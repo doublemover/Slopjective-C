@@ -1,5 +1,6 @@
 #include "runtime/images/registration_table_walk.h"
 
+#include "runtime/classes/class_metadata_tables.h"
 #include "runtime/images/image_descriptor.h"
 #include "runtime/images/registration_table_record.h"
 #include "runtime/metadata/runtime_emitted_records.h"
@@ -12,6 +13,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace objc3c::runtime {
@@ -40,6 +42,14 @@ bool TryWalkRegistrationTableUnlocked(
   if (!RuntimeRegistrationTableDescriptorCountsMatchImage(counts, image) ||
       !RuntimeRegistrationTableDiscoveryRootsAreClosed(
           registration_table, linker_anchor_matches_discovery_root)) {
+    return false;
+  }
+  std::string class_metadata_diagnostic_reason;
+  if (!RuntimeClassMetadataTableIsSupported(
+          state, registration_table, class_metadata_diagnostic_reason)) {
+    ++state.malformed_class_metadata_rejection_count;
+    state.last_malformed_class_graph_reason =
+        std::move(class_metadata_diagnostic_reason);
     return false;
   }
 

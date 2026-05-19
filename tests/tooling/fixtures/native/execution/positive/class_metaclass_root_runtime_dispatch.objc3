@@ -17,16 +17,24 @@ module classMetaclassRootRuntimeDispatch;
 
 @interface Widget : RootObject
 - (i32) widgetValue;
+- (bool) ready;
 @end
 
 @implementation Widget
 - (i32) widgetValue {
   return 23;
 }
+
+- (bool) ready {
+  return true;
+}
 @end
 
 fn main() -> i32 {
   let widget = 1042;
   let widgetClass = 1043;
-  return [widget widgetValue] + [widget rootValue] + [widgetClass shared];
+  if ([widget ready]) {
+    return [widget widgetValue] + [widget rootValue] + [widgetClass shared] + 1;
+  }
+  return 1;
 }

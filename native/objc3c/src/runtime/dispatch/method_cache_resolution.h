@@ -13,8 +13,10 @@ struct MethodCacheEntry;
 struct RuntimeState;
 
 RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
-    RuntimeState &state, const MethodCacheEntry &entry,
-    std::uint64_t receiver_base_identity);
+    RuntimeState &state, const MethodCacheKey &cache_key,
+    const MethodCacheEntry &entry, std::uint64_t receiver_base_identity,
+    std::uint64_t expected_normalized_receiver_identity,
+    std::uint64_t expected_selector_stable_id);
 
 RuntimeDispatchTarget ResolveMethodCacheMissUnlocked(
     RuntimeState &state, std::uint64_t base_identity,

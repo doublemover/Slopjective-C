@@ -7,7 +7,8 @@ static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
     info.canonical_type = BuildCanonicalSemanticType(
         ValueType::ObjCId, false, "", 1u, true, false, false, false, false,
         "", true, argument.substr(2), false, 0u, {}, false, false, false,
-        false, false, false, false, false, false, false, false, false);
+        false, false, false, false, false, false, false, false, false, false,
+        false, false);
     info.ownership_kind = SemanticOwnershipKind::Retained;
     return info;
   }
@@ -33,7 +34,7 @@ static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
         true, object_name, has_specialization && !generic_suffix_text.empty(),
         generic_suffix_text, true, pointer_depth, {}, false, false,
         false, false, false, false, false, false, false, false, false,
-        false);
+        false, false, false, false);
     info.object_pointer_type_name = object_name;
     info.ownership_kind = SemanticOwnershipKind::Retained;
     return info;

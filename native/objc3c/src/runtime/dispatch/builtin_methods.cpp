@@ -5,15 +5,13 @@
 #include "runtime/dispatch/typed_dispatch_result.h"
 #include "runtime/memory/arc.h"
 #include "runtime/memory/autorelease_pool.h"
+#include "runtime/memory/runtime_instance_lifetime.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/public/objc3_runtime_result.h"
 #include "runtime/state/runtime_state_records.h"
-#include "runtime/storage/instance_storage.h"
 #include "runtime/storage/property_accessors.h"
-#include "runtime/storage/runtime_instance_records.h"
 
 #include <mutex>
-#include <utility>
 
 namespace objc3c::runtime {
 
@@ -58,32 +56,13 @@ RuntimeTypedDispatchResult InvokeRuntimeBuiltinMethod(
             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
             RuntimeMethodReturnKind::ObjectReference);
       }
-      int receiver_identity = state.next_runtime_instance_receiver;
-      while (receiver_identity <= 0 ||
-             state.runtime_instances_by_receiver.find(receiver_identity) !=
-                 state.runtime_instances_by_receiver.end()) {
-        ++receiver_identity;
+      const int receiver_identity =
+          AllocateRuntimeInstanceUnlocked(state, base_identity);
+      if (receiver_identity == 0) {
+        return RuntimeTypedDispatchFailure(
+            OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
+            RuntimeMethodReturnKind::ObjectReference);
       }
-      state.next_runtime_instance_receiver = receiver_identity + 1;
-      RuntimeInstanceRecord instance;
-      instance.receiver_identity = static_cast<std::uint64_t>(receiver_identity);
-      instance.base_identity = base_identity;
-      instance.class_name = node->class_name;
-      instance.instance_size_bytes =
-          RuntimeInstanceStorageSize(node->runtime_instance_size_bytes);
-      const std::uint64_t instance_size_bytes =
-          static_cast<std::uint64_t>(instance.instance_size_bytes);
-      instance.storage_bytes.assign(instance.instance_size_bytes, 0u);
-      instance.retain_count = 1u;
-      state.runtime_instances_by_receiver.emplace(receiver_identity,
-                                                 std::move(instance));
-      state.live_runtime_instance_count =
-          static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
-      state.last_allocated_runtime_instance_receiver =
-          static_cast<std::uint64_t>(receiver_identity);
-      state.last_allocated_runtime_instance_base_identity = base_identity;
-      state.last_allocated_runtime_instance_size_bytes = instance_size_bytes;
-      state.last_allocated_runtime_instance_class_name = node->class_name;
       return RuntimeTypedDispatchSuccess(RuntimeMethodReturnKind::ObjectReference,
                                          receiver_identity);
     }

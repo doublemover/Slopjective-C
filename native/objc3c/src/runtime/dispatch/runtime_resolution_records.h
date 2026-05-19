@@ -53,6 +53,11 @@ struct MethodCacheEntry {
   RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
+  std::uint64_t cache_registered_image_count = 0;
+  std::uint64_t cache_last_successful_registration_order_ordinal = 0;
+  std::uint64_t cache_reset_generation = 0;
+  std::uint64_t cache_replay_generation = 0;
+  std::uint64_t cache_realized_class_node_count = 0;
   objc3_runtime_dispatch_status_code strict_error_status =
       OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   const void *implementation = nullptr;

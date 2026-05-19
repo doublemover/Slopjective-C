@@ -199,6 +199,13 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     cache_entry.selector_stable_id = selector_stable_id;
     cache_entry.parameter_count = entry.parameter_count;
     cache_entry.return_kind = return_kind;
+    cache_entry.cache_registered_image_count = state.registered_image_count;
+    cache_entry.cache_last_successful_registration_order_ordinal =
+        state.last_successful_registration_order_ordinal;
+    cache_entry.cache_reset_generation = state.reset_generation;
+    cache_entry.cache_replay_generation = state.replay_generation;
+    cache_entry.cache_realized_class_node_count =
+        static_cast<std::uint64_t>(state.realized_class_nodes.size());
     cache_entry.implementation = entry.implementation;
     if (state.method_cache.emplace(cache_key, std::move(cache_entry)).second) {
       ++state.fast_path_seed_count;

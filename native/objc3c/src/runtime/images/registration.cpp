@@ -93,6 +93,7 @@ int RegisterImageUnlocked(
   state.last_successful_registration_order_ordinal =
       image->registration_order_ordinal;
   state.last_registration_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  state.last_malformed_class_graph_reason.clear();
   state.last_registered_module_name = image->module_name;
   state.last_registered_translation_unit_identity_key =
       image->translation_unit_identity_key;

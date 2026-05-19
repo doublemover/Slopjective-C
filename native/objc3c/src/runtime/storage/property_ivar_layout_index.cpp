@@ -11,12 +11,24 @@ namespace objc3c::runtime {
 namespace {
 
 std::string RuntimePropertyIvarLayoutLookupKey(const char *layout_identity,
+                                               const char *owner_identity,
                                                const char *property_name) {
   const std::string layout =
       layout_identity != nullptr ? layout_identity : "";
+  const std::string owner =
+      owner_identity != nullptr ? owner_identity : "";
   const std::string property =
       property_name != nullptr ? property_name : "";
-  return layout + "\n" + property;
+  return owner + "\n" + layout + "\n" + property;
+}
+
+std::string RuntimePropertyIvarBindingLookupKey(const char *owner_identity,
+                                                const char *binding_symbol) {
+  const std::string owner =
+      owner_identity != nullptr ? owner_identity : "";
+  const std::string binding =
+      binding_symbol != nullptr ? binding_symbol : "";
+  return owner + "\n" + binding;
 }
 
 void AddRuntimePropertyIvarLayoutLookup(
@@ -25,12 +37,15 @@ void AddRuntimePropertyIvarLayoutLookup(
     const char *layout_identity,
     const EmittedIvarDescriptor &descriptor) {
   if (layout_identity == nullptr || layout_identity[0] == '\0' ||
+      descriptor.declaration_owner_identity == nullptr ||
+      descriptor.declaration_owner_identity[0] == '\0' ||
       descriptor.property_name == nullptr ||
       descriptor.property_name[0] == '\0') {
     return;
   }
   const std::string key =
       RuntimePropertyIvarLayoutLookupKey(layout_identity,
+                                         descriptor.declaration_owner_identity,
                                          descriptor.property_name);
   const auto inserted = lookup.emplace(key, &descriptor);
   if (!inserted.second && inserted.first->second != &descriptor) {
@@ -43,18 +58,43 @@ const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorByLayoutLookup(
     const std::unordered_map<std::string, const EmittedIvarDescriptor *> &lookup,
     const std::unordered_set<std::string> &ambiguous_keys,
     const char *layout_identity,
+    const char *owner_identity,
     const char *property_name) {
   if (layout_identity == nullptr || layout_identity[0] == '\0' ||
+      owner_identity == nullptr || owner_identity[0] == '\0' ||
       property_name == nullptr || property_name[0] == '\0') {
     return nullptr;
   }
   const std::string key =
-      RuntimePropertyIvarLayoutLookupKey(layout_identity, property_name);
+      RuntimePropertyIvarLayoutLookupKey(layout_identity, owner_identity,
+                                         property_name);
   if (ambiguous_keys.find(key) != ambiguous_keys.end()) {
     return nullptr;
   }
   const auto found = lookup.find(key);
   return found != lookup.end() ? found->second : nullptr;
+}
+
+const EmittedIvarDescriptor *FindUniqueRuntimePropertyIvarDescriptorByBinding(
+    const RuntimePropertyIvarLayoutIndex &index,
+    const char *binding_symbol) {
+  if (binding_symbol == nullptr || binding_symbol[0] == '\0') {
+    return nullptr;
+  }
+  const EmittedIvarDescriptor *match = nullptr;
+  const std::string suffix = "\n" + std::string(binding_symbol);
+  for (const auto &entry : index.ivars_by_binding_symbol) {
+    if (entry.first.size() < suffix.size() ||
+        entry.first.compare(entry.first.size() - suffix.size(), suffix.size(),
+                            suffix) != 0) {
+      continue;
+    }
+    if (match != nullptr && match != entry.second) {
+      return nullptr;
+    }
+    match = entry.second;
+  }
+  return match;
 }
 
 }  // namespace
@@ -63,8 +103,20 @@ bool BuildRuntimePropertyIvarLayoutIndex(
     const RegisteredImageMetadata &image,
     const std::string &ivar_owner_identity,
     RuntimePropertyIvarLayoutIndex &index) {
+  std::unordered_set<std::string> owner_identities;
+  if (!ivar_owner_identity.empty()) {
+    owner_identities.insert(ivar_owner_identity);
+  }
+  return BuildRuntimePropertyIvarLayoutIndexForOwners(image, owner_identities,
+                                                      index);
+}
+
+bool BuildRuntimePropertyIvarLayoutIndexForOwners(
+    const RegisteredImageMetadata &image,
+    const std::unordered_set<std::string> &ivar_owner_identities,
+    RuntimePropertyIvarLayoutIndex &index) {
   index = RuntimePropertyIvarLayoutIndex{};
-  if (image.ivar_descriptor_root == nullptr) {
+  if (image.ivar_descriptor_root == nullptr || ivar_owner_identities.empty()) {
     return false;
   }
 
@@ -80,7 +132,8 @@ bool BuildRuntimePropertyIvarLayoutIndex(
         descriptor->ivar_binding_symbol[0] == '\0') {
       return false;
     }
-    if (ivar_owner_identity != descriptor->declaration_owner_identity) {
+    if (ivar_owner_identities.find(descriptor->declaration_owner_identity) ==
+        ivar_owner_identities.end()) {
       continue;
     }
 
@@ -107,8 +160,14 @@ bool BuildRuntimePropertyIvarLayoutIndex(
         std::max<std::size_t>(index.published_owner_size,
                               static_cast<std::size_t>(
                                   descriptor->owner_size_bytes));
-    index.ivars_by_binding_symbol.emplace(descriptor->ivar_binding_symbol,
-                                          descriptor);
+    const std::string binding_key = RuntimePropertyIvarBindingLookupKey(
+        descriptor->declaration_owner_identity,
+        descriptor->ivar_binding_symbol);
+    const auto inserted =
+        index.ivars_by_binding_symbol.emplace(binding_key, descriptor);
+    if (!inserted.second && inserted.first->second != descriptor) {
+      return false;
+    }
     AddRuntimePropertyIvarLayoutLookup(index.ivars_by_layout_symbol,
                                        index.ambiguous_layout_symbols,
                                        descriptor->layout_record->layout_symbol,
@@ -133,23 +192,35 @@ const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorForProperty(
     const RuntimePropertyIvarLayoutIndex &index,
     const EmittedPropertyDescriptor &descriptor) {
   if (descriptor.ivar_binding_symbol != nullptr &&
-      descriptor.ivar_binding_symbol[0] != '\0') {
+      descriptor.ivar_binding_symbol[0] != '\0' &&
+      descriptor.declaration_owner_identity != nullptr &&
+      descriptor.declaration_owner_identity[0] != '\0') {
+    const std::string binding_key = RuntimePropertyIvarBindingLookupKey(
+        descriptor.declaration_owner_identity,
+        descriptor.ivar_binding_symbol);
     const auto found =
-        index.ivars_by_binding_symbol.find(descriptor.ivar_binding_symbol);
+        index.ivars_by_binding_symbol.find(binding_key);
     if (found != index.ivars_by_binding_symbol.end()) {
       return found->second;
+    }
+    if (const EmittedIvarDescriptor *unique_binding =
+            FindUniqueRuntimePropertyIvarDescriptorByBinding(
+                index, descriptor.ivar_binding_symbol)) {
+      return unique_binding;
     }
   }
   const EmittedIvarDescriptor *by_layout_symbol =
       FindRuntimePropertyIvarDescriptorByLayoutLookup(
           index.ivars_by_layout_symbol, index.ambiguous_layout_symbols,
-          descriptor.ivar_layout_symbol, descriptor.property_name);
+          descriptor.ivar_layout_symbol, descriptor.declaration_owner_identity,
+          descriptor.property_name);
   if (by_layout_symbol != nullptr) {
     return by_layout_symbol;
   }
   return FindRuntimePropertyIvarDescriptorByLayoutLookup(
       index.ivars_by_layout_replay_key, index.ambiguous_layout_replay_keys,
-      descriptor.ivar_layout_replay_key, descriptor.property_name);
+      descriptor.ivar_layout_replay_key, descriptor.declaration_owner_identity,
+      descriptor.property_name);
 }
 
 }  // namespace objc3c::runtime

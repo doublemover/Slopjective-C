@@ -14,38 +14,63 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t attached_category_count;
   uint64_t protocol_conformance_edge_count;
   uint64_t live_instance_count;
+  uint64_t malformed_class_metadata_rejection_count;
   uint64_t last_allocated_receiver_identity;
   uint64_t last_allocated_base_identity;
   uint64_t last_allocated_instance_size_bytes;
+  uint64_t last_allocated_allocation_ordinal;
   const char *last_realized_class_name;
   const char *last_realized_class_owner_identity;
   const char *last_realized_metaclass_owner_identity;
   const char *last_attached_category_owner_identity;
   const char *last_attached_category_name;
   const char *last_allocated_class_name;
+  const char *last_malformed_class_graph_reason;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {
   int found;
   uint64_t base_identity;
+  uint64_t instance_receiver_identity;
+  uint64_t class_receiver_identity;
   uint64_t registration_order_ordinal;
   int is_root_class;
+  int has_super_node;
   int implementation_backed;
   uint64_t attached_category_count;
   uint64_t direct_protocol_count;
   uint64_t attached_protocol_count;
   uint64_t runtime_property_accessor_count;
   uint64_t runtime_instance_size_bytes;
+  uint64_t super_base_identity;
   const char *module_name;
   const char *translation_unit_identity_key;
   const char *class_name;
+  const char *super_class_name;
   const char *class_owner_identity;
   const char *metaclass_owner_identity;
   const char *super_class_owner_identity;
   const char *super_metaclass_owner_identity;
+  const char *instance_isa_owner_identity;
+  const char *class_object_isa_owner_identity;
+  const char *metaclass_object_isa_owner_identity;
+  const char *root_class_owner_identity;
+  const char *root_metaclass_owner_identity;
   const char *last_attached_category_owner_identity;
   const char *last_attached_category_name;
 } objc3_runtime_realized_class_entry_snapshot;
+
+typedef struct objc3_runtime_instance_entry_snapshot {
+  int found;
+  uint64_t receiver_identity;
+  uint64_t base_identity;
+  uint64_t allocation_ordinal;
+  uint64_t instance_size_bytes;
+  uint64_t storage_size_bytes;
+  uint64_t zero_initialized_storage_byte_count;
+  uint64_t retain_count;
+  const char *class_name;
+} objc3_runtime_instance_entry_snapshot;
 
 typedef struct objc3_runtime_property_registry_state_snapshot {
   uint64_t layout_ready_class_count;
@@ -189,6 +214,8 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
 int objc3_runtime_copy_realized_class_entry_for_testing(
     const char *class_name,
     objc3_runtime_realized_class_entry_snapshot *snapshot);
+int objc3_runtime_copy_instance_entry_for_testing(
+    int receiver_identity, objc3_runtime_instance_entry_snapshot *snapshot);
 int objc3_runtime_copy_property_registry_state_for_testing(
     objc3_runtime_property_registry_state_snapshot *snapshot);
 int objc3_runtime_copy_property_entry_for_testing(

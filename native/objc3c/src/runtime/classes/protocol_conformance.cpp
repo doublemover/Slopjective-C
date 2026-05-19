@@ -64,6 +64,9 @@ bool QueryProtocolConformanceFromProtocolRecordUnlocked(
       return false;
     }
     ++visited_protocol_count;
+    if (record->is_forward_declaration) {
+      continue;
+    }
     if (std::strcmp(record->protocol_name, protocol_name) == 0) {
       matched_owner_identity = record->owner_identity;
       return true;
@@ -123,7 +126,8 @@ bool ProtocolExistsByNameUnlocked(const RuntimeState &state,
           protocol_record->protocol_name == nullptr) {
         continue;
       }
-      if (std::strcmp(protocol_record->protocol_name, protocol_name) == 0) {
+      if (!protocol_record->is_forward_declaration &&
+          std::strcmp(protocol_record->protocol_name, protocol_name) == 0) {
         return true;
       }
     }

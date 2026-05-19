@@ -4,6 +4,7 @@
 #include "runtime/dispatch/dispatch_result_state.h"
 #include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
+#include "runtime/dispatch/runtime_method_return.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <utility>
@@ -42,7 +43,8 @@ RuntimeDispatchTarget BuildResolvedDispatchTarget(
 MethodCacheEntry BuildMethodCacheEntry(
     const SlowPathResolution &resolution,
     std::uint64_t normalized_receiver_identity,
-    std::uint64_t selector_stable_id) {
+    std::uint64_t selector_stable_id,
+    const RuntimeState &state) {
   MethodCacheEntry cache_entry;
   cache_entry.resolved = resolution.resolved;
   cache_entry.dispatch_family_is_class = resolution.dispatch_family_is_class;
@@ -60,6 +62,13 @@ MethodCacheEntry BuildMethodCacheEntry(
   cache_entry.return_kind = resolution.return_kind;
   cache_entry.category_probe_count = resolution.category_probe_count;
   cache_entry.protocol_probe_count = resolution.protocol_probe_count;
+  cache_entry.cache_registered_image_count = state.registered_image_count;
+  cache_entry.cache_last_successful_registration_order_ordinal =
+      state.last_successful_registration_order_ordinal;
+  cache_entry.cache_reset_generation = state.reset_generation;
+  cache_entry.cache_replay_generation = state.replay_generation;
+  cache_entry.cache_realized_class_node_count =
+      static_cast<std::uint64_t>(state.realized_class_nodes.size());
   cache_entry.strict_error_status =
       RuntimeStrictDispatchStatus(resolution.resolved, resolution.ambiguous,
                                   resolution.strict_error_status);
@@ -70,14 +79,76 @@ MethodCacheEntry BuildMethodCacheEntry(
   return cache_entry;
 }
 
+objc3_runtime_dispatch_status_code ValidateMethodCacheEntryForDispatch(
+    const RuntimeState &state, const MethodCacheEntry &entry,
+    std::uint64_t expected_normalized_receiver_identity,
+    std::uint64_t expected_selector_stable_id) {
+  if (entry.normalized_receiver_identity !=
+          expected_normalized_receiver_identity ||
+      entry.selector_stable_id != expected_selector_stable_id ||
+      entry.cache_registered_image_count != state.registered_image_count ||
+      entry.cache_last_successful_registration_order_ordinal !=
+          state.last_successful_registration_order_ordinal ||
+      entry.cache_reset_generation != state.reset_generation ||
+      entry.cache_replay_generation != state.replay_generation ||
+      entry.cache_realized_class_node_count !=
+          static_cast<std::uint64_t>(state.realized_class_nodes.size())) {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE;
+  }
+  if (!entry.resolved) {
+    return entry.strict_error_status;
+  }
+  if (!RuntimeMethodReturnKindIsDispatchResultSupported(entry.return_kind)) {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE;
+  }
+  if (entry.parameter_count > 4) {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT;
+  }
+  if (entry.implementation == nullptr &&
+      entry.builtin_kind == RuntimeBuiltinKind::None &&
+      entry.runtime_property_accessor == nullptr) {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
+  }
+  return OBJC3_RUNTIME_DISPATCH_STATUS_OK;
+}
+
 }  // namespace
 
 RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
-    RuntimeState &state, const MethodCacheEntry &entry,
-    std::uint64_t receiver_base_identity) {
+    RuntimeState &state, const MethodCacheKey &cache_key,
+    const MethodCacheEntry &entry, std::uint64_t receiver_base_identity,
+    std::uint64_t expected_normalized_receiver_identity,
+    std::uint64_t expected_selector_stable_id) {
   RuntimeDispatchTarget target;
   ++state.method_cache_hit_count;
   PublishMethodCacheEntryStateUnlocked(state, entry, receiver_base_identity);
+  const objc3_runtime_dispatch_status_code cache_status =
+      ValidateMethodCacheEntryForDispatch(
+          state, entry, expected_normalized_receiver_identity,
+          expected_selector_stable_id);
+  if (cache_status == OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE) {
+    state.method_cache.erase(cache_key);
+    state.last_dispatch_resolved_live_method = false;
+    state.last_dispatch_strict_error = true;
+    state.last_dispatch_path = "cache-hit-stale";
+    state.last_dispatch_implementation_kind = "strict-dispatch-error";
+    target.dispatch_status = cache_status;
+    StoreDispatchResultContractUnlocked(
+        state, target.dispatch_status, RuntimeMethodReturnKind::Unsupported);
+    ++state.strict_dispatch_error_count;
+    return target;
+  }
+  if (cache_status != OBJC3_RUNTIME_DISPATCH_STATUS_OK && entry.resolved) {
+    state.last_dispatch_resolved_live_method = false;
+    state.last_dispatch_strict_error = true;
+    state.last_dispatch_path = "cache-hit-invalid-abi";
+    state.last_dispatch_implementation_kind = "strict-dispatch-error";
+    target.dispatch_status = cache_status;
+    StoreDispatchResultContractUnlocked(
+        state, target.dispatch_status, entry.return_kind);
+    ++state.strict_dispatch_error_count;
+    return target;
+  }
   if (entry.resolved) {
     state.last_dispatch_used_builtin =
         entry.builtin_kind != RuntimeBuiltinKind::None;
@@ -94,7 +165,7 @@ RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
 
   state.last_dispatch_path = "cache-hit-error";
   state.last_dispatch_implementation_kind = "strict-dispatch-error";
-  target.dispatch_status = entry.strict_error_status;
+  target.dispatch_status = cache_status;
   StoreDispatchResultContractUnlocked(
       state, target.dispatch_status, RuntimeMethodReturnKind::Unsupported);
   ++state.strict_dispatch_error_count;
@@ -113,7 +184,8 @@ RuntimeDispatchTarget ResolveMethodCacheMissUnlocked(
       state, base_identity, normalized_receiver_identity, family,
       selector_handle.stable_id, selector_handle.selector);
   MethodCacheEntry cache_entry = BuildMethodCacheEntry(
-      resolution, normalized_receiver_identity, selector_handle.stable_id);
+      resolution, normalized_receiver_identity, selector_handle.stable_id,
+      state);
   const objc3_runtime_dispatch_status_code strict_error_status =
       cache_entry.strict_error_status;
   state.method_cache.emplace(cache_key, std::move(cache_entry));

@@ -36,11 +36,14 @@ objc3_runtime_dispatch_i32_result CompleteStrictInvocationResult(
   if (!RuntimeDispatchStatusIsSuccess(result.status_code)) {
     RecordPostResolutionStrictDispatchFailure(
         state, result.status_code, result.return_kind, strict_failure_path);
-    return MakeRuntimeDispatchI32Result(result.status_code, 0);
+    return MakeRuntimeDispatchI32TypedResult(
+        result.status_code, 0,
+        RuntimeMethodReturnKindDispatchAbiCode(result.return_kind));
   }
   RecordTypedDispatchSuccess(state, result.return_kind);
-  return MakeRuntimeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_OK,
-                                     result.value);
+  return MakeRuntimeDispatchI32TypedResult(
+      OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value,
+      RuntimeMethodReturnKindDispatchAbiCode(result.return_kind));
 }
 
 }  // namespace
@@ -53,8 +56,9 @@ objc3_runtime_dispatch_i32_result ExecuteResolvedRuntimeDispatchTargetStrict(
     RecordPostResolutionStrictDispatchFailure(
         state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
         dispatch_target.return_kind, "resolved-method-precondition-error");
-    return MakeRuntimeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
+    return MakeRuntimeDispatchI32TypedResult(
+        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0,
+        RuntimeMethodReturnKindDispatchAbiCode(dispatch_target.return_kind));
   }
 
   PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
@@ -81,8 +85,9 @@ objc3_runtime_dispatch_i32_result ExecuteResolvedRuntimeDispatchTargetStrict(
   RecordPostResolutionStrictDispatchFailure(
       state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
       dispatch_target.return_kind, "resolved-method-missing-callable-error");
-  return MakeRuntimeDispatchI32Result(
-      OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
+  return MakeRuntimeDispatchI32TypedResult(
+      OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0,
+      RuntimeMethodReturnKindDispatchAbiCode(dispatch_target.return_kind));
 }
 
 }  // namespace objc3c::runtime

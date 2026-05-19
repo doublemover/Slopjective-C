@@ -26,7 +26,12 @@ inline int RunHelperExpectationChecks() {
     return result;
   }
 
-  return VerifyDispatchStatusCases();
+  result = VerifyDispatchStatusCases();
+  if (result != 0) {
+    return result;
+  }
+
+  return VerifyDispatchResultAbiFields();
 }
 
 inline int RunLiveRuntimeDispatchChecks() {

@@ -54,6 +54,8 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_keypath_query_found = false;
   state.last_keypath_query_ambiguous = false;
   state.last_resolved_keypath_profile.clear();
+  state.malformed_class_metadata_rejection_count = 0;
+  state.last_malformed_class_graph_reason.clear();
   ClearMethodCacheStateUnlocked(state);
   ClearRealizedClassGraphUnlocked(state);
   ClearRuntimeInstanceStateUnlocked(state);

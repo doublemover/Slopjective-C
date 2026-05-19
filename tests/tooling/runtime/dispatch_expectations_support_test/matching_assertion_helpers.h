@@ -97,6 +97,52 @@ inline int VerifyDispatchStatusCases() {
   return 0;
 }
 
+inline int VerifyDispatchResultAbiFields() {
+  const objc3_runtime_dispatch_i32_result success =
+      MakeRuntimeDispatchI32TypedResult(
+          OBJC3_RUNTIME_DISPATCH_STATUS_OK, 77,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL);
+  if (ReportValueExpectation(
+          success.abi_version, OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION,
+          "checked dispatch result abi version", 35) != 0) {
+    return 35;
+  }
+  if (ReportValueExpectation(
+          success.result_size,
+          static_cast<int>(sizeof(objc3_runtime_dispatch_i32_result)),
+          "checked dispatch result abi size", 36) != 0) {
+    return 36;
+  }
+  if (ReportValueExpectation(success.return_kind,
+                             OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL,
+                             "checked dispatch result return kind", 37) != 0) {
+    return 37;
+  }
+  if (ReportTextExpectation(success.result_contract,
+                            "typed-dispatch-value-result",
+                            "checked dispatch result value contract",
+                            38) != 0) {
+    return 38;
+  }
+
+  const objc3_runtime_dispatch_i32_result failure =
+      MakeRuntimeDispatchI32TypedResult(
+          OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE, 77,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32);
+  if (ReportValueExpectation(
+          failure.value, 0,
+          "checked dispatch strict error zeroes value", 39) != 0) {
+    return 39;
+  }
+  if (ReportTextExpectation(failure.result_contract,
+                            "typed-dispatch-strict-error-result",
+                            "checked dispatch strict error contract",
+                            40) != 0) {
+    return 40;
+  }
+  return 0;
+}
+
 inline int VerifyUnknownReceiverStrictDispatchError(
     const objc3_runtime_dispatch_i32_result &result) {
   if (!::objc3c::runtime::probe::IsStrictDispatchError(

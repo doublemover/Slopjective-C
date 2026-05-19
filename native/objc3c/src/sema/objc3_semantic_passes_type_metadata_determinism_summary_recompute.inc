@@ -9,14 +9,11 @@
   const Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   const Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary =
-      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildLightweightGenericConstraintSummaryFromCanonicalTypes(handoff);
   const Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary =
-      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildNullabilityFlowWarningPrecisionSummaryFromCanonicalTypes(handoff);
   const Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary =
-      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildProtocolQualifiedObjectTypeSummaryFromCanonicalTypes(handoff);
   const Objc3VarianceBridgeCastSummary variance_bridge_cast_summary =
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           handoff.type_annotation_surface_summary,

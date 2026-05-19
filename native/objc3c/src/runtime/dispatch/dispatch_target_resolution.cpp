@@ -45,8 +45,9 @@ RuntimeDispatchTarget ResolveRuntimeDispatchTargetUnlocked(
                                  selector_handle->stable_id};
   const auto cache_it = state.method_cache.find(cache_key);
   if (cache_it != state.method_cache.end()) {
-    return ResolveMethodCacheHitUnlocked(state, cache_it->second,
-                                         base_identity);
+    return ResolveMethodCacheHitUnlocked(
+        state, cache_key, cache_it->second, base_identity,
+        normalized_receiver_identity, selector_handle->stable_id);
   }
   return ResolveMethodCacheMissUnlocked(
       state, base_identity, normalized_receiver_identity, family,

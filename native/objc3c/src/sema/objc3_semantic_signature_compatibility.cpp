@@ -23,13 +23,35 @@ bool IsCompatibleCanonicalSemanticType(
          lhs.has_pointer_declarator == rhs.has_pointer_declarator &&
          lhs.pointer_declarator_depth == rhs.pointer_declarator_depth &&
          lhs.object_pointer_type_name == rhs.object_pointer_type_name &&
+         lhs.object_type_facts_authoritative ==
+             rhs.object_type_facts_authoritative &&
+         lhs.is_objc_object_reference == rhs.is_objc_object_reference &&
+         lhs.is_objc_id_object == rhs.is_objc_id_object &&
+         lhs.is_objc_class_object == rhs.is_objc_class_object &&
+         lhs.is_objc_metaclass_object == rhs.is_objc_metaclass_object &&
+         lhs.is_objc_protocol_object == rhs.is_objc_protocol_object &&
+         lhs.is_objc_instancetype_object == rhs.is_objc_instancetype_object &&
+         lhs.is_objc_named_object_pointer ==
+             rhs.is_objc_named_object_pointer &&
          lhs.has_protocol_composition == rhs.has_protocol_composition &&
          lhs.protocol_composition_lexicographic ==
              rhs.protocol_composition_lexicographic &&
+         lhs.protocol_composition_facts_authoritative ==
+             rhs.protocol_composition_facts_authoritative &&
+         lhs.has_invalid_protocol_composition ==
+             rhs.has_invalid_protocol_composition &&
          lhs.has_generic_suffix == rhs.has_generic_suffix &&
          lhs.generic_arguments_source_order == rhs.generic_arguments_source_order &&
          lhs.generic_arguments_lexicographic ==
              rhs.generic_arguments_lexicographic &&
+         lhs.generic_arguments_facts_authoritative ==
+             rhs.generic_arguments_facts_authoritative &&
+         lhs.has_invalid_generic_suffix == rhs.has_invalid_generic_suffix &&
+         lhs.has_explicit_nullability == rhs.has_explicit_nullability &&
+         lhs.nullability_facts_authoritative ==
+             rhs.nullability_facts_authoritative &&
+         lhs.has_invalid_nullability_suffix ==
+             rhs.has_invalid_nullability_suffix &&
          lhs.has_invalid_type_suffix == rhs.has_invalid_type_suffix &&
          lhs.deterministic == rhs.deterministic &&
          lhs.canonical_spelling == rhs.canonical_spelling &&

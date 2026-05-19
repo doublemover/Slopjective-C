@@ -74,6 +74,35 @@ static Objc3SemanticCanonicalOwnership CanonicalOwnershipFromQualifiers(
   return Objc3SemanticCanonicalOwnership::Unspecified;
 }
 
+static bool IsObjc3ObjectReferenceCanonicalKind(
+    Objc3SemanticCanonicalTypeKind kind) {
+  return kind == Objc3SemanticCanonicalTypeKind::Object ||
+         kind == Objc3SemanticCanonicalTypeKind::ClassObject ||
+         kind == Objc3SemanticCanonicalTypeKind::ProtocolObject ||
+         kind == Objc3SemanticCanonicalTypeKind::Instancetype ||
+         kind == Objc3SemanticCanonicalTypeKind::ObjectPointer ||
+         kind == Objc3SemanticCanonicalTypeKind::ForeignObject;
+}
+
+static void PopulateObjc3CanonicalObjectTypeFacts(
+    Objc3SemanticCanonicalType &type) {
+  type.is_objc_object_reference =
+      IsObjc3ObjectReferenceCanonicalKind(type.kind);
+  type.is_objc_id_object =
+      type.kind == Objc3SemanticCanonicalTypeKind::Object;
+  type.is_objc_class_object =
+      type.kind == Objc3SemanticCanonicalTypeKind::ClassObject;
+  type.is_objc_metaclass_object = type.is_objc_class_object;
+  type.is_objc_protocol_object =
+      type.kind == Objc3SemanticCanonicalTypeKind::ProtocolObject;
+  type.is_objc_instancetype_object =
+      type.kind == Objc3SemanticCanonicalTypeKind::Instancetype;
+  type.is_objc_named_object_pointer =
+      type.kind == Objc3SemanticCanonicalTypeKind::ObjectPointer &&
+      !type.object_pointer_type_name.empty();
+  type.object_type_facts_authoritative = true;
+}
+
 static std::string CanonicalTypeReplayKey(
     const Objc3SemanticCanonicalType &type) {
   std::ostringstream out;
@@ -87,15 +116,34 @@ static std::string CanonicalTypeReplayKey(
       << ";pointer=" << (type.has_pointer_declarator ? 1 : 0)
       << ";pointer-depth=" << type.pointer_declarator_depth
       << ";object-name=" << type.object_pointer_type_name
+      << ";object-facts="
+      << (type.object_type_facts_authoritative ? 1 : 0) << ":"
+      << (type.is_objc_object_reference ? 1 : 0) << ":"
+      << (type.is_objc_id_object ? 1 : 0) << ":"
+      << (type.is_objc_class_object ? 1 : 0) << ":"
+      << (type.is_objc_metaclass_object ? 1 : 0) << ":"
+      << (type.is_objc_protocol_object ? 1 : 0) << ":"
+      << (type.is_objc_instancetype_object ? 1 : 0) << ":"
+      << (type.is_objc_named_object_pointer ? 1 : 0)
       << ";protocols="
       << objc3c::support::JoinStringVector(
              type.protocol_composition_lexicographic, "+")
+      << ";protocol-facts="
+      << (type.protocol_composition_facts_authoritative ? 1 : 0) << ":"
+      << (type.has_invalid_protocol_composition ? 1 : 0)
       << ";generics="
       << objc3c::support::JoinStringVector(
              type.generic_arguments_source_order, "+")
       << ";generics-lex="
       << objc3c::support::JoinStringVector(
              type.generic_arguments_lexicographic, "+")
+      << ";generic-facts="
+      << (type.generic_arguments_facts_authoritative ? 1 : 0) << ":"
+      << (type.has_invalid_generic_suffix ? 1 : 0)
+      << ";nullability-facts="
+      << (type.nullability_facts_authoritative ? 1 : 0) << ":"
+      << (type.has_explicit_nullability ? 1 : 0) << ":"
+      << (type.has_invalid_nullability_suffix ? 1 : 0)
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
   return out.str();
 }
@@ -113,12 +161,14 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
     bool ownership_is_unowned_reference, bool unsafe_unretained, bool assign,
     bool copy, bool retain, bool strong, bool property_nullable,
     bool property_nonnull, bool property_null_resettable,
-    bool has_invalid_type_suffix) {
+    bool has_invalid_generic_suffix, bool has_invalid_nullability_suffix,
+    bool has_invalid_protocol_composition, bool has_invalid_type_suffix) {
   Objc3SemanticCanonicalType type;
   type.value_type = value_type;
   type.kind = CanonicalTypeKindForValueType(
       value_type, is_vector, object_pointer_type_spelling, id_spelling,
       class_spelling, sel_spelling, instancetype_spelling);
+  PopulateObjc3CanonicalObjectTypeFacts(type);
   type.is_vector = is_vector;
   type.vector_base_spelling = vector_base_spelling;
   type.vector_lane_count = vector_lane_count;
@@ -126,20 +176,31 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
   type.pointer_declarator_depth = pointer_declarator_depth;
   if (object_pointer_type_spelling) {
     type.object_pointer_type_name = object_pointer_type_name;
+    PopulateObjc3CanonicalObjectTypeFacts(type);
   }
   type.nullability = CanonicalNullabilityFromTokens(nullability_tokens);
+  type.has_explicit_nullability = !nullability_tokens.empty();
   if (property_null_resettable) {
     type.nullability = Objc3SemanticCanonicalNullability::NullResettable;
+    type.has_explicit_nullability = true;
   } else if (property_nonnull) {
     type.nullability = Objc3SemanticCanonicalNullability::Nonnull;
+    type.has_explicit_nullability = true;
   } else if (property_nullable) {
     type.nullability = Objc3SemanticCanonicalNullability::Nullable;
+    type.has_explicit_nullability = true;
   }
+  type.nullability_facts_authoritative = true;
+  type.has_invalid_nullability_suffix = has_invalid_nullability_suffix;
   type.ownership = CanonicalOwnershipFromQualifiers(
       has_ownership_qualifier, ownership_is_weak_reference,
       ownership_is_unowned_reference, unsafe_unretained, assign, copy, retain,
       strong);
   type.has_generic_suffix = has_generic_suffix;
+  type.generic_arguments_facts_authoritative = true;
+  type.has_invalid_generic_suffix = has_invalid_generic_suffix;
+  type.protocol_composition_facts_authoritative = true;
+  type.has_invalid_protocol_composition = has_invalid_protocol_composition;
   if (has_generic_suffix) {
     type.generic_arguments_source_order =
         ParseGenericArgumentSuffixTextSourceOrder(generic_suffix_text);
@@ -153,9 +214,24 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
     }
   }
   type.has_invalid_type_suffix = has_invalid_type_suffix;
-  type.deterministic = IsSortedUniqueStrings(type.protocol_composition_lexicographic) &&
-                       std::is_sorted(type.generic_arguments_lexicographic.begin(),
-                                      type.generic_arguments_lexicographic.end());
+  type.deterministic =
+      type.object_type_facts_authoritative &&
+      type.generic_arguments_facts_authoritative &&
+      type.nullability_facts_authoritative &&
+      type.protocol_composition_facts_authoritative &&
+      type.is_objc_object_reference ==
+          IsObjc3ObjectReferenceCanonicalKind(type.kind) &&
+      (!type.is_objc_named_object_pointer ||
+       !type.object_pointer_type_name.empty()) &&
+      (!type.has_protocol_composition || type.has_generic_suffix) &&
+      (!type.has_invalid_protocol_composition ||
+       type.has_protocol_composition) &&
+      (!type.has_invalid_generic_suffix || type.has_generic_suffix) &&
+      (!type.has_invalid_nullability_suffix ||
+       type.has_explicit_nullability) &&
+      IsSortedUniqueStrings(type.protocol_composition_lexicographic) &&
+      std::is_sorted(type.generic_arguments_lexicographic.begin(),
+                     type.generic_arguments_lexicographic.end());
   type.canonical_spelling =
       object_pointer_type_spelling && !object_pointer_type_name.empty()
           ? object_pointer_type_name
@@ -175,6 +251,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
     const FuncParam &param) {
+  const ProtocolCompositionInfo protocol_composition =
+      BuildProtocolCompositionInfoFromParam(param);
   return BuildCanonicalSemanticType(
       param.type, param.vector_spelling, param.vector_base_spelling,
       param.vector_lane_count, param.id_spelling, param.class_spelling,
@@ -185,7 +263,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
       param.pointer_declarator_depth, param.nullability_suffix_tokens,
       param.has_ownership_qualifier, param.ownership_is_weak_reference,
       param.ownership_is_unowned_reference, false, false, false, false, false,
-      false, false, false, HasInvalidParamTypeSuffix(param));
+      false, false, false, HasInvalidGenericParamTypeSuffix(param),
+      HasInvalidNullabilityParamTypeSuffix(param),
+      protocol_composition.has_invalid_protocol_composition,
+      HasInvalidParamTypeSuffix(param));
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
@@ -200,7 +281,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
       fn.return_pointer_declarator_depth, fn.return_nullability_suffix_tokens,
       fn.has_return_ownership_qualifier, fn.return_ownership_is_weak_reference,
       fn.return_ownership_is_unowned_reference, false, false, false, false,
-      false, false, false, false,
+      false, false, false, false, HasInvalidGenericReturnTypeSuffix(fn),
+      HasInvalidNullabilityReturnTypeSuffix(fn),
+      BuildProtocolCompositionInfoFromFunctionReturn(fn)
+          .has_invalid_protocol_composition,
       HasInvalidGenericReturnTypeSuffix(fn) ||
           HasInvalidPointerReturnTypeDeclarator(fn) ||
           HasInvalidNullabilityReturnTypeSuffix(fn) ||
@@ -223,7 +307,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
       method.has_return_ownership_qualifier,
       method.return_ownership_is_weak_reference,
       method.return_ownership_is_unowned_reference, false, false, false, false,
-      false, false, false, false,
+      false, false, false, false, HasInvalidGenericReturnTypeSuffix(method),
+      HasInvalidNullabilityReturnTypeSuffix(method),
+      BuildProtocolCompositionInfoFromMethodReturn(method)
+          .has_invalid_protocol_composition,
       HasInvalidGenericReturnTypeSuffix(method) ||
           HasInvalidPointerReturnTypeDeclarator(method) ||
           HasInvalidNullabilityReturnTypeSuffix(method) ||
@@ -244,5 +331,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
       property.ownership_is_unowned_reference, property.is_unsafe_unretained,
       property.is_assign, property.is_copy, property.is_retain,
       property.is_strong, property.is_nullable, property.is_nonnull,
-      property.is_null_resettable, HasInvalidPropertyTypeSuffix(property));
+      property.is_null_resettable, HasInvalidGenericPropertyTypeSuffix(property),
+      HasInvalidNullabilityPropertyTypeSuffix(property), false,
+      HasInvalidPropertyTypeSuffix(property));
 }

@@ -1,5 +1,30 @@
+  const auto is_deterministic_canonical_type =
+      [](const Objc3SemanticCanonicalType &type) {
+        const bool object_reference_kind =
+            type.kind == Objc3SemanticCanonicalTypeKind::Object ||
+            type.kind == Objc3SemanticCanonicalTypeKind::ClassObject ||
+            type.kind == Objc3SemanticCanonicalTypeKind::ProtocolObject ||
+            type.kind == Objc3SemanticCanonicalTypeKind::Instancetype ||
+            type.kind == Objc3SemanticCanonicalTypeKind::ObjectPointer ||
+            type.kind == Objc3SemanticCanonicalTypeKind::ForeignObject;
+        return type.deterministic && type.object_type_facts_authoritative &&
+               type.generic_arguments_facts_authoritative &&
+               type.nullability_facts_authoritative &&
+               type.protocol_composition_facts_authoritative &&
+               type.is_objc_object_reference == object_reference_kind &&
+               (!type.is_objc_named_object_pointer ||
+                !type.object_pointer_type_name.empty()) &&
+               (!type.has_protocol_composition || type.has_generic_suffix) &&
+               (!type.has_invalid_protocol_composition ||
+                type.has_protocol_composition) &&
+               (!type.has_invalid_generic_suffix ||
+                type.has_generic_suffix) &&
+               (!type.has_invalid_nullability_suffix ||
+                type.has_explicit_nullability);
+      };
   const auto is_deterministic_method_metadata =
-      [](const Objc3SemanticMethodTypeMetadata &metadata) {
+      [&is_deterministic_canonical_type](
+          const Objc3SemanticMethodTypeMetadata &metadata) {
         if (metadata.selector.empty() ||
             metadata.selector_normalized.empty() ||
             metadata.selector != metadata.selector_normalized ||
@@ -45,10 +70,21 @@
             metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
           return false;
         }
+        if (metadata.param_canonical_types.size() != metadata.arity ||
+            !is_deterministic_canonical_type(
+                metadata.return_canonical_type)) {
+          return false;
+        }
+        for (const auto &param_type : metadata.param_canonical_types) {
+          if (!is_deterministic_canonical_type(param_type)) {
+            return false;
+          }
+        }
         return true;
       };
   const auto is_deterministic_property_metadata =
-      [](const Objc3SemanticPropertyTypeMetadata &metadata) {
+      [&is_deterministic_canonical_type](
+          const Objc3SemanticPropertyTypeMetadata &metadata) {
         const bool expected_invalid_type_suffix =
             metadata.has_invalid_generic_suffix ||
             metadata.has_invalid_pointer_declarator ||
@@ -65,6 +101,9 @@
              !metadata.has_ownership_qualifier) ||
             metadata.has_invalid_type_suffix !=
                 expected_invalid_type_suffix) {
+          return false;
+        }
+        if (!is_deterministic_canonical_type(metadata.canonical_type)) {
           return false;
         }
         if ((!metadata.has_ownership_qualifier &&
@@ -128,9 +167,17 @@
         metadata.param_ownership_arc_fixit_hint.size() != metadata.arity ||
         metadata.param_has_protocol_composition.size() != metadata.arity ||
         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
-        metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+        metadata.param_has_invalid_protocol_composition.size() != metadata.arity ||
+        metadata.param_canonical_types.size() != metadata.arity ||
+        !is_deterministic_canonical_type(metadata.return_canonical_type)) {
       return "function metadata row '" + metadata.name +
              "' has parameter metadata arrays that drift from arity";
+    }
+    for (const auto &param_type : metadata.param_canonical_types) {
+      if (!is_deterministic_canonical_type(param_type)) {
+        return "function metadata row '" + metadata.name +
+               "' has non-authoritative canonical type facts";
+      }
     }
   }
 

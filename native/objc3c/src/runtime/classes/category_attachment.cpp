@@ -1,5 +1,6 @@
 #include "runtime/classes/category_attachment.h"
 
+#include "runtime/classes/class_metadata_tables.h"
 #include "runtime/images/image_descriptor.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
@@ -22,51 +23,82 @@ const void *CategoryAggregateEntry(
   return RuntimeAggregateEntry(aggregate, index);
 }
 
-bool CollectPreferredCategoryRecordsForImage(
-    const RegisteredImageMetadata &record, const std::string &class_name,
+struct PreferredCategoryRecord {
+  const EmittedCategoryRecord *interface_record = nullptr;
+  const EmittedCategoryRecord *implementation_record = nullptr;
+};
+
+bool AddPreferredCategoryRecord(
+    const EmittedCategoryRecord &category_record,
+    std::unordered_map<std::string, PreferredCategoryRecord> &grouped_records) {
+  if (category_record.class_name == nullptr ||
+      category_record.category_name == nullptr ||
+      category_record.record_kind == nullptr ||
+      category_record.owner_identity == nullptr) {
+    return false;
+  }
+  const std::string key =
+      std::string(category_record.class_name) + "\n" +
+      std::string(category_record.category_name);
+  PreferredCategoryRecord &preferred_record = grouped_records[key];
+  const std::string record_kind = category_record.record_kind;
+  if (record_kind == "implementation") {
+    if (preferred_record.implementation_record != nullptr &&
+        std::string(preferred_record.implementation_record->owner_identity) !=
+            std::string(category_record.owner_identity)) {
+      return false;
+    }
+    preferred_record.implementation_record = &category_record;
+    return true;
+  }
+  if (record_kind == "interface") {
+    if (preferred_record.interface_record != nullptr &&
+        std::string(preferred_record.interface_record->owner_identity) !=
+            std::string(category_record.owner_identity)) {
+      return false;
+    }
+    preferred_record.interface_record = &category_record;
+    return true;
+  }
+  return false;
+}
+
+bool CollectPreferredCategoryRecords(
+    const RuntimeState &state,
+    const std::string &class_name,
     std::vector<const EmittedCategoryRecord *> &preferred_records) {
   // Class graph publication owns attachment selection: implementation records
   // win over interface records for the same category name, and conflicting
-  // same-tier owners fail closed.
-  std::unordered_map<std::string, const EmittedCategoryRecord *> grouped_records;
-  grouped_records.reserve(
-      static_cast<std::size_t>(record.category_descriptor_count));
-  for (std::uint64_t index = 0; index < record.category_descriptor_count;
-       ++index) {
-    const auto *category_record = static_cast<const EmittedCategoryRecord *>(
-        CategoryAggregateEntry(record.category_descriptor_root, index));
-    if (category_record == nullptr || category_record->class_name == nullptr ||
-        category_record->category_name == nullptr ||
-        category_record->record_kind == nullptr ||
-        category_record->owner_identity == nullptr) {
-      return false;
-    }
-    if (class_name != category_record->class_name) {
+  // same-tier owners fail closed across the full registered-image set.
+  std::unordered_map<std::string, PreferredCategoryRecord> grouped_records;
+  for (const RegisteredImageMetadata *record : OrderedClassGraphImages(state)) {
+    if (record == nullptr) {
       continue;
     }
-    const std::string key = category_record->category_name;
-    const bool is_implementation =
-        std::string(category_record->record_kind) == "implementation";
-    auto existing = grouped_records.find(key);
-    if (existing == grouped_records.end()) {
-      grouped_records.emplace(key, category_record);
-      continue;
-    }
-    const bool existing_is_implementation =
-        std::string(existing->second->record_kind) == "implementation";
-    if (existing_is_implementation == is_implementation &&
-        std::string(existing->second->owner_identity) !=
-            std::string(category_record->owner_identity)) {
-      return false;
-    }
-    if (!existing_is_implementation && is_implementation) {
-      existing->second = category_record;
+    grouped_records.reserve(grouped_records.size() +
+                            static_cast<std::size_t>(
+                                record->category_descriptor_count));
+    for (std::uint64_t index = 0; index < record->category_descriptor_count;
+         ++index) {
+      const auto *category_record = static_cast<const EmittedCategoryRecord *>(
+          CategoryAggregateEntry(record->category_descriptor_root, index));
+      if (category_record == nullptr ||
+          category_record->class_name == nullptr ||
+          class_name != category_record->class_name) {
+        continue;
+      }
+      if (!AddPreferredCategoryRecord(*category_record, grouped_records)) {
+        return false;
+      }
     }
   }
   preferred_records.clear();
   preferred_records.reserve(grouped_records.size());
   for (const auto &entry : grouped_records) {
-    preferred_records.push_back(entry.second);
+    const PreferredCategoryRecord &record = entry.second;
+    preferred_records.push_back(record.implementation_record != nullptr
+                                    ? record.implementation_record
+                                    : record.interface_record);
   }
   std::sort(
       preferred_records.begin(), preferred_records.end(),
@@ -103,8 +135,8 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
     return false;
   }
   std::vector<const EmittedCategoryRecord *> category_records;
-  if (!CollectPreferredCategoryRecordsForImage(*node.image, node.class_name,
-                                               category_records)) {
+  if (!CollectPreferredCategoryRecords(state, node.class_name,
+                                       category_records)) {
     return false;
   }
   for (const EmittedCategoryRecord *category_record : category_records) {

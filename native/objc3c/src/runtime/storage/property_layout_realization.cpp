@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 namespace objc3c::runtime {
@@ -29,12 +30,27 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
       node.bundle_owner_identity.empty()) {
     return false;
   }
-  const std::string storage_owner_identity =
+  std::unordered_set<std::string> ivar_owner_identities;
+  std::unordered_set<std::string> descriptor_owner_identities;
+  const std::string class_storage_owner_identity =
       node.interface_owner_identity.empty() ? node.bundle_owner_identity
                                             : node.interface_owner_identity;
+  ivar_owner_identities.insert(class_storage_owner_identity);
+  descriptor_owner_identities.insert(node.bundle_owner_identity);
+  descriptor_owner_identities.insert(class_storage_owner_identity);
+  for (const EmittedCategoryRecord *category_record :
+       node.attached_category_records) {
+    if (category_record == nullptr || category_record->owner_identity == nullptr ||
+        category_record->owner_identity[0] == '\0') {
+      return false;
+    }
+    ivar_owner_identities.insert(category_record->owner_identity);
+    descriptor_owner_identities.insert(category_record->owner_identity);
+  }
   RuntimePropertyIvarLayoutIndex ivar_layout_index;
-  if (!BuildRuntimePropertyIvarLayoutIndex(*node.image, storage_owner_identity,
-                                           ivar_layout_index)) {
+  if (!BuildRuntimePropertyIvarLayoutIndexForOwners(*node.image,
+                                                   ivar_owner_identities,
+                                                   ivar_layout_index)) {
     return false;
   }
   node.runtime_instance_size_bytes =
@@ -48,7 +64,10 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
         !RuntimePropertyDescriptorHasRealizableAccessorShape(*descriptor)) {
       return false;
     }
-    if (node.bundle_owner_identity != descriptor->declaration_owner_identity) {
+    if (descriptor->declaration_owner_identity == nullptr ||
+        descriptor_owner_identities.find(
+            descriptor->declaration_owner_identity) ==
+            descriptor_owner_identities.end()) {
       continue;
     }
     if (!RuntimePropertyDescriptorDeclaresSynthesizedStorageBinding(

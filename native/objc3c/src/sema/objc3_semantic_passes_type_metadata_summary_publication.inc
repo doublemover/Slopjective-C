@@ -1,12 +1,9 @@
   handoff.lightweight_generic_constraint_summary =
-      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildLightweightGenericConstraintSummaryFromCanonicalTypes(handoff);
   handoff.nullability_flow_warning_precision_summary =
-      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildNullabilityFlowWarningPrecisionSummaryFromCanonicalTypes(handoff);
   handoff.protocol_qualified_object_type_summary =
-      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
-          handoff.type_annotation_surface_summary);
+      BuildProtocolQualifiedObjectTypeSummaryFromCanonicalTypes(handoff);
   handoff.variance_bridge_cast_summary =
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           handoff.type_annotation_surface_summary,

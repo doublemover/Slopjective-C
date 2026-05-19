@@ -21,7 +21,9 @@ constexpr RuntimeDispatchDiagnosticRecord kRuntimeDispatchDiagnostics[] = {
     {OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT, "O3RT006",
      "runtime dispatch failed: rejected argument layout"},
     {OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT, "O3RT007",
-     "runtime dispatch failed: category conflict"}};
+     "runtime dispatch failed: category conflict"},
+    {OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE, "O3RT009",
+     "runtime dispatch failed: stale method cache entry"}};
 
 constexpr RuntimeDispatchDiagnosticRecord kInternalDispatchDiagnostic = {
     OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, "O3RT000",

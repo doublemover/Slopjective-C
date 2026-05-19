@@ -16,6 +16,7 @@ struct RuntimeWeakSlotRef {
 struct RuntimeInstanceRecord {
   std::uint64_t receiver_identity = 0;
   std::uint64_t base_identity = 0;
+  std::uint64_t allocation_ordinal = 0;
   std::string class_name;
   std::size_t instance_size_bytes = 0;
   std::vector<unsigned char> storage_bytes;
