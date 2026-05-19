@@ -1,5 +1,6 @@
 static bool IsProtocolQualifiedGenericArgument(const std::string &argument) {
-  const std::string trimmed = TrimAsciiWhitespace(argument);
+  const std::string trimmed =
+      objc3c::support::TrimAsciiWhitespace(argument);
   return trimmed.rfind("id<", 0) == 0u;
 }
 
@@ -12,7 +13,8 @@ static bool ValidateProtocolQualifiedGenericArgument(
     unsigned line,
     unsigned column,
     std::vector<std::string> &diagnostics) {
-  const std::string trimmed = TrimAsciiWhitespace(argument);
+  const std::string trimmed =
+      objc3c::support::TrimAsciiWhitespace(argument);
   if (trimmed.rfind("id<", 0) != 0u) {
     return true;
   }

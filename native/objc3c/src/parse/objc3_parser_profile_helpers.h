@@ -14,9 +14,6 @@ bool TryParseVectorTypeSpelling(const Objc3LexToken &type_token,
                                 std::string &vector_base_spelling,
                                 unsigned &vector_lane_count);
 
-std::string BuildNormalizedObjcSelector(
-    const std::vector<Objc3MethodDecl::SelectorPiece> &pieces);
-
 std::string BuildTypedKeyPathLiteralProfile(
     const std::string &root_name,
     bool root_is_self,

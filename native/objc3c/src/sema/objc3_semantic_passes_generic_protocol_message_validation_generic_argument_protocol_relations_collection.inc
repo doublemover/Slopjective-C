@@ -1,6 +1,7 @@
 static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
     const std::string &argument_text) {
-  const std::string argument = TrimAsciiWhitespace(argument_text);
+  const std::string argument =
+      objc3c::support::TrimAsciiWhitespace(argument_text);
   if (argument.rfind("id<", 0) == 0u && argument.size() > 2u) {
     SemanticTypeInfo info = MakeScalarSemanticType(ValueType::ObjCId);
     info.canonical_type = BuildCanonicalSemanticType(

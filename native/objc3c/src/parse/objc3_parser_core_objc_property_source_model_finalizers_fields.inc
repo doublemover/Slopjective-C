@@ -4,14 +4,17 @@
     property.property_attribute_profile =
         BuildExecutablePropertyAttributeProfile(property);
     property.effective_getter_selector =
-        property.has_getter ? TrimAsciiWhitespaceCopy(property.getter_selector)
-                            : property.name;
+        property.has_getter
+            ? objc3c::support::TrimAsciiWhitespace(property.getter_selector)
+            : property.name;
     property.effective_setter_available = !property.is_readonly;
     property.effective_setter_selector =
         property.effective_setter_available
             ? (property.has_setter
-                   ? TrimAsciiWhitespaceCopy(property.setter_selector)
-                   : BuildDefaultPropertySetterSelector(property.name))
+                   ? objc3c::support::TrimAsciiWhitespace(
+                         property.setter_selector)
+                   : objc3c::support::selectors::
+                         BuildDefaultPropertySetterSelector(property.name))
             : std::string{};
     property.executable_synthesized_binding_kind =
         supports_storage_layout ? "implicit-ivar" : "none";

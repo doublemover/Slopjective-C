@@ -5,7 +5,8 @@
     for (const auto &attribute : property.attributes) {
       std::string rendered = attribute.name;
       if (attribute.has_value) {
-        rendered += "=" + TrimAsciiWhitespaceCopy(attribute.value);
+        rendered +=
+            "=" + objc3c::support::TrimAsciiWhitespace(attribute.value);
       }
       attributes.push_back(std::move(rendered));
     }

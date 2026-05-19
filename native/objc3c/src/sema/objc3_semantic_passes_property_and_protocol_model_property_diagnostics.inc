@@ -26,13 +26,15 @@
                              " '" + owner_name + "'");
     }
     if ((attribute.name == "getter" || attribute.name == "setter") &&
-        (!attribute.has_value || TrimAsciiWhitespace(attribute.value).empty())) {
+        (!attribute.has_value ||
+         objc3c::support::TrimAsciiWhitespace(attribute.value).empty())) {
       emit_invalid_attribute("type mismatch: @property accessor attribute '" + attribute.name +
                              "' requires a selector value for property '" + property.name + "' in " + owner_kind +
                              " '" + owner_name + "'");
     }
     if (attribute.name == "behavior" &&
-        (!attribute.has_value || TrimAsciiWhitespace(attribute.value).empty())) {
+        (!attribute.has_value ||
+         objc3c::support::TrimAsciiWhitespace(attribute.value).empty())) {
       emit_invalid_attribute("type mismatch: @property behavior attribute requires a non-empty value for property '" +
                              property.name + "' in " + owner_kind + " '" + owner_name + "'");
     }

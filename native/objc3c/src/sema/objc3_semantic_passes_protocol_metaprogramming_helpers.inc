@@ -5,7 +5,7 @@ struct ProtocolCompositionInfo {
 };
 
 static std::string NormalizeMetaprogrammingRawDeriveToken(std::string token) {
-  token = TrimAsciiWhitespace(token);
+  token = objc3c::support::TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
        (token.front() == '\'' && token.back() == '\''))) {
@@ -15,7 +15,7 @@ static std::string NormalizeMetaprogrammingRawDeriveToken(std::string token) {
 }
 
 static std::string NormalizeMetaprogrammingRawMacroToken(std::string token) {
-  token = TrimAsciiWhitespace(token);
+  token = objc3c::support::TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
        (token.front() == '\'' && token.back() == '\''))) {
@@ -25,7 +25,7 @@ static std::string NormalizeMetaprogrammingRawMacroToken(std::string token) {
 }
 
 static std::string NormalizeMetaprogrammingRawPropertyBehaviorToken(std::string token) {
-  token = TrimAsciiWhitespace(token);
+  token = objc3c::support::TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
        (token.front() == '\'' && token.back() == '\''))) {

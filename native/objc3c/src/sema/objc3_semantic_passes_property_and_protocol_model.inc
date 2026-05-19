@@ -58,8 +58,10 @@
   info.is_direct = property.is_direct;
   info.has_getter = property.has_getter;
   info.has_setter = property.has_setter;
-  info.getter_selector = TrimAsciiWhitespace(property.getter_selector);
-  info.setter_selector = TrimAsciiWhitespace(property.setter_selector);
+  info.getter_selector =
+      objc3c::support::TrimAsciiWhitespace(property.getter_selector);
+  info.setter_selector =
+      objc3c::support::TrimAsciiWhitespace(property.setter_selector);
   info.ivar_binding_symbol = property.ivar_binding_symbol;
   info.executable_synthesized_binding_kind =
       property.executable_synthesized_binding_kind;
@@ -174,7 +176,8 @@
 #include "sema/objc3_semantic_passes_protocol_requirement_model.inc"
 
 static std::string GenericArgumentObjectTypeName(const std::string &argument) {
-  const std::string trimmed = TrimAsciiWhitespace(argument);
+  const std::string trimmed =
+      objc3c::support::TrimAsciiWhitespace(argument);
   if (trimmed.empty()) {
     return "";
   }
@@ -195,7 +198,8 @@ static std::string GenericArgumentObjectTypeName(const std::string &argument) {
 static bool ExtractGenericArgumentSpecialization(
     const std::string &argument, std::string &object_name,
     std::string &generic_suffix_text) {
-  const std::string trimmed = TrimAsciiWhitespace(argument);
+  const std::string trimmed =
+      objc3c::support::TrimAsciiWhitespace(argument);
   object_name = GenericArgumentObjectTypeName(trimmed);
   generic_suffix_text.clear();
   if (object_name.empty()) {

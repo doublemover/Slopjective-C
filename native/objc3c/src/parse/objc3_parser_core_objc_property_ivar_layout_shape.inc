@@ -1,5 +1,4 @@
 #include "parse/objc3_parser_core_objc_property_ivar_layout_shape_model.inc"
-#include "parse/objc3_parser_core_objc_property_ivar_layout_shape_text_selector_helpers.inc"
 #include "parse/objc3_parser_core_objc_property_ivar_layout_shape_computation.inc"
 #include "parse/objc3_parser_core_objc_property_ivar_layout_shape_alignment_helpers.inc"
 #include "parse/objc3_parser_core_objc_property_ivar_layout_shape_replay_key.inc"

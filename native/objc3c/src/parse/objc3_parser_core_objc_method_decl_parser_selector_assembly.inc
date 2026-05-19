@@ -62,7 +62,16 @@
       return false;
     }
 
-    method.selector = BuildNormalizedObjcSelector(method.selector_pieces);
+    std::vector<objc3c::support::selectors::SelectorPieceSpelling>
+        selector_pieces;
+    selector_pieces.reserve(method.selector_pieces.size());
+    for (const Objc3MethodDecl::SelectorPiece &piece :
+         method.selector_pieces) {
+      selector_pieces.push_back({piece.keyword, piece.has_parameter});
+    }
+    method.selector =
+        objc3c::support::selectors::BuildNormalizedSelectorSpelling(
+            selector_pieces);
     method.selector_is_normalized = true;
     return true;
   }

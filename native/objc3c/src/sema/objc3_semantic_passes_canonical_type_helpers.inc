@@ -88,11 +88,14 @@ static std::string CanonicalTypeReplayKey(
       << ";pointer-depth=" << type.pointer_declarator_depth
       << ";object-name=" << type.object_pointer_type_name
       << ";protocols="
-      << JoinStringVector(type.protocol_composition_lexicographic, "+")
+      << objc3c::support::JoinStringVector(
+             type.protocol_composition_lexicographic, "+")
       << ";generics="
-      << JoinStringVector(type.generic_arguments_source_order, "+")
+      << objc3c::support::JoinStringVector(
+             type.generic_arguments_source_order, "+")
       << ";generics-lex="
-      << JoinStringVector(type.generic_arguments_lexicographic, "+")
+      << objc3c::support::JoinStringVector(
+             type.generic_arguments_lexicographic, "+")
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
   return out.str();
 }
@@ -159,7 +162,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
           : objc3c::support::ValueTypeName(value_type);
   if (type.has_generic_suffix) {
     type.canonical_spelling += "<" +
-                               JoinStringVector(
+                               objc3c::support::JoinStringVector(
                                    type.generic_arguments_source_order, ",") +
                                ">";
   }

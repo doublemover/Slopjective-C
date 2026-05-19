@@ -4,7 +4,8 @@ static bool GenericArgumentSatisfiesProtocolConstraint(
         &protocol_definitions,
     const std::string &argument,
     const std::string &required_protocol) {
-  const std::string trimmed = TrimAsciiWhitespace(argument);
+  const std::string trimmed =
+      objc3c::support::TrimAsciiWhitespace(argument);
   if (trimmed.rfind("id<", 0) == 0u) {
     const ProtocolCompositionParseResult parsed =
         ParseProtocolCompositionSuffixText(trimmed.substr(2));

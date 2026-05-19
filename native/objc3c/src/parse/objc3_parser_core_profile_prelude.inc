@@ -41,6 +41,8 @@
 #include "parser/frontend/objc3_parser_type_projection.h"
 #include "parse/objc3_type_feature_profiles.h"
 #include "support/objc3_method_family.h"
+#include "support/objc3_string_predicates.h"
+#include "support/selectors/selector_normalization.h"
 
 #include <algorithm>
 #include <limits>

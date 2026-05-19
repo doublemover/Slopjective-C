@@ -14,9 +14,5 @@ struct ProtocolCompositionParseResult {
   bool IsValid() const;
 };
 
-std::string TrimAsciiWhitespace(const std::string &text);
-
-bool IsValidProtocolIdentifier(const std::string &identifier);
-
 ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(
     const std::string &suffix_text);

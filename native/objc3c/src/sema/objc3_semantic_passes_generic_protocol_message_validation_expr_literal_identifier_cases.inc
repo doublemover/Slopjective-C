@@ -35,7 +35,8 @@
             diagnostics.push_back(MakeDiag(
                 expr->line, expr->column, "O3S206",
                 "type mismatch: typed key-path member chain '" +
-                    JoinStringVector(expr->typed_keypath_components, ".") +
+                    objc3c::support::JoinStringVector(
+                        expr->typed_keypath_components, ".") +
                     "' is unsupported until executable typed key-path lowering is enabled"));
             return MakeScalarSemanticType(ValueType::Unknown);
           }

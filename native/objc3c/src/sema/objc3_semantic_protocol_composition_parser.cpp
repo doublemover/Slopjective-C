@@ -1,47 +1,14 @@
 #include "sema/objc3_semantic_protocol_composition_parser.h"
 
+#include "support/objc3_identifier_spelling.h"
+#include "support/objc3_string_predicates.h"
+
 #include <algorithm>
-#include <cctype>
 #include <unordered_set>
 
 bool ProtocolCompositionParseResult::IsValid() const {
   return !malformed_composition && !empty_composition &&
          invalid_identifiers.empty() && duplicate_identifiers.empty();
-}
-
-std::string TrimAsciiWhitespace(const std::string &text) {
-  std::size_t start = 0;
-  while (start < text.size() &&
-         std::isspace(static_cast<unsigned char>(text[start])) != 0) {
-    ++start;
-  }
-  if (start == text.size()) {
-    return "";
-  }
-
-  std::size_t end = text.size();
-  while (end > start &&
-         std::isspace(static_cast<unsigned char>(text[end - 1])) != 0) {
-    --end;
-  }
-  return text.substr(start, end - start);
-}
-
-bool IsValidProtocolIdentifier(const std::string &identifier) {
-  if (identifier.empty()) {
-    return false;
-  }
-  const unsigned char first = static_cast<unsigned char>(identifier.front());
-  if (!(std::isalpha(first) != 0 || first == '_')) {
-    return false;
-  }
-  for (std::size_t i = 1; i < identifier.size(); ++i) {
-    const unsigned char c = static_cast<unsigned char>(identifier[i]);
-    if (!(std::isalnum(c) != 0 || c == '_')) {
-      return false;
-    }
-  }
-  return true;
 }
 
 ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(
@@ -71,10 +38,11 @@ ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(
     const std::size_t token_end =
         (comma == std::string::npos) ? inner.size() : comma;
     const std::string token =
-        TrimAsciiWhitespace(inner.substr(start, token_end - start));
+        objc3c::support::TrimAsciiWhitespace(
+            inner.substr(start, token_end - start));
     if (token.empty()) {
       result.empty_composition = true;
-    } else if (!IsValidProtocolIdentifier(token)) {
+    } else if (!objc3c::support::IsObjcIdentifierSpelling(token)) {
       result.invalid_identifiers.push_back(token);
     } else if (!seen_names.insert(token).second) {
       result.duplicate_identifiers.push_back(token);

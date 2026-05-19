@@ -7,8 +7,12 @@ add_library(objc3c_support_ascii STATIC
 objc3c_apply_build_defaults(objc3c_support_ascii)
 
 add_library(objc3c_support_strings STATIC
+  objc3_ascii_whitespace.cpp
+  objc3_ascii_whitespace.h
   objc3_string_affix_predicates.cpp
   objc3_string_affix_predicates.h
+  objc3_string_join.cpp
+  objc3_string_join.h
   objc3_string_predicates.h
   objc3_string_search_predicates.cpp
   objc3_string_search_predicates.h
@@ -37,6 +41,8 @@ target_link_libraries(objc3c_support_profile_matchers PUBLIC
 add_library(objc3c_support_identifier_io STATIC
   objc3_file_reading.cpp
   objc3_file_reading.h
+  objc3_identifier_spelling.cpp
+  objc3_identifier_spelling.h
   objc3_identifier_safe_suffix_builder.cpp
   objc3_identifier_safe_suffix_builder.h
   objc3_identifier_safe_suffix_characters.cpp
@@ -205,6 +211,8 @@ add_library(objc3c_support_selectors STATIC
   selectors/selector_identity_normalization.cpp
   selectors/selector_identity_normalization.h
   selectors/selector_normalization.h
+  selectors/selector_piece_normalization.cpp
+  selectors/selector_piece_normalization.h
   selectors/selector_spelling.h
   selectors/selector_spelling_validation.cpp
   selectors/selector_spelling_validation.h

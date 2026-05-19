@@ -6,7 +6,6 @@
 #include "sema/objc3_semantic_generic_argument_relations.h"
 #include "sema/objc3_semantic_interop_surface_helpers.h"
 #include "sema/objc3_semantic_match_exhaustiveness.h"
-#include "sema/objc3_semantic_pass_helpers.h"
 #include "sema/objc3_semantic_protocol_composition_parser.h"
 #include "sema/objc3_semantic_signature_compatibility.h"
 #include "sema/objc3_semantic_symbol_lookup.h"

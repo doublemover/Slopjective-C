@@ -20,7 +20,8 @@ static std::vector<std::string> ParseGenericArgumentSuffixTextSourceOrder(
     }
     if ((at_end || c == ',') && depth == 0) {
       const std::string token =
-          TrimAsciiWhitespace(inner.substr(start, index - start));
+          objc3c::support::TrimAsciiWhitespace(
+              inner.substr(start, index - start));
       if (!token.empty()) {
         arguments.push_back(token);
       }

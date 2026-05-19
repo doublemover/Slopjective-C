@@ -44,6 +44,7 @@ objc3c_apply_build_defaults(objc3c_parse_profiles)
 objc3c_apply_llvm_direct_config(objc3c_parse_profiles)
 target_link_libraries(objc3c_parse_profiles PUBLIC
   objc3c_ast
+  objc3c_support_ascii
   objc3c_token
 )
 
