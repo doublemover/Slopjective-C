@@ -80,3 +80,9 @@ function Invoke-Objc3cNativeCMakeConfigure {
     Write-Objc3cNativeBuildStep "cmake_configure=reuse"
   }
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeCMakeConfigureNeeded",
+  "Write-Objc3cNativeCMakeConfigureReason",
+  "Invoke-Objc3cNativeCMakeConfigure"
+)

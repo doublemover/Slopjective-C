@@ -62,3 +62,8 @@ function Test-Objc3cNativeBuildFingerprintMatch {
 
   return $true
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeBuildFingerprint",
+  "Test-Objc3cNativeBuildFingerprintMatch"
+)

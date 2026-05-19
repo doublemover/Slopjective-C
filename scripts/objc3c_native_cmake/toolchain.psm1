@@ -103,3 +103,10 @@ function Assert-Objc3cNativeToolchainPath {
     throw $Message
   }
 }
+
+Export-ModuleMember -Function @(
+  "Resolve-Objc3cNativeCommandPath",
+  "Resolve-Objc3cNativeToolchain",
+  "Resolve-Objc3cNativeLibclangPath",
+  "Assert-Objc3cNativeToolchainPath"
+)

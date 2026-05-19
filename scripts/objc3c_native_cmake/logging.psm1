@@ -5,3 +5,7 @@ function Write-Objc3cNativeBuildStep {
 
   Write-Host ("[objc3c-native] " + $Message)
 }
+
+Export-ModuleMember -Function @(
+  "Write-Objc3cNativeBuildStep"
+)

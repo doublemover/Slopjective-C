@@ -22,3 +22,7 @@ function Get-Objc3cNativeCMakeBuildPaths {
     BuildFingerprint = Join-Path $tmpOutDir "native_build_backend_fingerprint.json"
   }
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeCMakeBuildPaths"
+)

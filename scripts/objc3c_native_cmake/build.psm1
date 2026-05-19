@@ -13,3 +13,7 @@ function Invoke-Objc3cNativeCMakeBuild {
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   Write-Objc3cNativeBuildStep "cmake_build_done=native-binaries"
 }
+
+Export-ModuleMember -Function @(
+  "Invoke-Objc3cNativeCMakeBuild"
+)
