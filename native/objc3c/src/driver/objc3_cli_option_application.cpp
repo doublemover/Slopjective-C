@@ -1,6 +1,6 @@
 #include "driver/objc3_cli_option_application.h"
 
-#include "diagnostics/modes/objc3_removed_mode_options.h"
+#include "diagnostics/modes/canonical_rejections.h"
 #include "driver/objc3_cli_option_groups.h"
 
 bool ApplyObjc3CliOption(int &index,
@@ -17,8 +17,8 @@ bool ApplyObjc3CliOption(int &index,
   if (matched) {
     return true;
   }
-  if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(flag,
-                                                                   error)) {
+  if (objc3c::diagnostics::modes::BuildCanonicalModeRejectionDiagnostic(
+          flag, error)) {
     return false;
   }
   if (!TryApplyObjc3CliExtendedOptionGroup(

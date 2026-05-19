@@ -6,7 +6,7 @@
 #include "config/objc3_config_validation.h"
 #include "config/objc3_feature_state_catalog.h"
 #include "config/objc3_language_version.h"
-#include "config/objc3_removed_command_options.h"
+#include "config/objc3_command_options.h"
 #include "contracts/objc3_config_capability_contract.h"
 
 namespace objc3c::config {

@@ -2,7 +2,7 @@
 
 #include <span>
 
-#include "config/objc3_removed_command_options.h"
+#include "config/objc3_command_options.h"
 
 namespace objc3c::config {
 

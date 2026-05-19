@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/language/objc3-language-profile-v1.schema.json",
+  "title": "objc3 Canonical Language Profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile",
+    "language_version",
+    "accepted_profiles",
+    "feature_states",
+    "rejected_command_options",
+    "diagnostic_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "objc3-language-profile-v1"
+    },
+    "profile": {
+      "const": "canonical"
+    },
+    "language_version": {
+      "const": 3
+    },
+    "accepted_profiles": {
+      "type": "array",
+      "items": {
+        "const": "canonical"
+      },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "feature_states": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/feature_state"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "rejected_command_options": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rejected_command_option"
+      },
+      "uniqueItems": true
+    },
+    "diagnostic_policy": {
+      "type": "object",
+      "required": [
+        "removed_mode_options",
+        "unknown_options"
+      ],
+      "properties": {
+        "removed_mode_options": {
+          "const": "canonical-rejection-diagnostic"
+        },
+        "unknown_options": {
+          "const": "unknown-argument-error"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "feature_state": {
+      "type": "object",
+      "required": [
+        "id",
+        "state"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "implemented",
+            "internal",
+            "rejected",
+            "reserved"
+          ]
+        },
+        "diagnostic_code": {
+          "type": "string",
+          "pattern": "^O3[A-Z][0-9]{3}$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "rejected_command_option": {
+      "type": "object",
+      "required": [
+        "spelling",
+        "owner",
+        "state",
+        "diagnostic_code",
+        "summary"
+      ],
+      "properties": {
+        "spelling": {
+          "type": "string",
+          "pattern": "^--objc[0-9]?-[a-z0-9][a-z0-9-]*(?:=.*)?$"
+        },
+        "owner": {
+          "enum": [
+            "language-mode",
+            "reporting",
+            "runtime"
+          ]
+        },
+        "state": {
+          "const": "rejected"
+        },
+        "diagnostic_code": {
+          "type": "string",
+          "pattern": "^O3[A-Z][0-9]{3}$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

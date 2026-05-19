@@ -22,7 +22,7 @@ add_library(objc3c_config STATIC
   objc3_removed_command_option_contract.cpp
   objc3_removed_command_option_table.cpp
   objc3_removed_command_option_validation.cpp
-  objc3_removed_command_options.cpp
+  objc3_command_options.cpp
   objc3_rejected_command_option_language_data.cpp
   objc3_rejected_command_option_reporting_data.cpp
   objc3_rejected_command_option_runtime_data.cpp
