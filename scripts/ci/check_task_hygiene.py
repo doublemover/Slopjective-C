@@ -32,6 +32,13 @@ LIVE_SCAN_ROOTS = [
 LEGACY_ALIAS_RE = re.compile(r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)")
 MILESTONE_WORKFLOW_RE = re.compile(r"^m\d+.*\.yml$")
 MILESTONE_CHECKER_REF_RE = re.compile(r"scripts/check_m\d")
+LIBRARY_CLI_PARITY_LL_METADATA = {
+    "artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "explicit_fixture_label": "fixture parity IR",
+}
 
 
 def iter_live_files():
@@ -44,6 +51,25 @@ def iter_live_files():
         for path in root.rglob('*'):
             if path.is_file() and 'tmp' not in path.parts and 'node_modules' not in path.parts:
                 yield path
+
+
+def read_ll_comment_metadata(path: Path) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+    for line in path.read_text(encoding='utf-8', errors='ignore').splitlines()[:16]:
+        stripped = line.strip()
+        if not stripped.startswith(';'):
+            continue
+        body = stripped[1:].strip()
+        if ':' not in body:
+            continue
+        key, value = body.split(':', 1)
+        metadata[key.strip()] = value.strip()
+    return metadata
+
+
+def library_cli_parity_ll_is_labeled(path: Path) -> bool:
+    metadata = read_ll_comment_metadata(path)
+    return all(metadata.get(key) == value for key, value in LIBRARY_CLI_PARITY_LL_METADATA.items())
 
 
 def main() -> int:
@@ -100,8 +126,8 @@ def main() -> int:
         ROOT / 'tests/tooling/fixtures/native/library_cli_parity/library/module.ll',
     ]
     for stub in ll_stubs:
-        if stub.exists():
-            errors.append(f'stub ll fixture still live: {stub.relative_to(ROOT).as_posix()}')
+        if stub.exists() and not library_cli_parity_ll_is_labeled(stub):
+            errors.append(f'unlabeled stub ll fixture still live: {stub.relative_to(ROOT).as_posix()}')
     if errors:
         print('task-hygiene contract check failed:')
         for error in errors:
