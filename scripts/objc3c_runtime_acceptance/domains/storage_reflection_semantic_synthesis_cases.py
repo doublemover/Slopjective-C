@@ -181,5 +181,3 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
             },
         ),
     )
-
-

@@ -5,4 +5,3 @@ elseif(APPLE)
 else()
   set(OBJC3C_HOST_PLATFORM "posix")
 endif()
-

@@ -61,4 +61,3 @@ def load_dependency_cases() -> dict[str, dict[str, Any]]:
         if not summary_status(case["payload"]):
             raise SystemExit(f"{name} summary is not green: {display_path(case['summary_path'])}")
     return dependency_cases
-

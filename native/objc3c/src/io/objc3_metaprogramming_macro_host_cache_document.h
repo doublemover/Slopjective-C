@@ -16,4 +16,3 @@ std::string BuildObjc3MetaprogrammingMacroHostProcessCacheArtifactDocumentJson(
     bool launch_attempted,
     bool cache_hit,
     int host_process_exit_code);
-

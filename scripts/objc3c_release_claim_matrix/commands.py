@@ -19,4 +19,3 @@ def ensure_success(result: subprocess.CompletedProcess[str], context: str) -> No
         return
     detail = (result.stderr or result.stdout).strip()
     raise SystemExit(f"{context} failed ({result.returncode}): {detail}")
-

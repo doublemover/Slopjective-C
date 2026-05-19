@@ -184,4 +184,3 @@ std::string RenderDashboardChangeHistory() {
   history.End();
   return out.str();
 }
-

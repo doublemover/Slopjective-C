@@ -56,4 +56,3 @@ std::string BuildObjc3ReleaseEvidenceOperationArtifactDocumentJson(
   operation.BoolField("ready", true);
   return FinishJsonObject(operation, out);
 }
-

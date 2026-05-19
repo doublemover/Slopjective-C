@@ -8,4 +8,3 @@
 #include "lower/contracts/block_lowering_capture_contract_validators.inc"
 #include "lower/contracts/block_lowering_storage_ownership_contract_validators.inc"
 #include "lower/contracts/block_lowering_determinism_contract_validators.inc"
-

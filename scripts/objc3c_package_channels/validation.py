@@ -13,4 +13,3 @@ def validate_manifest_required_fields(
     for field_name in metadata_surface["required_manifest_fields"]:
         if field_name not in manifest_payload:
             raise RuntimeError(f"package-channels manifest missing required field {field_name}")
-

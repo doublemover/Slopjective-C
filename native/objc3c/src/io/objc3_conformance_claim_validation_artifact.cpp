@@ -30,4 +30,3 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       resolved.publication_surface_kind);
   return true;
 }
-

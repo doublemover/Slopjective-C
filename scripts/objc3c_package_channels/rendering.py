@@ -122,4 +122,3 @@ if (-not $?) {
 Write-Output ("offline_bundle_root: " + $bundleRoot)
 Write-Output ("installer_archive: " + $installerArchive)
 """
-

@@ -204,4 +204,3 @@ bool TryResolveObjc3ConformanceClaimValidationInputs(
   }
   return true;
 }
-

@@ -43,4 +43,3 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
   artifact_json = BuildObjc3AdvancedFeatureGateArtifactDocumentJson(inputs);
   return true;
 }
-

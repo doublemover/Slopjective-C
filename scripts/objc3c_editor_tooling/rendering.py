@@ -27,4 +27,3 @@ def render_editor_surface(
         "formatter": model.formatter,
         "debug": model.debug,
     }
-

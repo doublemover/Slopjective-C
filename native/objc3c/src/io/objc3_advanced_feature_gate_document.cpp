@@ -35,4 +35,3 @@ std::string BuildObjc3AdvancedFeatureGateArtifactDocumentJson(
   gate.BoolField("ready", true);
   return FinishJsonObject(gate, out);
 }
-

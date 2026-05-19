@@ -15,4 +15,3 @@ std::string RenderDashboardArtifacts(
 std::string RenderDashboardSummary();
 std::string RenderDashboardRefresh();
 std::string RenderDashboardChangeHistory();
-

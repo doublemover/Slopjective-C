@@ -10,4 +10,3 @@ void WriteJsonArrayValue(std::ostream &out, const JsonValue::Array &array);
 void WriteJsonObjectValue(std::ostream &out, const JsonValue::Object &object);
 
 }  // namespace objc3::io::json
-

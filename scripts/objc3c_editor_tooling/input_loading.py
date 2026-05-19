@@ -74,4 +74,3 @@ def load_editor_tooling_inputs(paths: EditorToolingPaths) -> EditorToolingInputs
         manifest_path_text=manifest_path_text or None,
         object_path_text=object_path_text or None,
     )
-

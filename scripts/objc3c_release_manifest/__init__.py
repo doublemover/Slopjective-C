@@ -1,2 +1,1 @@
 """Release manifest builder internals."""
-

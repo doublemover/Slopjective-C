@@ -37,4 +37,3 @@ std::string BuildObjc3RuntimeMetadataLinkerRetentionDiscoveryJson(
                                       {artifacts.driver_linker_flag});
   return FinishJsonObject(discovery_document, discovery);
 }
-

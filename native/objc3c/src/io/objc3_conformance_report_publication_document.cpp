@@ -52,4 +52,3 @@ std::string BuildObjc3ConformanceReportPublicationArtifactDocumentJson(
   publication.BoolField("ready", true);
   return FinishJsonObject(publication, out);
 }
-

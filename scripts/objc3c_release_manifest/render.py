@@ -29,4 +29,3 @@ def write_release_manifest_artifacts(
     )
     write_json_file(SUMMARY_PATH, summary)
     return summary
-

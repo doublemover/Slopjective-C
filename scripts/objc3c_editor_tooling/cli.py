@@ -40,4 +40,3 @@ def main() -> int:
     print(f"formatter_path: {published.formatter_path}")
     print(f"debug_path: {published.debug_path}")
     return 0
-

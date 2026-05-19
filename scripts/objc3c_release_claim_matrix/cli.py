@@ -25,4 +25,3 @@ def main(argv: Sequence[str]) -> int:
     print(f"[ok] wrote {display_path(args.json_out)}")
     print(f"[ok] wrote {display_path(args.md_out)}")
     return 0
-

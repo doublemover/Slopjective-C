@@ -191,4 +191,3 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   return 125;
 #endif
 }
-

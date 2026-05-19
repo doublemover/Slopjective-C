@@ -33,4 +33,3 @@ def playground_workspace_paths(
         summary_path=report_root / "compile-summary.json",
         dump_path=report_root / "playground-repro.json",
     )
-

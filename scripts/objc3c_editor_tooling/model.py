@@ -218,4 +218,3 @@ def diagnostics_summary(inputs: EditorToolingInputs) -> dict[str, Any]:
         "total": len(entries),
         "entries": entries,
     }
-

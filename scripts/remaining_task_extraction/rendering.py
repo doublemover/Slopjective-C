@@ -162,4 +162,3 @@ def render_markdown(payload: dict[str, object]) -> str:
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
-

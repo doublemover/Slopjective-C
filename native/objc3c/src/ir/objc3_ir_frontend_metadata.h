@@ -47,4 +47,3 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendTaskRuntimeSupportMetadata,
                                  Objc3IRFrontendUnsafeIntrinsicsMetadata,
                                  Objc3IRFrontendLanguageSurfaceMetadata {};
-

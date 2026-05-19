@@ -38,4 +38,3 @@
 
 #include <cstddef>
 #include <string>
-

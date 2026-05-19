@@ -32,4 +32,3 @@ class BlockerTableSchema:
     summary_index: int | None
     owner_column_name: str | None
     summary_column_name: str | None
-

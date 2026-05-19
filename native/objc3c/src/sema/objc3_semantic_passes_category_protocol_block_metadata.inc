@@ -13,4 +13,3 @@
 #include "sema/objc3_semantic_passes_block_literal_capture_metadata.inc"
 
 #include "sema/objc3_semantic_passes_block_abi_invoke_trampoline_metadata.inc"
-

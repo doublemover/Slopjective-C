@@ -395,5 +395,3 @@ def test_runner_fails_closed_when_open_blocker_refresh_fails(
     assert (output_dir / "extract_open_blockers.log").exists()
     report_text = (output_dir / "activation_preflight_report.md").read_text(encoding="utf-8")
     assert "- Open blockers refresh exit code: `2`" in report_text
-
-

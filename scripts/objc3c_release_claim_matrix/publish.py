@@ -37,4 +37,3 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     )
     write_json_file(json_out, matrix)
     md_out.write_text(render_markdown(probes), encoding="utf-8")
-

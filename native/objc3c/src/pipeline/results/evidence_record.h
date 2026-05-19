@@ -264,4 +264,3 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
   summary.replay_key = replay_key.str();
   return summary;
 }
-

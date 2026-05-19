@@ -8,4 +8,3 @@
 std::string BuildObjc3CrossModuleImportedModulesJson(
     const std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput>
         &imported_inputs);
-

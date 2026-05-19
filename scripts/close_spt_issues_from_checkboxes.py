@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Close SPT issues when their source checkbox rows are checked.
-
-This facade preserves the public script path and helper names while the
-implementation lives in `scripts/spt_issue_checkbox_closeout/`.
-"""
+"""Close SPT issues when their source checkbox rows are checked."""
 
 from __future__ import annotations
 

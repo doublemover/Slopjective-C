@@ -39,4 +39,3 @@ std::string BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
       << kObjc3ConformanceFormatClaimPolicyModel << ")";
   return out.str();
 }
-

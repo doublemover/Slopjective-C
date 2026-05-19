@@ -73,4 +73,3 @@ def paths_for_source(source: EditorToolingSource) -> EditorToolingPaths:
         formatted_source=report_dir / "formatted-source.objc3",
         debug_map=report_dir / "debug-map.json",
     )
-

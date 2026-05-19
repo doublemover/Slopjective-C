@@ -148,4 +148,3 @@ def run_matrix_probes() -> MatrixProbeArtifacts:
         strict_reject=strict_reject,
         yaml_reject=yaml_reject,
     )
-

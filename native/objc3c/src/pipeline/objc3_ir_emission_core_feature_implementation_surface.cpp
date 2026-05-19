@@ -29,4 +29,3 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       PublishObjc3IREmissionCoreFeatureSurfaceFailureReasons(surface);
   return surface;
 }
-

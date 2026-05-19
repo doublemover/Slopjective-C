@@ -61,5 +61,3 @@ class ProjectTemplatePaths:
     template_readme: Path
     template_manifest: Path
     harness_path: Path
-
-

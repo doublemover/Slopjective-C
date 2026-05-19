@@ -91,8 +91,3 @@ def read_capability_summary(path: Path) -> LLVMCapabilitySummary:
         parity_ready=require_bool(sema_type_system_parity, "parity_ready"),
         blockers=tuple(blockers_raw),
     )
-
-
-
-
-

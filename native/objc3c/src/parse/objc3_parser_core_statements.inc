@@ -16,4 +16,3 @@
 #include "parse/objc3_parser_core_statement_optional_bindings.inc"
 
 #include "parse/objc3_parser_core_statement_match_patterns.inc"
-

@@ -1,4 +1,4 @@
-"""Compatibility wrapper for the documentation surface checker model."""
+"""Documentation surface checker model exports."""
 
 from __future__ import annotations
 

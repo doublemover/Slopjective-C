@@ -6,4 +6,3 @@
 
 std::string BuildObjc3RuntimeMetadataLinkerRetentionDiscoveryJson(
     const Objc3RuntimeMetadataLinkerRetentionArtifacts &artifacts);
-

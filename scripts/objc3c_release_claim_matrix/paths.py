@@ -25,4 +25,3 @@ RELEASE_CLAIMS_ROOT = ROOT / "tmp" / "reports" / "release_claims"
 PUBLISHED_MATRIX_ARTIFACT_ROOT = (
     ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix"
 )
-

@@ -31,4 +31,3 @@ def runtime_acceptance_step(action: str) -> list[str]:
 
 def workflow_action(action: str, *args: str) -> list[str]:
     return workflow_command(action, *args)
-

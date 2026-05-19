@@ -8,4 +8,3 @@ bool ExtractBoundaryTokenValue(const std::string &line,
 bool ExtractHexBoundaryTokenValue(const std::string &line,
                                   const std::string &key,
                                   std::string &value);
-

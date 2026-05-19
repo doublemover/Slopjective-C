@@ -7,4 +7,3 @@ dependencies = []
 [tool.objc3c.workflow]
 entrypoint = "python -m scripts.objc3c_workflow"
 dependency-lock = "requirements.lock"
-

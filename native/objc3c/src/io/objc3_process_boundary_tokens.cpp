@@ -63,4 +63,3 @@ bool ExtractHexBoundaryTokenValue(const std::string &line,
   }
   return DecodeHexString(encoded, value) && !value.empty();
 }
-

@@ -33,4 +33,3 @@ def render_markdown(probes: MatrixProbeArtifacts) -> str:
 - Strict profile reject rc: `{probes.strict_reject.returncode}`
 - YAML emit reject rc: `{probes.yaml_reject.returncode}`
 """
-

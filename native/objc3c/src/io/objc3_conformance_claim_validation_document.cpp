@@ -66,4 +66,3 @@ std::string BuildObjc3ConformanceClaimValidationArtifactDocumentJson(
   validation.BoolField("ready", true);
   return FinishJsonObject(validation, out);
 }
-

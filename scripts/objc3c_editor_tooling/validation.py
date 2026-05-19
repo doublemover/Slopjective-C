@@ -14,4 +14,3 @@ def compile_summary_exit_code(result: CompileInvocationResult) -> int | None:
 def diagnostics_entries(diagnostics_payload: dict[str, Any]) -> list[Any]:
     entries = diagnostics_payload.get("diagnostics", [])
     return entries if isinstance(entries, list) else []
-

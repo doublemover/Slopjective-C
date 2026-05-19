@@ -48,4 +48,3 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
   artifact_json = BuildObjc3ReleaseCandidateMatrixArtifactDocumentJson(inputs);
   return true;
 }
-

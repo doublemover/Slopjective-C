@@ -6,7 +6,7 @@
     "textual-binary-interface-parity-source-surface",
     "mixed-image-compatibility-interop-semantics",
     "imported-runtime-packaging-replay",
-    "c-cpp-swift-bridge-compatibility-semantics",
+    "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
     "mixed-image-package-lowering-bridge-emission",

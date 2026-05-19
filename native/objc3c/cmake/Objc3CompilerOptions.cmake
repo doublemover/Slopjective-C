@@ -4,4 +4,3 @@ function(objc3c_configure_compiler_options target_name)
     CXX_EXTENSIONS OFF
   )
 endfunction()
-

@@ -54,4 +54,3 @@ bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
       BuildObjc3ReleaseEvidenceOperationArtifactDocumentJson(inputs);
   return true;
 }
-

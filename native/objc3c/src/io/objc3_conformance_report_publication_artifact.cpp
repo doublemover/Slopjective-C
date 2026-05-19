@@ -36,4 +36,3 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
       BuildObjc3ConformanceReportPublicationArtifactDocumentJson(inputs);
   return true;
 }
-

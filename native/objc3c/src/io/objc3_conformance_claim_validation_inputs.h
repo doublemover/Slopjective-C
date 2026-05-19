@@ -29,4 +29,3 @@ bool TryResolveObjc3ConformanceClaimValidationInputs(
     const std::string &publication_json,
     Objc3ConformanceClaimValidationResolvedInputs &resolved,
     std::string &error);
-

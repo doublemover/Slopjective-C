@@ -41,4 +41,3 @@ RELEASE_FOUNDATION_ATTESTATION = (
 
 def package_channel_run_id() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
-

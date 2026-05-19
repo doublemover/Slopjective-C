@@ -1,4 +1,4 @@
-"""Compatibility facade for the conformance corpus surface model checker."""
+"""Conformance corpus surface model checker entrypoint."""
 
 from __future__ import annotations
 

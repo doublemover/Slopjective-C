@@ -41,7 +41,7 @@
     "cross-module-runtime-package-interop-source-surface",
     "textual-binary-interface-parity-source-surface",
     "mixed-image-compatibility-interop-semantics",
-    "c-cpp-swift-bridge-compatibility-semantics",
+    "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
     "mixed-image-package-lowering-bridge-emission",

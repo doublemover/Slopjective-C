@@ -70,4 +70,3 @@ def _load_workspace_object(
     if not isinstance(payload, dict):
         raise TypeError(f"stdlib {workspace_key} must be a JSON object")
     return payload
-

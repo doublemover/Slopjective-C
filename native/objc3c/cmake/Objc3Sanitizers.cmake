@@ -6,4 +6,3 @@ function(objc3c_apply_sanitizers target_name)
     target_link_options(${target_name} PUBLIC -fsanitize=address)
   endif()
 endfunction()
-

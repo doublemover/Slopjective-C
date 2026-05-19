@@ -138,4 +138,3 @@ def render_markdown(rows: Sequence[OpenBlocker]) -> str:
             f"`{row.status}` |"
         )
     return "\n".join(lines).rstrip() + "\n"
-

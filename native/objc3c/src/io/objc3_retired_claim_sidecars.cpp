@@ -48,4 +48,3 @@ bool DiagnoseObjc3RetiredClaimSidecars(
   error = out.str();
   return false;
 }
-

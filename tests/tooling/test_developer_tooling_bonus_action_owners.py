@@ -80,4 +80,3 @@ def test_bonus_payload_requires_source_of_truth_integration_surface() -> None:
         )
     else:
         raise AssertionError("missing bonus surface did not fail closed")
-

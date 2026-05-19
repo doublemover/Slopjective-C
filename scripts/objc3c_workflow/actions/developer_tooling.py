@@ -40,4 +40,3 @@ def action_validate_developer_tooling(_: list[str]) -> int:
 
 def action_validate_runnable_developer_tooling(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_DEVELOPER_TOOLING_E2E_PY)])
-

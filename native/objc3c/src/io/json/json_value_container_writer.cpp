@@ -34,4 +34,3 @@ void WriteJsonObjectValue(std::ostream &out, const JsonValue::Object &object) {
 }
 
 }  // namespace objc3::io::json
-

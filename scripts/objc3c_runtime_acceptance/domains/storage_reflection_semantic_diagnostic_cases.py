@@ -103,5 +103,3 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
             },
         ),
     )
-
-

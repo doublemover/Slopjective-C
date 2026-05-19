@@ -54,4 +54,3 @@ class OverlapConflictRow:
     path: str
     active_issue_count: int
     lanes: tuple[str, ...]
-

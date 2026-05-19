@@ -55,11 +55,6 @@ CASE_RUNNERS: dict[str, CaseCommand] = {
         interop_packaging.check_imported_runtime_packaging_replay_case,
         requires_clangxx=True,
     ),
-    "c-cpp-swift-bridge-compatibility-semantics": CaseCommand(
-        "c-cpp-swift-bridge-compatibility-semantics",
-        interop_packaging.check_c_cpp_swift_bridge_compatibility_semantics_case,
-        result_case_id="c-cpp-swift-interop-boundary-semantics",
-    ),
     "c-cpp-swift-interop-boundary-semantics": CaseCommand(
         "c-cpp-swift-interop-boundary-semantics",
         interop_packaging.check_c_cpp_swift_bridge_compatibility_semantics_case,

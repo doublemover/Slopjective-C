@@ -40,4 +40,3 @@ def load_bonus_surface_inputs() -> BonusSurfaceInputs:
         portfolio=portfolio,
         walkthrough=walkthrough,
     )
-

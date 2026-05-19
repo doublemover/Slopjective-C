@@ -55,4 +55,3 @@ std::string BuildObjc3MetaprogrammingMacroHostProcessCacheArtifactDocumentJson(
   artifact.StringField("replay_key", inputs.replay_key);
   return FinishJsonObject(artifact, out);
 }
-

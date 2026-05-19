@@ -82,4 +82,3 @@ def print_package_channel_result(paths: PackageChannelPaths) -> None:
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
     print(f"portable_archive: {repo_rel(paths.portable_archive)}")
     print("objc3c-package-channels: PASS")
-

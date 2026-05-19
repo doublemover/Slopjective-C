@@ -32,5 +32,3 @@ def run_command(role: str, command: Sequence[str]) -> CommandResult:
         stdout=completed.stdout,
         stderr=completed.stderr,
     )
-
-

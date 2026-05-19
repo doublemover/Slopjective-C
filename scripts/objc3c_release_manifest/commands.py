@@ -20,4 +20,3 @@ def git_output(*args: str) -> str:
     if result.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)} failed with exit code {result.returncode}")
     return result.stdout.strip()
-
