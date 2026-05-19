@@ -16,7 +16,7 @@ foreach ($nativeCmakeModule in $nativeCmakeModules) {
     throw "native CMake support module missing: $nativeCmakeModulePath"
   }
 
-  Import-Module $nativeCmakeModulePath -Force -DisableNameChecking
+  Import-Module $nativeCmakeModulePath -Force -DisableNameChecking -Global
 }
 
 Export-ModuleMember -Function @(
