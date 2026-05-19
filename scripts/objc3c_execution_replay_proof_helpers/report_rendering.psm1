@@ -6,7 +6,7 @@ function New-ExecutionReplayProofSummary {
     [Parameter(Mandatory = $true)][object[]]$SelectedProofCases,
     [Parameter(Mandatory = $true)][object[]]$CaseSummaries,
     [Parameter(Mandatory = $true)][object[]]$CaseTimings,
-    [Parameter(Mandatory = $true)][string]$CaseId,
+    [Parameter(Mandatory = $true)][AllowEmptyString()][string]$CaseId,
     [Parameter(Mandatory = $true)][int]$ShardIndex,
     [Parameter(Mandatory = $true)][int]$ShardCount,
     [Parameter(Mandatory = $true)][int]$Limit,

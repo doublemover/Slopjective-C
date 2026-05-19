@@ -13,15 +13,15 @@ from scripts.objc3c_workflow.actions.test_orchestration_nightly_profile import (
     TEST_NIGHTLY_PROFILE,
 )
 from scripts.objc3c_workflow.actions.test_orchestration_profile_model import (
-    TestOrchestrationProfile,
-    TestOrchestrationStep,
+    TestOrchestrationProfile as OrchestrationProfile,
+    TestOrchestrationStep as OrchestrationStep,
 )
 from scripts.objc3c_workflow.actions.test_orchestration_profiles import (
     TEST_ORCHESTRATION_PROFILES,
     require_test_orchestration_profile_payload,
-    test_orchestration_profile_payload,
-    test_orchestration_profile_payloads,
-    test_orchestration_steps,
+    test_orchestration_profile_payload as orchestration_profile_payload,
+    test_orchestration_profile_payloads as orchestration_profile_payloads,
+    test_orchestration_steps as orchestration_steps,
 )
 from scripts.objc3c_workflow.actions.test_orchestration_smoke_profile import (
     TEST_SMOKE_PROFILE,
@@ -63,16 +63,16 @@ def test_test_orchestration_profile_catalog_preserves_public_actions() -> None:
         "test-nightly": TEST_NIGHTLY_PROFILE,
     }
     for profile in TEST_ORCHESTRATION_PROFILES.values():
-        assert isinstance(profile, TestOrchestrationProfile)
+        assert isinstance(profile, OrchestrationProfile)
         assert profile.profile_owner
         assert profile.command_owner == "test_orchestration_commands"
         assert profile.report_owner == "validation_timing_child_reports"
         assert profile.hard_blocking_decision_owner == "test_orchestration_composites"
-        assert all(isinstance(step, TestOrchestrationStep) for step in profile.steps)
+        assert all(isinstance(step, OrchestrationStep) for step in profile.steps)
 
 
 def test_test_orchestration_steps_materialize_mutable_command_lists() -> None:
-    steps = test_orchestration_steps("test-smoke")
+    steps = orchestration_steps("test-smoke")
 
     assert steps[0][0] == "test-behavior-matrix"
     assert isinstance(steps[0][1], list)
@@ -80,11 +80,26 @@ def test_test_orchestration_steps_materialize_mutable_command_lists() -> None:
     assert steps[2][0] == "test-execution-replay-focused"
 
 
+def test_focused_execution_replay_summary_allows_limit_only_selection() -> None:
+    full_steps = orchestration_steps("test-full")
+    focused_step = full_steps[-1]
+    report_rendering = (
+        ROOT
+        / "scripts"
+        / "objc3c_execution_replay_proof_helpers"
+        / "report_rendering.psm1"
+    ).read_text(encoding="utf-8")
+
+    assert focused_step[0] == "test-execution-replay-focused"
+    assert focused_step[1][-2:] == ["-Limit", "1"]
+    assert "[AllowEmptyString()][string]$CaseId" in report_rendering
+
+
 def test_test_orchestration_profile_payloads_are_owner_explicit() -> None:
-    payloads = test_orchestration_profile_payloads()
+    payloads = orchestration_profile_payloads()
 
     assert set(payloads) == set(TEST_ORCHESTRATION_PROFILES)
-    smoke = test_orchestration_profile_payload("test-smoke")
+    smoke = orchestration_profile_payload("test-smoke")
     assert smoke == payloads["test-smoke"]
     assert smoke["profile_owner"] == "test_orchestration_smoke_profile"
     assert smoke["source_owner"] == "test_orchestration_paths"
@@ -114,7 +129,7 @@ def test_test_orchestration_profile_payloads_are_owner_explicit() -> None:
 
 
 def test_test_orchestration_profile_payload_rejects_missing_step_owner() -> None:
-    payload = test_orchestration_profile_payload("test-smoke")
+    payload = orchestration_profile_payload("test-smoke")
     broken_step = dict(payload["steps"][0])
     broken_step.pop("command_owner")
     payload["steps"] = [broken_step, *payload["steps"][1:]]
