@@ -1,14 +1,84 @@
 {
   "schema_version": 1,
   "program": "objc3-hard-cutover-8132-8150",
-  "updated": "2026-05-09",
+  "updated": "2026-05-19",
   "branch": "hard-cutover/hc-000-full-program",
   "worker_scope": "docs/issues issue evidence indexes only",
   "constraints": {
-    "validation": "not run",
-    "github": "not called",
+    "validation": "current validation refresh ran on 2026-05-19; older commit-only sections below still preserve their original not-run boundary",
+    "github": "issue list/view used for current state; remote issue edits not performed",
     "push": "not performed",
     "commit_policy": "branch commits only with git commit --no-verify"
+  },
+  "current_validation_refresh": {
+    "date": "2026-05-19",
+    "validation_target_head": "ba5ce496905986736aab03145aafcba2c284b865",
+    "validation_target_head_short": "ba5ce4969",
+    "validation_target_head_summary": "Stabilize release foundation package gate",
+    "evidence_refresh_commit_role": "tracker-only commit following the validated source head",
+    "branch": "hard-cutover/hc-000-full-program",
+    "remote_state": "local branch ahead of origin/hard-cutover/hc-000-full-program",
+    "worktree_after_validation": "clean before evidence refresh edits",
+    "clean_room_repo_superclean": {
+      "deleted_artifact": "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
+      "refresh_command": "python -m scripts.objc3c_workflow check-repo-superclean-surface",
+      "refresh_status": "PASS",
+      "package_command": "python -m scripts.objc3c_workflow package-runnable-toolchain",
+      "package_status": "PASS",
+      "fresh_package_root": "tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408"
+    },
+    "validation": [
+      {
+        "command": "git diff --check",
+        "status": "PASS"
+      },
+      {
+        "command": "python -m scripts.objc3c_workflow lint",
+        "status": "PASS"
+      },
+      {
+        "command": "python -m scripts.objc3c_workflow validate-repo-superclean",
+        "status": "PASS",
+        "report": "tmp/reports/objc3c-public-workflow/validate-repo-superclean.json",
+        "generated_at_utc": "2026-05-19T13:18:50.828399+00:00",
+        "duration_seconds": 35.307991
+      },
+      {
+        "command": "python -m scripts.objc3c_workflow test-runtime-acceptance-fast",
+        "status": "PASS",
+        "report": "tmp/reports/runtime/acceptance/summary.json",
+        "selected_suite": "fast",
+        "case_count": 21,
+        "elapsed_seconds": 34.403597
+      }
+    ],
+    "live_github_issue_state": {
+      "checked_with": "gh issue list/view",
+      "closed": [
+        "#8133",
+        "#8142"
+      ],
+      "open": [
+        "#8132",
+        "#8134",
+        "#8135",
+        "#8136",
+        "#8137",
+        "#8138",
+        "#8139",
+        "#8140",
+        "#8141",
+        "#8143",
+        "#8144",
+        "#8145",
+        "#8146",
+        "#8147",
+        "#8148",
+        "#8149",
+        "#8150"
+      ]
+    },
+    "remote_closure": "deferred until current evidence is paired with the intended branch publication state"
   },
   "branch_evidence_policy": {
     "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
@@ -19,12 +89,12 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "b4dad7b30",
-    "current_head_summary": "docs: refresh hard-cutover evidence through core keys",
-    "current_head_role": "latest committed docs-only closeout refresh folded into this evidence map",
-    "latest_source_head": "2a2d9759a",
-    "latest_source_head_summary": "HC extract final readiness core keys",
-    "latest_source_head_role": "latest committed source evidence folded into this docs-only closeout map"
+    "current_head": "ba5ce4969",
+    "current_head_summary": "Stabilize release foundation package gate",
+    "current_head_role": "validated source head for the 2026-05-19 clean-room and control-plane refresh; tracker-only evidence commit follows it",
+    "latest_source_head": "ba5ce4969",
+    "latest_source_head_summary": "Stabilize release foundation package gate",
+    "latest_source_head_role": "latest committed source and validation head folded into this current refresh"
   },
   "local_longest_file_scan": {
     "status": "checkout scan observation only; not validation, push, GitHub issue edit, or remote closure evidence",

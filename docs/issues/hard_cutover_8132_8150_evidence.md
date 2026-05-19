@@ -1,5 +1,52 @@
 # Hard-Cutover Issue Evidence: #8132-#8150
 
+## Current Validation Refresh: 2026-05-19
+
+This refresh records current local evidence collected against source head
+`ba5ce4969` (`Stabilize release foundation package gate`). The evidence refresh
+commit follows that validated source head and only updates these tracker files.
+It supersedes the older validation-deferred note below for the current checkout,
+but it still does not claim that the branch has been pushed or that remote issue
+closure has happened.
+
+Current branch state:
+
+- branch: `hard-cutover/hc-000-full-program`
+- validated source head: `ba5ce496905986736aab03145aafcba2c284b865`
+- remote state: local branch is still ahead of
+  `origin/hard-cutover/hc-000-full-program`
+- worktree state after validation: clean
+- live hard-cutover tracker state checked with `gh issue list`:
+  `#8133` and `#8142` are closed; `#8132`, `#8134` through `#8141`, and
+  `#8143` through `#8150` remain open
+
+Current clean-room repo-superclean evidence:
+
+- deleted `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`
+- `python -m scripts.objc3c_workflow check-repo-superclean-surface` regenerated
+  the deleted artifact and passed
+- deleted the artifact again
+- `python -m scripts.objc3c_workflow package-runnable-toolchain` regenerated the
+  artifact through package staging and passed
+- fresh package root:
+  `tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408`
+
+Current validation evidence:
+
+- `git diff --check`: pass
+- `python -m scripts.objc3c_workflow lint`: pass
+- `python -m scripts.objc3c_workflow validate-repo-superclean`: pass,
+  `tmp/reports/objc3c-public-workflow/validate-repo-superclean.json`,
+  generated at `2026-05-19T13:18:50.828399+00:00`, total step duration
+  `35.307991` seconds
+- `python -m scripts.objc3c_workflow test-runtime-acceptance-fast`: pass,
+  `tmp/reports/runtime/acceptance/summary.json`, fast suite, `21` cases,
+  elapsed `34.403597` seconds
+
+Remote issue updates and closure remain deferred until this current evidence is
+paired with the intended branch publication state. This section is current
+evidence, not a replacement for the per-issue acceptance criteria below.
+
 This is a branch-committed closeout evidence map for the hard-cutover branch. It
 is based on committed branch work as of 2026-05-09. No validation, GitHub
 commands, push, or remote issue updates were run while writing this artifact.

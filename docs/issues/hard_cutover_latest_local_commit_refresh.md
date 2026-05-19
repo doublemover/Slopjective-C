@@ -1,5 +1,33 @@
 # Hard-Cutover Branch Commit Refresh
 
+## Current Validation Refresh: 2026-05-19
+
+The current validation evidence was collected against source head `ba5ce4969`
+(`Stabilize release foundation package gate`). The evidence refresh commit
+follows that validated source head and only updates tracker files. This refresh
+records validation and clean-room artifact proof that was not present in the
+older commit-only sections below.
+
+- Clean-room repo-superclean proof deleted
+  `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`, then
+  `python -m scripts.objc3c_workflow check-repo-superclean-surface` regenerated
+  and validated it.
+- Package clean-room proof deleted the same artifact again, then
+  `python -m scripts.objc3c_workflow package-runnable-toolchain` regenerated it
+  during package staging and produced
+  `tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408`.
+- `git diff --check` passed.
+- `python -m scripts.objc3c_workflow lint` passed.
+- `python -m scripts.objc3c_workflow validate-repo-superclean` passed with
+  report `tmp/reports/objc3c-public-workflow/validate-repo-superclean.json`.
+- `python -m scripts.objc3c_workflow test-runtime-acceptance-fast` passed with
+  report `tmp/reports/runtime/acceptance/summary.json`.
+- Live GitHub state at refresh time: `#8133` and `#8142` are closed; `#8132`,
+  `#8134` through `#8141`, and `#8143` through `#8150` remain open.
+- The local branch remains ahead of
+  `origin/hard-cutover/hc-000-full-program`; this refresh is not a push or
+  remote closure claim.
+
 This docs/issues refresh folds in the branch owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through branch commit
 `6d6fa804d`. A follow-up branch evidence pass now also folds in committed owner
