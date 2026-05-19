@@ -54,6 +54,12 @@ inline void PrintRealizedClassEntryAllocation(
   PrintIntField("found", snapshot.found);
   PrintUint64Field("base_identity",
                    static_cast<unsigned long long>(snapshot.base_identity));
+  PrintUint64Field("instance_receiver_identity",
+                   static_cast<unsigned long long>(
+                       snapshot.instance_receiver_identity));
+  PrintUint64Field("class_receiver_identity",
+                   static_cast<unsigned long long>(
+                       snapshot.class_receiver_identity));
   PrintUint64Field(
       "registration_order_ordinal",
       static_cast<unsigned long long>(snapshot.registration_order_ordinal));
@@ -208,12 +214,22 @@ inline void PrintConformanceQueryProtocolCategory(
   PrintUint64Field(
       "attached_category_count",
       static_cast<unsigned long long>(snapshot.attached_category_count));
+  PrintUint64Field(
+      "matched_protocol_depth",
+      static_cast<unsigned long long>(snapshot.matched_protocol_depth));
+  PrintIntField("matched_from_category", snapshot.matched_from_category);
+  PrintIntField("matched_from_superclass", snapshot.matched_from_superclass);
+  PrintIntField("matched_via_inherited_protocol",
+                snapshot.matched_via_inherited_protocol);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
                    snapshot.matched_protocol_owner_identity);
   PrintStringField("matched_attachment_owner_identity",
-                   snapshot.matched_attachment_owner_identity, false);
+                   snapshot.matched_attachment_owner_identity);
+  PrintStringField("matched_class_name", snapshot.matched_class_name);
+  PrintStringField("matched_class_owner_identity",
+                   snapshot.matched_class_owner_identity, false);
   std::printf("}");
 }
 
@@ -246,6 +262,37 @@ inline void PrintConformanceQueryCanonicalSummary(
                    snapshot.matched_protocol_owner_identity);
   PrintStringField("matched_attachment_owner_identity",
                    snapshot.matched_attachment_owner_identity, false);
+  std::printf("}");
+}
+
+inline void PrintConformanceQueryProtocolInheritance(
+    const objc3_runtime_protocol_conformance_query_snapshot &snapshot) {
+  std::printf("{");
+  PrintIntField("class_found", snapshot.class_found);
+  PrintIntField("protocol_found", snapshot.protocol_found);
+  PrintIntField("conforms", snapshot.conforms);
+  PrintUint64Field(
+      "visited_protocol_count",
+      static_cast<unsigned long long>(snapshot.visited_protocol_count));
+  PrintUint64Field(
+      "attached_category_count",
+      static_cast<unsigned long long>(snapshot.attached_category_count));
+  PrintUint64Field(
+      "matched_protocol_depth",
+      static_cast<unsigned long long>(snapshot.matched_protocol_depth));
+  PrintIntField("matched_from_category", snapshot.matched_from_category);
+  PrintIntField("matched_from_superclass", snapshot.matched_from_superclass);
+  PrintIntField("matched_via_inherited_protocol",
+                snapshot.matched_via_inherited_protocol);
+  PrintStringField("class_name", snapshot.class_name);
+  PrintStringField("protocol_name", snapshot.protocol_name);
+  PrintStringField("matched_protocol_owner_identity",
+                   snapshot.matched_protocol_owner_identity);
+  PrintStringField("matched_attachment_owner_identity",
+                   snapshot.matched_attachment_owner_identity);
+  PrintStringField("matched_class_name", snapshot.matched_class_name);
+  PrintStringField("matched_class_owner_identity",
+                   snapshot.matched_class_owner_identity, false);
   std::printf("}");
 }
 

@@ -72,7 +72,9 @@ inline void StabilizeConformanceQuery(
     objc3_runtime_protocol_conformance_query_snapshot &snapshot,
     std::string &class_storage, std::string &protocol_storage,
     std::string &protocol_owner_storage,
-    std::string &attachment_owner_storage) {
+    std::string &attachment_owner_storage,
+    std::string *matched_class_storage = nullptr,
+    std::string *matched_class_owner_storage = nullptr) {
   StabilizeNullableCString(snapshot.class_name, class_storage,
                            snapshot.class_name);
   StabilizeNullableCString(snapshot.protocol_name, protocol_storage,
@@ -83,6 +85,16 @@ inline void StabilizeConformanceQuery(
   StabilizeNullableCString(snapshot.matched_attachment_owner_identity,
                            attachment_owner_storage,
                            snapshot.matched_attachment_owner_identity);
+  if (matched_class_storage != nullptr) {
+    StabilizeNullableCString(snapshot.matched_class_name,
+                             *matched_class_storage,
+                             snapshot.matched_class_name);
+  }
+  if (matched_class_owner_storage != nullptr) {
+    StabilizeNullableCString(snapshot.matched_class_owner_identity,
+                             *matched_class_owner_storage,
+                             snapshot.matched_class_owner_identity);
+  }
 }
 
 inline void StabilizeDispatchState(

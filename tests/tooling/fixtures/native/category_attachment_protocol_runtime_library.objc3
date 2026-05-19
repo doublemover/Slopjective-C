@@ -25,11 +25,15 @@ module categoryAttachmentProtocolRuntimeLibrary;
 
 @interface Widget : Base <Worker>
 + (i32) classValue;
+- (i32) tracedValue;
 @end
 
 @implementation Widget
 + (i32) classValue {
   return 11;
+}
+- (i32) tracedValue {
+  return 5;
 }
 @end
 
@@ -40,5 +44,19 @@ module categoryAttachmentProtocolRuntimeLibrary;
 @implementation Widget (Tracing)
 - (i32) tracedValue {
   return 13;
+}
+@end
+
+@interface Derived : Base <Tracer>
++ (i32) classValue;
+- (i32) tracedValue;
+@end
+
+@implementation Derived
++ (i32) classValue {
+  return 17;
+}
+- (i32) tracedValue {
+  return 19;
 }
 @end

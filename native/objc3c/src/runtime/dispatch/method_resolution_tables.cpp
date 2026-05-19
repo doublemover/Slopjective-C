@@ -33,7 +33,10 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
     }
     if (ambiguous || resolution.resolved ||
         HasTerminalStrictDispatchError(resolution)) {
-      return true;
+      if (ambiguous || HasTerminalStrictDispatchError(resolution)) {
+        return true;
+      }
+      continue;
     }
     if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
             state, category_record->adopted_protocol_refs, family,

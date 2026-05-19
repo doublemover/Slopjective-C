@@ -14,8 +14,11 @@ inline int ExpectedProtocolStrictDispatchErrorValue(
 
 inline void CaptureProtocolRuntimeAssertions(
     CategoryAttachmentProtocolProbeRun &run) {
+  const RuntimeDispatch strict_error_dispatch{
+      static_cast<int>(run.widget_entry.entry.instance_receiver_identity),
+      kProtocolStrictErrorSelector};
   run.values.protocol_strict_error_expected =
-      ExpectedProtocolStrictDispatchErrorValue(kProtocolStrictErrorDispatch);
+      ExpectedProtocolStrictDispatchErrorValue(strict_error_dispatch);
 }
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

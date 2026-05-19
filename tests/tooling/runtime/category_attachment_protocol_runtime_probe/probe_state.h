@@ -8,6 +8,7 @@ namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
 
 struct CategoryAttachmentProtocolValues {
   int category_value = 0;
+  int category_cached_value = 0;
   int class_value = 0;
   int protocol_strict_error = 0;
   int protocol_strict_error_expected = 0;
@@ -41,10 +42,19 @@ struct ProtocolConformanceObservation {
   std::string protocol_name;
   std::string protocol_owner;
   std::string attachment_owner;
+  std::string matched_class_name;
+  std::string matched_class_owner;
 };
 
 struct MethodCacheStateObservation {
   objc3_runtime_method_cache_state_snapshot state{};
+  std::string selector;
+  std::string class_name;
+  std::string owner;
+};
+
+struct MethodCacheEntryObservation {
+  objc3_runtime_method_cache_entry_snapshot entry{};
   std::string selector;
   std::string class_name;
   std::string owner;
@@ -58,7 +68,12 @@ struct CategoryAttachmentProtocolProbeRun {
   ProtocolConformanceObservation worker_query;
   ProtocolConformanceObservation tracer_query;
   ProtocolConformanceObservation base_worker_query;
+  ProtocolConformanceObservation derived_worker_query;
+  MethodCacheStateObservation category_first_state;
+  MethodCacheStateObservation category_second_state;
   MethodCacheStateObservation method_state;
+  MethodCacheEntryObservation category_entry;
+  MethodCacheEntryObservation strict_error_entry;
 };
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

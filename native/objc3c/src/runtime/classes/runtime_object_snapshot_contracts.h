@@ -160,10 +160,16 @@ typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   int conforms;
   uint64_t visited_protocol_count;
   uint64_t attached_category_count;
+  uint64_t matched_protocol_depth;
+  int matched_from_category;
+  int matched_from_superclass;
+  int matched_via_inherited_protocol;
   const char *class_name;
   const char *protocol_name;
   const char *matched_protocol_owner_identity;
   const char *matched_attachment_owner_identity;
+  const char *matched_class_name;
+  const char *matched_class_owner_identity;
 } objc3_runtime_protocol_conformance_query_snapshot;
 
 typedef struct objc3_runtime_object_model_query_state_snapshot {

@@ -31,6 +31,12 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_conformance_protocol_name.clear();
   state.last_protocol_conformance_owner_identity.clear();
   state.last_protocol_conformance_attachment_owner_identity.clear();
+  state.last_protocol_conformance_matched_class_name.clear();
+  state.last_protocol_conformance_matched_class_owner_identity.clear();
+  state.last_protocol_conformance_matched_protocol_depth = 0;
+  state.last_protocol_conformance_matched_from_category = false;
+  state.last_protocol_conformance_matched_from_superclass = false;
+  state.last_protocol_conformance_matched_via_inherited_protocol = false;
   state.last_protocol_query_class_found = false;
   state.last_protocol_query_protocol_found = false;
   state.last_protocol_query_conforms = false;

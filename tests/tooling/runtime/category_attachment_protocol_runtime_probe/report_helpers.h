@@ -13,6 +13,8 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
 
   std::printf("{");
   std::printf("\"category_value\":%d,", values.category_value);
+  std::printf("\"category_cached_value\":%d,",
+              values.category_cached_value);
   std::printf("\"class_value\":%d,", values.class_value);
   std::printf("\"protocol_strict_error\":%d,",
               values.protocol_strict_error);
@@ -36,9 +38,24 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
   std::printf(",\"base_worker_query\":");
   ::objc3c::runtime::probe::PrintConformanceQueryProtocolCategory(
       run.base_worker_query.query);
+  std::printf(",\"derived_worker_query\":");
+  ::objc3c::runtime::probe::PrintConformanceQueryProtocolInheritance(
+      run.derived_worker_query.query);
+  std::printf(",\"category_first_state\":");
+  ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
+      run.category_first_state.state);
+  std::printf(",\"category_second_state\":");
+  ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
+      run.category_second_state.state);
   std::printf(",\"method_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
       run.method_state.state);
+  std::printf(",\"category_entry\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts(
+      run.category_entry.entry);
+  std::printf(",\"strict_error_entry\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts(
+      run.strict_error_entry.entry);
   std::printf("}\n");
 }
 

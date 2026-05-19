@@ -35,9 +35,18 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
     worker = payload.get("worker_query", {})
     tracer = payload.get("tracer_query", {})
     base_worker = payload.get("base_worker_query", {})
+    derived_worker = payload.get("derived_worker_query", {})
+    category_first_state = payload.get("category_first_state", {})
+    category_second_state = payload.get("category_second_state", {})
     method_state = payload.get("method_state", {})
+    category_entry = payload.get("category_entry", {})
+    strict_error_entry = payload.get("strict_error_entry", {})
 
     expect(payload.get("category_value") == 13, "expected category dispatch to return 13")
+    expect(
+        payload.get("category_cached_value") == 13,
+        "expected cached category dispatch to return 13",
+    )
     expect(payload.get("class_value") == 11, "expected class dispatch to return 11")
     expect(
         payload.get("protocol_strict_error")
@@ -64,6 +73,11 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected Widget to conform directly to Worker",
     )
     expect(
+        worker.get("matched_protocol_depth", 0) == 0
+        and worker.get("matched_from_category", 0) == 0,
+        "expected direct Worker conformance to publish a direct class match route",
+    )
+    expect(
         tracer.get("conforms") == 1
         and tracer.get("visited_protocol_count", 0) >= 2
         and tracer.get("matched_attachment_owner_identity") == "category:Widget(Tracing)",
@@ -76,9 +90,51 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected Base/Worker conformance query to fail closed without inheriting subclass protocols",
     )
     expect(
+        derived_worker.get("class_found") == 1
+        and derived_worker.get("protocol_found") == 1
+        and derived_worker.get("conforms") == 1
+        and derived_worker.get("matched_protocol_owner_identity") == "protocol:Worker"
+        and derived_worker.get("matched_class_name") == "Derived"
+        and derived_worker.get("matched_protocol_depth", 0) >= 1
+        and derived_worker.get("matched_via_inherited_protocol") == 1
+        and derived_worker.get("matched_from_category") == 0,
+        "expected Derived to conform to Worker through inherited Tracer protocol semantics",
+    )
+    expect(
         method_state.get("last_selector") == "ignoredValue"
         and method_state.get("last_dispatch_strict_error") == 1,
         "expected unresolved protocol selector dispatch to publish strict-error cache state",
+    )
+    expect(
+        category_first_state.get("last_selector") == "tracedValue"
+        and category_first_state.get("last_dispatch_used_cache") == 0
+        and category_first_state.get("last_dispatch_resolved_live_method") == 1
+        and category_first_state.get("last_category_probe_count", 0) >= 1,
+        "expected first category dispatch to resolve through slow-path merged category lookup",
+    )
+    expect(
+        category_second_state.get("last_selector") == "tracedValue"
+        and category_second_state.get("last_dispatch_used_cache") == 1
+        and category_second_state.get("last_dispatch_resolved_live_method") == 1,
+        "expected second category dispatch to hit the merged dispatch cache",
+    )
+    expect(
+        category_entry.get("found") == 1
+        and category_entry.get("resolved") == 1
+        and category_entry.get("selector") == "tracedValue"
+        and category_entry.get("resolved_class_name") == "Widget"
+        and category_entry.get("resolved_owner_identity")
+        == "implementation:Widget(Tracing)::instance_method:tracedValue"
+        and category_entry.get("category_probe_count", 0) >= 1,
+        "expected tracedValue cache entry to preserve the category implementation owner",
+    )
+    expect(
+        strict_error_entry.get("found") == 1
+        and strict_error_entry.get("resolved") == 0
+        and strict_error_entry.get("selector") == "ignoredValue"
+        and strict_error_entry.get("category_probe_count", 0) >= 1
+        and strict_error_entry.get("protocol_probe_count", 0) >= 1,
+        "expected ignoredValue to preserve protocol/category negative lookup evidence",
     )
 
 
@@ -145,10 +201,14 @@ def check_runtime_object_foundation_protocol_category_case(
         passed=True,
         summary={
             "category_value": payload["category_value"],
+            "category_cached_value": payload["category_cached_value"],
             "class_value": payload["class_value"],
             "attached_category_count": payload["graph_state"]["attached_category_count"],
             "tracer_visited_protocol_count": payload["tracer_query"][
                 "visited_protocol_count"
+            ],
+            "derived_worker_protocol_depth": payload["derived_worker_query"][
+                "matched_protocol_depth"
             ],
             "category_conflict_diagnostic_count": conflict_diagnostics[
                 "results"

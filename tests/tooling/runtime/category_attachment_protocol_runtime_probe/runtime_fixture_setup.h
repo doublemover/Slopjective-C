@@ -44,7 +44,8 @@ inline void StabilizeProtocolConformanceObservation(
     ProtocolConformanceObservation &observation) {
   ::objc3c::runtime::probe::StabilizeConformanceQuery(
       observation.query, observation.class_name, observation.protocol_name,
-      observation.protocol_owner, observation.attachment_owner);
+      observation.protocol_owner, observation.attachment_owner,
+      &observation.matched_class_name, &observation.matched_class_owner);
 }
 
 inline void CaptureProtocolConformanceQuery(
@@ -54,19 +55,6 @@ inline void CaptureProtocolConformanceQuery(
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       class_name, protocol_name, &observation.query);
   StabilizeProtocolConformanceObservation(observation);
-}
-
-inline void StabilizeMethodCacheStateObservation(
-    MethodCacheStateObservation &observation) {
-  ::objc3c::runtime::probe::StabilizeMethodCacheState(
-      observation.state, observation.selector, observation.class_name,
-      observation.owner);
-}
-
-inline void CaptureMethodCacheState(MethodCacheStateObservation &observation) {
-  observation = MethodCacheStateObservation{};
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&observation.state);
-  StabilizeMethodCacheStateObservation(observation);
 }
 
 inline void CaptureCategoryAttachmentProtocolRuntimeSnapshots(
@@ -80,7 +68,8 @@ inline void CaptureCategoryAttachmentProtocolRuntimeSnapshots(
                                   run.tracer_query);
   CaptureProtocolConformanceQuery(kBaseClassName, kWorkerProtocolName,
                                   run.base_worker_query);
-  CaptureMethodCacheState(run.method_state);
+  CaptureProtocolConformanceQuery(kDerivedClassName, kWorkerProtocolName,
+                                  run.derived_worker_query);
 }
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

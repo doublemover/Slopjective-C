@@ -167,6 +167,12 @@ struct RuntimeState {
   std::string last_protocol_conformance_protocol_name;
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
+  std::string last_protocol_conformance_matched_class_name;
+  std::string last_protocol_conformance_matched_class_owner_identity;
+  std::uint64_t last_protocol_conformance_matched_protocol_depth = 0;
+  bool last_protocol_conformance_matched_from_category = false;
+  bool last_protocol_conformance_matched_from_superclass = false;
+  bool last_protocol_conformance_matched_via_inherited_protocol = false;
   bool last_protocol_query_class_found = false;
   bool last_protocol_query_protocol_found = false;
   bool last_protocol_query_conforms = false;
