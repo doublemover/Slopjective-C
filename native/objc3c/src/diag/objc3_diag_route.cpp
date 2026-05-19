@@ -3,7 +3,7 @@
 Objc3DiagnosticRoute RouteDiagnosticCode(std::string_view code) {
   Objc3DiagnosticCode parsed;
   Objc3DiagnosticRoute route;
-  if (!TryParseDiagnosticCode(code, parsed)) {
+  if (!TryParseNativeDiagCode(code, parsed)) {
     return route;
   }
 
