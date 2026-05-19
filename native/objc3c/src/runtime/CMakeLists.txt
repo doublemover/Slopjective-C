@@ -11,9 +11,8 @@ set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/public/objc3_runtime_api.h)
 set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
 set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
-# M251-D001 freeze: reserve the canonical in-tree native runtime library
-# target/header/source-root surface before M251-D002 lands the actual library
-# skeleton and M251-D003 wires the driver/link path to consume it.
+# Native runtime library surface: keep the canonical in-tree target, public
+# header, source-root, and archive basename stable for build and package owners.
 
 add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp

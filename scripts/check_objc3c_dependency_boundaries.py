@@ -48,7 +48,7 @@ SOURCE_EXTENSIONS = (".h", ".hpp", ".hh", ".c", ".cc", ".cpp")
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 
 ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
-    "artifacts": {"pipeline", "io"},
+    "artifacts": {"parse", "sema", "lower", "ir", "pipeline", "io"},
     "driver": {"artifacts", "libobjc3c_frontend", "io", "lower", "pipeline"},
     "libobjc3c_frontend": {"artifacts", "pipeline", "io"},
     "pipeline": {"lex", "parse", "sema", "lower", "ir", "io"},

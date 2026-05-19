@@ -12,6 +12,7 @@ The native frontend is split into five primary layers plus adapter modules:
 
 Adapter modules:
 
+- `artifacts/*`: cross-phase manifest, metadata, and publication projections
 - `pipeline/*`: stage orchestration and result passing
 - `libobjc3c_frontend/*`: embedding API over the pipeline
 - `driver/*`: CLI parsing and top-level command routing
@@ -19,12 +20,13 @@ Adapter modules:
 
 Allowed dependencies:
 
-- `driver` -> `libobjc3c_frontend`, `io`, `lower`, `pipeline`
-- `libobjc3c_frontend` -> `pipeline`, `io`
+- `artifacts` -> `parse`, `sema`, `lower`, `ir`, `pipeline`, `io`
+- `driver` -> `artifacts`, `libobjc3c_frontend`, `io`, `lower`, `pipeline`
+- `libobjc3c_frontend` -> `artifacts`, `pipeline`, `io`
 - `pipeline` -> `lex`, `parse`, `sema`, `lower`, `ir`, `io`
 - `lower` -> `sema`
 - `ir` -> `lower`, `parse`
-- `io` -> `lower`, `pipeline`
+- `io` -> `artifacts`, `lower`, `pipeline`
 - `parse` -> `lex`, `pipeline`
 - `sema` -> `parse`, `pipeline`
 - `lex` -> none

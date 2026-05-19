@@ -18,6 +18,8 @@ Adopt layered frontend boundaries in this order:
 
 with integration modules:
 
+- `artifacts` (manifest, metadata, and publication projections over the
+  completed frontend phases)
 - `pipeline` (stage orchestration)
 - `libobjc3c_frontend` (public API)
 - `driver` (CLI adapter)
