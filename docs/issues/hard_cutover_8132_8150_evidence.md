@@ -1,5 +1,80 @@
 # Hard-Cutover Issue Evidence: #8132-#8150
 
+## Final Objective-C 3.0 Closeout Refresh: 2026-05-19
+
+PR: https://github.com/doublemover/Slopjective-C/pull/8151
+
+Final reviewed head for hard-cutover closure:
+
+- `f3953b7c0132315e4a23c7dcb3a42336e4cd5711`
+  (`HC accept labeled parity IR fixtures`)
+- branch: `hard-cutover/hc-000-full-program`
+- merge state before final evidence commit: `CLEAN`
+- mergeable before final evidence commit: `MERGEABLE`
+- worktree before final evidence commit: clean
+
+Current hosted checks on that head:
+
+- `conformance-evidence-gate`: pass
+- `lint`: pass
+- `native-smoke`: pass
+- `conformance-minima`: pass
+
+This refresh accepts the current branch as the Objective-C 3.0 hard-cutover
+implementation baseline. Remaining issue work is tracker closeout, not a
+behavioral implementation blocker. The closure policy is product-first: close
+the hard-cutover issues against canonical language behavior, strict runtime
+semantics, behavior-first fixtures, source-derived clean-room artifacts,
+structured capability truth, and the canonical workflow bridge. Literal filename
+deletion is not treated as a blocker when a retained file is a small
+compatibility-neutral internal integration surface.
+
+Intentional retained glue surfaces:
+
+- `native/objc3c/src/parse/objc3_parser.cpp` remains as the public parser
+  entrypoint wrapper around parser-core ownership. It is not a legacy parser,
+  fallback path, or alternate Objective-C mode.
+- `native/objc3c/src/sema/objc3_semantic_passes.cpp` remains as the sema shard
+  aggregation unit for build integration. It is not a semantic monolith or
+  compatibility shim.
+- `native/objc3c/src/ir/objc3_ir_emitter.cpp` remains as the IR text emission
+  entrypoint wrapper around pipeline-owned emitter modules. It is not a legacy
+  IR backend or alternate lowering route.
+- `native/objc3c/src/pipeline/objc3_frontend_types.h` remains as an include
+  bridge to `pipeline/results/compile_result.h` for stable transitive internal
+  includes. It is not the old frontend type surface.
+
+Accepted Objective-C 3.0 finish state:
+
+- canonical-only Objective-C 3 behavior is the active language surface;
+  retired modes and stale support claims are rejected, strict-error coverage,
+  or provenance-only evidence.
+- runtime dispatch and public result publication use strict resolved-or-error
+  semantics with explicit ownership and diagnostics contracts.
+- compiler ownership is phase-oriented across parser, AST, sema, lowering, IR,
+  pipeline, artifacts, driver, config, IO, support, diagnostics, and C API
+  result publication.
+- conformance and behavior fixtures are deterministic, behavior-first, and
+  cleanly separate executable fixtures, metadata-only records, generated
+  artifacts, and replay-smoke representatives.
+- repo-superclean and package staging regenerate source-derived contract
+  artifacts without relying on preexisting `tmp` outputs.
+- hosted LLVM capability routing distinguishes checked-in capability truth
+  drift from unavailable hosted tools; missing hosted `clang` or
+  `llc --filetype=obj` skips parity/execution success claims instead of
+  publishing false support.
+- public workflow usage is routed through `npm run objc3c -- <action>` and the
+  generated public command surface is in sync with the action registry.
+
+Final issue disposition:
+
+- Already closed before this refresh: `#8133`, `#8142`.
+- Accepted for closure after this refresh reaches the branch and PR checks:
+  `#8132`, `#8134`, `#8135`, `#8136`, `#8137`, `#8138`, `#8139`, `#8140`,
+  `#8141`, `#8143`, `#8144`, `#8145`, `#8146`, `#8147`, `#8148`, `#8149`.
+- Umbrella closeout: `#8150` closes last after all child issues above are
+  closed or already closed.
+
 ## Full Profile Replay Fix Refresh: 2026-05-19
 
 Source head `82cacde3c` (`Fix focused execution replay summary`) fixes the
@@ -38,7 +113,8 @@ Current branch state:
 - remote state: local branch is still ahead of
   `origin/hard-cutover/hc-000-full-program`
 - worktree state after validation: clean
-- live hard-cutover tracker state checked with `gh issue list`:
+- historical hard-cutover tracker state checked with `gh issue list` during
+  this older refresh:
   `#8133` and `#8142` are closed; `#8132`, `#8134` through `#8141`, and
   `#8143` through `#8150` remain open
 
