@@ -72,6 +72,12 @@ void CollectConcurrencyTaskGroupCancellationStmtSites(
           stmt->let_stmt->value.get(), summary);
     }
     return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectConcurrencyTaskGroupCancellationExprSites(
+          stmt->assign_stmt->value.get(), summary);
+    }
+    return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
       CollectConcurrencyTaskGroupCancellationExprSites(
