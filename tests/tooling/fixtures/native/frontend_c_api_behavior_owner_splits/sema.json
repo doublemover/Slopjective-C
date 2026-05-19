@@ -16,7 +16,9 @@
     "required_stage_summary_fields:diagnostics_errors",
     "required_stage_summary_fields:diagnostics_fatals",
     "required_helpers:objc3c_frontend_c_result_error_message",
-    "required_helpers:objc3c_frontend_c_result_error_message_view"
+    "required_helpers:objc3c_frontend_c_result_error_message_view",
+    "required_helpers:objc3c_frontend_c_owned_result_error_message",
+    "required_helpers:objc3c_frontend_c_owned_result_error_message_view"
   ],
   "canonical_anchor": "tests/native/sema",
   "retired_surface_rule": "semantic gate gates, semantic retired route gates, old-mode semantic inputs, compatibility-positive diagnostics, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, skipped sema reported as support, and missing or empty result-owned error strings are canonical rejection, strict-error, or provenance-only evidence"

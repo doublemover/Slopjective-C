@@ -23,17 +23,21 @@ def assert_c_api_cpp_pins_core_compile_and_c_only_helper_owners(
         source,
         [
             '#include "libobjc3c_frontend/c_api.h"',
-            "return objc3c_frontend_is_abi_compatible(requested_abi_version);",
+            "return requested_abi_version == OBJC3C_FRONTEND_C_API_ABI_VERSION ? 1u : 0u;",
             "return objc3c_frontend_abi_version();",
             "return objc3c_frontend_version();",
             "return objc3c_frontend_version_string();",
             "new (std::nothrow) objc3c_frontend_c_context_t();",
+            "new (std::nothrow) objc3c_frontend_c_result_t();",
             "delete context;",
             "return objc3c_frontend_compile_file(context, options, result);",
             "return objc3c_frontend_compile_source(context, options, result);",
             "return objc3c_frontend_copy_last_error(context, buffer, buffer_size);",
             "OBJC3C_FRONTEND_C_API_OWNER_RESULT_LIFECYCLE == 1",
+            "OBJC3C_FRONTEND_C_API_OWNER_OWNED_RESULT_HANDLE == 9",
             "OBJC3C_FRONTEND_C_API_POLICY_C_NAMES_OWN_PACKAGE_SURFACE == 8",
+            "OBJC3C_FRONTEND_C_API_POLICY_OWNED_RESULT_HANDLE_STORAGE == 9",
+            "objc3c_frontend_c_owned_result_destroy(",
             "objc3c_frontend_c_result_destroy(",
             "ReleaseCompileResultOwnedStrings(result);",
             "*result = {};",
@@ -95,11 +99,13 @@ def assert_c_api_helper_contract_tracks_result_error_artifact_stage_helpers(
         "native/objc3c/src/libobjc3c_frontend/c_api_result.h",
         "native/objc3c/src/libobjc3c_frontend/c_api_string.h",
         "native/objc3c/src/libobjc3c_frontend/c_api_stage_summary.h",
+        "native/objc3c/src/libobjc3c_frontend/public/c_api_owned_result.h",
     ]
     assert contract["source_paths"] == [
         "native/objc3c/src/libobjc3c_frontend/c_api_abi.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_compile.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_owned_result.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_result_artifacts.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_result_error.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_result_lifecycle.cpp",
@@ -109,6 +115,8 @@ def assert_c_api_helper_contract_tracks_result_error_artifact_stage_helpers(
 
     for alias in contract["required_type_aliases"]:
         assert alias in c_api_surface
+        if alias == "objc3c_frontend_c_result_t":
+            continue
         assert f"std::is_same_v<{alias}," in source
 
     assert_contract_collection_in_text(

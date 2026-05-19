@@ -23,7 +23,7 @@
 #define OBJC3C_FRONTEND_VERSION_MINOR 1u
 #define OBJC3C_FRONTEND_VERSION_PATCH 0u
 
-#define OBJC3C_FRONTEND_ABI_VERSION 2u
+#define OBJC3C_FRONTEND_ABI_VERSION 3u
 
 #define OBJC3C_FRONTEND_VERSION_STRING "0.1.0"
 
@@ -39,7 +39,6 @@ typedef struct objc3c_frontend_version {
   uint16_t major;
   uint16_t minor;
   uint16_t patch;
-  uint16_t reserved;
   uint32_t abi_version;
 } objc3c_frontend_version_t;
 
@@ -48,7 +47,6 @@ typedef struct objc3c_frontend_version {
     (uint16_t)OBJC3C_FRONTEND_VERSION_MAJOR,       \
     (uint16_t)OBJC3C_FRONTEND_VERSION_MINOR,       \
     (uint16_t)OBJC3C_FRONTEND_VERSION_PATCH,       \
-    (uint16_t)0u,                                  \
     (uint32_t)OBJC3C_FRONTEND_ABI_VERSION          \
   }
 

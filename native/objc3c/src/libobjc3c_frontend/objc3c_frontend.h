@@ -19,8 +19,6 @@ extern "C" {
  * - This header aggregates the exported symbol and struct-layout surface for
  *   libobjc3c_frontend.
  * - Callers should gate startup with objc3c_frontend_is_exact_abi_version().
- * - Reserved struct fields must be zero-initialized by callers; they do not
- *   imply a compatibility window.
  * - ABI evolution is hard-cutover: embedders must compile and run against the
  *   exact exposed ABI version.
  *

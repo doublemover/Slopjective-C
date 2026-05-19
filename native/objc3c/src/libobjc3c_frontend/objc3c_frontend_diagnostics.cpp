@@ -78,8 +78,7 @@ objc3c_frontend_stage_summary_is_well_formed(
   if (summary == nullptr || summary->stage != expected_stage) {
     return 0u;
   }
-  if (summary->attempted > 1u || summary->skipped > 1u ||
-      summary->reserved != 0u) {
+  if (summary->attempted > 1u || summary->skipped > 1u) {
     return 0u;
   }
   if (summary->attempted != 0u && summary->skipped != 0u) {

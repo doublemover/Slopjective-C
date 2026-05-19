@@ -16,7 +16,10 @@
     "required_path_fields:diagnostics",
     "required_helpers:objc3c_frontend_c_result_artifact_path",
     "required_helpers:objc3c_frontend_c_result_artifact_path_view",
-    "required_helpers:objc3c_frontend_c_result_has_artifact"
+    "required_helpers:objc3c_frontend_c_result_has_artifact",
+    "required_helpers:objc3c_frontend_c_owned_result_artifact_path",
+    "required_helpers:objc3c_frontend_c_owned_result_artifact_path_view",
+    "required_helpers:objc3c_frontend_c_owned_result_has_artifact"
   ],
   "canonical_anchor": "tests/native/ir",
   "retired_surface_rule": "generated-only rows, generated-artifact-only support, evidence-log artifact claims, gate/retired-route artifact paths, old-mode IR artifact rows, migration-only artifact claims, compatibility artifact rows, missing artifact paths, empty artifact paths, undefined artifact kinds, and artifact accessor mismatch are provenance-only, canonical rejection, or strict-error evidence"

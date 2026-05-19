@@ -14,7 +14,8 @@
     "required_stage_summary_fields:stage",
     "required_stage_summary_fields:attempted",
     "required_stage_summary_fields:skipped",
-    "required_helpers:objc3c_frontend_c_stage_summary_is_well_formed"
+    "required_helpers:objc3c_frontend_c_stage_summary_is_well_formed",
+    "required_helpers:objc3c_frontend_c_owned_result_stage_summary"
   ],
   "canonical_anchor": "tests/native/parser",
   "retired_surface_rule": "old-mode parser inputs, parser retired route flags, parser gates, compatibility parser routing, generated-only rows, evidence-log parser-stage success, and migration-only parser claims are canonical rejection, strict-error, or provenance-only evidence"

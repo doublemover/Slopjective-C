@@ -40,8 +40,6 @@ typedef struct objc3c_frontend_stage_summary {
   uint8_t attempted;
   /* Non-zero when this stage was intentionally skipped. */
   uint8_t skipped;
-  /* Reserved for ABI-compatible field growth; set to 0. */
-  uint16_t reserved;
   /* Total diagnostics emitted by this stage. */
   uint32_t diagnostics_total;
   /* Severity breakdown. */

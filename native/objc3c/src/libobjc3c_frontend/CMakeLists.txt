@@ -5,6 +5,7 @@ add_library(objc3c_frontend STATIC
   c_api_abi.cpp
   c_api_compile.cpp
   c_api_lifecycle.cpp
+  c_api_owned_result.cpp
   c_api_result_artifacts.cpp
   c_api_result_error.cpp
   c_api_result_lifecycle.cpp

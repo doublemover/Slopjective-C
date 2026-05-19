@@ -24,6 +24,9 @@ C_API_COMPILE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_compile.h"
 C_API_RESULT_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_result.h"
 C_API_STRING_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_string.h"
 C_API_STAGE_SUMMARY_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_stage_summary.h"
+C_API_OWNED_RESULT_H = (
+    SRC_ROOT / "libobjc3c_frontend" / "public" / "c_api_owned_result.h"
+)
 C_API_HEADER_PATHS = [
     C_API_H,
     C_API_CONTRACT_H,
@@ -34,6 +37,7 @@ C_API_HEADER_PATHS = [
     C_API_RESULT_H,
     C_API_STRING_H,
     C_API_STAGE_SUMMARY_H,
+    C_API_OWNED_RESULT_H,
 ]
 RESULT_OWNERSHIP_CPP = (
     SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_ownership.cpp"
@@ -45,6 +49,7 @@ C_API_SOURCES = [
     SRC_ROOT / "libobjc3c_frontend" / "c_api_abi.cpp",
     SRC_ROOT / "libobjc3c_frontend" / "c_api_compile.cpp",
     SRC_ROOT / "libobjc3c_frontend" / "c_api_lifecycle.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_owned_result.cpp",
     SRC_ROOT / "libobjc3c_frontend" / "c_api_result_artifacts.cpp",
     SRC_ROOT / "libobjc3c_frontend" / "c_api_result_error.cpp",
     SRC_ROOT / "libobjc3c_frontend" / "c_api_result_lifecycle.cpp",

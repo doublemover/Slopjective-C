@@ -14,6 +14,7 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 - string header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_string.h`
 - error header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
 - C-only name surface: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- C-only owned result surface: `native/objc3c/src/libobjc3c_frontend/public/c_api_owned_result.h`
 
 `objc3c_frontend.h` exposes the canonical C ABI with an opaque frontend context type.
 
@@ -35,7 +36,10 @@ or publish artifacts, but they are not package-facing C ABI headers.
 
 ## Ownership Rules
 
-- compile result storage is caller-owned and zero-initialized before first use
+- owned C result handles are allocated by `objc3c_frontend_c_compile_*_owned()`
+  and released by `objc3c_frontend_c_owned_result_destroy()`
+- compile result storage adapters remain caller-provided and zero-initialized
+  before first use
 - result-owned strings are released by result destruction, not by string release
 - accessor-returned result strings/views are borrowed until result destruction
 - standalone owned strings are released by the matching string release function
@@ -46,13 +50,12 @@ or publish artifacts, but they are not package-facing C ABI headers.
 ## Stability
 
 - exported symbols, enums, and struct layouts in `objc3c_frontend*.h` are the ABI boundary
-- append-only growth for public structs
 - zero-initialize option and result structs before use
 
 ## ABI Version Gate
 
 - version macros live in `objc3c_frontend_version.h`
-- use `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
+- use `objc3c_frontend_is_exact_abi_version(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
 - `objc3c_frontend_version().abi_version` must match `objc3c_frontend_abi_version()`
 - mismatched ABI versions are unsupported; callers must use the current header
   and library pair rather than relying on adapter layers or retired aliases

@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
     "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
   ],
-  "support_boundary": "frontend C API provenance covers runner/helper contract rows, source and header path lists, required helper/type/summary fields, header ownership phrases, source snippets, emitted artifact paths, diagnostics paths, manifests, IR/object outputs, runtime metadata paths, generated-only rows, evidence-log rows, migration-only rows, and owner split routing metadata as provenance only",
+  "support_boundary": "frontend C API provenance covers runner/helper contract rows, owned result handle rows, source and header path lists, required helper/type/summary fields, header ownership phrases, source snippets, emitted artifact paths, diagnostics paths, manifests, IR/object outputs, runtime metadata paths, generated-only rows, evidence-log rows, migration-only rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "source_contracts:tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
@@ -14,6 +14,7 @@
     "runner:artifacts/bin/objc3c-frontend-c-api-runner.exe",
     "source_glob:native/objc3c/src/tools/objc3c_frontend_c_api_runner*",
     "header_path:native/objc3c/src/libobjc3c_frontend/c_api.h",
+    "header_paths:native/objc3c/src/libobjc3c_frontend/public/c_api_owned_result.h",
     "header_paths:*",
     "source_paths:*",
     "required_type_aliases:*",

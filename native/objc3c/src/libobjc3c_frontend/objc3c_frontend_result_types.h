@@ -35,7 +35,6 @@ typedef struct objc3c_frontend_compile_result {
   int32_t process_exit_code;
   uint8_t success;
   uint8_t semantic_skipped;
-  uint16_t reserved;
   objc3c_frontend_stage_summary_t lex;
   objc3c_frontend_stage_summary_t parse;
   objc3c_frontend_stage_summary_t sema;

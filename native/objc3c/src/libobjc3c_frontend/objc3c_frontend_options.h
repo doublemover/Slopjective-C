@@ -31,7 +31,7 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  * - allow_live_error_runtime_surface admits the private runtime-owned
  *   try/throw/throws proof surface; leave zero for canonical fail-closed
  *   public compiles.
- * - Set unused pointers to NULL and reserved fields to 0.
+ * - Set unused pointers to NULL.
  */
 typedef struct objc3c_frontend_compile_options {
   objc3c_frontend_borrowed_path_t input_path;
@@ -48,8 +48,6 @@ typedef struct objc3c_frontend_compile_options {
   uint8_t ir_object_backend;
   uint8_t language_version;
   uint8_t allow_live_error_runtime_surface;
-  uint8_t reserved1;
-  uint8_t reserved2;
   uint64_t translation_unit_registration_order_ordinal;
 } objc3c_frontend_compile_options_t;
 

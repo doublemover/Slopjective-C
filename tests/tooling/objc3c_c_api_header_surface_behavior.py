@@ -37,6 +37,7 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             '#include "c_api_result.h"',
             '#include "c_api_string.h"',
             '#include "c_api_stage_summary.h"',
+            '#include "libobjc3c_frontend/public/c_api_owned_result.h"',
         ],
     )
     assert_contains_all(
@@ -78,12 +79,19 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "OBJC3C_FRONTEND_C_API_NULL_INVALID_INPUT_OWNER owns fail-closed NULL",
             "OBJC3C_FRONTEND_C_API_ABI_VERSION_OWNER owns exact ABI version gating",
             "OBJC3C_FRONTEND_C_API_PUBLIC_PRIVATE_PARTITION_OWNER owns the rule",
+            "OBJC3C_FRONTEND_C_API_OWNED_RESULT_OWNER owns opaque result handles",
             "uint32_t objc3c_frontend_c_api_abi_version(void);",
-            "uint8_t objc3c_frontend_c_is_abi_compatible(",
+            "uint8_t objc3c_frontend_c_is_exact_abi_version(",
             "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(",
             "objc3c_frontend_c_status_t\nobjc3c_frontend_c_compile_source(",
+            "objc3c_frontend_c_status_t\nobjc3c_frontend_c_compile_file_owned(",
+            "objc3c_frontend_c_status_t\nobjc3c_frontend_c_compile_source_owned(",
             "size_t objc3c_frontend_c_copy_last_error(",
             "void objc3c_frontend_c_result_destroy(",
+            "void objc3c_frontend_c_owned_result_destroy(",
+            "objc3c_frontend_c_owned_result_stage_summary(",
+            "objc3c_frontend_c_owned_result_error_message(",
+            "objc3c_frontend_c_owned_result_artifact_path(",
             "objc3c_frontend_c_result_artifact_path(",
             "objc3c_frontend_c_result_artifact_path_view(",
             "objc3c_frontend_c_result_has_artifact(",
@@ -94,7 +102,8 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "objc3c_frontend_c_stage_summary_is_well_formed(",
             "objc3c_frontend_c_stage_summary_has_diagnostics(",
             "objc3c_frontend_c_stage_summary_has_errors(",
-            "compile_result storage is caller-owned",
+            "owned compile results are allocated by objc3c_frontend_c_compile_*_owned()",
+            "compile_result storage entrypoints remain storage adapters",
             (
                 "result payload strings are released only by "
                 "objc3c_frontend_c_result_destroy()"
@@ -127,8 +136,6 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "objc3c_frontend_borrowed_path_t llc_path;",
             "uint8_t allow_live_error_runtime_surface;",
             "uint8_t language_version;",
-            "uint8_t reserved1;",
-            "uint8_t reserved2;",
             (
                 "Borrowed option values are caller-owned storage for the duration "
                 "of the call."
@@ -141,6 +148,8 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "OBJC3C_FRONTEND_RETIRED_MODE",
             "uint8_t retired_mode;",
             "uint8_t retired_mode_assist;",
+            "uint8_t reserved1;",
+            "uint8_t reserved2;",
         ],
     )
     assert_regex_absent(r"const char \*.*path", surface.options_header)

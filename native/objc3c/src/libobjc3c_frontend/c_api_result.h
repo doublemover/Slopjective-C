@@ -8,7 +8,8 @@
 /*
  * Ownership/accessor surface for C-only embedders.
  * - result_destroy releases only result-owned payload strings, then zeros the
- *   result. Passing NULL is a no-op because there is no owner to release.
+ *   supplied storage adapter. Passing NULL is a no-op.
+ * - owned_result_destroy releases the opaque result handle and its payload.
  * - result_* accessors return borrowed pointers/views valid until
  *   result_destroy.
  * - string_release is for standalone owned strings only; do not pass

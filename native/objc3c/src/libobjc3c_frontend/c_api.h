@@ -9,6 +9,7 @@
 #include "c_api_string.h"
 #include "c_api_types.h"
 #include "c_api_version.h"
+#include "libobjc3c_frontend/public/c_api_owned_result.h"
 
 /*
  * C ABI contract for non-C++ embedding environments. This header exposes
@@ -16,10 +17,13 @@
  * libobjc3c_frontend entrypoints.
  *
  * Result/string ownership is explicit on this surface:
- * - compile_result storage is caller-owned and must be zero-initialized before
- *   first use.
- * - result payload strings are result-owned and released only by
- *   objc3c_frontend_c_result_destroy().
+ * - owned compile results are allocated by objc3c_frontend_c_compile_*_owned()
+ *   and destroyed with objc3c_frontend_c_owned_result_destroy().
+ * - compile_result storage entrypoints remain storage adapters over the same
+ *   owned payload contract and must be zero-initialized before first use.
+ * - result payload strings are released only by
+ *   objc3c_frontend_c_result_destroy() for storage adapters; opaque-handle
+ *   payload strings are released by objc3c_frontend_c_owned_result_destroy().
  * - standalone owned strings are released with
  *   objc3c_frontend_c_string_release().
  * - borrowed option strings/paths must remain valid for the duration of the
@@ -36,10 +40,12 @@
  * - c_api_result_lifecycle.h owns C-only result-owned payload destruction.
  * - c_api_result_artifacts.h owns C-only artifact selector accessors.
  * - c_api_result_error.h owns C-only error payload accessors.
+ * - public/c_api_owned_result.h owns opaque result handles and accessors.
  * - c_api_string.h owns standalone string lifetime helpers.
  * - c_api_stage_summary.h owns stage summary predicates.
  *
  * Hard-cutover owner registry:
+ * - OBJC3C_FRONTEND_C_API_OWNED_RESULT_OWNER owns opaque result handles.
  * - OBJC3C_FRONTEND_C_API_RESULT_LIFECYCLE_OWNER owns result destruction.
  * - OBJC3C_FRONTEND_C_API_STRING_OWNER owns standalone string release/view.
  * - OBJC3C_FRONTEND_C_API_DIAGNOSTICS_OWNER owns diagnostics artifact access.

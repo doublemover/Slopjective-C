@@ -105,7 +105,8 @@
   ],
   "fail_closed_behavior_boundary": "status mismatch, result success mismatch, missing result-owned error messages, empty artifact paths, missing artifacts, diagnostics path failures, accessor failures, retired route, gate, old-mode, compatibility, and evidence-log claims are canonical rejection or strict-error evidence",
   "ownership_expectations": [
-    "compile result storage is caller-owned and destroyed through objc3c_frontend_c_result_destroy",
+    "owned result handles are destroyed through objc3c_frontend_c_owned_result_destroy",
+    "compile result storage adapters are destroyed through objc3c_frontend_c_result_destroy",
     "result-owned error strings are reported separately from context last_error and must match on failures",
     "artifact path access is mediated by objc3c_frontend_c_result_has_artifact and borrowed views of result-owned path strings",
     "runner-required artifacts are explicit per emitted option and compile status",
