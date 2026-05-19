@@ -76,3 +76,7 @@ function Get-Objc3cNativeFrontendPacketDefinitions {
     }
   )
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeFrontendPacketDefinitions"
+)

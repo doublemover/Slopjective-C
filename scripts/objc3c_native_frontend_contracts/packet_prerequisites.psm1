@@ -33,3 +33,7 @@ function Assert-Objc3cNativeFrontendPacketPrerequisites {
     }
   }
 }
+
+Export-ModuleMember -Function @(
+  "Assert-Objc3cNativeFrontendPacketPrerequisites"
+)

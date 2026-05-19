@@ -16,3 +16,7 @@ function Get-Objc3cNativeFrontendArtifactPaths {
     IntegrationCloseout = Join-Path $RepoRoot "tmp/artifacts/objc3c-native/frontend_integration_closeout.json"
   }
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeFrontendArtifactPaths"
+)

@@ -81,3 +81,7 @@ function Get-Objc3cNativeFrontendModules {
     }
   )
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeFrontendModules"
+)

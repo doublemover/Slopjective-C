@@ -25,3 +25,7 @@ function Get-Objc3cNativeSelectedFrontendPacketDefinitions {
     }
   }
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeSelectedFrontendPacketDefinitions"
+)

@@ -22,3 +22,7 @@ function Get-Objc3cNativeFrontendSharedSources {
   }
   return $flattened.ToArray()
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeFrontendSharedSources"
+)
