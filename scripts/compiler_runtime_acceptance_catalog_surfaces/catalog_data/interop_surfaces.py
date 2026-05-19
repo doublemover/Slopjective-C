@@ -19,8 +19,8 @@ INTEROP_SURFACES: tuple[SurfaceRequirement, ...] = (
         SOURCE_FIELD_AND_CASE_FIELDS,
     ),
     SurfaceRequirement(
-        "runtime_mixed_image_compatibility_interop_semantics_surface",
-        RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
+        "runtime_mixed_image_interop_semantics_surface",
+        RUNTIME_MIXED_IMAGE_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
         source_model_case_fields("language_profile_model"),
     ),
     SurfaceRequirement(
@@ -29,8 +29,8 @@ INTEROP_SURFACES: tuple[SurfaceRequirement, ...] = (
         source_model_case_fields("runtime_probe"),
     ),
     SurfaceRequirement(
-        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
-        RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
+        "runtime_c_cpp_swift_bridge_semantics_surface",
+        RUNTIME_C_CPP_SWIFT_BRIDGE_SEMANTICS_SURFACE_CONTRACT_ID,
         source_model_case_fields("language_profile_model"),
     ),
     SurfaceRequirement(

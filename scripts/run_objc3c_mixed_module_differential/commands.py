@@ -46,9 +46,9 @@ CASE_RUNNERS: dict[str, CaseCommand] = {
         "textual-binary-interface-parity-source-surface",
         interop_packaging.check_textual_binary_interface_parity_source_surface_case,
     ),
-    "mixed-image-compatibility-interop-semantics": CaseCommand(
-        "mixed-image-compatibility-interop-semantics",
-        interop_packaging.check_mixed_image_compatibility_interop_semantics_case,
+    "mixed-image-interop-semantics": CaseCommand(
+        "mixed-image-interop-semantics",
+        interop_packaging.check_mixed_image_interop_semantics_case,
     ),
     "imported-runtime-packaging-replay": CaseCommand(
         "imported-runtime-packaging-replay",
@@ -57,7 +57,7 @@ CASE_RUNNERS: dict[str, CaseCommand] = {
     ),
     "c-cpp-swift-interop-boundary-semantics": CaseCommand(
         "c-cpp-swift-interop-boundary-semantics",
-        interop_packaging.check_c_cpp_swift_bridge_compatibility_semantics_case,
+        interop_packaging.check_c_cpp_swift_bridge_semantics_case,
     ),
     "import-version-feature-claim-diagnostics": CaseCommand(
         "import-version-feature-claim-diagnostics",
@@ -94,14 +94,14 @@ SURFACE_BUILDERS: dict[str, SurfaceBuilder] = {
     "runtime_textual_binary_interface_parity_source_surface": (
         interop_packaging.build_runtime_textual_binary_interface_parity_source_surface
     ),
-    "runtime_mixed_image_compatibility_interop_semantics_surface": (
-        interop_packaging.build_runtime_mixed_image_compatibility_interop_semantics_surface
+    "runtime_mixed_image_interop_semantics_surface": (
+        interop_packaging.build_runtime_mixed_image_interop_semantics_surface
     ),
     "runtime_package_loading_module_identity_semantics_surface": (
         interop_packaging.build_runtime_package_loading_module_identity_semantics_surface
     ),
-    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": (
-        interop_packaging.build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface
+    "runtime_c_cpp_swift_bridge_semantics_surface": (
+        interop_packaging.build_runtime_c_cpp_swift_bridge_semantics_surface
     ),
     "runtime_import_version_feature_claim_diagnostics_surface": (
         interop_packaging.build_runtime_import_version_feature_claim_diagnostics_surface

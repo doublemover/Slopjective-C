@@ -19,7 +19,7 @@
   "authoritative_case_ids": [
     "cross-module-runtime-package-interop-source-surface",
     "textual-binary-interface-parity-source-surface",
-    "mixed-image-compatibility-interop-semantics",
+    "mixed-image-interop-semantics",
     "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
@@ -29,8 +29,8 @@
     "live-package-loading-interop-runtime-implementation"
   ],
   "authoritative_surfaces": [
-    "runtime_mixed_image_compatibility_interop_semantics_surface",
-    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "runtime_mixed_image_interop_semantics_surface",
+    "runtime_c_cpp_swift_bridge_semantics_surface",
     "runtime_packaging_bridge_loader_artifact_surface",
     "runtime_mixed_image_package_lowering_bridge_emission_surface",
     "runtime_package_loader_bridge_abi_surface",

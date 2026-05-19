@@ -16,10 +16,10 @@ from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 
 
-def check_mixed_image_compatibility_interop_semantics_case(
+def check_mixed_image_interop_semantics_case(
     run_dir: Path,
 ) -> CaseResult:
-    case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
+    case_dir = run_dir / "mixed-image-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
     consumer_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE)
 
@@ -149,7 +149,7 @@ def check_mixed_image_compatibility_interop_semantics_case(
     )
 
     return CaseResult(
-        case_id="mixed-image-compatibility-interop-semantics",
+        case_id="mixed-image-interop-semantics",
         probe="compile-runtime-import-surface-link-plan-and-fail-closed-diagnostics",
         fixture=INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
         claim_class="compile-coupled-inspection",
@@ -171,4 +171,4 @@ def check_mixed_image_compatibility_interop_semantics_case(
     )
 
 
-__all__ = ["check_mixed_image_compatibility_interop_semantics_case"]
+__all__ = ["check_mixed_image_interop_semantics_case"]

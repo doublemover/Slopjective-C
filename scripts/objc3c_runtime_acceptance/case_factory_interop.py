@@ -26,14 +26,14 @@ def build_interop_packaging_case_factories(
             ),
         ),
         (
-            "mixed-image-compatibility-interop-semantics",
-            lambda: domains.interop_packaging.check_mixed_image_compatibility_interop_semantics_case(
+            "mixed-image-interop-semantics",
+            lambda: domains.interop_packaging.check_mixed_image_interop_semantics_case(
                 run_dir
             ),
         ),
         (
             "c-cpp-swift-interop-boundary-semantics",
-            lambda: domains.interop_packaging.check_c_cpp_swift_bridge_compatibility_semantics_case(
+            lambda: domains.interop_packaging.check_c_cpp_swift_bridge_semantics_case(
                 run_dir
             ),
         ),

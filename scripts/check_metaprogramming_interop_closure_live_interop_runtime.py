@@ -39,7 +39,7 @@ def main() -> int:
         "conformance_report_passes": conformance_report.get("status") == "PASS",
         "e2e_report_passes": e2e_report.get("status") == "PASS",
         "acceptance_report_contains_live_interop_cases": all(case_id in acceptance_case_ids for case_id in (
-            "mixed-image-compatibility-interop-semantics",
+            "mixed-image-interop-semantics",
             "c-cpp-swift-interop-boundary-semantics",
             "runtime-package-loader-bridge-abi",
             "live-package-loading-interop-runtime-implementation",

@@ -10,22 +10,22 @@ from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
     INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
     RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
-    RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_MIXED_IMAGE_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
 )
 
 
-def build_runtime_mixed_image_compatibility_interop_semantics_surface(
+def build_runtime_mixed_image_interop_semantics_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id in {"mixed-image-compatibility-interop-semantics"}
+        if result.case_id in {"mixed-image-interop-semantics"}
     ]
     return {
         "contract_id": (
-            RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID
+            RUNTIME_MIXED_IMAGE_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID
         ),
         "source_contract_ids": [
             RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
@@ -63,4 +63,4 @@ def build_runtime_mixed_image_compatibility_interop_semantics_surface(
     }
 
 
-__all__ = ["build_runtime_mixed_image_compatibility_interop_semantics_surface"]
+__all__ = ["build_runtime_mixed_image_interop_semantics_surface"]

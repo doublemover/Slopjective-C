@@ -38,12 +38,12 @@ from objc3c_runtime_acceptance.domains.interop_packaging_runtime_surfaces import
     build_runtime_package_loading_interop_implementation_surface,
 )
 from objc3c_runtime_acceptance.domains.interop_packaging_semantic_cases import (
-    check_c_cpp_swift_bridge_compatibility_semantics_case,
-    check_mixed_image_compatibility_interop_semantics_case,
+    check_c_cpp_swift_bridge_semantics_case,
+    check_mixed_image_interop_semantics_case,
 )
 from objc3c_runtime_acceptance.domains.interop_packaging_semantic_surfaces import (
-    build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface,
-    build_runtime_mixed_image_compatibility_interop_semantics_surface,
+    build_runtime_c_cpp_swift_bridge_semantics_surface,
+    build_runtime_mixed_image_interop_semantics_surface,
     build_runtime_package_loading_module_identity_semantics_surface,
 )
 from objc3c_runtime_acceptance.domains.interop_packaging_source_cases import (
@@ -58,9 +58,9 @@ from objc3c_runtime_acceptance.domains.interop_packaging_source_surfaces import 
 _EXPORTED_CASE_NAMES = [
     "build_runtime_cross_module_package_interop_source_surface",
     "build_runtime_textual_binary_interface_parity_source_surface",
-    "build_runtime_mixed_image_compatibility_interop_semantics_surface",
+    "build_runtime_mixed_image_interop_semantics_surface",
     "build_runtime_package_loading_module_identity_semantics_surface",
-    "build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "build_runtime_c_cpp_swift_bridge_semantics_surface",
     "build_runtime_import_version_feature_claim_diagnostics_surface",
     "build_runtime_packaging_bridge_loader_artifact_surface",
     "build_runtime_mixed_image_package_lowering_bridge_emission_surface",
@@ -70,8 +70,8 @@ _EXPORTED_CASE_NAMES = [
     "check_imported_runtime_packaging_replay_case",
     "check_cross_module_runtime_package_interop_source_surface_case",
     "check_textual_binary_interface_parity_source_surface_case",
-    "check_mixed_image_compatibility_interop_semantics_case",
-    "check_c_cpp_swift_bridge_compatibility_semantics_case",
+    "check_mixed_image_interop_semantics_case",
+    "check_c_cpp_swift_bridge_semantics_case",
     "check_import_version_feature_claim_diagnostics_case",
     "check_runtime_packaging_bridge_loader_artifact_surface_case",
     "check_mixed_image_package_lowering_bridge_emission_case",

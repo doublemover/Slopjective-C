@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from objc3c_runtime_acceptance.domains.interop_packaging_semantic_bridge_compatibility import (
-    check_c_cpp_swift_bridge_compatibility_semantics_case,
+from objc3c_runtime_acceptance.domains.interop_packaging_semantic_bridge import (
+    check_c_cpp_swift_bridge_semantics_case,
 )
 from objc3c_runtime_acceptance.domains.interop_packaging_semantic_mixed_image import (
-    check_mixed_image_compatibility_interop_semantics_case,
+    check_mixed_image_interop_semantics_case,
 )
 
 _EXPORTED_CASE_NAMES = [
-    "check_mixed_image_compatibility_interop_semantics_case",
-    "check_c_cpp_swift_bridge_compatibility_semantics_case",
+    "check_mixed_image_interop_semantics_case",
+    "check_c_cpp_swift_bridge_semantics_case",
 ]
 
 

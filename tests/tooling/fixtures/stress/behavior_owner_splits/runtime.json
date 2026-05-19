@@ -26,8 +26,8 @@
       "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
       "selectors": [
         "runtime_cross_module_package_interop_source_surface",
-        "runtime_mixed_image_compatibility_interop_semantics_surface",
-        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+        "runtime_mixed_image_interop_semantics_surface",
+        "runtime_c_cpp_swift_bridge_semantics_surface",
         "runtime_package_loading_interop_implementation_surface"
       ],
       "disposition": "runtime interop and package loading provenance; compatibility wording is not compatibility support"

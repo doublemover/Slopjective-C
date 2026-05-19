@@ -15,7 +15,7 @@ from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 
 
-def check_c_cpp_swift_bridge_compatibility_semantics_case(
+def check_c_cpp_swift_bridge_semantics_case(
     run_dir: Path,
 ) -> CaseResult:
     case_dir = run_dir / "c-cpp-swift-interop-boundary-semantics"
@@ -148,4 +148,4 @@ def check_c_cpp_swift_bridge_compatibility_semantics_case(
     )
 
 
-__all__ = ["check_c_cpp_swift_bridge_compatibility_semantics_case"]
+__all__ = ["check_c_cpp_swift_bridge_semantics_case"]

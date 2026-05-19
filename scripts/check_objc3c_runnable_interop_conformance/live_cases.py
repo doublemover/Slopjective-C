@@ -21,9 +21,9 @@ def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
         results = [
             runtime_acceptance.check_cross_module_runtime_package_interop_source_surface_case(run_dir),
             runtime_acceptance.check_textual_binary_interface_parity_source_surface_case(run_dir),
-            runtime_acceptance.check_mixed_image_compatibility_interop_semantics_case(run_dir),
+            runtime_acceptance.check_mixed_image_interop_semantics_case(run_dir),
             runtime_acceptance.check_imported_runtime_packaging_replay_case(clangxx, run_dir),
-            runtime_acceptance.check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
+            runtime_acceptance.check_c_cpp_swift_bridge_semantics_case(run_dir),
             runtime_acceptance.check_import_version_feature_claim_diagnostics_case(run_dir),
             runtime_acceptance.check_runtime_packaging_bridge_loader_artifact_surface_case(run_dir),
             runtime_acceptance.check_mixed_image_package_lowering_bridge_emission_case(run_dir),
@@ -43,13 +43,13 @@ def build_live_surfaces(results: list[runtime_acceptance.CaseResult]) -> dict[st
         "runtime_textual_binary_interface_parity_source_surface": runtime_acceptance.build_runtime_textual_binary_interface_parity_source_surface(
             results
         ),
-        "runtime_mixed_image_compatibility_interop_semantics_surface": runtime_acceptance.build_runtime_mixed_image_compatibility_interop_semantics_surface(
+        "runtime_mixed_image_interop_semantics_surface": runtime_acceptance.build_runtime_mixed_image_interop_semantics_surface(
             results
         ),
         "runtime_package_loading_module_identity_semantics_surface": runtime_acceptance.build_runtime_package_loading_module_identity_semantics_surface(
             results
         ),
-        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": runtime_acceptance.build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
+        "runtime_c_cpp_swift_bridge_semantics_surface": runtime_acceptance.build_runtime_c_cpp_swift_bridge_semantics_surface(
             results
         ),
         "runtime_import_version_feature_claim_diagnostics_surface": runtime_acceptance.build_runtime_import_version_feature_claim_diagnostics_surface(

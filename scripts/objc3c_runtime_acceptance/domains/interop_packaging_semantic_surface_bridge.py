@@ -9,13 +9,13 @@ from objc3c_runtime_acceptance.case_result import CaseResult
 from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
-    RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_C_CPP_SWIFT_BRIDGE_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
 )
 
 
-def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
+def build_runtime_c_cpp_swift_bridge_semantics_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
     authoritative_case_ids = [
@@ -25,7 +25,7 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
     ]
     return {
         "contract_id": (
-            RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID
+            RUNTIME_C_CPP_SWIFT_BRIDGE_SEMANTICS_SURFACE_CONTRACT_ID
         ),
         "source_contract_ids": [
             RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
@@ -57,4 +57,4 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
     }
 
 
-__all__ = ["build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface"]
+__all__ = ["build_runtime_c_cpp_swift_bridge_semantics_surface"]

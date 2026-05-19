@@ -14,7 +14,7 @@ SUMMARY_CONTRACT_ID = "objc3c.runtime.runnable.interop.conformance.summary.v1"
 REQUIRED_CASES = {
     "cross-module-runtime-package-interop-source-surface",
     "textual-binary-interface-parity-source-surface",
-    "mixed-image-compatibility-interop-semantics",
+    "mixed-image-interop-semantics",
     "imported-runtime-packaging-replay",
     "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
@@ -32,14 +32,14 @@ REQUIRED_SURFACE_CONTRACTS = {
     "runtime_textual_binary_interface_parity_source_surface": (
         "objc3c.runtime.textual.binary.interface.parity.source.surface.v1"
     ),
-    "runtime_mixed_image_compatibility_interop_semantics_surface": (
-        "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
+    "runtime_mixed_image_interop_semantics_surface": (
+        "objc3c.runtime.mixed.image.interop.semantics.surface.v1"
     ),
     "runtime_package_loading_module_identity_semantics_surface": (
         "objc3c.runtime.package.loading.module.identity.semantics.surface.v1"
     ),
-    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": (
-        "objc3c.runtime.c.cpp.swift.bridge.compatibility.semantics.surface.v1"
+    "runtime_c_cpp_swift_bridge_semantics_surface": (
+        "objc3c.runtime.c.cpp.swift.bridge.semantics.surface.v1"
     ),
     "runtime_import_version_feature_claim_diagnostics_surface": (
         "objc3c.runtime.import.version.feature.claim.diagnostics.surface.v1"

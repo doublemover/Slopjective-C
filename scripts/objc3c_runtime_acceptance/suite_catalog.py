@@ -46,7 +46,7 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
     "cross-module": (
         "cross-module-metaprogramming-artifact-preservation",
         "cross-module-runtime-package-interop-source-surface",
-        "mixed-image-compatibility-interop-semantics",
+        "mixed-image-interop-semantics",
         "c-cpp-swift-interop-boundary-semantics",
         "runtime-packaging-bridge-loader-artifact-surface",
         "mixed-image-package-lowering-bridge-emission",

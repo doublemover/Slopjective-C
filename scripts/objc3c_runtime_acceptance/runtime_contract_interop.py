@@ -9,14 +9,14 @@ RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.textual.binary.interface.parity.source.surface.v1"
 )
-RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
-    "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
+RUNTIME_MIXED_IMAGE_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.mixed.image.interop.semantics.surface.v1"
 )
 RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.package.loading.module.identity.semantics.surface.v1"
 )
-RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID = (
-    "objc3c.runtime.c.cpp.swift.bridge.compatibility.semantics.surface.v1"
+RUNTIME_C_CPP_SWIFT_BRIDGE_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.c.cpp.swift.bridge.semantics.surface.v1"
 )
 RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.import.version.feature.claim.diagnostics.surface.v1"

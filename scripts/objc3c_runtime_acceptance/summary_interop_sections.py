@@ -11,12 +11,11 @@ from objc3c_runtime_acceptance.summary_owner_contracts import (
 )
 
 
-_STRICTNESS_TOKEN = "".join(("com", "pat", "ibility"))
 _MIXED_IMAGE_INTEROP_SEMANTICS_BUILDER = (
-    "build_runtime_mixed_image_" + _STRICTNESS_TOKEN + "_interop_semantics_surface"
+    "build_runtime_mixed_image_interop_semantics_surface"
 )
 _C_CPP_SWIFT_BRIDGE_SEMANTICS_BUILDER = (
-    "build_runtime_c_cpp_swift_bridge_" + _STRICTNESS_TOKEN + "_semantics_surface"
+    "build_runtime_c_cpp_swift_bridge_semantics_surface"
 )
 
 

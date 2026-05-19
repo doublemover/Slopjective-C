@@ -117,14 +117,14 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "runtime_textual_binary_interface_parity_source_surface": surfaces[
             "runtime_textual_binary_interface_parity_source_surface"
         ],
-        "runtime_mixed_image_compatibility_interop_semantics_surface": surfaces[
-            "runtime_mixed_image_compatibility_interop_semantics_surface"
+        "runtime_mixed_image_interop_semantics_surface": surfaces[
+            "runtime_mixed_image_interop_semantics_surface"
         ],
         "runtime_package_loading_module_identity_semantics_surface": surfaces[
             "runtime_package_loading_module_identity_semantics_surface"
         ],
-        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": surfaces[
-            "runtime_c_cpp_swift_bridge_compatibility_semantics_surface"
+        "runtime_c_cpp_swift_bridge_semantics_surface": surfaces[
+            "runtime_c_cpp_swift_bridge_semantics_surface"
         ],
         "runtime_import_version_feature_claim_diagnostics_surface": surfaces[
             "runtime_import_version_feature_claim_diagnostics_surface"
