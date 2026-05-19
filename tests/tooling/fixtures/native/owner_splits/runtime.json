@@ -41,7 +41,7 @@
     "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
     "tests/native/runtime/concurrency/actor_executor_contract.objc3",
     "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
-    "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
+    "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3"
   ],
   "retired_surface_rule": "runtime dispatch retired route and unresolved dispatch symbols are strict errors"
 }

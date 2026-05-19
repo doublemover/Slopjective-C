@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 from behavior_fixture_boundary_support import (
     POSITIVE_RESIDUE_AUDIT,
     ROOT,
@@ -7,10 +10,59 @@ from behavior_fixture_boundary_support import (
 )
 
 
+TOOLING_NATIVE_FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "native"
+TOOLING_POSITIVE_LEXICAL_AUDIT_EXTRAS = {
+    TOOLING_NATIVE_FIXTURE_ROOT / "return_paths_ok.objc3",
+}
+POSITIVE_NAME_MARKERS = ("_positive", "_accept", "_success")
+POSITIVE_RESIDUE_PATTERNS = (
+    re.compile(r"\bold[-_\s]+mode\b"),
+    re.compile(r"\bretired[-_\s]+route"),
+    re.compile(r"\bretired[-_\s]+adapter\b"),
+    re.compile(r"\bcompat(?:ibility)?(?:[-_\s]+gate)?\b"),
+    re.compile(r"\blegacy\b"),
+    re.compile(r"\bmigration(?:[-_\s]+lane)?\b"),
+    re.compile(r"\bshims?\b"),
+    re.compile(r"\bfallbacks?\b"),
+)
+
+
+def normalize_residue_token(value: str) -> str:
+    return re.sub(r"[-_\s]+", "-", value.lower())
+
+
+def is_positive_fixture_path(path: Path) -> bool:
+    relative_parts = [part.lower() for part in path.relative_to(TOOLING_NATIVE_FIXTURE_ROOT).parts]
+    stem = path.stem.lower()
+    return "positive" in relative_parts or any(marker in stem for marker in POSITIVE_NAME_MARKERS)
+
+
+def positive_tooling_fixtures() -> set[Path]:
+    positive_paths = {
+        path
+        for path in TOOLING_NATIVE_FIXTURE_ROOT.rglob("*.objc3")
+        if path.is_file() and is_positive_fixture_path(path)
+    }
+    return positive_paths | {path for path in TOOLING_POSITIVE_LEXICAL_AUDIT_EXTRAS if path.is_file()}
+
+
+def has_positive_residue_token(value: str) -> bool:
+    normalized = value.lower()
+    return any(pattern.search(normalized) for pattern in POSITIVE_RESIDUE_PATTERNS)
+
+
 def test_positive_residue_audit_policy_is_hard_cutover_only() -> None:
     audit = load_json(POSITIVE_RESIDUE_AUDIT)
 
-    assert audit["result"].startswith("no remaining old-mode")
+    result = audit["result"]
+    assert result.startswith("no remaining")
+    for retired_surface in (
+        "retired mode",
+        "retired adapter",
+        "alternate acceptance path",
+        "retired-source lane",
+    ):
+        assert retired_surface in result
     assert audit["validation"] == "not run"
     assert set(audit["conversion_policy"]) == {
         "true_retired_positive",
@@ -47,7 +99,7 @@ def test_positive_residue_documents_lexical_false_positive_surfaces() -> None:
         path = ROOT / hit["path"]
         assert path.is_file(), hit["path"]
         text = path.read_text(encoding="utf-8")
-        assert hit["token"] in text
+        assert normalize_residue_token(hit["token"]) in normalize_residue_token(text)
         assert hit["classification"]
         assert "not " in hit["disposition"]
 
@@ -55,25 +107,10 @@ def test_positive_residue_documents_lexical_false_positive_surfaces() -> None:
 def test_positive_fixture_lexical_residue_hits_are_documented() -> None:
     audit = load_json(POSITIVE_RESIDUE_AUDIT)
     documented_paths = {hit["path"] for hit in audit["documented_lexical_positive_hits"]}
-    tooling_root = ROOT / "tests" / "tooling" / "fixtures" / "native"
-    positive_fixture_paths = {
-        *tooling_root.glob("*positive*.objc3"),
-        *(tooling_root / "execution" / "positive").glob("*.objc3"),
-        *(tooling_root / "recovery" / "positive").glob("*.objc3"),
-    }
-    retired_terms = (
-        "old-mode",
-        "old_mode",
-        "gate",
-        "retired-route",
-        "compatibility",
-        "migration",
-        "legacy",
-    )
     lexical_hit_paths = {
         path.relative_to(ROOT).as_posix()
-        for path in positive_fixture_paths
-        if any(term in path.read_text(encoding="utf-8").lower() for term in retired_terms)
+        for path in positive_tooling_fixtures()
+        if has_positive_residue_token(path.read_text(encoding="utf-8"))
     }
 
     assert lexical_hit_paths <= documented_paths

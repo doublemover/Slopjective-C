@@ -87,7 +87,13 @@
       "path": "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
       "token": "retired-route",
       "classification": "ordinary parameter name in canonical return-path behavior",
-      "disposition": "not a retired retired route surface"
+      "disposition": "not a retired route mode"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/return_paths_ok.objc3",
+      "token": "retired-route",
+      "classification": "ordinary parameter name in canonical return-path behavior",
+      "disposition": "not a retired route mode"
     },
     {
       "path": "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
@@ -208,12 +214,6 @@
       "token": "SemanticBridgeGate",
       "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
       "disposition": "not a retired adapter feature gate"
-    },
-    {
-      "path": "tests/tooling/fixtures/native/diagnostics_migrator_source_inventory_positive.objc3",
-      "token": "migrator",
-      "classification": "diagnostic inventory naming for source migration reporting",
-      "disposition": "not a retired-source lane that accepts old syntax"
     }
   ]
 }

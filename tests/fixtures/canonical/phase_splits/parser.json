@@ -60,7 +60,8 @@
       "behavior_family": "negative",
       "fixture_kind": "rejection",
       "retired_surface_tags": [
-        "old-mode"
+        "old-mode",
+        "compatibility-gate"
       ],
       "expected_diagnostic_code": "O3C001"
     },
@@ -69,7 +70,8 @@
       "behavior_family": "negative",
       "fixture_kind": "rejection",
       "retired_surface_tags": [
-        "old-mode"
+        "old-mode",
+        "retired-route"
       ],
       "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
     }

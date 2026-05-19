@@ -92,7 +92,7 @@ HARD_CUTOVER_CONTRACTS = {
         "negative",
         "O3S221",
     ),
-    "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3": (
+    "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3": (
         "strict-error",
         "link.unresolved_symbol",
     ),

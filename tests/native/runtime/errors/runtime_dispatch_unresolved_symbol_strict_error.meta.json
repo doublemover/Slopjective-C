@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "runtime_dispatch_unresolved_symbol.objc3",
+  "fixture": "runtime_dispatch_unresolved_symbol_strict_error.objc3",
   "origin": "hand-authored",
   "owner_phase": "runtime",
   "behavior_family": "errors",

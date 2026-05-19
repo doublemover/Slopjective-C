@@ -125,9 +125,9 @@
       "fixtures": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
         "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
       ],
       "owner_boundary": "unresolved runtime dispatch linkage is strict-error evidence"

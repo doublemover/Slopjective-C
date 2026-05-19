@@ -287,7 +287,7 @@
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
       ],
       "retired_disposition": "lowering behavior rows are resolved through lowering-family owner splits before any lowering fixture is cited; canonical lowering positives remain hand-authored lowering fixtures, strict-error and removed runtime-dispatch retired route rows remain rejection/linkage evidence, and old-mode, gate, retired route, generated-only, evidence-log, or migration-only lowering claims remain rejection or provenance-only rather than positive behavior truth"
     },
@@ -393,7 +393,7 @@
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3"
       ],
       "retired_disposition": "runtime behavior rows are resolved through runtime-family owner splits before any runtime fixture is cited; canonical runtime positives remain hand-authored runtime fixtures, dispatch misses and unresolved dispatch symbols remain strict-error evidence, and old-mode, gate, retired route, generated-only, evidence-log, or migration-only runtime claims remain rejection or provenance-only rather than positive behavior truth"
     },

@@ -181,6 +181,7 @@
         "tests/tooling/fixtures/native/dispatch_intent_source_closure_positive.objc3",
         "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
         "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
+        "tests/tooling/fixtures/native/return_paths_ok.objc3",
         "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
         "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
         "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",

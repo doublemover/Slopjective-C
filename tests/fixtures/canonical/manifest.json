@@ -146,7 +146,8 @@
       "behavior_family": "negative",
       "fixture_kind": "rejection",
       "retired_surface_tags": [
-        "old-mode"
+        "old-mode",
+        "compatibility-gate"
       ],
       "expected_diagnostic_code": "O3C001"
     },
@@ -157,7 +158,8 @@
       "behavior_family": "negative",
       "fixture_kind": "rejection",
       "retired_surface_tags": [
-        "old-mode"
+        "old-mode",
+        "retired-route"
       ],
       "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
     },
@@ -301,7 +303,7 @@
       "expected_diagnostic_code": ""
     },
     {
-      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
+      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
       "origin": "hand-authored",
       "owner_phase": "lowering",
       "behavior_family": "objc_runtime",
@@ -445,7 +447,7 @@
       "expected_diagnostic_code": "O3RT002"
     },
     {
-      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",
       "behavior_family": "errors",

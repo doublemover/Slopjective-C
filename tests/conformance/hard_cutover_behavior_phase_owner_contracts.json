@@ -106,7 +106,7 @@
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
       ],
       "generated_fixture_authority": false,
       "retired_disposition": "runtime-dispatch retired route lowering remains strict-error or removed-flag rejection evidence"
@@ -161,7 +161,7 @@
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
         "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
       ],
       "generated_fixture_authority": false,

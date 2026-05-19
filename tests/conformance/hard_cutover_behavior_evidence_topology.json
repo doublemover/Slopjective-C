@@ -84,7 +84,7 @@
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
       ],
       "owner_index_area": "lowering_and_ir",
       "issues": [
@@ -141,7 +141,7 @@
       "strict_or_rejection_evidence": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
         "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
         "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
       ],

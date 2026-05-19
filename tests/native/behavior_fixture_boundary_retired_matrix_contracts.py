@@ -8,6 +8,11 @@ from behavior_fixture_boundary_support import (
     load_behavior_fixture_catalog,
     load_json,
 )
+from behavior_fixture_boundary_retired_positive_residue import (
+    has_positive_residue_token,
+    normalize_residue_token,
+    positive_tooling_fixtures,
+)
 
 
 def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixtures() -> None:
@@ -38,6 +43,7 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
 
     assert matrix["schema_version"] == 1
     assert matrix["source_of_truth"] == "tests/native"
+    normalized_policy = normalize_residue_token(matrix["policy"])
     for token in (
         "old-mode",
         "gate",
@@ -47,7 +53,7 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
         "unsupported-feature",
         "runtime-dispatch",
     ):
-        assert token in matrix["policy"]
+        assert normalize_residue_token(token) in normalized_policy
     for entry in matrix["entries"]:
         surface = entry["surface"]
         fixture = behavior_by_path[entry["fixture_path"]]
@@ -186,33 +192,11 @@ def test_legacy_migration_pair_no_longer_lives_as_tooling_root_residue() -> None
 
 
 def test_tooling_positive_fixture_names_do_not_claim_retired_surfaces() -> None:
-    positive_roots = (
-        ROOT / "tests" / "tooling" / "fixtures" / "native",
-        ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive",
-        ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "positive",
-    )
-    retired_name_tokens = (
-        "legacy",
-        "old_mode",
-        "old-mode",
-        "gate",
-        "compat",
-        "compatibility",
-        "migration",
-    )
-
-    for root in positive_roots:
-        for path in root.rglob("*"):
-            if not path.is_file():
-                continue
-            if "_positive" not in path.stem.lower():
-                continue
-            normalized_name = path.name.lower()
-            for token in retired_name_tokens:
-                assert token not in normalized_name, (
-                    f"retired positive fixture name must be moved to rejection coverage: "
-                    f"{path.relative_to(ROOT)}"
-                )
+    for path in positive_tooling_fixtures():
+        assert not has_positive_residue_token(path.name), (
+            f"retired positive fixture name must be moved to rejection coverage: "
+            f"{path.relative_to(ROOT)}"
+        )
 
 
 def test_legacy_literal_aliases_are_rejection_coverage_not_positive_recovery() -> None:

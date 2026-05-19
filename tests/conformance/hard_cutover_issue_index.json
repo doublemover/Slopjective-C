@@ -993,7 +993,7 @@
       "behavior_evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
       ],
       "retired_surface_disposition": "lowering runtime retired route is strict-error/rejection evidence only"
     },

@@ -182,8 +182,8 @@
           "positive_expectation": false
         },
         {
-          "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
-          "sidecar": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.meta.json",
+          "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.meta.json",
           "fixture_kind": "strict-error",
           "expected_stage": "link",
           "strict_rejection_name": true,
@@ -198,8 +198,8 @@
           "positive_expectation": false
         },
         {
-          "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
-          "sidecar": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.meta.json",
+          "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+          "sidecar": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.meta.json",
           "fixture_kind": "strict-error",
           "expected_stage": "link",
           "strict_rejection_name": true,

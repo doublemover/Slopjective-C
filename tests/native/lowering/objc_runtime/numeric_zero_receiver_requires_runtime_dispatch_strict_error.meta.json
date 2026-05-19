@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "numeric_zero_receiver_requires_runtime_dispatch.objc3",
+  "fixture": "numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
   "origin": "hand-authored",
   "owner_phase": "lowering",
   "behavior_family": "objc_runtime",

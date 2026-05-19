@@ -35,7 +35,7 @@
       "expected_diagnostic_code": "O3RT002"
     },
     {
-      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
       "behavior_family": "errors",
       "fixture_kind": "strict-error",
       "retired_surface_tags": [

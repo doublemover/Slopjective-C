@@ -32,7 +32,7 @@
       "expected_diagnostic_code": ""
     },
     {
-      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
+      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
       "behavior_family": "objc_runtime",
       "fixture_kind": "strict-error",
       "retired_surface_tags": [

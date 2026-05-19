@@ -75,7 +75,7 @@
       "native_behavior_fixtures": [
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
       ],
       "behavior_focus": "runtime-facing lowering contracts, ABI metadata, and optimization-invariant behavior",
       "hard_cutover_rule": "lowering fixtures may assert ABI stability but must not introduce alternate gate ABIs or retired route lowering paths"

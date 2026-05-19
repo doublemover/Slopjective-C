@@ -111,7 +111,7 @@
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
-        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
       ],
       "diagnostic_codes": [
@@ -137,7 +137,7 @@
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
         "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
       ],
       "diagnostic_codes": [
@@ -229,6 +229,7 @@
         "tests/tooling/fixtures/native/dispatch_intent_source_closure_positive.objc3",
         "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
         "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
+        "tests/tooling/fixtures/native/return_paths_ok.objc3",
         "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
         "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
         "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
@@ -248,10 +249,35 @@
         "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
         "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
         "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
-        "tests/conformance/semantic/XMOD-8015-01.json",
-        "tests/tooling/fixtures/native/diagnostics_migrator_source_inventory_positive.objc3"
+        "tests/conformance/semantic/XMOD-8015-01.json"
       ],
       "support_boundary": "documented lexical hits are ordinary identifiers or inventory labels, not compatibility support"
+    },
+    {
+      "outcome": "absent_support",
+      "kind": "absent-support",
+      "owning_indexes": [
+        "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "tests/conformance/hard_cutover_positive_residue_audit.json"
+      ],
+      "owning_issues": [
+        "#8144",
+        "#8145",
+        "#8150"
+      ],
+      "evidence": [
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "tests/conformance/hard_cutover_positive_residue_audit.json"
+      ],
+      "diagnostic_codes": [
+        "absent-support"
+      ],
+      "support_boundary": "retired-source lane behavior support remains absent rather than accepted through positive fixtures"
     },
     {
       "outcome": "issue_closeout_only",

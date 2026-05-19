@@ -11,10 +11,7 @@ STRICT_ERROR_SUFFIXES = (
     "_rejected.objc3",
     "_contract.objc3",
 )
-CURRENT_STRICT_ERROR_NAME_DEBT = {
-    "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
-    "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
-}
+CURRENT_STRICT_ERROR_NAME_DEBT: set[str] = set()
 
 
 def load_json(path: Path) -> dict:
