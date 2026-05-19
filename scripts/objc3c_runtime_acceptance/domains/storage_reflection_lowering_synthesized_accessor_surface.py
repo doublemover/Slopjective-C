@@ -52,6 +52,9 @@ def build_executable_synthesized_accessor_property_lowering_surface(
         "property_descriptor_model": (
             "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers"
         ),
+        "fail_closed_model": (
+            "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-retired-routes"
+        ),
         "authoritative_case_ids": authoritative_case_ids(
             results,
             {

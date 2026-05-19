@@ -45,6 +45,6 @@ inline constexpr const char
         "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
 inline constexpr const char
     *kExecutableAccessorLayoutSynthesizedAccessorFailClosedModel =
-        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-shared-storage-bypasses";
+        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-retired-routes";
 
 }  // namespace objc3::artifacts::frontend

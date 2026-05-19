@@ -36,6 +36,7 @@ inline void StabilizeMethodCacheEntryObservation(
 
 inline void CopyPropertyEntry(const char *property_name,
                               PropertyEntryObservation &observation) {
+  observation = PropertyEntryObservation{};
   (void)objc3_runtime_copy_property_entry_for_testing(
       kWidgetClassName, property_name, &observation.entry);
 }
@@ -53,16 +54,17 @@ inline void CapturePropertyEntryAssertions(
   StabilizePropertyEntryObservation(assertions.token_property);
 }
 
-inline PropertyRegistryObservation CapturePropertyRegistryState() {
-  PropertyRegistryObservation observation;
+inline void CapturePropertyRegistryState(
+    PropertyRegistryObservation &observation) {
+  observation = PropertyRegistryObservation{};
   (void)objc3_runtime_copy_property_registry_state_for_testing(
       &observation.state);
   StabilizePropertyRegistryObservation(observation);
-  return observation;
 }
 
 inline void CopyMethodCacheEntry(int widget_instance, const char *selector,
                                  MethodCacheEntryObservation &observation) {
+  observation = MethodCacheEntryObservation{};
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       widget_instance, selector, &observation.entry);
 }
@@ -84,13 +86,12 @@ inline void CaptureMethodCacheAssertions(
   StabilizeMethodCacheEntryObservation(assertions.token_method);
 }
 
-inline PropertyIvarExecutionAssertions CapturePropertyIvarExecutionAssertions(
-    int widget_instance) {
-  PropertyIvarExecutionAssertions assertions;
+inline void CapturePropertyIvarExecutionAssertions(
+    int widget_instance, PropertyIvarExecutionAssertions &assertions) {
+  assertions = PropertyIvarExecutionAssertions{};
   CapturePropertyEntryAssertions(assertions);
-  assertions.registry_state = CapturePropertyRegistryState();
+  CapturePropertyRegistryState(assertions.registry_state);
   CaptureMethodCacheAssertions(widget_instance, assertions);
-  return assertions;
 }
 
 }  // namespace objc3c::runtime::probe::property_ivar_execution_matrix

@@ -17,6 +17,7 @@ def pwsh_script(script: object, *args: str) -> list[str]:
     return [
         PWSH,
         "-NoProfile",
+        "-NonInteractive",
         "-ExecutionPolicy",
         "Bypass",
         "-File",

@@ -5,10 +5,8 @@
 
 namespace objc3c::runtime::probe::reference_counting_weak_autoreleasepool {
 
-inline ReferenceCountingWeakAutoreleasepoolRun
-CaptureReferenceCountingWeakAutoreleasepoolProbe() {
-  ReferenceCountingWeakAutoreleasepoolRun run;
-
+inline void CaptureReferenceCountingWeakAutoreleasepoolProbe(
+    ReferenceCountingWeakAutoreleasepoolRun &run) {
   ResetReferenceCountingRuntimeFixture();
   run.fixture = AllocateReferenceCountingFixture();
   RecordReferenceCountingFixtureHandles(run.fixture, run.operations);
@@ -27,12 +25,11 @@ CaptureReferenceCountingWeakAutoreleasepoolProbe() {
                             run.snapshots.graph_after_parent_release,
                             run.snapshots.memory_after_parent_release);
   CaptureWeakValuePropertyEntry(run.snapshots.weak_value_entry);
-  return run;
 }
 
 inline int RunReferenceCountingWeakAutoreleasepoolProbe() {
-  const ReferenceCountingWeakAutoreleasepoolRun run =
-      CaptureReferenceCountingWeakAutoreleasepoolProbe();
+  ReferenceCountingWeakAutoreleasepoolRun run{};
+  CaptureReferenceCountingWeakAutoreleasepoolProbe(run);
   PrintReferenceCountingWeakAutoreleasepoolReport(run);
   return 0;
 }

@@ -17,7 +17,7 @@ struct ProbeBlockStorage {
   int (*invoke)(void *, int, int, int, int) = nullptr;
   void (*copy)(void *) = nullptr;
   void (*dispose)(void *) = nullptr;
-  ProbeCaptureState *capture = nullptr;
+  int *captured_base = nullptr;
 };
 
 struct RuntimeInvocationResult {

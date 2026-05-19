@@ -6,7 +6,7 @@ namespace objc3c::runtime {
 
 RuntimeTypedDispatchResultContract RuntimeTypedDispatchContractForStatus(
     objc3_runtime_dispatch_status_code status_code) {
-  return RuntimeDispatchStatusIsSuccess(status_code)
+  return RuntimeDispatchStatusCarriesValueResult(status_code)
              ? RuntimeTypedDispatchResultContract::ValueResult
              : RuntimeTypedDispatchResultContract::StrictErrorResult;
 }

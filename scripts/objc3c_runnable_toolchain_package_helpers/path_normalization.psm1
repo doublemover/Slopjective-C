@@ -54,7 +54,43 @@ function Resolve-PackageRoot {
   return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $RequestedRoot))
 }
 
+function Resolve-PackageManifestPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [Parameter(Mandatory = $true)][string]$ManifestRelativePath
+  )
+
+  if ([string]::IsNullOrWhiteSpace($ManifestRelativePath)) {
+    throw "runnable toolchain package FAIL: manifest relative path is required"
+  }
+
+  $normalizedRelativePath = $ManifestRelativePath.Replace('/', '\')
+  if ([System.IO.Path]::IsPathRooted($normalizedRelativePath)) {
+    throw "runnable toolchain package FAIL: manifest path must be package-relative: $ManifestRelativePath"
+  }
+
+  foreach ($segment in @($normalizedRelativePath -split '[\\/]+')) {
+    if ($segment -eq ".." -or $segment -eq ".") {
+      throw "runnable toolchain package FAIL: manifest path cannot contain traversal segments: $ManifestRelativePath"
+    }
+  }
+
+  $packageRootFullPath = [System.IO.Path]::GetFullPath($PackageRoot).TrimEnd([char[]]@(
+    [System.IO.Path]::DirectorySeparatorChar,
+    [System.IO.Path]::AltDirectorySeparatorChar
+  ))
+  $manifestPath = [System.IO.Path]::GetFullPath((Join-Path $packageRootFullPath $normalizedRelativePath))
+  $packageRootPrefix = $packageRootFullPath + [System.IO.Path]::DirectorySeparatorChar
+
+  if (-not $manifestPath.StartsWith($packageRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "runnable toolchain package FAIL: manifest path escaped package root: $ManifestRelativePath"
+  }
+
+  return $manifestPath
+}
+
 Export-ModuleMember -Function @(
   "Get-RepoRelativePathCompat",
+  "Resolve-PackageManifestPath",
   "Resolve-PackageRoot"
 )

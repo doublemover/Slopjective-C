@@ -13,15 +13,17 @@ namespace block_arc_runtime_abi {
 inline RuntimeInvocationResult InvokeRuntimeHelpersForProbe() {
   RuntimeInvocationResult result;
 
+  ResetProbeCounters(7);
   ::objc3_runtime_push_autoreleasepool_scope();
   result.retained = ::objc3_runtime_retain_i32(77);
   result.autoreleased = ::objc3_runtime_autorelease_i32(result.retained);
   result.released = ::objc3_runtime_release_i32(result.retained);
 
-  result.capture = SetUpProbeCaptureState();
-  ProbeBlockStorage block = SetUpProbeBlockStorage(&result.capture);
+  int captured_base = SetUpCapturedBaseCell();
+  ProbeBlockStorage block = SetUpProbeBlockStorage(&captured_base);
   result.handle =
       ::objc3_runtime_promote_block_i32(&block, sizeof(block), 1);
+  captured_base = 99;
   result.invoke_result =
       result.handle > 0
           ? ::objc3_runtime_invoke_block_i32(result.handle, 1, 2, 3, 4)
@@ -34,6 +36,7 @@ inline RuntimeInvocationResult InvokeRuntimeHelpersForProbe() {
       result.handle > 0 ? ::objc3_runtime_release_i32(result.handle) : 0;
   ::objc3_runtime_pop_autoreleasepool_scope();
 
+  result.capture = CaptureProbeCounters();
   return result;
 }
 

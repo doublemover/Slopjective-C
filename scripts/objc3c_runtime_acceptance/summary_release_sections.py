@@ -11,14 +11,6 @@ from objc3c_runtime_acceptance.summary_owner_contracts import (
 )
 
 
-_STRICTNESS_TOKEN = "".join(("com", "pat", "ibility"))
-_SIDECAR_DIAGNOSTICS_BUILDER = (
-    "build_runtime_scaffold_retirement_deprecated_sidecar_"
-    + _STRICTNESS_TOKEN
-    + "_diagnostics_surface"
-)
-
-
 def build_release_summary_sections(
     *,
     results: list[CaseResult],
@@ -49,11 +41,10 @@ def build_release_summary_sections(
                 results
             )
         ),
-        "runtime_scaffold_retirement_deprecated_sidecar_diagnostics_surface": (
-            getattr(
-                domains.release_claims,
-                _SIDECAR_DIAGNOSTICS_BUILDER,
-            )(results)
+        "runtime_retired_artifact_rejection_contracts_surface": (
+            domains.release_claims.build_runtime_retired_artifact_rejection_contracts_surface(
+                results
+            )
         ),
         "runtime_claim_publication_dashboard_schema_surface": (
             domains.release_claims.build_runtime_claim_publication_dashboard_schema_surface(
@@ -70,8 +61,8 @@ def build_release_summary_sections(
                 results
             )
         ),
-        "runtime_final_release_evidence_descaffolding_implementation_surface": (
-            domains.release_claims.build_runtime_final_release_evidence_descaffolding_implementation_surface(
+        "runtime_current_release_evidence_owner_payload_surface": (
+            domains.release_claims.build_runtime_current_release_evidence_owner_payload_surface(
                 results
             )
         ),

@@ -30,11 +30,11 @@ REQUIRED_CASES = {
     "strict-profile-feature-claim-source-surface",
     "claimability-semantics-release-policy",
     "strict-profile-claim-implementation",
-    "scaffold-retirement-deprecated-sidecar-compatibility-diagnostics",
+    "retired-artifact-rejection-contracts",
     "claim-publication-dashboard-schema-surface",
     "final-claim-publication-deprecated-path-shutdown",
     "release-candidate-runtime-claim-abi",
-    "final-release-evidence-descaffolding-implementation",
+    "current-release-evidence-owner-payload",
 }
 
 REQUIRED_SURFACE_CONTRACTS = {
@@ -50,8 +50,8 @@ REQUIRED_SURFACE_CONTRACTS = {
     "runtime_strict_profile_claim_implementation_surface": (
         "objc3c.runtime.strict.profile.claim.implementation.surface.v1"
     ),
-    "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": (
-        "objc3c.runtime.scaffold.retirement.deprecated.sidecar.compatibility.diagnostics.surface.v1"
+    "runtime_retired_artifact_rejection_contracts_surface": (
+        "objc3c.runtime.retired.artifact.rejection.contracts.surface.v1"
     ),
     "runtime_claim_publication_dashboard_schema_surface": (
         "objc3c.runtime.claim.publication.dashboard.schema.surface.v1"
@@ -62,14 +62,14 @@ REQUIRED_SURFACE_CONTRACTS = {
     "runtime_release_candidate_claim_abi_surface": (
         "objc3c.runtime.release.candidate.claim.abi.surface.v1"
     ),
-    "runtime_final_release_evidence_descaffolding_implementation_surface": (
-        "objc3c.runtime.final.release.evidence.descaffolding.implementation.surface.v1"
+    "runtime_current_release_evidence_owner_payload_surface": (
+        "objc3c.runtime.current.release.evidence.owner.payload.surface.v1"
     ),
 }
 
 TARGETED_PROFILE_IDS = ["strict", "strict-concurrency", "strict-system"]
 DASHBOARD_SCHEMA_PATH = "schemas/objc3-conformance-dashboard-status-v1.schema.json"
-DEPRECATED_SIDECAR_FILENAMES = [
+RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES = [
     "module.objc3-release-runtime-claim-matrix.json",
     "module.objc3-dashboard-ready-summary.json",
     "module.objc3-toolchain-runtime-ga-operations-scaffold.json",
@@ -79,7 +79,7 @@ DEPRECATED_SIDECAR_FILENAMES = [
 __all__ = [
     "ACCEPTANCE_REPORT",
     "DASHBOARD_SCHEMA_PATH",
-    "DEPRECATED_SIDECAR_FILENAMES",
+    "RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES",
     "INTEGRATION_REPORT",
     "LIVE_CASE_ROOT",
     "REPORT_PATH",

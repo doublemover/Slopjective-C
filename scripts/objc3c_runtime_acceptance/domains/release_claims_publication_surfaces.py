@@ -5,25 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
-from .. import runtime_contract_release
 from .release_claims_owner_contracts import release_claims_surface_owner_payload
 from .release_claims_retired_artifacts import RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES
 from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
     RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
+    RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID,
     RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-)
-
-
-_RETIRED_ARTIFACT_REJECTION_SOURCE_CONTRACT_NAME = (
-    "RUNTIME_SCAFFOLD_"
-    + "RETIREMENT_DEPRECATED_SIDE"
-    + "CAR_COMPAT"
-    + "IBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID"
-)
-RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID = (
-    getattr(runtime_contract_release, _RETIRED_ARTIFACT_REJECTION_SOURCE_CONTRACT_NAME)
 )
 
 
@@ -61,7 +50,7 @@ def build_runtime_retired_artifact_rejection_contracts_surface(
         "retired_artifact_filenames": RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
         "explicit_non_goals": [
             "no-silent-acceptance-of-retired-release-artifacts",
-            "no-separate-migration-path-for-deprecated-claim-artifacts",
+            "no-separate-migration-path-for-retired-claim-artifacts",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,

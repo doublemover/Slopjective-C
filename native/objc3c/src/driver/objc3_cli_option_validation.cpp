@@ -3,6 +3,7 @@
 #include "config/objc3_language_profile.h"
 #include "driver/objc3_cli_artifact_options_contract.h"
 #include "driver/objc3_cli_usage.h"
+#include "io/objc3_process.h"
 
 bool ValidateObjc3CliOptions(const Objc3CliOptions &options,
                              std::string &error) {
@@ -25,10 +26,9 @@ bool ValidateObjc3CliOptions(const Objc3CliOptions &options,
     return false;
   }
 
-  if (options.emit_objc3_conformance_format != "json") {
-    error =
-        "invalid --emit-objc3-conformance-format (expected json): " +
-        options.emit_objc3_conformance_format;
+  if (!IsObjc3JsonConformanceFormat(options.emit_objc3_conformance_format)) {
+    error = BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
+        options.emit_objc3_conformance_format);
     return false;
   }
 

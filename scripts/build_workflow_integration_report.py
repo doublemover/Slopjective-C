@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from scripts.objc3c_workflow.public_command_api import (
     public_workflow_action_payload,
     public_workflow_command,
     public_workflow_package_bridge_payload,
 )
-from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -25,8 +24,18 @@ REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 
 
 def main() -> None:
-    subprocess.run(python_script_command(CONTRACT_BUILDER), cwd=ROOT, check=True)
-    subprocess.run(public_workflow_command('check-public-command-budget'), cwd=ROOT, check=True)
+    run_completed(
+        python_script_command(CONTRACT_BUILDER),
+        cwd=ROOT,
+        capture_output=False,
+        check=True,
+    )
+    run_completed(
+        public_workflow_command('check-public-command-budget'),
+        cwd=ROOT,
+        capture_output=False,
+        check=True,
+    )
 
     contract = json.loads(DEFAULT_CONTRACT_PATH.read_text(encoding='utf-8'))
     maintainer_runbook = MAINTAINER_RUNBOOK_PATH.read_text(encoding='utf-8')

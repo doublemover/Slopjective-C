@@ -15,47 +15,44 @@ inline int DispatchRuntimeMethod(const RuntimeDispatch &dispatch) {
 }
 
 inline void CaptureStartupRuntimeState(MethodBindingProbeRun &run) {
-  run.registration = CaptureRegistrationState();
-  run.selector_table = CaptureSelectorTableState();
+  CaptureRegistrationState(run.registration);
+  CaptureSelectorTableState(run.selector_table);
 }
 
 inline void CaptureInstanceMethodBindings(MethodBindingProbeRun &run) {
   run.values.instance_first = DispatchRuntimeMethod(kInstanceValueDispatch);
-  run.instance_first_state = CaptureMethodCacheState();
+  CaptureMethodCacheState(run.instance_first_state);
 
   run.values.instance_second = DispatchRuntimeMethod(kInstanceValueDispatch);
-  run.instance_second_state = CaptureMethodCacheState();
+  CaptureMethodCacheState(run.instance_second_state);
 }
 
 inline void CaptureClassMethodBindings(MethodBindingProbeRun &run) {
   run.values.class_value = DispatchRuntimeMethod(kClassValueDispatch);
-  run.class_state = CaptureMethodCacheState();
+  CaptureMethodCacheState(run.class_state);
 
   run.values.known_class_value = DispatchRuntimeMethod(kKnownClassValueDispatch);
-  run.known_class_state = CaptureMethodCacheState();
+  CaptureMethodCacheState(run.known_class_state);
 }
 
 inline void CaptureCategoryMethodBinding(MethodBindingProbeRun &run) {
   run.values.category_value = DispatchRuntimeMethod(kCategoryValueDispatch);
-  run.category_state = CaptureMethodCacheState();
+  CaptureMethodCacheState(run.category_state);
 }
 
 inline void CaptureMethodBindingEntries(MethodBindingProbeRun &run) {
-  run.instance_entry = CaptureMethodCacheEntry(kInstanceValueEntry);
-  run.class_entry = CaptureMethodCacheEntry(kClassValueEntry);
-  run.category_entry = CaptureMethodCacheEntry(kCategoryValueEntry);
+  CaptureMethodCacheEntry(kInstanceValueEntry, run.instance_entry);
+  CaptureMethodCacheEntry(kClassValueEntry, run.class_entry);
+  CaptureMethodCacheEntry(kCategoryValueEntry, run.category_entry);
 }
 
-inline MethodBindingProbeRun CaptureMethodBindingProbeRun() {
-  MethodBindingProbeRun run{};
-
+inline void CaptureMethodBindingProbeRun(MethodBindingProbeRun &run) {
+  run = MethodBindingProbeRun{};
   CaptureStartupRuntimeState(run);
   CaptureInstanceMethodBindings(run);
   CaptureClassMethodBindings(run);
   CaptureCategoryMethodBinding(run);
   CaptureMethodBindingEntries(run);
-
-  return run;
 }
 
 } // namespace method_binding_probe

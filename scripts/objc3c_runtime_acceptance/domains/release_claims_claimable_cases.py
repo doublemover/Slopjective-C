@@ -63,7 +63,7 @@ def check_strict_profile_feature_claim_source_surface_case(
         artifacts.advanced_feature_gate,
         artifacts.release_candidate_matrix,
         artifacts.feature_claim_truth_surface,
-        artifacts.compatibility_semantics,
+        artifacts.canonical_selection_claim_semantics,
     )
 
     return CaseResult(
@@ -82,7 +82,7 @@ def check_strict_profile_feature_claim_source_surface_case(
                     "unsupported_selection_surface_ids"
                 ),
                 "targeted_profile_ids": EXPECTED_TARGETED_PROFILES,
-                "rejection_model": artifacts.compatibility_semantics.get(
+                "rejection_model": artifacts.canonical_selection_claim_semantics.get(
                     "rejection_model"
                 ),
             },

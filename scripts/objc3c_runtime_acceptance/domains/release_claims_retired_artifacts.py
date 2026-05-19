@@ -4,18 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .. import runtime_contract_release
-
-
-_RETIRED_ARTIFACT_SOURCE_NAME = (
-    "DEPRECATED_CLAIM_"
-    + "COMPAT"
-    + "IBILITY"
-    + "_SIDE"
-    + "CAR_FILENAMES"
-)
-RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES = getattr(
-    runtime_contract_release, _RETIRED_ARTIFACT_SOURCE_NAME
+from ..runtime_contract_release import (
+    RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
 )
 
 

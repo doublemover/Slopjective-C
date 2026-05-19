@@ -61,7 +61,7 @@ BuildToolingLegacyCanonicalMigrationSemanticsSummary(
   } else if (!IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
                  compatibility_summary)) {
     summary.failure_reason =
-        "frontend compatibility/strictness semantics prerequisite is not ready";
+        "frontend canonical selection claim semantics prerequisite is not ready";
   }
   summary.replay_key =
       BuildToolingLegacyCanonicalMigrationSemanticsReplayKey(summary);

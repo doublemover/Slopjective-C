@@ -13,15 +13,15 @@ inline constexpr const char *kObjc3RuntimeReleaseCandidateClaimSnapshotType =
 inline constexpr const char *kObjc3RuntimeReleaseCandidateClaimProbePath =
     "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp";
 inline constexpr const char *kObjc3RuntimeReleaseCandidateClaimBoundaryModel =
-    "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-deprecated-path-shutdown-without-widening-the-public-runtime-header";
+    "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-retired-artifact-rejection-without-widening-the-public-runtime-header";
 inline constexpr const char
-    *kObjc3RuntimeFinalReleaseEvidenceDescaffoldingImplementationSurfaceContractId =
-        "objc3c.runtime.final.release.evidence.descaffolding.implementation.surface.v1";
+    *kObjc3RuntimeCurrentReleaseEvidenceOwnerPayloadSurfaceContractId =
+        "objc3c.runtime.current.release.evidence.owner.payload.surface.v1";
 inline constexpr const char *kObjc3RuntimeReleaseCandidateEvidenceSnapshotSymbol =
     "objc3_runtime_copy_release_candidate_evidence_state_for_testing";
 inline constexpr const char *kObjc3RuntimeReleaseCandidateEvidenceSnapshotType =
     "objc3_runtime_release_candidate_evidence_state_snapshot";
 inline constexpr const char *kObjc3RuntimeReleaseCandidateEvidenceProbePath =
     "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp";
-inline constexpr const char *kObjc3RuntimeReleaseCandidateEvidenceImplementationModel =
-    "private-release-candidate-evidence-snapshot-freezes-the-live-validation-release-evidence-dashboard-gate-matrix-and-deprecated-path-shutdown-implementation-boundary";
+inline constexpr const char *kObjc3RuntimeCurrentReleaseEvidenceOwnerPayloadModel =
+    "private-release-candidate-evidence-snapshot-freezes-the-live-validation-release-evidence-dashboard-gate-matrix-and-retired-artifact-rejection-boundary";

@@ -200,7 +200,7 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
   WriteRuntimeInstallationAbiSurface(manifest, runtime_bootstrap_api);
   WriteRuntimeLoaderLifecycleSurface(manifest, runtime_bootstrap_semantics);
   WriteRuntimeReleaseCandidateClaimAbiSurface(manifest, runtime_bootstrap_api);
-  WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
+  WriteRuntimeCurrentReleaseEvidenceOwnerPayloadSurface(
       manifest, runtime_bootstrap_api);
 }
 

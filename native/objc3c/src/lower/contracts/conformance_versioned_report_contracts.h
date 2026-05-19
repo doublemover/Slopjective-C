@@ -9,7 +9,7 @@ inline constexpr const char *kObjc3VersionedConformanceReportLoweringContractId 
     "objc3c.versioned.conformance.report.lowering.v1";
 inline constexpr const char
     *kObjc3VersionedConformanceReportLoweringSemanticContractId =
-        "objc3c.compatibility.strictness.claim.semantics.v1";
+        "objc3c.canonical.selection.claim.semantics.v1";
 inline constexpr const char
     *kObjc3VersionedConformanceReportLoweringArtifactSuffix =
         ".objc3-conformance-report.json";
@@ -30,7 +30,7 @@ inline constexpr const char
         "unsupported-claims-remain-published-as-known-unsupported-without-runnable-overclaim";
 inline constexpr const char
     *kObjc3VersionedConformanceReportSelectionModel =
-        "canonical-and-legacy-compatibility-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
+        "canonical-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
 inline constexpr const char
     *kObjc3VersionedConformanceReportCanonicalInterfaceMode =
         "no-standalone-interface-payload-yet";

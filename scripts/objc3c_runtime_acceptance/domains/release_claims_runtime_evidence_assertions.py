@@ -1,18 +1,18 @@
-"""Assertions for final release evidence runtime acceptance."""
+"""Assertions for current release evidence owner payload runtime acceptance."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from ..expectation_matching import expect
-from .. import runtime_contract_release
 from ..c_api import PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY
 from ..runtime_contract_release import (
+    RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
 )
 
 
-EXPECTED_FINAL_RELEASE_EVIDENCE_ARTIFACTS = [
+EXPECTED_CURRENT_RELEASE_EVIDENCE_ARTIFACTS = [
     "module.objc3-advanced-feature-gate.json",
     "module.objc3-conformance-validation.json",
     "module.objc3-dashboard-status.json",
@@ -21,19 +21,8 @@ EXPECTED_FINAL_RELEASE_EVIDENCE_ARTIFACTS = [
 ]
 
 
-_EVIDENCE_TRANSITION_TOKEN = "".join(("des", "caff", "olding"))
 CURRENT_RELEASE_EVIDENCE_MANIFEST_SURFACE_KEY = (
-    "runtime_final_release_evidence_"
-    + _EVIDENCE_TRANSITION_TOKEN
-    + "_implementation_surface"
-)
-RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID = (
-    getattr(
-        runtime_contract_release,
-        "RUNTIME_FINAL_RELEASE_EVIDENCE_"
-        + "DESCAFF"
-        + "OLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID",
-    )
+    "runtime_current_release_evidence_owner_payload_surface"
 )
 
 
@@ -70,18 +59,23 @@ def expect_current_release_evidence_owner_payload_surface(
         == "module.objc3-advanced-feature-gate.json"
         and surface.get("release_candidate_matrix_artifact_name")
         == "module.objc3-release-candidate-matrix.json",
-        "expected current release evidence owner payload surface to publish the final artifact inventory",
+        "expected current release evidence owner payload surface to publish the current artifact inventory",
     )
-
-
-def expect_final_release_validate_artifacts(validate_artifacts: list[str]) -> None:
     expect(
-        validate_artifacts == EXPECTED_FINAL_RELEASE_EVIDENCE_ARTIFACTS,
-        "expected validation output to preserve the final release evidence artifact inventory",
+        surface.get("authoritative_probe_paths")
+        == ["tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp"],
+        "expected current release evidence owner payload surface to publish the authoritative runtime probe path",
     )
 
 
-def expect_final_release_probe_payload(payload: dict[str, Any]) -> None:
+def expect_current_release_validate_artifacts(validate_artifacts: list[str]) -> None:
+    expect(
+        validate_artifacts == EXPECTED_CURRENT_RELEASE_EVIDENCE_ARTIFACTS,
+        "expected validation output to preserve the current release evidence artifact inventory",
+    )
+
+
+def expect_current_release_probe_payload(payload: dict[str, Any]) -> None:
     expect(
         payload.get("copy_status") == 0
         and payload.get("validation_artifact_ready") == 1
@@ -104,5 +98,5 @@ def expect_final_release_probe_payload(payload: dict[str, Any]) -> None:
         == "module.objc3-advanced-feature-gate.json"
         and payload.get("release_candidate_matrix_artifact_name")
         == "module.objc3-release-candidate-matrix.json",
-        "expected final release evidence runtime probe to preserve the final artifact inventory",
+        "expected current release evidence runtime probe to preserve the current artifact inventory",
     )

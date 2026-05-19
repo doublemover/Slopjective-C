@@ -29,9 +29,9 @@ RELEASE_CLAIM_SURFACES: tuple[SurfaceRequirement, ...] = (
         source_model_case_fields("claim_implementation_model"),
     ),
     SurfaceRequirement(
-        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface",
-        RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
-        source_model_case_fields("compatibility_diagnostic_model"),
+        "runtime_retired_artifact_rejection_contracts_surface",
+        RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID,
+        source_model_case_fields("retired_artifact_rejection_model"),
     ),
     SurfaceRequirement(
         "runtime_claim_publication_dashboard_schema_surface",
@@ -52,9 +52,12 @@ RELEASE_CLAIM_SURFACES: tuple[SurfaceRequirement, ...] = (
         ),
     ),
     SurfaceRequirement(
-        "runtime_final_release_evidence_descaffolding_implementation_surface",
-        RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-        probe_path_fields("release_candidate_evidence_snapshot_symbol", "implementation_model"),
+        "runtime_current_release_evidence_owner_payload_surface",
+        RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID,
+        probe_path_fields(
+            "release_candidate_evidence_snapshot_symbol",
+            "current_release_evidence_owner_payload_model",
+        ),
     ),
 )
 

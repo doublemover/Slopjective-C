@@ -16,7 +16,7 @@ def expect_strict_profile_feature_claim_surfaces(
     advanced_feature_gate: dict[str, Any],
     release_candidate_matrix: dict[str, Any],
     feature_claim_truth_surface: dict[str, Any],
-    compatibility_semantics: dict[str, Any],
+    canonical_selection_claim_semantics: dict[str, Any],
 ) -> None:
     expect(
         feature_claim_truth_surface.get("contract_id")
@@ -49,27 +49,28 @@ def expect_strict_profile_feature_claim_surfaces(
         "expected feature-claim truth surface to publish fail-closed strictness, strict-concurrency, and macro behavior",
     )
     expect(
-        compatibility_semantics.get("contract_id")
-        == "objc3c.compatibility.strictness.claim.semantics.v1",
-        "expected conformance report to embed the compatibility/strictness claim semantics surface",
+        canonical_selection_claim_semantics.get("contract_id")
+        == "objc3c.canonical.selection.claim.semantics.v1",
+        "expected conformance report to embed the canonical selection claim semantics surface",
     )
     expect(
-        compatibility_semantics.get("rejection_model")
+        canonical_selection_claim_semantics.get("rejection_model")
         == "strictness-strict-concurrency-and-feature-macro-claims-remain-fail-closed",
-        "expected compatibility semantics to preserve the strict-profile rejection model",
+        "expected canonical selection claim semantics to preserve the strict-profile rejection model",
     )
     expect(
-        compatibility_semantics.get("fail_closed") is True
-        and compatibility_semantics.get(
+        canonical_selection_claim_semantics.get("fail_closed") is True
+        and canonical_selection_claim_semantics.get(
             "strictness_selection_rejection_semantics_landed"
         )
         is True
-        and compatibility_semantics.get(
+        and canonical_selection_claim_semantics.get(
             "feature_macro_claim_suppression_semantics_landed"
         )
         is True
-        and compatibility_semantics.get("ready_for_lowering_and_runtime") is True,
-        "expected compatibility semantics to preserve a ready fail-closed strict-profile boundary",
+        and canonical_selection_claim_semantics.get("ready_for_lowering_and_runtime")
+        is True,
+        "expected canonical selection claim semantics to preserve a ready fail-closed strict-profile boundary",
     )
     expect(
         publication.get("supported_profile_ids") == EXPECTED_CLAIMED_PROFILES

@@ -9,9 +9,27 @@ function Get-CoreRecoveryContractCases {
   return @(Get-CoreRecoveryCanonicalCaseDefinitions)
 }
 
+function Invoke-CoreRecoveryContractCaseRecord {
+  param([object]$CaseRecord)
+
+  if ($CaseRecord -is [System.Collections.IDictionary]) {
+    Invoke-ContractCase @CaseRecord
+    return
+  }
+
+  if ($CaseRecord -is [System.Collections.IEnumerable] -and -not ($CaseRecord -is [string])) {
+    foreach ($entry in $CaseRecord) {
+      Invoke-CoreRecoveryContractCaseRecord -CaseRecord $entry
+    }
+    return
+  }
+
+  throw "contract FAIL: unsupported recovery contract case record shape: $($CaseRecord.GetType().FullName)"
+}
+
 function Invoke-CoreRecoveryContractCases {
   foreach ($case in Get-CoreRecoveryContractCases) {
-    Invoke-ContractCase @case
+    Invoke-CoreRecoveryContractCaseRecord -CaseRecord $case
   }
 }
 
@@ -42,6 +60,7 @@ function Invoke-InvalidDispatchSymbolContract {
 
 Export-ModuleMember -Function @(
   "Get-CoreRecoveryContractCases",
+  "Invoke-CoreRecoveryContractCaseRecord",
   "Invoke-CoreRecoveryContractCases",
   "Invoke-InvalidDispatchSymbolContract"
 )

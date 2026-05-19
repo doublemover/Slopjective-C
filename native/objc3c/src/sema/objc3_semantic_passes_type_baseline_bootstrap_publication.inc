@@ -23,7 +23,7 @@ BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
   Objc3BootstrapLegalityFailureContractSummary summary;
   // semantic migration anchor: canonical-mode legacy literal diagnostics stays
   // truthful only if the live fail-closed legacy-literal rejection surface is
-  // preserved through the compatibility/strictness summary exported here.
+  // preserved through the canonical selection claim summary exported here.
   summary.fail_closed = true;
   summary.duplicate_registration_policy_frozen = true;
   summary.image_order_invariant_frozen = true;

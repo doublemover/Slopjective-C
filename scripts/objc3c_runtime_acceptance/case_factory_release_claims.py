@@ -38,8 +38,8 @@ def build_release_claim_case_factories(
             ),
         ),
         (
-            "scaffold-retirement-deprecated-sidecar-compatibility-diagnostics",
-            lambda: domains.release_claims.check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
+            "retired-artifact-rejection-contracts",
+            lambda: domains.release_claims.check_retired_artifact_rejection_contracts_case(
                 run_dir
             ),
         ),
@@ -63,8 +63,8 @@ def build_release_claim_case_factories(
             ),
         ),
         (
-            "final-release-evidence-descaffolding-implementation",
-            lambda: domains.release_claims.check_final_release_evidence_descaffolding_implementation_case(
+            "current-release-evidence-owner-payload",
+            lambda: domains.release_claims.check_current_release_evidence_owner_payload_case(
                 clangxx,
                 run_dir,
             ),

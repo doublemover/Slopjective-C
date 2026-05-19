@@ -7,18 +7,17 @@
 
 namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
 
-inline CategoryAttachmentProtocolProbeRun
-CaptureCategoryAttachmentProtocolRuntimeProbe() {
-  CategoryAttachmentProtocolProbeRun run;
+inline void CaptureCategoryAttachmentProtocolRuntimeProbe(
+    CategoryAttachmentProtocolProbeRun &run) {
+  run = CategoryAttachmentProtocolProbeRun{};
   CaptureCategoryAttachmentActions(run);
   CaptureProtocolRuntimeAssertions(run);
   CaptureCategoryAttachmentProtocolRuntimeSnapshots(run);
-  return run;
 }
 
 inline int RunCategoryAttachmentProtocolRuntimeProbe() {
-  const CategoryAttachmentProtocolProbeRun run =
-      CaptureCategoryAttachmentProtocolRuntimeProbe();
+  CategoryAttachmentProtocolProbeRun run{};
+  CaptureCategoryAttachmentProtocolRuntimeProbe(run);
   PrintCategoryAttachmentProtocolRuntimeReport(run);
   return 0;
 }

@@ -16,6 +16,7 @@ inline void StabilizeRealizedGraphStateObservation(
 
 inline void CaptureRealizedGraphState(
     RealizedGraphStateObservation &observation) {
+  observation = RealizedGraphStateObservation{};
   (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
       &observation.state);
   StabilizeRealizedGraphStateObservation(observation);
@@ -33,6 +34,7 @@ inline void StabilizeRealizedClassEntryObservation(
 
 inline void CaptureRealizedClassEntry(
     const char *class_name, RealizedClassEntryObservation &observation) {
+  observation = RealizedClassEntryObservation{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       class_name, &observation.entry);
   StabilizeRealizedClassEntryObservation(observation);
@@ -48,6 +50,7 @@ inline void StabilizeProtocolConformanceObservation(
 inline void CaptureProtocolConformanceQuery(
     const char *class_name, const char *protocol_name,
     ProtocolConformanceObservation &observation) {
+  observation = ProtocolConformanceObservation{};
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       class_name, protocol_name, &observation.query);
   StabilizeProtocolConformanceObservation(observation);
@@ -61,6 +64,7 @@ inline void StabilizeMethodCacheStateObservation(
 }
 
 inline void CaptureMethodCacheState(MethodCacheStateObservation &observation) {
+  observation = MethodCacheStateObservation{};
   (void)objc3_runtime_copy_method_cache_state_for_testing(&observation.state);
   StabilizeMethodCacheStateObservation(observation);
 }

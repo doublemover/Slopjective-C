@@ -25,6 +25,15 @@ inline void StabilizePropertyEntryObservation(
       observation.getter_owner, observation.setter_owner);
 }
 
+inline void StabilizeRunnableSampleAssertions(
+    RunnableSampleAssertions &assertions) {
+  StabilizeConformanceQueryObservation(assertions.worker_query);
+  StabilizeConformanceQueryObservation(assertions.tracer_query);
+  StabilizePropertyEntryObservation(assertions.count_property);
+  StabilizePropertyEntryObservation(assertions.value_property);
+  StabilizePropertyEntryObservation(assertions.token_property);
+}
+
 inline void CopyConformanceQuery(const char *protocol_name,
                                  ConformanceQueryObservation &observation) {
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
@@ -37,20 +46,16 @@ inline void CopyPropertyEntry(const char *property_name,
       kWidgetClassName, property_name, &observation.entry);
 }
 
-inline RunnableSampleAssertions CaptureRunnableSampleAssertions() {
-  RunnableSampleAssertions assertions;
+inline void CaptureRunnableSampleAssertions(
+    RunnableSampleAssertions &assertions) {
+  assertions = RunnableSampleAssertions{};
   CopyConformanceQuery(kWorkerProtocolName, assertions.worker_query);
   CopyConformanceQuery(kTracerProtocolName, assertions.tracer_query);
-  StabilizeConformanceQueryObservation(assertions.worker_query);
-  StabilizeConformanceQueryObservation(assertions.tracer_query);
 
   CopyPropertyEntry(kCountPropertyName, assertions.count_property);
   CopyPropertyEntry(kValuePropertyName, assertions.value_property);
   CopyPropertyEntry(kTokenPropertyName, assertions.token_property);
-  StabilizePropertyEntryObservation(assertions.count_property);
-  StabilizePropertyEntryObservation(assertions.value_property);
-  StabilizePropertyEntryObservation(assertions.token_property);
-  return assertions;
+  StabilizeRunnableSampleAssertions(assertions);
 }
 
 }  // namespace objc3c::runtime::probe::canonical_runnable_sample_set

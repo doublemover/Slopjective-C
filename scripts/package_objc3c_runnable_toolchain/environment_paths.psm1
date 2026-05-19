@@ -17,9 +17,9 @@ function Resolve-RunnableToolchainPackageEnvironment {
   }
 
   $resolvedPackageRoot = Resolve-PackageRoot -RepoRoot $repoRoot -RequestedRoot $PackageRoot
-  $manifestPath = Join-Path $resolvedPackageRoot ($ManifestRelativePath.Replace('/', '\\'))
-  $manifestDir = Split-Path -Parent $manifestPath
-  New-Item -ItemType Directory -Force -Path $manifestDir | Out-Null
+  $manifestPath = Resolve-PackageManifestPath `
+    -PackageRoot $resolvedPackageRoot `
+    -ManifestRelativePath $ManifestRelativePath
 
   return [ordered]@{
     RepoRoot = $repoRoot

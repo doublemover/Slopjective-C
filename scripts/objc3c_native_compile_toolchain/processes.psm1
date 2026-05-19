@@ -34,7 +34,27 @@ function Invoke-NativeCompiler {
   )
 
   $command = New-NativeCompilerProcessCommand -ExePath $ExePath -Arguments $Arguments
-  $process = Start-Process -FilePath $command.file_path -ArgumentList $command.arguments -NoNewWindow -Wait -PassThru
+  $compilerItem = Get-Item -LiteralPath $command.file_path -Force
+  if (($compilerItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw "native compiler executable cannot be a reparse point: $($command.file_path)"
+  }
+  $isWindowsPlatform = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
+    [System.Runtime.InteropServices.OSPlatform]::Windows
+  )
+  if ($isWindowsPlatform -and [System.IO.Path]::GetExtension($compilerItem.FullName) -ne ".exe") {
+    throw "native compiler executable must be a Windows .exe path: $($command.file_path)"
+  }
+
+  $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = $compilerItem.FullName
+  $startInfo.UseShellExecute = $false
+  $startInfo.CreateNoWindow = $true
+  foreach ($argument in @($command.arguments)) {
+    [void]$startInfo.ArgumentList.Add([string]$argument)
+  }
+
+  $process = [System.Diagnostics.Process]::Start($startInfo)
+  $process.WaitForExit()
   return [int]$process.ExitCode
 }
 

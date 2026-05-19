@@ -51,7 +51,7 @@ inline constexpr const char
         "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
-        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-shared-storage-bypasses";
+        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-retired-routes";
 
 inline constexpr const char
     *kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId =

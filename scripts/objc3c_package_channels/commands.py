@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from objc3c_tooling.subprocesses import python_script_command, run_completed
+from scripts.objc3c_workflow.command_powershell_policy import powershell_file_command
 
 from .paths import (
     PACKAGE_PS1,
@@ -33,16 +34,12 @@ def build_release_foundation_artifacts() -> None:
 
 def build_runnable_package(package_root: Path, manifest_relative_path: str) -> None:
     run(
-        [
+        powershell_file_command(
             PWSH,
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(PACKAGE_PS1),
+            PACKAGE_PS1,
             "-PackageRoot",
             str(package_root),
             "-ManifestRelativePath",
             manifest_relative_path,
-        ]
+        )
     )

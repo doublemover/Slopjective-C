@@ -9,45 +9,41 @@ namespace objc3c {
 namespace tooling {
 namespace method_binding_probe {
 
-inline RegistrationObservation CaptureRegistrationState() {
-  RegistrationObservation observation{};
+inline void CaptureRegistrationState(RegistrationObservation &observation) {
+  observation = RegistrationObservation{};
   observation.status =
       objc3_runtime_copy_registration_state_for_testing(&observation.state);
   ::objc3c::runtime::probe::StabilizeRegistrationState(
       observation.state, observation.module_storage,
       observation.identity_storage);
-  return observation;
 }
 
-inline SelectorTableObservation CaptureSelectorTableState() {
-  SelectorTableObservation observation{};
+inline void CaptureSelectorTableState(SelectorTableObservation &observation) {
+  observation = SelectorTableObservation{};
   observation.status =
       objc3_runtime_copy_selector_lookup_table_state_for_testing(
           &observation.state);
   ::objc3c::runtime::probe::StabilizeSelectorTableState(
       observation.state, observation.last_storage);
-  return observation;
 }
 
-inline MethodCacheStateObservation CaptureMethodCacheState() {
-  MethodCacheStateObservation observation{};
+inline void CaptureMethodCacheState(MethodCacheStateObservation &observation) {
+  observation = MethodCacheStateObservation{};
   observation.status =
       objc3_runtime_copy_method_cache_state_for_testing(&observation.state);
   ::objc3c::runtime::probe::StabilizeMethodCacheState(
       observation.state, observation.selector_storage,
       observation.class_storage, observation.owner_storage);
-  return observation;
 }
 
-inline MethodCacheEntryObservation CaptureMethodCacheEntry(
-    const MethodCacheEntryKey &key) {
-  MethodCacheEntryObservation observation{};
+inline void CaptureMethodCacheEntry(
+    const MethodCacheEntryKey &key, MethodCacheEntryObservation &observation) {
+  observation = MethodCacheEntryObservation{};
   observation.status = objc3_runtime_copy_method_cache_entry_for_testing(
       key.receiver, key.selector, &observation.entry);
   ::objc3c::runtime::probe::StabilizeMethodCacheEntry(
       observation.entry, observation.selector_storage,
       observation.class_storage, observation.owner_storage);
-  return observation;
 }
 
 } // namespace method_binding_probe

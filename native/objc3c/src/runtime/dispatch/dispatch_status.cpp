@@ -19,4 +19,10 @@ bool RuntimeDispatchStatusIsSuccess(
   return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK;
 }
 
+bool RuntimeDispatchStatusCarriesValueResult(
+    objc3_runtime_dispatch_status_code status_code) {
+  return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK ||
+         status_code == OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER;
+}
+
 }  // namespace objc3c::runtime

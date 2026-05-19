@@ -8,17 +8,16 @@
 
 namespace objc3c::runtime::probe::synthesized_accessor {
 
-inline ProbeResult CaptureSynthesizedAccessorProbe() {
-  ProbeResult result;
+inline void CaptureSynthesizedAccessorProbe(ProbeResult &result) {
+  result = ProbeResult{};
   CaptureSynthesizedAccessorSetup(result.setup);
   result.actions = ExecuteSynthesizedAccessorActions();
-  result.assertions =
-      CaptureAccessorAssertions(result.actions.widget_instance);
-  return result;
+  CaptureAccessorAssertions(result.actions.widget_instance, result.assertions);
 }
 
 inline int RunProbeMain() {
-  const ProbeResult result = CaptureSynthesizedAccessorProbe();
+  ProbeResult result{};
+  CaptureSynthesizedAccessorProbe(result);
   PrintSynthesizedAccessorReport(result);
   return 0;
 }

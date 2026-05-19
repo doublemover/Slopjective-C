@@ -24,9 +24,7 @@ def build_summary_payload(
     surfaces: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     claim_surface = surfaces["runtime_release_candidate_claim_abi_surface"]
-    evidence_surface = surfaces[
-        "runtime_final_release_evidence_descaffolding_implementation_surface"
-    ]
+    evidence_surface = surfaces["runtime_current_release_evidence_owner_payload_surface"]
     strict_claim_surface = surfaces[
         "runtime_strict_profile_claim_implementation_surface"
     ]
@@ -49,9 +47,7 @@ def build_summary_payload(
         "child_report_paths": child_report_paths,
         "live_case_run_dir": live_run_dir,
         "runtime_release_candidate_claim_abi_surface": claim_surface,
-        "runtime_final_release_evidence_descaffolding_implementation_surface": (
-            evidence_surface
-        ),
+        "runtime_current_release_evidence_owner_payload_surface": evidence_surface,
         "runtime_strict_profile_claim_implementation_surface": strict_claim_surface,
         "runtime_final_claim_publication_deprecated_path_shutdown_surface": (
             final_publication_surface

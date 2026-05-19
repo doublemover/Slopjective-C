@@ -8,16 +8,17 @@
 
 namespace objc3c::runtime::probe::object_model_lookup_reflection_runtime {
 
-inline ProbeResult CaptureObjectModelLookupReflectionRuntimeProbe() {
-  ProbeResult result;
+inline void CaptureObjectModelLookupReflectionRuntimeProbe(
+    ProbeResult &result) {
+  result = ProbeResult{};
   CaptureObjectModelFixture(result.fixture);
   CaptureWidgetRuntimeDispatchAssertions(result.fixture, result.dispatch);
   CaptureLookupReflectionState(result.reflection);
-  return result;
 }
 
 inline int RunProbeMain() {
-  const ProbeResult result = CaptureObjectModelLookupReflectionRuntimeProbe();
+  ProbeResult result{};
+  CaptureObjectModelLookupReflectionRuntimeProbe(result);
   PrintProbeReport(result);
   return 0;
 }

@@ -15,7 +15,8 @@ extern "C" int objc3_runtime_dispatch_i32(int receiver, const char *selector,
                                           int a0, int a1, int a2, int a3) {
   const objc3_runtime_dispatch_i32_result result =
       objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
-  if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
+  if (!objc3c::runtime::RuntimeDispatchStatusCarriesValueResult(
+          result.status_code)) {
     objc3c::runtime::AbortRuntimeDispatchFailure(result);
   }
   return result.value;

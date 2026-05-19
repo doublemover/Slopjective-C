@@ -19,7 +19,8 @@ function Get-RunnableToolchainPackageHelperExportedFunctionNames {
     "Get-RequiredRunnableToolchainPackageFiles",
     "Get-RepoRelativeStdlibFiles",
     "Get-RepoRelativeWorkflowPythonFiles",
-    "Resolve-PackageRoot"
+    "Resolve-PackageRoot",
+    "Resolve-PackageManifestPath"
   )
 }
 

@@ -39,7 +39,7 @@ function Get-CanonicalLinkDiagnosticsText {
   foreach ($match in [regex]::Matches($normalizedRaw, '(?im)unresolved external symbol\s+([A-Za-z_.$?@][A-Za-z0-9_.$?@]*)')) {
     $null = $unresolvedSymbols.Add($match.Groups[1].Value)
   }
-  foreach ($match in [regex]::Matches($normalizedRaw, '(?im)undefined (?:reference|symbol)(?:\s+to)?\s+[^A-Za-z_.$?@]*([A-Za-z_.$?@][A-Za-z0-9_.$?@]*)')) {
+  foreach ($match in [regex]::Matches($normalizedRaw, '(?im)undefined (?:reference|symbol)(?::|\s+to)?\s*[^A-Za-z_.$?@]*([A-Za-z_.$?@][A-Za-z0-9_.$?@]*)')) {
     $null = $unresolvedSymbols.Add($match.Groups[1].Value)
   }
   foreach ($symbol in @($unresolvedSymbols) | Sort-Object) {
@@ -50,6 +50,8 @@ function Get-CanonicalLinkDiagnosticsText {
   if ($normalizedRaw -match '(?im)\bentry point\b') {
     $entryPointMissing = $true
   } elseif ($normalizedRaw -match '(?im)undefined (?:reference|symbol)(?:\s+to)?\s+[^A-Za-z_.$?@]*main\b') {
+    $entryPointMissing = $true
+  } elseif ($normalizedRaw -match '(?im)\bsubsystem must be defined\b') {
     $entryPointMissing = $true
   }
   if ($entryPointMissing) {

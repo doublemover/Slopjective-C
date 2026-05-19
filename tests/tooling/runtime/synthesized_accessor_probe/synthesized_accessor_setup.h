@@ -6,26 +6,27 @@
 
 namespace objc3c::runtime::probe::synthesized_accessor {
 
-inline RegistrationStateObservation CaptureRegistrationStateObservation() {
-  RegistrationStateObservation observation;
+inline void CaptureRegistrationStateObservation(
+    RegistrationStateObservation &observation) {
+  observation = RegistrationStateObservation{};
   (void)objc3_runtime_copy_registration_state_for_testing(&observation.state);
   ::objc3c::runtime::probe::StabilizeRegistrationState(
       observation.state, observation.module, observation.identity);
-  return observation;
 }
 
-inline SelectorTableStateObservation CaptureSelectorTableStateObservation() {
-  SelectorTableStateObservation observation;
+inline void CaptureSelectorTableStateObservation(
+    SelectorTableStateObservation &observation) {
+  observation = SelectorTableStateObservation{};
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
       &observation.state);
   ::objc3c::runtime::probe::StabilizeSelectorTableState(
       observation.state, observation.last_selector);
-  return observation;
 }
 
 inline void CaptureSynthesizedAccessorSetup(AccessorSetup &setup) {
-  setup.registration_state = CaptureRegistrationStateObservation();
-  setup.selector_table_state = CaptureSelectorTableStateObservation();
+  setup = AccessorSetup{};
+  CaptureRegistrationStateObservation(setup.registration_state);
+  CaptureSelectorTableStateObservation(setup.selector_table_state);
 }
 
 }  // namespace objc3c::runtime::probe::synthesized_accessor

@@ -122,7 +122,7 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   }
   if (!IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(summary)) {
     summary.failure_reason =
-        "compatibility/strictness/claim semantics summary is incomplete";
+        "canonical selection claim semantics summary is incomplete";
   }
   return summary;
 }

@@ -7,10 +7,10 @@ from typing import Any
 from .config import (
     ACCEPTANCE_REPORT,
     DASHBOARD_SCHEMA_PATH,
-    DEPRECATED_SIDECAR_FILENAMES,
     INTEGRATION_REPORT,
     REQUIRED_CASES,
     REQUIRED_SURFACE_CONTRACTS,
+    RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
     TARGETED_PROFILE_IDS,
 )
 from .io import repo_rel
@@ -103,9 +103,7 @@ def validate_release_candidate_surface_relationships(
     surfaces: dict[str, dict[str, Any]],
 ) -> None:
     claim_surface = surfaces["runtime_release_candidate_claim_abi_surface"]
-    evidence_surface = surfaces[
-        "runtime_final_release_evidence_descaffolding_implementation_surface"
-    ]
+    evidence_surface = surfaces["runtime_current_release_evidence_owner_payload_surface"]
     strict_claim_surface = surfaces[
         "runtime_strict_profile_claim_implementation_surface"
     ]
@@ -128,16 +126,16 @@ def validate_release_candidate_surface_relationships(
     expect(
         evidence_surface.get("runtime_release_candidate_claim_abi_surface_contract_id")
         == claim_surface.get("contract_id"),
-        "final release evidence implementation surface drifted from the release-candidate claim ABI contract",
+        "current release evidence owner payload surface drifted from the release-candidate claim ABI contract",
     )
     expect(
         dashboard_surface.get("dashboard_schema_path") == DASHBOARD_SCHEMA_PATH,
         "claim dashboard schema surface drifted from the live dashboard schema path",
     )
     expect(
-        final_publication_surface.get("deprecated_sidecar_filenames")
-        == DEPRECATED_SIDECAR_FILENAMES,
-        "final claim publication surface drifted from the retired sidecar inventory",
+        final_publication_surface.get("retired_artifact_filenames")
+        == RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
+        "final claim publication surface drifted from the retired release-claim artifact inventory",
     )
 
 

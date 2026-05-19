@@ -8,19 +8,19 @@
 
 namespace objc3c::runtime::probe::property_ivar_execution_matrix {
 
-inline ProbeResult CapturePropertyIvarExecutionMatrixProbe() {
-  ProbeResult result;
+inline void CapturePropertyIvarExecutionMatrixProbe(ProbeResult &result) {
+  result = ProbeResult{};
   result.fixture = SetUpWidgetFixture();
-  result.execution =
-      ExecutePropertyIvarMatrixCases(result.fixture.widget_instance);
+  ExecutePropertyIvarMatrixCases(result.fixture.widget_instance,
+                                 result.execution);
   CaptureWidgetFixtureEntry(result.fixture);
-  result.assertions =
-      CapturePropertyIvarExecutionAssertions(result.fixture.widget_instance);
-  return result;
+  CapturePropertyIvarExecutionAssertions(result.fixture.widget_instance,
+                                         result.assertions);
 }
 
 inline int RunProbeMain() {
-  const ProbeResult result = CapturePropertyIvarExecutionMatrixProbe();
+  ProbeResult result{};
+  CapturePropertyIvarExecutionMatrixProbe(result);
   PrintProbeReport(result);
   return 0;
 }

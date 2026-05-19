@@ -7,11 +7,11 @@
 
 namespace objc3::artifacts::frontend {
 
-void WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
+void WriteRuntimeCurrentReleaseEvidenceOwnerPayloadSurface(
     std::ostream &manifest,
     const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api) {
-  manifest << "  \"runtime_final_release_evidence_descaffolding_implementation_surface\":{\"contract_id\":\""
-           << kObjc3RuntimeFinalReleaseEvidenceDescaffoldingImplementationSurfaceContractId
+  manifest << "  \"runtime_current_release_evidence_owner_payload_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeCurrentReleaseEvidenceOwnerPayloadSurfaceContractId
            << "\",\"runtime_release_candidate_claim_abi_surface_contract_id\":\""
            << kObjc3RuntimeReleaseCandidateClaimAbiSurfaceContractId
            << "\",\"public_header_path\":\""
@@ -29,10 +29,10 @@ void WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
            << ",\"dashboard_status_artifact_name\":\"module.objc3-dashboard-status.json\""
            << ",\"advanced_feature_gate_artifact_name\":\"module.objc3-advanced-feature-gate.json\""
            << ",\"release_candidate_matrix_artifact_name\":\"module.objc3-release-candidate-matrix.json\""
-           << ",\"authoritative_probe_path\":\""
+           << ",\"authoritative_probe_paths\":[\""
            << kObjc3RuntimeReleaseCandidateEvidenceProbePath
-           << "\",\"implementation_model\":\""
-           << kObjc3RuntimeReleaseCandidateEvidenceImplementationModel
+           << "\"],\"current_release_evidence_owner_payload_model\":\""
+           << kObjc3RuntimeCurrentReleaseEvidenceOwnerPayloadModel
            << "\""
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"

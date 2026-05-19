@@ -58,7 +58,7 @@ void WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
            << ",\"tests/tooling/runtime/arc_debug_instrumentation_probe.cpp\"]"
            << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
            << ",\"no-milestone-specific-scaffolding\""
-           << ",\"hard-cut-storage-global-body-proof\"]"
+           << ",\"no-storage-global-retired-routes-or-sidecar-body-proof\"]"
            << ",\"implementation_owned_property_entries\":"
            << executable_accessor_layout_lowering_summary
                   .implementation_owned_property_entries

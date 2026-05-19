@@ -20,17 +20,20 @@ inline void StabilizeAggregateQueryObservation(
 
 inline void CaptureCountPropertyLookup(
     PropertyLookupObservation &observation) {
+  observation = PropertyLookupObservation{};
   (void)objc3_runtime_copy_property_entry_for_testing(
       kWidgetClassName, kCountPropertyName, &observation.snapshot);
 }
 
 inline void CaptureTracerConformanceLookup(
     ProtocolConformanceObservation &observation) {
+  observation = ProtocolConformanceObservation{};
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       kWidgetClassName, kTracerProtocolName, &observation.snapshot);
 }
 
 inline void CaptureAggregateLookupState(AggregateQueryObservation &aggregate) {
+  aggregate = AggregateQueryObservation{};
   (void)objc3_runtime_copy_object_model_query_state_for_testing(
       &aggregate.snapshot);
   StabilizeAggregateQueryObservation(aggregate);
@@ -38,6 +41,7 @@ inline void CaptureAggregateLookupState(AggregateQueryObservation &aggregate) {
 
 inline void CaptureLookupReflectionState(
     LookupReflectionCapture &reflection) {
+  reflection = LookupReflectionCapture{};
   CaptureCountPropertyLookup(reflection.count_property);
   CaptureTracerConformanceLookup(reflection.tracer_query);
   CaptureAggregateLookupState(reflection.aggregate);

@@ -21,8 +21,8 @@ function Get-CoreRecoveryNilReceiverCaseDefinitions {
       RequireObjc3ManifestSurface = $true
     },
     @{
-      Source = "tests/tooling/fixtures/native/recovery/positive/message_send_nil_receiver_semantic_compatibility.objc3"
-      CaseName = "objc3_dispatch_nil_receiver_semantic_compatibility"
+      Source = "tests/tooling/fixtures/native/recovery/positive/message_send_nil_receiver_zero_result_positive.objc3"
+      CaseName = "objc3_dispatch_nil_receiver_zero_result"
       RequireLl = $true
       RequiredLlTokens = @("define i32 @main()", "icmp eq i32", "define i32 @objc3c_entry")
       ForbiddenLlTokens = @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "msg_dispatch_")

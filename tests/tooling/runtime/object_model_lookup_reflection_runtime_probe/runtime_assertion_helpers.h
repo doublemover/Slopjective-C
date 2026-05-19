@@ -8,6 +8,7 @@ namespace objc3c::runtime::probe::object_model_lookup_reflection_runtime {
 
 inline void CaptureWidgetRuntimeDispatchAssertions(
     const ObjectModelFixture &fixture, RuntimeDispatchAssertions &assertions) {
+  assertions = RuntimeDispatchAssertions{};
   assertions.traced_value = objc3_runtime_dispatch_i32(
       fixture.initialized_widget, kTracedValueSelector, 0, 0, 0, 0);
   (void)objc3_runtime_dispatch_i32(fixture.initialized_widget,

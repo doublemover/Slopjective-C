@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.domains.block_arc_runtime_arc_assertions import (
     assert_arc_cleanup_scope_runtime_fixture,
     assert_arc_implicit_cleanup_runtime_fixture,
@@ -49,6 +50,22 @@ def check_block_helper_runtime_execution_case(
         "block runtime byref forwarding probe",
     )
     assert_byref_forwarding_probe_payload(byref_forwarding_payload)
+
+    copy_dispose_payload = compile_run_json_probe(
+        clangxx,
+        runtime_probe("block_runtime_copy_dispose_invoke_probe.cpp"),
+        case_dir / "block_runtime_copy_dispose_invoke_probe.exe",
+        "block runtime copy/dispose invoke probe",
+    )
+    expect(
+        copy_dispose_payload.get("copy_count_after_promotion") == 1
+        and copy_dispose_payload.get("invoke_result") == 117
+        and copy_dispose_payload.get("dispose_count_before_final_release") == 0
+        and copy_dispose_payload.get("dispose_count_after_final_release") == 1
+        and copy_dispose_payload.get("post_release_callback_count") == 0
+        and copy_dispose_payload.get("invoke_after_release_result") == 0,
+        "expected block runtime copy/dispose invoke probe to preserve promoted pointer capture lifetime and reject stale post-release invocation",
+    )
 
     owned = compile_link_run_fixture(
         clangxx,
@@ -140,6 +157,18 @@ def check_block_helper_runtime_execution_case(
             ),
             "byref_forwarding_second_invoke_result": byref_forwarding_payload.get(
                 "second_invoke_result"
+            ),
+            "copy_dispose_probe_copy_count_after_promotion": copy_dispose_payload.get(
+                "copy_count_after_promotion"
+            ),
+            "copy_dispose_probe_invoke_result": copy_dispose_payload.get(
+                "invoke_result"
+            ),
+            "copy_dispose_probe_dispose_count_after_final_release": (
+                copy_dispose_payload.get("dispose_count_after_final_release")
+            ),
+            "copy_dispose_probe_post_release_callback_count": (
+                copy_dispose_payload.get("post_release_callback_count")
             ),
             "byref_copy_helper_required_sites": byref_copy_dispose_surface.get(
                 "copy_helper_required_sites"

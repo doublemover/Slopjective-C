@@ -34,7 +34,7 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
         "metaprogramming-derive-property-behavior-semantics",
         "metaprogramming-macro-safety-cache-diagnostics",
         "import-version-feature-claim-diagnostics",
-        "scaffold-retirement-deprecated-sidecar-compatibility-diagnostics",
+        "retired-artifact-rejection-contracts",
         "executable-try-throw-do-catch-semantics",
         "bridging-filter-unwind-compatibility-diagnostics",
         "property-reflection-accessor-compatibility-diagnostics",

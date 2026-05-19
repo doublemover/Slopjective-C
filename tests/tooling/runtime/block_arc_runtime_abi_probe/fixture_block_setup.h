@@ -7,40 +7,54 @@ namespace runtime {
 namespace probe {
 namespace block_arc_runtime_abi {
 
+inline ProbeCaptureState &ProbeCounters() {
+  static ProbeCaptureState counters;
+  return counters;
+}
+
+inline void ResetProbeCounters(int base) {
+  ProbeCounters() = ProbeCaptureState{base, 0, 0};
+}
+
+inline ProbeCaptureState CaptureProbeCounters() {
+  return ProbeCounters();
+}
+
 extern "C" inline int ProbeInvoke(void *storage,
                                   int a0,
                                   int a1,
                                   int a2,
                                   int a3) {
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return -1;
   }
-  return block->capture->base + a0 + a1 + a2 + a3;
+  return *block->captured_base + a0 + a1 + a2 + a3;
 }
 
 extern "C" inline void ProbeCopy(void *storage) {
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return;
   }
-  ++block->capture->copy_count;
+  ++ProbeCounters().copy_count;
 }
 
 extern "C" inline void ProbeDispose(void *storage) {
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return;
   }
-  ++block->capture->dispose_count;
+  ++ProbeCounters().dispose_count;
 }
 
-inline ProbeBlockStorage SetUpProbeBlockStorage(ProbeCaptureState *capture) {
-  return ProbeBlockStorage{&ProbeInvoke, &ProbeCopy, &ProbeDispose, capture};
+inline ProbeBlockStorage SetUpProbeBlockStorage(int *captured_base) {
+  return ProbeBlockStorage{&ProbeInvoke, &ProbeCopy, &ProbeDispose,
+                           captured_base};
 }
 
-inline ProbeCaptureState SetUpProbeCaptureState() {
-  return ProbeCaptureState{7, 0, 0};
+inline int SetUpCapturedBaseCell() {
+  return 7;
 }
 
 } // namespace block_arc_runtime_abi

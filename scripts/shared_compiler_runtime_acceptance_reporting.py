@@ -75,8 +75,8 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "runtime_strict_profile_claim_implementation_surface": surfaces[
             "runtime_strict_profile_claim_implementation_surface"
         ],
-        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": surfaces[
-            "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface"
+        "runtime_retired_artifact_rejection_contracts_surface": surfaces[
+            "runtime_retired_artifact_rejection_contracts_surface"
         ],
         "runtime_claim_publication_dashboard_schema_surface": surfaces[
             "runtime_claim_publication_dashboard_schema_surface"
@@ -87,8 +87,8 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "runtime_release_candidate_claim_abi_surface": surfaces[
             "runtime_release_candidate_claim_abi_surface"
         ],
-        "runtime_final_release_evidence_descaffolding_implementation_surface": surfaces[
-            "runtime_final_release_evidence_descaffolding_implementation_surface"
+        "runtime_current_release_evidence_owner_payload_surface": surfaces[
+            "runtime_current_release_evidence_owner_payload_surface"
         ],
         "runtime_metaprogramming_source_surface": surfaces[
             "runtime_metaprogramming_source_surface"

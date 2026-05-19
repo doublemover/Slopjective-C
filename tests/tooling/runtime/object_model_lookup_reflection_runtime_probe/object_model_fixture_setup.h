@@ -20,6 +20,7 @@ inline int WidgetClassReceiverIdentity(
 }
 
 inline void CaptureObjectModelFixture(ObjectModelFixture &fixture) {
+  fixture = ObjectModelFixture{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kWidgetClassName, &fixture.widget_class.snapshot);
   fixture.widget_class_receiver =

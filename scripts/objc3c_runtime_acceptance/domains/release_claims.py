@@ -73,41 +73,4 @@ def exported_case_names() -> list[str]:
     return sorted(_EXPORTED_CASE_NAMES)
 
 
-_STRICTNESS_TOKEN = "".join(("com", "pat", "ibility"))
-_RETIRED_CASE_ALIAS = (
-    "check_scaffold_retirement_deprecated_sidecar_"
-    + _STRICTNESS_TOKEN
-    + "_diagnostics_case"
-)
-_RETIRED_SURFACE_ALIAS = (
-    "build_runtime_scaffold_retirement_deprecated_sidecar_"
-    + _STRICTNESS_TOKEN
-    + "_diagnostics_surface"
-)
-_EVIDENCE_TRANSITION_TOKEN = "".join(("des", "caff", "olding"))
-_EVIDENCE_CASE_ALIAS = (
-    "check_final_release_evidence_"
-    + _EVIDENCE_TRANSITION_TOKEN
-    + "_implementation_case"
-)
-_EVIDENCE_SURFACE_ALIAS = (
-    "build_runtime_final_release_evidence_"
-    + _EVIDENCE_TRANSITION_TOKEN
-    + "_implementation_surface"
-)
-_LEGACY_EXTERNAL_NAME_MAP = {
-    _RETIRED_CASE_ALIAS: check_retired_artifact_rejection_contracts_case,
-    _RETIRED_SURFACE_ALIAS: build_runtime_retired_artifact_rejection_contracts_surface,
-    _EVIDENCE_CASE_ALIAS: check_current_release_evidence_owner_payload_case,
-    _EVIDENCE_SURFACE_ALIAS: build_runtime_current_release_evidence_owner_payload_surface,
-}
-
-
-def __getattr__(name: str) -> object:
-    try:
-        return _LEGACY_EXTERNAL_NAME_MAP[name]
-    except KeyError:
-        raise AttributeError(name) from None
-
-
 __all__ = [*_EXPORTED_CASE_NAMES, "exported_case_names"]

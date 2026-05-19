@@ -8,7 +8,8 @@ namespace tooling {
 namespace method_cache_slow_path_probe {
 
 inline int RunMethodCacheSlowPathProbe() {
-  const SlowPathProbeRun run = CaptureSlowPathProbeRun();
+  SlowPathProbeRun run{};
+  CaptureSlowPathProbeRun(run);
   PrintMethodCacheSlowPathProbeReport(run);
   return 0;
 }

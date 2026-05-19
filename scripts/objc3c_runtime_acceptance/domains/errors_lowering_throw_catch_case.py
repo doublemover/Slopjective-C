@@ -31,9 +31,11 @@ def check_executable_throw_catch_cleanup_lowering_case(
     ll_text = ll_path.read_text(encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     throws_abi = manifest.get("lowering_error_handling_throws_abi_propagation", {})
-    result_replay = manifest.get("error_handling_result_and_bridging_artifact_replay", {})
-    ns_error_bridging = manifest.get("ns_error_bridging_lowering_surface", {})
-    unwind_cleanup = manifest.get("unwind_cleanup_lowering_surface", {})
+    result_replay = manifest.get(
+        "lowering_error_handling_result_and_bridging_artifact_replay", {}
+    )
+    ns_error_bridging = manifest.get("lowering_ns_error_bridging", {})
+    unwind_cleanup = manifest.get("lowering_unwind_cleanup", {})
     expect(
         isinstance(throws_abi, dict)
         and throws_abi.get("contract_id")

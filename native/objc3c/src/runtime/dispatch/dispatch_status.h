@@ -9,5 +9,7 @@ objc3_runtime_dispatch_status_code RuntimeStrictDispatchStatus(
     objc3_runtime_dispatch_status_code unresolved_status);
 bool RuntimeDispatchStatusIsSuccess(
     objc3_runtime_dispatch_status_code status_code);
+bool RuntimeDispatchStatusCarriesValueResult(
+    objc3_runtime_dispatch_status_code status_code);
 
 }  // namespace objc3c::runtime

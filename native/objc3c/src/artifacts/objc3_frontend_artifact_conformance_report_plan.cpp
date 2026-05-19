@@ -60,10 +60,10 @@ void WriteObjc3FrontendArtifactConformanceReportManifestSurfaces(
     const Objc3FrontendArtifactConformanceReportPlan &plan) {
   manifest
       // semantic freeze anchor: sema publishes the fail-closed
-      // legality boundary that classifies live compatibility selections,
+      // legality boundary that classifies live canonical selections,
       // source-only claim downgrades, and strictness/macro claim
       // rejections before lowering and conformance gates consume them.
-      << ",\"objc_compatibility_strictness_claim_semantics\":"
+      << ",\"objc_canonical_selection_claim_semantics\":"
       << objc3::artifacts::reports::
              BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
                  plan.frontend_compatibility_strictness_claim_semantics)

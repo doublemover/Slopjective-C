@@ -16,14 +16,17 @@ inline void StabilizeRealizedClassObservation(
       observation.category_name);
 }
 
-inline RunnableSampleFixture CaptureRunnableSampleFixture() {
-  RunnableSampleFixture fixture;
+inline void StabilizeRunnableSampleFixture(RunnableSampleFixture &fixture) {
+  StabilizeRealizedClassObservation(fixture.widget_entry);
+}
+
+inline void CaptureRunnableSampleFixture(RunnableSampleFixture &fixture) {
+  fixture = RunnableSampleFixture{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kWidgetClassName, &fixture.widget_entry.entry);
-  StabilizeRealizedClassObservation(fixture.widget_entry);
+  StabilizeRunnableSampleFixture(fixture);
   fixture.widget_class_receiver =
       static_cast<int>(fixture.widget_entry.entry.base_identity + 2U);
-  return fixture;
 }
 
 }  // namespace objc3c::runtime::probe::canonical_runnable_sample_set

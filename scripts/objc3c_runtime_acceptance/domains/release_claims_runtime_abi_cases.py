@@ -74,8 +74,8 @@ def check_release_candidate_runtime_claim_abi_case(
         "expected release-candidate claim ABI surface to publish the claimed and targeted profile sets",
     )
     expect(
-        runtime_claim_abi_surface.get("authoritative_probe_path")
-        == RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE,
+        runtime_claim_abi_surface.get("authoritative_probe_paths")
+        == [RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE],
         "expected release-candidate claim ABI surface to publish the authoritative runtime probe path",
     )
 

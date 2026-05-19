@@ -7,16 +7,16 @@
 
 namespace objc3c::runtime::probe::runtime_backed_storage_ownership_reflection {
 
-inline ProbeResult CaptureRuntimeBackedStorageOwnershipReflectionProbe() {
-  ProbeResult result;
+inline void CaptureRuntimeBackedStorageOwnershipReflectionProbe(
+    ProbeResult &result) {
+  result = ProbeResult{};
   CaptureRealizedBoxEntry(result.fixture);
   CaptureBackedStorageOwnershipAssertions(result.assertions);
-  return result;
 }
 
 inline int RunProbeMain() {
-  const ProbeResult result =
-      CaptureRuntimeBackedStorageOwnershipReflectionProbe();
+  ProbeResult result{};
+  CaptureRuntimeBackedStorageOwnershipReflectionProbe(result);
   PrintProbeReport(result);
   return 0;
 }

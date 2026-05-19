@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$script:RecoveryContractContext = $null
+$script:RecoveryContractContextVariableName = "Objc3cNativeRecoveryContractContext"
 
 function Set-RecoveryContractContext {
   param(
@@ -11,21 +11,31 @@ function Set-RecoveryContractContext {
     [string]$PowerShellExecutable
   )
 
-  $script:RecoveryContractContext = [pscustomobject]@{
+  $context = [pscustomobject]@{
     RepoRoot = $RepoRoot
     OutDir = $OutDir
     CompilerPath = $CompilerPath
     CompileWrapperScript = $CompileWrapperScript
     PowerShellExecutable = $PowerShellExecutable
   }
+  Set-Variable `
+    -Name $script:RecoveryContractContextVariableName `
+    -Value $context `
+    -Scope Global `
+    -Force
 }
 
 function Get-RecoveryContractContext {
-  if ($null -eq $script:RecoveryContractContext) {
+  $context = Get-Variable `
+    -Name $script:RecoveryContractContextVariableName `
+    -Scope Global `
+    -ValueOnly `
+    -ErrorAction SilentlyContinue
+  if ($null -eq $context) {
     throw "contract FAIL: recovery contract runner context was not initialized"
   }
 
-  return $script:RecoveryContractContext
+  return $context
 }
 
 function Invoke-Objc3cNativeWithRecovery {

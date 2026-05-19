@@ -34,11 +34,8 @@ _RUNTIME_ACCEPTANCE_EXPORTS = {
     "check_strict_profile_claim_implementation_case": (
         release_claims.check_strict_profile_claim_implementation_case
     ),
-    "check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case": (
-        getattr(
-            release_claims,
-            "check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case",
-        )
+    "check_retired_artifact_rejection_contracts_case": (
+        release_claims.check_retired_artifact_rejection_contracts_case
     ),
     "check_claim_publication_dashboard_schema_surface_case": (
         release_claims.check_claim_publication_dashboard_schema_surface_case
@@ -49,11 +46,8 @@ _RUNTIME_ACCEPTANCE_EXPORTS = {
     "check_release_candidate_runtime_claim_abi_case": (
         release_claims.check_release_candidate_runtime_claim_abi_case
     ),
-    "check_final_release_evidence_descaffolding_implementation_case": (
-        getattr(
-            release_claims,
-            "check_final_release_evidence_descaffolding_implementation_case",
-        )
+    "check_current_release_evidence_owner_payload_case": (
+        release_claims.check_current_release_evidence_owner_payload_case
     ),
     "build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface": (
         release_claims.build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface
@@ -67,11 +61,8 @@ _RUNTIME_ACCEPTANCE_EXPORTS = {
     "build_runtime_strict_profile_claim_implementation_surface": (
         release_claims.build_runtime_strict_profile_claim_implementation_surface
     ),
-    "build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": (
-        getattr(
-            release_claims,
-            "build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface",
-        )
+    "build_runtime_retired_artifact_rejection_contracts_surface": (
+        release_claims.build_runtime_retired_artifact_rejection_contracts_surface
     ),
     "build_runtime_claim_publication_dashboard_schema_surface": (
         release_claims.build_runtime_claim_publication_dashboard_schema_surface
@@ -82,11 +73,8 @@ _RUNTIME_ACCEPTANCE_EXPORTS = {
     "build_runtime_release_candidate_claim_abi_surface": (
         release_claims.build_runtime_release_candidate_claim_abi_surface
     ),
-    "build_runtime_final_release_evidence_descaffolding_implementation_surface": (
-        getattr(
-            release_claims,
-            "build_runtime_final_release_evidence_descaffolding_implementation_surface",
-        )
+    "build_runtime_current_release_evidence_owner_payload_surface": (
+        release_claims.build_runtime_current_release_evidence_owner_payload_surface
     ),
 }
 
@@ -106,13 +94,13 @@ def run_release_candidate_case_commands(
         runtime_backend.check_strict_profile_feature_claim_source_surface_case(run_dir),
         runtime_backend.check_claimability_semantics_release_policy_case(run_dir),
         runtime_backend.check_strict_profile_claim_implementation_case(run_dir),
-        runtime_backend.check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
+        runtime_backend.check_retired_artifact_rejection_contracts_case(
             run_dir
         ),
         runtime_backend.check_claim_publication_dashboard_schema_surface_case(run_dir),
         runtime_backend.check_final_claim_publication_deprecated_path_shutdown_case(run_dir),
         runtime_backend.check_release_candidate_runtime_claim_abi_case(clangxx, run_dir),
-        runtime_backend.check_final_release_evidence_descaffolding_implementation_case(
+        runtime_backend.check_current_release_evidence_owner_payload_case(
             clangxx,
             run_dir,
         ),

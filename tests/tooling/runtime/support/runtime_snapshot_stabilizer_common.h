@@ -11,7 +11,8 @@ namespace objc3c::runtime::probe {
 // or otherwise mutate runtime state must copy strings before printing later.
 inline void StabilizeNullableCString(const char *source, std::string &storage,
                                      const char *&field) {
-  storage = source != nullptr ? source : "";
+  const std::string stable_source = source != nullptr ? source : "";
+  storage = stable_source;
   field = storage.empty() ? nullptr : storage.c_str();
 }
 

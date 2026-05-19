@@ -23,14 +23,14 @@ inline constexpr std::array<ValueType, 5> kObjc3CanonicalBridgeTopReferenceTypeF
     ValueType::ObjCObjectPtr,
 };
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsContractId =
-    "objc3c.compatibility.strictness.claim.semantics.v1";
+    "objc3c.canonical.selection.claim.semantics.v1";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics";
+    "frontend.pipeline.semantic_surface.objc_canonical_selection_claim_semantics";
 // runnable-core compatibility guard anchor: sema owns the current
 // truthful split between live selections, source-only downgraded claims, and
 // fail-closed unsupported advanced surfaces around the runnable core.
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
-    "canonical-language-profile-source-only-downgrade-unsupported-fail-closed";
+    "canonical-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimDowngradeModel =
     "source-only-claims-remain-recognized-but-never-promote-to-runnable";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimRejectionModel =

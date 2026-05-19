@@ -15,8 +15,8 @@ RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID = (
 RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.strict.profile.claim.implementation.surface.v1"
 )
-RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
-    "objc3c.runtime.scaffold.retirement.deprecated.sidecar.compatibility.diagnostics.surface.v1"
+RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.retired.artifact.rejection.contracts.surface.v1"
 )
 RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.claim.publication.dashboard.schema.surface.v1"
@@ -27,12 +27,12 @@ RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID = (
 RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.release.candidate.claim.abi.surface.v1"
 )
-RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
-    "objc3c.runtime.final.release.evidence.descaffolding.implementation.surface.v1"
+RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.current.release.evidence.owner.payload.surface.v1"
 )
 
 RELEASE_CLAIMABLE_SURFACE_FIXTURE = "tests/tooling/fixtures/native/hello.objc3"
-DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES = [
+RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES = [
     "module.objc3-release-runtime-claim-matrix.json",
     "module.objc3-dashboard-ready-summary.json",
     "module.objc3-toolchain-runtime-ga-operations-scaffold.json",

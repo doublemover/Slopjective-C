@@ -157,8 +157,8 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
       showcase = "npm run objc3c -- validate-showcase"
       showcase_e2e = "npm run objc3c -- validate-runnable-showcase"
       getting_started = "npm run objc3c -- validate-getting-started"
-      smoke = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1"
-      replay = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1"
+      smoke = "npm run objc3c -- test-execution-smoke"
+      replay = "npm run objc3c -- test-execution-replay"
     }
     truthful_boundary = @(
       "staged local package root only",

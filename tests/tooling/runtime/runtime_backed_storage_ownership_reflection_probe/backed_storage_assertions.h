@@ -9,6 +9,7 @@ namespace objc3c::runtime::probe::runtime_backed_storage_ownership_reflection {
 
 inline void CaptureBackedStorageOwnershipAssertions(
     BackedStorageOwnershipAssertions &assertions) {
+  assertions = BackedStorageOwnershipAssertions{};
   CaptureStorageAccessorImplementationSurface(
       assertions.implementation_surface);
   CaptureStorageOwnershipProperty(kCurrentValuePropertyQuery,

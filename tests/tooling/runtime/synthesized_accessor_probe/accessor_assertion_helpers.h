@@ -14,30 +14,30 @@ inline void StabilizeMethodCacheObservation(
       observation.owner);
 }
 
-inline MethodCacheEntryObservation CaptureMethodCacheObservation(
-    int receiver, const char *selector) {
-  MethodCacheEntryObservation observation;
+inline void CaptureMethodCacheObservation(
+    int receiver, const char *selector,
+    MethodCacheEntryObservation &observation) {
+  observation = MethodCacheEntryObservation{};
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       receiver, selector, &observation.entry);
   StabilizeMethodCacheObservation(observation);
-  return observation;
 }
 
-inline AccessorAssertions CaptureAccessorAssertions(int widget_instance) {
-  AccessorAssertions assertions;
-  assertions.count_entry =
-      CaptureMethodCacheObservation(widget_instance, kCountGetterSelector);
-  assertions.set_count_entry =
-      CaptureMethodCacheObservation(widget_instance, kCountSetterSelector);
-  assertions.enabled_entry =
-      CaptureMethodCacheObservation(widget_instance, kEnabledGetterSelector);
-  assertions.set_enabled_entry =
-      CaptureMethodCacheObservation(widget_instance, kEnabledSetterSelector);
-  assertions.value_entry =
-      CaptureMethodCacheObservation(widget_instance, kValueGetterSelector);
-  assertions.set_value_entry =
-      CaptureMethodCacheObservation(widget_instance, kValueSetterSelector);
-  return assertions;
+inline void CaptureAccessorAssertions(int widget_instance,
+                                      AccessorAssertions &assertions) {
+  assertions = AccessorAssertions{};
+  CaptureMethodCacheObservation(widget_instance, kCountGetterSelector,
+                                assertions.count_entry);
+  CaptureMethodCacheObservation(widget_instance, kCountSetterSelector,
+                                assertions.set_count_entry);
+  CaptureMethodCacheObservation(widget_instance, kEnabledGetterSelector,
+                                assertions.enabled_entry);
+  CaptureMethodCacheObservation(widget_instance, kEnabledSetterSelector,
+                                assertions.set_enabled_entry);
+  CaptureMethodCacheObservation(widget_instance, kValueGetterSelector,
+                                assertions.value_entry);
+  CaptureMethodCacheObservation(widget_instance, kValueSetterSelector,
+                                assertions.set_value_entry);
 }
 
 }  // namespace objc3c::runtime::probe::synthesized_accessor

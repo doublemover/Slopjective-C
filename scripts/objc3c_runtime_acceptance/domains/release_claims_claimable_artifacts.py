@@ -30,8 +30,8 @@ class ClaimableSurfaceArtifacts:
         return self.report.get("feature_claim_truth_surface", {})
 
     @property
-    def compatibility_semantics(self) -> dict[str, Any]:
-        return self.report.get("compatibility_strictness_claim_semantics", {})
+    def canonical_selection_claim_semantics(self) -> dict[str, Any]:
+        return self.report.get("canonical_selection_claim_semantics", {})
 
 
 def compile_claimable_surface(run_dir: Path, case_id: str) -> ClaimableSurfaceArtifacts:

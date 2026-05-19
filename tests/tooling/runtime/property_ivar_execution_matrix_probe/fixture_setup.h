@@ -16,12 +16,11 @@ inline void StabilizeRealizedClassObservation(
       observation.category_name);
 }
 
-inline RealizedClassObservation CaptureWidgetClassEntry() {
-  RealizedClassObservation observation;
+inline void CaptureWidgetClassEntry(RealizedClassObservation &observation) {
+  observation = RealizedClassObservation{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kWidgetClassName, &observation.entry);
   StabilizeRealizedClassObservation(observation);
-  return observation;
 }
 
 inline WidgetFixture SetUpWidgetFixture() {
@@ -32,7 +31,8 @@ inline WidgetFixture SetUpWidgetFixture() {
 }
 
 inline void CaptureWidgetFixtureEntry(WidgetFixture &fixture) {
-  fixture.widget_entry = CaptureWidgetClassEntry();
+  fixture.widget_entry = RealizedClassObservation{};
+  CaptureWidgetClassEntry(fixture.widget_entry);
 }
 
 }  // namespace objc3c::runtime::probe::property_ivar_execution_matrix

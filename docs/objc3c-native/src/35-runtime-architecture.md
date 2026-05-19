@@ -1197,7 +1197,7 @@ or ad hoc IR inspection.
   - property table:
     - `property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records`
   - ivar layout:
-    - `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records`
+    - `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records`
   - accessor binding:
     - `effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis`
 - authoritative evidence paths:
@@ -1240,7 +1240,7 @@ body or layout truth outside the live lowering path.
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - frozen semantic models:
   - descriptor model:
-    - `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
+    - `ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering`
   - offset globals:
     - `one-retained-i64-offset-global-per-emitted-ivar-binding`
   - layout tables:

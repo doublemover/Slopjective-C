@@ -7,9 +7,8 @@
 
 namespace objc3c::runtime::probe::ownership_runtime_hook {
 
-inline OwnershipProbeRun CaptureOwnershipRuntimeHookProbe() {
-  OwnershipProbeRun run;
-
+inline void CaptureOwnershipRuntimeHookProbe(OwnershipProbeRun &run) {
+  run = OwnershipProbeRun{};
   ResetOwnershipRuntimeFixture();
   const OwnershipFixture fixture =
       AllocateOwnershipFixture(run.graphs.after_alloc);
@@ -27,11 +26,11 @@ inline OwnershipProbeRun CaptureOwnershipRuntimeHookProbe() {
   CapturePropertyEntryOwnershipHook("Box", "currentValue",
                                     run.current_value_entry);
   CapturePropertyEntryOwnershipHook("Box", "weakValue", run.weak_value_entry);
-  return run;
 }
 
 inline int RunOwnershipRuntimeHookProbe() {
-  const OwnershipProbeRun run = CaptureOwnershipRuntimeHookProbe();
+  OwnershipProbeRun run{};
+  CaptureOwnershipRuntimeHookProbe(run);
   PrintOwnershipRuntimeHookReport(run);
   return 0;
 }

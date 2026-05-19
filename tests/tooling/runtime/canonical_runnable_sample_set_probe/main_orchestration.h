@@ -8,16 +8,21 @@
 
 namespace objc3c::runtime::probe::canonical_runnable_sample_set {
 
-inline ProbeResult CaptureCanonicalRunnableSampleSetProbe() {
-  ProbeResult result;
-  result.fixture = CaptureRunnableSampleFixture();
+inline void StabilizeCanonicalRunnableSampleSetProbe(ProbeResult &result) {
+  StabilizeRunnableSampleFixture(result.fixture);
+  StabilizeRunnableSampleAssertions(result.assertions);
+}
+
+inline void CaptureCanonicalRunnableSampleSetProbe(ProbeResult &result) {
+  result = ProbeResult{};
+  CaptureRunnableSampleFixture(result.fixture);
   result.execution = ExecuteRunnableSampleSet(result.fixture);
-  result.assertions = CaptureRunnableSampleAssertions();
-  return result;
+  CaptureRunnableSampleAssertions(result.assertions);
 }
 
 inline int RunProbeMain() {
-  const ProbeResult result = CaptureCanonicalRunnableSampleSetProbe();
+  ProbeResult result;
+  CaptureCanonicalRunnableSampleSetProbe(result);
   PrintProbeReport(result);
   return 0;
 }

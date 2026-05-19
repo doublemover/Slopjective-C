@@ -21,7 +21,7 @@ from ..runtime_contract_release import (
 
 RETIRED_ARTIFACT_REJECTION_CASE_ID = "retired-artifact-rejection-contracts"
 RETIRED_ARTIFACT_REJECTION_DIAGNOSTIC_FRAGMENT = (
-    "deprecated claim/scaffold compatibility sidecar(s) detected"
+    "retired claim sidecar(s) detected next to the active release artifacts"
 )
 
 

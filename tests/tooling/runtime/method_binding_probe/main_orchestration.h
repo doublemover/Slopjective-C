@@ -9,7 +9,8 @@ namespace tooling {
 namespace method_binding_probe {
 
 inline int RunMethodBindingProbe() {
-  const MethodBindingProbeRun run = CaptureMethodBindingProbeRun();
+  MethodBindingProbeRun run{};
+  CaptureMethodBindingProbeRun(run);
   (void)MethodBindingProbeInvariantsSatisfied(run);
   PrintMethodBindingProbeReport(run);
   return 0;

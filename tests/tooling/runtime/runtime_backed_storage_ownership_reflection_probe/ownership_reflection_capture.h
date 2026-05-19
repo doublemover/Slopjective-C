@@ -60,6 +60,7 @@ inline void StabilizeStorageAccessorImplementationObservation(
 }
 
 inline void CaptureRealizedBoxEntry(StorageReflectionFixture &fixture) {
+  fixture = StorageReflectionFixture{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kBoxClassName, &fixture.box_entry.snapshot);
   ::objc3c::runtime::probe::StabilizeRealizedClassEntry(fixture.box_entry);
@@ -68,6 +69,7 @@ inline void CaptureRealizedBoxEntry(StorageReflectionFixture &fixture) {
 inline void CaptureStorageOwnershipProperty(
     const StorageOwnershipPropertyQuery &query,
     StorageOwnershipPropertyObservation &observation) {
+  observation = StorageOwnershipPropertyObservation{};
   (void)objc3_runtime_copy_property_entry_for_testing(
       query.class_name, query.property_name, &observation.snapshot);
   ::objc3c::runtime::probe::StabilizePropertyEntry(observation);
@@ -75,6 +77,7 @@ inline void CaptureStorageOwnershipProperty(
 
 inline void CaptureStorageAccessorImplementationSurface(
     StorageAccessorImplementationObservation &observation) {
+  observation = StorageAccessorImplementationObservation{};
   (void)objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing(
       &observation.snapshot);
   StabilizeStorageAccessorImplementationObservation(observation);

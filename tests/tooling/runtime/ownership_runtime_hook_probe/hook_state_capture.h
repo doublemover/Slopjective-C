@@ -6,6 +6,7 @@
 namespace objc3c::runtime::probe::ownership_runtime_hook {
 
 inline void CaptureRealizedClassGraph(RealizedClassGraphCapture &capture) {
+  capture = RealizedClassGraphCapture{};
   (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
       &capture.snapshot);
   ::objc3c::runtime::probe::StabilizeRealizedClassGraph(
@@ -16,6 +17,7 @@ inline void CapturePropertyEntryOwnershipHook(
     const char *class_name,
     const char *property_name,
     PropertyEntryOwnershipCapture &capture) {
+  capture = PropertyEntryOwnershipCapture{};
   (void)objc3_runtime_copy_property_entry_for_testing(class_name, property_name,
                                                       &capture.entry);
   ::objc3c::runtime::probe::StabilizePropertyEntry(

@@ -32,8 +32,8 @@ def build_live_surfaces(
                 results
             )
         ),
-        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": (
-            runtime_backend.build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface(
+        "runtime_retired_artifact_rejection_contracts_surface": (
+            runtime_backend.build_runtime_retired_artifact_rejection_contracts_surface(
                 results
             )
         ),
@@ -50,8 +50,8 @@ def build_live_surfaces(
         "runtime_release_candidate_claim_abi_surface": (
             runtime_backend.build_runtime_release_candidate_claim_abi_surface(results)
         ),
-        "runtime_final_release_evidence_descaffolding_implementation_surface": (
-            runtime_backend.build_runtime_final_release_evidence_descaffolding_implementation_surface(
+        "runtime_current_release_evidence_owner_payload_surface": (
+            runtime_backend.build_runtime_current_release_evidence_owner_payload_surface(
                 results
             )
         ),

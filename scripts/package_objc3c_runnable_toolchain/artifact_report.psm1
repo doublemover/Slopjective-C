@@ -63,6 +63,8 @@ function Write-RunnableToolchainPackageManifest {
     -ManifestPath $ManifestPath `
     -StagedRelativePaths $StagedRelativePaths
 
+  $manifestDir = Split-Path -Parent $ManifestPath
+  New-Item -ItemType Directory -Force -Path $manifestDir | Out-Null
   $manifestPayload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $ManifestPath -Encoding utf8
   return $manifestPayload
 }

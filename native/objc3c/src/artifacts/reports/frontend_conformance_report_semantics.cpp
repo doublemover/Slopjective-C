@@ -139,7 +139,7 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
   if (!IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
           summary)) {
     summary.failure_reason =
-        "frontend compatibility/strictness/claim semantics summary is incomplete";
+        "frontend canonical selection claim semantics summary is incomplete";
   }
   return summary;
 }

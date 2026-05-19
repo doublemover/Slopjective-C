@@ -20,21 +20,25 @@ function Get-RuntimeDispatchExpectationFromSpec {
 
   $requiresLiveRuntimeDispatch = $false
   $requiresLiveRuntimeDispatchExplicit = $false
-  $runtimeDispatchSymbol = "objc3_runtime_dispatch_i32"
+  $canonicalRuntimeDispatchSymbol = "objc3_runtime_dispatch_i32"
+  $runtimeDispatchSymbol = $canonicalRuntimeDispatchSymbol
 
-  if ($null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "requires_runtime_link") {
-    $requiresLiveRuntimeDispatch = [bool]$ExecutionSpec.requires_runtime_link
-    $requiresLiveRuntimeDispatchExplicit = $true
-  }
   if ($null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") {
     $requiresLiveRuntimeDispatch = [bool]$ExecutionSpec.requires_live_runtime_dispatch
     $requiresLiveRuntimeDispatchExplicit = $true
   }
   if ($null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "runtime_dispatch_symbol") {
     $candidate = "$($ExecutionSpec.runtime_dispatch_symbol)".Trim()
-    if (-not [string]::IsNullOrWhiteSpace($candidate)) {
-      $runtimeDispatchSymbol = $candidate
+    if ([string]::IsNullOrWhiteSpace($candidate)) {
+      throw "execution smoke FAIL: runtime_dispatch_symbol must be omitted or set to $canonicalRuntimeDispatchSymbol"
     }
+    if ($candidate -ne $canonicalRuntimeDispatchSymbol) {
+      throw "execution smoke FAIL: retired runtime dispatch symbol '$candidate' in execution metadata; expected $canonicalRuntimeDispatchSymbol"
+    }
+    if (-not $requiresLiveRuntimeDispatch) {
+      throw "execution smoke FAIL: runtime_dispatch_symbol requires requires_live_runtime_dispatch=true"
+    }
+    $runtimeDispatchSymbol = $candidate
   }
 
   return [pscustomobject]@{
