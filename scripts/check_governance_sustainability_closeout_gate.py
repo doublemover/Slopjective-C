@@ -8,6 +8,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.subprocesses import python_script_command, run_completed as run_command
 
+try:
+    from objc3c_workflow.public_command_api import public_workflow_command
+except ModuleNotFoundError:
+    from scripts.objc3c_workflow.public_command_api import public_workflow_command
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gate"
 SUMMARY_PATH = OUT_DIR / "governance_sustainability_closeout_gate.json"
@@ -136,7 +141,7 @@ COMMANDS = [
     },
     {
         "name": "repo-superclean-surface",
-        "command": python_script_command("scripts/check_repo_superclean_surface.py"),
+        "command": public_workflow_command("check-repo-superclean-surface"),
         "summary_path": None,
     },
 ]
