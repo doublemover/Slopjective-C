@@ -1,3 +1,19 @@
+add_library(objc3c_pipeline_source_closure_replay_keys STATIC
+  source_closure/frontend_source_closure_replay_keys_concurrency.cpp
+  source_closure/frontend_source_closure_replay_keys_core.cpp
+  source_closure/frontend_source_closure_replay_keys_metaprogramming_interop.cpp
+  source_closure/frontend_source_closure_replay_keys_ownership_dispatch.cpp
+  source_closure/frontend_source_closure_replay_keys_tooling_symbol_graph.cpp
+)
+target_sources(objc3c_pipeline_source_closure_replay_keys PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/frontend_source_closure_replay_keys.h
+)
+objc3c_apply_build_defaults(objc3c_pipeline_source_closure_replay_keys)
+objc3c_apply_llvm_direct_config(objc3c_pipeline_source_closure_replay_keys)
+target_link_libraries(objc3c_pipeline_source_closure_replay_keys PUBLIC
+  objc3c_sema_model
+)
+
 add_library(objc3c_pipeline STATIC
   dispatch_surface_classification.cpp
   frontend_executable_metadata_handoff.cpp
@@ -89,11 +105,6 @@ add_library(objc3c_pipeline STATIC
   frontend_semantic_metadata_summary_helpers_nullability_generics.cpp
   frontend_semantic_metadata_summary_helpers_protocol_category.cpp
   frontend_semantic_metadata_summary_helpers_selector_property.cpp
-  frontend_source_closure_replay_keys_concurrency.cpp
-  frontend_source_closure_replay_keys_core.cpp
-  frontend_source_closure_replay_keys_metaprogramming_interop.cpp
-  frontend_source_closure_replay_keys_ownership_dispatch.cpp
-  frontend_source_closure_replay_keys_tooling_symbol_graph.cpp
   frontend_concurrency_task_source_closure_helpers.cpp
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
@@ -175,7 +186,6 @@ add_library(objc3c_pipeline STATIC
   frontend_error_handling_source_closure_helpers.h
   frontend_interop_source_closure_helpers.h
   frontend_ownership_source_closure_helpers.h
-  frontend_source_closure_replay_keys.h
   frontend_semantic_metadata_summary_helpers.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
@@ -321,6 +331,7 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_ir
   objc3c_diag
   objc3c_json
+  objc3c_pipeline_source_closure_replay_keys
   objc3c_pipeline_results
   objc3c_support
 )
