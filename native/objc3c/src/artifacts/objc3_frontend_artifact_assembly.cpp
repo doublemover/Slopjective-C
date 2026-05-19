@@ -4,8 +4,8 @@
 
 #include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
+#include "pipeline/frontend_artifact_semantic_accessors.h"
 #include "pipeline/results/runtime_import_evidence_record.h"
-#include "sema/objc3_semantic_passes.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -61,8 +61,7 @@ Objc3FrontendArtifactAssemblyContext BuildObjc3FrontendArtifactAssemblyContext(
                             semantic_lowering_plan.post_pipeline_failure);
 
   auto type_system_type_semantic_model_summary =
-      ::BuildTypeSystemTypeSemanticModelSummary(
-          pipeline_result.program.ast, pipeline_result.integration_surface, 4u);
+      BuildObjc3FrontendArtifactTypeSemanticModelSummary(pipeline_result, 4u);
 
   auto runtime_metadata_plan =
       ::BuildObjc3FrontendArtifactRuntimeMetadataPlan(pipeline_result);

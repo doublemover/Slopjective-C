@@ -5,7 +5,6 @@
 #include "artifacts/objc3_frontend_artifact_assembly.h"
 #include "artifacts/objc3_frontend_artifact_bundle_publication.h"
 #include "contracts/objc3_frontend_diagnostic_stage_flattening.h"
-#include "parse/objc3_parser_contract_types.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(
@@ -13,7 +12,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
   Objc3FrontendArtifactBundle bundle;
-  const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);
+  const Objc3Program &program = pipeline_result.program.ast;
   bundle.stage_diagnostics = pipeline_result.stage_diagnostics;
   bundle.parse_lowering_readiness_surface =
       BuildObjc3ParseLoweringReadinessSurface(pipeline_result, options);

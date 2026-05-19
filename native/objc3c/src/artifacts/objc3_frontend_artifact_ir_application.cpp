@@ -29,7 +29,7 @@
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_metadata.h"
 #include "artifacts/objc3_frontend_artifacts.h"
-#include "ir/objc3_ir_frontend_metadata.h"
+#include "pipeline/frontend_ir_metadata_model.h"
 #include "support/frontend_dispatch_contract_records.h"
 #include "support/objc3_frontend_dispatch_metadata_ir_application.h"
 

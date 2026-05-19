@@ -18,7 +18,7 @@
 #include "artifacts/objc3_frontend_artifact_semantic_surface_manifest.h"
 #include "artifacts/objc3_frontend_artifact_sema_parity_manifest_fields.h"
 #include "artifacts/objc3_frontend_artifacts.h"
-#include "sema/objc3_sema_pass_manager_contract_flow.h"
+#include "pipeline/frontend_artifact_semantic_accessors.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -39,8 +39,7 @@ std::string BuildObjc3FrontendArtifactManifest(
                                                          pipeline_result);
   AppendObjc3FrontendArtifactSemaParityManifestFields(
       manifest, pipeline_result,
-      ::IsReadyObjc3SemaParityContractSurface(
-          pipeline_result.sema_parity_surface));
+      Objc3FrontendArtifactSemaParitySurfaceReady(pipeline_result));
   WriteRuntimeMetadataPublicationManifestFields(
       manifest, pipeline_result.runtime_metadata_source_ownership_boundary,
       pipeline_result.runtime_export_legality_boundary,
