@@ -177,7 +177,8 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     if (selector_stable_id == 0) {
       continue;
     }
-    const MethodCacheKey cache_key{normalized_receiver_identity,
+    const MethodCacheKey cache_key{node.base_identity,
+                                   normalized_receiver_identity,
                                    selector_stable_id};
     if (state.method_cache.find(cache_key) != state.method_cache.end()) {
       continue;
@@ -196,6 +197,7 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     cache_entry.fast_path_reason = fast_path_reason;
     cache_entry.class_name = node.class_name;
     cache_entry.owner_identity = entry.owner_identity;
+    cache_entry.lookup_start_base_identity = node.base_identity;
     cache_entry.normalized_receiver_identity = normalized_receiver_identity;
     cache_entry.selector_stable_id = selector_stable_id;
     cache_entry.parameter_count = entry.parameter_count;

@@ -48,6 +48,7 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   int found;
   int resolved;
   int dispatch_family_is_class;
+  uint64_t lookup_start_base_identity;
   uint64_t normalized_receiver_identity;
   uint64_t selector_stable_id;
   uint64_t parameter_count;

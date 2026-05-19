@@ -10,6 +10,7 @@ struct RuntimeState;
 struct SlowPathResolution;
 
 struct MethodCacheKey {
+  std::uint64_t lookup_start_base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
 
@@ -22,7 +23,7 @@ struct MethodCacheKeyHash {
 
 SlowPathResolution ResolveMethodSlowPathUnlocked(
     RuntimeState &state,
-    std::uint64_t base_identity,
+    std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity,
     DispatchFamily family,
     std::uint64_t selector_stable_id,

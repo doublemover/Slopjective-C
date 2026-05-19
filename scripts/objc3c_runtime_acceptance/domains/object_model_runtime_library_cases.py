@@ -35,6 +35,12 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
     strict_dispatch_exe = case_dir / "strict_dispatch_error_status_probe.exe"
     compile_probe(clangxx, strict_dispatch_probe, strict_dispatch_exe, [])
     run_probe(strict_dispatch_exe)
+    typed_dispatch_probe = (
+        ROOT / "tests" / "tooling" / "runtime" / "typed_dispatch_abi_probe.cpp"
+    )
+    typed_dispatch_exe = case_dir / "typed_dispatch_abi_probe.exe"
+    compile_probe(clangxx, typed_dispatch_probe, typed_dispatch_exe, [])
+    run_probe(typed_dispatch_exe)
     return CaseResult(
         case_id="runtime-library",
         probe="tests/tooling/runtime/runtime_library_probe.cpp",
@@ -48,6 +54,9 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
             ),
             "strict_dispatch_error_status_probe": (
                 "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
+            ),
+            "typed_dispatch_abi_probe": (
+                "tests/tooling/runtime/typed_dispatch_abi_probe.cpp"
             ),
         },
     )

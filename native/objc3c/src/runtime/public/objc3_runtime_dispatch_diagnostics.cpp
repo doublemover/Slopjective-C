@@ -42,4 +42,27 @@ const RuntimeDispatchDiagnosticRecord &RuntimeDispatchDiagnosticForStatus(
   return kInternalDispatchDiagnostic;
 }
 
+const char *RuntimeDispatchReturnKindName(
+    objc3_runtime_dispatch_return_kind_code return_kind) {
+  switch (return_kind) {
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32:
+      return "i32";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL:
+      return "bool";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_VOID:
+      return "void";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_OBJECT_REFERENCE:
+      return "object-reference";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_CLASS_REFERENCE:
+      return "class-reference";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_SELECTOR_REFERENCE:
+      return "selector-reference";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_PROTOCOL_REFERENCE:
+      return "protocol-reference";
+    case OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED:
+      return "unsupported";
+  }
+  return "unsupported";
+}
+
 }  // namespace objc3c::runtime

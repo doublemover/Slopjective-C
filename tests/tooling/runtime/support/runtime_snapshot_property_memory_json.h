@@ -53,6 +53,22 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
                    static_cast<unsigned long long>(snapshot.size_bytes));
   PrintUint64Field("alignment_bytes",
                    static_cast<unsigned long long>(snapshot.alignment_bytes));
+  PrintUint64Field("padding_bytes",
+                   static_cast<unsigned long long>(snapshot.padding_bytes));
+  PrintUint64Field("inherited_slot_count",
+                   static_cast<unsigned long long>(
+                       snapshot.inherited_slot_count));
+  PrintUint64Field("inherited_size_bytes",
+                   static_cast<unsigned long long>(
+                       snapshot.inherited_size_bytes));
+  PrintUint64Field("owner_size_bytes",
+                   static_cast<unsigned long long>(snapshot.owner_size_bytes));
+  PrintUint64Field("init_order_index",
+                   static_cast<unsigned long long>(snapshot.init_order_index));
+  PrintUint64Field("destroy_order_index",
+                   static_cast<unsigned long long>(
+                       snapshot.destroy_order_index));
+  PrintIntField("layout_valid", snapshot.layout_valid);
   PrintUint64Field("instance_size_bytes", static_cast<unsigned long long>(
                                               snapshot.instance_size_bytes));
   PrintStringField("queried_class_name", snapshot.queried_class_name);
@@ -71,6 +87,15 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
   PrintStringField("synthesized_binding_symbol",
                    snapshot.synthesized_binding_symbol);
   PrintStringField("ivar_layout_symbol", snapshot.ivar_layout_symbol);
+  PrintStringField("ivar_layout_replay_key", snapshot.ivar_layout_replay_key);
+  PrintStringField("property_attribute_profile",
+                   snapshot.property_attribute_profile);
+  PrintStringField("ownership_lifetime_profile",
+                   snapshot.ownership_lifetime_profile);
+  PrintStringField("ownership_runtime_hook_profile",
+                   snapshot.ownership_runtime_hook_profile);
+  PrintStringField("accessor_ownership_profile",
+                   snapshot.accessor_ownership_profile);
   PrintStringField("getter_owner_identity", snapshot.getter_owner_identity);
   PrintStringField("setter_owner_identity", snapshot.setter_owner_identity,
                    false);

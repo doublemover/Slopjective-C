@@ -15,11 +15,12 @@ struct RuntimeState;
 RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
     RuntimeState &state, const MethodCacheKey &cache_key,
     const MethodCacheEntry &entry, std::uint64_t receiver_base_identity,
+    std::uint64_t expected_lookup_start_base_identity,
     std::uint64_t expected_normalized_receiver_identity,
     std::uint64_t expected_selector_stable_id);
 
 RuntimeDispatchTarget ResolveMethodCacheMissUnlocked(
-    RuntimeState &state, std::uint64_t base_identity,
+    RuntimeState &state, std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity, DispatchFamily family,
     const objc3_runtime_selector_handle &selector_handle,
     std::uint64_t receiver_base_identity, const MethodCacheKey &cache_key);

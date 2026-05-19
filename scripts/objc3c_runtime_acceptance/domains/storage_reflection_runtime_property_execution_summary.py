@@ -19,11 +19,13 @@ def build_property_execution_summary(
     return storage_reflection_case_summary(
         PROPERTY_EXECUTION_CASE_ID,
         {
+            "base_count_value": facts.payload.get("base_count_value"),
             "count_value": facts.payload.get("count_value"),
             "enabled_value": facts.payload.get("enabled_value"),
             "value_result": facts.payload.get("value_result"),
             "runtime_property_accessor_count": facts.widget_entry.get("runtime_property_accessor_count"),
             "slot_backed_property_count": facts.registry_state.get("slot_backed_property_count"),
+            "base_count_inherited": facts.base_count_property.get("inherited"),
             "count_dispatch_kind": facts.count_dispatch.get("last_implementation_kind"),
             "value_dispatch_kind": facts.value_dispatch.get("last_implementation_kind"),
             "token_dispatch_kind": facts.token_dispatch.get("last_implementation_kind"),

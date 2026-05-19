@@ -69,6 +69,7 @@ extern "C" int objc3_runtime_copy_method_cache_entry_for_testing(
   snapshot->found = 0;
   snapshot->resolved = 0;
   snapshot->dispatch_family_is_class = 0;
+  snapshot->lookup_start_base_identity = 0;
   snapshot->normalized_receiver_identity = 0;
   snapshot->selector_stable_id = 0;
   snapshot->parameter_count = 0;
@@ -119,6 +120,7 @@ extern "C" int objc3_runtime_copy_method_cache_entry_for_testing(
   snapshot->resolved = entry.resolved ? 1 : 0;
   snapshot->dispatch_family_is_class =
       entry.dispatch_family_is_class ? 1 : 0;
+  snapshot->lookup_start_base_identity = entry.lookup_start_base_identity;
   snapshot->normalized_receiver_identity = entry.normalized_receiver_identity;
   snapshot->selector_stable_id = entry.selector_stable_id;
   snapshot->parameter_count = entry.parameter_count;

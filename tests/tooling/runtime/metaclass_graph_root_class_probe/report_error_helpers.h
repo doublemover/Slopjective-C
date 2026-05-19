@@ -24,6 +24,10 @@ inline void PrintMetaclassGraphRootClassProbeReport(const ProbeRun &run) {
               root_class.widget_inherited_instance_value);
   std::printf("\"widget_own_instance_value\":%d,",
               root_class.widget_own_instance_value);
+  std::printf("\"widget_super_instance_value\":%d,",
+              root_class.widget_super_instance_value);
+  std::printf("\"widget_super_own_selector_status\":%d,",
+              root_class.widget_super_own_selector_status);
   std::printf("\"registration_state\":");
   ::objc3c::runtime::probe::PrintRegistrationStateBasic(
       fixture.registration_state);
@@ -61,6 +65,9 @@ inline void PrintMetaclassGraphRootClassProbeReport(const ProbeRun &run) {
   std::printf(",\"widget_own_entry\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryMetaclassMinimal(
       root_class.widget_own_entry);
+  std::printf(",\"widget_super_entry\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryMetaclassMinimal(
+      root_class.widget_super_entry);
   std::printf("}\n");
 }
 

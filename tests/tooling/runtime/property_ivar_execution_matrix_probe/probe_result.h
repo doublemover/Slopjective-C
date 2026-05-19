@@ -10,6 +10,9 @@ namespace objc3c::runtime::probe::property_ivar_execution_matrix {
 inline constexpr int kWidgetClassReceiver = 1024;
 inline constexpr const char *kWidgetClassName = "Widget";
 inline constexpr const char *kAllocSelector = "alloc";
+inline constexpr const char *kBaseCountPropertyName = "baseCount";
+inline constexpr const char *kBaseCountGetterSelector = "baseCount";
+inline constexpr const char *kBaseCountSetterSelector = "setBaseCount:";
 inline constexpr const char *kCountPropertyName = "count";
 inline constexpr const char *kCountGetterSelector = "count";
 inline constexpr const char *kCountSetterSelector = "setCount:";
@@ -85,6 +88,8 @@ struct WidgetFixture {
 };
 
 struct PropertyIvarExecutionCases {
+  int set_base_count_result = 0;
+  int base_count_value = 0;
   int set_count_result = 0;
   int count_value = 0;
   int set_enabled_result = 0;
@@ -92,6 +97,8 @@ struct PropertyIvarExecutionCases {
   int set_value_result = 0;
   int value_result = 0;
   int token_value = 0;
+  DispatchObservation set_base_count_dispatch;
+  DispatchObservation base_count_dispatch;
   DispatchObservation set_count_dispatch;
   DispatchObservation count_dispatch;
   DispatchObservation set_enabled_dispatch;
@@ -103,10 +110,12 @@ struct PropertyIvarExecutionCases {
 
 struct PropertyIvarExecutionAssertions {
   PropertyRegistryObservation registry_state;
+  PropertyEntryObservation base_count_property;
   PropertyEntryObservation count_property;
   PropertyEntryObservation enabled_property;
   PropertyEntryObservation value_property;
   PropertyEntryObservation token_property;
+  MethodCacheEntryObservation base_count_method;
   MethodCacheEntryObservation count_method;
   MethodCacheEntryObservation enabled_method;
   MethodCacheEntryObservation value_method;

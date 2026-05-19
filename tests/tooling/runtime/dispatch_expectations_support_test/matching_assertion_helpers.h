@@ -113,16 +113,22 @@ inline int VerifyDispatchResultAbiFields() {
           "checked dispatch result abi size", 36) != 0) {
     return 36;
   }
-  if (ReportValueExpectation(success.return_kind,
-                             OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL,
-                             "checked dispatch result return kind", 37) != 0) {
+  if (ReportValueExpectation(success.status_code,
+                             OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
+                             "checked dispatch result rejects non-i32 status",
+                             37) != 0) {
     return 37;
   }
-  if (ReportTextExpectation(success.result_contract,
-                            "typed-dispatch-value-result",
-                            "checked dispatch result value contract",
-                            38) != 0) {
+  if (ReportValueExpectation(success.value, 0,
+                             "checked dispatch result rejects non-i32 value",
+                             38) != 0) {
     return 38;
+  }
+  if (ReportTextExpectation(success.result_contract,
+                            "typed-dispatch-strict-error-result",
+                            "checked dispatch result non-i32 contract",
+                            41) != 0) {
+    return 41;
   }
 
   const objc3_runtime_dispatch_i32_result failure =

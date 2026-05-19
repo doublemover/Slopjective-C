@@ -8,6 +8,7 @@ from objc3c_runtime_acceptance.domains.object_model_cases import (
     check_live_dispatch_fast_path_case,
     check_metaclass_graph_root_class_case,
     check_realization_lookup_reflection_runtime_case,
+    check_runtime_object_foundation_protocol_category_case,
     check_runtime_library_case,
 )
 from objc3c_runtime_acceptance.domains.object_model_surface_cases import (
@@ -41,6 +42,7 @@ _EXPORTED_CASE_NAMES = [
     "check_metaclass_graph_root_class_case",
     "check_canonical_sample_set_case",
     "check_realization_lookup_reflection_runtime_case",
+    "check_runtime_object_foundation_protocol_category_case",
     "check_live_dispatch_fast_path_case",
 ]
 

@@ -4,7 +4,26 @@
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/state/runtime_state_records.h"
 
+#include <cstring>
+
 namespace objc3c::runtime {
+namespace {
+
+const char *ResolvedPropertyClassName(
+    const RealizedClassNode &resolved_node,
+    const EmittedPropertyDescriptor *descriptor) {
+  constexpr const char *kClassOwnerPrefix = "class:";
+  constexpr std::size_t kClassOwnerPrefixLength = 6;
+  if (descriptor != nullptr && descriptor->export_owner_identity != nullptr &&
+      std::strncmp(descriptor->export_owner_identity, kClassOwnerPrefix,
+                   kClassOwnerPrefixLength) == 0 &&
+      descriptor->export_owner_identity[kClassOwnerPrefixLength] != '\0') {
+    return descriptor->export_owner_identity + kClassOwnerPrefixLength;
+  }
+  return resolved_node.class_name.c_str();
+}
+
+}  // namespace
 
 void ResetRuntimePropertyReflectionQueryStateUnlocked(RuntimeState &state) {
   state.last_queried_property_class_name.clear();
@@ -38,7 +57,8 @@ void RecordRuntimePropertyReflectionHitUnlocked(
     bool inherited) {
   state.last_property_query_found = true;
   state.last_property_query_inherited = inherited;
-  state.last_reflected_property_class_name = resolved_node.class_name;
+  state.last_reflected_property_class_name =
+      ResolvedPropertyClassName(resolved_node, accessor.property_descriptor);
   state.last_reflected_property_owner_identity =
       accessor.property_descriptor != nullptr &&
               accessor.property_descriptor->declaration_owner_identity != nullptr

@@ -26,4 +26,10 @@ struct RuntimeDispatchTarget {
 RuntimeDispatchTarget ResolveRuntimeDispatchTargetUnlocked(
     RuntimeState &state, int receiver, const char *selector);
 
+RuntimeDispatchTarget ResolveRuntimeDispatchTargetFromClassUnlocked(
+    RuntimeState &state,
+    int receiver,
+    const char *lookup_start_class_name,
+    const char *selector);
+
 }  // namespace objc3c::runtime

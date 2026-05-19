@@ -4,6 +4,7 @@
 #include "probe_state.h"
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::arc_debug_instrumentation {
 
@@ -14,8 +15,10 @@ inline void ResetAndReplayRuntimeForArcDebugProbe() {
 
 inline ArcDebugFixture SetUpArcDebugFixture() {
   ArcDebugFixture fixture;
-  fixture.parent = ::objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
-  fixture.child = ::objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
+  fixture.parent =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(1024, "alloc");
+  fixture.child =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(1024, "alloc");
   return fixture;
 }
 

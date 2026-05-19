@@ -20,17 +20,22 @@ def assert_property_execution_runtime_payload(facts: PropertyExecutionPayload) -
 
 def _assert_materialized_widget_values(facts: PropertyExecutionPayload) -> None:
     expect(facts.payload.get("widget_instance", 0) != 0, "expected alloc to materialize a Widget instance")
+    expect(facts.payload.get("base_count_value") == 21, "expected inherited baseCount getter to return the stored value")
     expect(facts.payload.get("count_value") == 37, "expected synthesized count getter to return the stored value")
     expect(facts.payload.get("enabled_value") == 1, "expected synthesized enabled getter to return the stored value")
     expect(facts.payload.get("value_result") == 55, "expected synthesized strong property getter to return the stored value")
     expect(facts.widget_entry.get("found") == 1, "expected Widget to be realized during property execution")
     expect(facts.widget_entry.get("runtime_property_accessor_count", 0) >= 4,
            "expected Widget to publish runtime-backed synthesized accessors")
-    expect(facts.registry_state.get("slot_backed_property_count", 0) >= 4,
-           "expected property execution fixture to register four slot-backed properties")
+    expect(facts.registry_state.get("slot_backed_property_count", 0) >= 5,
+           "expected property execution fixture to register inherited plus Widget slot-backed properties")
 
 
 def _assert_runtime_backed_properties(facts: PropertyExecutionPayload) -> None:
+    expect(facts.base_count_property.get("found") == 1 and facts.base_count_property.get("inherited") == 1,
+           "expected baseCount property lookup on Widget to resolve inherited Base storage")
+    expect(facts.base_count_property.get("has_runtime_getter") == 1 and facts.base_count_property.get("has_runtime_setter") == 1,
+           "expected inherited baseCount property to execute through runtime-backed synthesized accessors")
     expect(facts.count_property.get("has_runtime_getter") == 1 and facts.count_property.get("has_runtime_setter") == 1,
            "expected count property to execute through runtime-backed synthesized accessors")
     expect(facts.enabled_property.get("has_runtime_getter") == 1 and facts.enabled_property.get("has_runtime_setter") == 1,
@@ -42,6 +47,16 @@ def _assert_runtime_backed_properties(facts: PropertyExecutionPayload) -> None:
 
 
 def _assert_reflected_property_selectors(facts: PropertyExecutionPayload) -> None:
+    expect(facts.base_count_property.get("property_name") == "baseCount",
+           "expected inherited baseCount property reflection to stay coherent")
+    expect(facts.base_count_property.get("queried_class_name") == "Widget",
+           "expected inherited baseCount query to preserve Widget as the queried class")
+    expect(facts.base_count_property.get("resolved_class_name") == "Base",
+           "expected inherited baseCount query to resolve against Base")
+    expect(facts.base_count_property.get("effective_getter_selector") == "baseCount",
+           "expected inherited baseCount getter selector reflection to stay coherent")
+    expect(facts.base_count_property.get("effective_setter_selector") == "setBaseCount:",
+           "expected inherited baseCount setter selector reflection to stay coherent")
     expect(facts.count_property.get("property_name") == "count",
            "expected count property reflection to stay coherent")
     expect(facts.count_property.get("effective_getter_selector") == "count",
@@ -61,6 +76,14 @@ def _assert_reflected_property_selectors(facts: PropertyExecutionPayload) -> Non
 
 
 def _assert_reflected_property_ownership(facts: PropertyExecutionPayload) -> None:
+    expect(facts.base_count_property.get("getter_owner_identity"), "expected inherited baseCount getter owner identity to be published")
+    expect(facts.base_count_property.get("setter_owner_identity"), "expected inherited baseCount setter owner identity to be published")
+    expect(facts.base_count_property.get("inherited_slot_count") == 0,
+           "expected Base-owned baseCount to start the inherited storage chain")
+    expect(facts.count_property.get("inherited_slot_count", 0) >= 1,
+           "expected Widget count property to report inherited Base storage slots")
+    expect(facts.count_property.get("offset_bytes", 0) > facts.base_count_property.get("offset_bytes", 0),
+           "expected Widget count ivar offset to follow inherited Base storage")
     expect(facts.count_property.get("getter_owner_identity"), "expected count getter owner identity to be published")
     expect(facts.count_property.get("setter_owner_identity"), "expected count setter owner identity to be published")
     expect(facts.enabled_property.get("getter_owner_identity"), "expected enabled getter owner identity to be published")
@@ -88,6 +111,8 @@ def _assert_runtime_registry_resolution(facts: PropertyExecutionPayload) -> None
 
 
 def _assert_runtime_method_cache_resolution(facts: PropertyExecutionPayload) -> None:
+    expect(facts.base_count_method.get("resolved") == 1 and facts.base_count_method.get("parameter_count") == 0,
+           "expected inherited baseCount getter dispatch to resolve live through the runtime cache")
     expect(facts.count_method.get("resolved") == 1 and facts.count_method.get("parameter_count") == 0,
            "expected count getter dispatch to resolve live through the runtime cache")
     expect(facts.enabled_method.get("resolved") == 1 and facts.enabled_method.get("parameter_count") == 0,
@@ -96,6 +121,8 @@ def _assert_runtime_method_cache_resolution(facts: PropertyExecutionPayload) -> 
            "expected currentValue getter dispatch to resolve live through the runtime cache")
     expect(facts.token_method.get("resolved") == 1 and facts.token_method.get("parameter_count") == 0,
            "expected tokenValue getter dispatch to resolve live through the runtime cache")
+    expect(facts.base_count_method.get("resolved_owner_identity") == facts.base_count_property.get("getter_owner_identity"),
+           "expected baseCount getter cache ownership to match reflected inherited property ownership")
     expect(facts.count_method.get("resolved_owner_identity") == facts.count_property.get("getter_owner_identity"),
            "expected count getter cache ownership to match reflected property ownership")
     expect(facts.enabled_method.get("resolved_owner_identity") == facts.enabled_property.get("getter_owner_identity"),

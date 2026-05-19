@@ -84,14 +84,18 @@ struct RootClassInvariants {
   objc3_runtime_method_cache_entry_snapshot widget_shared_entry{};
   objc3_runtime_method_cache_entry_snapshot widget_inherited_entry{};
   objc3_runtime_method_cache_entry_snapshot widget_own_entry{};
+  objc3_runtime_method_cache_entry_snapshot widget_super_entry{};
   MethodCacheStateReportStorage widget_inherited_state_storage;
   MethodCacheStateReportStorage widget_own_state_storage;
   MethodCacheEntryReportStorage root_shared_entry_storage;
   MethodCacheEntryReportStorage widget_shared_entry_storage;
   MethodCacheEntryReportStorage widget_inherited_entry_storage;
   MethodCacheEntryReportStorage widget_own_entry_storage;
+  MethodCacheEntryReportStorage widget_super_entry_storage;
   int widget_inherited_instance_value = 0;
   int widget_own_instance_value = 0;
+  int widget_super_instance_value = 0;
+  int widget_super_own_selector_status = 0;
 };
 
 struct ProbeRun {

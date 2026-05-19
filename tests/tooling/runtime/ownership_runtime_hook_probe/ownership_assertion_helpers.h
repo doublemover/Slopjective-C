@@ -1,6 +1,7 @@
 #pragma once
 
 #include "probe_state.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::ownership_runtime_hook {
 
@@ -14,12 +15,15 @@ inline void RecordOwnershipFixtureHandles(
 inline void CaptureInitialOwnershipHookResults(
     const OwnershipFixture &fixture,
     OwnershipOperationResults &operations) {
-  operations.strong_set_result = objc3_runtime_dispatch_i32(
+  operations.strong_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
       fixture.parent, "setCurrentValue:", fixture.child, 0, 0, 0);
-  operations.weak_set_result = objc3_runtime_dispatch_i32(
+  operations.weak_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
       fixture.parent, "setWeakValue:", fixture.child, 0, 0, 0);
   operations.weak_before_clear =
-      objc3_runtime_dispatch_i32(fixture.parent, "weakValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "weakValue");
   operations.retain_result = objc3_runtime_retain_i32(fixture.child);
   operations.release_after_retain_result =
       objc3_runtime_release_i32(fixture.child);
@@ -30,13 +34,17 @@ inline void CaptureStrongClearOwnershipResults(
     const OwnershipFixture &fixture,
     OwnershipOperationResults &operations) {
   operations.strong_before_clear =
-      objc3_runtime_dispatch_i32(fixture.parent, "currentValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "currentValue");
   operations.clear_strong_result =
-      objc3_runtime_dispatch_i32(fixture.parent, "setCurrentValue:", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedStatus(
+          fixture.parent, "setCurrentValue:", 0);
   operations.strong_after_clear =
-      objc3_runtime_dispatch_i32(fixture.parent, "currentValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "currentValue");
   operations.weak_after_clear =
-      objc3_runtime_dispatch_i32(fixture.parent, "weakValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "weakValue");
 }
 
 inline void CaptureParentReleaseOwnershipResult(

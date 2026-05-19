@@ -14,6 +14,9 @@ inline void PrintProbeReport(const ProbeResult &result) {
 
   std::printf("{");
   std::printf("\"widget_instance\":%d,", result.fixture.widget_instance);
+  std::printf("\"set_base_count_result\":%d,",
+              execution.set_base_count_result);
+  std::printf("\"base_count_value\":%d,", execution.base_count_value);
   std::printf("\"set_count_result\":%d,", execution.set_count_result);
   std::printf("\"count_value\":%d,", execution.count_value);
   std::printf("\"set_enabled_result\":%d,", execution.set_enabled_result);
@@ -27,6 +30,9 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf(",\"registry_state\":");
   ::objc3c::runtime::probe::PrintPropertyRegistryStateFull(
       assertions.registry_state.state);
+  std::printf(",\"base_count_property\":");
+  ::objc3c::runtime::probe::PrintPropertyEntryFull(
+      assertions.base_count_property.entry);
   std::printf(",\"count_property\":");
   ::objc3c::runtime::probe::PrintPropertyEntryFull(
       assertions.count_property.entry);
@@ -39,6 +45,9 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf(",\"token_property\":");
   ::objc3c::runtime::probe::PrintPropertyEntryFull(
       assertions.token_property.entry);
+  std::printf(",\"base_count_method\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
+      assertions.base_count_method.entry);
   std::printf(",\"count_method\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       assertions.count_method.entry);
@@ -51,6 +60,12 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf(",\"token_method\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       assertions.token_method.entry);
+  std::printf(",\"set_base_count_dispatch\":");
+  ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
+      execution.set_base_count_dispatch.state);
+  std::printf(",\"base_count_dispatch\":");
+  ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
+      execution.base_count_dispatch.state);
   std::printf(",\"set_count_dispatch\":");
   ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
       execution.set_count_dispatch.state);

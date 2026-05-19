@@ -1,6 +1,14 @@
 module propertyIvarExecutionMatrix;
 
-@interface Widget
+@interface Base
+@property (assign) i32 baseCount;
+@end
+
+@implementation Base
+@property (assign) i32 baseCount;
+@end
+
+@interface Widget : Base
 @property (assign, setter=setCount:) i32 count;
 @property (assign) bool enabled;
 @property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;

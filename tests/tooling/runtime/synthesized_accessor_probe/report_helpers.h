@@ -27,6 +27,15 @@ inline void PrintSynthesizedAccessorReport(const ProbeResult &result) {
   std::printf(",\"selector_table_state\":");
   ::objc3c::runtime::probe::PrintSelectorTableStateBasic(
       setup.selector_table_state.state);
+  std::printf(",\"count_property\":");
+  ::objc3c::runtime::probe::PrintPropertyEntryFull(
+      assertions.count_property.entry);
+  std::printf(",\"enabled_property\":");
+  ::objc3c::runtime::probe::PrintPropertyEntryFull(
+      assertions.enabled_property.entry);
+  std::printf(",\"value_property\":");
+  ::objc3c::runtime::probe::PrintPropertyEntryFull(
+      assertions.value_property.entry);
   std::printf(",\"count_entry\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       assertions.count_entry.entry);

@@ -43,6 +43,7 @@ RuntimeDispatchTarget BuildResolvedDispatchTarget(
 
 MethodCacheEntry BuildMethodCacheEntry(
     const SlowPathResolution &resolution,
+    std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity,
     std::uint64_t selector_stable_id,
     const RuntimeState &state) {
@@ -57,6 +58,7 @@ MethodCacheEntry BuildMethodCacheEntry(
   cache_entry.fast_path_reason = resolution.fast_path_reason;
   cache_entry.class_name = resolution.class_name;
   cache_entry.owner_identity = resolution.owner_identity;
+  cache_entry.lookup_start_base_identity = lookup_start_base_identity;
   cache_entry.normalized_receiver_identity = normalized_receiver_identity;
   cache_entry.selector_stable_id = selector_stable_id;
   cache_entry.parameter_count = resolution.parameter_count;
@@ -83,9 +85,11 @@ MethodCacheEntry BuildMethodCacheEntry(
 
 objc3_runtime_dispatch_status_code ValidateMethodCacheEntryForDispatch(
     const RuntimeState &state, const MethodCacheEntry &entry,
+    std::uint64_t expected_lookup_start_base_identity,
     std::uint64_t expected_normalized_receiver_identity,
     std::uint64_t expected_selector_stable_id) {
-  if (entry.normalized_receiver_identity !=
+  if (entry.lookup_start_base_identity != expected_lookup_start_base_identity ||
+      entry.normalized_receiver_identity !=
           expected_normalized_receiver_identity ||
       entry.selector_stable_id != expected_selector_stable_id ||
       entry.cache_registered_image_count != state.registered_image_count ||
@@ -120,6 +124,7 @@ objc3_runtime_dispatch_status_code ValidateMethodCacheEntryForDispatch(
 RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
     RuntimeState &state, const MethodCacheKey &cache_key,
     const MethodCacheEntry &entry, std::uint64_t receiver_base_identity,
+    std::uint64_t expected_lookup_start_base_identity,
     std::uint64_t expected_normalized_receiver_identity,
     std::uint64_t expected_selector_stable_id) {
   RuntimeDispatchTarget target;
@@ -127,8 +132,8 @@ RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
   PublishMethodCacheEntryStateUnlocked(state, entry, receiver_base_identity);
   const objc3_runtime_dispatch_status_code cache_status =
       ValidateMethodCacheEntryForDispatch(
-          state, entry, expected_normalized_receiver_identity,
-          expected_selector_stable_id);
+          state, entry, expected_lookup_start_base_identity,
+          expected_normalized_receiver_identity, expected_selector_stable_id);
   if (cache_status == OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE) {
     state.method_cache.erase(cache_key);
     state.last_dispatch_resolved_live_method = false;
@@ -176,7 +181,7 @@ RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
 }
 
 RuntimeDispatchTarget ResolveMethodCacheMissUnlocked(
-    RuntimeState &state, std::uint64_t base_identity,
+    RuntimeState &state, std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity, DispatchFamily family,
     const objc3_runtime_selector_handle &selector_handle,
     std::uint64_t receiver_base_identity, const MethodCacheKey &cache_key) {
@@ -184,11 +189,11 @@ RuntimeDispatchTarget ResolveMethodCacheMissUnlocked(
   ++state.method_cache_miss_count;
   ++state.slow_path_lookup_count;
   SlowPathResolution resolution = ResolveMethodSlowPathUnlocked(
-      state, base_identity, normalized_receiver_identity, family,
+      state, lookup_start_base_identity, normalized_receiver_identity, family,
       selector_handle.stable_id, selector_handle.selector);
   MethodCacheEntry cache_entry = BuildMethodCacheEntry(
-      resolution, normalized_receiver_identity, selector_handle.stable_id,
-      state);
+      resolution, lookup_start_base_identity, normalized_receiver_identity,
+      selector_handle.stable_id, state);
   const objc3_runtime_dispatch_status_code strict_error_status =
       cache_entry.strict_error_status;
   state.method_cache.emplace(cache_key, std::move(cache_entry));

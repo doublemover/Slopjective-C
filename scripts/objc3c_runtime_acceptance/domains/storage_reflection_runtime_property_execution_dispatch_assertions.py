@@ -10,10 +10,46 @@ from .storage_reflection_runtime_property_execution_payload import (
 
 
 def assert_property_execution_dispatches(facts: PropertyExecutionPayload) -> None:
+    _assert_base_count_dispatch(facts)
     _assert_count_dispatch(facts)
     _assert_enabled_dispatch(facts)
     _assert_value_dispatch(facts)
     _assert_token_dispatch(facts)
+
+
+def _assert_base_count_dispatch(facts: PropertyExecutionPayload) -> None:
+    expect(facts.set_base_count_dispatch.get("last_dispatch_path") == "slow-path-live",
+           "expected setBaseCount: to execute through live inherited synthesized accessor resolution")
+    expect(facts.set_base_count_dispatch.get("last_implementation_kind") == "builtin-property-setter",
+           "expected setBaseCount: to execute through the runtime property-setter builtin")
+    expect(facts.set_base_count_dispatch.get("last_property_name") == facts.base_count_property.get("property_name"),
+           "expected setBaseCount: dispatch property name to match reflected inherited property metadata")
+    expect(facts.set_base_count_dispatch.get("last_property_base_identity") == facts.widget_entry.get("base_identity"),
+           "expected setBaseCount: dispatch base identity to match the Widget receiver storage context")
+    expect(facts.set_base_count_dispatch.get("last_property_slot_index") == facts.base_count_property.get("slot_index"),
+           "expected setBaseCount: dispatch slot index to match reflected inherited property metadata")
+    expect(facts.set_base_count_dispatch.get("last_selector") == facts.base_count_property.get("effective_setter_selector"),
+           "expected setBaseCount: dispatch selector to match reflected inherited property metadata")
+    expect(facts.set_base_count_dispatch.get("last_resolved_owner_identity") == facts.base_count_property.get("setter_owner_identity"),
+           "expected setBaseCount: dispatch ownership to match reflected inherited property metadata")
+    expect(facts.set_base_count_dispatch.get("last_used_builtin") == 1 and facts.set_base_count_dispatch.get("last_resolved_parameter_count") == 1,
+           "expected setBaseCount: to remain builtin-backed and report one setter parameter")
+    expect(facts.base_count_dispatch.get("last_dispatch_path") == "slow-path-live",
+           "expected baseCount getter to execute through live inherited synthesized accessor resolution")
+    expect(facts.base_count_dispatch.get("last_implementation_kind") == "builtin-property-getter",
+           "expected baseCount getter to execute through the runtime property-getter builtin")
+    expect(facts.base_count_dispatch.get("last_property_name") == facts.base_count_property.get("property_name"),
+           "expected baseCount getter dispatch property name to match reflected inherited property metadata")
+    expect(facts.base_count_dispatch.get("last_property_base_identity") == facts.widget_entry.get("base_identity"),
+           "expected baseCount getter dispatch base identity to match the Widget receiver storage context")
+    expect(facts.base_count_dispatch.get("last_property_slot_index") == facts.base_count_property.get("slot_index"),
+           "expected baseCount getter dispatch slot index to match reflected inherited property metadata")
+    expect(facts.base_count_dispatch.get("last_selector") == facts.base_count_property.get("effective_getter_selector"),
+           "expected baseCount getter dispatch selector to match reflected inherited property metadata")
+    expect(facts.base_count_dispatch.get("last_resolved_owner_identity") == facts.base_count_property.get("getter_owner_identity"),
+           "expected baseCount getter dispatch ownership to match reflected inherited property metadata")
+    expect(facts.base_count_dispatch.get("last_used_builtin") == 1 and facts.base_count_dispatch.get("last_resolved_parameter_count") == 0,
+           "expected baseCount getter to remain builtin-backed and report zero getter parameters")
 
 
 def _assert_count_dispatch(facts: PropertyExecutionPayload) -> None:

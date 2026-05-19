@@ -2,6 +2,7 @@
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
 #include "support/runtime_snapshot_json.h"
+#include "support/typed_dispatch_helpers.h"
 
 #include <cstdio>
 #include <string>
@@ -18,6 +19,9 @@ using objc3c::runtime::probe::StabilizeRegistrationState;
 using objc3c::runtime::probe::StabilizeSelectorTableState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
+using objc3c::runtime::probe::DispatchTypedBoolValue;
+using objc3c::runtime::probe::DispatchTypedObjectReference;
+using objc3c::runtime::probe::DispatchTypedStatus;
 
 
 }  // namespace
@@ -45,22 +49,22 @@ int main() {
                              registration_identity_storage);
   StabilizeSelectorTableState(selector_table_state, selector_table_last_storage);
 
-  const int first_alloc = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
-  const int second_alloc = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
+  const int first_alloc = DispatchTypedObjectReference(1024, "alloc");
+  const int second_alloc = DispatchTypedObjectReference(1024, "alloc");
   const int set_count_result =
-      objc3_runtime_dispatch_i32(first_alloc, "setCount:", 37, 0, 0, 0);
+      DispatchTypedStatus(first_alloc, "setCount:", 37);
   const int count_value_first =
       objc3_runtime_dispatch_i32(first_alloc, "count", 0, 0, 0, 0);
   const int count_value_second =
       objc3_runtime_dispatch_i32(second_alloc, "count", 0, 0, 0, 0);
   const int set_enabled_result =
-      objc3_runtime_dispatch_i32(first_alloc, "setEnabled:", 1, 0, 0, 0);
+      DispatchTypedStatus(first_alloc, "setEnabled:", 1);
   const int enabled_value_second =
-      objc3_runtime_dispatch_i32(second_alloc, "enabled", 0, 0, 0, 0);
+      DispatchTypedBoolValue(second_alloc, "enabled");
   const int set_value_result =
-      objc3_runtime_dispatch_i32(first_alloc, "setValue:", 55, 0, 0, 0);
+      DispatchTypedStatus(first_alloc, "setValue:", 55);
   const int value_result_second =
-      objc3_runtime_dispatch_i32(second_alloc, "value", 0, 0, 0, 0);
+      DispatchTypedObjectReference(second_alloc, "value");
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       first_alloc, "count", &count_entry);

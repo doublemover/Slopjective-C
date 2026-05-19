@@ -3,6 +3,7 @@
 
 #include "probe_result.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::property_ivar_execution_matrix {
 
@@ -25,8 +26,11 @@ inline void CaptureWidgetClassEntry(RealizedClassObservation &observation) {
 
 inline WidgetFixture SetUpWidgetFixture() {
   WidgetFixture fixture;
-  fixture.widget_instance = objc3_runtime_dispatch_i32(
-      kWidgetClassReceiver, kAllocSelector, 0, 0, 0, 0);
+  CaptureWidgetClassEntry(fixture.widget_entry);
+  fixture.widget_instance =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          static_cast<int>(fixture.widget_entry.entry.class_receiver_identity),
+          kAllocSelector);
   return fixture;
 }
 

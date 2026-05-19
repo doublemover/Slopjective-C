@@ -11,14 +11,18 @@ class PropertyExecutionPayload:
     payload: dict[str, Any]
     widget_entry: Any
     registry_state: Any
+    base_count_property: Any
     count_property: Any
     enabled_property: Any
     value_property: Any
     token_property: Any
+    base_count_method: Any
     count_method: Any
     enabled_method: Any
     value_method: Any
     token_method: Any
+    set_base_count_dispatch: Any
+    base_count_dispatch: Any
     set_count_dispatch: Any
     count_dispatch: Any
     set_enabled_dispatch: Any
@@ -35,14 +39,18 @@ def capture_property_execution_payload(
         payload=payload,
         widget_entry=payload.get("widget_entry", {}),
         registry_state=payload.get("registry_state", {}),
+        base_count_property=payload.get("base_count_property", {}),
         count_property=payload.get("count_property", {}),
         enabled_property=payload.get("enabled_property", {}),
         value_property=payload.get("value_property", {}),
         token_property=payload.get("token_property", {}),
+        base_count_method=payload.get("base_count_method", {}),
         count_method=payload.get("count_method", {}),
         enabled_method=payload.get("enabled_method", {}),
         value_method=payload.get("value_method", {}),
         token_method=payload.get("token_method", {}),
+        set_base_count_dispatch=payload.get("set_base_count_dispatch", {}),
+        base_count_dispatch=payload.get("base_count_dispatch", {}),
         set_count_dispatch=payload.get("set_count_dispatch", {}),
         count_dispatch=payload.get("count_dispatch", {}),
         set_enabled_dispatch=payload.get("set_enabled_dispatch", {}),

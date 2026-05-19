@@ -16,6 +16,7 @@ def assert_synthesized_accessor_runtime_payload(
 ) -> None:
     _assert_synthesized_accessor_values(facts)
     _assert_synthesized_accessor_runtime_tables(facts)
+    _assert_synthesized_accessor_storage_reflection(facts)
     _assert_synthesized_accessor_cache_entries(facts)
 
 
@@ -73,16 +74,51 @@ def _assert_synthesized_accessor_runtime_tables(
     )
 
 
+def _assert_synthesized_accessor_storage_reflection(
+    facts: SynthesizedAccessorRuntimePayload,
+) -> None:
+    expected_properties: tuple[tuple[Any, str, int, int], ...] = (
+        (facts.count_property, "count", 0, 4),
+        (facts.enabled_property, "enabled", 1, 1),
+        (facts.value_property, "value", 2, 8),
+    )
+    for prop, name, slot_index, size_bytes in expected_properties:
+        expect(
+            prop.get("found") == 1,
+            f"expected synthesized-accessor {name} property to be reflectable",
+        )
+        expect(
+            prop.get("property_name") == name,
+            f"expected synthesized-accessor {name} property name to round trip",
+        )
+        expect(
+            prop.get("has_runtime_getter") == 1 and prop.get("has_runtime_setter") == 1,
+            f"expected synthesized-accessor {name} property to publish runtime-backed getter and setter",
+        )
+        expect(
+            prop.get("slot_index") == slot_index and prop.get("size_bytes") == size_bytes,
+            f"expected synthesized-accessor {name} property to publish stable storage slot layout",
+        )
+        expect(
+            prop.get("synthesized_binding_symbol"),
+            f"expected synthesized-accessor {name} property to publish synthesized storage binding",
+        )
+        expect(
+            prop.get("ivar_layout_symbol") and prop.get("ivar_layout_replay_key"),
+            f"expected synthesized-accessor {name} property to publish ivar layout symbols",
+        )
+
+
 def _assert_synthesized_accessor_cache_entries(
     facts: SynthesizedAccessorRuntimePayload,
 ) -> None:
     expected_entries: tuple[tuple[Any, str, int, str], ...] = (
-        (facts.count_entry, "count", 0, "implementation:Widget::instance_method:count"),
-        (facts.set_count_entry, "setCount:", 1, "implementation:Widget::instance_method:setCount:"),
-        (facts.enabled_entry, "enabled", 0, "implementation:Widget::instance_method:enabled"),
-        (facts.set_enabled_entry, "setEnabled:", 1, "implementation:Widget::instance_method:setEnabled:"),
-        (facts.value_entry, "value", 0, "implementation:Widget::instance_method:value"),
-        (facts.set_value_entry, "setValue:", 1, "implementation:Widget::instance_method:setValue:"),
+        (facts.count_entry, "count", 0, "interface:Widget::instance_method:count"),
+        (facts.set_count_entry, "setCount:", 1, "interface:Widget::instance_method:setCount:"),
+        (facts.enabled_entry, "enabled", 0, "interface:Widget::instance_method:enabled"),
+        (facts.set_enabled_entry, "setEnabled:", 1, "interface:Widget::instance_method:setEnabled:"),
+        (facts.value_entry, "value", 0, "interface:Widget::instance_method:value"),
+        (facts.set_value_entry, "setValue:", 1, "interface:Widget::instance_method:setValue:"),
     )
     for entry, selector, parameter_count, owner_identity in expected_entries:
         expect(

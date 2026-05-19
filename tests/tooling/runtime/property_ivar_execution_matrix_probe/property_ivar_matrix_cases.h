@@ -20,35 +20,71 @@ inline void CaptureLatestDispatchObservation(DispatchObservation &observation) {
   StabilizeDispatchObservation(observation);
 }
 
+inline int DispatchVoidStatus(int receiver, const char *selector, int a0) {
+  const objc3_runtime_dispatch_typed_result result =
+      objc3_runtime_dispatch_typed_checked(receiver, selector, a0, 0, 0, 0);
+  return result.status_code;
+}
+
+inline int DispatchI32Value(int receiver, const char *selector) {
+  const objc3_runtime_dispatch_i32_result result =
+      objc3_runtime_dispatch_i32_checked(receiver, selector, 0, 0, 0, 0);
+  return result.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK ? result.value
+                                                                : 0;
+}
+
+inline int DispatchBoolValue(int receiver, const char *selector) {
+  const objc3_runtime_dispatch_typed_result result =
+      objc3_runtime_dispatch_typed_checked(receiver, selector, 0, 0, 0, 0);
+  return result.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK
+             ? result.bool_value
+             : 0;
+}
+
+inline int DispatchObjectReference(int receiver, const char *selector) {
+  const objc3_runtime_dispatch_typed_result result =
+      objc3_runtime_dispatch_typed_checked(receiver, selector, 0, 0, 0, 0);
+  return result.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK
+             ? result.object_reference
+             : 0;
+}
+
 inline void ExecutePropertyIvarMatrixCases(
     int widget_instance, PropertyIvarExecutionCases &cases) {
   cases = PropertyIvarExecutionCases{};
-  cases.set_count_result = objc3_runtime_dispatch_i32(
-      widget_instance, kCountSetterSelector, 37, 0, 0, 0);
+  cases.set_base_count_result =
+      DispatchVoidStatus(widget_instance, kBaseCountSetterSelector, 21);
+  CaptureLatestDispatchObservation(cases.set_base_count_dispatch);
+
+  cases.base_count_value =
+      DispatchI32Value(widget_instance, kBaseCountGetterSelector);
+  CaptureLatestDispatchObservation(cases.base_count_dispatch);
+
+  cases.set_count_result =
+      DispatchVoidStatus(widget_instance, kCountSetterSelector, 37);
   CaptureLatestDispatchObservation(cases.set_count_dispatch);
 
-  cases.count_value = objc3_runtime_dispatch_i32(
-      widget_instance, kCountGetterSelector, 0, 0, 0, 0);
+  cases.count_value = DispatchI32Value(widget_instance, kCountGetterSelector);
   CaptureLatestDispatchObservation(cases.count_dispatch);
 
-  cases.set_enabled_result = objc3_runtime_dispatch_i32(
-      widget_instance, kEnabledSetterSelector, 1, 0, 0, 0);
+  cases.set_enabled_result =
+      DispatchVoidStatus(widget_instance, kEnabledSetterSelector, 1);
   CaptureLatestDispatchObservation(cases.set_enabled_dispatch);
 
-  cases.enabled_value = objc3_runtime_dispatch_i32(
-      widget_instance, kEnabledGetterSelector, 0, 0, 0, 0);
+  cases.enabled_value =
+      DispatchBoolValue(widget_instance, kEnabledGetterSelector);
   CaptureLatestDispatchObservation(cases.enabled_dispatch);
 
-  cases.set_value_result = objc3_runtime_dispatch_i32(
-      widget_instance, kValueSetterSelector, 55, 0, 0, 0);
+  cases.set_value_result =
+      DispatchVoidStatus(widget_instance, kValueSetterSelector, 55);
   CaptureLatestDispatchObservation(cases.set_value_dispatch);
 
-  cases.value_result = objc3_runtime_dispatch_i32(
-      widget_instance, kValueGetterSelector, 0, 0, 0, 0);
+  cases.value_result =
+      DispatchObjectReference(widget_instance, kValueGetterSelector);
   CaptureLatestDispatchObservation(cases.value_dispatch);
 
-  cases.token_value = objc3_runtime_dispatch_i32(
-      widget_instance, kTokenGetterSelector, 0, 0, 0, 0);
+  cases.token_value =
+      DispatchObjectReference(widget_instance, kTokenGetterSelector);
   CaptureLatestDispatchObservation(cases.token_dispatch);
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "reference_counting_fixture_setup.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::reference_counting_weak_autoreleasepool {
 
@@ -8,7 +9,8 @@ inline void CaptureStrongReferenceSetup(
     const ReferenceCountingFixture &fixture,
     ReferenceCountingOperationResults &operations,
     RealizedClassGraphCapture &graph_after_setup) {
-  operations.strong_set_result = objc3_runtime_dispatch_i32(
+  operations.strong_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
       fixture.parent, "setCurrentValue:", fixture.child, 0, 0, 0);
   operations.release_local_result = objc3_runtime_release_i32(fixture.child);
   CaptureRealizedClassGraph(graph_after_setup);
@@ -21,13 +23,17 @@ inline void CaptureWeakReferenceInsideAutoreleasepool(
     MemoryManagementCapture &memory_inside_pool) {
   objc3_runtime_push_autoreleasepool_scope();
   operations.getter_value =
-      objc3_runtime_dispatch_i32(fixture.parent, "currentValue", 0, 0, 0, 0);
-  operations.weak_set_result = objc3_runtime_dispatch_i32(
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "currentValue");
+  operations.weak_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
       fixture.parent, "setWeakValue:", operations.getter_value, 0, 0, 0);
-  operations.clear_strong_result = objc3_runtime_dispatch_i32(
-      fixture.parent, "setCurrentValue:", 0, 0, 0, 0);
+  operations.clear_strong_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
+          fixture.parent, "setCurrentValue:", 0);
   operations.weak_inside_pool =
-      objc3_runtime_dispatch_i32(fixture.parent, "weakValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "weakValue");
   CaptureRealizedClassGraph(graph_inside_pool);
   CaptureMemoryManagementState(memory_inside_pool);
 }
@@ -39,7 +45,8 @@ inline void CaptureWeakReferenceAfterAutoreleasepool(
     MemoryManagementCapture &memory_after_pool) {
   objc3_runtime_pop_autoreleasepool_scope();
   operations.weak_after_pool =
-      objc3_runtime_dispatch_i32(fixture.parent, "weakValue", 0, 0, 0, 0);
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.parent, "weakValue");
   CaptureRealizedClassGraph(graph_after_pool);
   CaptureMemoryManagementState(memory_after_pool);
 }

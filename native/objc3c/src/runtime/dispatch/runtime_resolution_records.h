@@ -50,6 +50,7 @@ struct MethodCacheEntry {
   std::string fast_path_reason;
   std::string class_name;
   std::string owner_identity;
+  std::uint64_t lookup_start_base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
   std::uint64_t parameter_count = 0;
@@ -84,6 +85,7 @@ struct SlowPathResolution {
   std::string fast_path_reason;
   std::string class_name;
   std::string owner_identity;
+  std::uint64_t lookup_start_base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
   std::uint64_t parameter_count = 0;

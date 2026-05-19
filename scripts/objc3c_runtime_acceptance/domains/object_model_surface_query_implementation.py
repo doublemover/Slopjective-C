@@ -76,16 +76,19 @@ def build_runtime_realization_lookup_reflection_implementation_surface(
             results,
             {
                 "realization-lookup-reflection-runtime",
+                "runtime-object-foundation-protocol-category",
                 "canonical-sample-set",
                 "dispatch-fast-path",
             },
         ),
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
             "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
+            "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
         ],

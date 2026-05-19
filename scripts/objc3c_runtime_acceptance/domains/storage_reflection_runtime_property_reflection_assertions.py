@@ -9,6 +9,11 @@ from .storage_reflection_runtime_property_reflection_payload import (
 )
 
 
+def _profile_has(profile: object, *tokens: str) -> bool:
+    text = profile if isinstance(profile, str) else ""
+    return all(token in text for token in tokens)
+
+
 def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None:
     expect(
         facts.widget_entry.get("found") == 1,
@@ -27,6 +32,15 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
         "expected token property getter to be runtime-backed",
     )
     expect(
+        _profile_has(
+            facts.token_property.get("property_attribute_profile"),
+            "readonly=1",
+            "getter=tokenValue",
+            "attributes=getter=tokenValue,readonly",
+        ),
+        "expected token property reflection to preserve readonly and custom getter attributes",
+    )
+    expect(
         facts.value_property.get("found") == 1,
         "expected value property to be reflectable",
     )
@@ -40,6 +54,17 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
         "expected value property getter/setter to be runtime-backed",
     )
     expect(
+        _profile_has(
+            facts.value_property.get("property_attribute_profile"),
+            "nonatomic=1",
+            "strong=1",
+            "getter=currentValue",
+            "setter=setCurrentValue:",
+            "attributes=getter=currentValue,nonatomic,setter=setCurrentValue:,strong",
+        ),
+        "expected value property reflection to preserve nonatomic, strong, getter, and setter attributes",
+    )
+    expect(
         facts.count_property.get("found") == 1,
         "expected count property to be reflectable",
     )
@@ -47,6 +72,15 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
         facts.count_property.get("has_runtime_getter") == 1
         and facts.count_property.get("has_runtime_setter") == 1,
         "expected count property getter/setter to be runtime-backed",
+    )
+    expect(
+        _profile_has(
+            facts.count_property.get("property_attribute_profile"),
+            "assign=1",
+            "setter=setCount:",
+            "attributes=assign,setter=setCount:",
+        ),
+        "expected count property reflection to preserve assign and custom setter attributes",
     )
     expect(
         facts.registry_after_count.get("slot_backed_property_count", 0) >= 3,

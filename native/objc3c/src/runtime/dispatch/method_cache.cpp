@@ -14,17 +14,19 @@
 namespace objc3c::runtime {
 
 bool MethodCacheKey::operator==(const MethodCacheKey &other) const {
-  return normalized_receiver_identity == other.normalized_receiver_identity &&
+  return lookup_start_base_identity == other.lookup_start_base_identity &&
+         normalized_receiver_identity == other.normalized_receiver_identity &&
          selector_stable_id == other.selector_stable_id;
 }
 
 std::size_t MethodCacheKeyHash::operator()(const MethodCacheKey &key) const {
-  return std::hash<std::uint64_t>{}(key.normalized_receiver_identity) ^
-         (std::hash<std::uint64_t>{}(key.selector_stable_id) << 1u);
+  return std::hash<std::uint64_t>{}(key.lookup_start_base_identity) ^
+         (std::hash<std::uint64_t>{}(key.normalized_receiver_identity) << 1u) ^
+         (std::hash<std::uint64_t>{}(key.selector_stable_id) << 2u);
 }
 
 SlowPathResolution ResolveMethodSlowPathUnlocked(
-    RuntimeState &state, std::uint64_t base_identity,
+    RuntimeState &state, std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity, DispatchFamily family,
     std::uint64_t selector_stable_id, const char *selector_spelling) {
   // Live lookup walks the emitted class/metaclass graph that came through
@@ -33,6 +35,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
   SlowPathResolution resolution;
   resolution.selector_storage = selector_spelling != nullptr ? selector_spelling
                                                             : "";
+  resolution.lookup_start_base_identity = lookup_start_base_identity;
   resolution.normalized_receiver_identity = normalized_receiver_identity;
   resolution.selector_stable_id = selector_stable_id;
   std::uint64_t category_probe_count = 0;
@@ -40,7 +43,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
 
   bool receiver_ambiguous = false;
   std::string resolved_class_name;
-  if (!ResolveReceiverClassNameUnlocked(state, base_identity,
+  if (!ResolveReceiverClassNameUnlocked(state, lookup_start_base_identity,
                                         resolved_class_name,
                                         receiver_ambiguous)) {
     resolution.ambiguous = receiver_ambiguous;
@@ -66,6 +69,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     SlowPathResolution image_resolution;
     image_resolution.selector_storage =
         selector_spelling != nullptr ? selector_spelling : "";
+    image_resolution.lookup_start_base_identity = lookup_start_base_identity;
     image_resolution.normalized_receiver_identity =
         normalized_receiver_identity;
     image_resolution.selector_stable_id = selector_stable_id;
@@ -84,6 +88,8 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
       SlowPathResolution malformed_resolution;
       malformed_resolution.selector_storage =
           selector_spelling != nullptr ? selector_spelling : "";
+      malformed_resolution.lookup_start_base_identity =
+          lookup_start_base_identity;
       malformed_resolution.normalized_receiver_identity =
           normalized_receiver_identity;
       malformed_resolution.selector_stable_id = selector_stable_id;
@@ -98,6 +104,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
           OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
       resolution.selector_storage =
           selector_spelling != nullptr ? selector_spelling : "";
+      resolution.lookup_start_base_identity = lookup_start_base_identity;
       resolution.normalized_receiver_identity = normalized_receiver_identity;
       resolution.selector_stable_id = selector_stable_id;
       resolution.category_probe_count =
@@ -150,6 +157,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
             OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
         resolution.selector_storage =
             selector_spelling != nullptr ? selector_spelling : "";
+        resolution.lookup_start_base_identity = lookup_start_base_identity;
         resolution.normalized_receiver_identity = normalized_receiver_identity;
         resolution.selector_stable_id = selector_stable_id;
         resolution.category_probe_count = category_probe_count;
@@ -167,6 +175,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
       TryResolveRuntimeBuiltinObjectMethod(resolved_class_name, family,
                                            selector_spelling, resolution)) {
     resolution.normalized_receiver_identity = normalized_receiver_identity;
+    resolution.lookup_start_base_identity = lookup_start_base_identity;
     resolution.selector_stable_id = selector_stable_id;
     resolution.category_probe_count = category_probe_count;
     resolution.protocol_probe_count = protocol_probe_count;

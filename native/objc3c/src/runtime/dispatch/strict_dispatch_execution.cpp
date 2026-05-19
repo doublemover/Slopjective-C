@@ -7,7 +7,6 @@
 #include "runtime/dispatch/typed_dispatch_result.h"
 #include "runtime/memory/arc_value_lifetime.h"
 #include "runtime/memory/dispatch_frame_state.h"
-#include "runtime/public/objc3_runtime_result_materialization_contract.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <mutex>
@@ -28,7 +27,7 @@ void ReleaseDispatchFrameAutoreleaseValues(RuntimeState &state) {
   }
 }
 
-objc3_runtime_dispatch_i32_result CompleteStrictInvocationResult(
+RuntimeTypedDispatchResult CompleteStrictInvocationResult(
     RuntimeState &state, RuntimeTypedDispatchResult result,
     const char *strict_failure_path) {
   result = NormalizeRuntimeTypedDispatchResult(result);
@@ -36,19 +35,15 @@ objc3_runtime_dispatch_i32_result CompleteStrictInvocationResult(
   if (!RuntimeDispatchStatusIsSuccess(result.status_code)) {
     RecordPostResolutionStrictDispatchFailure(
         state, result.status_code, result.return_kind, strict_failure_path);
-    return MakeRuntimeDispatchI32TypedResult(
-        result.status_code, 0,
-        RuntimeMethodReturnKindDispatchAbiCode(result.return_kind));
+    return result;
   }
   RecordTypedDispatchSuccess(state, result.return_kind);
-  return MakeRuntimeDispatchI32TypedResult(
-      OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value,
-      RuntimeMethodReturnKindDispatchAbiCode(result.return_kind));
+  return result;
 }
 
 }  // namespace
 
-objc3_runtime_dispatch_i32_result ExecuteResolvedRuntimeDispatchTargetStrict(
+RuntimeTypedDispatchResult ExecuteResolvedRuntimeDispatchTargetStrict(
     RuntimeState &state, int receiver,
     const RuntimeDispatchTarget &dispatch_target, int a0, int a1, int a2,
     int a3) {
@@ -56,9 +51,9 @@ objc3_runtime_dispatch_i32_result ExecuteResolvedRuntimeDispatchTargetStrict(
     RecordPostResolutionStrictDispatchFailure(
         state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
         dispatch_target.return_kind, "resolved-method-precondition-error");
-    return MakeRuntimeDispatchI32TypedResult(
-        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0,
-        RuntimeMethodReturnKindDispatchAbiCode(dispatch_target.return_kind));
+    return RuntimeTypedDispatchFailure(
+        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
+        dispatch_target.return_kind);
   }
 
   PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
@@ -85,9 +80,9 @@ objc3_runtime_dispatch_i32_result ExecuteResolvedRuntimeDispatchTargetStrict(
   RecordPostResolutionStrictDispatchFailure(
       state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
       dispatch_target.return_kind, "resolved-method-missing-callable-error");
-  return MakeRuntimeDispatchI32TypedResult(
-      OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0,
-      RuntimeMethodReturnKindDispatchAbiCode(dispatch_target.return_kind));
+  return RuntimeTypedDispatchFailure(
+      OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
+      dispatch_target.return_kind);
 }
 
 }  // namespace objc3c::runtime
