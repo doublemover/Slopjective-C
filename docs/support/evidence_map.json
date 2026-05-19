@@ -134,7 +134,7 @@
       "capability_id": "runtime.dispatch.strict-error",
       "support_claim": "objc3c.behavior.runtime.strict-dispatch-error",
       "evidence_kind": "test",
-      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
       "command": "npm run objc3c -- test-behavior-matrix"
     },
     {
