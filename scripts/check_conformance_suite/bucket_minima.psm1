@@ -26,6 +26,7 @@ function Invoke-ConformanceBucketMinimaCheck {
     }
 
     $bucketFiles = Get-ChildItem -LiteralPath $bucketPath -File -Filter "*.json" |
+      Sort-Object -Property Name |
       Where-Object { $_.Name -ne "manifest.json" }
     $executableCount = 0
     $metadataCount = 0
