@@ -170,7 +170,98 @@ def _compile_category_conflict_diagnostics(case_dir: Path) -> dict[str, Any]:
                     "duplicate category interface 'Root(Extras)'",
                 ],
                 expected_codes=["O3S200"],
-            )
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-merge-conflicting-method",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_merge_conflicting_method.objc3",
+                expected_snippets=[
+                    "category merge failure: category 'Widget(Beta)' selector '+value' conflicts with attached category 'Widget(Alpha)'",
+                ],
+                expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-merge-conflicting-property",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_merge_conflicting_property.objc3",
+                expected_snippets=[
+                    "category merge failure: category 'Widget(Beta)' property 'token' conflicts with attached category 'Widget(Alpha)'",
+                ],
+                expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-merge-missing-pair",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_merge_missing_pair.objc3",
+                expected_snippets=[
+                    "category merge failure: category interface 'Widget(Debug)' is missing category implementation for realized class 'Widget'",
+                ],
+                expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="protocol-dispatch-intent-rejected",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "protocol_dispatch_intent_rejected.objc3",
+                expected_snippets=[
+                    "dispatch-control semantics failed: selector '-shared' in protocol 'P' cannot use Part 9 dispatch-control callable attributes",
+                ],
+                expected_codes=["O3S314"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-method-dispatch-intent-rejected",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_method_dispatch_intent_rejected.objc3",
+                expected_snippets=[
+                    "dispatch-control semantics failed: selector '-shared' in category 'Box(Ext)' cannot use Part 9 dispatch-control callable attributes",
+                ],
+                expected_codes=["O3S315"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-container-dispatch-intent-rejected",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_container_dispatch_intent_rejected.objc3",
+                expected_snippets=[
+                    "dispatch-control semantics failed: category 'Box(Ext)' cannot use objc_direct_members, objc_final, or objc_sealed container attributes",
+                ],
+                expected_codes=["O3S316"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="duplicate-protocol-runtime-export",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "duplicate_protocol_runtime_export.objc3",
+                expected_snippets=[
+                    "duplicate protocol 'Worker'",
+                ],
+                expected_codes=["O3S200"],
+            ),
         ],
     )
 
@@ -213,6 +304,9 @@ def check_runtime_object_foundation_protocol_category_case(
             "category_conflict_diagnostic_count": conflict_diagnostics[
                 "results"
             ][0]["diagnostic_count"],
+            "category_protocol_negative_fixture_count": conflict_diagnostics[
+                "fixture_count"
+            ],
         },
     )
 

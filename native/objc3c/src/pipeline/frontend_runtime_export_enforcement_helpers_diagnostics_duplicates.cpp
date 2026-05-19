@@ -93,6 +93,36 @@ void AppendClassIdentityCollisionDiagnostics(
   }
 }
 
+void AppendProtocolIdentityCollisionDiagnostics(
+    const Objc3RuntimeMetadataSourceRecordSet &records,
+    std::vector<Objc3RuntimeExportBlockingDiagnostic> &diagnostics) {
+  std::unordered_map<std::string, Objc3RuntimeExportDiagnosticDuplicateSite>
+      protocol_presence;
+  protocol_presence.reserve(records.protocols_lexicographic.size());
+  for (const auto &record : records.protocols_lexicographic) {
+    if (record.is_forward_declaration) {
+      continue;
+    }
+    Objc3RuntimeExportDiagnosticDuplicateSite &presence =
+        protocol_presence[record.name];
+    CaptureRuntimeExportDiagnosticLocation(presence, record.line,
+                                           record.column);
+    ++presence.count;
+  }
+
+  for (const auto &[name, presence] : protocol_presence) {
+    if (presence.count <= 1u) {
+      continue;
+    }
+    AppendRuntimeExportBlockingDiagnostic(
+        diagnostics, presence.line, presence.column, "O3S263",
+        "runtime metadata export blocked: ambiguous runtime metadata graph "
+        "resolution: protocol '" +
+            name + "' has " + std::to_string(presence.count) +
+            " concrete export " + Objc3RuntimeExportRecordNoun(presence.count));
+  }
+}
+
 void AppendPropertyDuplicateDiagnostics(
     const Objc3RuntimeMetadataSourceRecordSet &records,
     std::vector<Objc3RuntimeExportBlockingDiagnostic> &diagnostics) {
@@ -208,6 +238,7 @@ void AppendDuplicateRuntimeExportBlockingDiagnostics(
     std::vector<Objc3RuntimeExportBlockingDiagnostic> &diagnostics) {
   AppendCategoryAttachmentCollisionDiagnostics(records, diagnostics);
   AppendClassIdentityCollisionDiagnostics(records, diagnostics);
+  AppendProtocolIdentityCollisionDiagnostics(records, diagnostics);
   AppendPropertyDuplicateDiagnostics(records, diagnostics);
   AppendMethodDuplicateDiagnostics(records, diagnostics);
   AppendIvarDuplicateDiagnostics(records, diagnostics);
