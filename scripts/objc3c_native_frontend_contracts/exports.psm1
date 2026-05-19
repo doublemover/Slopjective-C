@@ -19,3 +19,8 @@ function Get-Objc3cNativeFrontendContractExportedFunctionNames {
     "Get-Objc3cNativeFrontendSharedSources"
   )
 }
+
+Export-ModuleMember -Function @(
+  "Get-Objc3cNativeFrontendContractModuleNames",
+  "Get-Objc3cNativeFrontendContractExportedFunctionNames"
+)
