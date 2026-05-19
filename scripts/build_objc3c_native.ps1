@@ -40,16 +40,6 @@ foreach ($frontendArtifactModule in @(
 }
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_superclean_surface.psm1") -Force
 
-$nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot
-$llvmRoot = $nativeToolchain.LlvmRoot
-$clangxx = $nativeToolchain.Clangxx
-$llvmLibTool = $nativeToolchain.LlvmLibTool
-$cmakeTool = $nativeToolchain.CmakeTool
-$ninjaTool = $nativeToolchain.NinjaTool
-$libclang = $nativeToolchain.Libclang
-$includeDir = $nativeToolchain.IncludeDir
-$nativeSourceRoot = $nativeToolchain.NativeSourceRoot
-
 # objc3c.nativebuild.toolchainparity.v1 anchor:
 # - authoritative toolchain flow today is `LLVM_ROOT` -> direct wrapper
 #   resolution for clang++, llvm-lib, libclang, and include/library discovery
@@ -123,16 +113,26 @@ function Get-Objc3cNativeBuildRepoRelativePath {
   } else {
     $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
   }
-  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
-  $targetUri = [System.Uri]::new($resolvedTarget)
-  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
-  return $relative.Replace('\', '/')
+  $relative = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
+  return $relative.Replace([System.IO.Path]::DirectorySeparatorChar, '/').Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
 }
 
 function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
   return $Mode -in @("full", "binaries-only", "contracts-binary", "contracts-closeout", "contracts-all")
+}
+
+$modeRunsNativeBuild = Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode
+if ($modeRunsNativeBuild) {
+  $nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot
+  $llvmRoot = $nativeToolchain.LlvmRoot
+  $clangxx = $nativeToolchain.Clangxx
+  $llvmLibTool = $nativeToolchain.LlvmLibTool
+  $cmakeTool = $nativeToolchain.CmakeTool
+  $ninjaTool = $nativeToolchain.NinjaTool
+  $libclang = $nativeToolchain.Libclang
+  $includeDir = $nativeToolchain.IncludeDir
 }
 
 $frontendModules = @(Get-Objc3cNativeFrontendModules)
@@ -164,11 +164,15 @@ foreach ($runtimePath in @($runtimeLibrarySourcePath, $runtimeLibraryHeaderPath)
 }
 
 Write-BuildStep ("repo_root=" + $repoRoot)
-Write-BuildStep ("llvm_root=" + $llvmRoot)
-Write-BuildStep ("clangxx=" + $clangxx)
-Write-BuildStep ("cmake=" + $cmakeTool)
-Write-BuildStep ("ninja=" + $ninjaTool)
-Write-BuildStep ("llvm_lib=" + $llvmLibTool)
+if ($modeRunsNativeBuild) {
+  Write-BuildStep ("llvm_root=" + $llvmRoot)
+  Write-BuildStep ("clangxx=" + $clangxx)
+  Write-BuildStep ("cmake=" + $cmakeTool)
+  Write-BuildStep ("ninja=" + $ninjaTool)
+  Write-BuildStep ("llvm_lib=" + $llvmLibTool)
+} else {
+  Write-BuildStep "toolchain_resolution=skipped-source-contracts"
+}
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("execution_mode=" + $ExecutionMode)
 
@@ -179,19 +183,19 @@ $selectedFrontendPacketDefinitions = @(
     -PacketDefinitions $frontendPacketDefinitions
 )
 
-$buildFingerprint = Get-Objc3cNativeBuildFingerprint `
-  -Clangxx $clangxx `
-  -CmakeTool $cmakeTool `
-  -NinjaTool $ninjaTool `
-  -LlvmRoot $llvmRoot `
-  -IncludeDir $includeDir `
-  -Libclang $libclang `
-  -BuildDir $tmpOutDir `
-  -RuntimeOutputDir $outDir `
-  -LibraryOutputDir $outLibDir `
-  -SourceDir $cmakeSourceDir
+if ($modeRunsNativeBuild) {
+  $buildFingerprint = Get-Objc3cNativeBuildFingerprint `
+    -Clangxx $clangxx `
+    -CmakeTool $cmakeTool `
+    -NinjaTool $ninjaTool `
+    -LlvmRoot $llvmRoot `
+    -IncludeDir $includeDir `
+    -Libclang $libclang `
+    -BuildDir $tmpOutDir `
+    -RuntimeOutputDir $outDir `
+    -LibraryOutputDir $outLibDir `
+    -SourceDir $cmakeSourceDir
 
-if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
   Invoke-Objc3cNativeCMakeConfigure `
     -CmakeTool $cmakeTool `
     -NinjaTool $ninjaTool `
@@ -244,7 +248,7 @@ Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact `
   -RuntimeLibraryPath $outRuntimeLib `
   -FrontendDefinitions $frontendPacketDefinitions
 
-if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
+if ($modeRunsNativeBuild) {
   if (Test-Path -LiteralPath $outExe -PathType Leaf) {
     Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
   }

@@ -15,6 +15,22 @@ def test_contract_source_output_reports_only_selected_generated_packets() -> Non
     assert "foreach ($packetDefinition in $frontendPacketDefinitions)" not in build_script
 
 
+def test_contract_source_mode_skips_native_toolchain_resolution() -> None:
+    build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert "$modeRunsNativeBuild = Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode" in build_script
+    assert "if ($modeRunsNativeBuild)" in build_script
+    assert "$nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot" in build_script
+    assert 'Write-BuildStep "toolchain_resolution=skipped-source-contracts"' in build_script
+
+
+def test_repo_relative_output_uses_host_neutral_path_api() -> None:
+    build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert "[System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)" in build_script
+    assert "[System.Uri]::new(($resolvedRoot + '\\'))" not in build_script
+
+
 def test_binary_output_lines_are_gated_to_native_build_modes() -> None:
     build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
 
@@ -26,8 +42,8 @@ def test_binary_output_lines_are_gated_to_native_build_modes() -> None:
         "(Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))"
     )
 
-    assert "if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode)" in output_section
+    assert "if ($modeRunsNativeBuild)" in output_section
     assert built_line in output_section
-    assert output_section.index(
-        "if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode)"
-    ) < output_section.index(built_line)
+    assert output_section.index("if ($modeRunsNativeBuild)") < output_section.index(
+        built_line
+    )

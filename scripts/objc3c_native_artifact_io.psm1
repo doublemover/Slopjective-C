@@ -54,10 +54,8 @@ function Get-Objc3cNativeRepoRelativePath {
   } else {
     $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
   }
-  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
-  $targetUri = [System.Uri]::new($resolvedTarget)
-  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
-  return $relative.Replace('\', '/')
+  $relative = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
+  return $relative.Replace([System.IO.Path]::DirectorySeparatorChar, '/').Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
 }
 
 function Get-Objc3cNativeFileSha256Hex {
