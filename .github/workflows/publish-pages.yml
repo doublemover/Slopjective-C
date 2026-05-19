@@ -37,6 +37,8 @@ jobs:
           python-version: "3.12"
       - name: Install Node dependencies
         run: npm ci
+      - name: Run canonical maintainer lint workflow
+        run: npm run objc3c -- lint
       - name: Run spec structural lint suite
         run: npm run objc3c -- lint-spec
 

@@ -23,5 +23,7 @@ jobs:
         run: npm run objc3c -- check-native-docs
       - name: Enforce generated-only published site drift contract
         run: npm run objc3c -- check-site
+      - name: Run canonical maintainer lint workflow
+        run: npm run objc3c -- lint
       - name: Run spec structural lint suite
         run: npm run objc3c -- lint-spec
