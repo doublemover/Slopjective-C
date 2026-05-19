@@ -13,6 +13,8 @@ Workflow files, local docs, and site source must agree on these facts:
 - generated command-surface docs are derived from the bridge and action catalog,
 - capability claims come from `docs/support/capability_matrix.*` plus
   `docs/support/evidence_map.md`,
+- `docs/support/capability_matrix.schema.json` is a ref-only entrypoint to the
+  canonical schema under `schemas/`, not a local schema copy,
 - shared JSON/schema ownership comes from checked-in schemas and the native
   `objc3c_json` / artifact JSON modules.
 

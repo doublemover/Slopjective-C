@@ -9,6 +9,7 @@ summarize support, but they must not widen it beyond these files.
 | File                                 | Purpose                                                                                                                |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | `capability_matrix.json`             | Machine-readable capability states, support claims, evidence pointers, command-surface policy, and hard-cutover rules. |
+| `capability_matrix.schema.json`      | Ref-only support-directory schema entrypoint for the canonical capability matrix schema under `schemas/`.              |
 | `capability_matrix.md`               | Human-readable projection of the capability matrix.                                                                    |
 | `evidence_map.json`                  | Machine-readable flattened capability-to-evidence rows.                                                                |
 | `evidence_map.md`                    | Human-readable evidence table.                                                                                         |
@@ -37,10 +38,13 @@ registry and native artifact publication records:
 - `scripts/objc3c_shared/schema_registry.py`
 - `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
-There is no support-directory schema mirror. Capability matrix consumers load
-the matrix and evidence-map schemas through the shared registry and artifact
-schema contract records so schema ownership cannot drift between local copies
-and checked-in registry entries.
+There is no support-directory schema mirror. `capability_matrix.schema.json` is
+a ref-only entrypoint that delegates to
+`schemas/objc3c-capability-matrix-v1.schema.json` for docs and editor tooling;
+it carries no independent schema ID.
+Capability matrix consumers load the canonical matrix and evidence-map schemas
+through the shared registry and artifact schema contract records so schema
+ownership cannot drift between local copies and checked-in registry entries.
 
 `capability_matrix.json` also carries `projection_policy`. That object names
 the authoritative data files, schema sources, and human projections so consumers

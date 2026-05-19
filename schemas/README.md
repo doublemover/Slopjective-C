@@ -15,6 +15,12 @@ not canonical schema ownership.
 | `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, responsibility rules, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows, public-command evidence policy, and no-command ownership boundaries used by docs and release evidence maps. |
 
+`docs/support/capability_matrix.schema.json` is a support-directory entrypoint
+for docs and editor tooling. It delegates to
+`schemas/objc3c-capability-matrix-v1.schema.json` with `$ref`; it has no
+independent `$id` and is not a separate schema owner, registry ID, or copied
+capability-matrix shape.
+
 ## Conformance Evidence Schemas
 
 | Schema | Owns |
@@ -70,6 +76,10 @@ The canonical data files are:
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 
+The support-directory schema entrypoint is:
+
+- `docs/support/capability_matrix.schema.json`
+
 The human-readable projections are:
 
 - `docs/support/capability_matrix.md`
@@ -80,7 +90,8 @@ Schema files under `schemas/` are the schema owner inputs. Support
 directory JSON files consume these schemas through
 `scripts/objc3c_shared/schema_registry.py` and
 `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`; they
-must not carry local schema mirrors or copied schema fragments.
+must not carry local schema mirrors or copied schema fragments. The
+support-directory schema entrypoint may only delegate to the canonical schema.
 
 ## Hard-Cutover Rules
 

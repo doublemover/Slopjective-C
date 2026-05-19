@@ -18,6 +18,9 @@ matrix:
 - machine-readable capability truth lives in `docs/support/capability_matrix.json`
   under schema id `objc3c-capability-matrix-v1` from
   `scripts/objc3c_shared/schema_registry.py`,
+- docs/editor schema discovery may use `docs/support/capability_matrix.schema.json`,
+  which delegates to `schemas/objc3c-capability-matrix-v1.schema.json` and does
+  not own a separate JSON shape,
 - machine-readable evidence truth lives in `docs/support/evidence_map.json`
   under schema id `objc3c-capability-evidence-map-v1` from the same shared
   registry,

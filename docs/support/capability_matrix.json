@@ -30,6 +30,7 @@
     ],
     "schema_sources": [
       "schemas/objc3c-capability-matrix-v1.schema.json",
+      "docs/support/capability_matrix.schema.json",
       "schemas/objc3c-capability-evidence-map-v1.schema.json"
     ],
     "human_projections": [
@@ -177,7 +178,7 @@
       "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics; no switch enables retired forms.",
       "owner_modules": [
         "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
-        "native/objc3c/src/diagnostics/modes/objc3_removed_mode_option_messages.cpp",
+        "native/objc3c/src/diagnostics/modes/canonical_rejections.cpp",
         "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
         "native/objc3c/src/sema/objc3_sema_diagnostic_contract.cpp"
       ],
@@ -587,7 +588,7 @@
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
-      "summary": "The canonical capability matrix schema under schemas/, the machine-readable evidence map, split native parser/writer/schema/error helpers, and artifact JSON registry modules own deterministic support boundaries. Publicly replayable evidence commands are npm-bridge commands only.",
+      "summary": "The canonical capability matrix schema under schemas/, the ref-only support-directory schema entrypoint, the machine-readable evidence map, split native parser/writer/schema/error helpers, and artifact JSON registry modules own deterministic support boundaries. Publicly replayable evidence commands are npm-bridge commands only.",
       "owner_modules": [
         "schemas/objc3c-capability-matrix-v1.schema.json",
         "schemas/objc3c-capability-evidence-map-v1.schema.json",
@@ -608,6 +609,10 @@
         {
           "kind": "schema",
           "path": "schemas/objc3c-capability-matrix-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "docs/support/capability_matrix.schema.json"
         },
         {
           "kind": "schema",

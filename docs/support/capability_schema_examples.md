@@ -8,7 +8,9 @@ The schema IDs are `objc3c-capability-matrix-v1` and
 `scripts/objc3c_shared/schema_registry.py` and published to the native artifact
 schema registry by
 `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`;
-examples and support-directory files must not duplicate schema fragments.
+`docs/support/capability_matrix.schema.json` is a ref-only support-directory
+entrypoint for the canonical matrix schema. Examples and support-directory files
+must not duplicate schema fragments.
 
 ## Capability Matrix Entry
 

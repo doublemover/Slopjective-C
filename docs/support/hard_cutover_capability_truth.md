@@ -7,6 +7,7 @@ read it.
 Authoritative inputs:
 
 - `docs/support/capability_matrix.json`
+- `docs/support/capability_matrix.schema.json`
 - `docs/support/evidence_map.json`
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
@@ -14,9 +15,10 @@ Authoritative inputs:
 - `scripts/objc3c_shared/schema_registry.py`
 - `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
-Schema ownership is not mirrored under `docs/support`. Consumers validate the
-matrix and evidence map through registry-owned schema IDs and artifact-owned
-publication records: `objc3c-capability-matrix-v1` and
+Schema ownership is not mirrored under `docs/support`. The support schema
+entrypoint delegates to the canonical matrix schema under `schemas/`; consumers
+validate the matrix and evidence map through registry-owned schema IDs and
+artifact-owned publication records: `objc3c-capability-matrix-v1` and
 `objc3c-capability-evidence-map-v1`.
 
 Projection rule: markdown files, site pages, and runbooks are projections of

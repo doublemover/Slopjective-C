@@ -7,8 +7,11 @@
 
 ## Context
 
-`native/objc3c/src/main.cpp` is monolithic. Extraction requires a fixed module
-shape and dependency direction before code moves begin.
+`native/objc3c/src/main.cpp` is now the native CLI shell entrypoint that
+delegates into the driver boundary. The hard-cutover tree has split stage,
+support, pipeline, artifact, runtime, library, driver, CLI, and tool owners
+under `native/objc3c/src/`; this ADR records the dependency direction those
+owners must preserve.
 
 ## Decision
 
@@ -32,5 +35,5 @@ includes and target links.
 
 - Extraction tasks can proceed in parallel without ambiguous ownership.
 - Boundary checks can be automated by script and CI gates.
-- Some current utility code in `main.cpp` will need relocation into shared
-  utility headers to avoid cross-layer coupling.
+- `main.cpp` must remain a shell over the driver boundary; shared utilities
+  belong in stage/support owners rather than re-entering the CLI entrypoint.

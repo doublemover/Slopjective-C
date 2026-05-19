@@ -9,9 +9,11 @@ actions.
 
 The machine-readable evidence map is `docs/support/evidence_map.json`; its
 schema id is `objc3c-capability-evidence-map-v1`. The capability matrix schema
-id is `objc3c-capability-matrix-v1`. Both IDs are owned by
-`scripts/objc3c_shared/schema_registry.py` and published to the native artifact
-schema registry by
+id is `objc3c-capability-matrix-v1`, with canonical schema path
+`schemas/objc3c-capability-matrix-v1.schema.json` and ref-only support
+entrypoint `docs/support/capability_matrix.schema.json`. Both canonical IDs are
+owned by `scripts/objc3c_shared/schema_registry.py` and published to the native
+artifact schema registry by
 `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`.
 Example rows and anti-examples live in
 `docs/support/capability_schema_examples.md`.
@@ -28,7 +30,6 @@ only for replayable implemented behavior evidence through `npm run objc3c --
 documentation boundaries; they do not create public workflow surface or widen a
 capability state.
 
-Rows that point to hard-cutover issue evidence or closeout payloads are local
 Rows that point to hard-cutover issue evidence or closeout payloads are
 checked-in branch evidence boundaries only. Implementation commit lists in those
 docs do not prove validation, push state, GitHub issue edits, remote closure, or
@@ -103,6 +104,7 @@ which surfaces may own claims and which surfaces only consume evidence.
 | `workflow.command.npm-objc3c-bridge`         |                                                    | source        | `scripts/objc3c_workflow/path_bootstrap.py`                                        |                                          |
 | `workflow.command.npm-objc3c-bridge`         |                                                    | doc           | `docs/runbooks/objc3c_public_command_surface.md`                                   |                                          |
 | `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3c-capability-matrix-v1.schema.json`                                  |                                          |
+| `tooling.json.schema-registry`               |                                                    | schema        | `docs/support/capability_matrix.schema.json`                                       |                                          |
 | `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3c-capability-evidence-map-v1.schema.json`                            |                                          |
 | `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3-conformance-dashboard-status-v1.schema.json`                        |                                          |
 | `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3-conformance-evidence-bundle-v1.schema.json`                         |                                          |
