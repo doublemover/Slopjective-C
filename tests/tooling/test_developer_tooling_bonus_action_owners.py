@@ -3,6 +3,10 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
+from scripts.objc3c_workflow.actions import (
+    developer_tooling_bonus_artifacts,
+    developer_tooling_bonus_inputs,
+)
 from scripts.objc3c_workflow.actions.developer_tooling_bonus_inputs import (
     BonusSurfaceInputs,
 )
@@ -40,6 +44,52 @@ def test_bonus_inspection_action_delegates_owned_details() -> None:
     assert "SHOWCASE_PORTFOLIO_JSON" not in source
     assert "SHOWCASE_TUTORIAL_WALKTHROUGH_JSON" not in source
     assert "build-native-contracts" not in source
+
+
+def test_bonus_source_of_truth_refresh_uses_public_repo_superclean_action() -> None:
+    calls: list[tuple[str, list[str]]] = []
+
+    def fake_execute_registered_action(action: str, args: list[str]) -> int:
+        calls.append((action, list(args)))
+        return 0
+
+    original = developer_tooling_bonus_inputs.execute_registered_action
+    try:
+        developer_tooling_bonus_inputs.execute_registered_action = (
+            fake_execute_registered_action
+        )
+        assert developer_tooling_bonus_inputs.refresh_bonus_source_of_truth() == 0
+    finally:
+        developer_tooling_bonus_inputs.execute_registered_action = original
+
+    assert calls == [
+        (
+            developer_tooling_bonus_inputs.REPO_SUPERCLEAN_REFRESH_ACTION,
+            [],
+        )
+    ]
+
+
+def test_bonus_artifact_source_refreshes_before_artifact_read() -> None:
+    events: list[str] = []
+
+    original_refresh = developer_tooling_bonus_artifacts.refresh_bonus_source_of_truth
+    original_ensure = developer_tooling_bonus_artifacts.ensure_bonus_source_of_truth
+    try:
+        developer_tooling_bonus_artifacts.refresh_bonus_source_of_truth = (
+            lambda: events.append("refresh") or 0
+        )
+        developer_tooling_bonus_artifacts.ensure_bonus_source_of_truth = (
+            lambda: events.append("ensure")
+        )
+        assert developer_tooling_bonus_artifacts.ensure_bonus_artifact_source() == 0
+    finally:
+        developer_tooling_bonus_artifacts.refresh_bonus_source_of_truth = (
+            original_refresh
+        )
+        developer_tooling_bonus_artifacts.ensure_bonus_source_of_truth = original_ensure
+
+    assert events == ["refresh", "ensure"]
 
 
 def test_bonus_payload_preserves_inspection_contract() -> None:

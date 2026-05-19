@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import sys
+
 from ..environment import ROOT
 from .developer_tooling_bonus_artifacts import (
     bonus_tool_integration_report_path,
@@ -15,13 +17,12 @@ from .developer_tooling_bonus_payload import bonus_tool_payload as _bonus_tool_p
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
-    rc = _ensure_bonus_artifact_source()
-    if rc != 0:
-        return rc
-
     try:
+        rc = _ensure_bonus_artifact_source()
+        if rc != 0:
+            return rc
         payload = _bonus_tool_payload(_load_bonus_surface_inputs())
-    except ValueError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
