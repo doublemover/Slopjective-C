@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 
 from scripts.objc3c_tooling import subprocess_command
@@ -92,6 +93,31 @@ def test_public_workflow_commands_execute_in_process_without_shell(
     assert result.stdout == "captured stdout\n"
     assert result.stderr == "captured stderr\n"
     assert calls == [("demo-action", ["arg"])]
+
+
+def test_subprocess_tooling_imports_nested_workflow_from_script_path() -> None:
+    script_root = ROOT / "scripts"
+    code = (
+        "from objc3c_tooling.subprocess_command import run_completed;"
+        "result = run_completed(['definitely-not-a-real-objc3c-executable']);"
+        "print(result.returncode)"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PYTHONPATH": str(script_root),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "127"
 
 
 def test_workflow_command_output_line_owner_drives_facade() -> None:

@@ -128,7 +128,7 @@
         "objc3.system"
       ],
       "story_capabilities": [
-        "status-shape",
+        "status-bridging",
         "actor-shaped-messaging",
         "runtime-messaging"
       ]

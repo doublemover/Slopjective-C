@@ -40,10 +40,22 @@ def _completed_from_public_workflow_action(
     *,
     capture_output: bool,
 ) -> subprocess.CompletedProcess[str] | None:
-    from scripts.objc3c_workflow.composite_step_nested import (
-        execute_nested_action,
-        npm_bridge_action_offset,
-    )
+    root_text = str(ROOT)
+    if root_text not in sys.path:
+        sys.path.insert(0, root_text)
+
+    try:
+        from scripts.objc3c_workflow.composite_step_nested import (
+            execute_nested_action,
+            npm_bridge_action_offset,
+        )
+    except ModuleNotFoundError as exc:
+        if exc.name != "scripts" and not str(exc.name).startswith("scripts."):
+            raise
+        from objc3c_workflow.composite_step_nested import (
+            execute_nested_action,
+            npm_bridge_action_offset,
+        )
 
     action_offset = npm_bridge_action_offset(command_list)
     if action_offset is None:
