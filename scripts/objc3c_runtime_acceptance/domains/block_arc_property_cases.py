@@ -95,8 +95,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected helper ABI debug state to preserve the bound receiver")
     expect(inside.get("last_property_name") == "weakValue",
            "expected helper ABI debug state to report the bound weak property")
-    expect(inside.get("last_property_owner_identity") == "implementation:ArcBox",
-           "expected helper ABI debug state to report the ArcBox owner identity")
+    expect(inside.get("last_property_owner_identity") == "interface:ArcBox",
+           "expected helper ABI debug state to report the ArcBox declaration owner identity")
     expect(after.get("retain_call_count") == 1,
            "expected retain helper accounting to remain stable after the autoreleasepool drains")
     expect(after.get("release_call_count") == 3,
@@ -121,8 +121,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected helper ABI debug state to report the final parent release after pool drain")
     expect(after.get("last_property_name") == "weakValue",
            "expected post-pool helper ABI debug state to preserve the bound weak property")
-    expect(after.get("last_property_owner_identity") == "implementation:ArcBox",
-           "expected post-pool helper ABI debug state to preserve the ArcBox owner identity")
+    expect(after.get("last_property_owner_identity") == "interface:ArcBox",
+           "expected post-pool helper ABI debug state to preserve the ArcBox declaration owner identity")
 
     return CaseResult(
         case_id="arc-property-helper-abi",

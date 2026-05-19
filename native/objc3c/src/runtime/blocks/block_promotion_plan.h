@@ -6,7 +6,10 @@
 
 namespace objc3c::runtime {
 
-bool BuildRuntimeBlockRecord(int block_handle,
+struct RuntimeState;
+
+bool BuildRuntimeBlockRecord(RuntimeState &state,
+                             int block_handle,
                              const void *storage,
                              std::uint64_t storage_size_bytes,
                              int has_pointer_capture_storage,

@@ -33,8 +33,5 @@ module classMetaclassRootRuntimeDispatch;
 fn main() -> i32 {
   let widget = 1042;
   let widgetClass = 1043;
-  if ([widget ready]) {
-    return [widget widgetValue] + [widget rootValue] + [widgetClass shared] + 1;
-  }
-  return 1;
+  return [widget widgetValue] + [widget rootValue] + [widgetClass shared] + 1;
 }

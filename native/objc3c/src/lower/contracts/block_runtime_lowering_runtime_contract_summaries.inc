@@ -40,19 +40,19 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
 
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
   std::ostringstream out;
-  // byref-forwarding/heap-promotion/ownership-interop
-  // implementation anchor: escaping pointer-capture block promotion now
-  // rewrites capture slots onto runtime-owned heap cells before helper
-  // execution so byref mutation and owned-capture lifetime hooks survive after
-  // the source frame returns.
+  // byref-forwarding/heap-promotion runtime interop
+  // implementation anchor: runtime opt-in byref-cell block promotion now
+  // updates stack cell forwarding pointers, shares heap cells across promoted
+  // blocks, and keeps raw pointer-capture lowering on an adapter path until
+  // compiler-emitted caller-frame byref cells land.
   out << "contract="
       << kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId
       << ";previous_contract="
       << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
-      << ";forwarding_model=escaping-pointer-capture-slots-rewrite-to-runtime-owned-forwarding-cells"
-      << ";heap_promotion_model=promotion-deep-copies-captured-i32-cells-before-helper-execution"
-      << ";ownership_interop_model=copy-dispose-helpers-run-against-runtime-owned-cells-for-owned-captures"
-      << ";invoke_model=escaped-byref-and-owned-capture-block-handles-invoke-after-source-frame-return"
+      << ";forwarding_model=runtime-byref-cell-captures-update-stack-forwarding-and-share-heap-cells-across-promoted-blocks"
+      << ";heap_promotion_model=byref-cell-promotion-preserves-shared-forwarded-i32-state-while-raw-pointer-capture-lowering-uses-private-adapter-cells"
+      << ";byref_cell_lifetime_model=copy-dispose-helpers-run-against-runtime-byref-probe-cells"
+      << ";invoke_model=runtime-probe-block-handles-invoke-through-shared-forwarding-cells-after-promotion"
       << ";fail_closed_model=no-public-block-abi-widening-and-no-outer-stack-cell-forwarding-bridge-yet"
       << ";non_goals=no-public-byref-layout-surface-no-generalized-foreign-abi-block-interoperability";
   return out.str();

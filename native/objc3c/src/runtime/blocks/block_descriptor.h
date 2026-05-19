@@ -10,6 +10,13 @@ constexpr std::uint32_t kRuntimeBlockDescriptorPointerCaptureStorageFlag =
     1u << 0u;
 constexpr std::uint32_t kRuntimeBlockDescriptorCopyHelperFlag = 1u << 1u;
 constexpr std::uint32_t kRuntimeBlockDescriptorDisposeHelperFlag = 1u << 2u;
+constexpr std::uint32_t kRuntimeBlockDescriptorByrefForwardingCellsFlag =
+    1u << 3u;
+constexpr std::uint32_t kRuntimeBlockDescriptorSupportedFlags =
+    kRuntimeBlockDescriptorPointerCaptureStorageFlag |
+    kRuntimeBlockDescriptorCopyHelperFlag |
+    kRuntimeBlockDescriptorDisposeHelperFlag |
+    kRuntimeBlockDescriptorByrefForwardingCellsFlag;
 
 struct RuntimeBlockDescriptor {
   std::uint64_t storage_size_bytes = 0;

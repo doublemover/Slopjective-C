@@ -60,7 +60,8 @@ bool LoadRuntimeBlockDescriptor(RuntimeBlockRecord &record) {
   std::memcpy(&descriptor, record.storage_words.data(), sizeof(descriptor));
   if (descriptor == nullptr || descriptor->invoke == nullptr ||
       descriptor->storage_size_bytes != record.storage_size_bytes ||
-      descriptor->parameter_count > 4u) {
+      descriptor->parameter_count > 4u ||
+      (descriptor->flags & ~kRuntimeBlockDescriptorSupportedFlags) != 0u) {
     return false;
   }
 
@@ -71,8 +72,15 @@ bool LoadRuntimeBlockDescriptor(RuntimeBlockRecord &record) {
       (descriptor->flags & kRuntimeBlockDescriptorCopyHelperFlag) != 0u;
   const bool descriptor_has_dispose_helper =
       (descriptor->flags & kRuntimeBlockDescriptorDisposeHelperFlag) != 0u;
+  const bool descriptor_uses_byref_forwarding_cells =
+      (descriptor->flags & kRuntimeBlockDescriptorByrefForwardingCellsFlag) !=
+      0u;
   if (descriptor_uses_pointer_capture_storage !=
       record.has_pointer_capture_storage) {
+    return false;
+  }
+  if (descriptor_uses_byref_forwarding_cells &&
+      !descriptor_uses_pointer_capture_storage) {
     return false;
   }
   if ((!descriptor_uses_pointer_capture_storage &&
@@ -86,6 +94,7 @@ bool LoadRuntimeBlockDescriptor(RuntimeBlockRecord &record) {
   record.descriptor_capture_count = descriptor->capture_count;
   record.descriptor_parameter_count = descriptor->parameter_count;
   record.descriptor_flags = descriptor->flags;
+  record.has_byref_forwarding_cells = descriptor_uses_byref_forwarding_cells;
   record.invoke = descriptor->invoke;
   return true;
 }
@@ -115,11 +124,12 @@ bool LoadRuntimeBlockCopyDisposeHelpers(RuntimeBlockRecord &record) {
   return true;
 }
 
-bool PromoteRuntimeBlockPointerCaptures(RuntimeBlockRecord &record) {
+bool PromoteRuntimeBlockPointerCaptures(RuntimeState &state,
+                                        RuntimeBlockRecord &record) {
   if (!record.has_pointer_capture_storage) {
     return true;
   }
-  if (!PromotePointerCaptureCellsIntoRuntimeOwnedStorage(record)) {
+  if (!PromotePointerCaptureCellsIntoRuntimeOwnedStorage(state, record)) {
     return false;
   }
   if (record.copy_helper != nullptr) {
@@ -130,7 +140,8 @@ bool PromoteRuntimeBlockPointerCaptures(RuntimeBlockRecord &record) {
 
 }  // namespace
 
-bool BuildRuntimeBlockRecord(int block_handle,
+bool BuildRuntimeBlockRecord(RuntimeState &state,
+                             int block_handle,
                              const void *storage,
                              std::uint64_t storage_size_bytes,
                              int has_pointer_capture_storage,
@@ -154,7 +165,7 @@ bool BuildRuntimeBlockRecord(int block_handle,
   if (!LoadRuntimeBlockCopyDisposeHelpers(built)) {
     return false;
   }
-  if (!PromoteRuntimeBlockPointerCaptures(built)) {
+  if (!PromoteRuntimeBlockPointerCaptures(state, built)) {
     return false;
   }
   if (built.invoke == nullptr) {

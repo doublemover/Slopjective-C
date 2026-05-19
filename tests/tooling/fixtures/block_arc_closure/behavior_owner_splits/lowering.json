@@ -17,7 +17,7 @@
     "lowering_surface_paths:llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
     "lowering_surface_paths:llvm_ir_summary.arc_block_autorelease_return_lowering",
     "lowering_surface_paths:llvm_ir_summary.executable_block_escape_runtime_hook_lowering",
-    "implementation_invariants:promotion-runs-copy-helper-once-for-owned-capture-storage"
+    "implementation_invariants:promotion-runs-copy-helper-once-for-runtime-byref-probe-storage"
   ],
   "canonical_anchor": "tests/native/lowering",
   "retired_surface_rule": "retired route runtime lowering, compatibility gate lowering, old-mode ARC lowering, evidence-only promotion helper claims, stack-only byref success, missing runtime-registration replay, descriptor-only lowering rows, and lowering evidence-log success are strict-error, canonical rejection, absent-support, or provenance-only evidence"

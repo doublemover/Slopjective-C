@@ -61,7 +61,7 @@ int PromoteRuntimeBlockI32(const void *storage,
   std::lock_guard<std::mutex> lock(state.mutex);
   const int block_handle = AllocateRuntimeBlockHandleUnlocked(state);
   RuntimeBlockRecord record;
-  if (!BuildRuntimeBlockRecord(block_handle, storage, storage_size_bytes,
+  if (!BuildRuntimeBlockRecord(state, block_handle, storage, storage_size_bytes,
                                has_pointer_capture_storage, &record)) {
     return 0;
   }

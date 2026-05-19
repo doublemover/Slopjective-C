@@ -11,7 +11,12 @@ CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/byref_promotion
 OUT_DIR = ROOT / "tmp/reports/block-arc-closure/byref-promotion-forwarding"
 JSON_OUT = OUT_DIR / "byref_promotion_copy_dispose_forwarding_summary.json"
 MD_OUT = OUT_DIR / "byref_promotion_copy_dispose_forwarding_summary.md"
-RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
+RUNTIME_SYMBOL_PATHS = [
+    ROOT / "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+    ROOT / "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
+    ROOT / "native/objc3c/src/runtime/memory/runtime_ownership_helper_entrypoints.h",
+]
+RUNTIME_ANCHOR_PATH = ROOT / "native/objc3c/src/runtime/memory/runtime_ownership_helper_entrypoints.h"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_block_arc_closure.md"
 
 
@@ -21,16 +26,19 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
+    runtime_symbol_text = "\n".join(
+        path.read_text(encoding="utf-8") for path in RUNTIME_SYMBOL_PATHS
+    )
+    runtime_anchor_text = RUNTIME_ANCHOR_PATH.read_text(encoding="utf-8")
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     proof_paths = [ROOT / path for path in contract["authoritative_proof_paths"]]
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_block_arc_closure_byref_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_block_arc_closure_byref_summary.py",
         "all_authoritative_proof_paths_exist": all(path.is_file() for path in proof_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
-        "all_authoritative_runtime_symbols_exported": all(symbol in runtime_text for symbol in contract["authoritative_runtime_symbols"]),
-        "runtime_keeps_byref_forwarding_anchor": "byref-forwarding/heap-promotion/ownership-interop anchor:" in runtime_text,
+        "all_authoritative_runtime_symbols_exported": all(symbol in runtime_symbol_text for symbol in contract["authoritative_runtime_symbols"]),
+        "runtime_keeps_byref_forwarding_anchor": "byref-forwarding/heap-promotion runtime interop anchor:" in runtime_anchor_text,
         "runbook_mentions_byref_forwarding_runtime_path": "escaping byref behavior is only supported through the runtime-owned promotion, forwarding, copy, and dispose helper path already targeted by lowering" in runbook_text,
     }
 

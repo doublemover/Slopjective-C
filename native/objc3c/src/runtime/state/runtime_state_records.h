@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -179,10 +180,14 @@ struct RuntimeState {
   bool last_protocol_query_conforms = false;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
   std::unordered_map<int, RuntimeBlockRecord> runtime_blocks_by_handle;
+  std::unordered_map<RuntimeBlockByrefCell *,
+                     std::weak_ptr<RuntimeBlockByrefCell>>
+      runtime_block_byref_cells_by_heap_address;
   std::unordered_map<int, std::vector<RuntimeWeakSlotRef>>
       weak_slot_refs_by_target_receiver;
   int next_runtime_instance_receiver = 0x100000;
   int next_runtime_block_handle = 0x200000;
+  std::uint64_t next_runtime_block_byref_cell_ordinal = 1;
   std::uint64_t next_runtime_instance_allocation_ordinal = 1;
   std::uint64_t live_runtime_instance_count = 0;
   std::uint64_t last_allocated_runtime_instance_receiver = 0;

@@ -13,6 +13,7 @@ from objc3c_tooling.public_workflow_output import extract_report_paths
 from .paths import REPORT_PATH
 from .paths import RUNNER_PATH
 from .paths import SUMMARY_CONTRACT_ID
+from .results import byref_forwarding_probe_summary
 
 
 def build_summary_payload(
@@ -57,6 +58,9 @@ def build_summary_payload(
         },
         "runtime_abi_probe_payload": runtime_abi_probe_payload,
         "byref_forwarding_probe_payload": byref_forwarding_probe_payload,
+        "byref_forwarding_probe_summary": byref_forwarding_probe_summary(
+            byref_forwarding_probe_payload
+        ),
         "child_report_paths": [
             *extract_report_paths(package_result.stdout),
             *extract_report_paths(smoke_result.stdout),

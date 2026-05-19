@@ -1,0 +1,10 @@
+module ByrefCaptureMissingIdentifierExec;
+
+fn main() -> i32 {
+  let counter = 1;
+  let closure = ^[__block] (i32 add) {
+    counter = counter + add;
+    return counter;
+  };
+  return closure(1);
+}

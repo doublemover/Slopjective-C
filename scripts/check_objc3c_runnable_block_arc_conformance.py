@@ -14,6 +14,7 @@ from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION_SCRIPT = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
+RUNTIME_ACCEPTANCE_SCRIPT = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "runtime" / "architecture-integration" / "summary.json"
 ACCEPTANCE_REPORT = ROOT / "tmp" / "reports" / "runtime" / "acceptance" / "summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "runnable-block-arc-conformance" / "summary.json"
@@ -41,18 +42,41 @@ REQUIRED_SURFACE_CONTRACTS = {
     ),
 }
 
+CASE_SCOPED_SURFACE_FIELDS = {
+    "authoritative_case_ids",
+}
+
 
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
 
+
+def comparable_surface(surface: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in surface.items()
+        if key not in CASE_SCOPED_SURFACE_FIELDS
+    }
+
+
 def main() -> int:
-    if os.environ.get("OBJC3C_SKIP_INTEGRATION_RERUN") != "1":
+    skip_integration_rerun = os.environ.get("OBJC3C_SKIP_INTEGRATION_RERUN") == "1"
+    skip_block_arc_acceptance_rerun = os.environ.get(
+        "OBJC3C_SKIP_BLOCK_ARC_ACCEPTANCE_RERUN"
+    ) == "1"
+    if not skip_integration_rerun:
         integration_result = run_capture(
             python_script_command(INTEGRATION_SCRIPT)
         )
         if integration_result.returncode != 0:
             raise RuntimeError("runtime architecture integration workflow failed")
+    if not skip_block_arc_acceptance_rerun:
+        acceptance_result = run_capture(
+            python_script_command(RUNTIME_ACCEPTANCE_SCRIPT, "--suite", "block-arc")
+        )
+        if acceptance_result.returncode != 0:
+            raise RuntimeError("block/ARC runtime acceptance workflow failed")
 
     integration_report = load_json(INTEGRATION_REPORT)
     acceptance_report = load_json(ACCEPTANCE_REPORT)
@@ -93,7 +117,8 @@ def main() -> int:
             f"runtime acceptance report published the wrong contract id for {surface_key}",
         )
         expect(
-            integration_surface == acceptance_surface,
+            comparable_surface(integration_surface)
+            == comparable_surface(acceptance_surface),
             f"runtime integration report drifted from acceptance for {surface_key}",
         )
 

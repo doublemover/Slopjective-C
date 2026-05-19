@@ -17,6 +17,7 @@ from objc3c_runtime_acceptance.domains.block_arc_runtime_block_assertions import
     assert_byref_runtime_fixture,
     assert_nonowning_runtime_fixture,
     assert_owned_runtime_fixture,
+    byref_forwarding_probe_summary,
 )
 from objc3c_runtime_acceptance.domains.block_arc_runtime_shared import (
     block_copy_dispose_surface,
@@ -151,13 +152,7 @@ def check_block_helper_runtime_execution_case(
             "arc_inference_runtime_exit_code": arc_inference.returncode,
             "arc_cleanup_scope_runtime_exit_code": arc_cleanup_scope.returncode,
             "arc_implicit_cleanup_runtime_exit_code": arc_implicit_cleanup.returncode,
-            "byref_forwarding_probe_handle": byref_forwarding_payload.get("handle"),
-            "byref_forwarding_first_invoke_result": byref_forwarding_payload.get(
-                "first_invoke_result"
-            ),
-            "byref_forwarding_second_invoke_result": byref_forwarding_payload.get(
-                "second_invoke_result"
-            ),
+            **byref_forwarding_probe_summary(byref_forwarding_payload),
             "copy_dispose_probe_copy_count_after_promotion": copy_dispose_payload.get(
                 "copy_count_after_promotion"
             ),

@@ -27,8 +27,8 @@
   ],
   "implementation_invariants": [
     {
-      "invariant_id": "promotion-runs-copy-helper-once-for-owned-capture-storage",
-      "summary": "Promotion must preserve exactly one copy-helper transition into the runtime-owned block state for the canonical byref probe."
+      "invariant_id": "promotion-runs-copy-helper-once-for-runtime-byref-probe-storage",
+      "summary": "Promotion must preserve exactly one copy-helper transition into runtime byref probe storage."
     },
     {
       "invariant_id": "forwarded-byref-state-remains-live-until-final-release",
@@ -37,9 +37,19 @@
     {
       "invariant_id": "forwarded-payload-remains-stable-through-runtime-owned-storage",
       "summary": "The disposed payload and invoke results must reflect the promoted storage rather than post-promotion stack mutation."
+    },
+    {
+      "invariant_id": "stack-cell-forwarding-updates-to-shared-heap-cell",
+      "summary": "A stack byref cell must forward to a distinct heap cell and later promoted blocks capturing the same stack cell must share that heap forwarding cell."
+    },
+    {
+      "invariant_id": "shared-heap-byref-cell-destroys-on-last-block-release",
+      "summary": "Shared heap byref cells must remain alive after the first promoted block release and run their destroy helper exactly once when the final block reference releases them."
     }
   ],
   "authoritative_proof_paths": [
+    "native/objc3c/src/runtime/blocks/block_byref_cells.h",
+    "native/objc3c/src/runtime/blocks/block_byref_cells.cpp",
     "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
     "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
     "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
@@ -49,11 +59,14 @@
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
-    "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3"
+    "tests/tooling/fixtures/native/execution/positive/byref_capture_argument_materialization.objc3",
+    "tests/tooling/fixtures/native/execution/negative/byref_capture_missing_identifier.objc3",
+    "tests/tooling/fixtures/native/execution/negative/byref_capture_duplicate_binding.objc3"
   ],
   "claim_narrowing_constraints": [
     "no-stack-only-byref-success-claim",
     "no-evidence-only-promotion-helper-claim",
-    "no-public-runtime-abi-widening"
+    "no-public-runtime-abi-widening",
+    "no-compiler-emitted-caller-frame-forwarding-bridge-claim"
   ]
 }

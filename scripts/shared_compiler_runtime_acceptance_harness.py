@@ -13,6 +13,7 @@ from typing import Any, Sequence
 
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import run_capture
+from scripts.objc3c_workflow.public_bridge_registry import OBJC3C_PACKAGE_BRIDGE
 from shared_compiler_runtime_acceptance_catalog import (
     COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
     COMPILE_PROVENANCE_CONTRACT_ID,
@@ -93,7 +94,7 @@ def validate_suite_report(entry: SuiteEntry, report: dict[str, Any]) -> dict[str
         if acceptance_suite_surface.get("report_path") != entry.report_path:
             raise RuntimeError("runtime acceptance suite surface drifted from the expected report path")
     else:
-        if report.get("runner_path") != "scripts.objc3c_workflow":
+        if report.get("runner_path") != OBJC3C_PACKAGE_BRIDGE.runner_path:
             raise RuntimeError("composite suite report drifted from the public workflow runner path")
         steps = report.get("steps")
         if not isinstance(steps, list) or not steps:
