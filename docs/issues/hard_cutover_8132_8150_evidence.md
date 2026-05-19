@@ -27,16 +27,16 @@ the hard-cutover issues against canonical language behavior, strict runtime
 semantics, behavior-first fixtures, source-derived clean-room artifacts,
 structured capability truth, and the canonical workflow bridge. Literal filename
 deletion is not treated as a blocker when a retained file is a small
-compatibility-neutral internal integration surface.
+internal integration surface.
 
 Intentional retained glue surfaces:
 
 - `native/objc3c/src/parse/objc3_parser.cpp` remains as the public parser
   entrypoint wrapper around parser-core ownership. It is not a legacy parser,
-  fallback path, or alternate Objective-C mode.
+  secondary parser route, or alternate Objective-C mode.
 - `native/objc3c/src/sema/objc3_semantic_passes.cpp` remains as the sema shard
   aggregation unit for build integration. It is not a semantic monolith or
-  compatibility shim.
+  retired-behavior adapter.
 - `native/objc3c/src/ir/objc3_ir_emitter.cpp` remains as the IR text emission
   entrypoint wrapper around pipeline-owned emitter modules. It is not a legacy
   IR backend or alternate lowering route.
