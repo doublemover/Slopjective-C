@@ -20,6 +20,7 @@ inline void PrintMethodCacheSlowPathProbeReport(const SlowPathProbeRun &run) {
       run.selector_table.state);
   std::printf(",\"instance_first\":%d,", run.instance_first);
   std::printf("\"instance_second\":%d,", run.instance_second);
+  std::printf("\"instance_after_stale\":%d,", run.instance_after_stale);
   std::printf("\"class_self\":%d,", run.class_self);
   std::printf("\"known_class\":%d,", run.known_class);
   std::printf("\"strict_error_first\":%d,", run.strict_error_first);
@@ -31,6 +32,9 @@ inline void PrintMethodCacheSlowPathProbeReport(const SlowPathProbeRun &run) {
   std::printf(",\"instance_second_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateSlowPath(
       run.instance_second_state.state);
+  std::printf(",\"instance_after_stale_state\":");
+  ::objc3c::runtime::probe::PrintMethodCacheStateSlowPath(
+      run.instance_after_stale_state.state);
   std::printf(",\"class_self_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateSlowPath(
       run.class_self_state.state);
@@ -46,6 +50,9 @@ inline void PrintMethodCacheSlowPathProbeReport(const SlowPathProbeRun &run) {
   std::printf(",\"instance_entry\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       run.instance_entry.entry);
+  std::printf(",\"instance_after_stale_entry\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
+      run.instance_after_stale_entry.entry);
   std::printf(",\"class_entry\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(run.class_entry.entry);
   std::printf(",\"strict_error_entry\":");

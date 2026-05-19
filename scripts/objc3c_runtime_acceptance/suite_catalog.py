@@ -9,6 +9,9 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
     ),
     "fast": (
         "runtime-library",
+        "dispatch-lookup-runtime-probe",
+        "method-cache-slow-path-probe",
+        "typed-dispatch-abi-probe",
         "runtime-probe-helper-support",
         "compile-backend-parity",
         "artifact-registry-key-isolation",

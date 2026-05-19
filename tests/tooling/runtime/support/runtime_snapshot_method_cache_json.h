@@ -125,6 +125,9 @@ inline void PrintMethodCacheStateCategoryAttachment(
               static_cast<unsigned long long>(snapshot.cache_miss_count));
   std::printf("\"slow_path_lookup_count\":%llu,",
               static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
+  std::printf(
+      "\"stale_method_cache_entry_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.stale_method_cache_entry_count));
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
@@ -273,6 +276,9 @@ inline void PrintMethodCacheStateSlowPath(
               static_cast<unsigned long long>(snapshot.cache_miss_count));
   std::printf("\"slow_path_lookup_count\":%llu,",
               static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
+  std::printf(
+      "\"stale_method_cache_entry_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.stale_method_cache_entry_count));
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(

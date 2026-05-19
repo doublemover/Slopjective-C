@@ -5,6 +5,11 @@
 #include "runtime_snapshot_helpers.h"
 #include "selector_class_fixtures.h"
 
+#include "runtime/state/runtime_cache_invalidation.h"
+#include "runtime/state/runtime_state_store.h"
+
+#include <mutex>
+
 namespace objc3c {
 namespace tooling {
 namespace method_cache_slow_path_probe {
@@ -20,6 +25,19 @@ inline void CaptureInstanceDispatches(SlowPathProbeRun &run) {
 
   run.instance_second = CallWidgetCurrentValue();
   CaptureMethodCacheState(run.instance_second_state);
+}
+
+inline void ForceMethodSurfaceGenerationChange() {
+  ::objc3c::runtime::RuntimeState &state =
+      ::objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  ::objc3c::runtime::BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+}
+
+inline void CaptureStaleCacheRevalidation(SlowPathProbeRun &run) {
+  ForceMethodSurfaceGenerationChange();
+  run.instance_after_stale = CallWidgetCurrentValue();
+  CaptureMethodCacheState(run.instance_after_stale_state);
 }
 
 inline void CaptureClassDispatches(SlowPathProbeRun &run) {
@@ -42,6 +60,8 @@ inline void CaptureStrictErrorDispatches(SlowPathProbeRun &run) {
 inline void CaptureCacheEntries(SlowPathProbeRun &run) {
   CaptureMethodCacheEntry(kWidgetInstanceClassId, kCurrentValueSelector,
                           run.instance_entry);
+  CaptureMethodCacheEntry(kWidgetInstanceClassId, kCurrentValueSelector,
+                          run.instance_after_stale_entry);
   CaptureMethodCacheEntry(kWidgetClassObjectId, kSharedSelector,
                           run.class_entry);
   CaptureMethodCacheEntry(kWidgetInstanceClassId, kStrictErrorSelector,
@@ -52,6 +72,7 @@ inline void CaptureSlowPathProbeRun(SlowPathProbeRun &run) {
   run = SlowPathProbeRun{};
   CaptureStartupState(run);
   CaptureInstanceDispatches(run);
+  CaptureStaleCacheRevalidation(run);
   CaptureClassDispatches(run);
   CaptureStrictErrorDispatches(run);
   CaptureCacheEntries(run);

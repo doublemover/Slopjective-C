@@ -7,6 +7,7 @@
 namespace objc3c::runtime::typed_dispatch_abi_probe {
 
 using ::objc3c::runtime::strict_dispatch_error_status_probe::MakeImageCase;
+using ::objc3c::runtime::strict_dispatch_error_status_probe::ManualImageCase;
 using ::objc3c::runtime::strict_dispatch_error_status_probe::RegisterCase;
 
 inline bool ManualBoolMethod0() {
@@ -25,6 +26,16 @@ struct TypedDispatchCase {
   const void *implementation;
   int expected_value;
 };
+
+ManualImageCase &MakePersistentImageCase(
+    const char *module_name, const char *identity_key, const char *selector,
+    const char *return_type_name, std::uint64_t parameter_count,
+    const void *implementation, std::uint64_t method_header_count) {
+  auto *image_case = new ManualImageCase(MakeImageCase(
+      module_name, identity_key, selector, return_type_name, parameter_count,
+      implementation, method_header_count));
+  return *image_case;
+}
 
 bool CommonTypedResultShapeIsValid(
     const objc3_runtime_dispatch_typed_result &result,
@@ -77,8 +88,76 @@ bool TypedValueFieldsMatch(const objc3_runtime_dispatch_typed_result &result,
          result.protocol_reference == expected_protocol;
 }
 
+bool TypedValueFieldsAreZero(const objc3_runtime_dispatch_typed_result &result) {
+  return result.i32_value == 0 && result.bool_value == 0 &&
+         result.object_reference == 0 && result.class_reference == 0 &&
+         result.selector_reference == 0 && result.protocol_reference == 0;
+}
+
+bool TypedStatusShapeIsValid(
+    const objc3_runtime_dispatch_typed_result &result,
+    objc3_runtime_dispatch_status_code expected_status,
+    objc3_runtime_dispatch_return_kind_code expected_return_kind,
+    const char *expected_return_kind_name, const char *expected_code,
+    const char *expected_contract) {
+  return result.abi_version == OBJC3_RUNTIME_DISPATCH_TYPED_RESULT_ABI_VERSION &&
+         result.result_size == sizeof(objc3_runtime_dispatch_typed_result) &&
+         result.status_code == expected_status &&
+         result.return_kind == expected_return_kind &&
+         result.return_kind_name != nullptr &&
+         std::strcmp(result.return_kind_name, expected_return_kind_name) == 0 &&
+         TypedValueFieldsAreZero(result) && result.diagnostic_code != nullptr &&
+         std::strcmp(result.diagnostic_code, expected_code) == 0 &&
+         result.diagnostic_message != nullptr &&
+         result.diagnostic_message[0] != '\0' &&
+         result.result_contract != nullptr &&
+         std::strcmp(result.result_contract, expected_contract) == 0;
+}
+
+bool I32StatusShapeIsValid(
+    const objc3_runtime_dispatch_i32_result &result,
+    objc3_runtime_dispatch_status_code expected_status,
+    objc3_runtime_dispatch_return_kind_code expected_return_kind,
+    const char *expected_code, const char *expected_contract) {
+  return result.abi_version == OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION &&
+         result.result_size == sizeof(objc3_runtime_dispatch_i32_result) &&
+         result.status_code == expected_status &&
+         result.return_kind == expected_return_kind && result.value == 0 &&
+         result.diagnostic_code != nullptr &&
+         std::strcmp(result.diagnostic_code, expected_code) == 0 &&
+         result.diagnostic_message != nullptr &&
+         result.diagnostic_message[0] != '\0' &&
+         result.result_contract != nullptr &&
+         std::strcmp(result.result_contract, expected_contract) == 0;
+}
+
+bool I32ProjectionIsRejected(const TypedDispatchCase &test_case) {
+  if (test_case.return_kind == OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32) {
+    return true;
+  }
+  const objc3_runtime_dispatch_i32_result i32_result =
+      objc3_runtime_dispatch_i32_checked(1024, test_case.selector, 0, 0, 0, 0);
+  const bool i32_rejected = I32StatusShapeIsValid(
+      i32_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
+      test_case.return_kind, "O3RT005",
+      "typed-dispatch-strict-error-result");
+  if (!i32_rejected) {
+    std::fprintf(
+        stderr,
+        "legacy i32 mismatch check failed selector=%s status=%d kind=%d "
+        "value=%d code=%s contract=%s\n",
+        test_case.selector, i32_result.status_code, i32_result.return_kind,
+        i32_result.value,
+        i32_result.diagnostic_code != nullptr ? i32_result.diagnostic_code
+                                              : "<null>",
+        i32_result.result_contract != nullptr ? i32_result.result_contract
+                                              : "<null>");
+  }
+  return i32_rejected;
+}
+
 bool RunTypedCase(const TypedDispatchCase &test_case) {
-  auto image_case = MakeImageCase(
+  ManualImageCase &image_case = MakePersistentImageCase(
       test_case.module_name, test_case.identity_key, test_case.selector,
       test_case.return_type_name, 0, test_case.implementation, 1);
   if (!RegisterCase(image_case)) {
@@ -102,35 +181,116 @@ bool RunTypedCase(const TypedDispatchCase &test_case) {
         result.result_contract != nullptr ? result.result_contract : "<null>");
     return false;
   }
-  if (test_case.return_kind ==
-      OBJC3_RUNTIME_DISPATCH_RETURN_KIND_OBJECT_REFERENCE) {
-    const objc3_runtime_dispatch_i32_result i32_result =
-        objc3_runtime_dispatch_i32_checked(1024, test_case.selector, 0, 0, 0,
-                                           0);
-    const bool i32_rejected =
-        i32_result.status_code ==
-            OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE &&
-        i32_result.return_kind ==
-            OBJC3_RUNTIME_DISPATCH_RETURN_KIND_OBJECT_REFERENCE &&
-        i32_result.value == 0 && i32_result.diagnostic_code != nullptr &&
-        std::strcmp(i32_result.diagnostic_code, "O3RT005") == 0 &&
-        i32_result.result_contract != nullptr &&
-        std::strcmp(i32_result.result_contract,
-                    "typed-dispatch-strict-error-result") == 0;
-    if (!i32_rejected) {
-      std::fprintf(
-          stderr,
-          "legacy i32 mismatch check failed status=%d kind=%d value=%d "
-          "code=%s contract=%s\n",
-          i32_result.status_code, i32_result.return_kind, i32_result.value,
-          i32_result.diagnostic_code != nullptr ? i32_result.diagnostic_code
-                                                : "<null>",
-          i32_result.result_contract != nullptr ? i32_result.result_contract
-                                                : "<null>");
-      return false;
-    }
+  const bool projection_rejected = I32ProjectionIsRejected(test_case);
+  objc3_runtime_reset_for_testing();
+  return projection_rejected;
+}
+
+bool RunTypedNilAndUnknownSelectorCases() {
+  ManualImageCase &image_case = MakePersistentImageCase(
+      "typed-dispatch-negative-base", "typed-dispatch::negative-base",
+      "knownValue", "i32", 0,
+      reinterpret_cast<const void *>(
+          &::objc3c::runtime::strict_dispatch_error_status_probe::ManualMethod0),
+      1);
+  if (!RegisterCase(image_case)) {
+    std::fprintf(stderr, "registration failed: typed negative base\n");
+    return false;
   }
+  const objc3_runtime_dispatch_typed_result nil_typed =
+      objc3_runtime_dispatch_typed_checked(0, "knownValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result nil_i32 =
+      objc3_runtime_dispatch_i32_checked(0, "knownValue", 0, 0, 0, 0);
+  if (!TypedStatusShapeIsValid(
+          nil_typed, OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT008", "typed-dispatch-value-result") ||
+      !I32StatusShapeIsValid(nil_i32,
+                             OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
+                             OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED,
+                             "O3RT008", "typed-dispatch-value-result")) {
+    std::fprintf(stderr, "typed nil receiver case failed\n");
+    objc3_runtime_reset_for_testing();
+    return false;
+  }
+  const objc3_runtime_dispatch_typed_result unknown_typed =
+      objc3_runtime_dispatch_typed_checked(1024, "missingValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result unknown_i32 =
+      objc3_runtime_dispatch_i32_checked(1024, "missingValue", 0, 0, 0, 0);
+  if (!TypedStatusShapeIsValid(
+          unknown_typed, OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT001", "typed-dispatch-strict-error-result") ||
+      !I32StatusShapeIsValid(
+          unknown_i32, OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "O3RT001",
+          "typed-dispatch-strict-error-result")) {
+    std::fprintf(stderr, "typed unknown selector case failed\n");
+    objc3_runtime_reset_for_testing();
+    return false;
+  }
+  objc3_runtime_reset_for_testing();
   return true;
+}
+
+bool RunTypedUnsupportedReturnCase() {
+  ManualImageCase &image_case = MakePersistentImageCase(
+      "typed-dispatch-unsupported-return",
+      "typed-dispatch::unsupported-return", "doubleValue", "double", 0,
+      reinterpret_cast<const void *>(
+          &::objc3c::runtime::strict_dispatch_error_status_probe::ManualMethod0),
+      1);
+  if (!RegisterCase(image_case)) {
+    std::fprintf(stderr, "registration failed: typed unsupported return\n");
+    return false;
+  }
+  const objc3_runtime_dispatch_typed_result typed_result =
+      objc3_runtime_dispatch_typed_checked(1024, "doubleValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result i32_result =
+      objc3_runtime_dispatch_i32_checked(1024, "doubleValue", 0, 0, 0, 0);
+  const bool valid =
+      TypedStatusShapeIsValid(
+          typed_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT005", "typed-dispatch-strict-error-result") &&
+      I32StatusShapeIsValid(
+          i32_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "O3RT005",
+          "typed-dispatch-strict-error-result");
+  objc3_runtime_reset_for_testing();
+  return valid;
+}
+
+bool RunTypedUnsupportedArgumentCase() {
+  ManualImageCase &image_case = MakePersistentImageCase(
+      "typed-dispatch-unsupported-arguments",
+      "typed-dispatch::unsupported-arguments", "tooMany:args:for:i32:path:",
+      "i32", 5,
+      reinterpret_cast<const void *>(
+          &::objc3c::runtime::strict_dispatch_error_status_probe::ManualMethod5),
+      1);
+  if (!RegisterCase(image_case)) {
+    std::fprintf(stderr, "registration failed: typed unsupported args\n");
+    return false;
+  }
+  const objc3_runtime_dispatch_typed_result typed_result =
+      objc3_runtime_dispatch_typed_checked(
+          1024, "tooMany:args:for:i32:path:", 1, 2, 3, 4);
+  const objc3_runtime_dispatch_i32_result i32_result =
+      objc3_runtime_dispatch_i32_checked(
+          1024, "tooMany:args:for:i32:path:", 1, 2, 3, 4);
+  const bool valid =
+      TypedStatusShapeIsValid(
+          typed_result,
+          OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT006", "typed-dispatch-strict-error-result") &&
+      I32StatusShapeIsValid(
+          i32_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "O3RT006",
+          "typed-dispatch-strict-error-result");
+  objc3_runtime_reset_for_testing();
+  return valid;
 }
 
 bool RunProbe() {
@@ -203,7 +363,8 @@ bool RunProbe() {
       return false;
     }
   }
-  return true;
+  return RunTypedNilAndUnknownSelectorCases() &&
+         RunTypedUnsupportedReturnCase() && RunTypedUnsupportedArgumentCase();
 }
 
 }  // namespace objc3c::runtime::typed_dispatch_abi_probe

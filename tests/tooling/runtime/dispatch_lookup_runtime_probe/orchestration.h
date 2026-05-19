@@ -10,13 +10,12 @@
 namespace objc3c::runtime::probe::dispatch_lookup_runtime_probe {
 
 inline DispatchLookupProbeResult CaptureDispatchLookupProbeResult() {
-  ResetDispatchLookupRuntime();
-
   DispatchLookupProbeResult result;
-  result.register_status = RegisterDispatchLookupImage();
   result.selectors = CaptureSelectorLookups();
   result.dispatch = CaptureDispatchResults();
+  result.from_class = CaptureFromClassDispatchResults();
   result.registration = CaptureRegistrationSnapshot();
+  result.register_status = result.registration.snapshot.last_registration_status;
 
   ResetDispatchLookupRuntime();
   result.reset_lookup = CaptureSelectorLookupAfterReset();

@@ -8,6 +8,7 @@
 #include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
+#include <string>
 #include <utility>
 
 namespace objc3c::runtime {
@@ -135,16 +136,24 @@ RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
           state, entry, expected_lookup_start_base_identity,
           expected_normalized_receiver_identity, expected_selector_stable_id);
   if (cache_status == OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE) {
+    const std::string selector_storage = entry.selector_storage;
+    const bool dispatch_family_is_class = entry.dispatch_family_is_class;
     state.method_cache.erase(cache_key);
-    state.last_dispatch_resolved_live_method = false;
-    state.last_dispatch_strict_error = true;
-    state.last_dispatch_path = "cache-hit-stale";
-    state.last_dispatch_implementation_kind = "strict-dispatch-error";
-    target.dispatch_status = cache_status;
-    StoreDispatchResultContractUnlocked(
-        state, target.dispatch_status, RuntimeMethodReturnKind::Unsupported);
-    ++state.strict_dispatch_error_count;
-    return target;
+    ++state.stale_method_cache_entry_count;
+    const DispatchFamily revalidation_family =
+        dispatch_family_is_class ? DispatchFamily::Class
+                                 : DispatchFamily::Instance;
+    RuntimeDispatchTarget revalidated_target = ResolveMethodCacheMissUnlocked(
+        state, expected_lookup_start_base_identity,
+        expected_normalized_receiver_identity, revalidation_family,
+        objc3_runtime_selector_handle{selector_storage.c_str(),
+                                      expected_selector_stable_id},
+        receiver_base_identity, cache_key);
+    state.last_dispatch_path =
+        revalidated_target.resolved_live_method
+            ? "cache-hit-stale-revalidated-live"
+            : "cache-hit-stale-revalidated-error";
+    return revalidated_target;
   }
   if (cache_status != OBJC3_RUNTIME_DISPATCH_STATUS_OK && entry.resolved) {
     state.last_dispatch_resolved_live_method = false;

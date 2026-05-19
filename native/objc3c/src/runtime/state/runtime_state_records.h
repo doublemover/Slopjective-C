@@ -86,6 +86,7 @@ struct RuntimeState {
   std::uint64_t method_cache_hit_count = 0;
   std::uint64_t method_cache_miss_count = 0;
   std::uint64_t slow_path_lookup_count = 0;
+  std::uint64_t stale_method_cache_entry_count = 0;
   std::uint64_t live_dispatch_count = 0;
   std::uint64_t strict_dispatch_error_count = 0;
   std::uint64_t fast_path_seed_count = 0;

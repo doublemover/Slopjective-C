@@ -24,6 +24,8 @@ extern "C" int objc3_runtime_copy_method_cache_state_for_testing(
   snapshot->cache_hit_count = state.method_cache_hit_count;
   snapshot->cache_miss_count = state.method_cache_miss_count;
   snapshot->slow_path_lookup_count = state.slow_path_lookup_count;
+  snapshot->stale_method_cache_entry_count =
+      state.stale_method_cache_entry_count;
   snapshot->live_dispatch_count = state.live_dispatch_count;
   snapshot->strict_dispatch_error_count = state.strict_dispatch_error_count;
   snapshot->fast_path_seed_count = state.fast_path_seed_count;

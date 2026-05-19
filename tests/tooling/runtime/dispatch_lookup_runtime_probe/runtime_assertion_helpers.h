@@ -17,6 +17,16 @@ inline constexpr int kDispatchArg0 = 1;
 inline constexpr int kDispatchArg1 = 2;
 inline constexpr int kDispatchArg2 = 3;
 inline constexpr int kDispatchArg3 = 4;
+inline constexpr int kRootObjectClassReceiver = 1026;
+inline constexpr int kRootObjectInstanceReceiver = 1025;
+inline constexpr int kWidgetInstanceReceiver = 1042;
+inline constexpr const char *kRootObjectClassName = "RootObject";
+inline constexpr const char *kWidgetClassName = "Widget";
+inline constexpr const char *kMissingClassName = "MissingClass";
+inline constexpr const char *kRootValueSelector = "rootValue";
+inline constexpr const char *kWidgetValueSelector = "widgetValue";
+inline constexpr int kExpectedRootValue = 17;
+inline constexpr int kExpectedWidgetValue = 23;
 
 inline std::uint64_t SelectorStableId(
     const objc3_runtime_selector_handle *selector) {

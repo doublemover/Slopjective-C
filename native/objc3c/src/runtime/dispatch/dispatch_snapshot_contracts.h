@@ -21,6 +21,7 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t cache_hit_count;
   uint64_t cache_miss_count;
   uint64_t slow_path_lookup_count;
+  uint64_t stale_method_cache_entry_count;
   uint64_t live_dispatch_count;
   uint64_t strict_dispatch_error_count;
   uint64_t fast_path_seed_count;

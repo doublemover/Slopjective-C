@@ -19,11 +19,17 @@ from objc3c_runtime_acceptance.domains.object_model_metaclass_sample_cases impor
     check_metaclass_graph_root_class_case,
 )
 from objc3c_runtime_acceptance.domains.object_model_runtime_library_cases import (
+    check_dispatch_lookup_runtime_probe_case,
+    check_method_cache_slow_path_probe_case,
     check_runtime_library_case,
+    check_typed_dispatch_abi_probe_case,
 )
 
 _EXPORTED_CASE_NAMES = [
     "check_runtime_library_case",
+    "check_dispatch_lookup_runtime_probe_case",
+    "check_method_cache_slow_path_probe_case",
+    "check_typed_dispatch_abi_probe_case",
     "check_canonical_dispatch_case",
     "check_metaclass_graph_root_class_case",
     "check_canonical_sample_set_case",
