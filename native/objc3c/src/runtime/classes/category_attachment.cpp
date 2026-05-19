@@ -5,6 +5,7 @@
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <algorithm>
@@ -164,6 +165,10 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
   }
   state.realized_attached_category_count +=
       static_cast<std::uint64_t>(node.attached_category_records.size());
+  if (!node.attached_category_records.empty()) {
+    BumpRuntimeCategoryAttachmentGenerationUnlocked(state);
+    BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+  }
   if (node.bundle != nullptr &&
       node.bundle->class_record.adopted_protocol_refs != nullptr) {
     state.realized_protocol_conformance_edge_count +=

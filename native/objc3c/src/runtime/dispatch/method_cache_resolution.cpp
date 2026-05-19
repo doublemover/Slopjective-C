@@ -5,6 +5,7 @@
 #include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/dispatch/runtime_method_return.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <utility>
@@ -69,6 +70,7 @@ MethodCacheEntry BuildMethodCacheEntry(
   cache_entry.cache_replay_generation = state.replay_generation;
   cache_entry.cache_realized_class_node_count =
       static_cast<std::uint64_t>(state.realized_class_nodes.size());
+  StampMethodCacheMutationGenerationsUnlocked(cache_entry, state);
   cache_entry.strict_error_status =
       RuntimeStrictDispatchStatus(resolution.resolved, resolution.ambiguous,
                                   resolution.strict_error_status);
@@ -92,7 +94,8 @@ objc3_runtime_dispatch_status_code ValidateMethodCacheEntryForDispatch(
       entry.cache_reset_generation != state.reset_generation ||
       entry.cache_replay_generation != state.replay_generation ||
       entry.cache_realized_class_node_count !=
-          static_cast<std::uint64_t>(state.realized_class_nodes.size())) {
+          static_cast<std::uint64_t>(state.realized_class_nodes.size()) ||
+      !MethodCacheMutationGenerationsMatchUnlocked(state, entry)) {
     return OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE;
   }
   if (!entry.resolved) {

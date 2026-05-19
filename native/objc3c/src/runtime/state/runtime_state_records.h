@@ -135,6 +135,11 @@ struct RuntimeState {
   std::uint64_t last_replayed_image_count = 0;
   std::uint64_t reset_generation = 0;
   std::uint64_t replay_generation = 0;
+  std::uint64_t class_graph_generation = 0;
+  std::uint64_t category_attachment_generation = 0;
+  std::uint64_t protocol_declaration_generation = 0;
+  std::uint64_t storage_surface_generation = 0;
+  std::uint64_t method_surface_generation = 0;
   int last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   std::string last_replayed_module_name;
   std::string last_replayed_translation_unit_identity_key;

@@ -6,6 +6,7 @@
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <cstddef>
@@ -206,6 +207,7 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     cache_entry.cache_replay_generation = state.replay_generation;
     cache_entry.cache_realized_class_node_count =
         static_cast<std::uint64_t>(state.realized_class_nodes.size());
+    StampMethodCacheMutationGenerationsUnlocked(cache_entry, state);
     cache_entry.implementation = entry.implementation;
     if (state.method_cache.emplace(cache_key, std::move(cache_entry)).second) {
       ++state.fast_path_seed_count;

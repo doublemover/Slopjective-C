@@ -8,6 +8,7 @@
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_clear.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/storage/property_layout_realization.h"
@@ -172,6 +173,8 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
     state.last_realized_metaclass_owner_identity =
         last_node.metaclass_owner_identity;
   }
+  BumpRuntimeClassGraphGenerationUnlocked(state);
+  BumpRuntimeMethodSurfaceGenerationUnlocked(state);
 }
 
 }  // namespace objc3c::runtime

@@ -29,6 +29,13 @@ extern "C" int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->attached_category_count = state.realized_attached_category_count;
   snapshot->protocol_conformance_edge_count =
       state.realized_protocol_conformance_edge_count;
+  snapshot->class_graph_generation = state.class_graph_generation;
+  snapshot->category_attachment_generation =
+      state.category_attachment_generation;
+  snapshot->protocol_declaration_generation =
+      state.protocol_declaration_generation;
+  snapshot->storage_surface_generation = state.storage_surface_generation;
+  snapshot->method_surface_generation = state.method_surface_generation;
   snapshot->live_instance_count = state.live_runtime_instance_count;
   snapshot->malformed_class_metadata_rejection_count =
       state.malformed_class_metadata_rejection_count;

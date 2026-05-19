@@ -3,6 +3,7 @@
 #include "runtime/images/image_descriptor.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/storage/property_accessor_records.h"
 #include "runtime/storage/property_ivar_layout_index.h"
@@ -21,7 +22,6 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
   // eagerly consume emitted property and ivar metadata into a runtime-owned
   // layout/accessor view so alloc/new and synthesized accessors can execute
   // against per-instance storage owned by runtime records.
-  (void)state;
   node.runtime_property_accessors.clear();
   node.runtime_layout_ready = false;
   node.runtime_instance_size_bytes = 0;
@@ -93,6 +93,10 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
             RuntimePropertyAccessorSortsBefore);
   node.runtime_layout_ready = !node.runtime_property_accessors.empty() ||
                               node.runtime_instance_size_bytes != 0u;
+  if (node.runtime_layout_ready) {
+    BumpRuntimeStorageSurfaceGenerationUnlocked(state);
+    BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+  }
   return true;
 }
 

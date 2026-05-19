@@ -261,6 +261,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_dispatch_state_clear.h
   state/runtime_instance_state_clear.cpp
   state/runtime_instance_state_clear.h
+  state/runtime_cache_invalidation.h
   state/runtime_state_clear.h
   state/runtime_state.cpp
   state/runtime_state.h

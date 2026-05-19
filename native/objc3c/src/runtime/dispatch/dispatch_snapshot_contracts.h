@@ -25,6 +25,11 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t strict_dispatch_error_count;
   uint64_t fast_path_seed_count;
   uint64_t fast_path_hit_count;
+  uint64_t class_graph_generation;
+  uint64_t category_attachment_generation;
+  uint64_t protocol_declaration_generation;
+  uint64_t storage_surface_generation;
+  uint64_t method_surface_generation;
   uint64_t last_selector_stable_id;
   uint64_t last_normalized_receiver_identity;
   uint64_t last_category_probe_count;
@@ -48,6 +53,11 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   uint64_t parameter_count;
   uint64_t category_probe_count;
   uint64_t protocol_probe_count;
+  uint64_t cache_class_graph_generation;
+  uint64_t cache_category_attachment_generation;
+  uint64_t cache_protocol_declaration_generation;
+  uint64_t cache_storage_surface_generation;
+  uint64_t cache_method_surface_generation;
   int fast_path_seeded;
   int effective_direct_dispatch;
   int objc_final_declared;

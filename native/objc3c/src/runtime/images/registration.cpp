@@ -8,6 +8,7 @@
 #include "runtime/images/registration_table_walk.h"
 #include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/metadata/runtime_registration_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_clear.h"
 #include "runtime/state/runtime_state_records.h"
 
@@ -99,6 +100,14 @@ int RegisterImageUnlocked(
       image->translation_unit_identity_key;
   state.registration_order_by_identity_key.emplace(
       image->translation_unit_identity_key, image->registration_order_ordinal);
+  if (staged_registration_table != nullptr) {
+    const RegisteredImageMetadata &record =
+        state.registered_image_metadata_by_identity_key.at(
+            image->translation_unit_identity_key);
+    if (record.protocol_descriptor_count != 0) {
+      BumpRuntimeProtocolDeclarationGenerationUnlocked(state);
+    }
+  }
   RebuildRealizedClassGraphUnlocked(state);
   ClearRejectedRegistrationUnlocked(state);
   ClearMethodCacheStateUnlocked(state);

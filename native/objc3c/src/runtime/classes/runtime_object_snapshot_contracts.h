@@ -13,6 +13,11 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t receiver_class_binding_count;
   uint64_t attached_category_count;
   uint64_t protocol_conformance_edge_count;
+  uint64_t class_graph_generation;
+  uint64_t category_attachment_generation;
+  uint64_t protocol_declaration_generation;
+  uint64_t storage_surface_generation;
+  uint64_t method_surface_generation;
   uint64_t live_instance_count;
   uint64_t malformed_class_metadata_rejection_count;
   uint64_t last_allocated_receiver_identity;
