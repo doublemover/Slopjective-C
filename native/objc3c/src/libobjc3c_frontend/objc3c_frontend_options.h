@@ -28,6 +28,9 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  *   llvm-direct backend and fails before pipeline execution when absent.
  * - language_version must be OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3;
  *   zero is not a default.
+ * - allow_live_error_runtime_surface admits the private runtime-owned
+ *   try/throw/throws proof surface; leave zero for canonical fail-closed
+ *   public compiles.
  * - Set unused pointers to NULL and reserved fields to 0.
  */
 typedef struct objc3c_frontend_compile_options {
@@ -44,7 +47,7 @@ typedef struct objc3c_frontend_compile_options {
   uint8_t emit_object;
   uint8_t ir_object_backend;
   uint8_t language_version;
-  uint8_t reserved0;
+  uint8_t allow_live_error_runtime_surface;
   uint8_t reserved1;
   uint8_t reserved2;
   uint64_t translation_unit_registration_order_ordinal;

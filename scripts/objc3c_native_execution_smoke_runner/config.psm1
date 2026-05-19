@@ -3,6 +3,44 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
   $PSNativeCommandUseErrorActionPreference = $false
 }
 
+function Resolve-Objc3cNativeExecutionSmokeClangxx {
+  param([string]$ConfiguredClangPath)
+
+  if (-not [string]::IsNullOrWhiteSpace($ConfiguredClangPath)) {
+    return $ConfiguredClangPath
+  }
+
+  $llvmRoot = $env:LLVM_ROOT
+  if (-not [string]::IsNullOrWhiteSpace($llvmRoot)) {
+    $llvmClangxx = Join-Path $llvmRoot "bin\clang++.exe"
+    if (Test-Path -LiteralPath $llvmClangxx -PathType Leaf) {
+      return $llvmClangxx
+    }
+  }
+
+  $pathClangxx = Get-Command "clang++" -ErrorAction SilentlyContinue
+  if ($null -ne $pathClangxx -and -not [string]::IsNullOrWhiteSpace($pathClangxx.Source)) {
+    return $pathClangxx.Source
+  }
+
+  return "clang++"
+}
+
+function Get-Objc3cNativeExecutionSmokeLinkDriverArgs {
+  $args = @("-std=c++20")
+  if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) {
+    $args += @(
+      "-fms-runtime-lib=dll",
+      "-fuse-ld=lld",
+      "-Xlinker",
+      "/MANIFEST:EMBED",
+      "-Xlinker",
+      "/MANIFESTUAC:level='asInvoker' uiAccess='false'"
+    )
+  }
+  return $args
+}
+
 function Resolve-Objc3cNativeExecutionSmokeConfig {
   param([Parameter(Mandatory = $true)][string]$ScriptRoot)
 
@@ -22,7 +60,8 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
   $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
   $configuredClangPath = $env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH
-  $clangCommand = if ([string]::IsNullOrWhiteSpace($configuredClangPath)) { "clang" } else { $configuredClangPath }
+  $clangCommand = Resolve-Objc3cNativeExecutionSmokeClangxx -ConfiguredClangPath $configuredClangPath
+  $linkDriverArgs = @(Get-Objc3cNativeExecutionSmokeLinkDriverArgs)
   $configuredLlcPath = $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH
   $llcCommand = $configuredLlcPath
   $llcSourcePath = ""
@@ -36,13 +75,6 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   }
   if (-not [string]::IsNullOrWhiteSpace($llcCommand)) {
     $llcSourcePath = $llcCommand
-    if ((Test-Path -LiteralPath $llcCommand -PathType Leaf) -and $llcCommand.Contains(" ")) {
-      $quoted = $llcCommand.Replace('"', '""')
-      $shortCandidate = cmd /d /c "for %I in (""$quoted"") do @echo %~sI" 2>$null
-      if (-not [string]::IsNullOrWhiteSpace($shortCandidate)) {
-        $llcCommand = $shortCandidate.Trim()
-      }
-    }
   }
 
   if (!(Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
@@ -63,11 +95,14 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
     native_exe = $nativeExe
     native_exe_explicit = $nativeExeExplicit
     clang_command = $clangCommand
+    link_driver_args = $linkDriverArgs
     llc_command = $llcCommand
     llc_source_path = $llcSourcePath
   }
 }
 
 Export-ModuleMember -Function @(
+  "Get-Objc3cNativeExecutionSmokeLinkDriverArgs",
+  "Resolve-Objc3cNativeExecutionSmokeClangxx",
   "Resolve-Objc3cNativeExecutionSmokeConfig"
 )

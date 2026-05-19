@@ -15,7 +15,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend conformance guard matrix dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $matrixEvaluationRoot = Join-Path $PSScriptRoot "evaluation_matrix"
@@ -30,7 +35,12 @@ foreach ($matrixEvaluationModule in $matrixEvaluationModules) {
     Write-Error "native compile frontend conformance matrix evaluation helper missing at $matrixEvaluationModulePath"
     exit 2
   }
-  . $matrixEvaluationModulePath
+  $matrixEvaluationRootLiteral = (Split-Path -Parent $matrixEvaluationModulePath).Replace("'", "''")
+  $matrixEvaluationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$matrixEvaluationRootLiteral'`n" +
+    (Get-Content -LiteralPath $matrixEvaluationModulePath -Raw)
+  )
+  . $matrixEvaluationScript
 }
 
 function Invoke-FrontendConformanceMatrixEvaluationImpl {

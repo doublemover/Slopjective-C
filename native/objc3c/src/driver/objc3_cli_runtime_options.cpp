@@ -46,6 +46,10 @@ bool TryApplyObjc3CliRuntimeOption(const std::string &flag,
     options.imported_runtime_surface_paths.push_back(value);
     return true;
   }
+  if (flag == "--objc3-enable-live-error-runtime-surface") {
+    options.allow_live_error_runtime_surface = true;
+    return true;
+  }
   if (flag == "--objc3-max-message-args") {
     if (!ReadObjc3CliRequiredValue(flag, index, argc, argv, value, error)) {
       return false;

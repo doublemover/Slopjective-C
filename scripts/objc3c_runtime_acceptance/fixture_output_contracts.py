@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 from .compile_backends import DIRECT_COMPILE_BACKEND
+from .compile_backends import explicit_live_error_runtime_args
 from .compile_truth import COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID
 from .compile_truth import COMPILE_PROVENANCE_CONTRACT_ID
 from .fixture_compile_runner import run_fixture_compile
@@ -135,9 +136,20 @@ def compile_fixture_outputs_with_args(
     return obj_path, ll_path, manifest_path
 
 
+def compile_live_error_runtime_fixture_outputs(
+    fixture: Path, out_dir: Path, extra_args: list[str] | None = None
+) -> tuple[Path, Path, Path]:
+    return compile_fixture_outputs_with_args(
+        fixture,
+        out_dir,
+        explicit_live_error_runtime_args(extra_args),
+    )
+
+
 __all__ = [
     "compile_fixture",
     "compile_fixture_manifest_only",
+    "compile_live_error_runtime_fixture_outputs",
     "compile_fixture_outputs",
     "compile_fixture_outputs_with_args",
     "compile_fixture_with_args",

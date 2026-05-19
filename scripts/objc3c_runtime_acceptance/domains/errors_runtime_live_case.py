@@ -7,7 +7,9 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import (
+    compile_live_error_runtime_fixture_outputs,
+)
 from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
@@ -26,7 +28,9 @@ def check_live_error_runtime_integration_case(
         / "native"
         / "live_error_runtime_integration_positive.objc3"
     )
-    obj_path, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    obj_path, _, manifest_path = compile_live_error_runtime_fixture_outputs(
+        fixture, case_dir / "compile"
+    )
     probe = (
         ROOT
         / "tests"

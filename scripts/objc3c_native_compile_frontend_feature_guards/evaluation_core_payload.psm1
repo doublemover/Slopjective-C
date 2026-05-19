@@ -17,7 +17,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend feature guard core payload dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $corePayloadRoot = Join-Path $PSScriptRoot "evaluation_core_payload"
@@ -32,7 +37,12 @@ foreach ($corePayloadModule in $corePayloadModules) {
     Write-Error "native compile frontend feature guard core payload helper missing at $corePayloadModulePath"
     exit 2
   }
-  . $corePayloadModulePath
+  $corePayloadRootLiteral = (Split-Path -Parent $corePayloadModulePath).Replace("'", "''")
+  $corePayloadScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$corePayloadRootLiteral'`n" +
+    (Get-Content -LiteralPath $corePayloadModulePath -Raw)
+  )
+  . $corePayloadScript
 }
 
 Export-ModuleMember -Function "Assert-FrontendCoreFeaturePayloadImpl"

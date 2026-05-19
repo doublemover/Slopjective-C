@@ -44,10 +44,17 @@ inline void StabilizeRealizedClassEntryObservation(
       observation.category_name);
 }
 
+inline void StabilizeAllocationInvariantSnapshots(
+    AllocationInvariantSnapshots &snapshots) {
+  StabilizeMethodCacheEntryObservation(snapshots.count_entry);
+  StabilizeMethodCacheEntryObservation(snapshots.set_count_entry);
+  StabilizeRealizedGraphStateObservation(snapshots.graph_state);
+  StabilizeRealizedClassEntryObservation(snapshots.widget_entry);
+}
+
 inline RegistrationStateObservation CaptureRegistrationState() {
   RegistrationStateObservation observation;
   (void)objc3_runtime_copy_registration_state_for_testing(&observation.state);
-  StabilizeRegistrationStateObservation(observation);
   return observation;
 }
 
@@ -55,7 +62,6 @@ inline SelectorTableStateObservation CaptureSelectorTableState() {
   SelectorTableStateObservation observation;
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
       &observation.state);
-  StabilizeSelectorTableStateObservation(observation);
   return observation;
 }
 
@@ -64,7 +70,6 @@ inline MethodCacheEntryObservation CaptureMethodCacheEntry(int receiver,
   MethodCacheEntryObservation observation;
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       receiver, selector, &observation.entry);
-  StabilizeMethodCacheEntryObservation(observation);
   return observation;
 }
 
@@ -72,7 +77,6 @@ inline RealizedGraphStateObservation CaptureRealizedGraphState() {
   RealizedGraphStateObservation observation;
   (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
       &observation.state);
-  StabilizeRealizedGraphStateObservation(observation);
   return observation;
 }
 
@@ -80,20 +84,22 @@ inline RealizedClassEntryObservation CaptureWidgetClassEntry() {
   RealizedClassEntryObservation observation;
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kWidgetClassName, &observation.entry);
-  StabilizeRealizedClassEntryObservation(observation);
   return observation;
 }
 
-inline AllocationInvariantSnapshots CaptureAllocationInvariantSnapshots(
-    const AllocationFixture &fixture) {
-  AllocationInvariantSnapshots snapshots;
+inline void CaptureAllocationInvariantSnapshots(
+    const AllocationFixture &fixture,
+    AllocationInvariantSnapshots &snapshots) {
   snapshots.count_entry =
       CaptureMethodCacheEntry(fixture.first_alloc, kCountGetterSelector);
+  StabilizeMethodCacheEntryObservation(snapshots.count_entry);
   snapshots.set_count_entry =
       CaptureMethodCacheEntry(fixture.first_alloc, kCountSetterSelector);
+  StabilizeMethodCacheEntryObservation(snapshots.set_count_entry);
   snapshots.graph_state = CaptureRealizedGraphState();
+  StabilizeRealizedGraphStateObservation(snapshots.graph_state);
   snapshots.widget_entry = CaptureWidgetClassEntry();
-  return snapshots;
+  StabilizeRealizedClassEntryObservation(snapshots.widget_entry);
 }
 
 }  // namespace objc3c::runtime::probe::instance_allocation_runtime

@@ -125,6 +125,7 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "objc3c_frontend_borrowed_path_t out_dir;",
             "objc3c_frontend_borrowed_path_t clang_path;",
             "objc3c_frontend_borrowed_path_t llc_path;",
+            "uint8_t allow_live_error_runtime_surface;",
             "uint8_t language_version;",
             "uint8_t reserved1;",
             "uint8_t reserved2;",

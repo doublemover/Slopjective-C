@@ -35,4 +35,12 @@ REQUIRED_TREE: dict[str, tuple[str, ...]] = {
 STRICT_KINDS = {"negative", "strict-error", "rejection"}
 FIXTURE_KINDS = {"positive", *STRICT_KINDS}
 EXPECTED_STAGES = {"parse", "compile", "link", "run"}
-RETIRED_SURFACE_TAGS = frozenset({"old-mode", "runtime-adapter", "runtime-dispatch"})
+RETIRED_SURFACE_TAGS = frozenset(
+    {
+        "compatibility-gate",
+        "old-mode",
+        "retired-route",
+        "runtime-adapter",
+        "runtime-dispatch",
+    }
+)

@@ -6,7 +6,12 @@ if (!(Test-Path -LiteralPath $featureGuardNormalizationModule -PathType Leaf)) {
   Write-Error "native compile frontend feature guard normalization module missing at $featureGuardNormalizationModule"
   exit 2
 }
-Import-Module $featureGuardNormalizationModule -Force -DisableNameChecking
+$featureGuardNormalizationRootLiteral = (Split-Path -Parent $featureGuardNormalizationModule).Replace("'", "''")
+$featureGuardNormalizationScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$featureGuardNormalizationRootLiteral'`n" +
+  (Get-Content -LiteralPath $featureGuardNormalizationModule -Raw)
+)
+. $featureGuardNormalizationScript
 
 function Read-FrontendFeatureCompileArgs {
   param(

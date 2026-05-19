@@ -13,7 +13,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend conformance guard closeout dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $closeoutEvaluationRoot = Join-Path $PSScriptRoot "evaluation_closeout"
@@ -27,7 +32,12 @@ foreach ($closeoutEvaluationModule in $closeoutEvaluationModules) {
     Write-Error "native compile frontend conformance closeout evaluation helper missing at $closeoutEvaluationModulePath"
     exit 2
   }
-  . $closeoutEvaluationModulePath
+  $closeoutEvaluationRootLiteral = (Split-Path -Parent $closeoutEvaluationModulePath).Replace("'", "''")
+  $closeoutEvaluationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$closeoutEvaluationRootLiteral'`n" +
+    (Get-Content -LiteralPath $closeoutEvaluationModulePath -Raw)
+  )
+  . $closeoutEvaluationScript
 }
 
 function Invoke-FrontendIntegrationCloseoutEvaluationImpl {

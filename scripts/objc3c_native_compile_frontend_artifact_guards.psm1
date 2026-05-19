@@ -24,7 +24,12 @@ foreach ($artifactGuardModule in $artifactGuardModules) {
     Write-Error "native compile frontend artifact guard helper missing at $artifactGuardModulePath"
     exit 2
   }
-  . $artifactGuardModulePath
+  $artifactGuardRootLiteral = (Split-Path -Parent $artifactGuardModulePath).Replace("'", "''")
+  $artifactGuardScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$artifactGuardRootLiteral'`n" +
+    (Get-Content -LiteralPath $artifactGuardModulePath -Raw)
+  )
+  . $artifactGuardScript
 }
 
 Export-ModuleMember -Function @("Assert-FrontendModuleScaffold", "Assert-FrontendInvocationLock")

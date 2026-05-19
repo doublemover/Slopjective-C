@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
 from objc3c_tooling.behavior_fixtures import BehaviorFixture
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.probe_compile import find_clangxx, normal_user_manifest_link_args
 from objc3c_tooling.subprocesses import CommandExecution, bounded_text, run_timed
 
 from .config import BUILD_SCRIPT, NATIVE_EXE, RUNTIME_LIB
@@ -18,7 +20,17 @@ def ensure_native_binaries() -> None:
         return
     pwsh = shutil.which("pwsh") or "pwsh"
     result = run_timed(
-        [pwsh, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", BUILD_SCRIPT, "-ExecutionMode", "binaries-only"],
+        [
+            pwsh,
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            BUILD_SCRIPT,
+            "-ExecutionMode",
+            "binaries-only",
+        ],
         metadata={"stage": "build-native-binaries"},
     )
     if result.returncode != 0:
@@ -65,8 +77,43 @@ def object_path(compile_dir: Path) -> Path:
     return obj_path
 
 
+def runtime_registration_manifest_path(compile_dir: Path) -> Path:
+    manifest_path = compile_dir / "module.runtime-registration-manifest.json"
+    if not manifest_path.is_file():
+        raise BehaviorMatrixFailure(
+            "compile did not publish runtime registration manifest: "
+            f"{repo_rel(manifest_path)}"
+        )
+    return manifest_path
+
+
+def runtime_driver_linker_flags(compile_dir: Path) -> list[str]:
+    manifest_path = runtime_registration_manifest_path(compile_dir)
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise BehaviorMatrixFailure(
+            f"runtime registration manifest is invalid JSON: {repo_rel(manifest_path)}"
+        ) from exc
+    raw_flags = payload.get("driver_linker_flags")
+    if not isinstance(raw_flags, list) or not raw_flags:
+        raise BehaviorMatrixFailure(
+            "runtime registration manifest missing non-empty driver_linker_flags: "
+            f"{repo_rel(manifest_path)}"
+        )
+    flags: list[str] = []
+    for index, flag in enumerate(raw_flags):
+        if not isinstance(flag, str) or not flag.strip():
+            raise BehaviorMatrixFailure(
+                "runtime registration manifest has invalid driver_linker_flags "
+                f"entry {index}: {repo_rel(manifest_path)}"
+            )
+        flags.append(flag)
+    return flags
+
+
 def clang_command() -> str:
-    return shutil.which("clang") or "clang"
+    return find_clangxx()
 
 
 def link_fixture(
@@ -77,9 +124,16 @@ def link_fixture(
     include_runtime: bool,
 ) -> CommandExecution:
     exe_path = case_dir / "module.exe"
-    command: list[object] = [clang_command(), object_path(compile_dir)]
+    command: list[object] = [
+        clang_command(),
+        "-std=c++20",
+        "-fms-runtime-lib=dll",
+        *normal_user_manifest_link_args(),
+        object_path(compile_dir),
+    ]
     if include_runtime:
         command.append(RUNTIME_LIB)
+        command.extend(runtime_driver_linker_flags(compile_dir))
     command.extend(["-o", exe_path, "-fno-color-diagnostics"])
     return run_timed(
         command,

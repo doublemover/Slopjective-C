@@ -91,3 +91,5 @@ function Assert-Objc3cNativeCompileFrontendConformanceGuards {
     -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
   Assert-FrontendIntegrationCloseout -RepoRoot $RepoRoot -BuildResult $BuildResult | Out-Null
 }
+
+Export-ModuleMember -Function "Invoke-Objc3cNativeCompileFrontendGuards"

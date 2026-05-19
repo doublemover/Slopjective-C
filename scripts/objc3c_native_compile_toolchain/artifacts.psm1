@@ -7,7 +7,12 @@ if (!(Test-Path -LiteralPath $compileIoModule -PathType Leaf)) {
   Write-Error "native compile IO helper missing at $compileIoModule"
   exit 2
 }
-Import-Module $compileIoModule -Force -DisableNameChecking
+$compileIoRootLiteral = (Split-Path -Parent $compileIoModule).Replace("'", "''")
+$compileIoScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$compileIoRootLiteral'`n" +
+  (Get-Content -LiteralPath $compileIoModule -Raw)
+)
+. $compileIoScript
 
 $artifactModuleRoot = Join-Path $PSScriptRoot "artifact_resolution"
 $artifactModules = @(
@@ -23,7 +28,12 @@ foreach ($artifactModule in $artifactModules) {
     Write-Error "native compile toolchain artifact helper missing at $artifactModulePath"
     exit 2
   }
-  . $artifactModulePath
+  $artifactModuleRootLiteral = (Split-Path -Parent $artifactModulePath).Replace("'", "''")
+  $artifactScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$artifactModuleRootLiteral'`n" +
+    (Get-Content -LiteralPath $artifactModulePath -Raw)
+  )
+  . $artifactScript
 }
 
 Export-ModuleMember -Function @(

@@ -21,6 +21,7 @@ struct FrontendCApiRunnerOptions {
   bool emit_manifest = true;
   bool emit_ir = true;
   bool emit_object = true;
+  bool allow_live_error_runtime_surface = false;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
   std::filesystem::path summary_out;
   bool dump_summary_json = false;

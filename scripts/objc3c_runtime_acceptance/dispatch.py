@@ -42,13 +42,13 @@ def build_property_ivar_accessor_reflection_implementation_surface() -> dict[str
         symbols=PROPERTY_IVAR_REFLECTION_SYMBOLS,
         extra_fields={
             "implementation_model": (
-                "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation"
+                "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-through-runtime-storage-owners"
             ),
             "reflection_model": (
                 "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
             ),
             "fail_closed_model": (
-                "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis"
+                "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-synthetic-storage-path"
             ),
         },
         private_testing_surface_only=False,

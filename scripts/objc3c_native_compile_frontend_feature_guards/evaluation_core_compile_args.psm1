@@ -17,7 +17,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend feature guard core compile dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $coreCompileArgRoot = Join-Path $PSScriptRoot "evaluation_core_compile_args"
@@ -33,7 +38,12 @@ foreach ($coreCompileArgModule in $coreCompileArgModules) {
     Write-Error "native compile frontend feature guard core compile helper missing at $coreCompileArgModulePath"
     exit 2
   }
-  . $coreCompileArgModulePath
+  $coreCompileArgRootLiteral = (Split-Path -Parent $coreCompileArgModulePath).Replace("'", "''")
+  $coreCompileArgScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$coreCompileArgRootLiteral'`n" +
+    (Get-Content -LiteralPath $coreCompileArgModulePath -Raw)
+  )
+  . $coreCompileArgScript
 }
 
 Export-ModuleMember -Function "Assert-FrontendCoreCompileArgsImpl"

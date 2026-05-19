@@ -23,6 +23,9 @@ void WriteFrontendCApiRunnerPlaygroundReproCompileProfileJsonRows(
       << options.max_message_send_args << ",\n";
   out << grandchild_indent << "\"runtime_dispatch_symbol\": \""
       << EscapeJsonString(options.runtime_dispatch_symbol) << "\",\n";
+  out << grandchild_indent << "\"allow_live_error_runtime_surface\": "
+      << (options.allow_live_error_runtime_surface ? "true" : "false")
+      << ",\n";
   out << grandchild_indent
       << "\"translation_unit_registration_order_ordinal\": "
       << options.translation_unit_registration_order_ordinal << "\n";

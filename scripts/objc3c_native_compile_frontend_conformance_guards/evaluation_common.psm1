@@ -8,7 +8,12 @@ foreach ($modulePath in @($conformanceGuardNormalizationModule, $conformanceGuar
     Write-Error "native compile frontend conformance guard evaluation common dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 function Assert-FrontendConformanceDependencyContracts {

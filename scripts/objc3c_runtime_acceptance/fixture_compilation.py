@@ -11,6 +11,7 @@ from .fixture_output_contracts import compile_fixture_manifest_only
 from .fixture_output_contracts import compile_fixture_outputs
 from .fixture_output_contracts import compile_fixture_outputs_with_args
 from .fixture_output_contracts import compile_fixture_with_args
+from .fixture_output_contracts import compile_live_error_runtime_fixture_outputs
 
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "compile_fixture",
     "compile_fixture_expect_failure",
     "compile_fixture_manifest_only",
+    "compile_live_error_runtime_fixture_outputs",
     "compile_fixture_outputs",
     "compile_fixture_outputs_with_args",
     "compile_fixture_with_args",

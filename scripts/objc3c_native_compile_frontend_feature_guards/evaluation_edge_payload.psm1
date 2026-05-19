@@ -19,7 +19,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend feature guard edge payload dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $edgePayloadRoot = Join-Path $PSScriptRoot "evaluation_edge_payload"
@@ -35,7 +40,12 @@ foreach ($edgePayloadModule in $edgePayloadModules) {
     Write-Error "native compile frontend feature guard edge payload helper missing at $edgePayloadModulePath"
     exit 2
   }
-  . $edgePayloadModulePath
+  $edgePayloadRootLiteral = (Split-Path -Parent $edgePayloadModulePath).Replace("'", "''")
+  $edgePayloadScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$edgePayloadRootLiteral'`n" +
+    (Get-Content -LiteralPath $edgePayloadModulePath -Raw)
+  )
+  . $edgePayloadScript
 }
 
 Export-ModuleMember -Function "Assert-FrontendEdgeCompatibilityPayloadImpl"

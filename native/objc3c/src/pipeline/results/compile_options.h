@@ -37,6 +37,7 @@ struct Objc3FrontendOptions {
   bool emit_manifest = true;
   bool emit_ir = true;
   bool emit_object = true;
+  bool allow_live_error_runtime_surface = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1u;
   std::string metaprogramming_cache_root_relative_path;
   std::vector<std::string> imported_runtime_surface_paths;

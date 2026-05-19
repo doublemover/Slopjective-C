@@ -6,7 +6,12 @@ if (!(Test-Path -LiteralPath $featureGuardReportingModule -PathType Leaf)) {
   Write-Error "native compile frontend feature guard reporting module missing at $featureGuardReportingModule"
   exit 2
 }
-Import-Module $featureGuardReportingModule -Force -DisableNameChecking
+$featureGuardReportingRootLiteral = (Split-Path -Parent $featureGuardReportingModule).Replace("'", "''")
+$featureGuardReportingScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$featureGuardReportingRootLiteral'`n" +
+  (Get-Content -LiteralPath $featureGuardReportingModule -Raw)
+)
+. $featureGuardReportingScript
 
 $normalizationRoot = Join-Path $PSScriptRoot "normalization"
 $normalizationModules = @(
@@ -22,7 +27,12 @@ foreach ($normalizationModule in $normalizationModules) {
     Write-Error "native compile frontend feature guard normalization helper missing at $normalizationModulePath"
     exit 2
   }
-  . $normalizationModulePath
+  $normalizationRootLiteral = (Split-Path -Parent $normalizationModulePath).Replace("'", "''")
+  $normalizationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$normalizationRootLiteral'`n" +
+    (Get-Content -LiteralPath $normalizationModulePath -Raw)
+  )
+  . $normalizationScript
 }
 
 Export-ModuleMember -Function @(

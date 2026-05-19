@@ -8,7 +8,12 @@ foreach ($modulePath in @($featureGuardNormalizationModule, $featureGuardReporti
     Write-Error "native compile frontend feature guard diagnostics dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 function Assert-FrontendFeatureDependencyContracts {

@@ -7,7 +7,9 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import (
+    compile_live_error_runtime_fixture_outputs,
+)
 from objc3c_runtime_acceptance.paths import ROOT
 
 
@@ -21,7 +23,9 @@ def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
         / "native"
         / "error_source_closure_positive.objc3"
     )
-    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    _, _, manifest_path = compile_live_error_runtime_fixture_outputs(
+        fixture, case_dir / "compile"
+    )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     surface = (
         manifest.get("frontend", {})

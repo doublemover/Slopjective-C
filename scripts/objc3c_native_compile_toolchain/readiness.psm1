@@ -9,7 +9,16 @@ foreach ($dependencyModule in @($compileIoModule, $artifactsModule)) {
     Write-Error "native compile toolchain dependency missing at $dependencyModule"
     exit 2
   }
-  Import-Module $dependencyModule -Force -DisableNameChecking
+  if ($dependencyModule -eq $compileIoModule) {
+    $dependencyModuleRootLiteral = (Split-Path -Parent $dependencyModule).Replace("'", "''")
+    $dependencyScript = [scriptblock]::Create(
+      "`$PSScriptRoot = '$dependencyModuleRootLiteral'`n" +
+      (Get-Content -LiteralPath $dependencyModule -Raw)
+    )
+    . $dependencyScript
+  } else {
+    Import-Module $dependencyModule -Force -DisableNameChecking
+  }
 }
 
 $readinessModuleRoot = Join-Path $PSScriptRoot "readiness"
@@ -26,7 +35,12 @@ foreach ($readinessModule in $readinessModules) {
     Write-Error "native compile toolchain readiness helper missing at $readinessModulePath"
     exit 2
   }
-  . $readinessModulePath
+  $readinessModuleRootLiteral = (Split-Path -Parent $readinessModulePath).Replace("'", "''")
+  $readinessScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$readinessModuleRootLiteral'`n" +
+    (Get-Content -LiteralPath $readinessModulePath -Raw)
+  )
+  . $readinessScript
 }
 
 Export-ModuleMember -Function @(

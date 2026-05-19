@@ -8,6 +8,8 @@ void ApplyFrontendCApiRunnerCompileRuntimeOptions(
           ? nullptr
           : runner_options.runtime_dispatch_symbol.c_str();
   compile_options.max_message_send_args = runner_options.max_message_send_args;
+  compile_options.allow_live_error_runtime_surface =
+      runner_options.allow_live_error_runtime_surface ? 1u : 0u;
   compile_options.translation_unit_registration_order_ordinal =
       runner_options.translation_unit_registration_order_ordinal;
 }

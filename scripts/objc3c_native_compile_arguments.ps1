@@ -16,5 +16,10 @@ foreach ($compileArgumentModule in $compileArgumentModules) {
     Write-Error "native compile argument helper missing at $compileArgumentModulePath"
     exit 2
   }
-  . $compileArgumentModulePath
+  $compileArgumentModuleRootLiteral = (Split-Path -Parent $compileArgumentModulePath).Replace("'", "''")
+  $compileArgumentScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$compileArgumentModuleRootLiteral'`n" +
+    (Get-Content -LiteralPath $compileArgumentModulePath -Raw)
+  )
+  . $compileArgumentScript
 }

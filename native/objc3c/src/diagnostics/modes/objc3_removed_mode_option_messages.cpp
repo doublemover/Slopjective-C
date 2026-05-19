@@ -9,7 +9,7 @@ bool BuildRemovedModeOptionDiagnostic(const std::string &flag,
   if (!removed.matched) {
     return false;
   }
-  diagnostic = removed.message;
+  diagnostic = removed.diagnostic_code + ": " + removed.message;
   return true;
 }
 

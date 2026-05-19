@@ -7,7 +7,12 @@ if (!(Test-Path -LiteralPath $featureGuardOrchestrationModule -PathType Leaf)) {
   Write-Error "native compile frontend feature guard orchestration module missing at $featureGuardOrchestrationModule"
   exit 2
 }
-Import-Module $featureGuardOrchestrationModule -Force -DisableNameChecking
+$featureGuardOrchestrationRootLiteral = (Split-Path -Parent $featureGuardOrchestrationModule).Replace("'", "''")
+$featureGuardOrchestrationScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$featureGuardOrchestrationRootLiteral'`n" +
+  (Get-Content -LiteralPath $featureGuardOrchestrationModule -Raw)
+)
+. $featureGuardOrchestrationScript
 
 function Assert-FrontendCoreFeatureExpansion {
   param(

@@ -7,7 +7,12 @@ if (!(Test-Path -LiteralPath $conformanceGuardOrchestrationModule -PathType Leaf
   Write-Error "native compile frontend conformance guard orchestration module missing at $conformanceGuardOrchestrationModule"
   exit 2
 }
-Import-Module $conformanceGuardOrchestrationModule -Force -DisableNameChecking
+$conformanceGuardOrchestrationRootLiteral = (Split-Path -Parent $conformanceGuardOrchestrationModule).Replace("'", "''")
+$conformanceGuardOrchestrationScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$conformanceGuardOrchestrationRootLiteral'`n" +
+  (Get-Content -LiteralPath $conformanceGuardOrchestrationModule -Raw)
+)
+. $conformanceGuardOrchestrationScript
 
 function Assert-FrontendConformanceMatrix {
   param(

@@ -14,7 +14,12 @@ foreach ($configModule in $configModules) {
     Write-Error "native compile frontend conformance config helper missing at $configModulePath"
     exit 2
   }
-  . $configModulePath
+  $configRootLiteral = (Split-Path -Parent $configModulePath).Replace("'", "''")
+  $configScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$configRootLiteral'`n" +
+    (Get-Content -LiteralPath $configModulePath -Raw)
+  )
+  . $configScript
 }
 
 Export-ModuleMember -Function @(

@@ -7,7 +7,9 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import (
+    compile_live_error_runtime_fixture_outputs,
+)
 from objc3c_runtime_acceptance.paths import ROOT
 
 
@@ -21,7 +23,9 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         / "native"
         / "try_do_catch_semantics_positive.objc3"
     )
-    _, _, try_manifest_path = compile_fixture_outputs(try_fixture, case_dir / "try")
+    _, _, try_manifest_path = compile_live_error_runtime_fixture_outputs(
+        try_fixture, case_dir / "try"
+    )
     try_manifest = json.loads(try_manifest_path.read_text(encoding="utf-8"))
     try_surface = (
         try_manifest.get("frontend", {})
@@ -67,7 +71,7 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         / "native"
         / "bridge_legality_positive.objc3"
     )
-    _, _, bridge_manifest_path = compile_fixture_outputs(
+    _, _, bridge_manifest_path = compile_live_error_runtime_fixture_outputs(
         bridge_fixture, case_dir / "bridge"
     )
     bridge_manifest = json.loads(bridge_manifest_path.read_text(encoding="utf-8"))

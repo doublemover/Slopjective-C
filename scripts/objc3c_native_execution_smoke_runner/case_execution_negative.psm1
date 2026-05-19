@@ -104,7 +104,7 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
   }
 
   $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
-  $linkArgs = @($objPath, "-o", $exePath, "-fno-color-diagnostics")
+  $linkArgs = @($Context.link_driver_args) + @($objPath, "-o", $exePath, "-fno-color-diagnostics")
   if ($spec.stage -eq "link") {
     $linkStep = Invoke-TimedLoggedCommand -StageKey "negative_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
     $linkExit = [int]$linkStep.exit_code
@@ -159,7 +159,7 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
   }
 
   if ($spec.stage -eq "run") {
-    $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags) + @("-o", $exePath, "-fno-color-diagnostics")
+    $linkArgs = @($Context.link_driver_args) + @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags) + @("-o", $exePath, "-fno-color-diagnostics")
     $linkStep = Invoke-TimedLoggedCommand -StageKey "negative_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
     $linkExit = [int]$linkStep.exit_code
     if ($linkExit -ne 0) {

@@ -20,7 +20,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(
       result, options, tokens);
   objc3_frontend_pipeline_orchestration::RefreshProtocolSymbolReadiness(result);
 
-  const bool allow_error_handling_error_runtime_surface = true;
+  const bool allow_error_handling_error_runtime_surface =
+      options.allow_live_error_runtime_surface;
   if (ShouldRunObjc3FrontendSemaStage(result)) {
     Objc3SemaPassManagerResult sema_result = RunObjc3FrontendSemaStage(
         result, options, allow_error_handling_error_runtime_surface);

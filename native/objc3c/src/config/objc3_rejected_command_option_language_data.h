@@ -7,7 +7,7 @@
 
 namespace objc3c::config {
 
-inline constexpr std::size_t kRejectedLanguageModeCommandOptionDataCount = 4;
+inline constexpr std::size_t kRejectedLanguageModeCommandOptionDataCount = 7;
 
 std::span<const CommandOptionState> RejectedLanguageModeCommandOptionData();
 

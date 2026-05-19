@@ -8,7 +8,12 @@ foreach ($modulePath in @($conformanceGuardConfigModule, $conformanceGuardReport
     Write-Error "native compile frontend conformance guard helper module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $normalizationRoot = Join-Path $PSScriptRoot "normalization"
@@ -25,7 +30,12 @@ foreach ($normalizationModule in $normalizationModules) {
     Write-Error "native compile frontend conformance normalization helper missing at $normalizationModulePath"
     exit 2
   }
-  . $normalizationModulePath
+  $normalizationRootLiteral = (Split-Path -Parent $normalizationModulePath).Replace("'", "''")
+  $normalizationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$normalizationRootLiteral'`n" +
+    (Get-Content -LiteralPath $normalizationModulePath -Raw)
+  )
+  . $normalizationScript
 }
 
 Export-ModuleMember -Function @(

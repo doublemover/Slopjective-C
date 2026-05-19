@@ -17,7 +17,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend feature guard edge compile dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $edgeCompileArgRoot = Join-Path $PSScriptRoot "evaluation_edge_compile_args"
@@ -34,7 +39,12 @@ foreach ($edgeCompileArgModule in $edgeCompileArgModules) {
     Write-Error "native compile frontend feature guard edge compile helper missing at $edgeCompileArgModulePath"
     exit 2
   }
-  . $edgeCompileArgModulePath
+  $edgeCompileArgRootLiteral = (Split-Path -Parent $edgeCompileArgModulePath).Replace("'", "''")
+  $edgeCompileArgScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$edgeCompileArgRootLiteral'`n" +
+    (Get-Content -LiteralPath $edgeCompileArgModulePath -Raw)
+  )
+  . $edgeCompileArgScript
 }
 
 Export-ModuleMember -Function "ConvertTo-FrontendEdgeCompatibleCompileArgsImpl"

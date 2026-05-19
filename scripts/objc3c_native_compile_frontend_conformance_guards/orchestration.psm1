@@ -2,10 +2,39 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $conformanceOrchestrationRoot = Join-Path $PSScriptRoot "orchestration"
-. (Join-Path $conformanceOrchestrationRoot "dependencies.psm1")
-. (Join-Path $conformanceOrchestrationRoot "guard_runner.psm1")
+foreach ($conformanceOrchestrationModule in @("dependencies.psm1", "guard_runner.psm1")) {
+  $conformanceOrchestrationModulePath = Join-Path $conformanceOrchestrationRoot $conformanceOrchestrationModule
+  if (!(Test-Path -LiteralPath $conformanceOrchestrationModulePath -PathType Leaf)) {
+    Write-Error "native compile frontend conformance orchestration helper missing at $conformanceOrchestrationModulePath"
+    exit 2
+  }
+  $conformanceOrchestrationRootLiteral = (Split-Path -Parent $conformanceOrchestrationModulePath).Replace("'", "''")
+  $conformanceOrchestrationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$conformanceOrchestrationRootLiteral'`n" +
+    (Get-Content -LiteralPath $conformanceOrchestrationModulePath -Raw)
+  )
+  . $conformanceOrchestrationScript
+}
 
-Import-FrontendConformanceGuardDependencies -ConformanceGuardRoot $PSScriptRoot
+$scriptRoot = Split-Path $PSScriptRoot -Parent
+$conformanceGuardDependencyModules = Get-FrontendConformanceGuardDependencyModules -ConformanceGuardRoot $PSScriptRoot
+
+foreach ($modulePath in $conformanceGuardDependencyModules) {
+  if (!(Test-Path -LiteralPath $modulePath -PathType Leaf)) {
+    Write-Error "native compile frontend conformance guard dependency module missing at $modulePath"
+    exit 2
+  }
+  if ($modulePath -eq (Join-Path $scriptRoot "objc3c_native_compile_toolchain.psm1")) {
+    Import-Module $modulePath -Force -DisableNameChecking
+  } else {
+    $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+    $moduleScript = [scriptblock]::Create(
+      "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+      (Get-Content -LiteralPath $modulePath -Raw)
+    )
+    . $moduleScript
+  }
+}
 
 function Invoke-FrontendConformanceMatrixGuard {
   param(

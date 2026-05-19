@@ -13,7 +13,12 @@ foreach ($resultsModule in $resultsModules) {
     Write-Error "native compile toolchain result helper missing at $resultsModulePath"
     exit 2
   }
-  . $resultsModulePath
+  $resultsModuleRootLiteral = (Split-Path -Parent $resultsModulePath).Replace("'", "''")
+  $resultsScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$resultsModuleRootLiteral'`n" +
+    (Get-Content -LiteralPath $resultsModulePath -Raw)
+  )
+  . $resultsScript
 }
 
 Export-ModuleMember -Function "ConvertTo-NativeCompilerBuildResult"

@@ -16,6 +16,8 @@ from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
 from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.probe_output import parse_key_value_output
 
+from .compile_backends import runtime_driver_linker_flags
+
 
 RETRYABLE_PROBE_EXIT_CODES = {3221226356}
 DEFAULT_PROBE_RETRIES = int(
@@ -26,6 +28,13 @@ ACCEPTANCE_PROBE_RETRY_EVENTS: list[dict[str, Any]] = []
 
 def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list[Path]) -> None:
     compile_probe_with_args(clangxx, probe, exe_path, extra_objects, [])
+
+
+def runtime_link_args_for_objects(extra_objects: list[Path]) -> list[str]:
+    args: list[str] = []
+    for obj_path in extra_objects:
+        args.extend(runtime_driver_linker_flags(obj_path))
+    return args
 
 
 def compile_probe_with_args(
@@ -42,7 +51,7 @@ def compile_probe_with_args(
         cwd=ROOT,
         runtime_library=RUNTIME_LIB,
         object_inputs=extra_objects,
-        extra_args=extra_args,
+        extra_args=[*runtime_link_args_for_objects(extra_objects), *extra_args],
         failure_context=f"probe link failed for {probe}",
         runner=run,
     )
@@ -101,5 +110,6 @@ __all__ = [
     "parse_json_output",
     "parse_key_value_output",
     "RETRYABLE_PROBE_EXIT_CODES",
+    "runtime_link_args_for_objects",
     "run_probe",
 ]

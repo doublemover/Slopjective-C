@@ -3,15 +3,15 @@
 
 #include "expectation_fixture_cases.h"
 #include "failure_report_helpers.h"
-#include "runtime/dispatch/dispatch_errors.h"
+#include "runtime/public/objc3_runtime_result_contract.h"
 #include "support/dispatch_expectations.h"
 
 namespace objc3c::runtime::probe::dispatch_expectations_support {
 
 inline objc3_runtime_dispatch_i32_result MakeFixtureDispatchResult(
     const DispatchStatusCase &test_case) {
-  return ::objc3c::runtime::MakeDispatchI32Result(test_case.result_status,
-                                                  test_case.result_value);
+  return ::objc3c::runtime::MakeRuntimeDispatchI32Result(
+      test_case.result_status, test_case.result_value);
 }
 
 inline objc3_runtime_dispatch_i32_result ExecuteCheckedDispatch(
@@ -72,13 +72,14 @@ inline int VerifyStrictDispatchAliasMatchesExpectedDispatch() {
 inline int VerifyRuntimeDiagnosticTextCases() {
   for (const DiagnosticTextCase &test_case : kDiagnosticTextCases) {
     if (ReportTextExpectation(
-            ::objc3c::runtime::DispatchDiagnosticCode(test_case.status),
+            ::objc3c::runtime::RuntimeDispatchDiagnosticCode(test_case.status),
             test_case.expected_code, test_case.code_label,
             test_case.code_report_exit) != 0) {
       return 19;
     }
     if (ReportTextExpectation(
-            ::objc3c::runtime::DispatchDiagnosticMessage(test_case.status),
+            ::objc3c::runtime::RuntimeDispatchDiagnosticMessage(
+                test_case.status),
             test_case.expected_message, test_case.message_label,
             test_case.message_report_exit) != 0) {
       return 19;
@@ -142,12 +143,13 @@ inline int VerifyNilReceiverStrictDispatchError(
                              18) != 0) {
     return 18;
   }
-  if (ReportTextExpectation(result.diagnostic_code, "",
+  if (ReportTextExpectation(result.diagnostic_code, "O3RT008",
                             "live runtime nil receiver diagnostic code",
                             29) != 0 ||
-      ReportTextExpectation(result.diagnostic_message, "",
-                            "live runtime nil receiver diagnostic message",
-                            30) != 0) {
+      ReportTextExpectation(
+          result.diagnostic_message,
+          "runtime dispatch failed: nil receiver has no value dispatch result",
+          "live runtime nil receiver diagnostic message", 30) != 0) {
     return 29;
   }
   return 0;

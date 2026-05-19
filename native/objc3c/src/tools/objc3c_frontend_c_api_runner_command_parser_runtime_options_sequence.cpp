@@ -8,6 +8,12 @@ ParseFrontendCApiRunnerNumericRuntimeOptionPassSequence(
     int &index,
     FrontendCApiRunnerOptions &options,
     std::string &error) {
+  (void)error;
+  if (arg == "--objc3-enable-live-error-runtime-surface") {
+    options.allow_live_error_runtime_surface = true;
+    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  }
+
   const FrontendCApiRunnerCommandOptionParseResult max_message_args_result =
       ParseFrontendCApiRunnerMaxMessageArgsOption(arg, argc, argv, index,
                                                   options, error);

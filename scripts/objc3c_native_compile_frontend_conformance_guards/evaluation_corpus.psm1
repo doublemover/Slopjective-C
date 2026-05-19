@@ -13,7 +13,12 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend conformance guard corpus dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+  $moduleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+    (Get-Content -LiteralPath $modulePath -Raw)
+  )
+  . $moduleScript
 }
 
 $corpusEvaluationRoot = Join-Path $PSScriptRoot "evaluation_corpus"
@@ -29,7 +34,12 @@ foreach ($corpusEvaluationModule in $corpusEvaluationModules) {
     Write-Error "native compile frontend conformance corpus evaluation helper missing at $corpusEvaluationModulePath"
     exit 2
   }
-  . $corpusEvaluationModulePath
+  $corpusEvaluationRootLiteral = (Split-Path -Parent $corpusEvaluationModulePath).Replace("'", "''")
+  $corpusEvaluationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$corpusEvaluationRootLiteral'`n" +
+    (Get-Content -LiteralPath $corpusEvaluationModulePath -Raw)
+  )
+  . $corpusEvaluationScript
 }
 
 function Invoke-FrontendConformanceCorpusEvaluationImpl {

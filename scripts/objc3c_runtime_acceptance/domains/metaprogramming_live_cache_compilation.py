@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 
@@ -43,7 +44,7 @@ __all__ = [
 
 for _exported_name in __all__:
     _exported = globals()[_exported_name]
-    if hasattr(_exported, "__module__"):
+    if inspect.isclass(_exported) or inspect.isfunction(_exported):
         _exported.__module__ = __name__
 
 del _exported

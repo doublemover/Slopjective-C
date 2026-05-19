@@ -63,7 +63,7 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
 
   $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $Context.repo_root -EmitPrefix "module"
   $runtimeLibrary = Get-ExecutionSmokeRuntimeLibrary -LaunchContract $launchContract
-  $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags)
+  $linkArgs = @($Context.link_driver_args) + @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags)
   $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
   $linkStep = Invoke-TimedLoggedCommand -StageKey "positive_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
   $linkExit = [int]$linkStep.exit_code

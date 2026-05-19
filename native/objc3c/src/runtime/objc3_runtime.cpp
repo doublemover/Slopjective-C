@@ -32,4 +32,3 @@
 #include "runtime/storage/ivar_layout.h"
 #include "runtime/storage/property_accessors.h"
 #include "runtime/storage/weak_slots.h"
-#include "support/selectors/selector_normalization.h"

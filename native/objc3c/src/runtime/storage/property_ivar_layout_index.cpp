@@ -8,6 +8,57 @@
 
 namespace objc3c::runtime {
 
+namespace {
+
+std::string RuntimePropertyIvarLayoutLookupKey(const char *layout_identity,
+                                               const char *property_name) {
+  const std::string layout =
+      layout_identity != nullptr ? layout_identity : "";
+  const std::string property =
+      property_name != nullptr ? property_name : "";
+  return layout + "\n" + property;
+}
+
+void AddRuntimePropertyIvarLayoutLookup(
+    std::unordered_map<std::string, const EmittedIvarDescriptor *> &lookup,
+    std::unordered_set<std::string> &ambiguous_keys,
+    const char *layout_identity,
+    const EmittedIvarDescriptor &descriptor) {
+  if (layout_identity == nullptr || layout_identity[0] == '\0' ||
+      descriptor.property_name == nullptr ||
+      descriptor.property_name[0] == '\0') {
+    return;
+  }
+  const std::string key =
+      RuntimePropertyIvarLayoutLookupKey(layout_identity,
+                                         descriptor.property_name);
+  const auto inserted = lookup.emplace(key, &descriptor);
+  if (!inserted.second && inserted.first->second != &descriptor) {
+    ambiguous_keys.insert(key);
+    lookup.erase(inserted.first);
+  }
+}
+
+const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorByLayoutLookup(
+    const std::unordered_map<std::string, const EmittedIvarDescriptor *> &lookup,
+    const std::unordered_set<std::string> &ambiguous_keys,
+    const char *layout_identity,
+    const char *property_name) {
+  if (layout_identity == nullptr || layout_identity[0] == '\0' ||
+      property_name == nullptr || property_name[0] == '\0') {
+    return nullptr;
+  }
+  const std::string key =
+      RuntimePropertyIvarLayoutLookupKey(layout_identity, property_name);
+  if (ambiguous_keys.find(key) != ambiguous_keys.end()) {
+    return nullptr;
+  }
+  const auto found = lookup.find(key);
+  return found != lookup.end() ? found->second : nullptr;
+}
+
+}  // namespace
+
 bool BuildRuntimePropertyIvarLayoutIndex(
     const RegisteredImageMetadata &image,
     const std::string &ivar_owner_identity,
@@ -58,6 +109,14 @@ bool BuildRuntimePropertyIvarLayoutIndex(
                                   descriptor->owner_size_bytes));
     index.ivars_by_binding_symbol.emplace(descriptor->ivar_binding_symbol,
                                           descriptor);
+    AddRuntimePropertyIvarLayoutLookup(index.ivars_by_layout_symbol,
+                                       index.ambiguous_layout_symbols,
+                                       descriptor->layout_record->layout_symbol,
+                                       *descriptor);
+    AddRuntimePropertyIvarLayoutLookup(index.ivars_by_layout_replay_key,
+                                       index.ambiguous_layout_replay_keys,
+                                       descriptor->layout_replay_key,
+                                       *descriptor);
   }
   return true;
 }
@@ -70,17 +129,27 @@ std::size_t RuntimePropertyIvarLayoutInstanceSize(
                                       index.max_alignment));
 }
 
-const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorByBinding(
+const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorForProperty(
     const RuntimePropertyIvarLayoutIndex &index,
     const EmittedPropertyDescriptor &descriptor) {
-  if (descriptor.ivar_binding_symbol == nullptr ||
-      descriptor.ivar_binding_symbol[0] == '\0') {
-    return nullptr;
+  if (descriptor.ivar_binding_symbol != nullptr &&
+      descriptor.ivar_binding_symbol[0] != '\0') {
+    const auto found =
+        index.ivars_by_binding_symbol.find(descriptor.ivar_binding_symbol);
+    if (found != index.ivars_by_binding_symbol.end()) {
+      return found->second;
+    }
   }
-  const auto found =
-      index.ivars_by_binding_symbol.find(descriptor.ivar_binding_symbol);
-  return found != index.ivars_by_binding_symbol.end() ? found->second
-                                                      : nullptr;
+  const EmittedIvarDescriptor *by_layout_symbol =
+      FindRuntimePropertyIvarDescriptorByLayoutLookup(
+          index.ivars_by_layout_symbol, index.ambiguous_layout_symbols,
+          descriptor.ivar_layout_symbol, descriptor.property_name);
+  if (by_layout_symbol != nullptr) {
+    return by_layout_symbol;
+  }
+  return FindRuntimePropertyIvarDescriptorByLayoutLookup(
+      index.ivars_by_layout_replay_key, index.ambiguous_layout_replay_keys,
+      descriptor.ivar_layout_replay_key, descriptor.property_name);
 }
 
 }  // namespace objc3c::runtime

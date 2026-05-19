@@ -10,6 +10,8 @@ Objc3FrontendOptions BuildFrontendPipelineOptions(
   frontend_options.emit_manifest = options.emit_manifest != 0;
   frontend_options.emit_ir = options.emit_ir != 0;
   frontend_options.emit_object = options.emit_object != 0;
+  frontend_options.allow_live_error_runtime_surface =
+      options.allow_live_error_runtime_surface != 0;
   if (options.translation_unit_registration_order_ordinal > 0) {
     frontend_options.bootstrap_registration_order_ordinal =
         options.translation_unit_registration_order_ordinal;

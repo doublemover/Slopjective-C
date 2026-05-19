@@ -36,12 +36,12 @@ Assert-Objc3cNativeCompileDependencyFile -Path $runtimeLaunchContractScript -Des
 Assert-Objc3cNativeCompileDependencyFile -Path $compileWrapperModule -Description "native compile wrapper helper"
 
 . $compileArgumentsScript
+Import-Module $compileFrontendGuardsModule -Force -DisableNameChecking
 Import-Module $compileIoModule -Force -DisableNameChecking
 Import-Module $compileToolchainModule -Force -DisableNameChecking
-Import-Module $compileFrontendGuardsModule -Force -DisableNameChecking
 Import-Module $compileCommandModule -Force -DisableNameChecking
 . $runtimeLaunchContractScript
-. $compileWrapperModule
+Import-Module $compileWrapperModule -Force -DisableNameChecking
 
 Invoke-Objc3cNativeCompileWrapper `
   -RepoRoot $repoRoot `

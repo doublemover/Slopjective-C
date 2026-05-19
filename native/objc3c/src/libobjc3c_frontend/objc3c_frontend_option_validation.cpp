@@ -7,6 +7,16 @@ namespace objc3c::frontend {
 bool ValidateFrontendEmitOptions(
     const objc3c_frontend_compile_options_t &options,
     std::string &error) {
+  if (options.allow_live_error_runtime_surface > 1u) {
+    error =
+        "compile_options.allow_live_error_runtime_surface must be 0 or 1.";
+    return false;
+  }
+  if (options.reserved1 != 0u || options.reserved2 != 0u) {
+    error = "compile_options reserved fields must be zero.";
+    return false;
+  }
+
   const bool wants_artifact = options.emit_manifest != 0 ||
                               options.emit_ir != 0 ||
                               options.emit_object != 0;

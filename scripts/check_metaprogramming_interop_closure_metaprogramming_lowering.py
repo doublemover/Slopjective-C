@@ -48,7 +48,7 @@ def main() -> int:
         "acceptance_report_publishes_all_authoritative_surfaces": all(surface in acceptance_report for surface in contract["authoritative_surfaces"]),
         "runtime_abi_surface_keeps_property_behavior_narrow": acceptance_report.get("runtime_metaprogramming_runtime_abi_cache_surface", {}).get("expansion_runtime_model") == "property-behavior-runtime-support-is-live-while-macro-host-execution-runtime-process-launch-and-package-loading-remain-fail-closed-on-the-expansion-boundary-snapshot",
         "synthesized_accessor_surface_keeps_storage_helper_model": acceptance_report.get("executable_synthesized_accessor_property_lowering_surface", {}).get("storage_model") == "synthesized-getter-setter-bodies-lower-directly-to-runtime-current-property-helper-calls-without-storage-globals",
-        "runtime_property_surface_keeps_runtime_owned_layout_model": acceptance_report.get("runtime_property_ivar_accessor_reflection_implementation_surface", {}).get("implementation_model") == "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation",
+        "runtime_property_surface_keeps_runtime_owned_layout_model": acceptance_report.get("runtime_property_ivar_accessor_reflection_implementation_surface", {}).get("implementation_model") == "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-through-runtime-storage-owners",
         "e2e_materializes_then_reuses_host_cache": e2e_report.get("provider_first_materialization_state") == "materialized" and e2e_report.get("provider_second_materialization_state") == "cache-hit",
         "e2e_preserves_cross_module_link_plan": bool(e2e_report.get("consumer_link_plan_path")),
     }

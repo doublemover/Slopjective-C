@@ -1,7 +1,7 @@
 #ifndef OBJC3C_TESTS_TOOLING_RUNTIME_INSTALLATION_LOADER_LIFECYCLE_PROBE_INSTALLATION_STATE_HELPERS_H_
 #define OBJC3C_TESTS_TOOLING_RUNTIME_INSTALLATION_LOADER_LIFECYCLE_PROBE_INSTALLATION_STATE_HELPERS_H_
 
-#include "runtime/public/objc3_runtime_api.h"
+#include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <cstdint>
 #include <string>

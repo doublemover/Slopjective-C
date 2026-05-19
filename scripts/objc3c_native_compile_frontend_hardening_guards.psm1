@@ -7,7 +7,12 @@ if (!(Test-Path -LiteralPath $hardeningGuardOrchestrationModule -PathType Leaf))
   Write-Error "native compile frontend hardening guard orchestration module missing at $hardeningGuardOrchestrationModule"
   exit 2
 }
-Import-Module $hardeningGuardOrchestrationModule -Force -DisableNameChecking
+$hardeningGuardOrchestrationRootLiteral = (Split-Path -Parent $hardeningGuardOrchestrationModule).Replace("'", "''")
+$hardeningGuardOrchestrationScript = [scriptblock]::Create(
+  "`$PSScriptRoot = '$hardeningGuardOrchestrationRootLiteral'`n" +
+  (Get-Content -LiteralPath $hardeningGuardOrchestrationModule -Raw)
+)
+. $hardeningGuardOrchestrationScript
 
 function Assert-FrontendEdgeRobustness {
   param(

@@ -8,18 +8,19 @@
 
 namespace objc3c::runtime::probe::instance_allocation_runtime {
 
-inline ProbeRun CaptureInstanceAllocationRuntimeProbe() {
-  ProbeRun run;
+inline void CaptureInstanceAllocationRuntimeProbe(ProbeRun &run) {
   run.registration_state = CaptureRegistrationState();
+  StabilizeRegistrationStateObservation(run.registration_state);
   run.selector_table_state = CaptureSelectorTableState();
+  StabilizeSelectorTableStateObservation(run.selector_table_state);
   run.fixture = AllocateWidgetInstances();
   run.mutations = CaptureAllocationMutationResults(run.fixture);
-  run.invariants = CaptureAllocationInvariantSnapshots(run.fixture);
-  return run;
+  CaptureAllocationInvariantSnapshots(run.fixture, run.invariants);
 }
 
 inline int RunInstanceAllocationRuntimeProbe() {
-  const ProbeRun run = CaptureInstanceAllocationRuntimeProbe();
+  ProbeRun run;
+  CaptureInstanceAllocationRuntimeProbe(run);
   PrintInstanceAllocationRuntimeReport(run);
   return 0;
 }

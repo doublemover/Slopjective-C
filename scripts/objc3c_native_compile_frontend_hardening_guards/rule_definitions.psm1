@@ -14,7 +14,12 @@ foreach ($hardeningRuleModule in $hardeningRuleModules) {
     Write-Error "native compile frontend hardening rule helper missing at $hardeningRuleModulePath"
     exit 2
   }
-  . $hardeningRuleModulePath
+  $hardeningRuleRootLiteral = (Split-Path -Parent $hardeningRuleModulePath).Replace("'", "''")
+  $hardeningRuleScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$hardeningRuleRootLiteral'`n" +
+    (Get-Content -LiteralPath $hardeningRuleModulePath -Raw)
+  )
+  . $hardeningRuleScript
 }
 
 Export-ModuleMember -Function @(

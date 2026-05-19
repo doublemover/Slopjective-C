@@ -20,7 +20,16 @@ foreach ($modulePath in @(
     Write-Error "native compile frontend hardening guard dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  if ($modulePath -eq $compileToolchainModule) {
+    Import-Module $modulePath -Force -DisableNameChecking
+  } else {
+    $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+    $moduleScript = [scriptblock]::Create(
+      "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+      (Get-Content -LiteralPath $modulePath -Raw)
+    )
+    . $moduleScript
+  }
 }
 
 $hardeningOrchestrationRoot = Join-Path $PSScriptRoot "orchestration"
@@ -35,7 +44,12 @@ foreach ($hardeningOrchestrationModule in $hardeningOrchestrationModules) {
     Write-Error "native compile frontend hardening orchestration helper missing at $hardeningOrchestrationModulePath"
     exit 2
   }
-  . $hardeningOrchestrationModulePath
+  $hardeningOrchestrationRootLiteral = (Split-Path -Parent $hardeningOrchestrationModulePath).Replace("'", "''")
+  $hardeningOrchestrationScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$hardeningOrchestrationRootLiteral'`n" +
+    (Get-Content -LiteralPath $hardeningOrchestrationModulePath -Raw)
+  )
+  . $hardeningOrchestrationScript
 }
 
 function Invoke-FrontendEdgeRobustnessGuard {

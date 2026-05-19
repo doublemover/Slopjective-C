@@ -161,7 +161,7 @@ MANIFEST_IMPLEMENTATION_SURFACE_EXPECTATIONS = (
     ),
     SurfaceFieldExpectation(
         "implementation_model",
-        "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation",
+        "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-through-runtime-storage-owners",
         "expected property/accessor runtime implementation surface to preserve implementation_model",
     ),
     SurfaceFieldExpectation(
@@ -171,7 +171,7 @@ MANIFEST_IMPLEMENTATION_SURFACE_EXPECTATIONS = (
     ),
     SurfaceFieldExpectation(
         "fail_closed_model",
-        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis",
+        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-synthetic-storage-path",
         "expected property/accessor runtime implementation surface to preserve fail_closed_model",
     ),
 )
@@ -267,7 +267,7 @@ LIVE_IMPLEMENTATION_SURFACE_EXPECTATIONS = (
     ),
     SurfaceFieldExpectation(
         "implementation_model",
-        "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation",
+        "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-through-runtime-storage-owners",
         "expected live storage/accessor implementation snapshot to preserve implementation_model",
     ),
     SurfaceFieldExpectation(
@@ -277,7 +277,7 @@ LIVE_IMPLEMENTATION_SURFACE_EXPECTATIONS = (
     ),
     SurfaceFieldExpectation(
         "fail_closed_model",
-        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis",
+        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-synthetic-storage-path",
         "expected live storage/accessor implementation snapshot to preserve fail_closed_model",
     ),
 )

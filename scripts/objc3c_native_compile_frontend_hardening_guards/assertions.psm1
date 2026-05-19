@@ -15,7 +15,12 @@ foreach ($hardeningAssertionModule in $hardeningAssertionModules) {
     Write-Error "native compile frontend hardening assertion helper missing at $hardeningAssertionModulePath"
     exit 2
   }
-  . $hardeningAssertionModulePath
+  $hardeningAssertionRootLiteral = (Split-Path -Parent $hardeningAssertionModulePath).Replace("'", "''")
+  $hardeningAssertionScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$hardeningAssertionRootLiteral'`n" +
+    (Get-Content -LiteralPath $hardeningAssertionModulePath -Raw)
+  )
+  . $hardeningAssertionScript
 }
 
 Export-ModuleMember -Function @(

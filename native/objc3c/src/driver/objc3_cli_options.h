@@ -44,6 +44,7 @@ struct Objc3CliOptions {
   Objc3IrObjectBackend ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
   std::uint32_t language_version = objc3c::config::kCanonicalLanguageVersion;
   Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
+  bool allow_live_error_runtime_surface = false;
   Objc3ConformanceProfile conformance_profile =
       Objc3ConformanceProfile::kCore;
   bool emit_objc3_conformance = false;

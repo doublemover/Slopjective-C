@@ -1,6 +1,15 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+function Export-ModuleMember {
+  param(
+    [string[]]$Function,
+    [string[]]$Cmdlet,
+    [string[]]$Variable,
+    [string[]]$Alias
+  )
+}
+
 $toolchainModuleRoot = Join-Path $PSScriptRoot "objc3c_native_compile_toolchain"
 $toolchainHelperModules = @(
   "artifacts.psm1",
@@ -17,126 +26,15 @@ foreach ($helperModuleName in $toolchainHelperModules) {
     Write-Error "native compile toolchain helper missing at $helperModulePath"
     exit 2
   }
-  Import-Module $helperModulePath -Force -DisableNameChecking -Prefix NativeToolchain
-}
-
-function Ensure-NativeCompilerAvailable {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [object]$BuildResult
+  $helperRootLiteral = (Split-Path -Parent $helperModulePath).Replace("'", "''")
+  $helperScript = [scriptblock]::Create(
+    "`$PSScriptRoot = '$helperRootLiteral'`n" +
+    (Get-Content -LiteralPath $helperModulePath -Raw)
   )
-
-  return Ensure-NativeToolchainNativeCompilerAvailable @PSBoundParameters
+  . $helperScript
 }
 
-function Invoke-NativeCompiler {
-  param(
-    [string]$ExePath,
-    [string[]]$Arguments
-  )
-
-  return Invoke-NativeToolchainNativeCompiler @PSBoundParameters
-}
-
-function Resolve-FrontendConformanceCorpusPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendConformanceCorpusPath @PSBoundParameters
-}
-
-function Resolve-FrontendConformanceMatrixPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendConformanceMatrixPath @PSBoundParameters
-}
-
-function Resolve-FrontendCoreFeatureExpansionPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendCoreFeatureExpansionPath @PSBoundParameters
-}
-
-function Resolve-FrontendDiagnosticsHardeningPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendDiagnosticsHardeningPath @PSBoundParameters
-}
-
-function Resolve-FrontendEdgeCompatibilityPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendEdgeCompatibilityPath @PSBoundParameters
-}
-
-function Resolve-FrontendEdgeRobustnessPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendEdgeRobustnessPath @PSBoundParameters
-}
-
-function Resolve-FrontendIntegrationCloseoutPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendIntegrationCloseoutPath @PSBoundParameters
-}
-
-function Resolve-FrontendInvocationLockPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendInvocationLockPath @PSBoundParameters
-}
-
-function Resolve-FrontendRecoveryDeterminismHardeningPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendRecoveryDeterminismHardeningPath @PSBoundParameters
-}
-
-function Resolve-FrontendScaffoldPath {
-  param(
-    [string]$RepoRoot,
-    [object]$BuildResult
-  )
-
-  return Resolve-NativeToolchainFrontendScaffoldPath @PSBoundParameters
-}
-
-function Resolve-NativeCompilerExecutablePath {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoRoot
-  )
-
-  return Resolve-NativeToolchainNativeCompilerExecutablePath @PSBoundParameters
-}
-
-Export-ModuleMember -Function @(
+Microsoft.PowerShell.Core\Export-ModuleMember -Function @(
   "Ensure-NativeCompilerAvailable",
   "Invoke-NativeCompiler",
   "Resolve-FrontendConformanceCorpusPath",

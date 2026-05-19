@@ -174,7 +174,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
               token_line,
               token_column,
               "O3C002",
-              std::string("rejected canonical literal spelling '") +
+              std::string("legacy literal alias '") +
                   Objc3RejectedCanonicalLiteralDiagnosticSpelling(rejected_literal) +
                   "' is rejected; use canonical '" +
                   Objc3RejectedCanonicalLiteralReplacementSpelling(rejected_literal) + "'"));

@@ -21,7 +21,7 @@ struct StrictDispatchScenario {
   const void *implementation;
   std::uint64_t method_header_count;
   DispatchArguments arguments;
-  int expected_status;
+  objc3_runtime_dispatch_status_code expected_status;
   const char *expected_error_code;
   const char *expected_error_message;
   int exit_code_base;
@@ -43,7 +43,7 @@ inline StrictDispatchScenario UnsupportedReturnScenario() {
           {0, 0, 0, 0},
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
           "O3RT005",
-          "runtime dispatch failed: unsupported return type",
+          "runtime dispatch failed: rejected return shape",
           10};
 }
 
@@ -58,7 +58,7 @@ inline StrictDispatchScenario UnsupportedArgumentsScenario() {
           {1, 2, 3, 4},
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
           "O3RT006",
-          "runtime dispatch failed: unsupported argument layout",
+          "runtime dispatch failed: rejected argument layout",
           20};
 }
 

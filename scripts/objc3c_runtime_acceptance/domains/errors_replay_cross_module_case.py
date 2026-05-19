@@ -8,7 +8,7 @@ from pathlib import Path
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.fixture_compilation import (
-    compile_fixture_outputs_with_args,
+    compile_live_error_runtime_fixture_outputs,
 )
 from objc3c_runtime_acceptance.paths import ROOT
 
@@ -35,7 +35,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
     )
     provider_dir = case_dir / "provider"
     consumer_dir = case_dir / "consumer"
-    compile_fixture_outputs_with_args(
+    compile_live_error_runtime_fixture_outputs(
         provider_fixture,
         provider_dir,
         ["--objc3-bootstrap-registration-order-ordinal", "1"],
@@ -45,7 +45,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
         provider_import_surface.is_file(),
         "expected cross-module error provider to emit a runtime import surface",
     )
-    compile_fixture_outputs_with_args(
+    compile_live_error_runtime_fixture_outputs(
         consumer_fixture,
         consumer_dir,
         [

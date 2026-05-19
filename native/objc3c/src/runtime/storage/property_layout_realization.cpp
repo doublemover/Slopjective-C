@@ -29,11 +29,11 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
       node.bundle_owner_identity.empty()) {
     return false;
   }
-  const std::string ivar_owner_identity =
+  const std::string storage_owner_identity =
       node.interface_owner_identity.empty() ? node.bundle_owner_identity
                                             : node.interface_owner_identity;
   RuntimePropertyIvarLayoutIndex ivar_layout_index;
-  if (!BuildRuntimePropertyIvarLayoutIndex(*node.image, ivar_owner_identity,
+  if (!BuildRuntimePropertyIvarLayoutIndex(*node.image, storage_owner_identity,
                                            ivar_layout_index)) {
     return false;
   }
@@ -56,8 +56,8 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
       continue;
     }
     const EmittedIvarDescriptor *ivar_descriptor =
-        FindRuntimePropertyIvarDescriptorByBinding(ivar_layout_index,
-                                                   *descriptor);
+        FindRuntimePropertyIvarDescriptorForProperty(ivar_layout_index,
+                                                     *descriptor);
     if (ivar_descriptor == nullptr) {
       continue;
     }

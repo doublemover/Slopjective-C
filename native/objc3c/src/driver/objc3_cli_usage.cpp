@@ -7,6 +7,7 @@
 std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
          "[--llc <path>] [--objc3-import-runtime-surface <path>]... "
+         "[--objc3-enable-live-error-runtime-surface] "
          "[-fobjc-version=<N>] [-fobjc-arc] [-fno-objc-arc] "
          "[--objc3-conformance-profile <core|strict|strict-concurrency|strict-system>] "
          "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json>] "

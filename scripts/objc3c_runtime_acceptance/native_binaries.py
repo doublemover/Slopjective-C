@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from objc3c_tooling.probe_compile import find_clangxx
+from objc3c_workflow.command_powershell_policy import powershell_file_command
 
 from .paths import BUILD_PS1
 from .paths import NATIVE_EXE
@@ -34,16 +35,12 @@ def ensure_native_binaries() -> None:
             "native source tree is not packaged and required runtime executable/library artifacts are missing"
         )
     result = run(
-        [
+        powershell_file_command(
             PWSH,
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(BUILD_PS1),
+            BUILD_PS1,
             "-ExecutionMode",
             "binaries-only",
-        ]
+        )
     )
     if result.returncode != 0:
         raise RuntimeError(

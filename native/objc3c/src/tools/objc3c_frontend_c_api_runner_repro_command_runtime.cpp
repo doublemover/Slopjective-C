@@ -16,6 +16,9 @@ void AppendFrontendCApiRunnerReproRuntimeArgs(
             << QuoteFrontendCApiRunnerPowerShellArg(
                    options.runtime_dispatch_symbol);
   }
+  if (options.allow_live_error_runtime_surface) {
+    command << " --objc3-enable-live-error-runtime-surface";
+  }
   if (options.translation_unit_registration_order_ordinal != 0) {
     command << " --objc3-bootstrap-registration-order-ordinal "
             << std::to_string(

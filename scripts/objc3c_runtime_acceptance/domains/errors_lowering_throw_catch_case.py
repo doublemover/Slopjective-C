@@ -7,7 +7,9 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import (
+    compile_live_error_runtime_fixture_outputs,
+)
 from objc3c_runtime_acceptance.paths import ROOT
 
 
@@ -23,7 +25,9 @@ def check_executable_throw_catch_cleanup_lowering_case(
         / "native"
         / "error_out_abi_positive.objc3"
     )
-    _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    _, ll_path, manifest_path = compile_live_error_runtime_fixture_outputs(
+        fixture, case_dir / "compile"
+    )
     ll_text = ll_path.read_text(encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     throws_abi = manifest.get("lowering_error_handling_throws_abi_propagation", {})

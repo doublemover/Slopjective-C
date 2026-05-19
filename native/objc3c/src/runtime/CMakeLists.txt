@@ -279,7 +279,6 @@ add_subdirectory(storage)
 objc3c_apply_build_defaults(${OBJC3_RUNTIME_LIBRARY_TARGET})
 target_link_libraries(${OBJC3_RUNTIME_LIBRARY_TARGET} PUBLIC
   objc3c_runtime_metadata
-  objc3c_support
 )
 set_target_properties(${OBJC3_RUNTIME_LIBRARY_TARGET} PROPERTIES
   OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}

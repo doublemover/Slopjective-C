@@ -13,7 +13,16 @@ foreach ($modulePath in @($compileToolchainModule, $featureGuardConfigModule, $f
     Write-Error "native compile frontend feature guard dependency module missing at $modulePath"
     exit 2
   }
-  Import-Module $modulePath -Force -DisableNameChecking
+  if ($modulePath -eq $compileToolchainModule) {
+    Import-Module $modulePath -Force -DisableNameChecking
+  } else {
+    $moduleRootLiteral = (Split-Path -Parent $modulePath).Replace("'", "''")
+    $moduleScript = [scriptblock]::Create(
+      "`$PSScriptRoot = '$moduleRootLiteral'`n" +
+      (Get-Content -LiteralPath $modulePath -Raw)
+    )
+    . $moduleScript
+  }
 }
 
 function Invoke-FrontendCoreFeatureExpansionGuard {

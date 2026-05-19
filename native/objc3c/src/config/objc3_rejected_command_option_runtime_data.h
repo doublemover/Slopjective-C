@@ -7,7 +7,7 @@
 
 namespace objc3c::config {
 
-inline constexpr std::size_t kRejectedRuntimeCommandOptionDataCount = 4;
+inline constexpr std::size_t kRejectedRuntimeCommandOptionDataCount = 5;
 
 std::span<const CommandOptionState> RejectedRuntimeCommandOptionData();
 

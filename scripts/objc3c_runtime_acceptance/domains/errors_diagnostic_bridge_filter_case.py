@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.fixture_compilation import (
     NegativeDiagnosticExpectation,
-    compile_fixture_outputs,
+    compile_live_error_runtime_fixture_outputs,
     compile_negative_diagnostic_batch,
 )
 from objc3c_runtime_acceptance.paths import ROOT
@@ -27,7 +27,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         / "native"
         / "bridge_legality_positive.objc3"
     )
-    _, _, manifest_path = compile_fixture_outputs(
+    _, _, manifest_path = compile_live_error_runtime_fixture_outputs(
         positive_fixture, case_dir / "positive"
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -76,7 +76,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         / "native"
         / "bridge_legality_native_fail_closed.objc3"
     )
-    _, _, native_manifest_path = compile_fixture_outputs(
+    _, _, native_manifest_path = compile_live_error_runtime_fixture_outputs(
         native_fail_closed_fixture, case_dir / "native-fail-closed"
     )
     native_manifest = json.loads(native_manifest_path.read_text(encoding="utf-8"))
