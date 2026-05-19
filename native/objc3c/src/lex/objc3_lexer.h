@@ -8,6 +8,9 @@
 
 class Objc3Lexer {
  public:
+  static constexpr std::uint8_t kDefaultLanguageVersion =
+      objc3c::config::kCanonicalLanguageVersion;
+
   explicit Objc3Lexer(const std::string &source, const Objc3LexerOptions &options = Objc3LexerOptions{});
 
   std::vector<Objc3LexToken> Run(std::vector<std::string> &diagnostics);
