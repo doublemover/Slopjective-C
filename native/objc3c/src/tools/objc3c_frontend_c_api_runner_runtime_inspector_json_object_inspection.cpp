@@ -30,4 +30,28 @@ void WriteFrontendCApiRunnerRuntimeInspectorObjectInspectionJsonRows(
              kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
              paths.object))
       << "\",\n";
+  out << child_indent
+      << "\"realized_class_graph_snapshot_symbol\": "
+         "\"objc3_runtime_copy_realized_class_graph_state_for_testing\",\n";
+  out << child_indent
+      << "\"realized_class_entry_snapshot_symbol\": "
+         "\"objc3_runtime_copy_realized_class_entry_for_testing\",\n";
+  out << child_indent
+      << "\"runtime_instance_entry_snapshot_symbol\": "
+         "\"objc3_runtime_copy_instance_entry_for_testing\",\n";
+  out << child_indent
+      << "\"property_registry_state_snapshot_symbol\": "
+         "\"objc3_runtime_copy_property_registry_state_for_testing\",\n";
+  out << child_indent
+      << "\"property_entry_snapshot_symbol\": "
+         "\"objc3_runtime_copy_property_entry_for_testing\",\n";
+  out << child_indent
+      << "\"storage_accessor_snapshot_symbol\": "
+         "\"objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing\",\n";
+  out << child_indent
+      << "\"protocol_conformance_query_symbol\": "
+         "\"objc3_runtime_copy_protocol_conformance_query_for_testing\",\n";
+  out << child_indent
+      << "\"object_model_query_state_snapshot_symbol\": "
+         "\"objc3_runtime_copy_object_model_query_state_for_testing\",\n";
 }
