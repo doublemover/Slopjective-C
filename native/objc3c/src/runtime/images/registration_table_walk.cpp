@@ -12,12 +12,83 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace objc3c::runtime {
+
+namespace {
+
+struct RuntimeRegistrationTableWalkMutationCheckpoint {
+  std::unordered_map<std::string, std::size_t> selector_index_by_name;
+  std::deque<SelectorSlot> selector_slots;
+  std::unordered_map<std::uint64_t, KeyPathSlot> keypath_slots;
+  std::uint64_t metadata_backed_selector_count = 0;
+  std::uint64_t dynamic_selector_count = 0;
+  std::uint64_t metadata_provider_edge_count = 0;
+  std::uint64_t image_backed_keypath_count = 0;
+  std::uint64_t ambiguous_keypath_handle_count = 0;
+  std::string last_materialized_selector;
+  std::uint64_t last_materialized_stable_id = 0;
+  std::uint64_t last_materialized_registration_order_ordinal = 0;
+  std::uint64_t last_materialized_selector_pool_index = 0;
+  bool last_materialized_from_metadata = false;
+  std::uint64_t last_materialized_keypath_handle = 0;
+  std::uint64_t last_materialized_keypath_registration_order_ordinal = 0;
+  std::string last_materialized_keypath_profile;
+
+  explicit RuntimeRegistrationTableWalkMutationCheckpoint(
+      const RuntimeState &state)
+      : selector_index_by_name(state.selector_index_by_name),
+        selector_slots(state.selector_slots),
+        keypath_slots(state.keypath_slots),
+        metadata_backed_selector_count(state.metadata_backed_selector_count),
+        dynamic_selector_count(state.dynamic_selector_count),
+        metadata_provider_edge_count(state.metadata_provider_edge_count),
+        image_backed_keypath_count(state.image_backed_keypath_count),
+        ambiguous_keypath_handle_count(state.ambiguous_keypath_handle_count),
+        last_materialized_selector(state.last_materialized_selector),
+        last_materialized_stable_id(state.last_materialized_stable_id),
+        last_materialized_registration_order_ordinal(
+            state.last_materialized_registration_order_ordinal),
+        last_materialized_selector_pool_index(
+            state.last_materialized_selector_pool_index),
+        last_materialized_from_metadata(state.last_materialized_from_metadata),
+        last_materialized_keypath_handle(state.last_materialized_keypath_handle),
+        last_materialized_keypath_registration_order_ordinal(
+            state.last_materialized_keypath_registration_order_ordinal),
+        last_materialized_keypath_profile(
+            state.last_materialized_keypath_profile) {}
+
+  void Restore(RuntimeState &state) const {
+    state.selector_index_by_name = selector_index_by_name;
+    state.selector_slots = selector_slots;
+    state.keypath_slots = keypath_slots;
+    state.metadata_backed_selector_count = metadata_backed_selector_count;
+    state.dynamic_selector_count = dynamic_selector_count;
+    state.metadata_provider_edge_count = metadata_provider_edge_count;
+    state.image_backed_keypath_count = image_backed_keypath_count;
+    state.ambiguous_keypath_handle_count = ambiguous_keypath_handle_count;
+    state.last_materialized_selector = last_materialized_selector;
+    state.last_materialized_stable_id = last_materialized_stable_id;
+    state.last_materialized_registration_order_ordinal =
+        last_materialized_registration_order_ordinal;
+    state.last_materialized_selector_pool_index =
+        last_materialized_selector_pool_index;
+    state.last_materialized_from_metadata = last_materialized_from_metadata;
+    state.last_materialized_keypath_handle = last_materialized_keypath_handle;
+    state.last_materialized_keypath_registration_order_ordinal =
+        last_materialized_keypath_registration_order_ordinal;
+    state.last_materialized_keypath_profile =
+        last_materialized_keypath_profile;
+  }
+};
+
+}  // namespace
 
 bool TryWalkRegistrationTableUnlocked(
     RuntimeState &state,
@@ -87,6 +158,9 @@ bool TryWalkRegistrationTableUnlocked(
       return false;
     }
   }
+
+  const RuntimeRegistrationTableWalkMutationCheckpoint mutation_checkpoint(
+      state);
   for (std::uint64_t index = 0; index < counts.keypath_descriptor_count;
        ++index) {
     const auto *descriptor =
@@ -96,6 +170,7 @@ bool TryWalkRegistrationTableUnlocked(
     if (descriptor == nullptr ||
         !MaterializeKeyPathDescriptorUnlocked(
             state, *descriptor, image->registration_order_ordinal)) {
+      mutation_checkpoint.Restore(state);
       return false;
     }
   }
@@ -108,6 +183,7 @@ bool TryWalkRegistrationTableUnlocked(
             state, selector_pool_spellings[index].c_str(),
             image->registration_order_ordinal,
             static_cast<std::uint64_t>(index + 1u))) {
+      mutation_checkpoint.Restore(state);
       return false;
     }
   }
