@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.issue8036.arc.cleanup.integration.owner.contract.v1",
+  "issue": 8036,
+  "draft_id": "OC3-T10-003",
+  "support_claim": "objc3c.behavior.arc-cleanup.integration",
+  "runtime_acceptance_suite": "arc-cleanup-integration",
+  "public_command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration",
+  "integration_surfaces": {
+    "blocks": {
+      "case_ids": [
+        "escaping-block-capture-legality",
+        "block-storage-arc-automation-semantics",
+        "block-arc-runtime-abi",
+        "block-helper-runtime-execution"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",
+        "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3"
+      ]
+    },
+    "properties": {
+      "case_ids": [
+        "arc-property-helper"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+      ]
+    },
+    "errors": {
+      "case_ids": [
+        "error-execution-cleanup-source",
+        "error-propagation-cleanup-semantics",
+        "executable-throw-catch-cleanup-lowering",
+        "error-runtime-abi-cleanup",
+        "live-error-runtime-integration"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+      ]
+    },
+    "async": {
+      "case_ids": [
+        "unified-concurrency-lowering-metadata-surface",
+        "unified-concurrency-runtime-abi",
+        "live-unified-concurrency-runtime-implementation"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3",
+        "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3"
+      ]
+    },
+    "interop": {
+      "case_ids": [
+        "cross-module-runtime-package-interop-source-surface",
+        "mixed-image-interop-semantics",
+        "c-cpp-swift-interop-boundary-semantics",
+        "runtime-package-loader-bridge-abi",
+        "live-package-loading-interop-runtime-implementation"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/interop_semantic_model_positive.objc3",
+        "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3"
+      ]
+    }
+  },
+  "required_source_tokens": {
+    "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3": [
+      "@cleanup(",
+      "@resource(",
+      "@autoreleasepool",
+      "defer",
+      "^()",
+      "CFRetain",
+      "CFAutorelease",
+      "async fn",
+      "await",
+      "objc_executor"
+    ],
+    "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3": [
+      "@cleanup(",
+      "@resource(",
+      "@autoreleasepool",
+      "defer",
+      "try",
+      "catch",
+      "NSError",
+      "objc_status_code",
+      "CFRetain",
+      "CFAutorelease"
+    ]
+  },
+  "support_boundaries": [
+    "The #8036 claim is an integration claim over existing behavior-owned ARC cleanup, block, property, error, async, and interop surfaces.",
+    "The suite and support row do not widen the public runtime ABI or claim full ARC automation outside the listed runtime-backed evidence.",
+    "Each surface must stay backed by hand-authored fixture or probe evidence; generated reports and provenance-only rows cannot satisfy this contract alone."
+  ]
+}

@@ -30,6 +30,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 | Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
 | --- | --- | --- | --- | --- |
+| `objc3c.behavior.arc-cleanup.integration` | `runtime` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration` |
 | `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
 | `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
 | `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
@@ -40,6 +41,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
 | `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime` | `tests/native/runtime/object_model/interface_method_table_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.interface-method-table` |
 | `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
+| `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
 | `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
 
 ## Phase Owner Contract
@@ -178,6 +180,27 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
   - source: `native/objc3c/src/sema/objc3_semantic_type_relations.cpp`
 
+### Effects and ownership semantic model
+
+- Capability ID: `compiler.sema.effects-ownership-model`
+- State: `implemented`
+- Support claims: `objc3c.behavior.sema.effects-ownership-model`
+- Summary: Semantic analysis publishes a deterministic effects and ownership model that covers ARC ownership, block escape helpers, throws cleanup, async/task suspension, actor isolation, and foreign-boundary readiness without widening runtime support beyond narrower implemented rows.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_effects_diagnostics_model_summaries_effects_ownership.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes.h`
+  - `native/objc3c/src/pipeline/results/pipeline_result_model.h`
+  - `native/objc3c/src/pipeline/frontend_pipeline_orchestration_semantic_models.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` via `npm run objc3c -- test-lowering-runtime-stress`
+  - test: `tests/tooling/test_build_objc3c_effects_ownership_semantic_model.py`
+  - test: `tests/conformance/semantic/EFF-8014-01.json`
+  - test: `tests/conformance/semantic/EFF-8014-02.json`
+  - test: `tests/conformance/semantic/EFF-8014-03.json`
+  - test: `tests/conformance/semantic/EFF-8014-04.json`
+  - source: `native/objc3c/src/sema/objc3_semantic_effects_diagnostics_model_summaries_effects_ownership.inc`
+  - source: `scripts/objc3c_effects_ownership_semantic_model/semantic_model.py`
+
 ### Canonical semantic rejection
 
 - Capability ID: `compiler.sema.canonical-diagnostics`
@@ -309,6 +332,30 @@ the canonical manifest fixture and public npm command above.
   - test: `scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py`
   - source: `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`
   - source: `native/objc3c/src/runtime/errors/catch_filter.cpp`
+
+### ARC cleanup integration across runtime surfaces
+
+- Capability ID: `language.arc-cleanup.integration`
+- State: `implemented`
+- Support claims: `objc3c.behavior.arc-cleanup.integration`
+- Summary: The branch-owned issue #8036 surface ties emitted ARC cleanup to block ownership, property helper traffic, NSError/status bridge cleanup, async suspension cleanup metadata, and interop package acceptance without widening the public runtime ABI beyond the existing helper-backed evidence.
+- Owner modules:
+  - `scripts/objc3c_runtime_acceptance/suite_catalog.py`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifact_ownership_lowering_plan.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifact_concurrency_runtime_manifest_surfaces.cpp`
+  - `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp`
+  - `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` via `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration`
+  - test: `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`
+  - test: `tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3`
+  - test: `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
+  - test: `tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3`
+  - test: `tests/tooling/fixtures/native/interop_semantic_model_positive.objc3`
+  - test: `tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3`
+  - test: `tests/tooling/fixtures/arc_cleanup_integration/owner_contract.json`
+  - test: `tests/tooling/test_arc_cleanup_integration_owner_split.py`
+  - source: `scripts/objc3c_runtime_acceptance/suite_catalog.py`
 
 ### Async and actor runtime closure
 

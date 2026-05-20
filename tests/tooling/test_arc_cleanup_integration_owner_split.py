@@ -1,0 +1,16 @@
+from arc_cleanup_integration_owner_split_support import (
+    assert_arc_cleanup_runtime_suite_maps_every_surface,
+    assert_arc_cleanup_support_claim_is_durable,
+    assert_issue_8036_contract_integrity,
+    assert_issue_8036_fixtures_cover_required_source_shapes,
+)
+
+
+test_issue_8036_contract_integrity = assert_issue_8036_contract_integrity
+test_issue_8036_fixtures_cover_required_source_shapes = (
+    assert_issue_8036_fixtures_cover_required_source_shapes
+)
+test_arc_cleanup_runtime_suite_maps_every_surface = (
+    assert_arc_cleanup_runtime_suite_maps_every_surface
+)
+test_arc_cleanup_support_claim_is_durable = assert_arc_cleanup_support_claim_is_durable

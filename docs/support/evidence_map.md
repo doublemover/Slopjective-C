@@ -35,6 +35,14 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.sema.typed-flow` | `objc3c.behavior.sema.typed-flow` | `test` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` |
 | `compiler.sema.typed-flow` | `objc3c.behavior.sema.typed-flow` | `source` | `native/objc3c/src/sema/objc3_sema_pass_manager.cpp` |  |
 | `compiler.sema.typed-flow` | `objc3c.behavior.sema.typed-flow` | `source` | `native/objc3c/src/sema/objc3_semantic_type_relations.cpp` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/tooling/test_build_objc3c_effects_ownership_semantic_model.py` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/conformance/semantic/EFF-8014-01.json` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/conformance/semantic/EFF-8014-02.json` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/conformance/semantic/EFF-8014-03.json` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `test` | `tests/conformance/semantic/EFF-8014-04.json` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `source` | `native/objc3c/src/sema/objc3_semantic_effects_diagnostics_model_summaries_effects_ownership.inc` |  |
+| `compiler.sema.effects-ownership-model` | `objc3c.behavior.sema.effects-ownership-model` | `source` | `scripts/objc3c_effects_ownership_semantic_model/semantic_model.py` |  |
 | `compiler.sema.canonical-diagnostics` |  | `diagnostic` | `tests/conformance/diagnostics/manifest.json` |  |
 | `compiler.sema.canonical-diagnostics` |  | `test` | `tests/tooling/test_objc3c_parser_contract_sema_integration.py` |  |
 | `compiler.sema.canonical-diagnostics` |  | `source` | `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp` |  |
@@ -64,6 +72,16 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.errors.nserror-status-bridge` | `objc3c.behavior.runtime.error-nserror-status-bridge` | `test` | `scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py` |  |
 | `runtime.errors.nserror-status-bridge` | `objc3c.behavior.runtime.error-nserror-status-bridge` | `source` | `native/objc3c/src/runtime/errors/error_bridge_operations.cpp` |  |
 | `runtime.errors.nserror-status-bridge` | `objc3c.behavior.runtime.error-nserror-status-bridge` | `source` | `native/objc3c/src/runtime/errors/catch_filter.cpp` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/interop_semantic_model_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/fixtures/arc_cleanup_integration/owner_contract.json` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `test` | `tests/tooling/test_arc_cleanup_integration_owner_split.py` |  |
+| `language.arc-cleanup.integration` | `objc3c.behavior.arc-cleanup.integration` | `source` | `scripts/objc3c_runtime_acceptance/suite_catalog.py` |  |
 | `runtime.concurrency.async-actors` | `objc3c.behavior.runtime.concurrency-async-actors` | `test` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` |
 | `runtime.concurrency.async-actors` | `objc3c.behavior.runtime.concurrency-async-actors` | `test` | `scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py` | `npm run objc3c -- test-runtime-acceptance-fast` |
 | `runtime.concurrency.async-actors` | `objc3c.behavior.runtime.concurrency-async-actors` | `test` | `scripts/objc3c_runtime_acceptance/domains/concurrency_runtime_abi_cases.py` |  |

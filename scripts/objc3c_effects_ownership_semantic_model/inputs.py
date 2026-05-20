@@ -17,6 +17,8 @@ from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_HELPER_SYMBOLS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_METHOD_FAMILY_SCALAR_RETURN_NEGATIVE
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
+from objc3c_effects_ownership_semantic_model.paths import FRONTEND_PIPELINE
+from objc3c_effects_ownership_semantic_model.paths import FRONTEND_TYPES
 from objc3c_effects_ownership_semantic_model.paths import METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
@@ -62,19 +64,19 @@ def load_semantic_inputs() -> dict[str, Any]:
 def build_static_presence() -> dict[str, dict[str, bool]]:
     sema_sources = source_files_under(SEMA_SOURCE_ROOT)
     frontend_artifact_sources = source_files_under(FRONTEND_ARTIFACT_SOURCE_ROOT)
-    frontend_pipeline_sources = source_files_under(FRONTEND_PIPELINE_SOURCE_ROOT)
     lowering_sources = source_files_under(LOWERING_SOURCE_ROOT)
     ir_sources = source_files_under(IR_SOURCE_ROOT)
     sema_text = read_sources(sema_sources)
     frontend_artifact_text = read_sources(frontend_artifact_sources)
-    frontend_pipeline_text = read_sources(frontend_pipeline_sources)
+    frontend_types_text = read(FRONTEND_TYPES)
+    frontend_pipeline_text = read(FRONTEND_PIPELINE)
     lowering_text = read_sources(lowering_sources)
     ir_text = read_sources(ir_sources)
     return {
         "sema_contract": contains_all(sema_text, CONTRACT_TOKENS + SUMMARY_FIELDS),
         "semantic_passes_header": contains_all(sema_text, ["BuildEffectsOwnershipSemanticModelSummary"]),
         "semantic_passes_cpp": contains_all(sema_text, SEMANTIC_PASS_TOKENS + SOURCE_REPLAY_SEGMENTS),
-        "frontend_types": contains_all(frontend_pipeline_text, ["effects_ownership_semantic_model_summary"]),
+        "frontend_types": contains_all(frontend_types_text, ["effects_ownership_semantic_model_summary"]),
         "frontend_pipeline": contains_all(
             frontend_pipeline_text,
             ["BuildEffectsOwnershipSemanticModelSummary", "effects_ownership_semantic_model_summary"],

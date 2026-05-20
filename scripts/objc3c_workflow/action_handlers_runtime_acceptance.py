@@ -17,6 +17,9 @@ RUNTIME_ACCEPTANCE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-runtime-acceptance-block-arc": (
         runtime_test_acceptance.action_test_runtime_acceptance_block_arc
     ),
+    "test-runtime-acceptance-arc-cleanup-integration": (
+        runtime_test_acceptance.action_test_runtime_acceptance_arc_cleanup_integration
+    ),
     "test-runtime-acceptance-concurrency": (
         runtime_test_acceptance.action_test_runtime_acceptance_concurrency
     ),

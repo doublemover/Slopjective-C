@@ -17,6 +17,7 @@ PUBLIC_RUNTIME_ACCEPTANCE_ACTIONS = {
     "test-runtime-acceptance-diagnostics",
     "test-runtime-acceptance-cross-module",
     "test-runtime-acceptance-block-arc",
+    "test-runtime-acceptance-arc-cleanup-integration",
     "test-runtime-acceptance-concurrency",
 }
 

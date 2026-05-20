@@ -73,6 +73,55 @@
       "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
     },
     {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "command": "npm run objc3c -- test-lowering-runtime-stress"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_build_objc3c_effects_ownership_semantic_model.py"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-01.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-02.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-03.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-04.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_effects_diagnostics_model_summaries_effects_ownership.inc"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_effects_ownership_semantic_model/semantic_model.py"
+    },
+    {
       "capability_id": "compiler.sema.canonical-diagnostics",
       "evidence_kind": "diagnostic",
       "path": "tests/conformance/diagnostics/manifest.json"
@@ -248,6 +297,67 @@
       "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/interop_semantic_model_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/arc_cleanup_integration/owner_contract.json"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_arc_cleanup_integration_owner_split.py"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/suite_catalog.py"
     },
     {
       "capability_id": "runtime.concurrency.async-actors",

@@ -54,6 +54,12 @@
       "executable_command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "claim_id": "objc3c.behavior.sema.effects-ownership-model",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "executable_command": "npm run objc3c -- test-lowering-runtime-stress"
+    },
+    {
       "claim_id": "objc3c.behavior.lowering.strict-runtime-dispatch",
       "owner_phase": "lowering",
       "behavior_fixture": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
@@ -102,6 +108,12 @@
       "executable_command": "npm run objc3c -- test-runtime-acceptance-fast"
     },
     {
+      "claim_id": "objc3c.behavior.arc-cleanup.integration",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "executable_command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration"
+    },
+    {
       "claim_id": "objc3c.behavior.e2e.runnable-smoke",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
@@ -113,6 +125,14 @@
       "path": "tests/native/parser/positive/canonical_module_main.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
       "behavior_family": "positive",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
@@ -544,6 +564,14 @@
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "effects_ownership",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     },

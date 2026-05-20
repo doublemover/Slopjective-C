@@ -48,7 +48,15 @@ STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
 SEMANTIC_PASSES_H = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
-FRONTEND_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
+FRONTEND_TYPES = (
+    ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "pipeline"
+    / "results"
+    / "pipeline_result_model.h"
+)
 FRONTEND_PIPELINE = (
     ROOT
     / "native"

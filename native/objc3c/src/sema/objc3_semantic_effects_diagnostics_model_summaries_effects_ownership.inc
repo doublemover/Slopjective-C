@@ -113,6 +113,12 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       actor_summary.actor_member_metadata_sites > 0;
   summary.foreign_boundary_semantics_landed =
       summary.foreign_boundary_sites > 0 || interop_summary.deterministic;
+  const bool effects_interop_profile_deterministic =
+      interop_summary.foreign_annotation_source_supported &&
+      interop_summary.ownership_interaction_profile_frozen &&
+      interop_summary.async_affinity_profile_reused &&
+      interop_summary.actor_hazard_profile_reused &&
+      interop_summary.metadata_payload_profile_frozen;
   summary.deterministic =
       retain_release.deterministic && weak_unowned.deterministic &&
       autoreleasepool.deterministic && block_storage.deterministic &&
@@ -120,7 +126,7 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       unwind_summary.deterministic && bridge_summary.deterministic &&
       error_summary.deterministic && async_summary.deterministic &&
       task_summary.deterministic && actor_summary.deterministic &&
-      interop_summary.deterministic &&
+      effects_interop_profile_deterministic &&
       summary.copy_helper_required_sites <= summary.block_literal_sites &&
       summary.dispose_helper_required_sites <= summary.block_literal_sites &&
       copy_dispose_helpers_symbolized &&

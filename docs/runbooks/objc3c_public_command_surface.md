@@ -4,7 +4,7 @@ This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
 - Package bridge count: `1`
-- Operator action count: `128`
+- Operator action count: `129`
 - Maintainer action count: `65`
 - Runner path: `package.json scripts.objc3c -> scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -60,6 +60,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test-nightly` | `test` | `nightly` | `full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal nightly child actions` |
 | `test-recovery` | `test` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test-runtime-acceptance` | `test` | `full` | `exhaustive runtime acceptance and ABI/accessor proof` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite full` |
+| `test-runtime-acceptance-arc-cleanup-integration` | `test` | `fast` | `ARC cleanup integration across block, property, error, async, and interop surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite arc-cleanup-integration` |
 | `test-runtime-acceptance-block-arc` | `test` | `fast` | `Block, byref, ownership transfer, and ARC runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite block-arc` |
 | `test-runtime-acceptance-concurrency` | `test` | `fast` | `async/task/actor runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite concurrency` |
 | `test-runtime-acceptance-cross-module` | `test` | `fast` | `cross-module import, replay, package, and link-plan runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite cross-module` |
