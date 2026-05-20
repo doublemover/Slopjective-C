@@ -55,6 +55,9 @@ bool BuildObjc3FrontendRuntimeMetadataPropertyBundles(
         property_node.executable_synthesized_binding_symbol;
     bundle.property_attribute_profile =
         property_node.property_attribute_profile;
+    bundle.property_behavior_declared =
+        property_node.property_behavior_declared;
+    bundle.property_behavior_name = property_node.property_behavior_name;
     bundle.ownership_lifetime_profile =
         property_node.ownership_lifetime_profile;
     bundle.ownership_runtime_hook_profile =

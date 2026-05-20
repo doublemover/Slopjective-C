@@ -5,6 +5,7 @@
 #include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdlib>
+#include <cstring>
 
 namespace objc3c::runtime::probe::runtime_property_metadata_reflection {
 
@@ -53,6 +54,7 @@ inline void PoisonPropertyEntrySnapshot(
   snapshot.ivar_layout_symbol = kPoisonedSnapshotField;
   snapshot.ivar_layout_replay_key = kPoisonedSnapshotField;
   snapshot.property_attribute_profile = kPoisonedSnapshotField;
+  snapshot.property_behavior_name = kPoisonedSnapshotField;
   snapshot.ownership_lifetime_profile = kPoisonedSnapshotField;
   snapshot.ownership_runtime_hook_profile = kPoisonedSnapshotField;
   snapshot.accessor_ownership_profile = kPoisonedSnapshotField;
@@ -90,6 +92,7 @@ inline bool MissingPropertyEntrySnapshotWasCleared(
          snapshot.ivar_layout_symbol == nullptr &&
          snapshot.ivar_layout_replay_key == nullptr &&
          snapshot.property_attribute_profile == nullptr &&
+         snapshot.property_behavior_name == nullptr &&
          snapshot.ownership_lifetime_profile == nullptr &&
          snapshot.ownership_runtime_hook_profile == nullptr &&
          snapshot.accessor_ownership_profile == nullptr &&
@@ -124,7 +127,8 @@ inline void StabilizePropertyEntryObservation(
       observation.setter_selector, observation.effective_getter_selector,
       observation.effective_setter_selector, observation.ivar_binding,
       observation.synthesized_binding, observation.layout_symbol,
-      observation.getter_owner, observation.setter_owner);
+      observation.property_behavior_name, observation.getter_owner,
+      observation.setter_owner);
 }
 
 inline void CapturePropertyRegistryObservation(
@@ -154,6 +158,15 @@ inline void CaptureDeclaredPropertyReflections(
                                   assertions.value_property);
   CapturePropertyEntryObservation(kCountPropertyQuery,
                                   assertions.count_property);
+  if (assertions.token_property.entry.property_behavior_name == nullptr ||
+      std::strcmp(assertions.token_property.entry.property_behavior_name,
+                  "Projected") != 0 ||
+      assertions.value_property.entry.property_behavior_name == nullptr ||
+      std::strcmp(assertions.value_property.entry.property_behavior_name,
+                  "Observed") != 0 ||
+      assertions.count_property.entry.property_behavior_name != nullptr) {
+    std::abort();
+  }
 }
 
 inline void CaptureRegistryStateAfterCountReflection(

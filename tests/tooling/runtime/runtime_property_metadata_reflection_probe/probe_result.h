@@ -28,6 +28,7 @@ struct PropertyEntryObservation {
   std::string ivar_binding;
   std::string synthesized_binding;
   std::string layout_symbol;
+  std::string property_behavior_name;
   std::string getter_owner;
   std::string setter_owner;
 };

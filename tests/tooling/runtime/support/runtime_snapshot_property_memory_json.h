@@ -100,6 +100,7 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
   PrintStringField("ivar_layout_replay_key", snapshot.ivar_layout_replay_key);
   PrintStringField("property_attribute_profile",
                    snapshot.property_attribute_profile);
+  PrintStringField("property_behavior_name", snapshot.property_behavior_name);
   PrintStringField("ownership_lifetime_profile",
                    snapshot.ownership_lifetime_profile);
   PrintStringField("ownership_runtime_hook_profile",
@@ -282,6 +283,7 @@ inline void PrintPropertyEntryStorageOwnership(
                    snapshot.effective_setter_selector);
   PrintStringField("property_attribute_profile",
                    snapshot.property_attribute_profile);
+  PrintStringField("property_behavior_name", snapshot.property_behavior_name);
   PrintStringField("ownership_lifetime_profile",
                    snapshot.ownership_lifetime_profile);
   PrintStringField("ownership_runtime_hook_profile",

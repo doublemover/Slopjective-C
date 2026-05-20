@@ -110,6 +110,10 @@ void WriteRuntimeOwnedPropertyDeclarationsJson(
                property_record.executable_synthesized_binding_symbol)
         << "\",\"property_attribute_profile\":\""
         << EscapeJsonString(property_record.property_attribute_profile)
+        << "\",\"property_behavior_declared\":"
+        << (property_record.property_behavior_declared ? "true" : "false")
+        << ",\"property_behavior_name\":\""
+        << EscapeJsonString(property_record.property_behavior_name)
         << "\",\"ownership_lifetime_profile\":\""
         << EscapeJsonString(property_record.ownership_lifetime_profile)
         << "\",\"ownership_runtime_hook_profile\":\""

@@ -23,6 +23,7 @@ def build_property_reflection_summary(
             "slot_backed_property_count": facts.registry_after_count.get("slot_backed_property_count"),
             "value_property_setter_available": facts.value_property.get("setter_available"),
             "value_property_attribute_count": facts.value_property.get("attribute_count"),
+            "value_property_behavior_name": facts.value_property.get("property_behavior_name"),
             "value_property_is_strong": facts.value_property.get("is_strong"),
             "value_property_has_custom_accessors": (
                 facts.value_property.get("has_custom_getter") == 1
@@ -31,6 +32,7 @@ def build_property_reflection_summary(
             "count_property_runtime_setter": facts.count_property.get("has_runtime_setter"),
             "count_property_is_assign": facts.count_property.get("is_assign"),
             "token_property_is_readonly": facts.token_property.get("is_readonly"),
+            "token_property_behavior_name": facts.token_property.get("property_behavior_name"),
         },
     )
 

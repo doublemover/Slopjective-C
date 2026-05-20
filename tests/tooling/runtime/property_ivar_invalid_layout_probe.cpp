@@ -119,6 +119,7 @@ struct ProbeResult {
   int registration_status = 0;
   int strict_published_layout = 0;
   objc3_runtime_image_walk_state_snapshot image_walk{};
+  objc3_runtime_realized_class_graph_state_snapshot graph_state{};
   objc3_runtime_realized_class_entry_snapshot class_entry{};
   objc3_runtime_property_entry_snapshot property_entry{};
   objc3_runtime_property_registry_state_snapshot registry_state{};
@@ -137,6 +138,8 @@ ProbeResult RunProbe() {
       &fixture.registration_table);
   result.registration_status = objc3_runtime_register_image(&fixture.image);
   (void)objc3_runtime_copy_image_walk_state_for_testing(&result.image_walk);
+  (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
+      &result.graph_state);
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
       kClassName, &result.class_entry);
   (void)objc3_runtime_copy_property_entry_for_testing(
@@ -175,6 +178,22 @@ void PrintProbeResult(const ProbeResult &result) {
   objc3c::runtime::probe::PrintStringField(
       "last_walked_module_name", result.image_walk.last_walked_module_name,
       false);
+  std::printf("}");
+  std::printf(",\"graph_state\":");
+  std::printf("{");
+  objc3c::runtime::probe::PrintUint64Field(
+      "malformed_class_metadata_rejection_count",
+      static_cast<unsigned long long>(
+          result.graph_state.malformed_class_metadata_rejection_count));
+  objc3c::runtime::probe::PrintStringField(
+      "last_malformed_class_graph_reason",
+      result.graph_state.last_malformed_class_graph_reason);
+  objc3c::runtime::probe::PrintStringField(
+      "last_malformed_class_graph_diagnostic_code",
+      result.graph_state.last_malformed_class_graph_diagnostic_code);
+  objc3c::runtime::probe::PrintStringField(
+      "last_malformed_class_graph_diagnostic_class",
+      result.graph_state.last_malformed_class_graph_diagnostic_class, false);
   std::printf("}");
   std::printf(",\"class_entry\":");
   objc3c::runtime::probe::PrintRealizedClassEntryPropertySummary(

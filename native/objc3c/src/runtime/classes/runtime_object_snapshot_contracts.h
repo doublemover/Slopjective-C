@@ -154,6 +154,7 @@ typedef struct objc3_runtime_property_entry_snapshot {
   const char *ivar_layout_symbol;
   const char *ivar_layout_replay_key;
   const char *property_attribute_profile;
+  const char *property_behavior_name;
   const char *ownership_lifetime_profile;
   const char *ownership_runtime_hook_profile;
   const char *accessor_ownership_profile;

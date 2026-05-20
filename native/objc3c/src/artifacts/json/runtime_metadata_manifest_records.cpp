@@ -84,6 +84,9 @@ void WriteRuntimeMetadataPropertyManifestRecord(
                      record.executable_synthesized_binding_symbol);
   object.StringField("property_attribute_profile",
                      record.property_attribute_profile);
+  object.BoolField("property_behavior_declared",
+                   record.property_behavior_declared);
+  object.StringField("property_behavior_name", record.property_behavior_name);
   object.StringField("ownership_lifetime_profile",
                      record.ownership_lifetime_profile);
   object.StringField("ownership_runtime_hook_profile",

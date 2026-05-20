@@ -141,6 +141,8 @@ struct Objc3ExecutableMetadataPropertyGraphNode {
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;
+  bool property_behavior_declared = false;
+  std::string property_behavior_name;
   std::string ownership_lifetime_profile;
   std::string ownership_runtime_hook_profile;
   std::string effective_getter_selector;

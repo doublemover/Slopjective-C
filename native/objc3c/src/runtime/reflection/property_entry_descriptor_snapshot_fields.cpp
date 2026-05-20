@@ -22,6 +22,33 @@ bool PropertyAttributeProfileHas(std::string_view profile,
   return starts_token && ends_token;
 }
 
+bool RenderedPropertyAttributesHave(std::string_view profile,
+                                    std::string_view token) {
+  constexpr std::string_view kAttributesPrefix = "attributes=";
+  const std::size_t position = profile.find(kAttributesPrefix);
+  if (position == std::string_view::npos) {
+    return false;
+  }
+
+  std::string_view attributes =
+      profile.substr(position + kAttributesPrefix.size());
+  const std::size_t terminator = attributes.find(';');
+  if (terminator != std::string_view::npos) {
+    attributes = attributes.substr(0, terminator);
+  }
+
+  const std::size_t token_position = attributes.find(token);
+  if (token_position == std::string_view::npos) {
+    return false;
+  }
+  const std::size_t token_end = token_position + token.size();
+  const bool starts_token =
+      token_position == 0 || attributes[token_position - 1] == ',';
+  const bool ends_token =
+      token_end == attributes.size() || attributes[token_end] == ',';
+  return starts_token && ends_token;
+}
+
 std::uint64_t CountRenderedPropertyAttributes(std::string_view profile) {
   constexpr std::string_view kAttributesPrefix = "attributes=";
   const std::size_t position = profile.find(kAttributesPrefix);
@@ -50,6 +77,16 @@ std::uint64_t CountRenderedPropertyAttributes(std::string_view profile) {
 
 bool HasExplicitSelector(const char *selector) {
   return selector != nullptr && selector[0] != '\0';
+}
+
+const char *PropertyBehaviorNameFromProfile(std::string_view profile) {
+  if (RenderedPropertyAttributesHave(profile, "behavior=Observed")) {
+    return "Observed";
+  }
+  if (RenderedPropertyAttributesHave(profile, "behavior=Projected")) {
+    return "Projected";
+  }
+  return nullptr;
 }
 
 }  // namespace
@@ -132,6 +169,8 @@ void PopulateRuntimePropertyEntryDescriptorSnapshotFields(
       descriptor.property_attribute_profile != nullptr
           ? descriptor.property_attribute_profile
           : nullptr;
+  snapshot.property_behavior_name =
+      PropertyBehaviorNameFromProfile(property_attribute_profile);
   snapshot.ownership_lifetime_profile =
       descriptor.ownership_lifetime_profile != nullptr
           ? descriptor.ownership_lifetime_profile

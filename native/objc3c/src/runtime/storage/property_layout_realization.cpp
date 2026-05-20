@@ -160,8 +160,7 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
                                                    ivar_layout_index)) {
     PublishInheritedOnlyRuntimeLayoutIfNeeded(state, node,
                                              inherited_size_bytes);
-    return RejectRealizedPropertyLayoutUnlocked(
-        state, node, "ivar-layout-index-invalid");
+    return false;
   }
   node.runtime_instance_size_bytes =
       std::max(RuntimePropertyIvarLayoutInstanceSize(ivar_layout_index),

@@ -52,6 +52,7 @@ void ResetRuntimePropertyEntrySnapshot(
   snapshot.ivar_layout_symbol = nullptr;
   snapshot.ivar_layout_replay_key = nullptr;
   snapshot.property_attribute_profile = nullptr;
+  snapshot.property_behavior_name = nullptr;
   snapshot.ownership_lifetime_profile = nullptr;
   snapshot.ownership_runtime_hook_profile = nullptr;
   snapshot.accessor_ownership_profile = nullptr;

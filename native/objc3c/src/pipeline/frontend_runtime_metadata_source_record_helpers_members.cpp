@@ -53,6 +53,9 @@ void AppendRuntimeMetadataPropertyRecords(
         property.executable_synthesized_binding_symbol;
     property_record.property_attribute_profile =
         property.property_attribute_profile;
+    property_record.property_behavior_declared =
+        property.property_behavior_declared;
+    property_record.property_behavior_name = property.property_behavior_name;
     property_record.ownership_lifetime_profile =
         property.ownership_lifetime_profile;
     property_record.ownership_runtime_hook_profile =

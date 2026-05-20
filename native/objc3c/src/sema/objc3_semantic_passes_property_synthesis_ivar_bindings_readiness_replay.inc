@@ -33,6 +33,8 @@ static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropert
          lhs.ownership_lifetime_profile == rhs.ownership_lifetime_profile &&
          lhs.ownership_runtime_hook_profile == rhs.ownership_runtime_hook_profile &&
          lhs.property_attribute_profile == rhs.property_attribute_profile &&
+         lhs.property_behavior_declared == rhs.property_behavior_declared &&
+         lhs.property_behavior_name == rhs.property_behavior_name &&
          lhs.effective_getter_selector == rhs.effective_getter_selector &&
          lhs.effective_setter_available == rhs.effective_setter_available &&
          lhs.effective_setter_selector == rhs.effective_setter_selector &&
