@@ -72,6 +72,7 @@ BuildErrorHandlingTryDoCatchSemanticSummary(
     }
   }
 
-  FinalizeErrorHandlingTryDoCatchSummary(summary);
+  FinalizeErrorHandlingTryDoCatchSummary(summary,
+                                         allow_source_only_error_runtime_surface);
   return summary;
 }

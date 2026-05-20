@@ -48,9 +48,9 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         "throw_surface_landed": True,
         "do_catch_surface_landed": True,
         "throwing_context_legality_enforced": True,
-        "native_emit_remains_fail_closed": True,
+        "native_emit_remains_fail_closed": False,
         "deterministic": True,
-        "ready_for_lowering_and_runtime": False,
+        "ready_for_lowering_and_runtime": True,
     }
     for field_name, expected_value in expected_fields.items():
         expect(
@@ -173,7 +173,7 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         for entry in negative_batch["results"]
     ]
 
-    native_fail_closed_fixture = (
+    live_bridge_fixture = (
         ROOT
         / "tests"
         / "tooling"
@@ -181,26 +181,29 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         / "native"
         / "try_do_catch_native_fail_closed.objc3"
     )
-    _, _, native_manifest_path = compile_live_error_runtime_fixture_outputs(
-        native_fail_closed_fixture, case_dir / "native-fail-closed"
+    _, _, live_bridge_manifest_path = compile_live_error_runtime_fixture_outputs(
+        live_bridge_fixture, case_dir / "live-runtime-surface"
     )
-    native_manifest = json.loads(native_manifest_path.read_text(encoding="utf-8"))
-    native_surface = (
-        native_manifest.get("frontend", {})
+    live_bridge_manifest = json.loads(
+        live_bridge_manifest_path.read_text(encoding="utf-8")
+    )
+    live_bridge_surface = (
+        live_bridge_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
         .get("objc_error_handling_try_do_catch_semantics", {})
     )
     expect(
-        isinstance(native_surface, dict),
-        "expected native fail-closed fixture to publish objc_error_handling_try_do_catch_semantics",
+        isinstance(live_bridge_surface, dict),
+        "expected live runtime fixture to publish objc_error_handling_try_do_catch_semantics",
     )
     expect(
-        native_surface.get("native_emit_remains_fail_closed") is True
-        and native_surface.get("try_expression_sites") == 1
-        and native_surface.get("do_catch_sites") == 1
-        and native_surface.get("bridged_callable_try_sites") == 1,
-        "expected native fail-closed fixture to preserve the semantic fail-closed lowering boundary",
+        live_bridge_surface.get("native_emit_remains_fail_closed") is False
+        and live_bridge_surface.get("ready_for_lowering_and_runtime") is True
+        and live_bridge_surface.get("try_expression_sites") == 1
+        and live_bridge_surface.get("do_catch_sites") == 1
+        and live_bridge_surface.get("bridged_callable_try_sites") == 1,
+        "expected live runtime fixture to publish a ready try/do/catch lowering boundary",
     )
 
     return CaseResult(
@@ -222,12 +225,15 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
                     "local_handler_sites"
                 ),
             },
-            "native_fail_closed_fixture": {
-                "fixture": str(native_fail_closed_fixture.relative_to(ROOT)).replace(
+            "live_runtime_surface_fixture": {
+                "fixture": str(live_bridge_fixture.relative_to(ROOT)).replace(
                     "\\", "/"
                 ),
-                "native_emit_remains_fail_closed": native_surface.get(
+                "native_emit_remains_fail_closed": live_bridge_surface.get(
                     "native_emit_remains_fail_closed"
+                ),
+                "ready_for_lowering_and_runtime": live_bridge_surface.get(
+                    "ready_for_lowering_and_runtime"
                 ),
             },
             "negative_fixtures": negative_summaries,

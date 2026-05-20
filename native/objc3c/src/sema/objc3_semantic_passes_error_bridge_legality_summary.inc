@@ -174,7 +174,11 @@ Objc3ErrorHandlingErrorBridgeLegalitySummary BuildErrorHandlingErrorBridgeLegali
       summary.unsupported_combinations_fail_closed &&
       summary.contract_violation_sites <=
           summary.bridge_callable_sites + summary.unsupported_combination_sites;
-  summary.ready_for_lowering_and_runtime = false;
+  summary.native_emit_remains_fail_closed =
+      !allow_source_only_error_runtime_surface;
+  summary.ready_for_lowering_and_runtime =
+      allow_source_only_error_runtime_surface && summary.deterministic &&
+      summary.contract_violation_sites == 0;
 
   std::ostringstream out;
   out << summary.contract_id
