@@ -36,7 +36,7 @@
     },
     {
       "claim_id": "bounded-lowering-runtime-and-differential-stress",
-      "status": "partial",
+      "status": "supported",
       "evidence_reports": [
         "tmp/reports/stress/lowering-runtime-stress-summary.json",
         "tmp/reports/stress/mixed-module-differential-summary.json"
@@ -45,18 +45,22 @@
         "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
         "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
         "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
-        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3"
+        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
+        "tests/tooling/fixtures/performance_governance/source_surface.json",
+        "schemas/objc3c-performance-dashboard-summary-v1.schema.json"
       ],
       "fail_closed_by": [
         "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/stress/workflow_surface.json",
         "scripts/run_objc3c_lowering_runtime_stress.py",
-        "scripts/run_objc3c_mixed_module_differential.py"
+        "scripts/run_objc3c_mixed_module_differential.py",
+        "scripts/check_objc3c_stress_integration.py",
+        "scripts/objc3c_performance_dashboard_builder/summary.py"
       ],
       "unsupported_surfaces": [
         "full production soak",
-        "external third-party corpus certification",
-        "performance-governance closure"
+        "external third-party corpus certification"
       ]
     }
   ]

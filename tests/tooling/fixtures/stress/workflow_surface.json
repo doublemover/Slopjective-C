@@ -7,6 +7,9 @@
   "integration_action": "validate-stress-integration",
   "end_to_end_action": "validate-stress-end-to-end",
   "nightly_action": "test-nightly",
+  "performance_dashboard_action": "build-performance-dashboard",
+  "performance_dashboard_report": "tmp/reports/performance-governance/dashboard-summary.json",
+  "performance_regression_gate_id": "objc3c.performance.release.regression-gate.v1",
   "command_surface": "docs/runbooks/objc3c_public_command_surface.md",
   "required_actions": [
     "check-stress-surface",

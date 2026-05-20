@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
@@ -36,22 +35,40 @@ def load_workflow_surface() -> dict[str, Any]:
     return surface
 
 
+def ensure_performance_dashboard_report(report_path: Path, build_action: str) -> dict[str, Any]:
+    report = load_json(report_path) if report_path.is_file() else None
+    if isinstance(report, dict) and isinstance(report.get("regression_gate"), dict):
+        return report
+    completed = run_capture(public_workflow_command(build_action))
+    expect(completed.returncode == 0, f"{build_action} command failed during stress integration validation")
+    return load_json(report_path)
+
+
+def validate_performance_regression_gate(report: dict[str, Any], expected_gate_id: str) -> dict[str, Any]:
+    gate = report.get("regression_gate")
+    expect(isinstance(gate, dict), "performance dashboard missing regression_gate")
+    expect(gate.get("gate_id") == expected_gate_id, "performance regression gate id drifted")
+    release_status = gate.get("release_status")
+    expect(release_status in {"release-ready", "caution", "blocked"}, "performance regression gate release_status drifted")
+    blocking_breach_count = gate.get("blocking_breach_count")
+    warning_breach_count = gate.get("warning_breach_count")
+    expect(isinstance(blocking_breach_count, int) and blocking_breach_count >= 0, "performance regression gate blocking count drifted")
+    expect(isinstance(warning_breach_count, int) and warning_breach_count >= 0, "performance regression gate warning count drifted")
+    return {
+        "gate_id": gate["gate_id"],
+        "passed": bool(gate.get("passed")),
+        "release_status": release_status,
+        "blocking_breach_count": blocking_breach_count,
+        "warning_breach_count": warning_breach_count,
+    }
+
+
 def ensure_validate_stress_report(validate_action: str) -> dict[str, Any]:
     report_path = workflow_report_path(validate_action)
     report = load_json(report_path) if report_path.is_file() else None
     if isinstance(report, dict) and report.get("status") == "PASS":
         return report
-    completed = subprocess.run(
-        public_workflow_command(validate_action),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_capture(public_workflow_command(validate_action))
     expect(completed.returncode == 0, f"{validate_action} command failed during stress integration validation")
     return load_json(report_path)
 
@@ -61,6 +78,9 @@ def main() -> int:
     validate_action = str(workflow_surface["validate_action"])
     required_steps = list(workflow_surface["validate_child_actions"])
     required_child_reports = dict(workflow_surface["required_child_reports"])
+    performance_dashboard_report_path = ROOT / str(workflow_surface["performance_dashboard_report"])
+    performance_dashboard_action = str(workflow_surface["performance_dashboard_action"])
+    performance_regression_gate_id = str(workflow_surface["performance_regression_gate_id"])
     validate_report_path = workflow_report_path(validate_action)
     workflow_report = ensure_validate_stress_report(validate_action)
     expect(workflow_report.get("status") == "PASS", "validate-stress workflow report did not pass")
@@ -87,12 +107,23 @@ def main() -> int:
         expect(payload.get("status") == "PASS", f"stress child report did not pass: {relative_path}")
         child_reports[relative_path] = payload
 
+    performance_dashboard = ensure_performance_dashboard_report(
+        performance_dashboard_report_path,
+        performance_dashboard_action,
+    )
+    performance_gate = validate_performance_regression_gate(
+        performance_dashboard,
+        performance_regression_gate_id,
+    )
+
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
         "workflow_surface": repo_rel(WORKFLOW_SURFACE),
         "workflow_report_path": repo_rel(validate_report_path),
+        "performance_dashboard_report_path": repo_rel(performance_dashboard_report_path),
+        "performance_regression_gate": performance_gate,
         "required_steps": required_steps,
         "child_report_paths": list(required_child_reports.keys()),
         "child_reports": {

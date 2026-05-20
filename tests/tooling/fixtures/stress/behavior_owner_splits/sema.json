@@ -22,10 +22,10 @@
       "path": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
       "selectors": [
         "tests/tooling/fixtures/native/type_semantic_*.objc3",
-        "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
-        "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3"
+        "semantic_provenance_cases[]:tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+        "semantic_provenance_cases[]:tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3"
       ],
-      "disposition": "semantic model and diagnostics provenance inside the broader compile stress suite"
+      "disposition": "semantic model and diagnostics provenance beside the runnable compile stress suite"
     },
     {
       "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",

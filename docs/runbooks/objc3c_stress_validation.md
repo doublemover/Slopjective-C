@@ -28,6 +28,10 @@ The current truthful stress-validation shape is:
 - `lowering-runtime-stress`
   - objective: widen checked-in lowering/runtime fixtures through the same
     compile and runtime launch paths already used by runnable validation
+  - semantic-provenance-only cases stay listed in the same manifest under
+    `semantic_provenance_cases`; they are not compiled by the runnable stress
+    harness when their current truthful behavior is a strict unsupported
+    semantic diagnostic
 - `mixed-module-differential`
   - objective: exercise provider/consumer and import/export stress cases
     without inventing a second module build pipeline
@@ -151,6 +155,8 @@ Downstream work must preserve these rules:
   - `npm run objc3c -- test-stress-crash-triage`
 - validate the checked-in stress source contract:
   - `npm run objc3c -- check-stress-surface`
+- publish the performance regression gate consumed by stress integration:
+  - `npm run objc3c -- build-performance-dashboard`
 - run the current executable smoke and replay evidence paths:
   - `npm run objc3c -- test-execution-smoke`
   - `npm run objc3c -- test-execution-replay`

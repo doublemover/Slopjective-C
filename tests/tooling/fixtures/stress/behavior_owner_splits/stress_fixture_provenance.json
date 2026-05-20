@@ -20,6 +20,7 @@
     "cases[].source_path",
     "compile_cases[]",
     "execution_cases[]",
+    "semantic_provenance_cases[]",
     "case_ids[]",
     "surface_contracts.*",
     "fixture_groups[].group_id",

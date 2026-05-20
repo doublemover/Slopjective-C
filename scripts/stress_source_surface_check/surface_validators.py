@@ -62,6 +62,15 @@ def validate_workflow_surface(workflow_surface: dict[str, Any], source_surface: 
     require(workflow_surface.get("source_check_action") == source_surface.get("source_check_action"), "stress workflow source_check_action drifted from source surface")
     require(workflow_surface.get("validate_action") == "validate-stress", "stress workflow validate_action drifted")
     require(workflow_surface.get("package_bridge") == source_surface.get("package_bridge"), "stress workflow package_bridge drifted from source surface")
+    require(workflow_surface.get("performance_dashboard_action") == "build-performance-dashboard", "stress workflow performance_dashboard_action drifted")
+    require(
+        workflow_surface.get("performance_dashboard_report") == "tmp/reports/performance-governance/dashboard-summary.json",
+        "stress workflow performance_dashboard_report drifted",
+    )
+    require(
+        workflow_surface.get("performance_regression_gate_id") == "objc3c.performance.release.regression-gate.v1",
+        "stress workflow performance_regression_gate_id drifted",
+    )
 
     required_actions = workflow_surface.get("required_actions")
     validate_child_actions = workflow_surface.get("validate_child_actions")

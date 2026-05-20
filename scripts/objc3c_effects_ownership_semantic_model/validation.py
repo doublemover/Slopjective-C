@@ -105,7 +105,7 @@ def build_checks(
         == [{"code": "O3S226", "line": 4, "column": 10}],
         "method_family_scalar_return_negative_conformance_expects_o3s305_location": conformance_method_family_scalar_return_negative.get("expect", {}).get("diagnostics")
         == [{"code": "O3S305", "line": 15, "column": 16}],
-        "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
+        "stress_manifest_tracks_positive_fixture_as_semantic_provenance": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": all(not rel(path).startswith("tmp/") for path in source_truth_paths),
         "static_sources_thread_surface": all(all(values.values()) for values in static_presence.values()),
     }

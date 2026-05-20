@@ -94,7 +94,10 @@
         "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
         "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
         "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3",
-        "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3"
+        "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
+        "tests/tooling/fixtures/performance_governance/source_surface.json",
+        "schemas/objc3c-performance-dashboard-summary-v1.schema.json"
       ]
     },
     {

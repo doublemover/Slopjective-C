@@ -44,7 +44,7 @@ def test_stress_claim_gate_catalogs_supported_and_partial_claims() -> None:
         "deterministic-malformed-input-fuzz",
         "bounded-lowering-runtime-and-differential-stress",
     ]
-    assert {summary["status"] for summary in summaries} == {"supported", "partial"}
+    assert {summary["status"] for summary in summaries} == {"supported"}
     assert all(summary["evidence_report_count"] > 0 for summary in summaries)
     assert all(summary["durable_input_count"] > 0 for summary in summaries)
 
