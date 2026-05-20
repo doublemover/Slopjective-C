@@ -21,6 +21,9 @@ fn unwindBridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_st
 fn runCase(owner: id) -> i32 {
   do {
     @cleanup(cleanup_release_temp) let temp = 1;
+    defer {
+      cleanup_release_temp(6);
+    }
     @resource(cleanup_scope_close_fd, invalid: -1) let fd = 4;
     @autoreleasepool {
       let retained = CFRetain(owner);

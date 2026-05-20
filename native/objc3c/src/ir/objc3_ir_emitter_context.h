@@ -78,6 +78,16 @@ struct PendingOwnershipCleanupCall {
   bool active = true;
 };
 
+enum class PendingScopeCleanupActionKind {
+  Defer,
+  Ownership,
+};
+
+struct PendingScopeCleanupAction {
+  PendingScopeCleanupActionKind kind = PendingScopeCleanupActionKind::Defer;
+  std::size_t index = 0;
+};
+
 struct FunctionContext {
   std::vector<std::string> entry_lines;
   std::vector<std::string> code_lines;
@@ -88,6 +98,8 @@ struct FunctionContext {
   std::vector<ControlLabels> control_stack;
   std::vector<std::string> autoreleasepool_scope_symbols;
   std::vector<std::vector<const BlockStmt *>> pending_defer_scope_blocks;
+  std::vector<std::vector<PendingScopeCleanupAction>>
+      pending_scope_cleanup_actions;
   std::vector<std::size_t> pending_block_dispose_scope_depths;
   std::vector<std::size_t> pending_ownership_cleanup_scope_depths;
   std::vector<std::size_t> arc_cleanup_scope_depths;

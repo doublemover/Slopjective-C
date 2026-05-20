@@ -112,10 +112,8 @@ void EmitObjc3IRFunctionLocalTypedReturn(
       ctx.return_await_cleanup_before_handoff_emitted;
   if (ctx.return_type == ValueType::Void) {
     if (!cleanup_already_emitted) {
-      EmitObjc3IRDeferredCleanupTerminalToDepth(
-          ctx, 0u, flow_context.scope_cleanup_callbacks);
-      EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-          ctx, 0u, ctx.code_lines, ctx.temp_counter);
+      EmitObjc3IRDeferredAndOwnershipCleanupTerminalToDepth(
+          ctx, 0u, 0u, flow_context.scope_cleanup_callbacks);
       EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
           ctx, 0u, ctx.code_lines);
       EmitObjc3IRArcOwnedTerminalCleanupToDepth(
@@ -135,10 +133,8 @@ void EmitObjc3IRFunctionLocalTypedReturn(
     returned_value = retained_value;
   }
   if (!cleanup_already_emitted) {
-    EmitObjc3IRDeferredCleanupTerminalToDepth(
-        ctx, 0u, flow_context.scope_cleanup_callbacks);
-    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRDeferredAndOwnershipCleanupTerminalToDepth(
+        ctx, 0u, 0u, flow_context.scope_cleanup_callbacks);
     EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
         ctx, 0u, ctx.code_lines);
     EmitObjc3IRArcOwnedTerminalCleanupToDepth(

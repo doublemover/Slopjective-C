@@ -72,6 +72,7 @@ def check_executable_throw_catch_cleanup_lowering_case(
     }
     cleanup_calls = {
         "cleanup_function": "call void @cleanup_release_temp" in ll_text,
+        "defer_marker": "call void @cleanup_release_temp(i32 6)" in ll_text,
         "resource_cleanup": "call void @cleanup_scope_close_fd" in ll_text,
         "arc_release": "objc3_runtime_release_i32" in ll_text,
         "autorelease": "objc3_runtime_autorelease_i32" in ll_text,
@@ -85,6 +86,23 @@ def check_executable_throw_catch_cleanup_lowering_case(
     expect(
         all(cleanup_calls.values()),
         "expected executable error lowering fixture to couple ARC cleanup, @cleanup, @resource, and autoreleasepool helpers with thrown bridge flow",
+    )
+    try_failure_index = ll_text.find("try_fail_")
+    catch_dispatch_index = ll_text.find("do_catch_dispatch_", try_failure_index)
+    expect(
+        try_failure_index >= 0 and catch_dispatch_index > try_failure_index,
+        "expected executable error lowering fixture to expose try failure cleanup before catch dispatch",
+    )
+    failure_cleanup_segment = ll_text[try_failure_index:catch_dispatch_index]
+    resource_cleanup_index = failure_cleanup_segment.find(
+        "call void @cleanup_scope_close_fd"
+    )
+    defer_cleanup_index = failure_cleanup_segment.find(
+        "call void @cleanup_release_temp(i32 6)"
+    )
+    expect(
+        0 <= resource_cleanup_index < defer_cleanup_index,
+        "expected thrown-path cleanup lowering to honor LIFO order for a resource registered after a defer before catch dispatch",
     )
     cleanup_counts = {
         "unwind_cleanup_sites": replay_key_counter(
@@ -133,6 +151,7 @@ def check_executable_throw_catch_cleanup_lowering_case(
             "unwind_cleanup_contract": unwind_cleanup.get("lane_contract"),
             "helper_calls": helper_calls,
             "cleanup_calls": cleanup_calls,
+            "thrown_path_resource_before_defer": True,
             "cleanup_counts": cleanup_counts,
         },
     )

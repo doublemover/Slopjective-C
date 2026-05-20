@@ -25,6 +25,11 @@ void EmitObjc3IRDeferredCleanupTerminalToDepth(
     FunctionContext &ctx, std::size_t target_scope_depth,
     const Objc3IRScopeCleanupEmissionCallbacks &callbacks);
 
+void EmitObjc3IRDeferredAndOwnershipCleanupTerminalToDepth(
+    FunctionContext &ctx, std::size_t target_scope_depth,
+    std::size_t target_ownership_cleanup_depth,
+    const Objc3IRScopeCleanupEmissionCallbacks &callbacks);
+
 void EmitObjc3IRPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
                                                  std::size_t target_depth);
 

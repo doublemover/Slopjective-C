@@ -105,6 +105,11 @@ void EmitObjc3IRStatement(
         }
         ctx.ownership_cleanup_call_indices[let->name] =
             ctx.pending_ownership_cleanup_calls.size();
+        if (!ctx.pending_scope_cleanup_actions.empty()) {
+          ctx.pending_scope_cleanup_actions.back().push_back(
+              {PendingScopeCleanupActionKind::Ownership,
+               ctx.pending_ownership_cleanup_calls.size()});
+        }
         ctx.pending_ownership_cleanup_calls.push_back(std::move(cleanup_call));
       }
       return;
@@ -219,6 +224,11 @@ void EmitObjc3IRStatement(
       const BlockStmt *block_stmt = stmt->block_stmt.get();
       if (block_stmt == nullptr || ctx.pending_defer_scope_blocks.empty()) {
         return;
+      }
+      if (!ctx.pending_scope_cleanup_actions.empty()) {
+        ctx.pending_scope_cleanup_actions.back().push_back(
+            {PendingScopeCleanupActionKind::Defer,
+             ctx.pending_defer_scope_blocks.back().size()});
       }
       ctx.pending_defer_scope_blocks.back().push_back(block_stmt);
       return;

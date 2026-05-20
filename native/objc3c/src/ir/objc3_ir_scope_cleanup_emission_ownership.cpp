@@ -110,6 +110,22 @@ void DiscardObjc3IROwnershipCleanupToDepth(FunctionContext &ctx,
   }
 }
 
+void EmitObjc3IROwnershipCleanupAtIndex(
+    FunctionContext &ctx, std::size_t index,
+    const Objc3IRScopeCleanupEmissionCallbacks &callbacks) {
+  if (index >= ctx.pending_ownership_cleanup_calls.size()) {
+    return;
+  }
+  PendingOwnershipCleanupCall &call =
+      ctx.pending_ownership_cleanup_calls[index];
+  if (!call.binding_name.empty()) {
+    ctx.ownership_cleanup_call_indices.erase(call.binding_name);
+  }
+  const PendingOwnershipCleanupCall stable_call = call;
+  call.active = false;
+  EmitObjc3IROwnershipCleanupCall(stable_call, ctx, callbacks);
+}
+
 void EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
     const FunctionContext &ctx, std::size_t target_depth,
     std::vector<std::string> &out_lines, int &temp_counter) {
@@ -119,4 +135,14 @@ void EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
         ctx.pending_ownership_cleanup_calls[index - 1u], out_lines,
         temp_counter);
   }
+}
+
+void EmitObjc3IROwnershipCleanupTerminalAtIndex(
+    const FunctionContext &ctx, std::size_t index,
+    std::vector<std::string> &out_lines, int &temp_counter) {
+  if (index >= ctx.pending_ownership_cleanup_calls.size()) {
+    return;
+  }
+  EmitObjc3IROwnershipCleanupTerminalCall(
+      ctx.pending_ownership_cleanup_calls[index], out_lines, temp_counter);
 }

@@ -13,6 +13,14 @@ void EmitObjc3IROwnershipCleanupUnwindToDepth(
 void DiscardObjc3IROwnershipCleanupToDepth(FunctionContext &ctx,
                                            std::size_t target_depth);
 
+void EmitObjc3IROwnershipCleanupAtIndex(
+    FunctionContext &ctx, std::size_t index,
+    const Objc3IRScopeCleanupEmissionCallbacks &callbacks);
+
 void EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
     const FunctionContext &ctx, std::size_t target_depth,
+    std::vector<std::string> &out_lines, int &temp_counter);
+
+void EmitObjc3IROwnershipCleanupTerminalAtIndex(
+    const FunctionContext &ctx, std::size_t index,
     std::vector<std::string> &out_lines, int &temp_counter);
