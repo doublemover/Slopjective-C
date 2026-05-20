@@ -123,4 +123,39 @@ inline void CaptureNestedAutoreleasepoolLifoDrainOrder(
           memory_after_outer_pool.snapshot.live_runtime_instance_count;
 }
 
+inline void CaptureResetCleanupForAllocatedRuntimeInstances(
+    ReferenceCountingOperationResults &operations,
+    MemoryManagementCapture &memory_before_reset_cleanup,
+    MemoryManagementCapture &memory_after_reset_cleanup) {
+  ReferenceCountingFixture fixture = AllocateReferenceCountingFixture();
+  operations.reset_parent = fixture.parent;
+  operations.reset_child = fixture.child;
+  operations.reset_strong_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
+          fixture.parent, "setCurrentValue:", fixture.child, 0, 0, 0);
+  operations.reset_weak_set_result =
+      ::objc3c::runtime::probe::DispatchTypedStatus(
+          fixture.parent, "setWeakValue:", fixture.child, 0, 0, 0);
+  operations.reset_release_local_result =
+      objc3_runtime_release_i32(fixture.child);
+  CaptureMemoryManagementState(memory_before_reset_cleanup);
+
+  objc3_runtime_reset_for_testing();
+  CaptureMemoryManagementState(memory_after_reset_cleanup);
+
+  operations.reset_cleanup_observed =
+      operations.reset_parent != 0 && operations.reset_child != 0 &&
+      operations.reset_strong_set_result == 0 &&
+      operations.reset_weak_set_result == 0 &&
+      operations.reset_release_local_result == operations.reset_child &&
+      memory_before_reset_cleanup.snapshot.live_runtime_instance_count >= 2 &&
+      memory_before_reset_cleanup.snapshot.weak_target_count >= 1 &&
+      memory_before_reset_cleanup.snapshot.weak_slot_ref_count >= 1 &&
+      memory_after_reset_cleanup.snapshot.live_runtime_instance_count == 0 &&
+      memory_after_reset_cleanup.snapshot.weak_target_count == 0 &&
+      memory_after_reset_cleanup.snapshot.weak_slot_ref_count == 0 &&
+      memory_after_reset_cleanup.snapshot.autoreleasepool_depth == 0 &&
+      memory_after_reset_cleanup.snapshot.queued_autorelease_value_count == 0;
+}
+
 }  // namespace objc3c::runtime::probe::reference_counting_weak_autoreleasepool

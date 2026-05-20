@@ -75,7 +75,23 @@ def _assert_instance_allocation_runtime_values(
 ) -> None:
     expect(facts.first_alloc == 1048576, "expected first runtime instance identity to start at 1048576")
     expect(facts.second_alloc == 1048577, "expected second runtime instance identity to increment deterministically")
+    expect(facts.initialized_new == 1048578, "expected builtin new to allocate the third deterministic runtime instance identity")
     expect(facts.first_alloc != facts.second_alloc, "expected alloc to materialize distinct receiver identities")
+    expect(
+        facts.payload.get("first_init_result", {}).get("status_code") == 0
+        and facts.payload.get("first_init_result", {}).get("object_reference") == facts.first_alloc,
+        "expected first init to mark the allocated receiver initialized and return the same object identity",
+    )
+    expect(
+        facts.payload.get("initialized_new_result", {}).get("status_code") == 0
+        and facts.payload.get("initialized_new_result", {}).get("object_reference") == facts.initialized_new,
+        "expected builtin new to allocate and initialize a runtime receiver",
+    )
+    expect(
+        facts.payload.get("double_init_result", {}).get("status_code") == -4
+        and facts.payload.get("double_init_result", {}).get("diagnostic_code") == "O3RT004",
+        "expected double init to fail closed as malformed runtime lifecycle metadata",
+    )
     expect(facts.payload.get("set_base_count_first") == 0, "expected inherited baseCount setter dispatch to return zero")
     expect(facts.payload.get("base_count_value_first") == 21, "expected first inherited baseCount getter to read its written value")
     expect(facts.payload.get("base_count_value_second_before") == 0, "expected second inherited baseCount getter to start from zero-filled storage")
@@ -126,10 +142,10 @@ def _assert_instance_allocation_graph_state(
     expect(facts.graph_state.get("realized_class_count") == 2, "expected realized Base and Widget classes")
     expect(facts.graph_state.get("root_class_count") == 1, "expected only Base to be realized as the root class")
     expect(facts.graph_state.get("receiver_class_binding_count") == 2, "expected Base and Widget receiver bindings")
-    expect(facts.graph_state.get("live_instance_count") == 2, "expected two live runtime instances")
+    expect(facts.graph_state.get("live_instance_count") == 3, "expected alloc/new to leave three live runtime instances")
     expect(
-        facts.graph_state.get("last_allocated_receiver_identity") == facts.second_alloc,
-        "expected graph state to record the last allocated receiver",
+        facts.graph_state.get("last_allocated_receiver_identity") == facts.initialized_new,
+        "expected graph state to record the last allocated receiver from builtin new",
     )
     expect(
         facts.graph_state.get("last_allocated_base_identity") == facts.widget_entry.get("base_identity"),
@@ -139,7 +155,21 @@ def _assert_instance_allocation_graph_state(
         facts.graph_state.get("last_allocated_instance_size_bytes") == facts.widget_entry.get("runtime_instance_size_bytes"),
         "expected graph state to record the inherited Widget instance storage size",
     )
+    expect(
+        facts.graph_state.get("last_allocated_allocation_ordinal") == 3,
+        "expected graph state to preserve the deterministic allocation ordinal from builtin new",
+    )
     expect(facts.graph_state.get("last_allocated_class_name") == "Widget", "expected graph state to record the allocated class name")
+    expect(
+        facts.graph_state.get("last_initialized_receiver_identity") == facts.initialized_new
+        and facts.graph_state.get("last_initialized_initialization_ordinal") == 2,
+        "expected graph state to preserve the latest initialized receiver and deterministic init ordinal",
+    )
+    expect(
+        facts.graph_state.get("last_instance_lifecycle_failure_reason")
+        == "runtime instance already initialized",
+        "expected graph state to preserve the double-init fail-closed lifecycle reason",
+    )
     expect(facts.base_entry.get("found") == 1, "expected Base realized class entry to be queryable")
     expect(facts.base_entry.get("is_root_class") == 1, "expected Base fixture to be the root class")
     expect(facts.base_entry.get("runtime_property_accessor_count") == 1, "expected Base to publish the inherited baseCount accessor pair")
@@ -162,8 +192,39 @@ def _assert_instance_allocation_graph_state(
     expect(facts.widget_entry.get("metaclass_owner_identity") == "metaclass:Widget", "expected Widget metaclass owner identity")
     expect(facts.first_instance.get("found") == 1, "expected first instance snapshot to be queryable")
     expect(facts.second_instance.get("found") == 1, "expected second instance snapshot to be queryable")
+    expect(facts.initialized_new_instance.get("found") == 1, "expected builtin new instance snapshot to be queryable")
     expect(facts.first_instance.get("class_name") == "Widget", "expected first instance to record Widget class")
     expect(facts.second_instance.get("class_name") == "Widget", "expected second instance to record Widget class")
+    expect(facts.initialized_new_instance.get("class_name") == "Widget", "expected builtin new instance to record Widget class")
+    expect(
+        facts.first_instance.get("initialized") == 1
+        and facts.first_instance.get("initialization_ordinal") == 1,
+        "expected first init to publish deterministic initialization state",
+    )
+    expect(
+        facts.second_instance.get("initialized") == 0
+        and facts.second_instance.get("initialization_ordinal") == 0,
+        "expected raw alloc without init to remain explicitly uninitialized",
+    )
+    expect(
+        facts.initialized_new_instance.get("initialized") == 1
+        and facts.initialized_new_instance.get("initialization_ordinal") == 2,
+        "expected builtin new to publish deterministic initialization state",
+    )
+    expect(
+        facts.first_instance.get("normalized_receiver_identity")
+        == facts.widget_entry.get("base_identity", 0) + 1
+        and facts.first_instance.get("class_receiver_identity")
+        == facts.widget_entry.get("base_identity", 0) + 2,
+        "expected instance snapshots to expose normalized instance/class receiver identities",
+    )
+    expect(
+        facts.first_instance.get("class_owner_identity") == "class:Widget"
+        and facts.first_instance.get("metaclass_owner_identity") == "metaclass:Widget"
+        and facts.first_instance.get("instance_isa_owner_identity") == "class:Widget"
+        and facts.first_instance.get("class_object_isa_owner_identity") == "metaclass:Widget",
+        "expected instance snapshots to expose class/metaclass isa owner identities",
+    )
     expect(
         facts.first_instance.get("instance_size_bytes") == facts.widget_entry.get("runtime_instance_size_bytes"),
         "expected first instance allocation size to match Widget runtime layout",

@@ -38,6 +38,16 @@ inline void PrintReferenceCountingWeakAutoreleasepoolReport(
               operations.nested_inner_autoreleased);
   std::printf("\"nested_lifo_drain_order_observed\":%d,",
               operations.nested_lifo_drain_order_observed);
+  std::printf("\"reset_parent\":%d,", operations.reset_parent);
+  std::printf("\"reset_child\":%d,", operations.reset_child);
+  std::printf("\"reset_strong_set_result\":%d,",
+              operations.reset_strong_set_result);
+  std::printf("\"reset_weak_set_result\":%d,",
+              operations.reset_weak_set_result);
+  std::printf("\"reset_release_local_result\":%d,",
+              operations.reset_release_local_result);
+  std::printf("\"reset_cleanup_observed\":%d,",
+              operations.reset_cleanup_observed);
   std::printf("\"graph_after_setup\":");
   ::objc3c::runtime::probe::PrintAllocationGraph(
       snapshots.graph_after_setup.snapshot);
@@ -77,6 +87,12 @@ inline void PrintReferenceCountingWeakAutoreleasepoolReport(
   std::printf(",\"weak_value_entry\":");
   ::objc3c::runtime::probe::PrintPropertyEntryWeakAutoreleasepool(
       snapshots.weak_value_entry.snapshot);
+  std::printf(",\"memory_before_reset_cleanup\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_before_reset_cleanup.snapshot);
+  std::printf(",\"memory_after_reset_cleanup\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_after_reset_cleanup.snapshot);
   std::printf("}");
 }
 

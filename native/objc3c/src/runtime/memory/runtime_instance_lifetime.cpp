@@ -102,7 +102,8 @@ std::vector<int> RuntimeInstanceOwnedValuesToReleaseForTeardownUnlocked(
 }  // namespace
 
 int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
-                                    std::uint64_t base_identity) {
+                                    std::uint64_t base_identity,
+                                    bool initialized) {
   const RealizedClassNode *node =
       FindRealizedClassNodeByBaseIdentityUnlocked(state, base_identity);
   if (node == nullptr) {
@@ -136,7 +137,13 @@ int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
       static_cast<std::uint64_t>(instance.instance_size_bytes);
   instance.storage_bytes.assign(instance.instance_size_bytes, 0u);
   instance.retain_count = 1u;
+  instance.initialized = initialized;
+  if (initialized) {
+    instance.initialization_ordinal =
+        state.next_runtime_instance_initialization_ordinal++;
+  }
 
+  state.last_runtime_instance_lifecycle_failure_reason.clear();
   state.last_allocated_runtime_instance_receiver =
       static_cast<std::uint64_t>(receiver_identity);
   state.last_allocated_runtime_instance_base_identity = base_identity;
@@ -144,11 +151,41 @@ int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
   state.last_allocated_runtime_instance_allocation_ordinal =
       instance.allocation_ordinal;
   state.last_allocated_runtime_instance_class_name = node->class_name;
+  if (initialized) {
+    state.last_initialized_runtime_instance_receiver =
+        static_cast<std::uint64_t>(receiver_identity);
+    state.last_initialized_runtime_instance_initialization_ordinal =
+        instance.initialization_ordinal;
+  }
   state.runtime_instances_by_receiver.emplace(receiver_identity,
                                              std::move(instance));
   state.live_runtime_instance_count =
       static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
   return receiver_identity;
+}
+
+bool InitializeRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
+  const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    state.last_runtime_instance_lifecycle_failure_reason =
+        "init target is not a live runtime instance";
+    return false;
+  }
+  RuntimeInstanceRecord &instance = instance_it->second;
+  if (instance.initialized) {
+    state.last_runtime_instance_lifecycle_failure_reason =
+        "runtime instance already initialized";
+    return false;
+  }
+  instance.initialized = true;
+  instance.initialization_ordinal =
+      state.next_runtime_instance_initialization_ordinal++;
+  state.last_initialized_runtime_instance_receiver =
+      static_cast<std::uint64_t>(receiver);
+  state.last_initialized_runtime_instance_initialization_ordinal =
+      instance.initialization_ordinal;
+  state.last_runtime_instance_lifecycle_failure_reason.clear();
+  return true;
 }
 
 void DestroyRuntimeInstanceUnlocked(
@@ -158,16 +195,17 @@ void DestroyRuntimeInstanceUnlocked(
   if (instance_it == state.runtime_instances_by_receiver.end()) {
     return;
   }
-  RuntimeInstanceRecord instance = std::move(instance_it->second);
-  state.runtime_instances_by_receiver.erase(instance_it);
-  state.live_runtime_instance_count =
-      static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
+  const std::vector<int> owned_values_to_release =
+      RuntimeInstanceOwnedValuesToReleaseForTeardownUnlocked(
+          state, instance_it->second);
 
   ZeroWeakSlotRefsForTargetUnlocked(state, receiver);
   RemoveWeakSlotRefsOwnedByReceiverUnlocked(state, receiver);
 
-  const std::vector<int> owned_values_to_release =
-      RuntimeInstanceOwnedValuesToReleaseForTeardownUnlocked(state, instance);
+  state.runtime_instances_by_receiver.erase(instance_it);
+  state.live_runtime_instance_count =
+      static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
+
   for (int stored_value : owned_values_to_release) {
     ReleaseRuntimeValueUnlocked(state, stored_value, records_to_dispose);
   }

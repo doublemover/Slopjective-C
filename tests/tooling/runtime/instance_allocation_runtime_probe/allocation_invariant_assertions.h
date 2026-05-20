@@ -31,7 +31,8 @@ inline void StabilizeRealizedGraphStateObservation(
   ::objc3c::runtime::probe::StabilizeRealizedGraphState(
       observation.state, observation.class_name, observation.owner,
       observation.metaclass, observation.category_owner,
-      observation.category_name, observation.allocated_class);
+      observation.category_name, observation.allocated_class,
+      observation.lifecycle_failure_reason);
 }
 
 inline void StabilizeRealizedClassEntryObservation(
@@ -49,6 +50,21 @@ inline void StabilizeInstanceEntryObservation(
   ::objc3c::runtime::probe::StabilizeNullableCString(
       observation.entry.class_name, observation.class_name,
       observation.entry.class_name);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      observation.entry.class_owner_identity, observation.class_owner_identity,
+      observation.entry.class_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      observation.entry.metaclass_owner_identity,
+      observation.metaclass_owner_identity,
+      observation.entry.metaclass_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      observation.entry.instance_isa_owner_identity,
+      observation.instance_isa_owner_identity,
+      observation.entry.instance_isa_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      observation.entry.class_object_isa_owner_identity,
+      observation.class_object_isa_owner_identity,
+      observation.entry.class_object_isa_owner_identity);
 }
 
 inline void StabilizePropertyEntryObservation(
@@ -74,6 +90,7 @@ inline void StabilizeAllocationInvariantSnapshots(
   StabilizeRealizedClassEntryObservation(snapshots.widget_entry);
   StabilizeInstanceEntryObservation(snapshots.first_instance);
   StabilizeInstanceEntryObservation(snapshots.second_instance);
+  StabilizeInstanceEntryObservation(snapshots.initialized_new_instance);
   StabilizePropertyEntryObservation(snapshots.base_count_property);
   StabilizePropertyEntryObservation(snapshots.count_property);
   StabilizePropertyEntryObservation(snapshots.value_property);
@@ -162,6 +179,9 @@ inline void CaptureAllocationInvariantSnapshots(
   StabilizeInstanceEntryObservation(snapshots.first_instance);
   snapshots.second_instance = CaptureInstanceEntry(fixture.second_alloc);
   StabilizeInstanceEntryObservation(snapshots.second_instance);
+  snapshots.initialized_new_instance =
+      CaptureInstanceEntry(fixture.initialized_new);
+  StabilizeInstanceEntryObservation(snapshots.initialized_new_instance);
   snapshots.base_count_property = CapturePropertyEntry(kBaseCountPropertyName);
   StabilizePropertyEntryObservation(snapshots.base_count_property);
   snapshots.count_property = CapturePropertyEntry(kCountPropertyName);

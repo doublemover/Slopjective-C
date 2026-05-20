@@ -35,6 +35,7 @@ class InstanceAllocationLayoutPayload:
     widget_entry: Any
     first_instance: Any
     second_instance: Any
+    initialized_new_instance: Any
     base_count_property: Any
     count_property: Any
     value_property: Any
@@ -44,6 +45,7 @@ class InstanceAllocationLayoutPayload:
     set_count_entry: Any
     first_alloc: int
     second_alloc: int
+    initialized_new: int
 
 
 def capture_property_layout_payload(
@@ -77,6 +79,7 @@ def capture_instance_allocation_layout_payload(
         widget_entry=payload.get("widget_entry", {}),
         first_instance=payload.get("first_instance", {}),
         second_instance=payload.get("second_instance", {}),
+        initialized_new_instance=payload.get("initialized_new_instance", {}),
         base_count_property=payload.get("base_count_property", {}),
         count_property=payload.get("count_property", {}),
         value_property=payload.get("value_property", {}),
@@ -86,6 +89,7 @@ def capture_instance_allocation_layout_payload(
         set_count_entry=payload.get("set_count_entry", {}),
         first_alloc=int(payload.get("first_alloc", 0)),
         second_alloc=int(payload.get("second_alloc", 0)),
+        initialized_new=int(payload.get("initialized_new", 0)),
     )
 
 

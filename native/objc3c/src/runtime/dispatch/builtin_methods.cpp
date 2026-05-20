@@ -58,8 +58,8 @@ RuntimeTypedDispatchResult InvokeRuntimeBuiltinMethod(
             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
             RuntimeMethodReturnKind::ObjectReference);
       }
-      const int receiver_identity =
-          AllocateRuntimeInstanceUnlocked(state, base_identity);
+      const int receiver_identity = AllocateRuntimeInstanceUnlocked(
+          state, base_identity, builtin_kind == RuntimeBuiltinKind::New);
       if (receiver_identity == 0) {
         return RuntimeTypedDispatchFailure(
             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
@@ -68,9 +68,21 @@ RuntimeTypedDispatchResult InvokeRuntimeBuiltinMethod(
       return RuntimeTypedDispatchSuccess(RuntimeMethodReturnKind::ObjectReference,
                                          receiver_identity);
     }
-    case RuntimeBuiltinKind::Init:
+    case RuntimeBuiltinKind::Init: {
+      std::lock_guard<std::mutex> lock(state.mutex);
+      const bool target_is_live =
+          state.runtime_instances_by_receiver.find(receiver) !=
+          state.runtime_instances_by_receiver.end();
+      if (!InitializeRuntimeInstanceUnlocked(state, receiver)) {
+        return RuntimeTypedDispatchFailure(
+            target_is_live
+                ? OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA
+                : OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
+            RuntimeMethodReturnKind::ObjectReference);
+      }
       return RuntimeTypedDispatchSuccess(RuntimeMethodReturnKind::ObjectReference,
                                          receiver);
+    }
     case RuntimeBuiltinKind::PropertyGetter: {
       if (runtime_property_accessor == nullptr) {
         return RuntimeTypedDispatchFailure(

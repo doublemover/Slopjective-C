@@ -37,6 +37,18 @@ inline void PrintRealizedGraphStateAllocation(
   PrintUint64Field("last_allocated_instance_size_bytes",
                    static_cast<unsigned long long>(
                        snapshot.last_allocated_instance_size_bytes));
+  PrintUint64Field(
+      "last_allocated_allocation_ordinal",
+      static_cast<unsigned long long>(
+          snapshot.last_allocated_allocation_ordinal));
+  PrintUint64Field(
+      "last_initialized_receiver_identity",
+      static_cast<unsigned long long>(
+          snapshot.last_initialized_receiver_identity));
+  PrintUint64Field(
+      "last_initialized_initialization_ordinal",
+      static_cast<unsigned long long>(
+          snapshot.last_initialized_initialization_ordinal));
   PrintStringField("last_realized_class_name",
                    snapshot.last_realized_class_name);
   PrintStringField("last_realized_class_owner_identity",
@@ -44,7 +56,9 @@ inline void PrintRealizedGraphStateAllocation(
   PrintStringField("last_realized_metaclass_owner_identity",
                    snapshot.last_realized_metaclass_owner_identity);
   PrintStringField("last_allocated_class_name",
-                   snapshot.last_allocated_class_name, false);
+                   snapshot.last_allocated_class_name);
+  PrintStringField("last_instance_lifecycle_failure_reason",
+                   snapshot.last_instance_lifecycle_failure_reason, false);
   std::printf("}");
 }
 

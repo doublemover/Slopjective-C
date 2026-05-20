@@ -47,6 +47,10 @@ extern "C" int objc3_runtime_copy_realized_class_graph_state_for_testing(
       state.last_allocated_runtime_instance_size_bytes;
   snapshot->last_allocated_allocation_ordinal =
       state.last_allocated_runtime_instance_allocation_ordinal;
+  snapshot->last_initialized_receiver_identity =
+      state.last_initialized_runtime_instance_receiver;
+  snapshot->last_initialized_initialization_ordinal =
+      state.last_initialized_runtime_instance_initialization_ordinal;
   snapshot->last_realized_class_name =
       objc3c::runtime::BorrowRuntimeCString(state.last_realized_class_name);
   snapshot->last_realized_class_owner_identity =
@@ -64,6 +68,9 @@ extern "C" int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->last_allocated_class_name =
       objc3c::runtime::BorrowRuntimeCString(
           state.last_allocated_runtime_instance_class_name);
+  snapshot->last_instance_lifecycle_failure_reason =
+      objc3c::runtime::BorrowRuntimeCString(
+          state.last_runtime_instance_lifecycle_failure_reason);
   snapshot->last_malformed_class_graph_reason =
       objc3c::runtime::BorrowRuntimeCString(
           state.last_malformed_class_graph_reason);
@@ -234,12 +241,20 @@ extern "C" int objc3_runtime_copy_instance_entry_for_testing(
   snapshot->found = 0;
   snapshot->receiver_identity = 0;
   snapshot->base_identity = 0;
+  snapshot->normalized_receiver_identity = 0;
+  snapshot->class_receiver_identity = 0;
   snapshot->allocation_ordinal = 0;
+  snapshot->initialized = 0;
+  snapshot->initialization_ordinal = 0;
   snapshot->instance_size_bytes = 0;
   snapshot->storage_size_bytes = 0;
   snapshot->zero_initialized_storage_byte_count = 0;
   snapshot->retain_count = 0;
   snapshot->class_name = nullptr;
+  snapshot->class_owner_identity = nullptr;
+  snapshot->metaclass_owner_identity = nullptr;
+  snapshot->instance_isa_owner_identity = nullptr;
+  snapshot->class_object_isa_owner_identity = nullptr;
 
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -252,7 +267,12 @@ extern "C" int objc3_runtime_copy_instance_entry_for_testing(
   snapshot->found = 1;
   snapshot->receiver_identity = instance.receiver_identity;
   snapshot->base_identity = instance.base_identity;
+  snapshot->normalized_receiver_identity =
+      instance.normalized_receiver_identity;
+  snapshot->class_receiver_identity = instance.class_receiver_identity;
   snapshot->allocation_ordinal = instance.allocation_ordinal;
+  snapshot->initialized = instance.initialized ? 1u : 0u;
+  snapshot->initialization_ordinal = instance.initialization_ordinal;
   snapshot->instance_size_bytes =
       static_cast<std::uint64_t>(instance.instance_size_bytes);
   snapshot->storage_size_bytes =
@@ -263,5 +283,15 @@ extern "C" int objc3_runtime_copy_instance_entry_for_testing(
   snapshot->retain_count = instance.retain_count;
   snapshot->class_name =
       objc3c::runtime::BorrowRuntimeCString(instance.class_name);
+  snapshot->class_owner_identity =
+      objc3c::runtime::BorrowRuntimeCString(instance.class_owner_identity);
+  snapshot->metaclass_owner_identity =
+      objc3c::runtime::BorrowRuntimeCString(instance.metaclass_owner_identity);
+  snapshot->instance_isa_owner_identity =
+      objc3c::runtime::BorrowRuntimeCString(
+          instance.instance_isa_owner_identity);
+  snapshot->class_object_isa_owner_identity =
+      objc3c::runtime::BorrowRuntimeCString(
+          instance.class_object_isa_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }

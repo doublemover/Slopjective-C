@@ -34,6 +34,9 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   const char *last_malformed_class_graph_diagnostic_code;
   const char *last_malformed_class_graph_diagnostic_message;
   const char *last_malformed_class_graph_diagnostic_class;
+  uint64_t last_initialized_receiver_identity;
+  uint64_t last_initialized_initialization_ordinal;
+  const char *last_instance_lifecycle_failure_reason;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {
@@ -78,6 +81,14 @@ typedef struct objc3_runtime_instance_entry_snapshot {
   uint64_t zero_initialized_storage_byte_count;
   uint64_t retain_count;
   const char *class_name;
+  uint64_t normalized_receiver_identity;
+  uint64_t class_receiver_identity;
+  uint64_t initialized;
+  uint64_t initialization_ordinal;
+  const char *class_owner_identity;
+  const char *metaclass_owner_identity;
+  const char *instance_isa_owner_identity;
+  const char *class_object_isa_owner_identity;
 } objc3_runtime_instance_entry_snapshot;
 
 typedef struct objc3_runtime_property_registry_state_snapshot {

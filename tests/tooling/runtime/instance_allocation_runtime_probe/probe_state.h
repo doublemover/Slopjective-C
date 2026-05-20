@@ -33,6 +33,7 @@ struct RealizedGraphStateObservation {
   std::string category_owner;
   std::string category_name;
   std::string allocated_class;
+  std::string lifecycle_failure_reason;
 };
 
 struct RealizedClassEntryObservation {
@@ -51,6 +52,10 @@ struct RealizedClassEntryObservation {
 struct InstanceEntryObservation {
   objc3_runtime_instance_entry_snapshot entry{};
   std::string class_name;
+  std::string class_owner_identity;
+  std::string metaclass_owner_identity;
+  std::string instance_isa_owner_identity;
+  std::string class_object_isa_owner_identity;
 };
 
 struct PropertyEntryObservation {
@@ -74,6 +79,10 @@ struct PropertyEntryObservation {
 struct AllocationFixture {
   int first_alloc = 0;
   int second_alloc = 0;
+  int initialized_new = 0;
+  objc3_runtime_dispatch_typed_result first_init_result{};
+  objc3_runtime_dispatch_typed_result initialized_new_result{};
+  objc3_runtime_dispatch_typed_result double_init_result{};
 };
 
 struct AllocationMutationResults {
@@ -110,6 +119,7 @@ struct AllocationInvariantSnapshots {
   RealizedClassEntryObservation widget_entry;
   InstanceEntryObservation first_instance;
   InstanceEntryObservation second_instance;
+  InstanceEntryObservation initialized_new_instance;
   PropertyEntryObservation base_count_property;
   PropertyEntryObservation count_property;
   PropertyEntryObservation value_property;

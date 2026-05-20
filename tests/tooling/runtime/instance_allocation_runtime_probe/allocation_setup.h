@@ -17,6 +17,11 @@ inline int DispatchWidgetObjectReference(int receiver, const char *selector) {
                                                                 selector);
 }
 
+inline objc3_runtime_dispatch_typed_result DispatchWidgetTyped(
+    int receiver, const char *selector) {
+  return ::objc3c::runtime::probe::DispatchTyped(receiver, selector);
+}
+
 inline int DispatchWidgetVoidStatus(int receiver, const char *selector,
                                     int argument) {
   return ::objc3c::runtime::probe::DispatchTypedStatus(receiver, selector,
@@ -41,6 +46,17 @@ inline AllocationFixture AllocateWidgetInstances() {
       DispatchWidgetObjectReference(widget_class_receiver, kAllocSelector);
   fixture.second_alloc =
       DispatchWidgetObjectReference(widget_class_receiver, kAllocSelector);
+  fixture.first_init_result =
+      DispatchWidgetTyped(fixture.first_alloc, kInitSelector);
+  fixture.initialized_new_result =
+      DispatchWidgetTyped(widget_class_receiver, kNewSelector);
+  if (fixture.initialized_new_result.status_code ==
+      OBJC3_RUNTIME_DISPATCH_STATUS_OK) {
+    fixture.initialized_new =
+        fixture.initialized_new_result.object_reference;
+  }
+  fixture.double_init_result =
+      DispatchWidgetTyped(fixture.first_alloc, kInitSelector);
   return fixture;
 }
 

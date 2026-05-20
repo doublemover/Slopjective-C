@@ -48,6 +48,12 @@ struct ReferenceCountingOperationResults {
   int nested_outer_autoreleased = 0;
   int nested_inner_autoreleased = 0;
   int nested_lifo_drain_order_observed = 0;
+  int reset_parent = 0;
+  int reset_child = 0;
+  int reset_strong_set_result = 0;
+  int reset_weak_set_result = 0;
+  int reset_release_local_result = 0;
+  int reset_cleanup_observed = 0;
 };
 
 struct ReferenceCountingSnapshotCaptures {
@@ -64,6 +70,8 @@ struct ReferenceCountingSnapshotCaptures {
   MemoryManagementCapture memory_after_outer_pool;
   MemoryManagementCapture memory_after_nested_release_cleanup;
   WeakPropertyEntryCapture weak_value_entry;
+  MemoryManagementCapture memory_before_reset_cleanup;
+  MemoryManagementCapture memory_after_reset_cleanup;
 };
 
 struct ReferenceCountingWeakAutoreleasepoolRun {

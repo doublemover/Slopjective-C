@@ -62,6 +62,12 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
     reference_after_cleanup = reference_payload.get(
         "memory_after_nested_release_cleanup", {}
     )
+    reference_before_reset_cleanup = reference_payload.get(
+        "memory_before_reset_cleanup", {}
+    )
+    reference_after_reset_cleanup = reference_payload.get(
+        "memory_after_reset_cleanup", {}
+    )
 
     expect(payload.get("parent", 0) != 0 and payload.get("child", 0) != 0,
            "expected ArcBox runtime helper probe to allocate live receivers")
@@ -181,6 +187,22 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected nested autoreleasepool drains to destroy two managed receivers")
     expect(reference_after_cleanup.get("live_runtime_instance_count") == reference_after_outer.get("live_runtime_instance_count"),
            "expected nested autoreleasepool cleanup accounting to stay stable after drain")
+    expect(reference_payload.get("reset_cleanup_observed") == 1,
+           "expected reference-counting probe to publish deterministic reset cleanup for allocated runtime instances")
+    expect(reference_before_reset_cleanup.get("live_runtime_instance_count", 0) >= 2,
+           "expected reset cleanup setup to allocate live runtime instances before reset")
+    expect(reference_before_reset_cleanup.get("weak_slot_ref_count", 0) >= 1,
+           "expected reset cleanup setup to register at least one weak slot before reset")
+    expect(reference_after_reset_cleanup.get("live_runtime_instance_count") == 0,
+           "expected reset cleanup to clear allocated runtime instances")
+    expect(reference_after_reset_cleanup.get("weak_target_count") == 0,
+           "expected reset cleanup to clear weak target bookkeeping")
+    expect(reference_after_reset_cleanup.get("weak_slot_ref_count") == 0,
+           "expected reset cleanup to clear weak slot bookkeeping")
+    expect(reference_after_reset_cleanup.get("autoreleasepool_depth") == 0,
+           "expected reset cleanup to clear autoreleasepool depth")
+    expect(reference_after_reset_cleanup.get("queued_autorelease_value_count") == 0,
+           "expected reset cleanup to clear queued autorelease values")
 
     return CaseResult(
         case_id="arc-property-helper-abi",
@@ -206,5 +228,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
             "reference_after_inner_last_drained": reference_after_inner.get("last_drained_autorelease_value"),
             "reference_after_outer_last_drained": reference_after_outer.get("last_drained_autorelease_value"),
             "reference_after_outer_live_runtime_instance_count": reference_after_outer.get("live_runtime_instance_count"),
+            "reference_reset_cleanup_observed": reference_payload.get("reset_cleanup_observed"),
+            "reference_after_reset_live_runtime_instance_count": reference_after_reset_cleanup.get("live_runtime_instance_count"),
+            "reference_after_reset_weak_slot_ref_count": reference_after_reset_cleanup.get("weak_slot_ref_count"),
         },
     )

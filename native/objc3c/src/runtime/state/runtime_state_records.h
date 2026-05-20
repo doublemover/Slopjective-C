@@ -190,12 +190,16 @@ struct RuntimeState {
   int next_runtime_block_handle = 0x200000;
   std::uint64_t next_runtime_block_byref_cell_ordinal = 1;
   std::uint64_t next_runtime_instance_allocation_ordinal = 1;
+  std::uint64_t next_runtime_instance_initialization_ordinal = 1;
   std::uint64_t live_runtime_instance_count = 0;
   std::uint64_t last_allocated_runtime_instance_receiver = 0;
   std::uint64_t last_allocated_runtime_instance_base_identity = 0;
   std::uint64_t last_allocated_runtime_instance_size_bytes = 0;
   std::uint64_t last_allocated_runtime_instance_allocation_ordinal = 0;
+  std::uint64_t last_initialized_runtime_instance_receiver = 0;
+  std::uint64_t last_initialized_runtime_instance_initialization_ordinal = 0;
   std::string last_allocated_runtime_instance_class_name;
+  std::string last_runtime_instance_lifecycle_failure_reason;
   std::string last_queried_property_class_name;
   std::string last_queried_property_name;
   std::string last_reflected_property_class_name;

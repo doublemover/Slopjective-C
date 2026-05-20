@@ -30,6 +30,9 @@ inline void CaptureReferenceCountingWeakAutoreleasepoolProbe(
       run.snapshots.memory_after_outer_pool,
       run.snapshots.memory_after_nested_release_cleanup);
   CaptureWeakValuePropertyEntry(run.snapshots.weak_value_entry);
+  CaptureResetCleanupForAllocatedRuntimeInstances(
+      run.operations, run.snapshots.memory_before_reset_cleanup,
+      run.snapshots.memory_after_reset_cleanup);
 }
 
 inline int RunReferenceCountingWeakAutoreleasepoolProbe() {

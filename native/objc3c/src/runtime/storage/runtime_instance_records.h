@@ -27,6 +27,8 @@ struct RuntimeInstanceRecord {
   std::size_t instance_size_bytes = 0;
   std::vector<unsigned char> storage_bytes;
   std::uint64_t retain_count = 1;
+  bool initialized = false;
+  std::uint64_t initialization_ordinal = 0;
 };
 
 }  // namespace objc3c::runtime
