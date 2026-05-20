@@ -1,0 +1,23 @@
+{
+  "contract_id": "objc3c.migration_analyzer.input.v1",
+  "source_path": "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m",
+  "source_language": "objective-c-2",
+  "target_profile": "objc3-canonical",
+  "module_name": "UnsafeLegacyWidget",
+  "requested_surfaces": [
+    "header-import-export",
+    "abi-alignment",
+    "foreign-type-diagnostics",
+    "mixed-image-loading"
+  ],
+  "foreign_interfaces": [
+    {
+      "language": "swift",
+      "module": "SwiftKit",
+      "symbols": []
+    }
+  ],
+  "packaged_execution": {
+    "manifest": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json"
+  }
+}

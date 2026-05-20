@@ -283,6 +283,7 @@ add_subdirectory(classes)
 add_subdirectory(reflection)
 add_subdirectory(storage)
 objc3c_apply_build_defaults(${OBJC3_RUNTIME_LIBRARY_TARGET})
+objc3c_apply_sanitizers(${OBJC3_RUNTIME_LIBRARY_TARGET})
 target_link_libraries(${OBJC3_RUNTIME_LIBRARY_TARGET} PUBLIC
   objc3c_runtime_metadata
 )

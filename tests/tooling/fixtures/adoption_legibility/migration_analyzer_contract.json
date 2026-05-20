@@ -1,0 +1,96 @@
+{
+  "contract_id": "objc3c.migration_analyzer.contract.v1",
+  "schema_version": 1,
+  "issue_ids": [8077, 8078],
+  "owner_section": "migration_analyzer",
+  "source_contracts": [
+    "tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json",
+    "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json",
+    "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_negative.json",
+    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_positive.m",
+    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m"
+  ],
+  "public_actions": [
+    "analyze-migration-source",
+    "rewrite-migration-source",
+    "validate-migration-workflow"
+  ],
+  "package_bridge": "objc3c",
+  "required_surfaces": [
+    "header-import-export",
+    "abi-alignment",
+    "foreign-type-diagnostics",
+    "mixed-image-loading",
+    "packaged-execution"
+  ],
+  "diagnostic_codes": [
+    "O3M002",
+    "O3M003",
+    "O3M005",
+    "O3M010",
+    "O3M017",
+    "O3M101",
+    "O3M102",
+    "O3M103",
+    "O3M104",
+    "O3M105",
+    "O3M210"
+  ],
+  "rewrite_rules": [
+    {
+      "rule_id": "objc2-foundation-import",
+      "automatic": true,
+      "claim_boundary": "import-line rewrite only"
+    },
+    {
+      "rule_id": "objc2-quoted-header-import",
+      "automatic": true,
+      "claim_boundary": "foreign header import-line rewrite only"
+    },
+    {
+      "rule_id": "cpp-quoted-header-import",
+      "automatic": true,
+      "claim_boundary": "C++ header import-line rewrite only"
+    },
+    {
+      "rule_id": "objc2-bool-type",
+      "automatic": true,
+      "claim_boundary": "token-boundary BOOL rewrite only"
+    },
+    {
+      "rule_id": "objc2-bool-literal",
+      "automatic": true,
+      "claim_boundary": "token-boundary YES/NO rewrite only"
+    },
+    {
+      "rule_id": "objc2-null-literal",
+      "automatic": true,
+      "claim_boundary": "token-boundary NULL rewrite only"
+    },
+    {
+      "rule_id": "objc2-interface-shape",
+      "automatic": false,
+      "claim_boundary": "manual planning surface; no retired-source acceptance claim"
+    },
+    {
+      "rule_id": "foreign-type-ownership",
+      "automatic": false,
+      "claim_boundary": "manual planning surface; no ABI parity claim"
+    }
+  ],
+  "support_boundary": "The analyzer parses checked-in migration input JSON and source text to produce diagnostics and rewrite plans. It does not accept retired Objective-C 2 source as compiler input, does not claim Swift or C++ ABI parity, and does not treat report-only output as support.",
+  "fail_closed_conditions": [
+    "input contract_id is missing or unsupported",
+    "required migration surfaces are absent",
+    "source path or packaged execution evidence is outside checked-in repository paths",
+    "Swift or C++ foreign interface declarations are missing",
+    "source delimiters are malformed",
+    "unsafe mixed-image loading markers are present",
+    "rewrite edits drift from the source text before application"
+  ],
+  "generated_report_contracts": [
+    "objc3c.migration_analyzer.report.v1",
+    "objc3c.migration.rewrite.report.v1",
+    "objc3c.migration_analyzer.workflow_validation.summary.v1"
+  ]
+}

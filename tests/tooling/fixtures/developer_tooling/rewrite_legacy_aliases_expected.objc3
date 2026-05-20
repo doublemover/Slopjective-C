@@ -1,0 +1,10 @@
+module Rewrite;
+
+fn main() {
+  let canonicalValue = true;
+  let other = false;
+  let pointer = nil;
+  let text = @"YES NO NULL must stay text";
+  // YES NO NULL must stay comment text
+  return canonicalValue ? pointer : other;
+}

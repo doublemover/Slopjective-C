@@ -1,0 +1,24 @@
+"""Core codegen optimization policy action specs."""
+
+from __future__ import annotations
+
+from .action_spec import ActionSpec
+from .actions.codegen_optimization_policy import (
+    CODEGEN_OPTIMIZATION_POLICY_ACTION,
+    CODEGEN_OPTIMIZATION_POLICY_BACKEND,
+    CODEGEN_OPTIMIZATION_POLICY_GUARANTEE_OWNER,
+    CODEGEN_OPTIMIZATION_POLICY_SUMMARY,
+    CODEGEN_OPTIMIZATION_POLICY_VALIDATION_TIER,
+)
+
+CORE_CODEGEN_ACTION_SPECS: dict[str, ActionSpec] = {
+    CODEGEN_OPTIMIZATION_POLICY_ACTION: ActionSpec(
+        CODEGEN_OPTIMIZATION_POLICY_ACTION,
+        CODEGEN_OPTIMIZATION_POLICY_SUMMARY,
+        CODEGEN_OPTIMIZATION_POLICY_BACKEND,
+        validation_tier=CODEGEN_OPTIMIZATION_POLICY_VALIDATION_TIER,
+        guarantee_owner=CODEGEN_OPTIMIZATION_POLICY_GUARANTEE_OWNER,
+    )
+}
+
+__all__ = ["CORE_CODEGEN_ACTION_SPECS"]

@@ -9,6 +9,8 @@
   "required_actions": [
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "build-security-posture",
     "publish-security-advisories",
     "validate-security-hardening",
@@ -22,6 +24,8 @@
     "owned_actions": [
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
+      "check-security-sanitizer-validation",
+      "check-security-language-runtime-threat-model",
       "build-security-posture",
       "publish-security-advisories",
       "validate-security-hardening",
@@ -36,6 +40,8 @@
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
       "check-security-runtime-hardening",
+      "check-security-sanitizer-validation",
+      "check-security-language-runtime-threat-model",
       "build-security-posture",
       "check-security-response-drill",
       "publish-security-advisories"
@@ -56,6 +62,8 @@
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
     "check-security-runtime-hardening",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "build-security-posture",
     "check-security-response-drill",
     "publish-security-advisories"

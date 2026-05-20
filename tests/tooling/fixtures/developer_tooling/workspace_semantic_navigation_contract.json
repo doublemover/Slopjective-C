@@ -1,0 +1,49 @@
+{
+  "contract_id": "objc3c.developer.tooling.workspace.semantic.navigation.contract.v1",
+  "surface_kind": "developer-tooling-workspace-semantic-navigation-contract",
+  "summary_implementation_anchor": "scripts/check_developer_tooling_workspace_integration.py",
+  "public_action": "materialize-playground-workspace",
+  "source": "tests/tooling/fixtures/native/hello.objc3",
+  "source_truth_inputs": [
+    "stdlib/module_inventory.json",
+    "showcase/portfolio.json",
+    "showcase/demo_packages.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+  ],
+  "expected_package_ids": [
+    "source:tests/tooling/fixtures/native/hello.objc3",
+    "stdlib:objc3.core",
+    "stdlib:objc3.errors",
+    "stdlib:objc3.concurrency",
+    "stdlib:objc3.keypath",
+    "stdlib:objc3.system",
+    "showcase:auroraBoard",
+    "showcase:signalMesh",
+    "showcase:patchKit"
+  ],
+  "expected_cross_package_edges": [
+    "showcase:auroraBoard->stdlib:objc3.core",
+    "showcase:auroraBoard->stdlib:objc3.errors",
+    "showcase:auroraBoard->stdlib:objc3.keypath",
+    "showcase:signalMesh->stdlib:objc3.concurrency",
+    "showcase:signalMesh->stdlib:objc3.system",
+    "showcase:patchKit->stdlib:objc3.keypath",
+    "showcase:patchKit->stdlib:objc3.system"
+  ],
+  "required_guardrail_checks": [
+    "lockfile_deterministic",
+    "offline_mirror_lock_derived",
+    "offline_mirror_no_network",
+    "tamper_rejection_diagnostic_owned",
+    "mixed_version_policy_owned",
+    "tmp_not_source_authority"
+  ],
+  "unsupported_surfaces": [
+    "network-backed workspace restore",
+    "tmp-only workspace source truth",
+    "workspace symbols without manifest-backed source coordinates"
+  ]
+}

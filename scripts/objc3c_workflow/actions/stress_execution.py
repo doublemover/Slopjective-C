@@ -30,6 +30,7 @@ def run_validate_stress() -> int:
             (action_name, stress_command(action_name))
             for action_name in VALIDATE_STRESS_CHILD_ACTIONS
         ],
+        continue_on_failure=True,
     )
 
 

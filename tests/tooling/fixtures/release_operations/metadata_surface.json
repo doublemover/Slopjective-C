@@ -44,6 +44,7 @@
     "upgrade_paths",
     "warnings",
     "revert_guidance",
+    "rollback_diagnostics",
     "fail_closed_diagnostics",
     "forbidden_claims"
   ]

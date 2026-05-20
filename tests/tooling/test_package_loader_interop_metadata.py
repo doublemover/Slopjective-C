@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import sys
 
@@ -11,6 +12,10 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from check_objc3c_package_registry_mirror_reproducibility import (  # noqa: E402
     collect_interop_loader_metadata_failures,
+    collect_offline_mirror_cache_failures,
+    expected_cache_payload,
+    file_digest,
+    stable_digest,
 )
 from package_ecosystem_contracts import (  # noqa: E402
     PACKAGE_LOADER_INTEROP_TAMPER_CODE,
@@ -182,4 +187,36 @@ def test_package_loader_interop_payload_tamper_with_preserved_digest_reports_sta
 
     assert failures == [
         f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata payload mismatch for showcase:patchKit"
+    ]
+
+
+def test_offline_mirror_cache_payload_tamper_reports_stable_code(tmp_path: Path) -> None:
+    source_path = tmp_path / "fixtures" / "Pkg.json"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text("{}\n", encoding="utf-8")
+    mirror_package = {
+        "package_id": "fixture:Pkg",
+        "source": "fixtures/Pkg.json",
+        "source_digest": file_digest(source_path),
+        "cache_path": "tmp/artifacts/package-ecosystem/mirrors/cache/fixture/Pkg.json",
+    }
+    cache_payload = expected_cache_payload(mirror_package)
+    mirror_package["cache_digest"] = stable_digest(cache_payload)
+    cache_path = tmp_path / mirror_package["cache_path"]
+    cache_path.parent.mkdir(parents=True)
+    tampered_payload = dict(cache_payload)
+    tampered_payload["source_digest"] = "sha256:" + ("0" * 64)
+    cache_path.write_text(
+        json.dumps(tampered_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    failures = collect_offline_mirror_cache_failures(
+        {"packages": [mirror_package]},
+        root=tmp_path,
+        cache_root=tmp_path / "tmp" / "artifacts" / "package-ecosystem" / "mirrors" / "cache",
+    )
+
+    assert failures == [
+        f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror cache payload mismatch for fixture:Pkg"
     ]

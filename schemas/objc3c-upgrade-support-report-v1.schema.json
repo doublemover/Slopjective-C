@@ -16,6 +16,7 @@
     "upgrade_paths",
     "warnings",
     "revert_guidance",
+    "rollback_diagnostics",
     "fail_closed_diagnostics",
     "forbidden_claims"
   ],
@@ -57,6 +58,11 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/revertGuidance" }
+    },
+    "rollback_diagnostics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rollbackDiagnostic" }
     },
     "fail_closed_diagnostics": {
       "type": "array",
@@ -139,11 +145,33 @@
     "revertGuidance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["channel_id", "instruction", "requires_backup"],
+      "required": ["channel_id", "instruction", "requires_backup", "rollback_channel", "operator_command"],
       "properties": {
         "channel_id": { "type": "string" },
         "instruction": { "type": "string" },
-        "requires_backup": { "type": "boolean" }
+        "requires_backup": { "type": "boolean" },
+        "rollback_channel": { "type": "string" },
+        "operator_command": { "type": "string" }
+      }
+    },
+    "rollbackDiagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diagnostic_id",
+        "severity",
+        "user_facing_message",
+        "rollback_channel",
+        "operator_command",
+        "blocks_publication"
+      ],
+      "properties": {
+        "diagnostic_id": { "type": "string" },
+        "severity": { "enum": ["info", "warn", "warning", "error"] },
+        "user_facing_message": { "type": "string" },
+        "rollback_channel": { "type": "string" },
+        "operator_command": { "type": "string" },
+        "blocks_publication": { "type": "boolean" }
       }
     },
     "failClosedDiagnostic": {

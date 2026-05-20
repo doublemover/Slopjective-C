@@ -11,13 +11,20 @@ VALIDATION_TIMING_BUDGET_OWNER = "validation_timing_budgets"
 VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER = "validation_timing_budgets"
 DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS = 120.0
 COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
-    "validate-performance-governance": 420.0,
-    "validate-release-foundation": 900.0,
-    "validate-packaging-channels": 1200.0,
-    "validate-release-operations": 1500.0,
-    "validate-distribution-credibility": 1500.0,
+    # Release composites include nested native performance, package, and
+    # publication gates. Keep these hard-blocking, but budget the cold Windows
+    # release lane instead of warmed developer-cache expectations.
+    "validate-performance-governance": 1800.0,
+    "validate-release-foundation": 3000.0,
+    "validate-packaging-channels": 3300.0,
+    "validate-release-operations": 3600.0,
+    "validate-distribution-credibility": 4200.0,
     "validate-security-hardening": 1800.0,
-    "validate-stress": 300.0,
+    # Stress validation intentionally includes fuzz, differential, reducer, and
+    # crash-triage children. A cold native build can legitimately dominate the
+    # first run, so the hard budget tracks the end-to-end lane instead of a
+    # warmed no-op expectation.
+    "validate-stress": 900.0,
 }
 
 

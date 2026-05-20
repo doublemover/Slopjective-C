@@ -10,8 +10,10 @@
   "generated_outputs": {
     "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
     "mirror_index": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+    "mirror_cache_root": "tmp/artifacts/package-ecosystem/mirrors/cache",
     "local_registry_index": "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
     "publication_metadata": "tmp/artifacts/package-ecosystem/registry/publication-metadata.json",
+    "restore_receipt": "tmp/artifacts/package-ecosystem/offline-install/objc3c-offline-mirror-restore-receipt.json",
     "mirror_summary": "tmp/reports/package-ecosystem/package-mirror-summary.json",
     "reproducibility_summary": "tmp/reports/package-ecosystem/registry-mirror-reproducibility-summary.json"
   },
@@ -32,6 +34,7 @@
       "local registry package ids drift from lock package ids",
       "offline mirror metadata digest mismatch did not fail closed",
       "offline mirror metadata payload mismatch did not fail closed",
+      "offline mirror cache payload mismatch did not fail closed",
       "hosted registry claim did not fail closed",
       "mirror validation requires network access"
     ]
@@ -49,6 +52,7 @@
     "publication metadata must fail closed for hosted registry support claims",
     "mixed-image interop loader metadata digests must match between lock, mirror, and local registry packages",
     "mixed-image interop loader metadata payloads, including ObjC++ and Swift bridge-surface rows, must match between lock, mirror, and local registry packages when digests are preserved",
+    "offline mirror cache entries must exist for every locked package and must digest-match the mirror index",
     "mirror validation must declare no-network-during-validation",
     "all generated paths remain under tmp/artifacts/package-ecosystem"
   ]

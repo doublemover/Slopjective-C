@@ -9,12 +9,17 @@ from objc3c_tooling.paths import display_path
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
 from objc3c_editor_tooling.validation import diagnostics_entries
+from objc3c_editor_tooling.workspace_index import (
+    build_workspace_index,
+    document_symbol_records,
+)
 
 
 @dataclass(frozen=True)
 class EditorToolingModel:
     language_server: dict[str, Any]
     navigation: dict[str, Any]
+    workspace_index: dict[str, Any]
     formatter: dict[str, Any]
     formatted_source_text: str
     debug: dict[str, Any]
@@ -68,12 +73,18 @@ def build_language_server_payload(
     summary: dict[str, Any],
     manifest_path_text: str | None,
     symbols: list[dict[str, Any]],
+    workspace_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest_available = bool(manifest_path_text)
+    workspace_index_available = (
+        bool(workspace_index)
+        and workspace_index.get("available") is True
+        and int(workspace_index.get("package_count", 0) or 0) > 1
+    )
     supported_capabilities = [
         "publishDiagnostics",
         "documentSymbol" if manifest_available else None,
-        "workspaceSymbol" if manifest_available else None,
+        "workspaceSymbol" if manifest_available and workspace_index_available else None,
         "definition" if manifest_available and symbols else None,
     ]
     supported_capabilities = [capability for capability in supported_capabilities if capability is not None]
@@ -96,9 +107,13 @@ def build_language_server_payload(
             "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
         },
         "workspaceSymbol": {
-            "supported": manifest_available,
-            "support_class": "manifest-backed" if manifest_available else "fail-closed",
-            "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
+            "supported": manifest_available and workspace_index_available,
+            "support_class": "workspace-index-backed"
+            if manifest_available and workspace_index_available
+            else "fail-closed",
+            "unpublished_reason": ""
+            if manifest_available and workspace_index_available
+            else "disabled until compile emits manifest declarations and workspace package index guardrails pass",
         },
         "definition": {
             "supported": manifest_available and bool(symbols),
@@ -135,13 +150,35 @@ def build_language_server_payload(
         "contract_id": "objc3c.developer.tooling.language.server.capability.surface.v1",
         "summary_status_name": summary.get("observability", {}).get("status_name", ""),
         "manifest_backed_navigation": manifest_available,
+        "workspace_index_backed_navigation": workspace_index_available,
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
     }
 
 
-def build_navigation_payload(source_display: str, manifest_path_text: str | None, symbols: list[dict[str, Any]]) -> dict[str, Any]:
+def build_navigation_payload(
+    source_display: str,
+    module_name: str,
+    manifest_path_text: str | None,
+    symbols: list[dict[str, Any]],
+    workspace_index: dict[str, Any],
+) -> dict[str, Any]:
+    document_symbols = document_symbol_records(source_display, module_name, symbols)
+    workspace_symbols = [
+        *document_symbols,
+        *workspace_index.get("package_symbols", []),
+    ]
+    definition_targets = [
+        {
+            "name": record["name"],
+            "kind": record["kind"],
+            "target_uri": record["definition"]["target_uri"],
+            "target_range": record["definition"]["target_range"],
+            "target_compiler_range": record["definition"]["target_compiler_range"],
+        }
+        for record in document_symbols
+    ]
     return {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
         "source_path": source_display,
@@ -150,6 +187,10 @@ def build_navigation_payload(source_display: str, manifest_path_text: str | None
         "symbol_count": len(symbols),
         "supported_symbol_kinds": sorted({symbol["kind"] for symbol in symbols}),
         "symbols": symbols,
+        "document_symbols": document_symbols,
+        "workspace_symbols": workspace_symbols,
+        "definition_targets": definition_targets,
+        "workspace_index": workspace_index,
         "retired_route_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
     }
 
@@ -196,14 +237,33 @@ def build_debug_payload(
 
 def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingInputs) -> EditorToolingModel:
     symbols = extract_symbols(inputs.manifest)
+    module_name = str(inputs.manifest.get("module") or paths.source.path.stem)
+    workspace_index = build_workspace_index(
+        paths.source.display_path,
+        module_name,
+        inputs.manifest_path_text,
+        symbols,
+    )
     formatted_text, formatter = build_format_summary_for_source(
         paths.source.display_path,
         inputs.source_text,
         display_path(paths.formatted_source),
     )
     return EditorToolingModel(
-        language_server=build_language_server_payload(inputs.summary, inputs.manifest_path_text, symbols),
-        navigation=build_navigation_payload(paths.source.display_path, inputs.manifest_path_text, symbols),
+        language_server=build_language_server_payload(
+            inputs.summary,
+            inputs.manifest_path_text,
+            symbols,
+            workspace_index,
+        ),
+        navigation=build_navigation_payload(
+            paths.source.display_path,
+            module_name,
+            inputs.manifest_path_text,
+            symbols,
+            workspace_index,
+        ),
+        workspace_index=workspace_index,
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(inputs.summary, inputs.object_path_text, symbols),

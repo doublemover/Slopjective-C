@@ -24,15 +24,18 @@ def main() -> int:
     code_paths = [ROOT / path for path in contract["authoritative_code_paths"]]
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
 
+    summary_anchor = str(contract.get("summary_script", contract.get("summary_implementation_anchor", "")))
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_diagnostics_policy_summary.py",
+        "summary_script_link_matches": summary_anchor == "scripts/build_developer_tooling_diagnostics_policy_summary.py",
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "runbook_mentions_diagnostics_source_of_truth": "diagnostics source of truth:" in runbook_text,
         "runbook_mentions_emitted_diagnostics_json": "emitted diagnostics JSON with real line, column, severity, code, and" in runbook_text,
         "runbook_mentions_manifest_declaration_records": "symbol resolution source of truth:" in runbook_text,
         "runbook_mentions_manifest_coordinates": "compile-owned declaration" in runbook_text and "shadow symbol index" in runbook_text,
-        "runbook_mentions_formatter_fail_closed": "formatter claims must fail closed when the source is outside the supported" in runbook_text,
+        "runbook_mentions_formatter_fail_closed": "formatter claims must fail closed when the source is malformed or outside the supported" in runbook_text,
+        "runbook_mentions_safe_source_rewrite": "safe source rewrites publish token-boundary edits" in runbook_text,
+        "runbook_mentions_diagnostic_quality_gate": "diagnostic taxonomy and fix-it quality gate" in runbook_text,
         "runbook_mentions_no_shadow_parser": "no editor-only shadow parser may become the source of truth for diagnostics or symbol resolution" in contract["claim_narrowing_constraints"],
     }
 
@@ -43,6 +46,7 @@ def main() -> int:
         "diagnostics_source_count": len(contract["diagnostics_source_of_truth"]),
         "symbol_resolution_source_count": len(contract["symbol_resolution_source_of_truth"]),
         "formatting_policy_count": len(contract["formatting_policy"]),
+        "diagnostic_quality_policy_count": len(contract.get("diagnostic_quality_policy", [])),
         "claim_narrowing_constraint_count": len(contract["claim_narrowing_constraints"]),
         "checks": checks,
         "status": "PASS" if all(checks.values()) else "FAIL",
@@ -57,6 +61,7 @@ def main() -> int:
         f"- Diagnostics sources: `{summary['diagnostics_source_count']}`\n"
         f"- Symbol-resolution sources: `{summary['symbol_resolution_source_count']}`\n"
         f"- Formatting policy entries: `{summary['formatting_policy_count']}`\n"
+        f"- Diagnostic quality policy entries: `{summary['diagnostic_quality_policy_count']}`\n"
         f"- Claim-narrowing constraints: `{summary['claim_narrowing_constraint_count']}`\n"
         f"- Status: `{summary['status']}`\n",
         encoding="utf-8",

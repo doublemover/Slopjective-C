@@ -7,6 +7,7 @@ from .native_build_binaries import (
     action_build_native_contracts,
     action_build_native_full,
     action_build_native_reconfigure,
+    action_validate_native_clean_room_rebuild,
     action_compile_objc3c,
 )
 from .native_build_package import (
@@ -24,6 +25,7 @@ __all__ = [
     "action_build_native_contracts",
     "action_build_native_full",
     "action_build_native_reconfigure",
+    "action_validate_native_clean_room_rebuild",
     "action_compile_objc3c",
     "action_package_runnable_toolchain",
     "action_proof_objc3c",

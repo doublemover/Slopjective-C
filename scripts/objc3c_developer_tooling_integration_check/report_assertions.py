@@ -18,11 +18,24 @@ def assert_runtime_inspector_report(runtime_inspector: dict[str, Any], failures:
     expect("object_sections" in runtime_inspector.get("dump_commands", {}), "expected runtime inspector object_sections dump command", failures)
 
 
-def assert_editor_tooling_reports(editor_surface: dict[str, Any], formatter_debug_summary: dict[str, Any], workspace_integration_summary: dict[str, Any], failures: list[str]) -> None:
+def assert_editor_tooling_reports(
+    editor_surface: dict[str, Any],
+    formatter_debug_summary: dict[str, Any],
+    formatter_rewrite_summary: dict[str, Any],
+    diagnostic_quality_summary: dict[str, Any],
+    workspace_integration_summary: dict[str, Any],
+    failures: list[str],
+) -> None:
     expect(editor_surface.get("formatter", {}).get("supported") is True, "expected editor tooling formatter surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("supported") is True, "expected editor tooling debug surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "expected editor tooling debug surface to keep statement stepping fail-closed", failures)
+    workspace_index = editor_surface.get("navigation", {}).get("workspace_index", {})
+    expect(workspace_index.get("available") is True, "expected editor tooling workspace index available=true", failures)
+    expect(int(workspace_index.get("package_count", 0)) >= 9, "expected editor tooling workspace index to include stdlib and showcase packages", failures)
+    expect(workspace_index.get("guardrails", {}).get("ok") is True, "expected editor tooling workspace package guardrails ok=true", failures)
     expect(formatter_debug_summary.get("ok") is True, "expected formatter/debug surface validation ok=true", failures)
+    expect(formatter_rewrite_summary.get("ok") is True, "expected formatter/rewrite surface validation ok=true", failures)
+    expect(diagnostic_quality_summary.get("ok") is True, "expected diagnostic quality validation ok=true", failures)
     expect(workspace_integration_summary.get("ok") is True, "expected workspace editor/debug integration ok=true", failures)
 
 
@@ -63,6 +76,8 @@ def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
     assert_editor_tooling_reports(
         reports["editor_surface"],
         reports["formatter_debug_summary"],
+        reports["formatter_rewrite_summary"],
+        reports["diagnostic_quality_summary"],
         reports["workspace_integration_summary"],
         failures,
     )

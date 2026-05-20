@@ -5,6 +5,7 @@ from __future__ import annotations
 ACTION_CATEGORY_CONTRACT_ID = "objc3c-workflow-action-category-v1"
 ACTION_CATEGORY_OWNER_SURFACE = "scripts/objc3c_workflow/action_payload_category.py"
 CANONICAL_ACTION_CATEGORIES: tuple[str, ...] = (
+    "analyze",
     "benchmark",
     "build",
     "check",
@@ -16,6 +17,7 @@ CANONICAL_ACTION_CATEGORIES: tuple[str, ...] = (
     "package",
     "proof",
     "publish",
+    "rewrite",
     "test",
     "trace",
     "validate",
@@ -35,6 +37,7 @@ def action_category_contract_payload() -> dict[str, object]:
         "owner_surface": ACTION_CATEGORY_OWNER_SURFACE,
         "canonical_categories": list(CANONICAL_ACTION_CATEGORIES),
         "unknown_category_retired_route_allowed": False,
+        "public_command_aliases_allowed": False,
         "public_contract": True,
     }
 

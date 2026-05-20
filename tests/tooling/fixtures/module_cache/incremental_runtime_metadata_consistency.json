@@ -1,0 +1,80 @@
+{
+  "contract_id": "objc3c.module_cache.incremental_runtime_metadata_consistency.v1",
+  "surface_kind": "module-cache-incremental-runtime-metadata-consistency",
+  "issues": [
+    "#8081",
+    "#8082"
+  ],
+  "runbook": "docs/runbooks/objc3c_compiler_throughput.md",
+  "positive_replay_manifests": [
+    "tests/tooling/fixtures/objc3c/validation_incremental_module_cache_contract/replay_run_1/module.manifest.json",
+    "tests/tooling/fixtures/objc3c/validation_incremental_module_cache_contract/replay_run_2/module.manifest.json"
+  ],
+  "positive_replay_ir": [
+    "tests/tooling/fixtures/objc3c/validation_incremental_module_cache_contract/replay_run_1/module.ll",
+    "tests/tooling/fixtures/objc3c/validation_incremental_module_cache_contract/replay_run_2/module.ll"
+  ],
+  "native_anchors": [
+    "native/objc3c/src/lower/contracts/cross_module_lowering_contracts.cpp",
+    "native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_module_type_system.inc",
+    "native/objc3c/src/sema/objc3_sema_pass_manager_module_summary_readiness.cpp",
+    "native/objc3c/src/sema/objc3_sema_pass_manager_module_publication_flow.cpp",
+    "native/objc3c/src/sema/objc3_sema_pass_manager_execution_module_error_concurrency.inc",
+    "native/objc3c/src/ir/objc3_ir_frontend_metadata_module_cache_invalidation.h"
+  ],
+  "positive_cache_candidate_surface": {
+    "incremental_module_cache_invalidation_sites": 5,
+    "namespace_segment_sites": 4,
+    "import_edge_candidate_sites": 5,
+    "object_pointer_type_sites": 7,
+    "pointer_declarator_sites": 3,
+    "normalized_sites": 3,
+    "cache_invalidation_candidate_sites": 2,
+    "contract_violation_sites": 0,
+    "deterministic": true,
+    "runtime_metadata_replay_key": "incremental_module_cache_invalidation_sites=5;namespace_segment_sites=4;import_edge_candidate_sites=5;object_pointer_type_sites=7;pointer_declarator_sites=3;normalized_sites=3;cache_invalidation_candidate_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=objc3c.incremental.module.cache.invalidation.lowering.v1"
+  },
+  "negative_surfaces": [
+    {
+      "case_id": "normalized-plus-cache-count-drift",
+      "diagnostic_code": "O3INC8081",
+      "source_range": "incremental_module_cache_invalidation_sites:5",
+      "surface": {
+        "incremental_module_cache_invalidation_sites": 5,
+        "normalized_sites": 5,
+        "cache_invalidation_candidate_sites": 1,
+        "contract_violation_sites": 0,
+        "deterministic": true
+      }
+    },
+    {
+      "case_id": "runtime-metadata-replay-key-drift",
+      "diagnostic_code": "O3INC8082",
+      "source_range": "runtime_metadata_replay_key",
+      "surface": {
+        "incremental_module_cache_invalidation_sites": 5,
+        "normalized_sites": 3,
+        "cache_invalidation_candidate_sites": 2,
+        "contract_violation_sites": 0,
+        "deterministic": true,
+        "runtime_metadata_replay_key": "incremental_module_cache_invalidation_sites=5;normalized_sites=3;cache_invalidation_candidate_sites=1"
+      }
+    }
+  ],
+  "owner_policy": {
+    "module_cache_owner": "incremental-module-cache-source",
+    "runtime_metadata_owner": "runtime-metadata-consistency-gate",
+    "blocker_owner": "incremental-module-cache-blockers",
+    "source_authority": "checked-in-module-cache-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "incremental-module-cache-blockers",
+    "blocking_conditions": [
+      "module cache invalidation replay manifests drift across deterministic runs",
+      "normalized and invalidation-candidate counts do not partition total cache sites",
+      "runtime metadata replay key omits cache invalidation candidates",
+      "native lowering or sema readiness accepts inconsistent cache metadata"
+    ]
+  }
+}

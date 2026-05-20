@@ -23,6 +23,8 @@ def build_playground_workspace_payload(
 ) -> dict[str, object]:
     formatter_payload = _object_payload(editor_surface_payload.get("formatter"))
     debug_payload = _object_payload(editor_surface_payload.get("debug"))
+    navigation_payload = _object_payload(editor_surface_payload.get("navigation"))
+    workspace_index_payload = _object_payload(navigation_payload.get("workspace_index"))
 
     return {
         "contract_id": PLAYGROUND_WORKSPACE_CONTRACT_ID,
@@ -43,6 +45,8 @@ def build_playground_workspace_payload(
             "inspect-compile-observability",
             "inspect-editor-tooling",
             "format-objc3c",
+            "rewrite-objc3c-source",
+            "check-developer-diagnostic-quality",
             "trace-compile-stages",
             "validate-developer-tooling",
         ],
@@ -57,6 +61,17 @@ def build_playground_workspace_payload(
             **published_paths,
             "formatted_output_path": formatter_payload.get("formatted_output_path"),
             "format_preview_supported": formatter_payload.get("supported"),
+            "workspace_index_digest": workspace_index_payload.get(
+                "workspace_index_digest"
+            ),
+            "workspace_package_count": workspace_index_payload.get("package_count", 0),
+            "cross_package_edge_count": workspace_index_payload.get(
+                "cross_package_edge_count",
+                0,
+            ),
+            "workspace_index_guardrails_ok": _object_payload(
+                workspace_index_payload.get("guardrails")
+            ).get("ok"),
             "debugger_model": debug_payload.get("debugger_model", ""),
             "declaration_breakpoint_anchor_count": debug_payload.get(
                 "declaration_breakpoint_anchor_count",
@@ -67,5 +82,6 @@ def build_playground_workspace_payload(
         "workspace_drill_commands": workspace_drill_commands(
             invocation.source_display,
             debug_payload,
+            workspace_index_path=published_paths.get("workspace_index_path", ""),
         ),
     }

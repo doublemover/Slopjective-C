@@ -28,6 +28,8 @@ Replayable public workflow actions:
 
 - `npm run objc3c -- check-security-hardening-surface`
 - `npm run objc3c -- check-security-hardening-schema-surface`
+- `npm run objc3c -- check-security-sanitizer-validation`
+- `npm run objc3c -- check-security-language-runtime-threat-model`
 - `npm run objc3c -- build-security-posture`
 - `npm run objc3c -- publish-security-advisories`
 - `npm run objc3c -- validate-security-hardening`
@@ -60,9 +62,14 @@ The current checked-in security posture is intentionally narrow.
   - fail-closed metadata requirements on checked-in fixtures
 - runtime hardening is bounded by:
   - existing runtime acceptance and packaged runnable validation
+  - ASan/UBSan native runtime and compiler target application contracts
   - a machine-owned runtime-hardening summary derived from those passing reports
   - no claim of external sandboxing, memory-safe runtime isolation, or hostile
     plugin containment beyond the checked-in acceptance and packaged proofs
+- language/runtime threat modeling is bounded by:
+  - the checked-in threat model and mitigation backlog contract
+  - macro supply-chain, runtime hardening, sanitizer, source, and workflow evidence
+  - no generated-summary-only closure claim
 - response publication is bounded by:
   - checked-in trust reports, operator policy, and release drill evidence
   - no hosted advisory service, key server, or out-of-band incident portal
@@ -162,10 +169,18 @@ Runtime hardening currently terminates in:
 - `npm run objc3c -- test-runtime-acceptance-fast`
 - `npm run objc3c -- validate-runnable-release-candidate`
 - `npm run objc3c -- validate-release-candidate-conformance`
+- `npm run objc3c -- check-security-sanitizer-validation`
+- `npm run objc3c -- check-security-language-runtime-threat-model`
 - existing runtime/object-model/block-ARC/error/concurrency/metaprogramming validation
+- `native/objc3c/cmake/Objc3Sanitizers.cmake` ASan/UBSan target application
+- `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+- `tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json`
 
 That surface is sufficient for checked-in executable regression evidence, but it
-is not a general-purpose memory-safety certification claim.
+is not a general-purpose memory-safety certification claim. Sanitizer execution
+remains platform/toolchain gated; the checked-in gate fails closed unless ASan
+and UBSan config, native runtime/compiler target application, workflow action,
+fixture, and report surfaces stay coherent.
 
 ### Disclosure And Response Boundary
 

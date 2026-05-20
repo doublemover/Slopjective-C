@@ -1,0 +1,21 @@
+module Tooling;
+@interface ToolingBox: NSObject
+  - (id) valueForKey: (id) key;
+@end
+
+actor class Mailbox {
+  fn enqueue(value: i32) {
+    await send(value);
+  }
+}
+
+fn main() {
+  let message = @"YES stays in strings and NULL stays in strings";
+  let legacyValue = YES;
+  let lookedUp = [box valueForKey: key] + 1;
+  if (lookedUp) {
+    return legacyValue ? lookedUp : 0;
+  } else {
+    return 0;
+  }
+}

@@ -32,6 +32,13 @@ PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH = (
 PACKAGE_OFFLINE_MIRROR_INDEX_PATH = (
     "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json"
 )
+PACKAGE_OFFLINE_MIRROR_CACHE_ROOT = (
+    "tmp/artifacts/package-ecosystem/mirrors/cache"
+)
+PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH = (
+    "tmp/artifacts/package-ecosystem/offline-install/"
+    "objc3c-offline-mirror-restore-receipt.json"
+)
 
 
 @dataclass(frozen=True)
@@ -84,6 +91,8 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
         generated_paths=(
             PACKAGE_LOCK_ARTIFACT_PATH,
             PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
+            PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
+            PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,
             PACKAGE_REGISTRY_LOCAL_INDEX_PATH,
             PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
         ),
@@ -93,6 +102,8 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
 
 __all__ = [
     "PACKAGE_OFFLINE_MIRROR_INDEX_PATH",
+    "PACKAGE_OFFLINE_MIRROR_CACHE_ROOT",
+    "PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH",
     "PACKAGE_OFFLINE_MIRROR_SCHEMA",
     "PACKAGE_REGISTRY_LOCAL_INDEX_PATH",
     "PACKAGE_REGISTRY_PUBLICATION_LAYERS",

@@ -24,6 +24,9 @@ Replayable public workflow actions:
 - `npm run objc3c -- inspect-runtime-inspector`
 - `npm run objc3c -- inspect-capability-explorer`
 - `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- format-objc3c`
+- `npm run objc3c -- rewrite-objc3c-source`
+- `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- trace-compile-stages`
 - `npm run objc3c -- test-capability-routed-source-parity`
 
@@ -103,6 +106,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - playground artifacts
   - playground reports
 - developer-tooling dump artifacts:
+  - generated editor-tooling reports
+  - `tmp/reports/developer-tooling/`
   - compile observability summary
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
   - compile observability payload
@@ -142,8 +147,12 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run objc3c -- trace-compile-stages`
 - inspect the combined editor tooling surface:
   - `npm run objc3c -- inspect-editor-tooling`
-- format one supported objc3c source through the preview formatter subset:
+- format one supported objc3c source through the canonical Objective-C 3 formatter subset:
   - `npm run objc3c -- format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
+- rewrite one supported objc3c source through the safe token-boundary rewrite engine:
+  - `npm run objc3c -- rewrite-objc3c-source tests/tooling/fixtures/developer_tooling/rewrite_legacy_aliases.objc3 -- --rule legacy-literal-aliases --rename-symbol legacyValue=canonicalValue`
+- validate diagnostic taxonomy and fix-it quality over the checked-in diagnostic manifest:
+  - `npm run objc3c -- check-developer-diagnostic-quality`
 - run the integrated developer-tooling validation flow:
   - `npm run objc3c -- validate-developer-tooling`
 - run the packaged developer-tooling validation flow against the staged runnable bundle:
@@ -192,7 +201,11 @@ full editor product:
   - runtime inspector benchmarking
   - compile-stage tracing
   - manifest-backed language-server capabilities and navigation
-  - preview formatter output on the supported canonical subset
+  - deterministic workspace semantic indexing across the primary source,
+    checked-in stdlib modules, and showcase package workspaces
+  - canonical Objective-C 3 source formatter output on the supported checked-in subset
+  - safe source rewrite output for token-boundary literal canonicalization and identifier rewrites
+  - diagnostic taxonomy and fix-it quality gate over checked-in diagnostic fixtures
   - declaration-breakpoint and object-symbol inspection debug anchors
   - runnable workspace drill materialization with editor/debug references
   - integrated developer-tooling validation
@@ -212,8 +225,8 @@ Current remaining gaps after the current developer-tooling slice:
 - no checked-in references/rename/semantic-token/code-action contract
 - no checked-in statement-level stepping or full source-map publication contract
 
-These remaining gaps stay fail-closed; they are not implied by the preview
-formatter or declaration-breakpoint debug surface.
+These remaining gaps stay fail-closed; they are not implied by the formatter,
+safe rewrite, diagnostic quality, or declaration-breakpoint debug surface.
 
 ## Diagnostics, Formatting, And Symbol Resolution Policy
 
@@ -221,19 +234,32 @@ Diagnostics, formatting, and symbol resolution must stay coupled to the live
 frontend runner output model.
 
 - diagnostics owner outputs:
-  - the frontend runner summary JSON
-  - the emitted diagnostics JSON with real line, column, severity, code, and
-    message entries
+  - diagnostics source of truth: the frontend runner summary JSON for compile
+    status, blocking stage, and aggregate severity
+  - diagnostics source of truth: the emitted diagnostics JSON with real line, column, severity, code, and message fields stays authoritative
 - symbol resolution owner outputs:
-  - the emitted manifest declaration records for globals, functions,
-    interfaces, implementations, protocols, and categories
+  - symbol resolution source of truth: the emitted manifest declaration records
+    for globals, functions, interfaces, implementations, protocols, and
+    categories
   - declaration coordinates published by the real compile output
+  - workspace semantic index entries derived from checked-in stdlib module
+    inventory, showcase package workspaces, and package lock/mirror guardrail
+    contracts
 - formatting owner output:
   - machine-owned formatter output must be generated from the canonical
     formatter helper and reflected through the combined developer-tooling
     surface
-  - formatter claims must fail closed when the source is outside the supported
+  - formatter claims must fail closed when the source is malformed or outside the supported
     canonical subset
+- safe source rewrite owner output:
+  - safe source rewrites publish token-boundary edits, replacement text, source
+    ranges, and deterministic source hashes
+  - rewrite rules skip strings and comments and fail closed on malformed source
+- diagnostic taxonomy and fix-it quality gate:
+  - checked-in diagnostic fixtures must publish stable diagnostic codes,
+    severities, messages, source ranges, and explicit fix-it arrays
+  - machine-applicable fix-its must carry structured source ranges and
+    replacement text before they count as fix-it coverage
 
 Downstream editor and navigation work must use compile-owned declaration
 coordinates instead of building a shadow symbol index from ad hoc text scans.
@@ -261,6 +287,11 @@ Language-server claims must stay narrower than the real shipped capability set.
 The public developer-tooling surface must publish one canonical capability map
 with capability status, publication status, and evidence roots instead of
 duplicating per-editor interpretations.
+
+Workspace-symbol claims require both manifest-backed declaration coordinates
+and the workspace semantic index guardrails. The index may include checked-in
+package entries and cross-package stdlib follow-up edges, but it must not treat
+generated `tmp/` locks, mirrors, or reports as source authority.
 
 ## Hosted LLVM Capability Truth Payloads
 
@@ -304,6 +335,8 @@ The generated developer-tooling surface must group:
 - diagnostics summary and per-diagnostic entries
 - language-server capability publication and unpublished-status metadata
 - navigation and declaration coordinates rooted in compile-owned manifest data
+- workspace semantic package index, package-symbol entries, and cross-package
+  navigation edges rooted in checked-in workspace/package contracts
 - formatter execution results and formatted output references
 - debug artifact inspection, breakpoint anchors, and stepping availability
 
@@ -318,6 +351,8 @@ The current and follow-on public entrypoints for the surface converge on:
 
 - `npm run objc3c -- inspect-editor-tooling`
 - `npm run objc3c -- format-objc3c`
+- `npm run objc3c -- rewrite-objc3c-source`
+- `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- validate-developer-tooling`
 
 The current formatter/debug/workspace slice is action-catalog-owned. Its script
@@ -338,6 +373,8 @@ The npm entrypoints route to the same action family:
 
 - `npm run objc3c -- inspect-editor-tooling`
 - `npm run objc3c -- format-objc3c <source>`
+- `npm run objc3c -- rewrite-objc3c-source <source> -- --rule legacy-literal-aliases --rename-symbol oldName=newName`
+- `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- validate-developer-tooling`
 - `npm run objc3c -- validate-runnable-developer-tooling`
 

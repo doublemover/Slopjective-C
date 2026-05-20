@@ -295,6 +295,10 @@ The runnable install-matrix proof for platform hardening is the composition of:
 - build/package validation on the checked-in host tier
 - toolchain/release support replay
 - installer and offline-bundle smoke under temp-owned roots
+- per-platform packaged runtime acceptance rows from the checked-in platform
+  matrix dimensions
+- local installer digest-signature validation and rollback diagnostics published
+  through package-channel and release-operation metadata
 
 The integrator for this slice is:
 
@@ -321,12 +325,15 @@ release/update metadata surfaces:
 These surfaces must publish the same support tiers and supported platform ids as
 the platform support matrix artifact selected by the checked-in
 platform-hardening contract.
+The matrix artifact also publishes the host OS, host architecture, package
+channel, runtime acceptance, and release-validation dimensions used to decide
+which public actions are allowed to back package and release claims.
 
 ## Explicit Non-Goals
 
 - no non-`windows-x64` support claim in the current milestone slice
 - no package-manager-specific install or upgrade semantics
-- no signed or notarized installer claim
+- no OS-notarized or external certificate-signed installer claim
 - no system-wide installer claim
 - no parallel portability harness outside the existing package, release, and
   public workflow paths

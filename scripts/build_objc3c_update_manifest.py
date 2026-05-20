@@ -50,6 +50,7 @@ def main() -> int:
         "portable_archive": package_channels_summary["portable_archive"],
         "installer_archive": package_channels_summary["installer_archive"],
         "offline_archive": package_channels_summary["offline_archive"],
+        "installer_signature": package_channels_summary["installer_signature"],
         "package_channels_manifest": package_channels_summary["manifest_path"],
         "release_manifest": repo_rel(RELEASE_MANIFEST),
         "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX),

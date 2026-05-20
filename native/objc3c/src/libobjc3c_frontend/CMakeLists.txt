@@ -54,6 +54,7 @@ add_library(objc3c_frontend STATIC
 )
 objc3c_apply_build_defaults(objc3c_frontend)
 objc3c_apply_llvm_direct_config(objc3c_frontend)
+objc3c_apply_sanitizers(objc3c_frontend)
 target_link_libraries(objc3c_frontend PUBLIC
   objc3c_artifacts
   objc3c_pipeline

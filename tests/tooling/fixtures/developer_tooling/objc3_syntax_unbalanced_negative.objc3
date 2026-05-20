@@ -1,0 +1,7 @@
+module Tooling;
+
+fn main() {
+  let value = 1;
+  if (value) {
+    return value;
+}

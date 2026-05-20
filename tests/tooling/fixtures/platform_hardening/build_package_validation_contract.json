@@ -38,6 +38,8 @@
   ],
   "required_matrix_fields": [
     "default_platform_id",
+    "matrix_dimensions",
+    "packaged_runtime_acceptance",
     "current_host",
     "required_tool_probes",
     "publication_surface"

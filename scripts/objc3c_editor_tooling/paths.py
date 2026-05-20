@@ -29,6 +29,7 @@ class EditorToolingPaths:
     editor_surface: Path
     language_server_capabilities: Path
     navigation_index: Path
+    workspace_index: Path
     formatter_output: Path
     formatted_source: Path
     debug_map: Path
@@ -69,6 +70,7 @@ def paths_for_source(source: EditorToolingSource) -> EditorToolingPaths:
         editor_surface=report_dir / "editor-surface.json",
         language_server_capabilities=report_dir / "language-server-capabilities.json",
         navigation_index=report_dir / "navigation-index.json",
+        workspace_index=report_dir / "workspace-index.json",
         formatter_output=report_dir / "formatter-output.json",
         formatted_source=report_dir / "formatted-source.objc3",
         debug_map=report_dir / "debug-map.json",

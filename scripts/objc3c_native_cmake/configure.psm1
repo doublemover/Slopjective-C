@@ -41,6 +41,8 @@ function Invoke-Objc3cNativeCMakeConfigure {
     [Parameter(Mandatory = $true)][string]$SourceDir,
     [Parameter(Mandatory = $true)][string]$BuildDir,
     [Parameter(Mandatory = $true)][string]$Clangxx,
+    [Parameter(Mandatory = $true)][string]$LlvmArTool,
+    [Parameter(Mandatory = $true)][string]$LlvmRanlibTool,
     [Parameter(Mandatory = $true)][string]$LlvmRoot,
     [Parameter(Mandatory = $true)][string]$IncludeDir,
     [Parameter(Mandatory = $true)][string]$Libclang,
@@ -65,10 +67,13 @@ function Invoke-Objc3cNativeCMakeConfigure {
       -G Ninja `
       "-DCMAKE_MAKE_PROGRAM=$NinjaTool" `
       "-DCMAKE_CXX_COMPILER=$Clangxx" `
+      "-DCMAKE_AR=$LlvmArTool" `
+      "-DCMAKE_RANLIB=$LlvmRanlibTool" `
       "-DCMAKE_BUILD_TYPE=Release" `
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" `
       "-DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=ON" `
       "-DOBJC3C_ENABLE_WARNING_PARITY=ON" `
+      "-DOBJC3C_ENABLE_REPRODUCIBLE_BUILD=ON" `
       "-DOBJC3C_LLVM_ROOT=$LlvmRoot" `
       "-DOBJC3C_LLVM_INCLUDE_DIR=$IncludeDir" `
       "-DOBJC3C_LIBCLANG_LIBRARY=$Libclang" `

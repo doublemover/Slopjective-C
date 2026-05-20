@@ -1,0 +1,135 @@
+{
+  "contract_id": "objc3c.security.hardening.language.runtime.threat_model.backlog.v1",
+  "schema_version": 1,
+  "surface_kind": "language-runtime-threat-model-backlog",
+  "public_action": "check-security-language-runtime-threat-model",
+  "runbook": "docs/runbooks/objc3c_language_runtime_threat_model.md",
+  "summary_path": "tmp/reports/security-hardening/language-runtime-threat-model-summary.json",
+  "evidence_roots": {
+    "macro_trust_policy": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "macro_supply_chain_trust_registry": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+    "runtime_hardening_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+    "sanitizer_validation_contract": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+    "security_source_surface": "tests/tooling/fixtures/security_hardening/source_surface.json",
+    "security_workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json"
+  },
+  "threats": [
+    {
+      "threat_id": "LR-T01",
+      "category": "macro_supply_chain",
+      "title": "Untrusted macro package or provenance accepted into compiler/runtime evidence",
+      "evidence_keys": [
+        "macro_trust_policy",
+        "macro_supply_chain_trust_registry"
+      ],
+      "required_mitigation_ids": [
+        "LR-M01"
+      ],
+      "owner": "macro_provenance_owner"
+    },
+    {
+      "threat_id": "LR-T02",
+      "category": "compiler_frontend",
+      "title": "Compiler frontend accepts malformed source or artifact state without sanitizer-backed validation coverage",
+      "evidence_keys": [
+        "sanitizer_validation_contract",
+        "security_workflow_surface"
+      ],
+      "required_mitigation_ids": [
+        "LR-M02"
+      ],
+      "owner": "compiler_security_owner"
+    },
+    {
+      "threat_id": "LR-T03",
+      "category": "runtime_memory",
+      "title": "Runtime dispatch, object lifetime, or block/actor state violates memory-safety boundaries",
+      "evidence_keys": [
+        "runtime_hardening_contract",
+        "sanitizer_validation_contract"
+      ],
+      "required_mitigation_ids": [
+        "LR-M03"
+      ],
+      "owner": "runtime_hardening_owner"
+    },
+    {
+      "threat_id": "LR-T04",
+      "category": "language_semantics",
+      "title": "Language/runtime support claim is published from generated summaries instead of checked-in source truth",
+      "evidence_keys": [
+        "security_source_surface",
+        "security_workflow_surface"
+      ],
+      "required_mitigation_ids": [
+        "LR-M04"
+      ],
+      "owner": "security_hardening_gate"
+    }
+  ],
+  "mitigation_backlog": [
+    {
+      "mitigation_id": "LR-M01",
+      "threat_ids": [
+        "LR-T01"
+      ],
+      "status": "active",
+      "closure_action": "check-security-hardening-surface",
+      "evidence_required": [
+        "macro_trust_policy",
+        "macro_supply_chain_trust_registry"
+      ],
+      "owner": "macro_provenance_owner"
+    },
+    {
+      "mitigation_id": "LR-M02",
+      "threat_ids": [
+        "LR-T02"
+      ],
+      "status": "active",
+      "closure_action": "check-security-sanitizer-validation",
+      "evidence_required": [
+        "sanitizer_validation_contract"
+      ],
+      "owner": "compiler_security_owner"
+    },
+    {
+      "mitigation_id": "LR-M03",
+      "threat_ids": [
+        "LR-T03"
+      ],
+      "status": "active",
+      "closure_action": "check-security-sanitizer-validation",
+      "evidence_required": [
+        "runtime_hardening_contract",
+        "sanitizer_validation_contract"
+      ],
+      "owner": "runtime_hardening_owner"
+    },
+    {
+      "mitigation_id": "LR-M04",
+      "threat_ids": [
+        "LR-T04"
+      ],
+      "status": "active",
+      "closure_action": "check-security-language-runtime-threat-model",
+      "evidence_required": [
+        "security_source_surface",
+        "security_workflow_surface"
+      ],
+      "owner": "security_hardening_gate"
+    }
+  ],
+  "required_categories": [
+    "macro_supply_chain",
+    "compiler_frontend",
+    "runtime_memory",
+    "language_semantics"
+  ],
+  "forbidden_claims": [
+    "no support claim without checked-in source truth",
+    "no macro supply-chain claim without trust-registry evidence",
+    "no runtime memory-safety claim without runtime and sanitizer contract evidence",
+    "no compiler sanitizer claim without native target application evidence"
+  ]
+}

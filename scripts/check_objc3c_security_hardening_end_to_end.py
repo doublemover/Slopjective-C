@@ -19,6 +19,8 @@ SOURCE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "source-surfa
 SCHEMA_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "schema-surface-summary.json"
 RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
+SANITIZER_VALIDATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "sanitizer-validation-summary.json"
+LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "language-runtime-threat-model-summary.json"
 INTEGRATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "integration-summary.json"
 POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publication-summary.json"
@@ -30,6 +32,8 @@ REQUIRED_STEPS = [
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
     "check-security-runtime-hardening",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "build-security-posture",
     "check-security-response-drill",
     "publish-security-advisories",
@@ -58,7 +62,16 @@ def main() -> int:
     step_actions = [str(step.get("action")) for step in steps if isinstance(step, dict)]
     expect(step_actions == REQUIRED_STEPS, "validate-security-hardening workflow step inventory drifted")
 
-    for path in (SOURCE_SUMMARY, SCHEMA_SUMMARY, RESPONSE_DRILL_SUMMARY, RUNTIME_HARDENING_SUMMARY, POSTURE_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (
+        SOURCE_SUMMARY,
+        SCHEMA_SUMMARY,
+        RESPONSE_DRILL_SUMMARY,
+        RUNTIME_HARDENING_SUMMARY,
+        SANITIZER_VALIDATION_SUMMARY,
+        LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
+        POSTURE_SUMMARY,
+        PUBLICATION_SUMMARY,
+    ):
         expect(path.is_file(), f"missing required security artifact {repo_rel(path)}")
         payload = load_json(path)
         expect(payload.get("status") == "PASS", f"security artifact did not pass: {repo_rel(path)}")
@@ -93,6 +106,8 @@ def main() -> int:
             repo_rel(SCHEMA_SUMMARY),
             repo_rel(RESPONSE_DRILL_SUMMARY),
             repo_rel(RUNTIME_HARDENING_SUMMARY),
+            repo_rel(SANITIZER_VALIDATION_SUMMARY),
+            repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
             repo_rel(INTEGRATION_SUMMARY),
             repo_rel(POSTURE_SUMMARY),
             repo_rel(PUBLICATION_SUMMARY),

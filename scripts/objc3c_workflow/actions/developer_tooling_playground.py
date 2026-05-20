@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from .developer_tooling_playground_runner import (
+    action_check_developer_diagnostic_quality,
     action_format_objc3c,
     action_inspect_editor_tooling,
+    action_rewrite_objc3c_source,
     ensure_frontend_runner_ready,
 )
 from .developer_tooling_playground_workspace import run_playground_workspace

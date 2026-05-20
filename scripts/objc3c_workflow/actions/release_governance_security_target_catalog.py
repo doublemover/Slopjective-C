@@ -9,8 +9,10 @@ from .release_governance_security_names import (
     BUILD_SECURITY_POSTURE,
     CHECK_SECURITY_HARDENING_SCHEMA_SURFACE,
     CHECK_SECURITY_HARDENING_SURFACE,
+    CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
     CHECK_SECURITY_RESPONSE_DRILL,
     CHECK_SECURITY_RUNTIME_HARDENING,
+    CHECK_SECURITY_SANITIZER_VALIDATION,
     PUBLISH_SECURITY_ADVISORIES,
     SECURITY_HARDENING_HARD_CUTOVER_GUARDRAILS,
     VALIDATE_SECURITY_HARDENING,
@@ -19,10 +21,12 @@ from .release_governance_security_names import (
 from .release_governance_security_owner_contracts import SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS
 from .release_governance_security_paths import (
     SECURITY_HARDENING_END_TO_END_PY,
+    SECURITY_HARDENING_LANGUAGE_RUNTIME_THREAT_MODEL_PY,
     SECURITY_HARDENING_POSTURE_PY,
     SECURITY_HARDENING_PUBLICATION_PY,
     SECURITY_HARDENING_RESPONSE_DRILL_PY,
     SECURITY_HARDENING_RUNTIME_HARDENING_PY,
+    SECURITY_HARDENING_SANITIZER_VALIDATION_PY,
     SECURITY_HARDENING_SOURCE_SURFACE_PY,
 )
 from .release_governance_security_target_models import SecurityHardeningTarget
@@ -71,6 +75,30 @@ SECURITY_HARDENING_PUBLIC_TARGETS: dict[str, SecurityHardeningTarget] = {
             "checked-in hardening policies"
         ),
         SECURITY_HARDENING_PUBLICATION_PY,
+        "repo",
+        SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS,
+    ),
+    CHECK_SECURITY_SANITIZER_VALIDATION: SecurityHardeningTarget(
+        CHECK_SECURITY_SANITIZER_VALIDATION,
+        "validate ASan/UBSan runtime and compiler sanitizer coverage contracts",
+        "python:scripts/check_security_sanitizer_validation.py",
+        (
+            "ASan/UBSan runtime and compiler coverage stays tied to checked-in "
+            "native target application, workflow, fixture, and report surfaces"
+        ),
+        SECURITY_HARDENING_SANITIZER_VALIDATION_PY,
+        "repo",
+        SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS,
+    ),
+    CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL: SecurityHardeningTarget(
+        CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
+        "validate the language/runtime threat model and mitigation backlog",
+        "python:scripts/check_security_language_runtime_threat_model.py",
+        (
+            "language/runtime security backlog stays coherent with macro "
+            "supply-chain, runtime, compiler, sanitizer, and source evidence"
+        ),
+        SECURITY_HARDENING_LANGUAGE_RUNTIME_THREAT_MODEL_PY,
         "repo",
         SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS,
     ),
@@ -139,6 +167,8 @@ SECURITY_HARDENING_VALIDATION_CHILD_ACTIONS = (
     CHECK_SECURITY_HARDENING_SURFACE,
     CHECK_SECURITY_HARDENING_SCHEMA_SURFACE,
     CHECK_SECURITY_RUNTIME_HARDENING,
+    CHECK_SECURITY_SANITIZER_VALIDATION,
+    CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
     BUILD_SECURITY_POSTURE,
     CHECK_SECURITY_RESPONSE_DRILL,
     PUBLISH_SECURITY_ADVISORIES,

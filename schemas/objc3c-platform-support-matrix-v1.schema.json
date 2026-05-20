@@ -8,8 +8,10 @@
     "schema_version",
     "generated_at_utc",
     "default_platform_id",
+    "matrix_dimensions",
     "platform_count",
     "platforms",
+    "packaged_runtime_acceptance",
     "channels",
     "tiers",
     "current_host",
@@ -31,6 +33,44 @@
     "default_platform_id": {
       "type": "string"
     },
+    "matrix_dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_os",
+        "host_arch",
+        "package_channels",
+        "runtime_acceptance_suites",
+        "release_validation_surfaces"
+      ],
+      "properties": {
+        "host_os": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "host_arch": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "package_channels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "runtime_acceptance_suites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "release_validation_surfaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
     "platform_count": {
       "type": "integer",
       "minimum": 1
@@ -48,6 +88,34 @@
           }
         },
         "additionalProperties": true
+      }
+    },
+    "packaged_runtime_acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "platform_id",
+          "required_public_actions",
+          "required_artifacts",
+          "rollback_required"
+        ],
+        "properties": {
+          "platform_id": { "type": "string" },
+          "required_public_actions": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/publicCommand" },
+            "minItems": 1
+          },
+          "required_artifacts": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "rollback_required": { "type": "boolean" }
+        }
       }
     },
     "channels": {

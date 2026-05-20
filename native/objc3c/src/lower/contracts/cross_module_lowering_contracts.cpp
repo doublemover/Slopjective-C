@@ -153,7 +153,7 @@ bool IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
     return false;
   }
   if ((contract.contract_violation_sites > 0 ||
-       contract.normalized_sites !=
+       contract.normalized_sites + contract.cache_invalidation_candidate_sites !=
            contract.incremental_module_cache_invalidation_sites) &&
       contract.deterministic) {
     return false;

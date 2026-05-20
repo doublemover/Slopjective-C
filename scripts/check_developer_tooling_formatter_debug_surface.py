@@ -2,13 +2,23 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.paths import repo_rel
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.public_workflow_output import extract_line_value
+from objc3c_tooling.subprocesses import run_capture
+from objc3c_editor_tooling.paths import (
+    paths_for_source as editor_paths_for_source,
+    resolve_source as resolve_editor_source,
+)
+from scripts.format_objc3c_source import (
+    REPORT_ROOT as FORMATTER_REPORT_ROOT,
+    resolve_source as resolve_formatter_source,
+    slugify as formatter_slugify,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,21 +35,36 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
         failures.append(message)
 
 
+def formatter_summary_path(source_text: str) -> Path:
+    _, source_display = resolve_formatter_source(source_text)
+    return FORMATTER_REPORT_ROOT / formatter_slugify(source_display) / "formatter-output.json"
+
+
+def editor_dump_path(source_text: str) -> Path:
+    return editor_paths_for_source(resolve_editor_source(source_text)).editor_surface
+
+
+def captured_or_materialized_path(captured_text: str, fallback_path: Path) -> str:
+    if captured_text:
+        return captured_text
+    if fallback_path.is_file():
+        return repo_rel(fallback_path)
+    return ""
+
+
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
-    format_result = subprocess.run(
+    format_result = run_capture(
         public_workflow_command("format-objc3c", contract["format_source"]),
         cwd=ROOT,
-        check=False,
-        text=True,
         capture_output=True,
+        echo=False,
     )
-    debug_result = subprocess.run(
+    debug_result = run_capture(
         public_workflow_command("inspect-editor-tooling", contract["debug_source"]),
         cwd=ROOT,
-        check=False,
-        text=True,
         capture_output=True,
+        echo=False,
     )
     if format_result.stdout:
         sys.stdout.write(format_result.stdout)
@@ -54,8 +79,14 @@ def main() -> int:
     expect(format_result.returncode == 0, "formatter action failed", failures)
     expect(debug_result.returncode == 0, "debug editor surface action failed", failures)
 
-    format_summary_path_text = extract_line_value(format_result.stdout, "summary_path:")
-    debug_dump_path_text = extract_line_value(debug_result.stdout, "dump_path:")
+    format_summary_path_text = captured_or_materialized_path(
+        extract_line_value(format_result.stdout, "summary_path:"),
+        formatter_summary_path(str(contract["format_source"])),
+    )
+    debug_dump_path_text = captured_or_materialized_path(
+        extract_line_value(debug_result.stdout, "dump_path:"),
+        editor_dump_path(str(contract["debug_source"])),
+    )
     expect(bool(format_summary_path_text), "formatter did not publish summary_path", failures)
     expect(bool(debug_dump_path_text), "editor tooling surface did not publish dump_path", failures)
 
@@ -67,7 +98,11 @@ def main() -> int:
     debug_payload = debug_surface.get("debug", {})
 
     expect(format_summary.get("supported") is True, "formatter did not report supported=true", failures)
-    expect(format_summary.get("support_class") == "preview", "formatter support_class must stay preview", failures)
+    expect(
+        format_summary.get("support_class") == "canonical-objc3-source-formatting",
+        "formatter support_class must stay canonical-objc3-source-formatting",
+        failures,
+    )
     expect(formatted_text == expected_formatted, "formatter output drifted from expected canonical source", failures)
     for field in contract["required_debug_fields"]:
         expect(field in debug_payload, f"debug payload missing required field: {field}", failures)

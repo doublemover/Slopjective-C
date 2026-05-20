@@ -23,6 +23,7 @@ Canonical checked-in boundary surfaces:
 - `docs/tutorials/getting_started.md`
 - canonicalization guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
+- `tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json`
 - `showcase/README.md`
 - `site/index.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
@@ -104,6 +105,33 @@ showcase anchors, create or validate package/application workspace state, then
 check support and revert evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
 Swift-facing, or C++-facing boundary.
+
+## Migration Analyzer And Rewrite Workflow
+
+The canonical migration analyzer contract is checked in at:
+
+- `tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json`
+
+Replay it with:
+
+- `npm run objc3c -- validate-migration-workflow`
+
+Public analyzer and rewrite entry points:
+
+- `npm run objc3c -- analyze-migration-source <input.json>`
+- `npm run objc3c -- rewrite-migration-source <input.json>`
+
+Migration inputs are checked-in JSON contracts that name a source file,
+target profile, required interop surfaces, Swift and C++ foreign interfaces,
+and packaged execution evidence. The analyzer fails closed when required
+surfaces are missing, source or package paths are not repository-owned, foreign
+interfaces are incomplete, delimiters are malformed, or unsafe mixed-image
+loading markers appear.
+
+Rewrite output is split into safe automatic edits and manual migration steps.
+Automatic edits are limited to token-boundary and import-line rewrites. Manual
+steps are report surfaces only; they do not claim retired Objective-C 2 source
+acceptance, Swift parity, C++ ABI parity, or alternate old-surface support.
 
 ## Artifact Contract
 

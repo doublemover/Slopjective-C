@@ -58,6 +58,8 @@ The current audit inventory is:
   - `tmp/artifacts/objc3c-native/cache/`
   - incremental invalidation counters published through the live manifest and
     lowering/sema replay-key surfaces
+  - module-cache consistency contract:
+    `tests/tooling/fixtures/module_cache/incremental_runtime_metadata_consistency.json`
 - macro-host compile-coupled artifacts:
   - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
   - `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
@@ -135,6 +137,9 @@ Compiler-throughput work is only valid when it preserves these invariants:
   launch contract
 - incremental invalidation claims remain rooted in the live manifest/replay-key
   surfaces already emitted by the compiler
+- deterministic module-cache invalidation requires normalized sites and
+  cache-invalidation candidate sites to partition the total cache sites; runtime
+  metadata replay keys must carry the same candidate count
 - macro-host cache claims remain fail-closed and compile-coupled through the
   existing runtime-acceptance/metaprogramming fixtures
 - docs-generation throughput claims stay on the checked-in generators, not on
@@ -193,6 +198,7 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/validation_tier_map.json`
   - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
   - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
+  - `tests/tooling/fixtures/module_cache/incremental_runtime_metadata_consistency.json`
   - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
   - registry owner: `scripts/objc3c_shared/schema_registry.py`
 

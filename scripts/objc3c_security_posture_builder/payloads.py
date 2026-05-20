@@ -16,6 +16,8 @@ from .constants import (
     RELEASE_KEY_SUMMARY,
     RESPONSE_SUMMARY,
     RUNTIME_HARDENING_SUMMARY,
+    SANITIZER_VALIDATION_SUMMARY,
+    LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
     SCHEMA_SUMMARY,
     SOURCE_SUMMARY,
     SUMMARY_PATH,
@@ -33,6 +35,8 @@ def build_evidence_paths(trust_report: dict[str, Any]) -> list[str]:
         repo_rel(ARTIFACT_CONTRACT_SUMMARY),
         repo_rel(SUPPLY_CHAIN_SUMMARY),
         repo_rel(RUNTIME_HARDENING_SUMMARY),
+        repo_rel(SANITIZER_VALIDATION_SUMMARY),
+        repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
         repo_rel(DISTRIBUTION_TRUST_REPORT),
         *[str(path) for path in trust_report.get("evidence_paths", []) if isinstance(path, str)],
     ]
@@ -53,6 +57,10 @@ def build_posture_payload(security_state: str, headline: str, trust_boundaries: 
             "publish_security_advisories_command": "publish-security-advisories",
             "validate_security_hardening_command": "validate-security-hardening",
             "validate_security_hardening_end_to_end_command": "validate-security-hardening-end-to-end",
+            "check_security_sanitizer_validation_command": "check-security-sanitizer-validation",
+            "check_security_language_runtime_threat_model_command": (
+                "check-security-language-runtime-threat-model"
+            ),
         },
     }
 

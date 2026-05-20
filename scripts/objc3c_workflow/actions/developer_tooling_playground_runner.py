@@ -10,9 +10,11 @@ from ..action_execution_dispatch import execute_registered_action
 from ..commands import run
 from ..environment import ROOT
 from .developer_tooling_paths import (
+    CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY,
     EDITOR_TOOLING_SURFACE_PY,
     FORMAT_OBJC3C_SOURCE_PY,
     FRONTEND_C_API_RUNNER_EXE,
+    REWRITE_OBJC3C_SOURCE_PY,
 )
 
 
@@ -82,3 +84,11 @@ def action_inspect_editor_tooling(rest: list[str]) -> int:
 
 def action_format_objc3c(rest: list[str]) -> int:
     return run([sys.executable, str(FORMAT_OBJC3C_SOURCE_PY), *rest])
+
+
+def action_rewrite_objc3c_source(rest: list[str]) -> int:
+    return run([sys.executable, str(REWRITE_OBJC3C_SOURCE_PY), *rest])
+
+
+def action_check_developer_diagnostic_quality(_: list[str]) -> int:
+    return run([sys.executable, str(CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY)])

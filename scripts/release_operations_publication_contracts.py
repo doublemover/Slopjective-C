@@ -58,32 +58,55 @@ def _warning_payloads(
     return warnings
 
 
-def _revert_guidance_payloads() -> list[JsonObject]:
-    return [
-        {
-            "channel_id": "stable",
-            "instruction": (
-                "Reinstall the current same-major stable toolchain with the local "
-                "installer."
-            ),
-            "requires_backup": False,
-        },
-        {
-            "channel_id": "candidate",
-            "instruction": (
-                "Revert candidate drills through the local installer receipt path."
-            ),
-            "requires_backup": False,
-        },
-        {
-            "channel_id": "preview",
-            "instruction": (
-                "Revert preview drills from the offline bundle and preserve "
-                "pre-upgrade inputs."
-            ),
-            "requires_backup": True,
-        },
-    ]
+def _rollback_command(revert_channel: str) -> str:
+    if revert_channel == "offline-bundle":
+        return "npm run objc3c -- validate-packaging-channels-end-to-end"
+    return "npm run objc3c -- build-package-channels"
+
+
+def _revert_guidance_payloads(update_channel_policy: Mapping[str, Any]) -> list[JsonObject]:
+    guidance: list[JsonObject] = []
+    for channel in update_channel_policy["channels"]:
+        revert_channel = channel["revert_channel"]
+        guidance.append(
+            {
+                "channel_id": channel["channel_id"],
+                "instruction": (
+                    f"Rollback {channel['channel_id']} through the {revert_channel} "
+                    "receipt path before publishing another update channel."
+                ),
+                "requires_backup": revert_channel == "offline-bundle",
+                "rollback_channel": revert_channel,
+                "operator_command": _rollback_command(revert_channel),
+            }
+        )
+    return guidance
+
+
+def _rollback_diagnostic_payloads(
+    *,
+    update_channel_policy: Mapping[str, Any],
+    fail_closed_policy: Mapping[str, Any],
+) -> list[JsonObject]:
+    default_revert_channel = {
+        channel["channel_id"]: channel["revert_channel"]
+        for channel in update_channel_policy["channels"]
+    }[update_channel_policy["default_channel"]]
+    diagnostics: list[JsonObject] = []
+    for diagnostic in fail_closed_policy["diagnostic_classes"]:
+        diagnostics.append(
+            {
+                "diagnostic_id": diagnostic["diagnostic_id"],
+                "severity": diagnostic["severity"],
+                "user_facing_message": (
+                    f"{diagnostic['trigger']}; {diagnostic['required_action']}."
+                ),
+                "rollback_channel": default_revert_channel,
+                "operator_command": _rollback_command(default_revert_channel),
+                "blocks_publication": diagnostic["blocks_publication"],
+            }
+        )
+    return diagnostics
 
 
 def _require_upgrade_support_fields(
@@ -116,6 +139,10 @@ def build_release_operations_publication_payloads(
         fail_closed_policy=fail_closed_policy,
     )
     generated_at_utc = _generated_at_utc()
+    rollback_diagnostics = _rollback_diagnostic_payloads(
+        update_channel_policy=update_channel_policy,
+        fail_closed_policy=fail_closed_policy,
+    )
     upgrade_support_report = {
         "contract_id": "objc3c.release.operations.upgrade-support-report.v1",
         "generated_at_utc": generated_at_utc,
@@ -127,7 +154,8 @@ def build_release_operations_publication_payloads(
         "support_windows": versioning_model["support_windows"],
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
         "warnings": warnings,
-        "revert_guidance": _revert_guidance_payloads(),
+        "revert_guidance": _revert_guidance_payloads(update_channel_policy),
+        "rollback_diagnostics": rollback_diagnostics,
         "fail_closed_diagnostics": fail_closed_policy["diagnostic_classes"],
         "forbidden_claims": claim_policy["forbidden_claims"],
     }
@@ -155,6 +183,7 @@ def build_release_operations_publication_payloads(
         "upgrade_support_report": upgrade_support_report_path,
         "channel_catalog": channel_catalog_path,
         "warning_count": len(warnings),
+        "rollback_diagnostic_count": len(rollback_diagnostics),
         "claim_class_count": len(claim_policy["upgrade_claim_classes"]),
         "platform_support_matrix": update_manifest["platform_support_matrix"],
     }

@@ -45,6 +45,8 @@
   "generated_roots": {
     "lock_root": "tmp/artifacts/package-ecosystem/locks",
     "mirror_root": "tmp/artifacts/package-ecosystem/mirrors",
+    "mirror_cache_root": "tmp/artifacts/package-ecosystem/mirrors/cache",
+    "offline_restore_receipt_root": "tmp/artifacts/package-ecosystem/offline-install",
     "report_root": "tmp/reports/package-ecosystem"
   },
   "lockfile_semantics": {
@@ -57,15 +59,17 @@
   "offline_mirror_semantics": {
     "mirror_contract_id": "objc3c.package_ecosystem.offline_mirror.v1",
     "index_model": "lock-derived-package-index",
-    "cache_model": "local-artifact-cache-derived-from-locked-package-graph",
+    "cache_model": "digest-checked-local-artifact-cache-derived-from-locked-package-graph",
     "network_policy": "no-network-during-validation",
-    "failure_model": "missing-cache-entry-extra-package-or-network-request-fails-validation"
+    "restore_receipt_contract_id": "objc3c.package_ecosystem.offline_mirror.restore_receipt.v1",
+    "failure_model": "missing-cache-entry-extra-package-cache-digest-mismatch-or-network-request-fails-validation"
   },
   "workspace_rules": [
     "workspace roots must come from checked-in package/workspace surfaces",
     "workspace materialization must be replayable from npm run objc3c actions with script paths recorded only as implementation anchors",
     "lockfiles and mirrors are generated artifacts under tmp and never source authority",
     "offline mirrors are valid only when derived from the current lock graph",
+    "offline restores must publish a machine-owned restore receipt tied to cache digests and the public package bridge",
     "canonical applications and stdlib programs must pressure the same package semantics"
   ],
   "package_bridge": "objc3c",
@@ -84,6 +88,7 @@
       "workspace source missing from checked-in package surface",
       "lock replay path absent from objc3c package bridge",
       "mirror index not derived from current lock graph",
+      "offline restore receipt missing or cache digest mismatched",
       "offline mirror validation requires network access"
     ]
   },

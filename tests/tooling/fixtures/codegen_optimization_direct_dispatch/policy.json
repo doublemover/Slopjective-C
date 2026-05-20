@@ -1,0 +1,245 @@
+{
+  "contract_id": "objc3c.codegen.optimization.direct.dispatch.policy.v1",
+  "issue_mapping": {
+    "primary_issues": [8091, 8092],
+    "draft_ids": ["OC3-N33-001", "OC3-N33-002"],
+    "milestone": "OC3-N33 Codegen Optimization And Direct Dispatch Policy"
+  },
+  "source_truth": {
+    "schema_path": "schemas/objc3c-codegen-optimization-direct-dispatch-policy-v1.schema.json",
+    "validator_path": "scripts/check_objc3c_codegen_optimization_direct_dispatch_policy.py",
+    "workflow_action": "validate-codegen-optimization-policy",
+    "source_anchors": [
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_message_send_lowering.cpp",
+        "tokens": [
+          "BuildObjc3IRMessageSendLoweringPlan",
+          "direct dispatch lowering remains unsupported on the live runtime path",
+          "RequiresFailClosedObjc3RuntimeDispatchError"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+        "tokens": [
+          "TryResolveObjc3IRDirectDispatch",
+          "BuildObjc3IRDirectDispatchCall",
+          "NoteDirectDispatchCall",
+          "invalidate_global_proof_state"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_receiver_dispatch_policy.cpp",
+        "tokens": [
+          "compile_time_nil_receiver",
+          "elide_to_nil_result",
+          "emit_nil_checked_dispatch"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_surface_serialization.cpp",
+        "tokens": [
+          "objc3c.method.dispatch.selector.thunk.lowering.v1",
+          "direct_dispatch_call_sites",
+          "direct_dispatch_candidate_sites",
+          "dynamic_opt_out_sites"
+        ]
+      }
+    ]
+  },
+  "optimizer_policy": {
+    "passes": [
+      {
+        "pass_id": "nil-receiver-folding",
+        "stage": "ir-message-send-lowering",
+        "semantic_preserving": true,
+        "allowed_moves": [
+          "fold compile-time optional nil receiver sends to the typed zero result",
+          "preserve non-nil and unknown receivers on runtime dispatch paths"
+        ],
+        "required_proofs": [
+          "receiver facts mark compile_time_nil_receiver before elision",
+          "selector and argument materialization do not introduce runtime side effects for elided nil sends",
+          "positive fixtures cover unary and keyword optional nil sends"
+        ],
+        "rejection_boundaries": [
+          "do not fold shadowed nil identifiers",
+          "do not fold numeric zero receivers as object nil",
+          "do not bypass canonical runtime dispatch for unknown receivers"
+        ]
+      },
+      {
+        "pass_id": "direct-call-lowering",
+        "stage": "ir-message-send-emission",
+        "semantic_preserving": true,
+        "allowed_moves": [
+          "lower concrete self sends and known class sends to exact direct-call symbols",
+          "coerce bool direct-call arguments through the existing i32-to-i1 marshalling helper",
+          "coerce direct-call results back through the existing typed value-to-i32 marshalling helper"
+        ],
+        "required_proofs": [
+          "callee symbol and signature are present in direct_dispatch_symbols_by_key and direct_dispatch_signatures_by_key",
+          "direct call request owns its result before IR emission",
+          "global proof state is invalidated after a direct dispatch call"
+        ],
+        "rejection_boundaries": [
+          "reject missing explicit argument types",
+          "reject missing explicit IR result ownership",
+          "do not synthesize direct dispatch for dynamic, protocol, category, or unresolved receiver sites"
+        ]
+      },
+      {
+        "pass_id": "runtime-dispatch-preservation",
+        "stage": "ir-runtime-dispatch-emission",
+        "semantic_preserving": true,
+        "allowed_moves": [
+          "route super sends through from-class runtime dispatch using self as receiver and superclass as lookup start",
+          "route dynamic opt-out sends through canonical runtime dispatch",
+          "retain typed return kind marshalling for bool, void, object, class, selector, protocol, and i32 results"
+        ],
+        "required_proofs": [
+          "super receivers are normalized to known non-nil self receiver facts",
+          "runtime dispatch result owner remains explicit",
+          "selector pool and lookup-start class globals are present before IR call construction"
+        ],
+        "rejection_boundaries": [
+          "fail closed on non-canonical dispatch entrypoints",
+          "fail closed when runtime dispatch ownership is missing",
+          "never materialize selector-table, method-cache, or slow-path helper compatibility routes in IR lowering"
+        ]
+      }
+    ]
+  },
+  "direct_dispatch_matrix": [
+    {
+      "row_id": "nil-receiver-optional-send",
+      "receiver_kind": "compile-time-nil",
+      "dispatch_route": "compile-time-zero-elision",
+      "admitted": true,
+      "nil_receiver_behavior": "elide to typed zero result before selector dispatch",
+      "super_behavior": "not-applicable",
+      "category_protocol_behavior": "not-applicable",
+      "marshalling_policy": "result coerces through existing typed zero/i32 contract",
+      "cache_invalidation": "none; no runtime or direct call is emitted",
+      "fixtures": [
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_keyword_elision.objc3",
+        "tests/tooling/fixtures/native/execution/positive/message_send_direct_nil_receiver_elision.objc3"
+      ]
+    },
+    {
+      "row_id": "self-direct-method",
+      "receiver_kind": "self",
+      "dispatch_route": "exact-direct-call",
+      "admitted": true,
+      "nil_receiver_behavior": "self is treated as known non-nil in implementation context",
+      "super_behavior": "not-applicable",
+      "category_protocol_behavior": "only class-owned direct methods are eligible",
+      "marshalling_policy": "explicit direct signature controls argument/result coercion",
+      "cache_invalidation": "invalidate global proof state after emitting the direct call",
+      "fixtures": [
+        "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/execution/positive/direct_bool_method_send.objc3"
+      ]
+    },
+    {
+      "row_id": "known-class-direct-method",
+      "receiver_kind": "known-class",
+      "dispatch_route": "exact-direct-call",
+      "admitted": true,
+      "nil_receiver_behavior": "class constants are non-nil class receivers",
+      "super_behavior": "not-applicable",
+      "category_protocol_behavior": "category/protocol declared dispatch intent is not promoted to direct call eligibility",
+      "marshalling_policy": "explicit direct signature controls argument/result coercion",
+      "cache_invalidation": "invalidate global proof state after emitting the direct call",
+      "fixtures": [
+        "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_fast_path_contract_positive.objc3"
+      ]
+    },
+    {
+      "row_id": "super-send",
+      "receiver_kind": "super",
+      "dispatch_route": "from-class-runtime-dispatch",
+      "admitted": true,
+      "nil_receiver_behavior": "super lowers through self and is known non-nil",
+      "super_behavior": "lookup starts at the current superclass and preserves method-family metadata",
+      "category_protocol_behavior": "runtime method lookup order remains runtime-owned",
+      "marshalling_policy": "typed runtime dispatch return kind remains authoritative",
+      "cache_invalidation": "runtime cache behavior stays behind the runtime dispatch boundary",
+      "fixtures": [
+        "tests/tooling/fixtures/native/execution/positive/typed_super_bool_dispatch.objc3"
+      ]
+    },
+    {
+      "row_id": "category-dispatch-intent",
+      "receiver_kind": "category",
+      "dispatch_route": "strict-rejection",
+      "admitted": false,
+      "nil_receiver_behavior": "not-applicable",
+      "super_behavior": "not-applicable",
+      "category_protocol_behavior": "category method/container direct or dynamic intent is rejected before lowering",
+      "marshalling_policy": "no ABI marshalling is emitted for rejected category dispatch intent",
+      "cache_invalidation": "none; rejected before runtime cache interaction",
+      "fixtures": [
+        "tests/tooling/fixtures/native/execution/negative/category_method_dispatch_intent_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_container_dispatch_intent_rejected.objc3"
+      ]
+    },
+    {
+      "row_id": "protocol-dispatch-intent",
+      "receiver_kind": "protocol",
+      "dispatch_route": "strict-rejection",
+      "admitted": false,
+      "nil_receiver_behavior": "not-applicable",
+      "super_behavior": "not-applicable",
+      "category_protocol_behavior": "protocol requirements cannot declare direct dispatch",
+      "marshalling_policy": "no ABI marshalling is emitted for rejected protocol dispatch intent",
+      "cache_invalidation": "none; rejected before runtime cache interaction",
+      "fixtures": [
+        "tests/tooling/fixtures/native/execution/negative/protocol_dispatch_intent_rejected.objc3"
+      ]
+    },
+    {
+      "row_id": "dynamic-opt-out",
+      "receiver_kind": "dynamic",
+      "dispatch_route": "canonical-runtime-dispatch",
+      "admitted": true,
+      "nil_receiver_behavior": "unknown dynamic receivers retain runtime nil semantics",
+      "super_behavior": "dynamic super sends stay on from-class runtime dispatch",
+      "category_protocol_behavior": "runtime lookup remains authoritative",
+      "marshalling_policy": "typed runtime dispatch return kind remains authoritative",
+      "cache_invalidation": "runtime cache invalidation remains runtime-owned behind dispatch entrypoints",
+      "fixtures": [
+        "tests/tooling/fixtures/native/dynamic_runtime_dispatch.objc3",
+        "tests/tooling/fixtures/native/dispatch_control_dynamic_escape_positive.objc3"
+      ]
+    },
+    {
+      "row_id": "unsupported-dispatch-surface",
+      "receiver_kind": "unsupported-or-noncanonical",
+      "dispatch_route": "fail-closed-before-ir-call",
+      "admitted": false,
+      "nil_receiver_behavior": "no nil fallback is synthesized after an unsupported dispatch surface is selected",
+      "super_behavior": "no super fallback is synthesized for unsupported dispatch surfaces",
+      "category_protocol_behavior": "no category/protocol compatibility route is synthesized",
+      "marshalling_policy": "no ABI marshalling is emitted after fail-closed rejection",
+      "cache_invalidation": "none; rejected before runtime cache interaction",
+      "fixtures": [
+        "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/tooling/fixtures/native/execution/negative/nil_receiver_runtime_dispatch_unresolved_symbol.objc3"
+      ]
+    }
+  ],
+  "strict_fallback_boundaries": {
+    "compatibility_shims_allowed": false,
+    "fail_open_allowed": false,
+    "fallback_routes": [],
+    "rejection_rules": [
+      "no compatibility dispatch shim",
+      "no old-mode route",
+      "no selector-table helper materialization in IR lowering",
+      "no direct dispatch promotion without exact symbol and signature ownership",
+      "no public support claim widening without executable fixture evidence"
+    ]
+  }
+}

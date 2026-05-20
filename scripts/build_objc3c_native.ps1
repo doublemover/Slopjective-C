@@ -1,12 +1,23 @@
 param(
   [ValidateSet("full", "binaries-only", "contracts-source", "contracts-binary", "contracts-closeout", "contracts-all")]
   [string]$ExecutionMode = "full",
-  [switch]$ForceReconfigure
+  [switch]$ForceReconfigure,
+  [string]$CleanRoomRoot = "",
+  [string]$BuildDir = "",
+  [string]$RuntimeOutputDir = "",
+  [string]$LibraryOutputDir = "",
+  [string]$FrontendArtifactRoot = "",
+  [string]$SummaryPath = "",
+  [int]$Parallelism = 0
 )
 
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$archiveNormalizer = Join-Path $PSScriptRoot "normalize_coff_archive_timestamps.py"
+if (!(Test-Path -LiteralPath $archiveNormalizer -PathType Leaf)) {
+  throw "COFF archive normalizer missing: $archiveNormalizer"
+}
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force -DisableNameChecking -Global
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force
 $frontendContractModuleRoot = Join-Path $PSScriptRoot "objc3c_native_frontend_contracts"
@@ -53,7 +64,17 @@ Import-Module (Join-Path $PSScriptRoot "objc3c_native_superclean_surface.psm1") 
 # - canonical outputs remain published at `artifacts/bin` and `artifacts/lib`
 # - this script still owns frontend contract-artifact generation after the native build
 
-$nativeBuildPaths = Get-Objc3cNativeCMakeBuildPaths -RepoRoot $repoRoot
+$resolvedCleanRoomRoot = ""
+if ($CleanRoomRoot) {
+  $resolvedCleanRoomRoot = [System.IO.Path]::GetFullPath($CleanRoomRoot)
+  New-Item -ItemType Directory -Force -Path $resolvedCleanRoomRoot | Out-Null
+}
+$nativeBuildPaths = Get-Objc3cNativeCMakeBuildPaths `
+  -RepoRoot $repoRoot `
+  -CleanRoomRoot $resolvedCleanRoomRoot `
+  -BuildDir $BuildDir `
+  -RuntimeOutputDir $RuntimeOutputDir `
+  -LibraryOutputDir $LibraryOutputDir
 $outDir = $nativeBuildPaths.RuntimeOutputDir
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $outLibDir = $nativeBuildPaths.LibraryOutputDir
@@ -66,6 +87,11 @@ New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
 $cmakeSourceDir = $nativeBuildPaths.CmakeSourceDir
 $compileCommandsPath = $nativeBuildPaths.CompileCommands
 $buildFingerprintPath = $nativeBuildPaths.BuildFingerprint
+if (!$SummaryPath) {
+  $SummaryPath = Join-Path $tmpOutDir "native_build_summary.json"
+}
+$sourceDateEpoch = "1704067200"
+$env:SOURCE_DATE_EPOCH = $sourceDateEpoch
 
 # objc3c.nativebuild.commandsurface.v1 anchor:
 # - current truthful state: this script remains the authoritative wrapper
@@ -117,6 +143,101 @@ function Get-Objc3cNativeBuildRepoRelativePath {
   return $relative.Replace([System.IO.Path]::DirectorySeparatorChar, '/').Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
 }
 
+function Get-Objc3cNativeBuildFileDigest {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPath
+  )
+
+  $relativePath = Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $TargetPath
+  if (!(Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
+    return [ordered]@{
+      path = $relativePath
+      exists = $false
+    }
+  }
+
+  $item = Get-Item -LiteralPath $TargetPath
+  return [ordered]@{
+    path = $relativePath
+    exists = $true
+    size_bytes = [int64]$item.Length
+    sha256 = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+}
+
+function Write-Objc3cNativeBuildSummary {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][string]$ExecutionModeValue,
+    [Parameter(Mandatory = $true)][bool]$NativeBuildRan,
+    [string]$CleanRoomRootPath = "",
+    [Parameter(Mandatory = $true)][string]$BuildDirPath,
+    [Parameter(Mandatory = $true)][string]$RuntimeOutputDirPath,
+    [Parameter(Mandatory = $true)][string]$LibraryOutputDirPath,
+    [Parameter(Mandatory = $true)][string]$FrontendArtifactRootPath,
+    [Parameter(Mandatory = $true)][string]$SourceDateEpoch,
+    [Parameter(Mandatory = $true)][int]$Parallelism,
+    [Parameter(Mandatory = $true)][string]$NativeExecutablePath,
+    [Parameter(Mandatory = $true)][string]$CapiRunnerPath,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryPath,
+    [Parameter(Mandatory = $true)][bool]$RuntimeArchiveNormalized,
+    [Parameter(Mandatory = $true)][string]$CompileCommandsFilePath,
+    [Parameter(Mandatory = $true)][string]$BuildFingerprintFilePath,
+    [Parameter(Mandatory = $true)][string]$RepoSupercleanSurfaceFilePath,
+    [object[]]$SelectedFrontendPacketDefinitions = @()
+  )
+
+  $frontendPackets = @(
+    $SelectedFrontendPacketDefinitions | ForEach-Object {
+      [ordered]@{
+        name = $_.Name
+        family = $_.Family
+        artifact = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $_.OutputPath)
+      }
+    }
+  )
+
+  $cleanRoomRelativePath = ""
+  if ($CleanRoomRootPath) {
+    $cleanRoomRelativePath = Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $CleanRoomRootPath
+  }
+
+  $summary = [ordered]@{
+    contract_id = "objc3c-native-bootstrap-reproducible-build-v1"
+    execution_mode = $ExecutionModeValue
+    native_build_ran = $NativeBuildRan
+    force_reconfigure = [bool]$ForceReconfigure
+    parallelism = $Parallelism
+    source_date_epoch = $SourceDateEpoch
+    runtime_archive_timestamps_normalized = $RuntimeArchiveNormalized
+    clean_room = [bool]$CleanRoomRootPath
+    clean_room_root = $cleanRoomRelativePath
+    output_roots = [ordered]@{
+      build_dir = (Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $BuildDirPath)
+      runtime_output_dir = (Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $RuntimeOutputDirPath)
+      library_output_dir = (Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $LibraryOutputDirPath)
+      frontend_artifact_root = (Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $FrontendArtifactRootPath)
+    }
+    artifacts = [ordered]@{
+      native_executable = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $NativeExecutablePath)
+      capi_runner = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $CapiRunnerPath)
+      runtime_library = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $RuntimeLibraryPath)
+      compile_commands = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $CompileCommandsFilePath)
+      build_fingerprint = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $BuildFingerprintFilePath)
+      repo_superclean_surface = (Get-Objc3cNativeBuildFileDigest -RootPath $RootPath -TargetPath $RepoSupercleanSurfaceFilePath)
+      frontend_packets = $frontendPackets
+    }
+  }
+
+  $summaryParent = Split-Path -Parent $Path
+  if ($summaryParent) {
+    New-Item -ItemType Directory -Force -Path $summaryParent | Out-Null
+  }
+  $summary | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $Path -Encoding utf8
+}
+
 function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
@@ -128,6 +249,8 @@ if ($modeRunsNativeBuild) {
   $nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot
   $llvmRoot = $nativeToolchain.LlvmRoot
   $clangxx = $nativeToolchain.Clangxx
+  $llvmArTool = $nativeToolchain.LlvmArTool
+  $llvmRanlibTool = $nativeToolchain.LlvmRanlibTool
   $llvmLibTool = $nativeToolchain.LlvmLibTool
   $cmakeTool = $nativeToolchain.CmakeTool
   $ninjaTool = $nativeToolchain.NinjaTool
@@ -139,7 +262,15 @@ $frontendModules = @(Get-Objc3cNativeFrontendModules)
 $sharedSources = @(Get-Objc3cNativeFrontendSharedSources -Modules $frontendModules)
 $runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
 $runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/public/objc3_runtime_api.h"
-$frontendArtifactPaths = Get-Objc3cNativeFrontendArtifactPaths -RepoRoot $repoRoot
+$resolvedFrontendArtifactRoot = if ($FrontendArtifactRoot) {
+  [System.IO.Path]::GetFullPath($FrontendArtifactRoot)
+} elseif ($resolvedCleanRoomRoot) {
+  Join-Path $resolvedCleanRoomRoot "artifacts/frontend-contracts"
+} else {
+  Join-Path $repoRoot "tmp/artifacts/objc3c-native"
+}
+New-Item -ItemType Directory -Force -Path $resolvedFrontendArtifactRoot | Out-Null
+$frontendArtifactPaths = Get-Objc3cNativeFrontendArtifactPaths -RepoRoot $repoRoot -ArtifactRoot $resolvedFrontendArtifactRoot
 $repoSupercleanSurfacePath = Join-Path $tmpOutDir "repo_superclean_source_of_truth.json"
 
 $nativeSources = @(
@@ -169,12 +300,23 @@ if ($modeRunsNativeBuild) {
   Write-BuildStep ("clangxx=" + $clangxx)
   Write-BuildStep ("cmake=" + $cmakeTool)
   Write-BuildStep ("ninja=" + $ninjaTool)
+  Write-BuildStep ("llvm_ar=" + $llvmArTool)
+  Write-BuildStep ("llvm_ranlib=" + $llvmRanlibTool)
   Write-BuildStep ("llvm_lib=" + $llvmLibTool)
 } else {
   Write-BuildStep "toolchain_resolution=skipped-source-contracts"
 }
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("execution_mode=" + $ExecutionMode)
+$parallelismLabel = if ($Parallelism -gt 0) { [string]$Parallelism } else { "host-default" }
+Write-BuildStep ("requested_parallelism=" + $parallelismLabel)
+if ($resolvedCleanRoomRoot) {
+  Write-BuildStep ("clean_room_root=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $resolvedCleanRoomRoot))
+}
+Write-BuildStep ("build_dir=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $tmpOutDir))
+Write-BuildStep ("runtime_output_dir=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outDir))
+Write-BuildStep ("library_output_dir=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outLibDir))
+Write-BuildStep ("frontend_artifact_root=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $resolvedFrontendArtifactRoot))
 
 $frontendPacketDefinitions = @(Get-Objc3cNativeFrontendPacketDefinitions -ArtifactPaths $frontendArtifactPaths)
 $selectedFrontendPacketDefinitions = @(
@@ -188,13 +330,17 @@ if ($modeRunsNativeBuild) {
     -Clangxx $clangxx `
     -CmakeTool $cmakeTool `
     -NinjaTool $ninjaTool `
+    -LlvmArTool $llvmArTool `
+    -LlvmRanlibTool $llvmRanlibTool `
+    -LlvmLibTool $llvmLibTool `
     -LlvmRoot $llvmRoot `
     -IncludeDir $includeDir `
     -Libclang $libclang `
     -BuildDir $tmpOutDir `
     -RuntimeOutputDir $outDir `
     -LibraryOutputDir $outLibDir `
-    -SourceDir $cmakeSourceDir
+    -SourceDir $cmakeSourceDir `
+    -SourceDateEpoch $sourceDateEpoch
 
   Invoke-Objc3cNativeCMakeConfigure `
     -CmakeTool $cmakeTool `
@@ -202,6 +348,8 @@ if ($modeRunsNativeBuild) {
     -SourceDir $cmakeSourceDir `
     -BuildDir $tmpOutDir `
     -Clangxx $clangxx `
+    -LlvmArTool $llvmArTool `
+    -LlvmRanlibTool $llvmRanlibTool `
     -LlvmRoot $llvmRoot `
     -IncludeDir $includeDir `
     -Libclang $libclang `
@@ -213,12 +361,17 @@ if ($modeRunsNativeBuild) {
 
   Invoke-Objc3cNativeCMakeBuild `
     -CmakeTool $cmakeTool `
-    -BuildDir $tmpOutDir
+    -BuildDir $tmpOutDir `
+    -Parallelism $Parallelism
 
   if (!(Test-Path -LiteralPath $outExe -PathType Leaf)) { throw "native binary missing after CMake/Ninja build: $outExe" }
   if (!(Test-Path -LiteralPath $outCapiExe -PathType Leaf)) { throw "c-api runner missing after CMake/Ninja build: $outCapiExe" }
   if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
   if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
+
+  & python $archiveNormalizer $outRuntimeLib
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  $runtimeArchiveNormalized = $true
 
   Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
   Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
@@ -226,6 +379,7 @@ if ($modeRunsNativeBuild) {
   Write-BuildStep ("compile_commands=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
 } else {
   Write-BuildStep "cmake_build_skip=native-binaries"
+  $runtimeArchiveNormalized = $false
 }
 
 Invoke-Objc3cNativeFrontendPacketGeneration `
@@ -248,6 +402,27 @@ Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact `
   -RuntimeLibraryPath $outRuntimeLib `
   -FrontendDefinitions $frontendPacketDefinitions
 
+Write-Objc3cNativeBuildSummary `
+  -RootPath $repoRoot `
+  -Path $SummaryPath `
+  -ExecutionModeValue $ExecutionMode `
+  -NativeBuildRan $modeRunsNativeBuild `
+  -CleanRoomRootPath $resolvedCleanRoomRoot `
+  -BuildDirPath $tmpOutDir `
+  -RuntimeOutputDirPath $outDir `
+  -LibraryOutputDirPath $outLibDir `
+  -FrontendArtifactRootPath $resolvedFrontendArtifactRoot `
+  -SourceDateEpoch $sourceDateEpoch `
+  -Parallelism $Parallelism `
+  -NativeExecutablePath $outExe `
+  -CapiRunnerPath $outCapiExe `
+  -RuntimeLibraryPath $outRuntimeLib `
+  -RuntimeArchiveNormalized $runtimeArchiveNormalized `
+  -CompileCommandsFilePath $compileCommandsPath `
+  -BuildFingerprintFilePath $buildFingerprintPath `
+  -RepoSupercleanSurfaceFilePath $repoSupercleanSurfacePath `
+  -SelectedFrontendPacketDefinitions $selectedFrontendPacketDefinitions
+
 if ($modeRunsNativeBuild) {
   if (Test-Path -LiteralPath $outExe -PathType Leaf) {
     Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
@@ -265,3 +440,4 @@ foreach ($packetDefinition in $selectedFrontendPacketDefinitions) {
   }
 }
 Write-Output ("repo_superclean_surface=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))
+Write-Output ("native_build_summary=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $SummaryPath))

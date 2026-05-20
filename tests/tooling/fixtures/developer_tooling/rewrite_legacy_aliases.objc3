@@ -1,0 +1,10 @@
+module Rewrite;
+
+fn main() {
+  let legacyValue = YES;
+  let other = NO;
+  let pointer = NULL;
+  let text = @"YES NO NULL must stay text";
+  // YES NO NULL must stay comment text
+  return legacyValue ? pointer : other;
+}

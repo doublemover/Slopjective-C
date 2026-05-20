@@ -65,6 +65,7 @@
       "claim_authority": "runtime acceptance and runnable release-candidate evidence",
       "required_actions": [
         "check-security-runtime-hardening",
+        "check-security-sanitizer-validation",
         "validate-security-hardening"
       ],
       "required_contract_fields": [
@@ -102,6 +103,27 @@
         "signed-installer trust",
         "retired route update trust",
         "trust bypass for unsigned payload"
+      ]
+    },
+    "language_runtime_threat_model_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
+      "owner": "security-hardening-language-runtime-threat-model",
+      "claim_authority": "checked-in language/runtime threat model, macro supply-chain, runtime hardening, and sanitizer validation evidence",
+      "required_actions": [
+        "check-security-sanitizer-validation",
+        "check-security-language-runtime-threat-model"
+      ],
+      "required_contract_fields": [
+        "threats",
+        "mitigation_backlog",
+        "evidence_roots",
+        "forbidden_claims"
+      ],
+      "forbidden_claims": [
+        "support claim without checked-in source truth",
+        "macro supply-chain claim without trust-registry evidence",
+        "runtime memory-safety claim without sanitizer contract evidence",
+        "compiler sanitizer claim without target application evidence"
       ]
     }
   }

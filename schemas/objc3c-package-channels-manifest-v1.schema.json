@@ -15,6 +15,7 @@
     "support_tiers",
     "implemented_channels",
     "interop_loader_metadata",
+    "installer_signature",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -46,6 +47,9 @@
     "interop_loader_metadata": {
       "$ref": "#/$defs/interopLoaderMetadata"
     },
+    "installer_signature": {
+      "$ref": "#/$defs/installerSignature"
+    },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
     "offline_archive": { "type": "string" }
@@ -62,6 +66,28 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "installerSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "artifact",
+        "sha256",
+        "verification_command",
+        "trust_scope"
+      ],
+      "properties": {
+        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "signing_key_id": { "const": "objc3c-release-operations-local-installer-key-v1" },
+        "subject": { "const": "local-installer" },
+        "artifact": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "verification_command": { "const": "npm run objc3c -- validate-packaging-channels-end-to-end" },
+        "trust_scope": { "const": "checked-in-artifact-digest" }
       }
     },
     "interopLoaderMetadata": {

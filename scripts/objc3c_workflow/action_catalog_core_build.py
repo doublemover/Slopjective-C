@@ -11,4 +11,5 @@ CORE_BUILD_ACTION_SPECS: dict[str, ActionSpec] = {
     "build-native-full": ActionSpec("build-native-full", "run full native build", "pwsh:scripts/build_objc3c_native.ps1"),
     "build-native-reconfigure": ActionSpec("build-native-reconfigure", "force native reconfigure build", "pwsh:scripts/build_objc3c_native.ps1"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", pass_through_args=True),
+    "validate-native-clean-room-rebuild": ActionSpec("validate-native-clean-room-rebuild", "validate deterministic clean-room native rebuilds from isolated bootstrap outputs", "python:scripts/check_objc3c_native_clean_room_rebuild.py", validation_tier="full", guarantee_owner="native bootstrap rebuilds stay clean-room routed and reproducible without preexisting tmp or artifact outputs"),
 }

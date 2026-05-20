@@ -214,6 +214,8 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
             owned_actions=(
                 "check-security-hardening-surface",
                 "check-security-hardening-schema-surface",
+                "check-security-sanitizer-validation",
+                "check-security-language-runtime-threat-model",
                 "build-security-posture",
                 "publish-security-advisories",
                 "validate-security-hardening",
@@ -228,6 +230,8 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "check-security-hardening-surface",
                 "check-security-hardening-schema-surface",
                 "check-security-runtime-hardening",
+                "check-security-sanitizer-validation",
+                "check-security-language-runtime-threat-model",
                 "build-security-posture",
                 "check-security-response-drill",
                 "publish-security-advisories",

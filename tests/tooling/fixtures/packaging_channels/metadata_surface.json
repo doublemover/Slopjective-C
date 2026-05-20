@@ -12,6 +12,7 @@
     "support_tiers",
     "implemented_channels",
     "interop_loader_metadata",
+    "installer_signature",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -24,5 +25,14 @@
     "package_bridge",
     "install_command",
     "installed_at_utc"
+  ],
+  "required_installer_signature_fields": [
+    "signature_format",
+    "signing_key_id",
+    "subject",
+    "artifact",
+    "sha256",
+    "verification_command",
+    "trust_scope"
   ]
 }

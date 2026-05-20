@@ -3,7 +3,11 @@ from __future__ import annotations
 import argparse
 import sys
 
-from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
+from objc3c_editor_tooling.input_loading import (
+    load_editor_tooling_inputs,
+    publish_diagnostics_only_summary,
+    run_frontend_compile,
+)
 from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import default_source_argument, paths_for_source, resolve_source
 from objc3c_editor_tooling.publication import publish_editor_tooling_surface
@@ -27,7 +31,8 @@ def main() -> int:
 
     summary_exit_code = compile_summary_exit_code(compile_result)
     if summary_exit_code is not None:
-        return summary_exit_code
+        if not publish_diagnostics_only_summary(paths, compile_result):
+            return summary_exit_code
 
     inputs = load_editor_tooling_inputs(paths)
     model = build_editor_tooling_model(paths, inputs)
@@ -37,6 +42,7 @@ def main() -> int:
     print(f"dump_path: {published.dump_path}")
     print(f"capabilities_path: {published.capabilities_path}")
     print(f"navigation_path: {published.navigation_path}")
+    print(f"workspace_index_path: {published.workspace_index_path}")
     print(f"formatter_path: {published.formatter_path}")
     print(f"debug_path: {published.debug_path}")
     return 0

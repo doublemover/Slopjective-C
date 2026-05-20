@@ -22,7 +22,9 @@
   "generated_artifact_roots": [
     "tmp/artifacts/package-ecosystem/locks",
     "tmp/artifacts/package-ecosystem/mirrors",
-    "tmp/artifacts/package-ecosystem/registry"
+    "tmp/artifacts/package-ecosystem/mirrors/cache",
+    "tmp/artifacts/package-ecosystem/registry",
+    "tmp/artifacts/package-ecosystem/offline-install"
   ],
   "generated_report_root": "tmp/reports/package-ecosystem",
   "report_slots": [
@@ -42,6 +44,7 @@
     "lockfiles and mirror indexes are generated artifacts, not checked-in source authority",
     "package ecosystem artifacts must validate against checked-in schemas before publication claims",
     "registry metadata must be generated from lock and mirror evidence",
+    "offline mirror cache entries and restore receipts must be generated from the same lock-derived mirror index",
     "mixed-image interop package metadata must be digest-checked across lock, mirror, and local registry artifacts",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
@@ -105,6 +108,7 @@
       "package artifact generated without checked-in source contract",
       "schema missing for package publication artifact",
       "generated package evidence outside package ecosystem artifact root",
+      "offline restore receipt missing cache digest evidence",
       "hosted registry claim without local package evidence",
       "package publication action has no owner contract",
       "package publication action is wrapper-only"

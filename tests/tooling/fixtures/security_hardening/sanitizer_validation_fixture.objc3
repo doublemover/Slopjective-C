@@ -1,0 +1,11 @@
+module security_hardening_sanitizer_validation_fixture;
+
+// objc3c_sanitizer_validation_fixture
+// Contract-only fixture for sanitizer-backed security validation.
+// The validation action verifies that native runtime and compiler targets are
+// wired to the checked-in ASan/UBSan CMake surface before any sanitizer-backed
+// security claim is published.
+
+fn sanitizer_validation_probe(value: i32) -> i32 {
+  return value + 1;
+}

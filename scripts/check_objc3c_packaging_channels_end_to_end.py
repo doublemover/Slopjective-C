@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import shutil
 import subprocess
 import zipfile
@@ -33,6 +34,14 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summa
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def extract_zip(zip_path: Path, destination: Path) -> None:
@@ -85,6 +94,11 @@ def main() -> int:
     expect(portable_archive.is_file(), "portable archive was not published")
     expect(installer_archive.is_file(), "installer archive was not published")
     expect(offline_archive.is_file(), "offline archive was not published")
+    installer_signature = manifest.get("installer_signature", {})
+    expect(installer_signature.get("signature_format") == "objc3c-local-sha256-v1", "installer signature format drifted")
+    expect(installer_signature.get("artifact") == repo_rel(installer_archive), "installer signature artifact drifted")
+    expect(installer_signature.get("sha256") == sha256_file(installer_archive), "installer signature digest drifted")
+    expect(installer_signature.get("verification_command") == "npm run objc3c -- validate-packaging-channels-end-to-end", "installer signature verification command drifted")
 
     extract_zip(portable_archive, portable_extract_root)
     expect((portable_extract_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json").is_file(), "portable archive missing runnable package manifest")
@@ -154,6 +168,7 @@ def main() -> int:
         "portable_archive": repo_rel(portable_archive),
         "installer_archive": repo_rel(installer_archive),
         "offline_archive": repo_rel(offline_archive),
+        "installer_signature": installer_signature,
         "install_root": repo_rel(install_root),
         "offline_install_root": repo_rel(offline_install_root),
     }
