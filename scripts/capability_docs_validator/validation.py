@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any
+
 from objc3c_shared.json_io import (
     JsonSchemaValidationError,
     load_json_object,
@@ -12,8 +15,10 @@ from capability_docs_validator.constants import (
     EVIDENCE_MAP_PATH,
     EVIDENCE_MAP_SCHEMA_PATH,
     MATRIX_PATH,
+    PHASE_OWNER_CONTRACT_PATH,
     SCHEMA_PATH,
 )
+from capability_docs_validator.conformance import _validate_conformance_manifest_links
 from capability_docs_validator.docs import _validate_docs_reference_rows
 from capability_docs_validator.evidence_map import _validate_evidence_map_projection
 from capability_docs_validator.errors import CapabilityDocsError
@@ -22,14 +27,29 @@ from capability_docs_validator.matrix import (
     _validate_evidence_rows,
     _validate_object_model_scope,
 )
+from capability_docs_validator.rendering import (
+    _validate_generated_docs,
+    render_support_docs,
+)
 from capability_docs_validator.support_links import _validate_support_claim_links
 
 
-def validate() -> None:
+@dataclass(frozen=True)
+class CapabilityDocsInputs:
+    matrix: dict[str, Any]
+    evidence_map: dict[str, Any]
+    manifest: dict[str, Any]
+    phase_owner_contracts: dict[str, Any]
+    rows: list[dict[str, Any]]
+
+
+def _load_validated_inputs() -> CapabilityDocsInputs:
     matrix = load_json_object(MATRIX_PATH)
     schema = load_json_object(SCHEMA_PATH)
     evidence_map = load_json_object(EVIDENCE_MAP_PATH)
     evidence_map_schema = load_json_object(EVIDENCE_MAP_SCHEMA_PATH)
+    manifest = load_json_object(CANONICAL_MANIFEST_PATH)
+    phase_owner_contracts = load_json_object(PHASE_OWNER_CONTRACT_PATH)
     try:
         validate_json_schema(matrix, schema, label=display_path(MATRIX_PATH))
         validate_json_schema(evidence_map, evidence_map_schema, label=display_path(EVIDENCE_MAP_PATH))
@@ -39,5 +59,26 @@ def validate() -> None:
     _validate_evidence_rows(rows)
     _validate_object_model_scope(rows)
     _validate_evidence_map_projection(rows, evidence_map)
-    _validate_support_claim_links(rows, load_json_object(CANONICAL_MANIFEST_PATH))
-    _validate_docs_reference_rows(rows)
+    _validate_support_claim_links(rows, manifest)
+    _validate_conformance_manifest_links(manifest, phase_owner_contracts)
+    return CapabilityDocsInputs(
+        matrix=matrix,
+        evidence_map=evidence_map,
+        manifest=manifest,
+        phase_owner_contracts=phase_owner_contracts,
+        rows=rows,
+    )
+
+
+def validate() -> None:
+    inputs = _load_validated_inputs()
+    _validate_generated_docs(
+        render_support_docs(
+            matrix=inputs.matrix,
+            rows=inputs.rows,
+            evidence_map=inputs.evidence_map,
+            manifest=inputs.manifest,
+            phase_owner_contracts=inputs.phase_owner_contracts,
+        )
+    )
+    _validate_docs_reference_rows(inputs.rows)

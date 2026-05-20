@@ -9,7 +9,7 @@ from capability_docs_validator.errors import CapabilityDocsError
 PUBLIC_OBJC3C_COMMAND_PREFIX = "npm run objc3c -- "
 
 
-def _manifest_support_claims(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
+def _manifest_fixture_paths(manifest: dict[str, Any]) -> set[str]:
     raw_fixtures = manifest.get("fixtures")
     if not isinstance(raw_fixtures, list):
         raise CapabilityDocsError("canonical manifest fixtures must be a list")
@@ -21,7 +21,11 @@ def _manifest_support_claims(manifest: dict[str, Any]) -> dict[str, dict[str, st
         if not isinstance(raw_path, str) or not raw_path:
             raise CapabilityDocsError(f"canonical manifest fixtures[{index}].path must be non-empty")
         fixture_paths.add(raw_path)
+    return fixture_paths
 
+
+def _manifest_support_claims(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
+    fixture_paths = _manifest_fixture_paths(manifest)
     raw_claims = manifest.get("support_claims")
     if not isinstance(raw_claims, list) or not raw_claims:
         raise CapabilityDocsError("canonical manifest support_claims must be a non-empty list")

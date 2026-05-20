@@ -12,9 +12,13 @@ MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
 SCHEMA_PATH = schema_path(CAPABILITY_MATRIX_SCHEMA_ID)
 EVIDENCE_MAP_SCHEMA_PATH = schema_path(CAPABILITY_EVIDENCE_MAP_SCHEMA_ID)
+SUPPORT_DOCS_DIR = ROOT / "docs" / "support"
 MATRIX_DOC = ROOT / "docs" / "support" / "capability_matrix.md"
 EVIDENCE_DOC = ROOT / "docs" / "support" / "evidence_map.md"
 CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
+PHASE_OWNER_CONTRACT_PATH = (
+    ROOT / "tests" / "conformance" / "hard_cutover_behavior_phase_owner_contracts.json"
+)
 BEHAVIOR_MATRIX_COMMAND = "npm run objc3c -- test-behavior-matrix"
 SUPPORT_CLAIM_RE = re.compile(r"\bobjc3c\.behavior\.[a-z0-9._-]+\b")
 

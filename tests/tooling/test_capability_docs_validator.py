@@ -86,6 +86,40 @@ def _manifest(*claims: dict[str, str]) -> dict[str, Any]:
     }
 
 
+def _manifest_with_retired_fixture(*claims: dict[str, str]) -> dict[str, Any]:
+    manifest = _manifest(*claims)
+    manifest["fixtures"].append(
+        {
+            "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+            "origin": "hand-authored",
+            "owner_phase": "parser",
+            "behavior_family": "negative",
+            "fixture_kind": "rejection",
+            "expected_diagnostic_code": "O3C002",
+        }
+    )
+    return manifest
+
+
+def _parser_phase_contract(support_claim: str = PARSER_CLAIM["claim_id"]) -> dict[str, Any]:
+    return {
+        "phase_contracts": [
+            {
+                "phase": "parser",
+                "support_claim": support_claim,
+                "fixture_root": "tests/native/parser",
+                "canonical_positive_evidence": [
+                    PARSER_CLAIM["behavior_fixture"],
+                ],
+                "retired_surface_evidence": [
+                    "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+                ],
+                "generated_fixture_authority": False,
+            }
+        ]
+    }
+
+
 def test_public_capability_docs_reject_retired_public_surface_claims() -> None:
     for path in PUBLIC_CAPABILITY_DOCS:
         text = path.read_text(encoding="utf-8")
@@ -147,6 +181,91 @@ def test_support_claim_links_require_every_manifest_claim_in_the_matrix() -> Non
 
     with pytest.raises(validator.CapabilityDocsError, match="missing from capability matrix"):
         validator._validate_support_claim_links([_parser_row()], _manifest(PARSER_CLAIM, RUNTIME_CLAIM))
+
+
+def test_conformance_phase_contracts_require_canonical_manifest_claims() -> None:
+    validator = _load_validator()
+
+    validator._validate_conformance_manifest_links(
+        _manifest_with_retired_fixture(PARSER_CLAIM),
+        _parser_phase_contract(),
+    )
+
+    with pytest.raises(validator.CapabilityDocsError, match="not backed by canonical manifest"):
+        validator._validate_conformance_manifest_links(
+            _manifest_with_retired_fixture(PARSER_CLAIM),
+            _parser_phase_contract("objc3c.behavior.parser.future-claim"),
+        )
+
+
+def test_conformance_phase_contracts_reject_generated_fixture_authority_for_support_claims() -> None:
+    validator = _load_validator()
+    phase_contract = _parser_phase_contract()
+    phase_contract["phase_contracts"][0]["generated_fixture_authority"] = True
+
+    with pytest.raises(validator.CapabilityDocsError, match="generated_fixture_authority"):
+        validator._validate_conformance_manifest_links(
+            _manifest_with_retired_fixture(PARSER_CLAIM),
+            phase_contract,
+        )
+
+
+def test_support_doc_claim_token_scan_rejects_claims_absent_from_matrix() -> None:
+    validator = _load_validator()
+
+    validator._validate_public_doc_claim_tokens(
+        "Documented `objc3c.behavior.parser.canonical-syntax`.",
+        {PARSER_CLAIM["claim_id"]},
+    )
+
+    with pytest.raises(validator.CapabilityDocsError, match="not declared"):
+        validator._validate_public_doc_claim_tokens(
+            "Documented `objc3c.behavior.parser.future-claim`.",
+            {PARSER_CLAIM["claim_id"]},
+        )
+
+
+def test_support_doc_renderer_includes_manifest_and_phase_claim_authority() -> None:
+    validator = _load_validator()
+    docs = validator.render_support_docs(
+        matrix={
+            "matrix_version": "unit-test",
+            "schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
+            "evidence_map_path": "docs/support/evidence_map.json",
+        },
+        rows=[_parser_row()],
+        evidence_map={
+            "projection_contract": {
+                "source": "docs/support/capability_matrix.json#/capabilities/*/evidence",
+                "owner": "scripts/capability_docs_validator/evidence_map.py",
+                "row_key": ["capability_id", "support_claim", "evidence_kind", "path", "command"],
+                "drift_rule": "unit",
+            },
+            "evidence_policy": {
+                "public_command_surface": "npm run objc3c -- <action>",
+                "command_required_for": ["replayable implemented behavior evidence"],
+                "command_forbidden_for": ["source ownership rows"],
+                "row_role_rule": "unit",
+            },
+            "rows": [
+                {
+                    "capability_id": "compiler.parser.core-declarations",
+                    "support_claim": PARSER_CLAIM["claim_id"],
+                    "evidence_kind": "test",
+                    "path": PARSER_CLAIM["behavior_fixture"],
+                    "command": PARSER_CLAIM["executable_command"],
+                }
+            ],
+        },
+        manifest=_manifest_with_retired_fixture(PARSER_CLAIM),
+        phase_owner_contracts=_parser_phase_contract(),
+    )
+
+    matrix_doc = docs[validator.MATRIX_DOC]
+    assert "## Support Claim Authority" in matrix_doc
+    assert PARSER_CLAIM["claim_id"] in matrix_doc
+    assert PARSER_CLAIM["behavior_fixture"] in matrix_doc
+    assert "## Phase Owner Contract" in matrix_doc
 
 
 def test_runtime_concurrency_claim_is_implemented_and_probe_backed() -> None:

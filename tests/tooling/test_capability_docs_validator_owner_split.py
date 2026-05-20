@@ -16,7 +16,9 @@ from capability_docs_validator.constants import (
     CAPABILITY_TRUTH_OWNER,
     capability_truth_owner_contract,
 )
+from capability_docs_validator.conformance import _validate_conformance_manifest_links
 from capability_docs_validator.docs import _validate_docs_reference_rows
+from capability_docs_validator.docs import _validate_public_doc_claim_tokens
 from capability_docs_validator.errors import CapabilityDocsError
 from capability_docs_validator.evidence_map import (
     _validate_evidence_map_projection,
@@ -24,6 +26,7 @@ from capability_docs_validator.evidence_map import (
 )
 from capability_docs_validator.manifest import _manifest_support_claims
 from capability_docs_validator.matrix import _require_matrix_shape
+from capability_docs_validator.rendering import render_support_docs
 from capability_docs_validator.support_links import (
     _row_support_claims,
     _validate_support_claim_links,
@@ -91,6 +94,9 @@ def test_legacy_entrypoint_reexports_validator_owner_modules() -> None:
     assert module._validate_evidence_map_projection is _validate_evidence_map_projection
     assert module.build_evidence_map_projection is build_evidence_map_projection
     assert module._validate_docs_reference_rows is _validate_docs_reference_rows
+    assert module._validate_public_doc_claim_tokens is _validate_public_doc_claim_tokens
+    assert module._validate_conformance_manifest_links is _validate_conformance_manifest_links
+    assert module.render_support_docs is render_support_docs
 
 
 def test_matrix_shape_claim_links_and_manifest_validation_are_separate_owners() -> None:
