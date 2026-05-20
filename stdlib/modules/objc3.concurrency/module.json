@@ -32,5 +32,16 @@
     "objc3_concurrency_cancellation_checkpoint",
     "objc3_concurrency_executor_hop_token",
     "objc3_concurrency_actor_mailbox_token"
-  ]
+  ],
+  "abi_signatures": {
+    "objc3_concurrency_spawn_token": "fn objc3_concurrency_spawn_token(seed: i32)",
+    "objc3_concurrency_child_spawn_token": "fn objc3_concurrency_child_spawn_token(seed: i32)",
+    "objc3_concurrency_detached_spawn_token": "fn objc3_concurrency_detached_spawn_token(seed: i32)",
+    "objc3_concurrency_join_status": "fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32)",
+    "objc3_concurrency_task_group_scope_depth": "fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32)",
+    "objc3_concurrency_cancellation_query": "fn objc3_concurrency_cancellation_query(flag: i32)",
+    "objc3_concurrency_cancellation_checkpoint": "fn objc3_concurrency_cancellation_checkpoint(flag: i32)",
+    "objc3_concurrency_executor_hop_token": "fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32)",
+    "objc3_concurrency_actor_mailbox_token": "fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, pending_messages: i32)"
+  }
 }

@@ -33,5 +33,20 @@
     "objc3_errors_or_throw_code",
     "objc3_errors_text_data_shape_score",
     "objc3_errors_text_data_shape_diagnostic"
-  ]
+  ],
+  "abi_signatures": {
+    "Objc3ErrorsResultOkTag": "let Objc3ErrorsResultOkTag = 1",
+    "Objc3ErrorsResultErrTag": "let Objc3ErrorsResultErrTag = 2",
+    "objc3_errors_result_ok_tag": "fn objc3_errors_result_ok_tag()",
+    "objc3_errors_result_err_tag": "fn objc3_errors_result_err_tag()",
+    "objc3_errors_result_is_ok": "fn objc3_errors_result_is_ok(tag: i32)",
+    "objc3_errors_option_to_result_tag": "fn objc3_errors_option_to_result_tag(flag: i32)",
+    "objc3_errors_option_result_shape_diagnostic": "fn objc3_errors_option_result_shape_diagnostic(flag: i32, tag: i32)",
+    "objc3_errors_result_unwrap_or": "fn objc3_errors_result_unwrap_or(tag: i32, value: i32, default_value: i32)",
+    "objc3_errors_result_error_or": "fn objc3_errors_result_error_or(tag: i32, code: i32, default_value: i32)",
+    "objc3_errors_ok_or_code": "fn objc3_errors_ok_or_code(value: i32, default_value: i32)",
+    "objc3_errors_or_throw_code": "fn objc3_errors_or_throw_code(value: i32, default_value: i32)",
+    "objc3_errors_text_data_shape_score": "fn objc3_errors_text_data_shape_score(unit_count: i32, byte_count: i32)",
+    "objc3_errors_text_data_shape_diagnostic": "fn objc3_errors_text_data_shape_diagnostic(unit_count: i32, byte_count: i32)"
+  }
 }

@@ -28,5 +28,14 @@
     "objc3_keypath_metadata_token",
     "objc3_keypath_reflection_interop_token",
     "objc3_keypath_runtime_composition_token"
-  ]
+  ],
+  "abi_signatures": {
+    "objc3_keypath_apply_index": "fn objc3_keypath_apply_index(root: i32, offset: i32)",
+    "objc3_keypath_component_count": "fn objc3_keypath_component_count(root: i32, offset: i32)",
+    "objc3_keypath_text_shape_score": "fn objc3_keypath_text_shape_score(component_count: i32, text_units: i32)",
+    "objc3_keypath_text_shape_diagnostic": "fn objc3_keypath_text_shape_diagnostic(component_count: i32, text_units: i32)",
+    "objc3_keypath_metadata_token": "fn objc3_keypath_metadata_token(root: i32, component_count: i32)",
+    "objc3_keypath_reflection_interop_token": "fn objc3_keypath_reflection_interop_token(component_count: i32, reflected_components: i32)",
+    "objc3_keypath_runtime_composition_token": "fn objc3_keypath_runtime_composition_token(component_count: i32, imported_components: i32)"
+  }
 }

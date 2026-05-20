@@ -19,6 +19,30 @@ def test_release_evidence_gate_contract_pins_pairs_empty_mode_and_attestation() 
     contract = release_evidence.load_release_evidence_contract()
 
     assert release_evidence.release_label_from_contract(contract) == "v0.11"
+    assert release_evidence.source_truth_policy_from_contract(contract) == {
+        "source_truth_roots": ("conformance", "schemas"),
+        "forbidden_source_truth_prefixes": ("tmp/",),
+        "generated_output_role": (
+            "tmp reports are replayable evidence only, not source truth"
+        ),
+    }
+    assert release_evidence.release_gate_checks_from_contract(contract) == (
+        {
+            "check_id": "public-claim-drift",
+            "owner_issue_ref": "#8059",
+            "entrypoint": "scripts/check_objc3c_public_claim_drift.py --check",
+        },
+        {
+            "check_id": "evidence-index-replay",
+            "owner_issue_ref": "#8065",
+            "entrypoint": "scripts/generate_conformance_evidence_index.py",
+        },
+        {
+            "check_id": "release-gate-attestation-envelope",
+            "owner_issue_ref": "#8066",
+            "entrypoint": "scripts/check_release_evidence.py",
+        },
+    )
     assert release_evidence.schema_data_pairs_from_contract(contract) == (
         (
             "schemas/objc3-abi-2025Q4.schema.json",
@@ -81,6 +105,39 @@ def test_release_evidence_contract_rejects_unsorted_schema_pairs() -> None:
         match="schema_data_pairs must be sorted by id",
     ):
         release_evidence.schema_data_pairs_from_contract(contract)
+
+
+def test_release_evidence_contract_rejects_tmp_source_truth_root() -> None:
+    contract = {
+        "source_truth_policy": {
+            "source_truth_roots": ["/".join(("tmp", "release-evidence"))],
+            "forbidden_source_truth_prefixes": ["/".join(("tmp", ""))],
+            "generated_output_role": (
+                "tmp reports are replayable evidence only, not source truth"
+            ),
+        }
+    }
+
+    with pytest.raises(
+        release_evidence.ReleaseEvidenceContractError,
+        match="source_truth_policy.source_truth_roots\\[0\\] must not use tmp",
+    ):
+        release_evidence.source_truth_policy_from_contract(contract)
+
+
+def test_release_evidence_contract_rejects_missing_release_gate_check() -> None:
+    contract = release_evidence.load_release_evidence_contract(
+        FIXTURE_ROOT / "missing_release_gate_check.json"
+    )
+
+    with pytest.raises(
+        release_evidence.ReleaseEvidenceContractError,
+        match=(
+            "release_gate_checks missing required checks: "
+            "release-gate-attestation-envelope"
+        ),
+    ):
+        release_evidence.release_gate_checks_from_contract(contract)
 
 
 def test_release_evidence_contract_checks_required_pair_files() -> None:

@@ -33,6 +33,17 @@
     "objc3_runtime_stdlib_core_map_entry_present_i32",
     "objc3_runtime_stdlib_core_map_entry_value_or_i32"
   ],
+  "runtime_abi_signatures": {
+    "objc3_runtime_stdlib_core_language_revision_i32": "extern fn objc3_runtime_stdlib_core_language_revision_i32() -> i32",
+    "objc3_runtime_stdlib_core_profile_revision_i32": "extern fn objc3_runtime_stdlib_core_profile_revision_i32() -> i32",
+    "objc3_runtime_stdlib_core_has_capability_i32": "extern fn objc3_runtime_stdlib_core_has_capability_i32(capability: i32) -> i32",
+    "objc3_runtime_stdlib_core_option_has_value_i32": "extern fn objc3_runtime_stdlib_core_option_has_value_i32(flag: i32) -> i32",
+    "objc3_runtime_stdlib_core_option_unwrap_or_i32": "extern fn objc3_runtime_stdlib_core_option_unwrap_or_i32(flag: i32, value: i32, default_value: i32) -> i32",
+    "objc3_runtime_stdlib_core_count_i32": "extern fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32",
+    "objc3_runtime_stdlib_core_prefix_count_i32": "extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32",
+    "objc3_runtime_stdlib_core_map_entry_present_i32": "extern fn objc3_runtime_stdlib_core_map_entry_present_i32(flag: i32) -> i32",
+    "objc3_runtime_stdlib_core_map_entry_value_or_i32": "extern fn objc3_runtime_stdlib_core_map_entry_value_or_i32(flag: i32, value: i32, default_value: i32) -> i32"
+  },
   "exports": [
     "Objc3CoreLanguageRevision",
     "Objc3CoreProfileRevision",
@@ -49,5 +60,22 @@
     "objc3_core_array_prefix_count",
     "objc3_core_map_entry_present",
     "objc3_core_map_entry_value_or"
-  ]
+  ],
+  "abi_signatures": {
+    "Objc3CoreLanguageRevision": "let Objc3CoreLanguageRevision = 1",
+    "Objc3CoreProfileRevision": "let Objc3CoreProfileRevision = 1",
+    "objc3_core_language_revision": "fn objc3_core_language_revision()",
+    "objc3_core_profile_revision": "fn objc3_core_profile_revision()",
+    "objc3_core_has_capability": "fn objc3_core_has_capability(capability: i32)",
+    "objc3_core_option_has_value": "fn objc3_core_option_has_value(flag: i32)",
+    "objc3_core_option_unwrap_or": "fn objc3_core_option_unwrap_or(flag: i32, value: i32, default_value: i32)",
+    "objc3_core_string_view_length": "fn objc3_core_string_view_length(count: i32)",
+    "objc3_core_string_view_prefix_units": "fn objc3_core_string_view_prefix_units(count: i32, requested: i32)",
+    "objc3_core_bytes_span_length": "fn objc3_core_bytes_span_length(count: i32)",
+    "objc3_core_bytes_span_prefix_length": "fn objc3_core_bytes_span_prefix_length(count: i32, requested: i32)",
+    "objc3_core_array_count": "fn objc3_core_array_count(count: i32)",
+    "objc3_core_array_prefix_count": "fn objc3_core_array_prefix_count(count: i32, requested: i32)",
+    "objc3_core_map_entry_present": "fn objc3_core_map_entry_present(flag: i32)",
+    "objc3_core_map_entry_value_or": "fn objc3_core_map_entry_value_or(flag: i32, value: i32, default_value: i32)"
+  }
 }

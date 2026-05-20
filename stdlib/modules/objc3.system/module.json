@@ -25,5 +25,12 @@
     "objc3_system_lifetime_borrow_token",
     "objc3_system_diagnostics_gate_token",
     "objc3_system_runtime_composition_token"
-  ]
+  ],
+  "abi_signatures": {
+    "objc3_system_resource_token": "fn objc3_system_resource_token(seed: i32)",
+    "objc3_system_cleanup_token": "fn objc3_system_cleanup_token(seed: i32, cleanup_count: i32)",
+    "objc3_system_lifetime_borrow_token": "fn objc3_system_lifetime_borrow_token(seed: i32, borrow_depth: i32)",
+    "objc3_system_diagnostics_gate_token": "fn objc3_system_diagnostics_gate_token(required_profile: i32, observed_profile: i32)",
+    "objc3_system_runtime_composition_token": "fn objc3_system_runtime_composition_token(seed: i32, helper_token: i32)"
+  }
 }

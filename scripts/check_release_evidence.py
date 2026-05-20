@@ -28,6 +28,23 @@ SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 
 CONTRACT_ID = "objc3c.release_evidence.gate_contract.v1"
+REQUIRED_RELEASE_GATE_CHECKS: tuple[tuple[str, str, str], ...] = (
+    (
+        "public-claim-drift",
+        "#8059",
+        "scripts/check_objc3c_public_claim_drift.py --check",
+    ),
+    (
+        "evidence-index-replay",
+        "#8065",
+        "scripts/generate_conformance_evidence_index.py",
+    ),
+    (
+        "release-gate-attestation-envelope",
+        "#8066",
+        "scripts/check_release_evidence.py",
+    ),
+)
 
 
 class ReleaseEvidenceContractError(RuntimeError):
@@ -83,13 +100,152 @@ def normalize_contract_path(raw_path: str, label: str, *, allow_tmp: bool) -> st
     path = Path(normalized)
     if path.is_absolute() or ".." in path.parts:
         raise ReleaseEvidenceContractError(f"{label} must be a repository-relative path")
-    if not allow_tmp and normalized.startswith("tmp/"):
+    if not allow_tmp and (normalized == "tmp" or normalized.startswith("tmp/")):
         raise ReleaseEvidenceContractError(f"{label} must not use tmp as source truth")
     return normalized
 
 
+def source_truth_policy_from_contract(contract: dict[str, Any]) -> dict[str, Any]:
+    policy = contract.get("source_truth_policy")
+    if not isinstance(policy, dict):
+        raise ReleaseEvidenceContractError("source_truth_policy must be an object")
+
+    roots = policy.get("source_truth_roots")
+    if not isinstance(roots, list) or not roots:
+        raise ReleaseEvidenceContractError(
+            "source_truth_policy.source_truth_roots must be a non-empty list"
+        )
+    normalized_roots: list[str] = []
+    seen_roots: set[str] = set()
+    for index, raw_root in enumerate(roots):
+        if not isinstance(raw_root, str) or not raw_root:
+            raise ReleaseEvidenceContractError(
+                f"source_truth_policy.source_truth_roots[{index}] "
+                "must be a non-empty string"
+            )
+        normalized_root = normalize_contract_path(
+            raw_root,
+            f"source_truth_policy.source_truth_roots[{index}]",
+            allow_tmp=False,
+        )
+        if normalized_root in seen_roots:
+            raise ReleaseEvidenceContractError(
+                f"duplicate source_truth_policy source root {normalized_root}"
+            )
+        seen_roots.add(normalized_root)
+        normalized_roots.append(normalized_root)
+
+    forbidden_prefixes = policy.get("forbidden_source_truth_prefixes")
+    if not isinstance(forbidden_prefixes, list) or "tmp/" not in forbidden_prefixes:
+        raise ReleaseEvidenceContractError(
+            "source_truth_policy.forbidden_source_truth_prefixes must include tmp/"
+        )
+    for index, raw_prefix in enumerate(forbidden_prefixes):
+        if not isinstance(raw_prefix, str) or not raw_prefix:
+            raise ReleaseEvidenceContractError(
+                f"source_truth_policy.forbidden_source_truth_prefixes[{index}] "
+                "must be a non-empty string"
+            )
+        normalize_contract_path(
+            raw_prefix,
+            f"source_truth_policy.forbidden_source_truth_prefixes[{index}]",
+            allow_tmp=True,
+        )
+
+    generated_output_role = require_string(
+        policy,
+        "generated_output_role",
+        "source_truth_policy",
+    )
+    if "not source truth" not in generated_output_role.casefold():
+        raise ReleaseEvidenceContractError(
+            "source_truth_policy.generated_output_role must state generated "
+            "outputs are not source truth"
+        )
+
+    return {
+        **policy,
+        "source_truth_roots": tuple(normalized_roots),
+        "forbidden_source_truth_prefixes": tuple(forbidden_prefixes),
+    }
+
+
 def release_label_from_contract(contract: dict[str, Any]) -> str:
     return require_string(contract, "release_label", "release_evidence_contract")
+
+
+def release_gate_checks_from_contract(
+    contract: dict[str, Any],
+) -> tuple[dict[str, str], ...]:
+    checks = contract.get("release_gate_checks")
+    if not isinstance(checks, list) or not checks:
+        raise ReleaseEvidenceContractError(
+            "release_gate_checks must be a non-empty list"
+        )
+
+    seen_ids: set[str] = set()
+    normalized_checks: list[dict[str, str]] = []
+    for index, raw_check in enumerate(checks):
+        if not isinstance(raw_check, dict):
+            raise ReleaseEvidenceContractError(
+                f"release_gate_checks[{index}] must be an object"
+            )
+        check_label = f"release_gate_checks[{index}]"
+        check_id = require_string(raw_check, "check_id", check_label)
+        if check_id in seen_ids:
+            raise ReleaseEvidenceContractError(
+                f"duplicate release_gate_checks check_id {check_id}"
+            )
+        seen_ids.add(check_id)
+        owner_issue_ref = require_string(raw_check, "owner_issue_ref", check_label)
+        if not owner_issue_ref.startswith("#"):
+            raise ReleaseEvidenceContractError(
+                f"{check_label}.owner_issue_ref must be an issue ref"
+            )
+        entrypoint = require_string(raw_check, "entrypoint", check_label)
+        entrypoint_path = entrypoint.split()[0]
+        normalize_contract_path(
+            entrypoint_path,
+            f"{check_label}.entrypoint",
+            allow_tmp=False,
+        )
+        if not entrypoint_path.startswith("scripts/"):
+            raise ReleaseEvidenceContractError(
+                f"{check_label}.entrypoint must point at a scripts/ entrypoint"
+            )
+        normalized_checks.append(
+            {
+                "check_id": check_id,
+                "owner_issue_ref": owner_issue_ref,
+                "entrypoint": entrypoint,
+            }
+        )
+
+    checks_by_id = {check["check_id"]: check for check in normalized_checks}
+    missing_check_ids = sorted(
+        check_id
+        for check_id, _owner_issue_ref, _entrypoint in REQUIRED_RELEASE_GATE_CHECKS
+        if check_id not in checks_by_id
+    )
+    if missing_check_ids:
+        raise ReleaseEvidenceContractError(
+            "release_gate_checks missing required checks: "
+            + ", ".join(missing_check_ids)
+        )
+
+    for check_id, owner_issue_ref, entrypoint in REQUIRED_RELEASE_GATE_CHECKS:
+        observed = checks_by_id[check_id]
+        if observed["owner_issue_ref"] != owner_issue_ref:
+            raise ReleaseEvidenceContractError(
+                f"release_gate_checks {check_id} owner_issue_ref must be "
+                f"{owner_issue_ref}"
+            )
+        if observed["entrypoint"] != entrypoint:
+            raise ReleaseEvidenceContractError(
+                f"release_gate_checks {check_id} entrypoint must be {entrypoint}"
+            )
+
+    return tuple(normalized_checks)
 
 
 def schema_data_pairs_from_contract(
@@ -223,6 +379,8 @@ def main() -> int:
 
     try:
         contract = load_release_evidence_contract()
+        source_truth_policy_from_contract(contract)
+        release_gate_checks_from_contract(contract)
         schema_data_pairs = schema_data_pairs_from_contract(contract)
         release_label = release_label_from_contract(contract)
         generated_index = generated_index_contract(contract)
