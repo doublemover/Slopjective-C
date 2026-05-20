@@ -29,8 +29,8 @@ Current closure scope:
 Current closure constraints:
 
 - the public runtime ABI remains registration, selector lookup, dispatch, and reset; error behavior stays on the private runtime-owned helper and snapshot surfaces
-- shared conformance and packaged e2e proof already exist, but the milestone still needs one truthful closure boundary tying throw/catch, cleanup, bridging, and cross-module propagation together
-- ARC, async, and broader interop interaction claims must stay narrower than the evidence published today
+- the closure boundary now ties try/throw/catch semantics, ARC cleanup-preserved bridge lowering, private helper ABI behavior, and cross-module replay evidence together
+- ARC claims are limited to cleanup-preservation evidence from `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`; async and broader interop interaction claims must stay narrower than the evidence published today
 
 Error propagation, unwind ordering, and cleanup semantic model:
 
@@ -65,7 +65,7 @@ Executable proof and ABI contract:
 Explicit non-goals:
 
 - public runtime ABI widening for thrown-error storage, bridge helpers, or catch matching
-- claims that ARC, async, or broader interop interaction is complete beyond the currently published error-runtime evidence
+- claims that ARC behavior is complete beyond the cleanup-preservation bridge evidence, or that async or broader interop interaction is complete beyond the currently published error-runtime evidence
 - release-scope error runtime scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims that cross-module propagation is complete beyond the current manifest/runtime-registration/replay proof
 

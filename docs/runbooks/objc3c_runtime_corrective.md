@@ -47,7 +47,7 @@ Follow-on tracks:
 - governance ratchet after the corrective tranche lands
 - full object-model realization, property closure, and aggregate runtime reflection
 - escaping block/byref execution, ownership transfer, and ARC automation
-- throws, cleanup, bridged errors, and executable propagation closure
+- error runtime closure remains owned by `docs/runbooks/objc3c_error_runtime_closure.md`
 - async/task/actor runtime execution, scheduling, and isolation closure
 - metaprogramming, property-behavior runtime materialization, and interop closure
 - full-envelope conformance, stability, and production claimability

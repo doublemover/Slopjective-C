@@ -79,7 +79,7 @@ Explicit non-goals:
 
 Follow-on tracks:
 
-- throws, cleanup, bridged errors, and executable propagation closure
+- native error runtime closure, owned by `docs/runbooks/objc3c_error_runtime_closure.md`
 - metaprogramming, property-behavior runtime materialization, and interop closure
 - full-envelope conformance, stability, and production claimability
 

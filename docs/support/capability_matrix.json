@@ -313,6 +313,120 @@
       ]
     },
     {
+      "id": "language.errors.try-catch-semantics",
+      "title": "Try, throw, and catch semantic checks",
+      "state": "implemented",
+      "summary": "The native semantic pipeline accepts supported try, throw, and do/catch forms, rejects missing try and invalid propagation contexts, validates catch bodies, and preserves deterministic O3S diagnostics.",
+      "support_claims": [
+        "objc3c.behavior.errors.try-catch-semantics"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp",
+        "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_expression_walk.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_callable_checks.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_type_effect_control_error_models.inc"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.lowering.error-unwind-cleanup",
+      "title": "Error unwind and cleanup lowering",
+      "state": "implemented",
+      "summary": "The native IR path lowers thrown-error slots, do/catch dispatch, cleanup/resource unwind, autoreleasepool unwind, and ARC cleanup preservation through deterministic runtime helper calls and replay metadata.",
+      "support_claims": [
+        "objc3c.behavior.lowering.error-unwind-cleanup"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp",
+        "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_function_local_flow.cpp",
+        "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_function_local_flow.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.errors.nserror-status-bridge",
+      "title": "Private NSError and status bridge runtime",
+      "state": "implemented",
+      "summary": "The private runtime error bridge stores and loads thrown i32 error handles, normalizes NSError/status-code failures, and performs catch-kind matching for the supported native bridge path. Generalized foreign exception ABI remains unsupported.",
+      "support_claims": [
+        "objc3c.behavior.runtime.error-nserror-status-bridge"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/errors/error_bridge_operations.cpp",
+        "native/objc3c/src/runtime/errors/catch_filter.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+        "native/objc3c/src/lower/contracts/error_handling_runtime_bridge_contracts.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+        }
+      ]
+    },
+    {
       "id": "runtime.concurrency.async-actors",
       "title": "Async and actor runtime closure",
       "state": "reserved",

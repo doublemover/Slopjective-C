@@ -157,6 +157,99 @@
       "command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_local_flow.cpp"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/error_bridge_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+    },
+    {
       "capability_id": "runtime.concurrency.async-actors",
       "evidence_kind": "doc",
       "path": "docs/spec/concurrency_reserved.md"

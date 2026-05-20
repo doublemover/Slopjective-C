@@ -645,10 +645,11 @@ instead of reconstructing lowering state from sidecars or probe-local notes.
 
 This is the authoritative error execution and cleanup source boundary. It
 freezes the live frontend-owned throws declarations, result-carrier profiles,
-NSError bridge markers, and reserved `try`/`throw`/`catch` parse boundary as
-one coupled compile surface instead of leaving later error-runtime work to
-reconstruct source ownership from deleted milestone scripts or stale planning
-packets.
+NSError bridge markers, and semantically checked `try`/`throw`/`catch`
+boundary as one coupled compile surface. Unsupported or out-of-surface forms
+remain fail-closed, while supported forms now feed the runtime-backed
+lowering/evidence path instead of leaving source ownership to deleted milestone
+scripts or stale planning packets.
 
 ## Catch Filter And Finalization Source Surface
 
@@ -666,17 +667,21 @@ packets.
 - authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`
+    - `tests/tooling/fixtures/native/throw_local_handler_positive.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_positive.objc3`
     - `tests/tooling/fixtures/native/try_requires_throwing_context_negative.objc3`
+    - `tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3`
     - `tests/tooling/fixtures/native/throw_requires_throws_or_catch_negative.objc3`
+    - `tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3`
+    - `tests/tooling/fixtures/native/catch_body_return_type_negative.objc3`
     - `tests/tooling/fixtures/native/catch_after_catch_all_negative.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3`
 
 This is the authoritative source boundary for catch filtering, catch-all
 finalization ordering, and bridge eligibility before lowering. It freezes the
 live try/throw/do/catch legality contract together with bridge-marker filtering
-semantics so later execution and runtime issues do not have to guess which
-source forms are valid or try-eligible.
+semantics so later extensions do not have to guess which source forms are valid
+or try-eligible.
 
 ## Error Propagation And Cleanup Semantics Surface
 
@@ -698,9 +703,9 @@ source forms are valid or try-eligible.
 
 This is the authoritative semantic-model boundary for error propagation and
 cleanup. It freezes the live throws declaration, result carrier, and NSError
-bridge semantics together with the explicit deferred runtime/ABI flags, so the
-next lowering and runtime issues inherit one concrete semantic contract instead
-of hand-waving over what is already enforced in the compiler.
+bridge semantics together with the emitted private helper ABI and runtime
+handoff metadata, so lowering and runtime owners inherit one concrete semantic
+contract instead of hand-waving over what is already enforced in the compiler.
 
 ## Bridging Filter And Unwind Diagnostics Surface
 
@@ -729,9 +734,9 @@ of hand-waving over what is already enforced in the compiler.
 
 This is the authoritative diagnostics boundary for bridged error callables and
 their unwind legality rules. It freezes the live legality model, the
-native fail-closed lowering boundary, and the exact negative diagnostic corpus
-so later lowering and runtime work cannot silently relax or reinterpret the
-compiler contract.
+unsupported/out-of-surface native lowering fail-closed boundary, and the exact
+negative diagnostic corpus so later lowering and runtime work cannot silently
+relax or reinterpret the compiler contract.
 
 ## Error Lowering Unwind And Bridge Helper Surface
 
@@ -752,6 +757,7 @@ compiler contract.
   - fixtures:
     - `tests/tooling/fixtures/native/error_out_abi_positive.objc3`
     - `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`
+    - `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`
   - probes:
     - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
 
@@ -796,6 +802,7 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
 - authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3`
+    - `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`
   - probes:
     - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
     - `tests/tooling/runtime/live_error_runtime_integration_probe.cpp`
@@ -803,8 +810,8 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
 This is the authoritative live runtime implementation boundary for the lowered
 throw/catch/status-bridge path. It freezes the observable runtime behavior of
 the real lowered fixture against the private helper ABI so later milestones
-cannot regress executable error propagation while still claiming only source
-surfaces.
+cannot regress executable error propagation while keeping public ABI widening
+and generalized foreign exception/error interop out of scope.
 
 ## Object-Model Realization Source Surface
 
