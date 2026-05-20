@@ -41,6 +41,7 @@
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/runtime/errors/error_bridge.cpp",
+    "scripts/check_error_runtime_closure_semantics_bridge.py",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py",
@@ -66,7 +67,9 @@
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/error_source_closure_positive.objc3",
     "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+    "tests/tooling/fixtures/native/rethrow_in_throws_catch_positive.objc3",
     "tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3",
+    "tests/tooling/fixtures/native/bridge_legality_status_missing_out_negative.objc3",
     "tests/tooling/fixtures/native/error_out_abi_positive.objc3",
     "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
     "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",

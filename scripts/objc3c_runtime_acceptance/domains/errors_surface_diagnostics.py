@@ -41,6 +41,7 @@ def build_runtime_bridging_filter_unwind_diagnostics_surface(
             "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
             "tests/tooling/fixtures/native/bridge_legality_native_fail_closed.objc3",
             "tests/tooling/fixtures/native/bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_status_missing_out_negative.objc3",
             "tests/tooling/fixtures/native/bridge_legality_nserror_bad_return_negative.objc3",
             "tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3",
             "tests/tooling/fixtures/native/bridge_legality_marker_conflict_negative.objc3",
