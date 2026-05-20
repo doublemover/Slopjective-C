@@ -29,6 +29,17 @@ RELEASE_FOUNDATION_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
         "release manifest, sbom, and attestation artifacts stay on checked-in schemas",
     ),
     ReleaseGovernanceActionContract(
+        "check-release-abi-api-drift",
+        "validate release ABI/API drift blockers before public publication",
+        "python:scripts/check_objc3c_release_abi_api_drift.py",
+        "release-foundation",
+        "repo",
+        (
+            "public ABI/API additions, removals, signature drift, helper "
+            "graduation, and compatibility-window drift block release publication"
+        ),
+    ),
+    ReleaseGovernanceActionContract(
         "build-release-manifest",
         "derive the machine-owned release manifest from repeated runnable package assembly runs",
         "python:scripts/build_objc3c_release_manifest.py",

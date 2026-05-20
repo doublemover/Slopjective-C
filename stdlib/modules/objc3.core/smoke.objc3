@@ -1,99 +1,65 @@
 module objc3_core_smoke;
 
+extern fn objc3_runtime_stdlib_core_language_revision_i32() -> i32;
+extern fn objc3_runtime_stdlib_core_profile_revision_i32() -> i32;
+extern fn objc3_runtime_stdlib_core_has_capability_i32(capability: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_option_has_value_i32(flag: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_option_unwrap_or_i32(flag: i32, value: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_map_entry_present_i32(flag: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_map_entry_value_or_i32(flag: i32, value: i32, default_value: i32) -> i32;
+
 fn objc3_core_language_revision() {
-  return 1;
+  return objc3_runtime_stdlib_core_language_revision_i32();
 }
 
 fn objc3_core_profile_revision() {
-  return 1;
+  return objc3_runtime_stdlib_core_profile_revision_i32();
 }
 
 fn objc3_core_has_capability(capability: i32) {
-  if (capability) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return objc3_runtime_stdlib_core_has_capability_i32(capability);
 }
 
 fn objc3_core_option_has_value(flag: i32) {
-  if (flag) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return objc3_runtime_stdlib_core_option_has_value_i32(flag);
 }
 
 fn objc3_core_option_unwrap_or(flag: i32, value: i32, default_value: i32) {
-  if (flag) {
-    return value;
-  } else {
-    return default_value;
-  }
+  return objc3_runtime_stdlib_core_option_unwrap_or_i32(flag, value, default_value);
 }
 
 fn objc3_core_string_view_length(count: i32) {
-  return count;
+  return objc3_runtime_stdlib_core_count_i32(count);
 }
 
 fn objc3_core_string_view_prefix_units(count: i32, requested: i32) {
-  if (requested < 0) {
-    return 0;
-  } else {
-    if (count < requested) {
-      return count;
-    } else {
-      return requested;
-    }
-  }
+  return objc3_runtime_stdlib_core_prefix_count_i32(count, requested);
 }
 
 fn objc3_core_bytes_span_length(count: i32) {
-  return count;
+  return objc3_runtime_stdlib_core_count_i32(count);
 }
 
 fn objc3_core_bytes_span_prefix_length(count: i32, requested: i32) {
-  if (requested < 0) {
-    return 0;
-  } else {
-    if (count < requested) {
-      return count;
-    } else {
-      return requested;
-    }
-  }
+  return objc3_runtime_stdlib_core_prefix_count_i32(count, requested);
 }
 
 fn objc3_core_array_count(count: i32) {
-  return count;
+  return objc3_runtime_stdlib_core_count_i32(count);
 }
 
 fn objc3_core_array_prefix_count(count: i32, requested: i32) {
-  if (requested < 0) {
-    return 0;
-  } else {
-    if (count < requested) {
-      return count;
-    } else {
-      return requested;
-    }
-  }
+  return objc3_runtime_stdlib_core_prefix_count_i32(count, requested);
 }
 
 fn objc3_core_map_entry_present(flag: i32) {
-  if (flag) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return objc3_runtime_stdlib_core_map_entry_present_i32(flag);
 }
 
 fn objc3_core_map_entry_value_or(flag: i32, value: i32, default_value: i32) {
-  if (flag) {
-    return value;
-  } else {
-    return default_value;
-  }
+  return objc3_runtime_stdlib_core_map_entry_value_or_i32(flag, value, default_value);
 }
 
 fn main() {

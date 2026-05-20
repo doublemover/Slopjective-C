@@ -31,6 +31,7 @@ STORAGE_REFLECTION_OWNER_CASE_IDS: tuple[str, ...] = (
     "property-layout",
     "instance-allocation-layout-runtime",
     "property-reflection",
+    "property-ivar-invalid-layout-runtime",
     "property-execution",
     "storage-ownership-reflection",
     "cross-module-storage-reflection-artifact-preservation",

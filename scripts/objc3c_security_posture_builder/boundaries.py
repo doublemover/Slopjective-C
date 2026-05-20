@@ -13,6 +13,8 @@ from .constants import (
     RELEASE_KEY_SUMMARY,
     RESPONSE_SUMMARY,
     RUNTIME_HARDENING_SUMMARY,
+    SANITIZER_VALIDATION_SUMMARY,
+    LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
     SCHEMA_SUMMARY,
     SOURCE_SUMMARY,
     SUPPLY_CHAIN_SUMMARY,
@@ -69,6 +71,18 @@ def build_trust_boundaries(reports: dict[str, dict[str, Any]], trust_report: dic
             "status": boundary_status_from_summary(reports["runtime_hardening"]),
             "source_path": repo_rel(RUNTIME_HARDENING_SUMMARY),
             "detail": "runtime hardening claims stay bounded to passing runtime acceptance and packaged runnable release-candidate evidence",
+        },
+        {
+            "boundary_id": "asan-ubsan-runtime-compiler-validation",
+            "status": boundary_status_from_summary(reports["sanitizer_validation"]),
+            "source_path": repo_rel(SANITIZER_VALIDATION_SUMMARY),
+            "detail": "ASan/UBSan claims stay tied to checked-in native runtime/compiler target application and report surfaces",
+        },
+        {
+            "boundary_id": "language-runtime-threat-model-backlog",
+            "status": boundary_status_from_summary(reports["language_runtime_threat_model"]),
+            "source_path": repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
+            "detail": "language/runtime mitigations stay coherent with macro supply-chain, runtime, compiler, and sanitizer evidence",
         },
         {
             "boundary_id": "distribution-trust-signal",

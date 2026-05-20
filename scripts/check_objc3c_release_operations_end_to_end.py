@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -16,7 +17,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
-UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
 
 
@@ -27,6 +28,14 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-sum
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def write_summary() -> None:
@@ -45,6 +54,11 @@ def write_summary() -> None:
         "upgrade support report contract drifted",
     )
     expect(len(upgrade_support_report.get("revert_guidance", [])) >= 3, "revert guidance drifted")
+    rollback_diagnostics = upgrade_support_report.get("rollback_diagnostics", [])
+    expect(
+        any(entry.get("user_facing_message") for entry in rollback_diagnostics if isinstance(entry, dict)),
+        "rollback diagnostics omitted user-facing messages",
+    )
     expect(len(upgrade_support_report.get("warnings", [])) >= 3, "upgrade warnings drifted")
     fail_closed = upgrade_support_report.get("fail_closed_diagnostics", [])
     expect(
@@ -57,6 +71,11 @@ def write_summary() -> None:
         artifact_rel = stable["artifacts"][artifact_key]
         artifact_path = ROOT / artifact_rel.replace("/", os.sep)
         expect(artifact_path.is_file(), f"missing stable artifact {artifact_rel}")
+    installer_signature = stable["artifacts"].get("installer_signature", {})
+    installer_path = ROOT / stable["artifacts"]["installer_archive"].replace("/", os.sep)
+    expect(installer_signature.get("signature_format") == "objc3c-local-sha256-v1", "stable installer signature format drifted")
+    expect(installer_signature.get("artifact") == stable["artifacts"]["installer_archive"], "stable installer signature artifact drifted")
+    expect(installer_signature.get("sha256") == sha256_file(installer_path), "stable installer signature digest drifted")
 
     summary = {
         "contract_id": "objc3c.release.operations.end-to-end.summary.v1",
@@ -66,6 +85,7 @@ def write_summary() -> None:
         "channels": channel_ids,
         "stable_artifacts": stable["artifacts"],
         "fail_closed_diagnostic_count": len(fail_closed),
+        "rollback_diagnostic_count": len(rollback_diagnostics),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

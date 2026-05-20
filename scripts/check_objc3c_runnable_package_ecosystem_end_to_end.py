@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 from package_ecosystem_contracts import package_ecosystem_owner_payload
 
@@ -29,6 +28,10 @@ REPORT_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "runnable-package
 def expect(condition: bool, message: str, failures: list[str]) -> None:
     if not condition:
         failures.append(message)
+
+
+def packaged_workflow_command(action: str) -> list[str]:
+    return [sys.executable, "-m", "scripts.objc3c_workflow", action]
 
 
 def main() -> int:
@@ -62,12 +65,12 @@ def main() -> int:
     expect(manifest_package_bridge == "objc3c", "package manifest missing objc3c package bridge", failures)
 
     packaged_authoring = run_capture(
-        public_workflow_command("validate-package-authoring"),
+        packaged_workflow_command("validate-package-authoring"),
         cwd=package_root,
     )
     expect(packaged_authoring.returncode == 0, "packaged package authoring workflow failed", failures)
     packaged_mirror = run_capture(
-        public_workflow_command("validate-package-mirror"),
+        packaged_workflow_command("validate-package-mirror"),
         cwd=package_root,
     )
     expect(packaged_mirror.returncode == 0, "packaged package mirror workflow failed", failures)

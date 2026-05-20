@@ -18,6 +18,7 @@ inline void PrintRuntimeInvocationReport(
   std::printf("\"released\":%d,", runtime.released);
   std::printf("\"handle\":%d,", runtime.handle);
   std::printf("\"invoke_result\":%d,", runtime.invoke_result);
+  std::printf("\"stale_invoke_result\":%d,", runtime.stale_invoke_result);
   std::printf("\"retain_handle_result\":%d,", runtime.retain_handle_result);
   std::printf("\"release_handle_result\":%d,", runtime.release_handle_result);
   std::printf("\"final_release_result\":%d,", runtime.final_release_result);
@@ -68,6 +69,25 @@ inline void PrintAbiStatusAndCounterReport(
   std::printf("\"weak_current_property_store_count\":%llu,",
               static_cast<unsigned long long>(
                   abi.weak_current_property_store_count));
+  std::printf("\"last_descriptor_address\":%llu,",
+              static_cast<unsigned long long>(abi.last_descriptor_address));
+  std::printf("\"last_descriptor_invoke_address\":%llu,",
+              static_cast<unsigned long long>(
+                  abi.last_descriptor_invoke_address));
+  std::printf("\"last_descriptor_storage_size_bytes\":%llu,",
+              static_cast<unsigned long long>(
+                  abi.last_descriptor_storage_size_bytes));
+  std::printf("\"last_descriptor_capture_count\":%llu,",
+              static_cast<unsigned long long>(
+                  abi.last_descriptor_capture_count));
+  std::printf("\"last_descriptor_storage_word_count\":%llu,",
+              static_cast<unsigned long long>(
+                  abi.last_descriptor_storage_word_count));
+  std::printf("\"last_descriptor_flags\":%llu,",
+              static_cast<unsigned long long>(abi.last_descriptor_flags));
+  std::printf("\"last_invoke_plan_storage_word_count\":%llu,",
+              static_cast<unsigned long long>(
+                  abi.last_invoke_plan_storage_word_count));
 }
 
 inline void PrintAbiLastValueReport(
@@ -76,6 +96,22 @@ inline void PrintAbiLastValueReport(
               abi.last_promoted_block_handle);
   std::printf("\"last_promote_has_pointer_capture_storage\":%d,",
               abi.last_promote_has_pointer_capture_storage);
+  std::printf("\"last_descriptor_parameter_count\":%d,",
+              abi.last_descriptor_parameter_count);
+  std::printf("\"last_descriptor_has_invoke\":%d,",
+              abi.last_descriptor_has_invoke);
+  std::printf("\"last_descriptor_has_copy_helper\":%d,",
+              abi.last_descriptor_has_copy_helper);
+  std::printf("\"last_descriptor_has_dispose_helper\":%d,",
+              abi.last_descriptor_has_dispose_helper);
+  std::printf("\"last_descriptor_has_pointer_capture_storage\":%d,",
+              abi.last_descriptor_has_pointer_capture_storage);
+  std::printf("\"last_invoke_plan_has_descriptor\":%d,",
+              abi.last_invoke_plan_has_descriptor);
+  std::printf("\"last_invoke_plan_has_invoke\":%d,",
+              abi.last_invoke_plan_has_invoke);
+  std::printf("\"last_invoke_plan_was_runnable\":%d,",
+              abi.last_invoke_plan_was_runnable);
   std::printf("\"last_invoked_block_handle\":%d,",
               abi.last_invoked_block_handle);
   std::printf("\"last_block_invoke_result\":%d,",
@@ -146,6 +182,12 @@ inline void PrintAbiSymbolReport(
       abi.runtime_abi_boundary_model);
   std::printf(",\"block_runtime_model\":");
   ::objc3c::runtime::probe::PrintJsonStringOrNull(abi.block_runtime_model);
+  std::printf(",\"block_descriptor_model\":");
+  ::objc3c::runtime::probe::PrintJsonStringOrNull(
+      abi.block_descriptor_model);
+  std::printf(",\"block_invoke_thunk_model\":");
+  ::objc3c::runtime::probe::PrintJsonStringOrNull(
+      abi.block_invoke_thunk_model);
   std::printf(",\"arc_runtime_model\":");
   ::objc3c::runtime::probe::PrintJsonStringOrNull(abi.arc_runtime_model);
   std::printf(",\"fail_closed_model\":");

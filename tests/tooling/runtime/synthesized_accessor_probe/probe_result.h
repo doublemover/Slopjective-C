@@ -25,6 +25,24 @@ struct MethodCacheEntryObservation {
   std::string owner;
 };
 
+struct PropertyEntryObservation {
+  objc3_runtime_property_entry_snapshot entry{};
+  std::string queried_class;
+  std::string resolved_class;
+  std::string property_name;
+  std::string declaration_owner;
+  std::string export_owner;
+  std::string getter_selector;
+  std::string setter_selector;
+  std::string effective_getter_selector;
+  std::string effective_setter_selector;
+  std::string ivar_binding;
+  std::string synthesized_binding;
+  std::string layout_symbol;
+  std::string getter_owner;
+  std::string setter_owner;
+};
+
 struct AccessorSetup {
   RegistrationStateObservation registration_state;
   SelectorTableStateObservation selector_table_state;
@@ -41,6 +59,9 @@ struct AccessorActions {
 };
 
 struct AccessorAssertions {
+  PropertyEntryObservation count_property;
+  PropertyEntryObservation enabled_property;
+  PropertyEntryObservation value_property;
   MethodCacheEntryObservation count_entry;
   MethodCacheEntryObservation set_count_entry;
   MethodCacheEntryObservation enabled_entry;

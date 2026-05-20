@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -38,7 +39,6 @@ struct RuntimeState {
   std::string fail_closed_ownership_model =
       kObjc3RuntimeFailClosedOwnershipModel;
   bool runtime_owner_split_explicit = true;
-  bool retired_route_path_allowed = false;
   std::uint64_t registered_image_count = 0;
   std::uint64_t registered_descriptor_total = 0;
   std::uint64_t next_expected_registration_order_ordinal = 1;
@@ -79,11 +79,18 @@ struct RuntimeState {
   bool last_keypath_query_found = false;
   bool last_keypath_query_ambiguous = false;
   std::string last_resolved_keypath_profile;
+  std::uint64_t malformed_class_metadata_rejection_count = 0;
+  std::string last_malformed_class_graph_reason;
+  std::string last_malformed_class_graph_metadata_surface;
+  std::string last_malformed_class_graph_target_kind;
+  std::string last_malformed_class_graph_visibility_state;
+  std::string last_malformed_class_graph_availability_state;
   std::unordered_map<MethodCacheKey, MethodCacheEntry, MethodCacheKeyHash>
       method_cache;
   std::uint64_t method_cache_hit_count = 0;
   std::uint64_t method_cache_miss_count = 0;
   std::uint64_t slow_path_lookup_count = 0;
+  std::uint64_t stale_method_cache_entry_count = 0;
   std::uint64_t live_dispatch_count = 0;
   std::uint64_t strict_dispatch_error_count = 0;
   std::uint64_t fast_path_seed_count = 0;
@@ -133,6 +140,11 @@ struct RuntimeState {
   std::uint64_t last_replayed_image_count = 0;
   std::uint64_t reset_generation = 0;
   std::uint64_t replay_generation = 0;
+  std::uint64_t class_graph_generation = 0;
+  std::uint64_t category_attachment_generation = 0;
+  std::uint64_t protocol_declaration_generation = 0;
+  std::uint64_t storage_surface_generation = 0;
+  std::uint64_t method_surface_generation = 0;
   int last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   std::string last_replayed_module_name;
   std::string last_replayed_translation_unit_identity_key;
@@ -160,20 +172,38 @@ struct RuntimeState {
   std::string last_protocol_conformance_protocol_name;
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
+  std::string last_protocol_conformance_matched_class_name;
+  std::string last_protocol_conformance_matched_class_owner_identity;
+  std::string last_protocol_conformance_failure_reason;
+  std::uint64_t last_protocol_conformance_matched_protocol_depth = 0;
+  bool last_protocol_conformance_matched_from_category = false;
+  bool last_protocol_conformance_matched_from_superclass = false;
+  bool last_protocol_conformance_matched_via_inherited_protocol = false;
   bool last_protocol_query_class_found = false;
   bool last_protocol_query_protocol_found = false;
   bool last_protocol_query_conforms = false;
+  bool last_protocol_query_malformed_metadata = false;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
   std::unordered_map<int, RuntimeBlockRecord> runtime_blocks_by_handle;
+  std::unordered_map<RuntimeBlockByrefCell *,
+                     std::weak_ptr<RuntimeBlockByrefCell>>
+      runtime_block_byref_cells_by_heap_address;
   std::unordered_map<int, std::vector<RuntimeWeakSlotRef>>
       weak_slot_refs_by_target_receiver;
   int next_runtime_instance_receiver = 0x100000;
   int next_runtime_block_handle = 0x200000;
+  std::uint64_t next_runtime_block_byref_cell_ordinal = 1;
+  std::uint64_t next_runtime_instance_allocation_ordinal = 1;
+  std::uint64_t next_runtime_instance_initialization_ordinal = 1;
   std::uint64_t live_runtime_instance_count = 0;
   std::uint64_t last_allocated_runtime_instance_receiver = 0;
   std::uint64_t last_allocated_runtime_instance_base_identity = 0;
   std::uint64_t last_allocated_runtime_instance_size_bytes = 0;
+  std::uint64_t last_allocated_runtime_instance_allocation_ordinal = 0;
+  std::uint64_t last_initialized_runtime_instance_receiver = 0;
+  std::uint64_t last_initialized_runtime_instance_initialization_ordinal = 0;
   std::string last_allocated_runtime_instance_class_name;
+  std::string last_runtime_instance_lifecycle_failure_reason;
   std::string last_queried_property_class_name;
   std::string last_queried_property_name;
   std::string last_reflected_property_class_name;

@@ -245,6 +245,12 @@ class Objc3IRCanonicalLiteralPoolCollector {
              .runtime_metadata_class_metaclass_bundles_lexicographic) {
       RegisterRuntimeStringLiteral(bundle.class_name);
       RegisterRuntimeStringLiteral(bundle.owner_identity);
+      if (bundle.has_super &&
+          objc3c::support::StartsWith(bundle.super_class_owner_identity,
+                                      "class:")) {
+        RegisterRuntimeStringLiteral(
+            bundle.super_class_owner_identity.substr(6));
+      }
     }
     for (const auto &bundle :
          frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic) {

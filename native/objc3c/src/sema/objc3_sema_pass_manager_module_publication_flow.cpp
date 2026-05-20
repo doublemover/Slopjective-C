@@ -181,6 +181,11 @@ BuildObjc3SemaModuleSemanticParityPublicationReadinessRecord(
               .cache_invalidation_candidate_sites <=
           surface.incremental_module_cache_invalidation_summary
               .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary.normalized_sites +
+              surface.incremental_module_cache_invalidation_summary
+                  .cache_invalidation_candidate_sites ==
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
       surface.incremental_module_cache_invalidation_summary
               .contract_violation_sites <=
           surface.incremental_module_cache_invalidation_summary

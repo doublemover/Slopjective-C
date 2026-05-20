@@ -4,7 +4,7 @@ import subprocess
 from dataclasses import dataclass
 from typing import Any
 
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.paths import ROOT, display_path
 
 from objc3c_editor_tooling.paths import EditorToolingPaths
@@ -54,6 +54,80 @@ def run_frontend_compile(paths: EditorToolingPaths) -> CompileInvocationResult:
         stderr=result.stderr,
         summary_available=paths.compile_summary.is_file(),
     )
+
+
+def _diagnostics_path(paths: EditorToolingPaths) -> Path:
+    return paths.artifact_dir / "module.diagnostics.json"
+
+
+def publish_diagnostics_only_summary(
+    paths: EditorToolingPaths,
+    result: CompileInvocationResult,
+) -> bool:
+    diagnostics_path = _diagnostics_path(paths)
+    if not diagnostics_path.is_file():
+        return False
+
+    diagnostics = load_json(diagnostics_path)
+    entries = diagnostics.get("diagnostics", [])
+    if not isinstance(entries, list):
+        entries = []
+    summary = {
+        "mode": "objc3c-frontend-c-api-runner-v1",
+        "input_path": paths.source.display_path,
+        "out_dir": display_path(paths.artifact_dir),
+        "emit_prefix": "module",
+        "status": result.returncode,
+        "process_exit_code": result.returncode,
+        "success": False,
+        "semantic_skipped": False,
+        "paths": {
+            "summary": display_path(paths.compile_summary),
+            "diagnostics": display_path(diagnostics_path),
+            "manifest": "",
+            "ir": "",
+            "object": "",
+            "runtime_metadata_binary": "",
+        },
+        "last_error": "",
+        "result_error_message": "",
+        "result_error_message_present": False,
+        "observability": {
+            "status_name": "diagnostics",
+            "last_attempted_stage": "sema",
+            "blocking_stage": "sema",
+            "highest_diagnostic_severity": "error" if entries else "unknown",
+            "result_error_message_present": False,
+            "diagnostics_total": len(entries),
+            "diagnostics_notes": sum(1 for entry in entries if entry.get("severity") == "note"),
+            "diagnostics_warnings": sum(1 for entry in entries if entry.get("severity") == "warning"),
+            "diagnostics_errors": sum(1 for entry in entries if entry.get("severity") == "error"),
+            "diagnostics_fatals": sum(1 for entry in entries if entry.get("severity") == "fatal"),
+            "artifact_presence": {
+                "summary": True,
+                "diagnostics": True,
+                "manifest": False,
+                "ir": False,
+                "object": False,
+                "runtime_metadata_binary": False,
+            },
+            "dump_commands": {
+                "summary": f"Get-Content -Raw '{display_path(paths.compile_summary)}'",
+                "diagnostics": f"Get-Content -Raw '{display_path(diagnostics_path)}'",
+                "manifest": "",
+                "ir": "",
+                "object": "",
+            },
+        },
+        "runtime_inspector": {
+            "contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
+            "available": False,
+            "dump_commands": {},
+            "availability_reason": "compile diagnostics prevented object artifact emission",
+        },
+    }
+    write_json_file(paths.compile_summary, summary)
+    return True
 
 
 def load_editor_tooling_inputs(paths: EditorToolingPaths) -> EditorToolingInputs:

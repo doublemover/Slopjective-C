@@ -34,6 +34,22 @@ BuildConcurrencyActorMailboxRuntimeImportSummary(
   summary.source_model = kObjc3ConcurrencyActorMailboxRuntimeImportSourceModel;
   summary.fail_closed_model =
       kObjc3ConcurrencyActorMailboxRuntimeImportFailClosedModel;
+  summary.actor_interface_sites = actor_contract.actor_interface_sites;
+  summary.actor_method_sites = actor_contract.actor_method_sites;
+  summary.actor_metadata_record_sites =
+      actor_contract.actor_metadata_record_sites;
+  summary.nonisolated_entry_sites = actor_contract.nonisolated_entry_sites;
+  summary.executor_affinity_sites = actor_contract.executor_affinity_sites;
+  summary.actor_hop_artifact_sites = actor_contract.actor_hop_artifact_sites;
+  summary.actor_isolation_thunk_sites =
+      actor_contract.actor_isolation_thunk_sites;
+  summary.replay_proof_dependency_sites =
+      actor_contract.replay_proof_dependency_sites;
+  summary.race_guard_dependency_sites =
+      actor_contract.race_guard_dependency_sites;
+  summary.task_handoff_sites = actor_contract.task_handoff_sites;
+  summary.guard_blocked_sites = actor_contract.guard_blocked_sites;
+  summary.contract_violation_sites = actor_contract.contract_violation_sites;
   summary.actor_lowering_replay_key = actor_lowering_replay_key;
   summary.actor_isolation_lowering_replay_key =
       actor_isolation_lowering_replay_key;
@@ -48,6 +64,24 @@ BuildConcurrencyActorMailboxRuntimeImportSummary(
   std::ostringstream replay_key;
   replay_key << summary.contract_id
              << ";source_contract_id=" << summary.source_contract_id
+             << ";actor_interface_sites=" << summary.actor_interface_sites
+             << ";actor_method_sites=" << summary.actor_method_sites
+             << ";actor_metadata_record_sites="
+             << summary.actor_metadata_record_sites
+             << ";nonisolated_entry_sites=" << summary.nonisolated_entry_sites
+             << ";executor_affinity_sites=" << summary.executor_affinity_sites
+             << ";actor_hop_artifact_sites="
+             << summary.actor_hop_artifact_sites
+             << ";actor_isolation_thunk_sites="
+             << summary.actor_isolation_thunk_sites
+             << ";replay_proof_dependency_sites="
+             << summary.replay_proof_dependency_sites
+             << ";race_guard_dependency_sites="
+             << summary.race_guard_dependency_sites
+             << ";task_handoff_sites=" << summary.task_handoff_sites
+             << ";guard_blocked_sites=" << summary.guard_blocked_sites
+             << ";contract_violation_sites="
+             << summary.contract_violation_sites
              << ";actor_mailbox_runtime_ready="
              << (summary.actor_mailbox_runtime_ready ? "true" : "false")
              << ";deterministic=" << (summary.deterministic ? "true" : "false")
@@ -69,7 +103,24 @@ std::string BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
       << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
       << "\",\"fail_closed_model\":\""
       << EscapeJsonString(summary.fail_closed_model)
-      << "\",\"actor_mailbox_runtime_ready\":"
+      << "\",\"actor_interface_sites\":" << summary.actor_interface_sites
+      << ",\"actor_method_sites\":" << summary.actor_method_sites
+      << ",\"actor_metadata_record_sites\":"
+      << summary.actor_metadata_record_sites
+      << ",\"nonisolated_entry_sites\":" << summary.nonisolated_entry_sites
+      << ",\"executor_affinity_sites\":" << summary.executor_affinity_sites
+      << ",\"actor_hop_artifact_sites\":" << summary.actor_hop_artifact_sites
+      << ",\"actor_isolation_thunk_sites\":"
+      << summary.actor_isolation_thunk_sites
+      << ",\"replay_proof_dependency_sites\":"
+      << summary.replay_proof_dependency_sites
+      << ",\"race_guard_dependency_sites\":"
+      << summary.race_guard_dependency_sites
+      << ",\"task_handoff_sites\":" << summary.task_handoff_sites
+      << ",\"guard_blocked_sites\":" << summary.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << summary.contract_violation_sites
+      << ",\"actor_mailbox_runtime_ready\":"
       << (summary.actor_mailbox_runtime_ready ? "true" : "false")
       << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
       << ",\"actor_lowering_replay_key\":\""

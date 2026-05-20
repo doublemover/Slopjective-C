@@ -6,8 +6,10 @@ from .release_governance_security_names import (
     BUILD_SECURITY_POSTURE,
     CHECK_SECURITY_HARDENING_SCHEMA_SURFACE,
     CHECK_SECURITY_HARDENING_SURFACE,
+    CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
     CHECK_SECURITY_RESPONSE_DRILL,
     CHECK_SECURITY_RUNTIME_HARDENING,
+    CHECK_SECURITY_SANITIZER_VALIDATION,
     PUBLISH_SECURITY_ADVISORIES,
     VALIDATE_SECURITY_HARDENING,
     VALIDATE_SECURITY_HARDENING_END_TO_END,
@@ -19,6 +21,7 @@ SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS = (
     "response_drill_owner",
     "runtime_hardening_owner",
     "installer_update_key_owner",
+    "language_runtime_threat_model_owner",
 )
 
 SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContract] = {
@@ -71,6 +74,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
         claim_authority="runtime acceptance and runnable release-candidate evidence",
         required_actions=(
             CHECK_SECURITY_RUNTIME_HARDENING,
+            CHECK_SECURITY_SANITIZER_VALIDATION,
             VALIDATE_SECURITY_HARDENING,
         ),
         forbidden_claims=(
@@ -103,6 +107,28 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
             "signed-installer trust",
             "retired route update trust",
             "trust bypass for unsigned payload",
+        ),
+    ),
+    "language_runtime_threat_model_owner": SecurityHardeningOwnerContract(
+        owner_id="language_runtime_threat_model_owner",
+        owner="security-hardening-language-runtime-threat-model",
+        source_contract=(
+            "tests/tooling/fixtures/security_hardening/"
+            "language_runtime_threat_model_backlog.json"
+        ),
+        claim_authority=(
+            "checked-in language/runtime threat model, macro supply-chain, "
+            "runtime hardening, and sanitizer validation evidence"
+        ),
+        required_actions=(
+            CHECK_SECURITY_SANITIZER_VALIDATION,
+            CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
+        ),
+        forbidden_claims=(
+            "support claim without checked-in source truth",
+            "macro supply-chain claim without trust-registry evidence",
+            "runtime memory-safety claim without sanitizer contract evidence",
+            "compiler sanitizer claim without target application evidence",
         ),
     ),
 }

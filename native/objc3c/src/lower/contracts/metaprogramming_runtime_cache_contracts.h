@@ -49,7 +49,16 @@ inline constexpr const char
         "frontend-runner-executes-with-manifest-enabled-and-ir-object-emission-disabled-for-deterministic-cache-materialization";
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel =
-        "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-and-reused-on-subsequent-runs";
+        "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-explicit-macro-cache-keys-and-policy-version-and-reused-on-subsequent-runs";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationInvalidationModel =
+        "metaprogramming-replay-key-explicit-macro-cache-key-or-sandbox-policy-drift-invalidates-the-entry-while-corrupt-or-incomplete-cache-artifacts-fail-closed";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSandboxPolicyModel =
+        "macro-host-materialization-is-deny-by-default-and-only-admits-pure-free-functions-with-objc_macro_sandbox-named-deterministic";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationDiagnosticsModel =
+        "stable-O3S331-and-O3S332-diagnostics-gate-missing-or-invalid-macro-cache-key-and-sandbox-policy-metadata";
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";

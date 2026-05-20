@@ -13,6 +13,10 @@ bool BlockLiteralUsesPointerCaptureStorage(const Expr &expr) {
          expr.block_runtime_dispose_helper_required;
 }
 
+std::string BuildBlockDescriptorType() {
+  return "{ i64, i64, i32, i32, i32, ptr }";
+}
+
 std::string BuildBlockStorageType(const Expr &expr) {
   std::ostringstream out;
   if (!BlockLiteralUsesPointerCaptureStorage(expr)) {
@@ -29,10 +33,30 @@ std::string BuildBlockStorageType(const Expr &expr) {
   return out.str();
 }
 
+std::string BuildBlockDescriptorSymbol(const Expr &expr) {
+  return expr.block_abi_descriptor_symbol.empty()
+             ? std::string("objc3_block_descriptor_missing_symbol")
+             : expr.block_abi_descriptor_symbol;
+}
+
 std::string BuildBlockInvokeSymbol(const Expr &expr) {
   return expr.block_invoke_trampoline_symbol.empty()
              ? std::string("objc3_block_invoke_missing_symbol")
              : expr.block_invoke_trampoline_symbol;
+}
+
+std::uint32_t BuildBlockDescriptorFlags(const Expr &expr) {
+  std::uint32_t flags = 0u;
+  if (BlockLiteralUsesPointerCaptureStorage(expr)) {
+    flags |= 1u << 0u;
+  }
+  if (expr.block_runtime_copy_helper_required) {
+    flags |= 1u << 1u;
+  }
+  if (expr.block_runtime_dispose_helper_required) {
+    flags |= 1u << 2u;
+  }
+  return flags;
 }
 
 bool BlockLiteralRequiresEscapingRuntimeHooks(const Expr &expr) {

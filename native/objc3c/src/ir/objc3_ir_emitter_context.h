@@ -22,10 +22,19 @@ struct LoweredMessageSend {
   std::vector<std::string> args;
   std::size_t explicit_arg_count = 0;
   std::string selector;
+  std::string method_family_name;
+  bool method_family_returns_retained_result = false;
+  bool method_family_returns_related_result = false;
   std::string dispatch_surface_family;
   std::string dispatch_surface_entrypoint_family;
   std::string dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+  ValueType runtime_return_type = ValueType::I32;
+  bool uses_from_class_dispatch = false;
+  std::string lookup_start_class_name;
+  std::string lookup_start_class_ptr;
   std::string direct_call_symbol;
+  ValueType direct_call_return_type = ValueType::I32;
+  std::vector<ValueType> direct_call_param_types;
 };
 
 struct ControlLabels {
@@ -69,6 +78,16 @@ struct PendingOwnershipCleanupCall {
   bool active = true;
 };
 
+enum class PendingScopeCleanupActionKind {
+  Defer,
+  Ownership,
+};
+
+struct PendingScopeCleanupAction {
+  PendingScopeCleanupActionKind kind = PendingScopeCleanupActionKind::Defer;
+  std::size_t index = 0;
+};
+
 struct FunctionContext {
   std::vector<std::string> entry_lines;
   std::vector<std::string> code_lines;
@@ -79,6 +98,8 @@ struct FunctionContext {
   std::vector<ControlLabels> control_stack;
   std::vector<std::string> autoreleasepool_scope_symbols;
   std::vector<std::vector<const BlockStmt *>> pending_defer_scope_blocks;
+  std::vector<std::vector<PendingScopeCleanupAction>>
+      pending_scope_cleanup_actions;
   std::vector<std::size_t> pending_block_dispose_scope_depths;
   std::vector<std::size_t> pending_ownership_cleanup_scope_depths;
   std::vector<std::size_t> arc_cleanup_scope_depths;
@@ -89,6 +110,8 @@ struct FunctionContext {
   std::vector<std::string> arc_owned_cleanup_ptrs;
   std::unordered_set<std::string> arc_owned_cleanup_ptr_set;
   std::unordered_set<std::string> arc_owned_storage_ptrs;
+  std::unordered_map<std::string, std::string>
+      arc_method_family_cleanup_ptr_by_value;
   std::unordered_map<std::string, std::size_t> ownership_cleanup_call_indices;
   struct ErrorHandlerFrame {
     std::string error_slot_ptr;
@@ -116,4 +139,6 @@ struct FunctionContext {
   bool global_proofs_invalidated = false;
   bool arc_return_insert_retain = false;
   bool arc_return_insert_autorelease = false;
+  bool return_await_cleanup_before_handoff_enabled = false;
+  bool return_await_cleanup_before_handoff_emitted = false;
 };

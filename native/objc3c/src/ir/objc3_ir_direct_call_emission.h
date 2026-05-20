@@ -18,6 +18,8 @@ struct Objc3IRDirectCallEmissionCallbacks {
       coerce_value_to_i32;
   std::function<bool(const std::string &function_name)>
       function_may_have_global_side_effects;
+  std::function<std::string(const std::string &reason)>
+      emit_unsupported_i32_value;
   std::function<bool(const Expr *expr, FunctionContext &ctx,
                      std::string &result_out)>
       try_emit_concurrency_actor_lowering_call;
@@ -25,6 +27,8 @@ struct Objc3IRDirectCallEmissionCallbacks {
                      std::string &result_out)>
       try_emit_concurrency_task_runtime_lowering_call;
   std::function<void(FunctionContext &ctx)> invalidate_global_proof_state;
+  std::function<void(FunctionContext &ctx)>
+      emit_return_await_cleanup_before_handoff;
   std::function<const LoweredFunctionSignature *(const std::string &name)>
       lookup_function_signature;
 };

@@ -21,9 +21,12 @@
       "surface": "tests/tooling/fixtures/native/execution/positive",
       "selectors": [
         "*runtime_dispatch*.meta.json",
+        "execution.requires_live_runtime_dispatch=true",
+        "direct_synthesized_bool_property_accessors.meta.json",
+        "typed_super_bool_dispatch.meta.json",
         "registration_reset_replay_runtime_entrypoints.*"
       ],
-      "disposition": "live dispatch positives must name objc3_runtime_dispatch_i32 and require live runtime dispatch"
+      "disposition": "live dispatch positives must name allowed runtime dispatch symbols and require live runtime dispatch"
     },
     {
       "surface": "tests/tooling/fixtures/native/execution/negative",
@@ -36,6 +39,9 @@
   ],
   "canonical_evidence": [
     "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
     "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
     "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
     "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",

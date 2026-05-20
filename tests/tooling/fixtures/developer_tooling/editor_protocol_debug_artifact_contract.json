@@ -12,6 +12,7 @@
     "tmp/reports/developer-tooling/editor-surface/editor-surface.json",
     "tmp/reports/developer-tooling/editor-surface/language-server-capabilities.json",
     "tmp/reports/developer-tooling/editor-surface/navigation-index.json",
+    "tmp/reports/developer-tooling/editor-surface/workspace-index.json",
     "tmp/reports/developer-tooling/editor-surface/formatter-output.json",
     "tmp/reports/developer-tooling/editor-surface/debug-map.json"
   ],
@@ -25,6 +26,7 @@
     "diagnostics",
     "language_server",
     "navigation",
+    "workspace_index",
     "formatter",
     "debug"
   ],

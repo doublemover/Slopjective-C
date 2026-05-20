@@ -74,4 +74,27 @@ bool RuntimeMethodReturnKindIsDispatchResultSupported(
   return false;
 }
 
+objc3_runtime_dispatch_return_kind_code RuntimeMethodReturnKindDispatchAbiCode(
+    RuntimeMethodReturnKind return_kind) {
+  switch (return_kind) {
+    case RuntimeMethodReturnKind::Int32:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32;
+    case RuntimeMethodReturnKind::Bool:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL;
+    case RuntimeMethodReturnKind::Void:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_VOID;
+    case RuntimeMethodReturnKind::ObjectReference:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_OBJECT_REFERENCE;
+    case RuntimeMethodReturnKind::ClassReference:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_CLASS_REFERENCE;
+    case RuntimeMethodReturnKind::SelectorReference:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_SELECTOR_REFERENCE;
+    case RuntimeMethodReturnKind::ProtocolReference:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_PROTOCOL_REFERENCE;
+    case RuntimeMethodReturnKind::Unsupported:
+      return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED;
+  }
+  return OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED;
+}
+
 }  // namespace objc3c::runtime

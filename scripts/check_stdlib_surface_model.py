@@ -35,6 +35,7 @@ class StdlibSurfacePaths:
     core_architecture: Path
     advanced_architecture: Path
     semantic_policy: Path
+    compatibility_gates: Path
     lowering_import_surface: Path
     advanced_helper_package_surface: Path
     program_surface: Path
@@ -53,6 +54,7 @@ class StdlibSurfacePaths:
             core_architecture=root / "stdlib" / "core_architecture.json",
             advanced_architecture=root / "stdlib" / "advanced_architecture.json",
             semantic_policy=root / "stdlib" / "semantic_policy.json",
+            compatibility_gates=root / "stdlib" / "compatibility_gates.json",
             lowering_import_surface=root / "stdlib" / "lowering_import_surface.json",
             advanced_helper_package_surface=root / "stdlib" / "advanced_helper_package_surface.json",
             program_surface=root / "stdlib" / "program_surface.json",
@@ -69,6 +71,7 @@ class StdlibSurfacePaths:
             SurfaceInput(self.core_architecture, "missing core architecture contract"),
             SurfaceInput(self.advanced_architecture, "missing advanced architecture contract"),
             SurfaceInput(self.semantic_policy, "missing semantic policy contract"),
+            SurfaceInput(self.compatibility_gates, "missing compatibility gate contract"),
             SurfaceInput(self.lowering_import_surface, "missing lowering/import surface contract"),
             SurfaceInput(
                 self.advanced_helper_package_surface,
@@ -88,6 +91,7 @@ class StdlibSurfaceDocuments:
     core_architecture: JsonObject
     advanced_architecture: JsonObject
     semantic_policy: JsonObject
+    compatibility_gates: JsonObject
     lowering_import_surface: JsonObject
     advanced_helper_package_surface: JsonObject
     program_surface: JsonObject
@@ -103,6 +107,7 @@ class StdlibSurfaceDocuments:
             core_architecture=load_json(paths.core_architecture),
             advanced_architecture=load_json(paths.advanced_architecture),
             semantic_policy=load_json(paths.semantic_policy),
+            compatibility_gates=load_json(paths.compatibility_gates),
             lowering_import_surface=load_json(paths.lowering_import_surface),
             advanced_helper_package_surface=load_json(paths.advanced_helper_package_surface),
             program_surface=load_json(paths.program_surface),
@@ -173,6 +178,7 @@ class StdlibSurfaceReport:
     required_exports: Any
     advanced_required_exports: Any
     module_semver: Any
+    compatibility_gates: Any
     artifact_filenames: Any
     advanced_helper_modules: Any
     capability_demo_examples: Any
@@ -189,6 +195,7 @@ class StdlibSurfaceReport:
             "core_architecture": repo_rel(self.paths.core_architecture),
             "advanced_architecture": repo_rel(self.paths.advanced_architecture),
             "semantic_policy": repo_rel(self.paths.semantic_policy),
+            "compatibility_gates": repo_rel(self.paths.compatibility_gates),
             "lowering_import_surface": repo_rel(self.paths.lowering_import_surface),
             "advanced_helper_package_surface": repo_rel(self.paths.advanced_helper_package_surface),
             "program_surface": repo_rel(self.paths.program_surface),
@@ -204,6 +211,7 @@ class StdlibSurfaceReport:
             "required_exports": self.required_exports,
             "advanced_required_exports": self.advanced_required_exports,
             "module_semver": self.module_semver,
+            "compatibility_gates_summary": self.compatibility_gates,
             "artifact_filenames": self.artifact_filenames,
             "advanced_helper_modules": self.advanced_helper_modules,
             "capability_demo_examples": self.capability_demo_examples,

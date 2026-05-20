@@ -15,6 +15,7 @@ from .external_validation_owner_contracts import (
     external_validation_owner_contract,
 )
 from .external_validation_targets import (
+    EXTERNAL_VALIDATION_CLAIM_GATE_PY,
     EXTERNAL_VALIDATION_INTEGRATION_PY,
     EXTERNAL_VALIDATION_PUBLICATION_PY,
     EXTERNAL_VALIDATION_REPLAY_PY,
@@ -36,6 +37,10 @@ def action_publish_external_repro_corpus(_: list[str]) -> int:
     return run_external_validation_target("publish-external-repro-corpus")
 
 
+def action_check_external_support_claim_gate(_: list[str]) -> int:
+    return run_external_validation_target("check-external-support-claim-gate")
+
+
 def action_validate_external_validation(_: list[str]) -> int:
     return run_validate_external_validation()
 
@@ -47,6 +52,7 @@ def action_validate_external_validation_integration(_: list[str]) -> int:
 __all__ = [
     "EXTERNAL_VALIDATION_OWNER_CONTRACT",
     "EXTERNAL_VALIDATION_OWNER_CONTRACT_ID",
+    "EXTERNAL_VALIDATION_CLAIM_GATE_PY",
     "EXTERNAL_VALIDATION_INTEGRATION_PY",
     "EXTERNAL_VALIDATION_PUBLICATION_PY",
     "EXTERNAL_VALIDATION_REPLAY_PY",
@@ -54,6 +60,7 @@ __all__ = [
     "EXTERNAL_VALIDATION_TARGETS",
     "ExternalValidationOwnerContract",
     "ExternalValidationTarget",
+    "action_check_external_support_claim_gate",
     "action_check_external_validation_surface",
     "action_publish_external_repro_corpus",
     "action_test_external_validation_replay",

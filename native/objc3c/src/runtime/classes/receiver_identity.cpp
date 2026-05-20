@@ -27,6 +27,14 @@ std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal) {
          static_cast<std::uint64_t>(ordinal) * kReceiverIdentityStride;
 }
 
+std::uint64_t BuildInstanceReceiverIdentity(std::uint64_t base_identity) {
+  return base_identity + 1u;
+}
+
+std::uint64_t BuildClassReceiverIdentity(std::uint64_t base_identity) {
+  return base_identity + 2u;
+}
+
 bool IsRuntimeReceiverBaseIdentity(std::uint64_t base_identity) {
   return base_identity >= kReceiverIdentityBase &&
          ((base_identity - kReceiverIdentityBase) %
@@ -45,7 +53,10 @@ bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
   if (runtime_instance_it != state.runtime_instances_by_receiver.end()) {
     base_identity = runtime_instance_it->second.base_identity;
     family = DispatchFamily::Instance;
-    normalized_receiver_identity = base_identity + 1u;
+    normalized_receiver_identity =
+        runtime_instance_it->second.normalized_receiver_identity != 0u
+            ? runtime_instance_it->second.normalized_receiver_identity
+            : BuildInstanceReceiverIdentity(base_identity);
     return true;
   }
   const std::int64_t signed_receiver = receiver;
@@ -69,11 +80,12 @@ bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
     case 0:
     case 2:
       family = DispatchFamily::Class;
-      normalized_receiver_identity = base_identity + 2u;
+      normalized_receiver_identity = BuildClassReceiverIdentity(base_identity);
       return true;
     case 1:
       family = DispatchFamily::Instance;
-      normalized_receiver_identity = base_identity + 1u;
+      normalized_receiver_identity =
+          BuildInstanceReceiverIdentity(base_identity);
       return true;
     default:
       return false;

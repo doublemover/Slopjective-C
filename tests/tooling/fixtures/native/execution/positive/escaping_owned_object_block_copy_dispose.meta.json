@@ -1,0 +1,8 @@
+{
+  "fixture": "escaping_owned_object_block_copy_dispose.objc3",
+  "execution": {
+    "native_compile_args": [
+      "-fobjc-arc"
+    ]
+  }
+}

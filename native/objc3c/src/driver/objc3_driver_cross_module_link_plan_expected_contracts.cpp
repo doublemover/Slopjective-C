@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast.h"
 #include "io/objc3_manifest_artifacts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
 #include "lower/objc3_lowering_contract.h"
 
 void PopulateObjc3DriverCrossModuleRuntimeLinkPlanExpectedContracts(
@@ -58,6 +59,12 @@ void PopulateObjc3DriverCrossModuleRuntimeLinkPlanExpectedContracts(
   link_plan_inputs
       .expected_block_ownership_runtime_support_library_link_wiring_contract_id =
       kObjc3RuntimeSupportLibraryLinkWiringContractId;
+  link_plan_inputs
+      .expected_block_ownership_retain_release_operation_lowering_contract_id =
+      kObjc3RetainReleaseOperationLoweringLaneContract;
+  link_plan_inputs
+      .expected_block_ownership_autoreleasepool_scope_lowering_contract_id =
+      kObjc3AutoreleasePoolScopeLoweringLaneContract;
   link_plan_inputs.expected_storage_reflection_contract_id =
       kObjc3RuntimeStorageReflectionArtifactPreservationContractId;
   link_plan_inputs.expected_storage_reflection_source_contract_id =

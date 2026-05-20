@@ -8,8 +8,10 @@ from typing import Any
 
 from .assertions import expect
 from .constants import (
+    DIAGNOSTIC_QUALITY_SUMMARY_PATH,
     EDITOR_SURFACE_PATH,
     FORMATTER_DEBUG_SUMMARY_PATH,
+    FORMATTER_REWRITE_SUMMARY_PATH,
     PUBLIC_WORKFLOW_REPORT_ROOT,
     ROOT,
     WORKSPACE_INTEGRATION_SUMMARY_PATH,
@@ -23,6 +25,8 @@ REPORT_PATHS = {
     "compile_stage_trace": PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json",
     "editor_surface": EDITOR_SURFACE_PATH,
     "formatter_debug_summary": FORMATTER_DEBUG_SUMMARY_PATH,
+    "formatter_rewrite_summary": FORMATTER_REWRITE_SUMMARY_PATH,
+    "diagnostic_quality_summary": DIAGNOSTIC_QUALITY_SUMMARY_PATH,
     "workspace_integration_summary": WORKSPACE_INTEGRATION_SUMMARY_PATH,
 }
 

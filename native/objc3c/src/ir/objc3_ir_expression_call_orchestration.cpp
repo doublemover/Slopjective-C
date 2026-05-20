@@ -7,6 +7,7 @@
 #include "ir/objc3_ir_direct_call_emission.h"
 #include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
+#include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_message_send_emission.h"
 
 namespace {
@@ -63,6 +64,7 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
                 function_name, options.defined_functions,
                 options.declared_pure_functions, options.impure_functions);
           },
+          options.services.emit_unsupported_i32_value,
           [&options](const Expr *call_expr, FunctionContext &callback_ctx,
                      std::string &result_out) {
             return TryEmitObjc3IRExpressionCallConcurrencyActorLoweringCall(
@@ -74,6 +76,11 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
                 call_expr, callback_ctx, options, result_out);
           },
           options.services.invalidate_global_proof_state,
+          [&options](FunctionContext &callback_ctx) {
+            EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
+                callback_ctx, 0u, 0u, 0u, 0u, 0u,
+                options.services.build_function_local_flow_context());
+          },
           options.services.lookup_function_signature},
       throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
 }
@@ -85,16 +92,22 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
       expr, ctx,
       Objc3IRMessageSendEmissionOptions{
           options.selector_pool_globals,
+          options.runtime_string_pool_globals,
           options.class_receiver_constants,
           options.direct_dispatch_symbols_by_key,
+          options.direct_dispatch_signatures_by_key,
+          options.runtime_dispatch_return_types_by_key,
+          options.runtime_dispatch_superclass_by_name,
           options.runtime_dispatch_arg_slots,
           options.runtime_dispatch_symbol,
-          options.runtime_dispatch_call_state},
+          options.runtime_dispatch_call_state,
+          options.arc_mode_enabled},
       Objc3IRMessageSendEmissionCallbacks{
           [&options](const Expr *arg_expr, FunctionContext &callback_ctx) {
             return EmitObjc3IRExpressionCallImpl(arg_expr, callback_ctx,
                                                  options);
           },
+          options.services.emit_identifier_value,
           options.services.new_temp,
           options.services.new_label,
           [&options](const Expr *receiver_expr,
@@ -154,6 +167,7 @@ std::string EmitObjc3IRExpressionCallImpl(
                 bridge_failed_out, bridge_error_value_out, options);
           },
           BuildObjc3IRThrowsErrorSlotAlloca,
+          EmitObjc3IRLoadThrownError,
           [&options](const std::string &error_value,
                      FunctionContext &callback_ctx) {
             EmitObjc3IRPropagateThrownError(

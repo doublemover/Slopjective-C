@@ -22,10 +22,10 @@ METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "schema_surface.json"
 
 PLATFORM_SUPPORT_MATRIX_ARTIFACT = (
-    ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
+    ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-matrix.json"
 )
 PLATFORM_SUPPORT_MATRIX_SUMMARY = (
-    ROOT / "tmp" / "reports" / "platform-hardening" / "platform-support-matrix-summary.json"
+    ROOT / "tmp" / "reports" / "platform-hardening" / "platform-matrix-summary.json"
 )
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "package-channels"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"

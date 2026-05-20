@@ -29,6 +29,7 @@ struct ConformanceQueryStorage {
   std::string protocol;
   std::string protocol_owner;
   std::string attachment_owner;
+  std::string failure_reason;
 };
 
 struct ProbeReportStorage {
@@ -73,7 +74,7 @@ inline void StabilizeConformanceQuerySnapshot(
     ConformanceQueryStorage &storage) {
   ::objc3c::runtime::probe::StabilizeConformanceQuery(
       query, storage.class_name, storage.protocol, storage.protocol_owner,
-      storage.attachment_owner);
+      storage.attachment_owner, nullptr, nullptr, &storage.failure_reason);
 }
 
 inline void StabilizeMethodCacheStateSnapshot(

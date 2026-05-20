@@ -54,20 +54,20 @@ bool TryResolveMethodFromRealizedClassChainUnlocked(
     const EmittedClassRecord &record =
         family == DispatchFamily::Class ? bundle->metaclass_record
                                         : bundle->class_record;
-    if (!TryResolveMethodFromMethodListRefUnlocked(
-            state, record.method_list_ref, record.class_name, family,
-            normalized_receiver_identity, selector_stable_id, selector_spelling,
-            resolution, ambiguous)) {
+    if (!TryResolveMethodFromAttachedCategoriesUnlocked(
+            state, *node, family, normalized_receiver_identity,
+            selector_stable_id, selector_spelling, resolution, ambiguous,
+            category_probe_count, protocol_probe_count)) {
       return false;
     }
     if (ambiguous || resolution.resolved ||
         HasTerminalStrictDispatchError(resolution)) {
       return true;
     }
-    if (!TryResolveMethodFromAttachedCategoriesUnlocked(
-            state, *node, family, normalized_receiver_identity,
-            selector_stable_id, selector_spelling, resolution, ambiguous,
-            category_probe_count, protocol_probe_count)) {
+    if (!TryResolveMethodFromMethodListRefUnlocked(
+            state, record.method_list_ref, record.class_name, family,
+            normalized_receiver_identity, selector_stable_id, selector_spelling,
+            resolution, ambiguous)) {
       return false;
     }
     if (ambiguous || resolution.resolved ||

@@ -1,0 +1,5 @@
+module DispatchB003Protocol;
+
+@protocol P
+- (i32)shared __attribute__((objc_direct));
+@end

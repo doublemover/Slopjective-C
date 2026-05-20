@@ -5,7 +5,7 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3RuntimeBackedSemanticsClosureSummary",
+    "native/objc3c/src/lower/contracts/block_runtime_lowering_semantics_closure_summary.inc::Objc3RuntimeBackedSemanticsClosureSummary",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp::Objc3IREmitter",
     "native/objc3c/src/sema/objc3_sema_pass_manager.cpp::SemaPassManager::Run",
     "native/objc3c/src/runtime/blocks/block_runtime_api.cpp::objc3_runtime_promote_block_i32",
@@ -14,7 +14,7 @@
     "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp::objc3_runtime_spawn_task_i32",
     "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp::objc3_runtime_actor_mailbox_enqueue_i32",
     "scripts/build_objc3c_runtime_backed_semantics_closure.py",
-    "reports/claimability/runtime-backed-semantics-closure/runtime_backed_semantics_closure_summary.json"
+    "tmp/reports/claimability/runtime-backed-semantics-closure/runtime_backed_semantics_closure_summary.json"
   ],
   "implementation_anchor": "scripts/build_objc3c_runtime_backed_semantics_closure.py --check",
   "source": "// IMPLEMENTATION-ANCHOR: scripts/build_objc3c_runtime_backed_semantics_closure.py --check\n// Representative native fixtures: arc_block_autorelease_return_positive.objc3, reference_counting_weak_autoreleasepool_positive.objc3, error_runtime_bridge_helper_positive.objc3, live_error_runtime_integration_positive.objc3, live_continuation_runtime_integration_positive.objc3, live_task_runtime_and_executor_implementation_positive.objc3, live_actor_mailbox_runtime_positive.objc3\n",
@@ -33,21 +33,23 @@
           "abi_requirements": [
             "Objc3RuntimeBackedSemanticsClosureSummary emits contract objc3c.runtime.backed.semantics.closure.v1 with block, ARC, error, continuation, task, and actor runtime-backed model strings",
             "Objc3IREmitter publishes a runtime_backed_semantics_closure IR comment in the same native lowering stream as runnable_block_execution_matrix, runnable_arc_closeout, error_handling_live_error_runtime_integration, concurrency_live_task_runtime_integration, and actor metadata contracts",
-            "The closure report compiles seven representative positive native fixtures and aggregates IR token evidence from block promotion/copy-dispose, ARC retain/release/autorelease/weak/autoreleasepool, error runtime bridge, continuation runtime, task runtime, and actor mailbox/replay surfaces",
+            "Per-fixture IR evidence includes concrete __objc3_block_copy_helper_ and __objc3_block_dispose_helper_ call sites for source constructs that require block copy/dispose lowering",
+            "The closure report compiles seven representative positive native fixtures and requires source-specific IR call tokens from block promotion/copy-dispose, ARC retain/release/autorelease/weak/autoreleasepool, error runtime bridge, continuation runtime, task runtime, and actor mailbox/replay surfaces",
+            "Runtime-import surface artifacts are checked for the relevant block ownership, ARC cleanup, error replay, and actor mailbox/isolation helper payloads instead of treating report-only or declaration-only tokens as support",
             "The private helper boundary contains exactly 36 helper symbols and no public runtime ABI widening is claimed by this fixture"
           ],
           "runtime_requirements": [
-            "objc3_runtime_promote_block_i32 and objc3_runtime_invoke_block_i32 back escaping block promotion and invoke paths",
+            "objc3_runtime_promote_block_i32 backs escaping block promotion while emitted block descriptors point at concrete invoke thunks",
             "objc3_runtime_retain_i32, objc3_runtime_release_i32, objc3_runtime_autorelease_i32, weak current-property helpers, and autoreleasepool push/pop helpers back the ARC slice",
             "objc3_runtime_store_thrown_error_i32, objc3_runtime_load_thrown_error_i32, bridge helpers, and catch-match helpers back thrown/error propagation",
-            "continuation, task-group, cancellation, executor-hop, actor isolation, mailbox, replay-proof, and race-guard helper declarations are present in emitted IR and implemented in the runtime source"
+            "continuation, task-group, cancellation, executor-hop, mailbox, replay-proof, race-guard, and nonisolated actor helper calls are present in the owning fixture IR, while the actor runtime-import artifact preserves isolation, hop, executor-affinity, replay, and race-guard metadata"
           ]
         }
       ],
       "abi_field_stability": [
         {
           "field_id": "runtime_backed_semantics.contract_id",
-          "contract_anchor": "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3RuntimeBackedSemanticsClosureSummary",
+          "contract_anchor": "native/objc3c/src/lower/contracts/block_runtime_lowering_semantics_closure_summary.inc::Objc3RuntimeBackedSemanticsClosureSummary",
           "stability_property": "The emitted runtime_backed_semantics_closure contract id must remain objc3c.runtime.backed.semantics.closure.v1 until an intentional version bump",
           "must_match_modes": [
             "native-runtime-backed-semantics"

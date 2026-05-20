@@ -12,7 +12,8 @@ static void FinalizeErrorHandlingTryDoCatchReplayKey(
 }
 
 static void FinalizeErrorHandlingTryDoCatchReadiness(
-    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary) {
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
+    bool allow_live_error_runtime_surface) {
   summary.try_surface_landed =
       summary.try_expression_sites ==
           summary.try_propagating_sites + summary.try_optional_sites +
@@ -31,11 +32,16 @@ static void FinalizeErrorHandlingTryDoCatchReadiness(
       summary.contract_violation_sites <=
           summary.try_expression_sites + summary.throw_statement_sites +
               summary.do_catch_sites + summary.catch_clause_sites;
-  summary.ready_for_lowering_and_runtime = false;
+  summary.native_emit_remains_fail_closed = !allow_live_error_runtime_surface;
+  summary.ready_for_lowering_and_runtime =
+      allow_live_error_runtime_surface && summary.deterministic &&
+      summary.contract_violation_sites == 0;
 }
 
 static void FinalizeErrorHandlingTryDoCatchSummary(
-    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary) {
-  FinalizeErrorHandlingTryDoCatchReadiness(summary);
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
+    bool allow_live_error_runtime_surface) {
+  FinalizeErrorHandlingTryDoCatchReadiness(summary,
+                                          allow_live_error_runtime_surface);
   FinalizeErrorHandlingTryDoCatchReplayKey(summary);
 }

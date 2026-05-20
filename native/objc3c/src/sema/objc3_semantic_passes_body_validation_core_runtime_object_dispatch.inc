@@ -34,6 +34,8 @@
              super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
          handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
              super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_alloc_sites ==
+             super_dispatch_method_family_summary.method_family_alloc_sites &&
          handoff.super_dispatch_method_family_summary.method_family_init_sites ==
              super_dispatch_method_family_summary.method_family_init_sites &&
          handoff.super_dispatch_method_family_summary.method_family_copy_sites ==
@@ -54,7 +56,8 @@
              handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
          handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
              handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
-         handoff.super_dispatch_method_family_summary.method_family_init_sites +
+         handoff.super_dispatch_method_family_summary.method_family_alloc_sites +
+                 handoff.super_dispatch_method_family_summary.method_family_init_sites +
                  handoff.super_dispatch_method_family_summary.method_family_copy_sites +
                  handoff.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
                  handoff.super_dispatch_method_family_summary.method_family_new_sites +

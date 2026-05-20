@@ -4,17 +4,24 @@
   "milestone": "M327",
   "issue": "M327-B002",
   "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "macro_supply_chain_trust_registry": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+    "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_integration_surface_function_builder_metadata_publication.inc",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
-    "native/objc3c/src/io/objc3_process.cpp",
+    "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+    "native/objc3c/src/io/objc3_process_metaprogramming_contracts.h",
     "scripts/check_objc3c_runtime_acceptance.py"
   ],
   "required_attributes": [
     "objc_macro",
     "objc_macro_package",
-    "objc_macro_provenance"
+    "objc_macro_provenance",
+    "objc_macro_cache_key",
+    "objc_macro_sandbox"
   ],
   "provenance_owner_contract": {
     "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
@@ -31,8 +38,20 @@
     "metadata_completeness_enforced",
     "sandbox_namespace_enforced",
     "provenance_determinism_enforced",
+    "cache_key_invalidation_enforced",
+    "sandbox_policy_deny_by_default_enforced",
     "callable_determinism_enforced",
     "ready_for_lowering_and_runtime"
+  ],
+  "required_trust_checks": [
+    "deny_unknown_packages",
+    "deny_revoked_provenance",
+    "deny_untrusted_signers",
+    "require_signature_for_provenance",
+    "require_replay_metadata",
+    "require_cache_key_binding",
+    "require_deny_by_default_sandbox",
+    "require_deterministic_replay"
   ],
   "positive_fixture_paths": [
     "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
@@ -46,10 +65,12 @@
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3"
   ],
   "non_claims": [
-    "no remote package-signing verification claim",
+    "no remote key-server package-signing verification claim",
     "no general hostile-macro execution claim",
     "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces",
     "no evidence-log macro provenance proof",

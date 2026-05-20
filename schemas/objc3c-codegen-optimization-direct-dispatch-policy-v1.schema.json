@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-codegen-optimization-direct-dispatch-policy-v1",
+  "title": "objc3c codegen optimization and direct dispatch policy",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_mapping",
+    "source_truth",
+    "optimizer_policy",
+    "direct_dispatch_matrix",
+    "strict_rejection_boundaries"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.codegen.optimization.direct.dispatch.policy.v1"
+    },
+    "issue_mapping": {
+      "type": "object",
+      "required": ["primary_issues", "draft_ids"],
+      "properties": {
+        "primary_issues": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "contains": { "const": 8091 }
+        },
+        "draft_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "OC3-N33-001" }
+        }
+      }
+    },
+    "source_truth": {
+      "type": "object",
+      "required": ["schema_path", "validator_path", "workflow_action", "source_anchors"],
+      "properties": {
+        "schema_path": { "type": "string" },
+        "validator_path": { "type": "string" },
+        "workflow_action": { "type": "string" },
+        "source_anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "tokens"],
+            "properties": {
+              "path": { "type": "string" },
+              "tokens": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "optimizer_policy": {
+      "type": "object",
+      "required": ["passes"],
+      "properties": {
+        "passes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "pass_id",
+              "stage",
+              "semantic_preserving",
+              "allowed_moves",
+              "required_proofs",
+              "rejection_boundaries"
+            ],
+            "properties": {
+              "pass_id": { "type": "string" },
+              "stage": { "type": "string" },
+              "semantic_preserving": { "const": true },
+              "allowed_moves": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "required_proofs": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "rejection_boundaries": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "direct_dispatch_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "row_id",
+          "receiver_kind",
+          "dispatch_route",
+          "admitted",
+          "nil_receiver_behavior",
+          "marshalling_policy",
+          "cache_invalidation"
+        ],
+        "properties": {
+          "row_id": { "type": "string" },
+          "receiver_kind": { "type": "string" },
+          "dispatch_route": { "type": "string" },
+          "admitted": { "type": "boolean" },
+          "nil_receiver_behavior": { "type": "string" },
+          "marshalling_policy": { "type": "string" },
+          "cache_invalidation": { "type": "string" }
+        }
+      }
+    },
+    "strict_rejection_boundaries": {
+      "type": "object",
+      "required": ["retired_adapter_routes_allowed", "fail_open_allowed", "retired_routes"],
+      "properties": {
+        "retired_adapter_routes_allowed": { "const": false },
+        "fail_open_allowed": { "const": false },
+        "retired_routes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 0
+        }
+      }
+    }
+  }
+}

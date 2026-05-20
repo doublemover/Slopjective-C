@@ -96,6 +96,14 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
             },
         },
         editor_surface_payload={
+            "navigation": {
+                "workspace_index": {
+                    "workspace_index_digest": "abc123",
+                    "package_count": 9,
+                    "cross_package_edge_count": 7,
+                    "guardrails": {"ok": True},
+                }
+            },
             "formatter": {
                 "supported": True,
                 "formatted_output_path": "tmp/formatted.objc3",
@@ -107,7 +115,10 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
                 "object_symbol_inventory_command": "npm run objc3c -- inspect-runtime",
             },
         },
-        published_paths={"editor_surface_path": "tmp/reports/editor.json"},
+        published_paths={
+            "editor_surface_path": "tmp/reports/editor.json",
+            "workspace_index_path": "tmp/reports/workspace-index.json",
+        },
     )
 
     assert payload["contract_id"] == "objc3c.playground.workspace.v1"
@@ -118,6 +129,8 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
         "inspect-compile-observability",
         "inspect-editor-tooling",
         "format-objc3c",
+        "rewrite-objc3c-source",
+        "check-developer-diagnostic-quality",
         "trace-compile-stages",
         "validate-developer-tooling",
     ]
@@ -125,6 +138,11 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
         "tmp/artifacts/playground/hello-3bb3df22f2ea"
     )
     assert payload["editor_tooling"]["format_preview_supported"] is True
+    assert payload["editor_tooling"]["workspace_index_digest"] == "abc123"
+    assert payload["editor_tooling"]["workspace_package_count"] == 9
+    assert payload["workspace_drill_commands"]["workspace_navigation_index"] == (
+        "Get-Content -Raw 'tmp/reports/workspace-index.json'"
+    )
     assert payload["workspace_drill_commands"]["object_symbol_inventory"] == (
         "npm run objc3c -- inspect-runtime"
     )

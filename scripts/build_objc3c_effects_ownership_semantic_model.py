@@ -22,6 +22,7 @@ from objc3c_effects_ownership_semantic_model.inputs import load_semantic_inputs
 from objc3c_effects_ownership_semantic_model.inputs import source_truth_paths
 from objc3c_effects_ownership_semantic_model.paths import COMPILER
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
+from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_HELPER_SYMBOLS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
 from objc3c_effects_ownership_semantic_model.paths import FRONTEND_ARTIFACTS
 from objc3c_effects_ownership_semantic_model.paths import FRONTEND_PIPELINE
@@ -31,6 +32,7 @@ from objc3c_effects_ownership_semantic_model.paths import IR_EMITTER_H
 from objc3c_effects_ownership_semantic_model.paths import JSON_OUT
 from objc3c_effects_ownership_semantic_model.paths import LOWERING_CONTRACT
 from objc3c_effects_ownership_semantic_model.paths import MD_OUT
+from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import POSITIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import REPORT_DIR
@@ -53,6 +55,7 @@ from objc3c_effects_ownership_semantic_model.validation import diagnostic_matche
 __all__ = [
     "COMPILER",
     "CONFORMANCE_NEGATIVE",
+    "CONFORMANCE_HELPER_SYMBOLS",
     "CONFORMANCE_POSITIVE",
     "CONTRACT_ID",
     "CONTRACT_TOKENS",
@@ -69,6 +72,7 @@ __all__ = [
     "LOWERING_CONTRACT",
     "LOWERING_CONTRACT_TOKENS",
     "MD_OUT",
+    "MISSING_REQUIRED_SLICES_FIXTURE",
     "NEGATIVE_FIXTURE",
     "POSITIVE_FIXTURE",
     "POSITIVE_MIN_COUNTS",

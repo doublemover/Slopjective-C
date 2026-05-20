@@ -1,0 +1,15 @@
+// Expected diagnostic code(s): O3S342.
+module M270B002NonActorActorHop;
+
+fn hop_to_worker() -> i32 { return 1; }
+
+@interface M270PlainBox
+- (i32)run;
+@end
+
+@implementation M270PlainBox
+- (i32)run {
+  hop_to_worker();
+  return 0;
+}
+@end

@@ -6,6 +6,7 @@
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <cstddef>
@@ -176,7 +177,8 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     if (selector_stable_id == 0) {
       continue;
     }
-    const MethodCacheKey cache_key{normalized_receiver_identity,
+    const MethodCacheKey cache_key{node.base_identity,
+                                   normalized_receiver_identity,
                                    selector_stable_id};
     if (state.method_cache.find(cache_key) != state.method_cache.end()) {
       continue;
@@ -195,10 +197,19 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     cache_entry.fast_path_reason = fast_path_reason;
     cache_entry.class_name = node.class_name;
     cache_entry.owner_identity = entry.owner_identity;
+    cache_entry.lookup_start_base_identity = node.base_identity;
     cache_entry.normalized_receiver_identity = normalized_receiver_identity;
     cache_entry.selector_stable_id = selector_stable_id;
     cache_entry.parameter_count = entry.parameter_count;
     cache_entry.return_kind = return_kind;
+    cache_entry.cache_registered_image_count = state.registered_image_count;
+    cache_entry.cache_last_successful_registration_order_ordinal =
+        state.last_successful_registration_order_ordinal;
+    cache_entry.cache_reset_generation = state.reset_generation;
+    cache_entry.cache_replay_generation = state.replay_generation;
+    cache_entry.cache_realized_class_node_count =
+        static_cast<std::uint64_t>(state.realized_class_nodes.size());
+    StampMethodCacheMutationGenerationsUnlocked(cache_entry, state);
     cache_entry.implementation = entry.implementation;
     if (state.method_cache.emplace(cache_key, std::move(cache_entry)).second) {
       ++state.fast_path_seed_count;

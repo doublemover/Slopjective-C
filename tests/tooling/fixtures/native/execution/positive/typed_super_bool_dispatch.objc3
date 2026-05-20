@@ -1,0 +1,29 @@
+module typedSuperBoolDispatch;
+
+@interface RootBoolBox
+- (bool) ready;
+@end
+
+@implementation RootBoolBox
+- (bool) ready {
+  return true;
+}
+@end
+
+@interface DerivedBoolBox : RootBoolBox
+- (i32) run;
+@end
+
+@implementation DerivedBoolBox
+- (i32) run {
+  if ([super ready]) {
+    return 1;
+  }
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  let object = [[DerivedBoolBox alloc] init];
+  return [object run];
+}

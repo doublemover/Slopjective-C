@@ -20,6 +20,14 @@ def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def summary_anchor(contract: dict[str, Any]) -> str:
+    return str(
+        contract.get("summary_script")
+        or contract.get("summary_implementation_anchor")
+        or ""
+    )
+
+
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
@@ -33,7 +41,7 @@ def main() -> int:
     missing_actions = [action for action in required_actions if action not in registered_actions]
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_artifact_contract_summary.py",
+        "summary_script_link_matches": summary_anchor(contract) == "scripts/build_developer_tooling_artifact_contract_summary.py",
         "all_schema_paths_exist": all(path.is_file() for path in schema_paths),
         "runbook_has_artifact_contract_heading": "## Editor Protocol And Debug Artifact Contract" in runbook_text,
         "runbook_mentions_combined_surface": "one machine-owned editor tooling surface" in runbook_text,

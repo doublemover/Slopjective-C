@@ -18,6 +18,15 @@ def validate_artifact_surface(required_paths: dict[str, str]) -> None:
         raise ValidationFailure("artifact surface report_root drifted")
 
 
+def validate_claim_gate_contracts(required_paths: dict[str, str]) -> None:
+    repro_corpus = load_json(ROOT / required_paths["repro_corpus"])
+    support_claim_gate = load_json(ROOT / required_paths["support_claim_gate"])
+    require_contract_id(repro_corpus, "repro_corpus")
+    require_contract_id(support_claim_gate, "support_claim_gate")
+    if support_claim_gate.get("repro_corpus") != required_paths["repro_corpus"]:
+        raise ValidationFailure("support claim gate repro_corpus path drifted")
+
+
 def validate_workflow_surface(
     surface: dict[str, object],
     required_paths: dict[str, str],

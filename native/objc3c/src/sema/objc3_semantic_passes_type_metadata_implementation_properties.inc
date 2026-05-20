@@ -77,6 +77,10 @@
       // across interface/implementation pairs without reinterpreting source.
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
+      property_metadata.property_behavior_declared =
+          source.property_behavior_declared;
+      property_metadata.property_behavior_name =
+          source.property_behavior_name;
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

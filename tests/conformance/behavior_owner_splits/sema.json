@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "sema",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "semantic conformance owns type checking, nullability, generics, effects, ownership, concurrency legality, interop semantic diagnostics, and unsupported feature diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
+  "support_boundary": "semantic conformance owns type checking, nullability, generics, protocol requirement conflicts, effects, ownership, Objective-C method-family retainable-result legality, concurrency legality, interop semantic diagnostics, and unsupported feature diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "semantic",
     "diagnostics"

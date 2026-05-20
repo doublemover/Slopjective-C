@@ -121,6 +121,8 @@ void WriteDispatchRuntimeAbiManifestSurfaces(
       << super_dispatch_method_family.super_dispatch_enabled_sites
       << ",\"super_dispatch_requires_class_context_sites\":"
       << super_dispatch_method_family.super_dispatch_requires_class_context_sites
+      << ",\"method_family_alloc_sites\":"
+      << super_dispatch_method_family.method_family_alloc_sites
       << ",\"method_family_init_sites\":"
       << super_dispatch_method_family.method_family_init_sites
       << ",\"method_family_copy_sites\":"

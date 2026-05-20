@@ -48,7 +48,11 @@ extern "C" int objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing(
   snapshot->runtime_abi_boundary_model =
       "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
   snapshot->block_runtime_model =
-      "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
+      "descriptor-backed-promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
+  snapshot->block_descriptor_model =
+      "storage-slot-zero-carries-an-internal-descriptor-pointer-whose-record-preserves-size-captures-flags-arity-and-invoke-thunk";
+  snapshot->block_invoke_thunk_model =
+      "runtime-invocation-plans-call-the-descriptor-owned-i32-invoke-thunk-with-copied-runtime-owned-storage";
   snapshot->arc_runtime_model =
       "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints";
   snapshot->fail_closed_model =

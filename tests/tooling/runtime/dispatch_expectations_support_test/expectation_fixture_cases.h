@@ -75,6 +75,13 @@ inline constexpr DiagnosticTextCase kDiagnosticTextCases[] = {
      "runtime dispatch failed: category conflict",
      "category conflict diagnostic message",
      24},
+    {OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE,
+     "O3RT009",
+     "stale cache diagnostic code",
+     33,
+     "runtime dispatch failed: stale method cache entry",
+     "stale cache diagnostic message",
+     34},
     {OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
      "O3RT008",
      "nil receiver diagnostic code",
@@ -139,6 +146,12 @@ inline constexpr DispatchStatusCase kDispatchStatusCases[] = {
      0,
      "O3RT007",
      "runtime dispatch failed: category conflict"},
+    {OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE,
+     0,
+     OBJC3_RUNTIME_DISPATCH_STATUS_STALE_METHOD_CACHE,
+     0,
+     "O3RT009",
+     "runtime dispatch failed: stale method cache entry"},
 };
 
 inline constexpr CheckedDispatchCall kUnknownReceiverDispatchCall = {

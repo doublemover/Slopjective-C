@@ -41,9 +41,18 @@ struct Objc3IRMetaprogrammingGlobalArtifact {
   std::string payload;
 };
 
+struct Objc3IRDirectDispatchSignature {
+  ValueType return_type = ValueType::I32;
+  std::vector<ValueType> param_types;
+};
+
 struct Objc3IRMethodDefinitionPlan {
   std::vector<Objc3IRMethodDefinition> method_definitions;
   std::unordered_map<std::string, std::string> direct_dispatch_symbols_by_key;
+  std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      direct_dispatch_signatures_by_key;
+  std::unordered_map<std::string, ValueType> runtime_dispatch_return_types_by_key;
+  std::unordered_map<std::string, std::string> runtime_dispatch_superclass_by_name;
   std::vector<Objc3IRMetaprogrammingGlobalArtifact>
       metaprogramming_global_artifacts;
   std::size_t synthesized_property_accessor_count = 0;

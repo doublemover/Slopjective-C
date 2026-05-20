@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "category_attachment_collision.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S200",
+      "duplicate category interface 'Root(Extras)'"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol conflict diagnostics",
+    "case": "category attachment collision"
+  }
+}

@@ -107,6 +107,7 @@ CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_CONTRACT_IDS = (
 PRIVATE_OBJECT_MODEL_QUERY_BOUNDARY = (
     "objc3_runtime_copy_realized_class_graph_state_for_testing",
     "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_instance_entry_for_testing",
     "objc3_runtime_copy_protocol_conformance_query_for_testing",
 )
 PRIVATE_REFLECTION_ARTIFACT_QUERY_BOUNDARY = (

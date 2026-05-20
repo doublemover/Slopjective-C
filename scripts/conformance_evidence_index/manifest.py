@@ -181,6 +181,12 @@ def infer_profile_release(
 
     if profile is None:
         profile = UNKNOWN_PROFILE
+    else:
+        profile_candidate, release_candidate = split_profile_release(profile)
+        if profile_candidate and release_candidate:
+            profile = profile_candidate
+            if release is None or release == UNKNOWN_RELEASE:
+                release = release_candidate
     if release is None:
         release = release_retired_route or UNKNOWN_RELEASE
 

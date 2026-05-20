@@ -11,9 +11,8 @@ inline void CaptureWidgetRuntimeDispatchAssertions(
   assertions = RuntimeDispatchAssertions{};
   assertions.traced_value = objc3_runtime_dispatch_i32(
       fixture.initialized_widget, kTracedValueSelector, 0, 0, 0, 0);
-  (void)objc3_runtime_dispatch_i32(fixture.initialized_widget,
-                                   kSetCountSelector, kWrittenCountValue, 0, 0,
-                                   0);
+  (void)::objc3c::runtime::probe::DispatchTypedStatus(
+      fixture.initialized_widget, kSetCountSelector, kWrittenCountValue);
   assertions.count_value = objc3_runtime_dispatch_i32(
       fixture.initialized_widget, kCountPropertyName, 0, 0, 0, 0);
 }

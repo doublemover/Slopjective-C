@@ -48,8 +48,21 @@ extern "C" inline void ProbeDispose(void *storage) {
   ++ProbeCounters().dispose_count;
 }
 
+inline const ::objc3c::runtime::RuntimeBlockDescriptor &ProbeDescriptor() {
+  static const ::objc3c::runtime::RuntimeBlockDescriptor descriptor{
+      sizeof(ProbeBlockStorage),
+      1,
+      4,
+      ::objc3c::runtime::kRuntimeBlockDescriptorPointerCaptureStorageFlag |
+          ::objc3c::runtime::kRuntimeBlockDescriptorCopyHelperFlag |
+          ::objc3c::runtime::kRuntimeBlockDescriptorDisposeHelperFlag,
+      0,
+      &ProbeInvoke};
+  return descriptor;
+}
+
 inline ProbeBlockStorage SetUpProbeBlockStorage(int *captured_base) {
-  return ProbeBlockStorage{&ProbeInvoke, &ProbeCopy, &ProbeDispose,
+  return ProbeBlockStorage{&ProbeDescriptor(), &ProbeCopy, &ProbeDispose,
                            captured_base};
 }
 

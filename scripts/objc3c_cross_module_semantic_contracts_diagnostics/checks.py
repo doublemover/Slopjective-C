@@ -78,7 +78,7 @@ def compile_contract_checks(
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "negative_conformance_expects_o3s200_location": conformance_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S200", "line": 3, "column": 8}],
-        "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
+        "stress_manifest_tracks_positive_fixture_as_semantic_provenance": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": all(not rel(path).startswith("tmp/") for path in SOURCE_TRUTH_PATHS),
         "static_sources_thread_surface": all(all(values.values()) for values in static_presence.values()),
     }

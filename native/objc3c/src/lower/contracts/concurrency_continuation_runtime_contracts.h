@@ -12,16 +12,18 @@ inline constexpr const char
         "objc3_runtime_handoff_async_continuation_to_executor_i32";
 inline constexpr const char *kObjc3RuntimeResumeAsyncContinuationI32Symbol =
     "objc3_runtime_resume_async_continuation_i32";
+inline constexpr const char *kObjc3RuntimeCancelAsyncContinuationI32Symbol =
+    "objc3_runtime_cancel_async_continuation_i32";
 
 inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperContractId =
     "objc3c.concurrency.continuation.runtime.helper.api.v1";
 inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperSourceModel =
-    "concurrency-lowering-publishes-a-private-runtime-helper-abi-for-logical-continuation-allocation-resume-and-executor-handoff";
+    "concurrency-lowering-publishes-a-private-runtime-helper-abi-for-logical-continuation-allocation-resume-cancel-and-executor-handoff";
 inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperAbiModel =
     "i32-backed-logical-continuation-handles-resume-entry-tags-and-executor-tags-remain-bootstrap-internal-runtime-abi";
 inline constexpr const char
     *kObjc3ConcurrencyContinuationRuntimeHelperExecutionModel =
-        "runtime-helpers-materialize-deterministic-logical-continuation-handles-resume-traffic-and-executor-handoff-without-public-header-widening";
+        "runtime-helpers-materialize-deterministic-logical-continuation-handles-resume-cancel-traffic-and-executor-handoff-without-public-header-widening";
 inline constexpr const char
     *kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel =
         "no-public-async-runtime-header-no-suspension-state-machine-no-executor-runtime-scheduling-claim-yet";

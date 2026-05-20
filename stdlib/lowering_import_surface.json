@@ -4,6 +4,7 @@
   "workspace_contract": "stdlib/workspace.json",
   "package_surface": "stdlib/package_surface.json",
   "module_inventory": "stdlib/module_inventory.json",
+  "smoke_runner": "scripts/run_objc3c_stdlib_workspace_smoke.py",
   "smoke_action": "npm run objc3c -- validate-stdlib-foundation",
   "machine_output_root": "tmp/artifacts/stdlib",
   "machine_report_root": "tmp/reports/stdlib",

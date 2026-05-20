@@ -47,7 +47,6 @@ void EmitObjc3RuntimeRegistrationManifestHeaderJson(
       << EscapeJsonString(
              objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel)
       << "\",\n"
-      << "  \"retired_route_path_allowed\": false,\n"
       << "  \"launch_integration_contract_id\": \""
       << EscapeJsonString(inputs.launch_integration_contract_id) << "\",\n"
       << "  \"translation_unit_registration_contract_id\": \""

@@ -16,6 +16,9 @@ inline void PrintMethodCacheEntryWithProbeCounts(
   std::printf("\"dispatch_family_is_class\":%d,",
               snapshot.dispatch_family_is_class);
   std::printf(
+      "\"lookup_start_base_identity\":%llu,",
+      static_cast<unsigned long long>(snapshot.lookup_start_base_identity));
+  std::printf(
       "\"normalized_receiver_identity\":%llu,",
       static_cast<unsigned long long>(snapshot.normalized_receiver_identity));
   std::printf("\"selector_stable_id\":%llu,",
@@ -43,6 +46,9 @@ inline void PrintMethodCacheEntryBasic(
   std::printf("\"dispatch_family_is_class\":%d,",
               snapshot.dispatch_family_is_class);
   std::printf(
+      "\"lookup_start_base_identity\":%llu,",
+      static_cast<unsigned long long>(snapshot.lookup_start_base_identity));
+  std::printf(
       "\"normalized_receiver_identity\":%llu,",
       static_cast<unsigned long long>(snapshot.normalized_receiver_identity));
   std::printf("\"selector_stable_id\":%llu,",
@@ -66,6 +72,9 @@ inline void PrintMethodCacheEntryMetaclassMinimal(
   std::printf("\"dispatch_family_is_class\":%d,",
               snapshot.dispatch_family_is_class);
   std::printf(
+      "\"lookup_start_base_identity\":%llu,",
+      static_cast<unsigned long long>(snapshot.lookup_start_base_identity));
+  std::printf(
       "\"normalized_receiver_identity\":%llu,",
       static_cast<unsigned long long>(snapshot.normalized_receiver_identity));
   std::printf("\"selector\":");
@@ -84,6 +93,9 @@ inline void PrintMethodCacheEntryRuntimeCanonical(
   std::printf("\"resolved\":%d,", snapshot.resolved);
   std::printf("\"dispatch_family_is_class\":%d,",
               snapshot.dispatch_family_is_class);
+  std::printf(
+      "\"lookup_start_base_identity\":%llu,",
+      static_cast<unsigned long long>(snapshot.lookup_start_base_identity));
   std::printf(
       "\"normalized_receiver_identity\":%llu,",
       static_cast<unsigned long long>(snapshot.normalized_receiver_identity));
@@ -113,6 +125,9 @@ inline void PrintMethodCacheStateCategoryAttachment(
               static_cast<unsigned long long>(snapshot.cache_miss_count));
   std::printf("\"slow_path_lookup_count\":%llu,",
               static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
+  std::printf(
+      "\"stale_method_cache_entry_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.stale_method_cache_entry_count));
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
@@ -261,6 +276,9 @@ inline void PrintMethodCacheStateSlowPath(
               static_cast<unsigned long long>(snapshot.cache_miss_count));
   std::printf("\"slow_path_lookup_count\":%llu,",
               static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
+  std::printf(
+      "\"stale_method_cache_entry_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.stale_method_cache_entry_count));
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(

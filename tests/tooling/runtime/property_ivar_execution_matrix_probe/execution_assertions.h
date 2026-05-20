@@ -39,19 +39,17 @@ inline void CopyPropertyEntry(const char *property_name,
   observation = PropertyEntryObservation{};
   (void)objc3_runtime_copy_property_entry_for_testing(
       kWidgetClassName, property_name, &observation.entry);
+  StabilizePropertyEntryObservation(observation);
 }
 
 inline void CapturePropertyEntryAssertions(
     PropertyIvarExecutionAssertions &assertions) {
+  CopyPropertyEntry(kBaseCountPropertyName, assertions.base_count_property);
   CopyPropertyEntry(kCountPropertyName, assertions.count_property);
   CopyPropertyEntry(kEnabledPropertyName, assertions.enabled_property);
   CopyPropertyEntry(kValuePropertyName, assertions.value_property);
   CopyPropertyEntry(kTokenPropertyName, assertions.token_property);
 
-  StabilizePropertyEntryObservation(assertions.count_property);
-  StabilizePropertyEntryObservation(assertions.enabled_property);
-  StabilizePropertyEntryObservation(assertions.value_property);
-  StabilizePropertyEntryObservation(assertions.token_property);
 }
 
 inline void CapturePropertyRegistryState(
@@ -71,18 +69,24 @@ inline void CopyMethodCacheEntry(int widget_instance, const char *selector,
 
 inline void CaptureMethodCacheAssertions(
     int widget_instance, PropertyIvarExecutionAssertions &assertions) {
+  CopyMethodCacheEntry(widget_instance, kBaseCountGetterSelector,
+                       assertions.base_count_method);
   CopyMethodCacheEntry(widget_instance, kCountGetterSelector,
                        assertions.count_method);
   CopyMethodCacheEntry(widget_instance, kEnabledGetterSelector,
                        assertions.enabled_method);
   CopyMethodCacheEntry(widget_instance, kValueGetterSelector,
                        assertions.value_method);
+  CopyMethodCacheEntry(widget_instance, kTokenSetterSelector,
+                       assertions.set_token_method);
   CopyMethodCacheEntry(widget_instance, kTokenGetterSelector,
                        assertions.token_method);
 
+  StabilizeMethodCacheEntryObservation(assertions.base_count_method);
   StabilizeMethodCacheEntryObservation(assertions.count_method);
   StabilizeMethodCacheEntryObservation(assertions.enabled_method);
   StabilizeMethodCacheEntryObservation(assertions.value_method);
+  StabilizeMethodCacheEntryObservation(assertions.set_token_method);
   StabilizeMethodCacheEntryObservation(assertions.token_method);
 }
 

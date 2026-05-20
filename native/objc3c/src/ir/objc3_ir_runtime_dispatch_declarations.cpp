@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 
+#include "lower/contracts/runtime_dispatch_strict_abi_entrypoint_contracts.h"
+
 void EmitObjc3IRRuntimeDispatchDeclarations(
     const Objc3LoweringIRBoundary &boundary,
     const Objc3IRRuntimeDispatchCallState &state, std::ostringstream &out) {
@@ -13,7 +15,15 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     if (symbol.empty()) {
       continue;
     }
-    out << "declare i32 @" << symbol << "(i32, ptr";
+    if (symbol == kObjc3RuntimeTypedDispatchValueFromClassSymbol) {
+      out << "declare i32 @" << symbol << "(i32, i32, ptr, ptr";
+    } else if (symbol == kObjc3RuntimeDispatchFromClassSymbol) {
+      out << "declare i32 @" << symbol << "(i32, ptr, ptr";
+    } else if (symbol == kObjc3RuntimeTypedDispatchValueSymbol) {
+      out << "declare i32 @" << symbol << "(i32, i32, ptr";
+    } else {
+      out << "declare i32 @" << symbol << "(i32, ptr";
+    }
     for (std::size_t i = 0; i < boundary.runtime_dispatch_arg_slots; ++i) {
       out << ", i32";
     }

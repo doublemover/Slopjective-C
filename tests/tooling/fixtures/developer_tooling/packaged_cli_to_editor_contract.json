@@ -20,6 +20,7 @@
     "developer_tooling_boundary_inventory",
     "developer_tooling_editor_surface_schema",
     "developer_tooling_navigation_contract",
+    "developer_tooling_workspace_semantic_navigation_contract",
     "developer_tooling_formatter_debug_contract",
     "developer_tooling_workspace_contract",
     "developer_tooling_packaged_contract",

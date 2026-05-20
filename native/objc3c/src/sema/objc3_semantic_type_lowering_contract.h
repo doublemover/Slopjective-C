@@ -9,7 +9,19 @@ inline bool IsObjc3SemanticCanonicalTypeReadyForLowering(
     const Objc3SemanticCanonicalType &type) {
   return type.deterministic &&
          type.kind != Objc3SemanticCanonicalTypeKind::Unknown &&
-         !type.canonical_spelling.empty() && !type.has_invalid_type_suffix;
+         !type.canonical_spelling.empty() && !type.has_invalid_type_suffix &&
+         type.object_type_facts_authoritative &&
+         type.generic_arguments_facts_authoritative &&
+         type.nullability_facts_authoritative &&
+         type.protocol_composition_facts_authoritative &&
+         (!type.is_objc_named_object_pointer ||
+          !type.object_pointer_type_name.empty()) &&
+         (!type.has_generic_suffix || type.is_objc_object_reference) &&
+         (!type.has_protocol_composition || type.is_objc_object_reference) &&
+         (!type.has_explicit_nullability || type.is_objc_object_reference) &&
+         !type.has_invalid_generic_suffix &&
+         !type.has_invalid_nullability_suffix &&
+         !type.has_invalid_protocol_composition;
 }
 
 inline std::size_t CountObjc3FunctionLoweringTypeContractViolations(

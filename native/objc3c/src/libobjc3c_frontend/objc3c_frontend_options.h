@@ -1,6 +1,7 @@
 #ifndef OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_OPTIONS_H_
 #define OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_OPTIONS_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u
@@ -31,12 +32,17 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  * - allow_live_error_runtime_surface admits the private runtime-owned
  *   try/throw/throws proof surface; leave zero for canonical fail-closed
  *   public compiles.
+ * - imported_runtime_surface_paths points at caller-owned borrowed paths and
+ *   imported_runtime_surface_path_count names the exact number of entries.
  * - Set unused pointers to NULL.
  */
 typedef struct objc3c_frontend_compile_options {
   objc3c_frontend_borrowed_path_t input_path;
   objc3c_frontend_borrowed_text_t source_text;
   objc3c_frontend_borrowed_path_t out_dir;
+  objc3c_frontend_borrowed_path_t metaprogramming_cache_root;
+  const objc3c_frontend_borrowed_path_t *imported_runtime_surface_paths;
+  size_t imported_runtime_surface_path_count;
   objc3c_frontend_borrowed_text_t emit_prefix;
   objc3c_frontend_borrowed_path_t clang_path;
   objc3c_frontend_borrowed_path_t llc_path;

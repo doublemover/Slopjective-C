@@ -9,6 +9,7 @@ from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from .commands import run
 from .fixtures import load_json_payload, read_module_name
 from .paths import (
+    DEMO_PACKAGES,
     GUIDED_WALKTHROUGH,
     MACHINE_OUTPUT_ROOT,
     MACHINE_REPORT_ROOT,
@@ -24,8 +25,10 @@ from .summary import (
     required_showcase_artifacts,
 )
 from .validation import (
+    demo_packages_by_example,
     known_story_capabilities,
     showcase_example_ids,
+    validate_demo_packages_contract,
     validate_guided_walkthrough_contract,
     validate_portfolio_contract,
     validate_requested_capabilities,
@@ -122,6 +125,14 @@ def main() -> int:
     if walkthrough_error is not None:
         return fail(walkthrough_error)
 
+    if not DEMO_PACKAGES.is_file():
+        return fail(f"missing showcase demo packages manifest: {repo_relative(DEMO_PACKAGES)}")
+    demo_packages_payload = load_json_payload(DEMO_PACKAGES)
+    demo_packages_error = validate_demo_packages_contract(demo_packages_payload, payload)
+    if demo_packages_error is not None:
+        return fail(demo_packages_error)
+    demo_packages = demo_packages_by_example(demo_packages_payload)
+
     ids = showcase_example_ids(examples)
     requested_ids = set(args.example)
     ids_error = validate_requested_ids(requested_ids, ids)
@@ -195,6 +206,7 @@ def main() -> int:
         compile_results.append(
             build_compile_result(
                 entry=entry,
+                demo_package=demo_packages[example_id],
                 module_name=module_name,
                 source=source,
                 workspace_payload=workspace_payload,
@@ -206,6 +218,7 @@ def main() -> int:
 
     summary_payload = build_summary_payload(
         portfolio_payload=payload,
+        demo_packages_payload=demo_packages_payload,
         selected_examples=selected_examples,
         compile_results=compile_results,
     )

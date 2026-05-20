@@ -139,7 +139,8 @@ inline void StabilizeRealizedGraphState(
     objc3_runtime_realized_class_graph_state_snapshot &snapshot,
     std::string &class_storage, std::string &owner_storage,
     std::string &metaclass_storage, std::string &category_owner_storage,
-    std::string &category_name_storage, std::string &allocated_class_storage) {
+    std::string &category_name_storage, std::string &allocated_class_storage,
+    std::string &lifecycle_failure_storage) {
   StabilizeRealizedGraphState(snapshot, class_storage, owner_storage,
                               metaclass_storage);
   StabilizeNullableCString(snapshot.last_attached_category_owner_identity,
@@ -151,6 +152,9 @@ inline void StabilizeRealizedGraphState(
   StabilizeNullableCString(snapshot.last_allocated_class_name,
                            allocated_class_storage,
                            snapshot.last_allocated_class_name);
+  StabilizeNullableCString(snapshot.last_instance_lifecycle_failure_reason,
+                           lifecycle_failure_storage,
+                           snapshot.last_instance_lifecycle_failure_reason);
 }
 
 

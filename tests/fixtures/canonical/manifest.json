@@ -54,6 +54,12 @@
       "executable_command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "claim_id": "objc3c.behavior.sema.effects-ownership-model",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "executable_command": "npm run objc3c -- test-lowering-runtime-stress"
+    },
+    {
       "claim_id": "objc3c.behavior.lowering.strict-runtime-dispatch",
       "owner_phase": "lowering",
       "behavior_fixture": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
@@ -72,6 +78,48 @@
       "executable_command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "claim_id": "objc3c.behavior.runtime.concurrency-async-actors",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.errors.try-catch-semantics",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+      "executable_command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "claim_id": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+      "executable_command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+      "executable_command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "claim_id": "objc3c.behavior.arc-cleanup.integration",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "executable_command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.core-runtime-v1",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
       "claim_id": "objc3c.behavior.e2e.runnable-smoke",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
@@ -83,6 +131,14 @@
       "path": "tests/native/parser/positive/canonical_module_main.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
       "behavior_family": "positive",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
@@ -508,6 +564,54 @@
       "behavior_family": "concurrency",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "effects_ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "strict-error",
+      "expected_diagnostic_code": "O3S206"
     },
     {
       "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",

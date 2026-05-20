@@ -11,7 +11,7 @@ from objc3c_runtime_backed_semantics_closure.paths import CONFORMANCE_NEGATIVE
 from objc3c_runtime_backed_semantics_closure.paths import CONFORMANCE_POSITIVE
 from objc3c_runtime_backed_semantics_closure.paths import CONFORMANCE_README
 from objc3c_runtime_backed_semantics_closure.paths import DURABLE_REPLAY_ROOT
-from objc3c_runtime_backed_semantics_closure.paths import RUNTIME
+from objc3c_runtime_backed_semantics_closure.paths import RUNTIME_SOURCE_ROOT
 from objc3c_runtime_backed_semantics_closure.paths import STRESS_MANIFEST
 from objc3c_runtime_backed_semantics_closure.paths import read
 from objc3c_runtime_backed_semantics_closure.paths import rel
@@ -27,7 +27,11 @@ def check_source_tokens() -> dict[str, dict[str, bool]]:
                 group_checks[f"{rel(path)}::{token}"] = token in text
         result[group] = group_checks
 
-    runtime_text = read(RUNTIME)
+    runtime_text = "\n".join(
+        read(path)
+        for pattern in ("*.cpp", "*.h")
+        for path in sorted(RUNTIME_SOURCE_ROOT.rglob(pattern))
+    )
     result["runtime_helper_implementations"] = {
         symbol: symbol in runtime_text for symbol in HELPER_SYMBOLS
     }

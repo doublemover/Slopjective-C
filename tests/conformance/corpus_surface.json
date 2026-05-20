@@ -5,6 +5,7 @@
   "suite_readme": "tests/conformance/README.md",
   "coverage_map": "tests/conformance/COVERAGE_MAP.md",
   "runbook": "docs/runbooks/objc3c_conformance_corpus.md",
+  "support_claim_runnable_evidence_catalog": "tests/conformance/support_claim_runnable_evidence_catalog.json",
   "primary_buckets": [
     "parser",
     "semantic",
@@ -172,6 +173,7 @@
   "artifact_surface": {
     "surface_summary": "tmp/reports/conformance/corpus-surface-summary.json",
     "coverage_index": "tmp/reports/conformance/corpus-index.json",
+    "support_claim_traceability_summary": "tmp/reports/conformance/runnable-claim-trace-summary.json",
     "integration_summary": "tmp/reports/conformance/corpus-integration-summary.json",
     "runnable_end_to_end_summary": "tmp/reports/conformance/corpus-runnable-end-to-end-summary.json",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
@@ -190,10 +192,12 @@
     "implementation_anchors": [
       "scripts/check_conformance_corpus_surface.py",
       "scripts/generate_conformance_corpus_index.py",
+      "scripts/generate_conformance_evidence_index.py",
       "scripts/check_conformance_suite.ps1"
     ],
     "coverage_map": "tests/conformance/COVERAGE_MAP.md",
-    "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json"
+    "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json",
+    "support_claim_runnable_evidence_catalog": "tests/conformance/support_claim_runnable_evidence_catalog.json"
   },
   "audit_surface": {
     "runtime_and_lowering_coverage": [

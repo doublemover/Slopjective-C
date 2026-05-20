@@ -7,6 +7,9 @@ from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
 from objc3c_runtime_acceptance.domains.probe_helpers import (
     check_runtime_probe_helper_support_case,
 )
+from objc3c_runtime_acceptance.domains.stdlib_runtime_cases import (
+    check_stdlib_core_runtime_probe_case,
+)
 
 
 def build_core_case_factories(context: CaseFactoryContext) -> LabeledCaseFactories:
@@ -19,8 +22,33 @@ def build_core_case_factories(context: CaseFactoryContext) -> LabeledCaseFactori
             lambda: domains.object_model.check_runtime_library_case(clangxx, run_dir),
         ),
         (
+            "dispatch-lookup-runtime-probe",
+            lambda: domains.object_model.check_dispatch_lookup_runtime_probe_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
+            "method-cache-slow-path-probe",
+            lambda: domains.object_model.check_method_cache_slow_path_probe_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
+            "typed-dispatch-abi-probe",
+            lambda: domains.object_model.check_typed_dispatch_abi_probe_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
             "runtime-probe-helper-support",
             lambda: check_runtime_probe_helper_support_case(clangxx, run_dir),
+        ),
+        (
+            "stdlib-core-runtime-probe",
+            lambda: check_stdlib_core_runtime_probe_case(clangxx, run_dir),
         ),
         (
             "compile-backend-parity",

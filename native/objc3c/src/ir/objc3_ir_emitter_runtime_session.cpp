@@ -16,6 +16,7 @@ void Objc3IREmitterRuntimeSession::ResetForEmission() {
   unsupported_fail_closed_path_reason_.clear();
   block_function_definitions_.clear();
   emitted_block_invoke_symbols_.clear();
+  emitted_block_descriptor_symbols_.clear();
   emitted_block_copy_helper_symbols_.clear();
   emitted_block_dispose_helper_symbols_.clear();
 }
@@ -42,6 +43,9 @@ Objc3IREmitterRuntimeSession::ServiceContextState() {
       initialized_state.function_arity,
       initialized_state.function_signatures,
       initialized_state.direct_dispatch_symbols_by_key,
+      initialized_state.direct_dispatch_signatures_by_key,
+      initialized_state.runtime_dispatch_return_types_by_key,
+      initialized_state.runtime_dispatch_superclass_by_name,
       initialized_state.selector_pool_globals,
       initialized_state.runtime_string_pool_globals,
       initialized_state.typed_keypath_artifacts,
@@ -50,6 +54,7 @@ Objc3IREmitterRuntimeSession::ServiceContextState() {
       initialized_state.vector_signature_function_count,
       block_function_definitions_,
       emitted_block_invoke_symbols_,
+      emitted_block_descriptor_symbols_,
       emitted_block_copy_helper_symbols_,
       emitted_block_dispose_helper_symbols_,
       runtime_dispatch_call_state_,

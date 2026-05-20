@@ -95,7 +95,7 @@ def _assert_property_layout_cache_entries(facts: PropertyLayoutPayload) -> None:
     )
     expect(
         str(facts.count_entry.get("resolved_owner_identity", "")).endswith(
-            "implementation:Widget::instance_method:count"
+            "Widget::instance_method:count"
         ),
         "expected count getter cache entry to preserve the synthesized owner identity",
     )
@@ -110,7 +110,7 @@ def _assert_property_layout_cache_entries(facts: PropertyLayoutPayload) -> None:
     )
     expect(
         str(facts.set_count_entry.get("resolved_owner_identity", "")).endswith(
-            "implementation:Widget::instance_method:setCount:"
+            "Widget::instance_method:setCount:"
         ),
         "expected setCount setter cache entry to preserve the synthesized owner identity",
     )

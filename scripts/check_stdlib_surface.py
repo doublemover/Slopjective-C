@@ -10,6 +10,7 @@ from objc3c_tooling.paths import repo_rel
 from stdlib_surface.architecture import validate_architecture_surfaces
 from stdlib_surface.artifacts import validate_module_artifacts
 from stdlib_surface.commands import validate_command_surfaces
+from stdlib_surface.compatibility import validate_compatibility_gates
 from stdlib_surface.contracts import validate_document_headers
 from stdlib_surface.inventory import validate_inventory_and_policy
 from stdlib_surface.semantics import validate_semantic_policy
@@ -40,6 +41,7 @@ def main() -> int:
     core_architecture = documents.core_architecture
     advanced_architecture = documents.advanced_architecture
     semantic_policy = documents.semantic_policy
+    compatibility_gates = documents.compatibility_gates
     lowering_import_surface = documents.lowering_import_surface
     advanced_helper_package_surface = documents.advanced_helper_package_surface
     program_surface = documents.program_surface
@@ -93,6 +95,17 @@ def main() -> int:
         raise RuntimeError("stdlib surface semantic policy validation did not return a payload")
     semantic_module_semver = semantic_policy_validation.module_semver
 
+    compatibility_error, compatibility_validation = validate_compatibility_gates(
+        root=ROOT,
+        compatibility_gates=compatibility_gates,
+        module_surfaces=module_surfaces,
+        semantic_policy=semantic_policy,
+    )
+    if compatibility_error is not None:
+        return fail(compatibility_error)
+    if compatibility_validation is None:
+        raise RuntimeError("stdlib surface compatibility validation did not return a payload")
+
     command_surface_error, command_surface_validation = validate_command_surfaces(
         root=ROOT,
         lowering_import_surface=lowering_import_surface,
@@ -119,6 +132,12 @@ def main() -> int:
             required_exports=architecture_required_exports,
             advanced_required_exports=advanced_required_exports,
             module_semver=semantic_module_semver,
+            compatibility_gates={
+                "abi_gate": compatibility_validation.abi_gate,
+                "semantic_gate": compatibility_validation.semantic_gate,
+                "package_gate": compatibility_validation.package_gate,
+                "conformance_gate": compatibility_validation.conformance_gate,
+            },
             artifact_filenames=artifact_filenames,
             advanced_helper_modules=advanced_helper_modules,
             capability_demo_examples=capability_demo_examples,

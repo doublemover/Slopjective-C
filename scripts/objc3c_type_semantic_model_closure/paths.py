@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_DIR = ROOT / "reports" / "claimability" / "type-semantic-model-closure"
+REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "type-semantic-model-closure"
 JSON_OUT = REPORT_DIR / "type_semantic_model_closure_summary.json"
 MD_OUT = REPORT_DIR / "type_semantic_model_closure_summary.md"
 TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "type-semantic-model-closure"
@@ -15,10 +15,12 @@ POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_se
 NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
 GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"
 PROTOCOL_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_protocol_generic_positive.objc3"
+PROTOCOL_CATEGORY_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "category_attachment_protocol_runtime_library.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
 PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
 PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_property_nullability_conflict.objc3"
+PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_optional_required_conflict.objc3"
 UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_unknown_protocol_composition.objc3"
 PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_qualified_unknown_message.objc3"
 TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_typed_object_receiver_unknown_message.objc3"
@@ -35,10 +37,12 @@ CONFORMANCE_GENERIC_VARIANCE_POSITIVE = ROOT / "tests" / "conformance" / "semant
 CONFORMANCE_PROTOCOL_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-15.json"
 CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-17.json"
 CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-18.json"
+CONFORMANCE_PROTOCOL_CATEGORY_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-20.json"
 CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-02.json"
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
 CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-05.json"
+CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-19.json"
 CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-06.json"
 CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-07.json"
 CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-08.json"
@@ -51,9 +55,14 @@ STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
 FRONTEND_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
-RUNTIME_IMPORT_SURFACE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_runtime_import_surface.cpp"
+RUNTIME_IMPORT_SURFACE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "runtime_import_type_system_preservation.cpp"
 RUNTIME_IMPORT_SURFACE_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_runtime_import_surface.h"
-LOWERING_CONTRACT = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.cpp"
+RUNTIME_IMPORT_TYPE_SYSTEM_PRESERVATION_SOURCES = [
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "runtime_import_type_system_preservation_generic.cpp",
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "runtime_import_type_system_preservation_nullability.cpp",
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "runtime_import_type_system_preservation_protocol.cpp",
+]
+LOWERING_CONTRACT = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.h"
 IR_EMITTER = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.cpp"
 
 SOURCE_TRUTH_PATHS = [
@@ -61,10 +70,12 @@ SOURCE_TRUTH_PATHS = [
     NESTED_GENERIC_POSITIVE_FIXTURE,
     GENERIC_VARIANCE_POSITIVE_FIXTURE,
     PROTOCOL_GENERIC_POSITIVE_FIXTURE,
+    PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
     NEGATIVE_FIXTURE,
     NULLABILITY_NEGATIVE_FIXTURE,
     PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
     PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE,
+    PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE,
     UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE,
     PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
     TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
@@ -79,10 +90,12 @@ SOURCE_TRUTH_PATHS = [
     CONFORMANCE_PROTOCOL_GENERIC_POSITIVE,
     CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE,
     CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE,
+    CONFORMANCE_PROTOCOL_CATEGORY_POSITIVE,
     CONFORMANCE_NEGATIVE,
     CONFORMANCE_NULLABILITY_NEGATIVE,
     CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
     CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE,
+    CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE,
     CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE,
     CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE,
     CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE,
@@ -99,6 +112,7 @@ SOURCE_TRUTH_PATHS = [
     FRONTEND_ARTIFACTS,
     RUNTIME_IMPORT_SURFACE,
     RUNTIME_IMPORT_SURFACE_HEADER,
+    *RUNTIME_IMPORT_TYPE_SYSTEM_PRESERVATION_SOURCES,
     LOWERING_CONTRACT,
     IR_EMITTER,
 ]

@@ -85,7 +85,8 @@
           result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
       result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
           result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
-      result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_init_sites +
+      result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_alloc_sites +
+              result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_init_sites +
               result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_copy_sites +
               result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
               result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_new_sites +

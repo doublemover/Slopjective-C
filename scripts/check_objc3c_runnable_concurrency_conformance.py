@@ -28,6 +28,7 @@ REQUIRED_CASES = {
     "unified-concurrency-lowering-metadata-surface",
     "unified-concurrency-runtime-abi",
     "live-unified-concurrency-runtime-implementation",
+    "stdlib-concurrency-runtime-probe",
     "cross-module-concurrency-actor-artifact-preservation",
 }
 
@@ -45,6 +46,11 @@ REQUIRED_SURFACE_CONTRACTS = {
         "objc3c.runtime.unified.concurrency.runtime.abi.surface.v1"
     ),
 }
+
+REQUIRED_PRIVATE_CONCURRENCY_RUNTIME_SYMBOLS = (
+    "objc3_runtime_cancel_async_continuation_i32",
+    "objc3_runtime_executor_hop_i32",
+)
 
 
 def expect(condition: bool, message: str) -> None:
@@ -72,6 +78,8 @@ def ensure_case_passed(case_map: dict[str, dict[str, Any]], case_id: str) -> Non
             result = runtime_acceptance.check_unified_concurrency_runtime_abi_case(clangxx, run_dir)
         elif case_id == "live-unified-concurrency-runtime-implementation":
             result = runtime_acceptance.check_live_unified_concurrency_runtime_implementation_case(clangxx, run_dir)
+        elif case_id == "stdlib-concurrency-runtime-probe":
+            result = runtime_acceptance.check_stdlib_concurrency_runtime_probe_case(clangxx, run_dir)
         elif case_id == "cross-module-concurrency-actor-artifact-preservation":
             result = runtime_acceptance.check_cross_module_concurrency_actor_artifact_preservation_case(run_dir)
         else:
@@ -145,9 +153,22 @@ def main() -> int:
         raise RuntimeError(
             "unified concurrency runtime ABI surface did not publish authoritative case ids"
         )
+    source_private_boundary = source_surface.get("private_concurrency_runtime_boundary", [])
+    abi_private_boundary = abi_surface.get(
+        "private_unified_concurrency_runtime_abi_boundary", []
+    )
+    for symbol in REQUIRED_PRIVATE_CONCURRENCY_RUNTIME_SYMBOLS:
+        expect(
+            symbol in source_private_boundary,
+            f"unified concurrency source surface dropped private runtime symbol {symbol}",
+        )
+        expect(
+            symbol in abi_private_boundary,
+            f"unified concurrency runtime ABI surface dropped private runtime symbol {symbol}",
+        )
     expect(
         "objc3_runtime_copy_actor_runtime_state_for_testing"
-        in source_surface.get("private_concurrency_runtime_boundary", []),
+        in source_private_boundary,
         "unified concurrency source surface drifted from the private runtime boundary",
     )
     expect(

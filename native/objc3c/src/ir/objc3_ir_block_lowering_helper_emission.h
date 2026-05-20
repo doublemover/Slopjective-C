@@ -4,6 +4,9 @@ struct Expr;
 struct FunctionContext;
 struct Objc3IRBlockLoweringContext;
 
+void EmitObjc3IRBlockDescriptor(
+    const Expr &expr, const Objc3IRBlockLoweringContext &context);
+
 void EmitObjc3IRBlockCopyHelper(
     const Expr &expr, const Objc3IRBlockLoweringContext &context);
 

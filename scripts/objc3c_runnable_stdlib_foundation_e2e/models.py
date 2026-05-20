@@ -21,9 +21,11 @@ class StdlibPackageSurface:
     module_inventory: Path
     stability_policy: Path
     package_surface: Path
+    compatibility_gates: Path
     lowering_import_surface: Path
     advanced_helper_package_surface: Path
     package_surface_payload: dict[str, Any]
+    compatibility_gates_payload: dict[str, Any]
     stdlib_program_surface_payload: dict[str, Any]
     lowering_import_surface_payload: dict[str, Any]
     advanced_helper_package_surface_payload: dict[str, Any]

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime_snapshot_helpers.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::reference_counting_weak_autoreleasepool {
 
@@ -11,8 +12,10 @@ inline void ResetReferenceCountingRuntimeFixture() {
 
 inline ReferenceCountingFixture AllocateReferenceCountingFixture() {
   ReferenceCountingFixture fixture;
-  fixture.parent = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
-  fixture.child = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
+  fixture.parent =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(1024, "alloc");
+  fixture.child =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(1024, "alloc");
   return fixture;
 }
 

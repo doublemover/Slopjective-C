@@ -201,9 +201,10 @@ void EmitObjc3IRModuleMetadataPreludeLoweringReplayPublication(
       << Objc3ErrorHandlingLiveErrorRuntimeIntegrationSummary() << "\n";
   // continuation/runtime-helper anchor: publish the first private
   // Part 7 helper ABI boundary for logical continuation allocation,
-  // scheduler handoff, and resume traffic. The current async lowering slice
-  // remains direct-call only, so this line freezes the helper contract
-  // without claiming live suspension or executor scheduling yet.
+  // scheduler handoff, resume traffic, and cancellation traffic. The current
+  // async lowering slice remains direct-call only, so this line freezes the
+  // helper contract without claiming live suspension or executor scheduling
+  // yet.
   out << "; concurrency_continuation_runtime_helper = "
       << Objc3ConcurrencyContinuationRuntimeHelperSummary() << "\n";
   // live continuation/runtime integration anchor: publish the

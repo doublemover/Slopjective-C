@@ -107,6 +107,14 @@ def _assert_startup_payload(
         payload.get("startup_realized_class_count") == 2,
         "expected startup to realize two classes",
     )
+    for generation_key in (
+        "startup_class_graph_generation",
+        "startup_method_surface_generation",
+    ):
+        expect(
+            payload.get(generation_key, 0) > 0,
+            f"expected {generation_key} to be initialized by startup",
+        )
     expect(
         payload.get("startup_retained_bootstrap_image_count") == 2,
         "expected startup to retain two bootstrap images",
@@ -147,6 +155,7 @@ def _assert_first_reset_payload(payload: JsonObject) -> None:
         payload.get("first_reset_retained_bootstrap_image_count") == 2,
         "expected first reset to retain both bootstrap images",
     )
+    _assert_reset_clears_live_registration_residue(payload, "first")
     expect(
         payload.get("first_reset_cleared_image_local_init_state_count") == 2,
         "expected first reset to clear two image-local init states",
@@ -181,6 +190,7 @@ def _assert_first_replay_payload(
         payload.get("first_replay_realized_class_count") == 2,
         "expected first replay to restore two realized classes",
     )
+    _assert_replayed_object_model_generations_match_startup(payload, "first")
     expect(
         payload.get("first_replay_last_replayed_image_count") == 2,
         "expected first replay to publish two replayed images",
@@ -230,6 +240,16 @@ def _assert_blocked_replay_payload(payload: JsonObject) -> None:
         payload.get("blocked_replay_last_replayed_image_count") == 0,
         "expected blocked replay to avoid replaying images",
     )
+    for key in (
+        "blocked_replay_live_registration_order_entry_count",
+        "blocked_replay_live_registered_metadata_entry_count",
+        "blocked_replay_live_selector_table_entry_count",
+        "blocked_replay_live_realized_class_count",
+    ):
+        expect(
+            payload.get(key, 0) > 0,
+            f"expected blocked replay to report non-empty live residue in {key}",
+        )
 
 
 def _assert_second_reset_payload(payload: JsonObject) -> None:
@@ -245,6 +265,7 @@ def _assert_second_reset_payload(payload: JsonObject) -> None:
         payload.get("second_reset_retained_bootstrap_image_count") == 2,
         "expected second reset to retain both bootstrap images",
     )
+    _assert_reset_clears_live_registration_residue(payload, "second")
     expect(
         payload.get("second_reset_cleared_image_local_init_state_count") == 2,
         "expected second reset to clear two image-local init states",
@@ -279,6 +300,7 @@ def _assert_second_replay_payload(
         payload.get("second_replay_realized_class_count") == 2,
         "expected second replay to restore two realized classes",
     )
+    _assert_replayed_object_model_generations_match_startup(payload, "second")
     expect(
         payload.get("second_replay_last_replayed_image_count") == 2,
         "expected second replay to publish two replayed images",
@@ -313,6 +335,50 @@ def _assert_second_replay_payload(
         payload.get("second_replay_consumer_identity") == identities.consumer,
         "expected second replay consumer identity to survive reset",
     )
+
+
+def _assert_replayed_object_model_generations_match_startup(
+    payload: JsonObject,
+    prefix: str,
+) -> None:
+    generation_fields = (
+        "class_graph_generation",
+        "category_attachment_generation",
+        "protocol_declaration_generation",
+        "storage_surface_generation",
+        "method_surface_generation",
+    )
+    for field in generation_fields:
+        replay_key = f"{prefix}_replay_{field}"
+        startup_key = f"startup_{field}"
+        expect(
+            payload.get(replay_key) == payload.get(startup_key),
+            (
+                f"expected {replay_key} to match {startup_key} after "
+                "deterministic reset/replay"
+            ),
+        )
+
+
+def _assert_reset_clears_live_registration_residue(
+    payload: JsonObject,
+    prefix: str,
+) -> None:
+    residue_fields = (
+        "live_registration_order_entry_count",
+        "live_registered_metadata_entry_count",
+        "live_selector_table_entry_count",
+        "live_keypath_entry_count",
+        "live_realized_class_count",
+        "live_method_cache_entry_count",
+        "live_property_lookup_cache_entry_count",
+    )
+    for field in residue_fields:
+        key = f"{prefix}_reset_{field}"
+        expect(
+            payload.get(key) == 0,
+            f"expected reset to clear live registration residue in {key}",
+        )
 
 
 __all__ = [

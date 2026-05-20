@@ -1,0 +1,16 @@
+// Expected diagnostic code(s): O3S219.
+module categoryUnknownClassRejected;
+
+@interface MissingOwner(Tracing)
+- (i32)traceValue;
+@end
+
+@implementation MissingOwner(Tracing)
+- (i32)traceValue {
+  return 1;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

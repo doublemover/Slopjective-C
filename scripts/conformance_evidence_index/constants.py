@@ -7,6 +7,9 @@ from objc3c_tooling.subprocesses import command_text, python_script_command
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT_ROOT = Path("reports/conformance")
 DEFAULT_GLOBS = ("**/*.json",)
+SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG = Path(
+    "tests/conformance/support_claim_runnable_evidence_catalog.json"
+)
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 INDEX_VERSION = 1
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"

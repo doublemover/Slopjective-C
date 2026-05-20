@@ -17,6 +17,8 @@ void EmitObjc3IRDispatchSuperSemanticCounterNode(
   EmitObjc3IRDispatchSemanticsSizeField(
       metadata.super_dispatch_method_family_requires_class_context_sites, out);
   EmitObjc3IRDispatchSemanticsSizeField(
+      metadata.super_dispatch_method_family_alloc_sites, out);
+  EmitObjc3IRDispatchSemanticsSizeField(
       metadata.super_dispatch_method_family_init_sites, out);
   EmitObjc3IRDispatchSemanticsSizeField(
       metadata.super_dispatch_method_family_copy_sites, out);

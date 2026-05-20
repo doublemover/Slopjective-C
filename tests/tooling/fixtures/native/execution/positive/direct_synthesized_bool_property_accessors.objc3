@@ -1,0 +1,24 @@
+module directSynthesizedBoolPropertyAccessors;
+
+__attribute__((objc_direct_members))
+@interface DirectBoolPropertyBox
+@property (assign) bool enabled;
+- (i32) run __attribute__((objc_dynamic));
+@end
+
+@implementation DirectBoolPropertyBox
+@property (assign) bool enabled;
+
+- (i32) run __attribute__((objc_dynamic)) {
+  [self setEnabled: true];
+  if ([self enabled]) {
+    return 1;
+  }
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  let object = [[DirectBoolPropertyBox alloc] init];
+  return [object run];
+}

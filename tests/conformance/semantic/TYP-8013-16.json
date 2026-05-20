@@ -7,7 +7,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticProtocolGenericUnknownProtocol;\n\n@interface SemanticEnvelope<__covariant T>\n@end\n\n@implementation SemanticEnvelope\n@end\n\nfn consume(box: SemanticEnvelope<id<MissingProtocol>> *?) -> i32 {\n  return 0;\n}",
   "expect": {

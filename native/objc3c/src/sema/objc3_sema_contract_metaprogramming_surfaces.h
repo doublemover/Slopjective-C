@@ -142,7 +142,7 @@ inline constexpr const char
         "frontend.pipeline.semantic_surface.objc_metaprogramming_macro_safety_sandbox_and_determinism_semantics";
 inline constexpr const char
     *kObjc3MetaprogrammingMacroSafetySandboxDeterminismRule =
-        "macro-callable-safety-sandbox-namespace-and-deterministic-provenance-semantics-are-live-in-sema-while-runnable-macro-execution-remains-deferred";
+        "macro-callable-safety-sandbox-namespace-deterministic-provenance-and-explicit-cache-key-semantics-are-live-in-sema-while-runnable-macro-execution-remains-deferred";
 inline constexpr const char
     *kObjc3MetaprogrammingMacroSafetySandboxDeterminismDeferredRule =
         "runnable-macro-execution-runtime-package-loading-and-expanded-body-materialization-remain-deferred-to-later-runtime-lanes";
@@ -161,18 +161,26 @@ struct Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary {
   std::size_t macro_marker_sites = 0;
   std::size_t macro_package_sites = 0;
   std::size_t macro_provenance_sites = 0;
+  std::size_t macro_cache_key_sites = 0;
+  std::size_t macro_sandbox_policy_sites = 0;
   std::size_t expansion_visible_macro_sites = 0;
   std::size_t safe_macro_callable_sites = 0;
   std::size_t incomplete_macro_metadata_sites = 0;
   std::size_t orphan_macro_metadata_sites = 0;
   std::size_t invalid_package_sites = 0;
   std::size_t invalid_provenance_sites = 0;
+  std::size_t missing_cache_key_sites = 0;
+  std::size_t invalid_cache_key_sites = 0;
+  std::size_t missing_sandbox_policy_sites = 0;
+  std::size_t invalid_sandbox_policy_sites = 0;
   std::size_t nondeterministic_callable_sites = 0;
   std::size_t unsupported_callable_topology_sites = 0;
   bool semantic_dependency_required = false;
   bool metadata_completeness_enforced = false;
   bool sandbox_namespace_enforced = false;
   bool provenance_determinism_enforced = false;
+  bool cache_key_invalidation_enforced = false;
+  bool sandbox_policy_deny_by_default_enforced = false;
   bool callable_determinism_enforced = false;
   bool macro_execution_deferred = false;
   bool deterministic = false;
@@ -191,6 +199,8 @@ inline bool IsReadyObjc3MetaprogrammingMacroSafetySandboxDeterminismSummary(
          summary.metadata_completeness_enforced &&
          summary.sandbox_namespace_enforced &&
          summary.provenance_determinism_enforced &&
+         summary.cache_key_invalidation_enforced &&
+         summary.sandbox_policy_deny_by_default_enforced &&
          summary.callable_determinism_enforced &&
          summary.macro_execution_deferred && summary.deterministic &&
          summary.ready_for_lowering_and_runtime &&

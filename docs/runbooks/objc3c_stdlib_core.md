@@ -23,7 +23,13 @@ Exact live implementation paths for downstream work:
 - `stdlib/modules/objc3.core/module.objc3`
 - `stdlib/modules/objc3.errors/module.objc3`
 - `stdlib/modules/objc3.keypath/module.objc3`
+- `native/objc3c/src/runtime/stdlib/core_runtime_contract.h`
+- `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
+- `tests/tooling/runtime/stdlib_core_runtime_probe.cpp`
+- `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3`
+- `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3`
 - `stdlib/semantic_policy.json`
+- `stdlib/compatibility_gates.json`
 - `stdlib/modules/objc3.core/module.json`
 - `stdlib/modules/objc3.errors/module.json`
 - `stdlib/modules/objc3.keypath/module.json`
@@ -44,8 +50,9 @@ not separate current-facing commands.
 - option presence and tag helpers
 - text/data view contracts for strings and bytes
 - collection-shape helpers for arrays and maps
-- trivial count/index predicates that can be reused without importing
-  error-bridging semantics
+- runtime-backed count, prefix, option, capability, and map entry helpers that
+  execute through `objc3_runtime_stdlib_core_*` entrypoints instead of local
+  placeholder arithmetic
 
 `objc3.errors` owns:
 
@@ -77,12 +84,14 @@ The checked-in architecture contract requires these families to stay visible:
 - `objc3.errors`
   - `error-identity`
   - `result-shape`
-  - `optional-bridge`
+  - `option-result-shape`
   - `text-data-shape`
 - `objc3.keypath`
   - `typed-keypath-application`
   - `typed-keypath-text-shape`
-  - `typed-keypath-text-compatibility`
+  - `typed-keypath-metadata`
+  - `reflection-interop`
+  - `runtime-composition-token`
 
 Downstream implementation issues may add concrete helpers inside these families,
 but they should not invent a second family split or move ownership between
@@ -116,14 +125,13 @@ modules without updating the checked-in architecture contract.
 - `objc3_errors_result_err_tag`
 - `objc3_errors_result_is_ok`
 - `objc3_errors_option_to_result_tag`
-- `objc3_errors_result_bridge_diagnostic`
+- `objc3_errors_option_result_shape_diagnostic`
 - `objc3_errors_result_unwrap_or`
 - `objc3_errors_result_error_or`
 - `objc3_errors_ok_or_code`
 - `objc3_errors_or_throw_code`
 - `objc3_errors_text_data_shape_score`
 - `objc3_errors_text_data_shape_diagnostic`
-- `objc3_errors_text_data_compatibility_score`
 
 `objc3.keypath` exports:
 
@@ -131,23 +139,48 @@ modules without updating the checked-in architecture contract.
 - `objc3_keypath_component_count`
 - `objc3_keypath_text_shape_score`
 - `objc3_keypath_text_shape_diagnostic`
-- `objc3_keypath_text_compatibility_diagnostic`
-- `objc3_keypath_text_compatibility_score`
+- `objc3_keypath_metadata_token`
+- `objc3_keypath_reflection_interop_token`
+- `objc3_keypath_runtime_composition_token`
+
+`objc3.core` runtime ABI:
+
+- `objc3_runtime_stdlib_core_language_revision_i32`
+- `objc3_runtime_stdlib_core_profile_revision_i32`
+- `objc3_runtime_stdlib_core_has_capability_i32`
+- `objc3_runtime_stdlib_core_option_has_value_i32`
+- `objc3_runtime_stdlib_core_option_unwrap_or_i32`
+- `objc3_runtime_stdlib_core_count_i32`
+- `objc3_runtime_stdlib_core_prefix_count_i32`
+- `objc3_runtime_stdlib_core_map_entry_present_i32`
+- `objc3_runtime_stdlib_core_map_entry_value_or_i32`
+- `objc3_runtime_copy_stdlib_core_state_for_testing`
 
 ## Semantic guarantees
 
-- all core-stdlib helpers remain deterministic and side-effect free
+- all core-stdlib helpers remain deterministic and route through the runtime
+  stdlib core ABI
+- stdlib major-version `1` compatibility is gated by
+  `stdlib/compatibility_gates.json`; runtime ABI signatures must exactly match
+  the checked-in module manifest, semantic drift must fail closed, and packaged
+  stdlib validation must carry the same gate summary
+- the execution fixture `stdlib_core_runtime_helpers.objc3` must keep proving
+  linked runtime calls, and `stdlib_core_runtime_helper_signature_conflict.objc3`
+  must keep ABI drift rejected before runtime execution
 - option and presence helpers use `0` for absent and nonzero for present
 - `unwrap_or` helpers return the live payload only when the checked-in
   presence or result tag says it is valid
+- capability queries recognize exactly the Core-profile stdlib capability ordinals
+  `1` through `4`; strict-system ordinal `5`, zero, negative, and unknown
+  positive ids fail closed as missing
 - option-to-result bridge helpers map presence directly onto the checked-in
   result tags and emit stable mismatch code `30601` when the bridge contract is
   violated
 - `objc3_errors_result_ok_tag` stays `1` and
   `objc3_errors_result_err_tag` stays `2` within major version `1`
-- text/data helpers preserve the caller-provided counts instead of claiming
-  allocation, ownership, or transcoding semantics, and prefix helpers clamp to
-  the caller-provided count instead of widening it
+- text/data helpers preserve count-shape semantics without claiming allocation,
+  ownership, or transcoding, and runtime count/prefix helpers apply a zero floor
+  to negative counts or requested lengths
 - text/data shape diagnostics return `0` on matching shapes and
   stable mismatch codes `30602` and `30603` for error-bridge and keypath
   shape failures

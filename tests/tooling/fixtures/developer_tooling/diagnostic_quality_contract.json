@@ -1,0 +1,18 @@
+{
+  "contract_id": "objc3c.developer.tooling.diagnostic.quality.contract.v1",
+  "surface_kind": "developer-tooling-diagnostic-taxonomy-fixit-contract",
+  "milestone": "OC3-N25",
+  "issues": [
+    8075,
+    8076
+  ],
+  "summary_implementation_anchor": "scripts/check_developer_tooling_diagnostic_quality.py",
+  "manifest_path": "tests/conformance/diagnostics/manifest.json",
+  "minimum_diagnostic_count": 80,
+  "minimum_machine_applicable_fixit_count": 20,
+  "required_fixit_codes": [
+    "OBJC3-D-CONC-MISSING-AWAIT",
+    "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+    "OBJC3-D-ERROR-MISSING-TRY"
+  ]
+}

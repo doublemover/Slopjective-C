@@ -27,8 +27,8 @@ PACKAGING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_packaging_channels
 RELEASE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_release_operations.md"
 PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-matrix-v1.schema.json"
 
-SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-support-matrix.json"
-SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-support-matrix-summary.json"
+SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-matrix.json"
+SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-matrix-summary.json"
 BOUNDARY_INVENTORY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "boundary-inventory" / "boundary_inventory_summary.json"
 SUPPORT_TIER_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "support-tier-policy" / "support_tier_policy_summary.json"
 UNSUPPORTED_HOST_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "unsupported-host-policy" / "unsupported_host_policy_summary.json"
@@ -44,7 +44,7 @@ PACKAGE_CHANNELS_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / 
 PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summary.json"
 RELEASE_PUBLICATION_SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "publication-summary.json"
 UPDATE_MANIFEST_PATH = RELEASE_OPERATIONS_ROOT / "update-manifest" / "objc3c-update-manifest.json"
-UPGRADE_SUPPORT_REPORT_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-upgrade-support-report.json"
+UPGRADE_SUPPORT_REPORT_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-upgrade-report.json"
 CHANNEL_CATALOG_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-release-channel-catalog.json"
 PACKAGE_MANIFEST_PATH = ROOT / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
 

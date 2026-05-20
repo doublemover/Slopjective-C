@@ -32,7 +32,6 @@ def main() -> int:
     package_root = ROOT / "tmp" / "pkg" / "objc3c-performance-e2e" / run_id
     manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
     performance_root = package_root / "tmp" / "artifacts" / "performance" / "runnable-e2e"
-    performance_root.mkdir(parents=True, exist_ok=True)
 
     package_result = run_capture(
         [
@@ -49,6 +48,7 @@ def main() -> int:
     )
     if package_result.returncode != 0:
         raise RuntimeError("runnable toolchain package command failed")
+    performance_root.mkdir(parents=True, exist_ok=True)
 
     manifest = load_json(manifest_path)
     expect(manifest.get("contract_id") == PACKAGE_CONTRACT_ID, "unexpected package contract id")

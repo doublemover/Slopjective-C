@@ -189,10 +189,10 @@ inline constexpr const char
         "objc_runtime_block_ownership_artifact_preservation";
 inline constexpr const char
     *kObjc3RuntimeBlockOwnershipArtifactPreservationSourceModel =
-        "runtime-block-lowering-helper-surfaces-preserve-invoke-thunk-byref-copy-dispose-escape-and-runtime-link-facts-for-separate-compilation";
+        "runtime-block-lowering-helper-surfaces-preserve-invoke-thunk-byref-copy-dispose-escape-runtime-link-and-arc-cleanup-facts-for-separate-compilation";
 inline constexpr const char
     *kObjc3RuntimeBlockOwnershipArtifactPreservationModel =
-        "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-and-runtime-link-facts-beyond-local-ir-object-emission";
+        "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-runtime-link-and-arc-cleanup-facts-beyond-local-ir-object-emission";
 inline constexpr const char
     *kObjc3RuntimeBlockOwnershipArtifactPreservationFailClosedModel =
         "missing-or-drifted-block-ownership-preservation-packets-disable-cross-module-block-ownership-claims";

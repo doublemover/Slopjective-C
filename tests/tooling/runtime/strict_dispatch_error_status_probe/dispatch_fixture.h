@@ -134,7 +134,36 @@ inline ManualImageCase MakeImageCase(const char *module_name,
   return image_case;
 }
 
+inline void RebindImageCasePointers(ManualImageCase &image_case) {
+  image_case.method_ref.method_list = &image_case.method_storage.header;
+  image_case.class_bundle.metaclass_record.method_list_ref =
+      &image_case.method_ref;
+  image_case.class_root_storage.entries[0] = &image_case.class_bundle;
+  image_case.discovery_root_storage.entries[0] =
+      &image_case.class_root_storage;
+  image_case.discovery_root_storage.entries[1] = &kEmptyRootStorage;
+  image_case.discovery_root_storage.entries[2] = &kEmptyRootStorage;
+  image_case.discovery_root_storage.entries[3] = &kEmptyRootStorage;
+  image_case.discovery_root_storage.entries[4] = &kEmptyRootStorage;
+  image_case.discovery_root_storage.entries[5] = &kEmptyRootStorage;
+  image_case.class_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &image_case.class_root_storage);
+  image_case.discovery_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &image_case.discovery_root_storage);
+  image_case.discovery_root_anchor = image_case.discovery_root;
+  image_case.registration_table.image_descriptor = &image_case.image;
+  image_case.registration_table.discovery_root = image_case.discovery_root;
+  image_case.registration_table.linker_anchor =
+      &image_case.discovery_root_anchor;
+  image_case.registration_table.class_descriptor_root = image_case.class_root;
+  image_case.registration_table.image_local_init_state =
+      &image_case.image_local_init_state;
+}
+
 inline bool RegisterCase(ManualImageCase &image_case) {
+  RebindImageCasePointers(image_case);
   image_case.image_local_init_state = 0;
   objc3_runtime_reset_for_testing();
   objc3_runtime_stage_registration_table_for_bootstrap(

@@ -1,0 +1,49 @@
+module m8034_arc_method_family_retained_message_cleanup;
+
+@interface Factory
++ (id) alloc;
++ (id) new;
++ (id) newValue;
+- (id) init;
+- (id) copy;
+- (id) mutableCopy;
+- (id) copyWithZone:(i32) zone;
+- (id) copying;
+- (id) copycat;
+- (id) newton;
+- (id) initiate;
+@end
+
+@implementation Factory
++ (id) alloc { return 2; }
++ (id) new { return 3; }
++ (id) newValue { return 5; }
+- (id) init { return 7; }
+- (id) copy { return 11; }
+- (id) mutableCopy { return 13; }
+- (id) copyWithZone:(i32) zone { return 17 + zone - zone; }
+- (id) copying { return 19; }
+- (id) copycat { return 23; }
+- (id) newton { return 29; }
+- (id) initiate { return 31; }
+@end
+
+fn main() -> i32 {
+  let object = 1042;
+  let allocated = [Factory alloc];
+  let newObject = [Factory new];
+  let newValue = [Factory newValue];
+  let initialized = [object init];
+  let copied = [object copy];
+  let zoneCopied = [object copyWithZone: 1];
+  let mutableCopied = [object mutableCopy];
+  let chained = [[Factory alloc] init];
+  let maybeNew = (0 ? [Factory new] : 0);
+  let copying = [object copying];
+  let copycat = [object copycat];
+  let newton = [object newton];
+  let initiate = [object initiate];
+  return allocated + newObject + newValue + initialized + copied + zoneCopied +
+      mutableCopied + chained + maybeNew + copying + copycat + newton +
+      initiate;
+}

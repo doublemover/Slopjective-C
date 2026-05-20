@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
 SCRIPT_PATH = ROOT / "scripts" / "benchmark_objc3c_performance.py"
 SPEC = importlib.util.spec_from_file_location("benchmark_objc3c_performance", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
@@ -21,8 +25,14 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     portfolio_path = root / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_portfolio.json"
     policy_path = root / "tests" / "tooling" / "fixtures" / "performance" / "measurement_policy.json"
     parameters_path = root / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_parameters.json"
+    budget_model_path = (
+        root / "tests" / "tooling" / "fixtures" / "performance_governance" / "budget_model.json"
+    )
+    source_path = root / "showcase" / "auroraBoard" / "main.objc3"
 
     portfolio_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.write_text("func main() -> i32 { return 0; }\n", encoding="utf-8")
     portfolio_path.write_text(
         json.dumps(
             {
@@ -38,11 +48,61 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
         encoding="utf-8",
     )
     policy_path.write_text(
-        json.dumps({"sample_policy": {"warmup_runs": 1, "measured_runs": 2}}) + "\n",
+        json.dumps(
+            {
+                "sample_policy": {
+                    "warmup_runs": 1,
+                    "measured_runs": 2,
+                    "clock_source": "wall-clock-monotonic-per-step",
+                    "capture_raw_samples": True,
+                },
+                "comparison_policy": {
+                    "same_machine_required": True,
+                    "same_input_family_required": True,
+                    "same_checked_in_source_required": True,
+                    "capture_exact_commands": True,
+                    "capture_tool_versions": True,
+                },
+                "claimability_policy": {
+                    "allowed_claim_classes": ["same-machine-raw-sample-measurement"],
+                    "disallowed_claim_classes": ["cross-machine-universal"],
+                    "required_claim_inputs": [
+                        "checked_in_benchmark_source",
+                        "approved_lab_profile",
+                        "raw_sample_packets",
+                    ],
+                },
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     parameters_path.write_text(
         json.dumps({"hardware_profile_capture": {"normalization_mode": "machine-profile-ratio-plus-raw-samples"}})
+        + "\n",
+        encoding="utf-8",
+    )
+    budget_model_path.parent.mkdir(parents=True, exist_ok=True)
+    budget_model_path.write_text(
+        json.dumps(
+            {
+                "contract_id": "objc3c.performance.governance.budget.model.v1",
+                "budget_families": [
+                    {
+                        "budget_id": "comparative-baseline",
+                        "metric_definitions": [
+                            {
+                                "metric_id": "compile_packet_count",
+                                "source_field": "derived.compile_packet_count",
+                                "comparison": "min",
+                                "warning_value": 3,
+                                "blocking_value": 2,
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
         + "\n",
         encoding="utf-8",
     )
@@ -51,6 +111,7 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     monkeypatch.setattr(benchmark, "PORTFOLIO_PATH", portfolio_path)
     monkeypatch.setattr(benchmark, "MEASUREMENT_POLICY_PATH", policy_path)
     monkeypatch.setattr(benchmark, "BENCHMARK_PARAMETERS_PATH", parameters_path)
+    monkeypatch.setattr(benchmark, "PERFORMANCE_BUDGET_MODEL_PATH", budget_model_path)
     monkeypatch.setattr(benchmark, "SUMMARY_OUT", summary_out)
 
     def fake_run_capture(command: list[str]):
@@ -107,5 +168,17 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     assert compile_packet["benchmark_kind"] == "compile-latency"
     assert compile_packet["normalized_summary"]["sample_count"] == 2
     assert compile_packet["raw_samples"][0]["command"][:4] == ["npm", "run", "objc3c", "--"]
+    assert compile_packet["reproducibility_evidence"]["workload_source"]["path"] == (
+        "showcase/auroraBoard/main.objc3"
+    )
+    assert len(compile_packet["reproducibility_evidence"]["workload_source"]["sha256"]) == 64
+    assert compile_packet["reproducibility_evidence"]["machine_profile"]["hostname"] == "fixture-host"
+    assert compile_packet["reproducibility_evidence"]["regression_policy"]["budget_id"] == (
+        "comparative-baseline"
+    )
+    assert compile_packet["reproducibility_evidence"]["regression_policy"]["thresholds"][0][
+        "metric_id"
+    ] == "compile_packet_count"
     assert runtime_packet["benchmark_kind"] == "runtime-wall-clock"
     assert runtime_packet["normalized_summary"]["median_duration_ms"] == 21.5
+    assert runtime_packet["reproducibility_evidence"]["tool_versions"]["clang"] == "clang fixture"

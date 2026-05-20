@@ -15,7 +15,7 @@
   ],
   "blocking_conditions": [
     "package-channel-install-failure",
-    "revert-proof-failure",
+    "rollback-proof-failure",
     "release-operations-proof-failure",
     "missing-release-evidence-index",
     "runtime-hardening-regression",

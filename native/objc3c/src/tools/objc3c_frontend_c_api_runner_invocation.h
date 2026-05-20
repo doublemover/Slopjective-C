@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "libobjc3c_frontend/c_api.h"
 #include "tools/objc3c_frontend_c_api_runner_options.h"
@@ -36,6 +37,9 @@ class FrontendCApiRunnerCompileInvocation {
  private:
   std::string input_path_text_;
   std::string out_dir_text_;
+  std::string metaprogramming_cache_root_text_;
+  std::vector<std::string> imported_runtime_surface_path_texts_;
+  std::vector<const char *> imported_runtime_surface_path_views_;
   std::string clang_path_text_;
   std::string llc_path_text_;
   const FrontendCApiRunnerOptions &runner_options_;

@@ -73,8 +73,10 @@ def main() -> int:
         "local_index_supported": layer_states.get("local-index") == "supported-generated-artifact",
         "offline_mirror_supported": layer_states.get("offline-mirror") == "supported-generated-artifact",
         "publication_metadata_supported": layer_states.get("publication-metadata") == "supported-generated-artifact",
+        "offline_restore_receipt_supported": layer_states.get("offline-restore-receipt") == "supported-generated-artifact",
         "hosted_registry_fails_closed": layer_states.get("hosted-registry") == "unsupported-fail-closed-if-claimed",
         "release_blockers_include_hosted_claim": "hosted registry claimed as supported" in release_blocking_conditions,
+        "release_blockers_include_cache_tamper": "offline mirror cache payload mismatch did not fail closed" in release_blocking_conditions,
     }
     ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
 

@@ -10,6 +10,8 @@
     "inspect-compile-observability",
     "inspect-editor-tooling",
     "format-objc3c",
+    "rewrite-objc3c-source",
+    "check-developer-diagnostic-quality",
     "trace-compile-stages",
     "validate-developer-tooling"
   ],
@@ -17,6 +19,11 @@
     "editor_surface_path",
     "language_server_capabilities_path",
     "navigation_path",
+    "workspace_index_path",
+    "workspace_index_digest",
+    "workspace_package_count",
+    "cross_package_edge_count",
+    "workspace_index_guardrails_ok",
     "formatter_path",
     "debug_path",
     "formatted_output_path",
@@ -28,6 +35,9 @@
   "required_workspace_drill_commands": [
     "inspect_editor_tooling",
     "format_preview",
+    "workspace_navigation_index",
     "object_symbol_inventory"
-  ]
+  ],
+  "minimum_workspace_package_count": 9,
+  "minimum_cross_package_edge_count": 7
 }

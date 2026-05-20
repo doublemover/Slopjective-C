@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,7 @@ class PackageChannelInputs:
     supported_platforms: dict[str, Any]
     metadata_surface: dict[str, Any]
     platform_support_matrix: dict[str, Any]
+    interop_loader_metadata: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -76,6 +78,7 @@ def package_channels_manifest_payload(
     *,
     inputs: PackageChannelInputs,
     paths: PackageChannelPaths,
+    installer_signature: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "contract_id": "objc3c.packaging.channels.summary.v1",
@@ -93,6 +96,8 @@ def package_channels_manifest_payload(
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
         "implemented_channels": IMPLEMENTED_CHANNELS,
+        "interop_loader_metadata": inputs.interop_loader_metadata,
+        "installer_signature": installer_signature,
         "release_foundation_artifacts": {
             "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
             "sbom": repo_rel(RELEASE_FOUNDATION_SBOM),
@@ -123,4 +128,26 @@ def package_channels_report_payload(
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
         "implemented_channels": manifest_payload["implemented_channels"],
+        "interop_loader_metadata": manifest_payload["interop_loader_metadata"],
+        "installer_signature": manifest_payload["installer_signature"],
+    }
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def installer_signature_payload(installer_archive: Path) -> dict[str, Any]:
+    return {
+        "signature_format": "objc3c-local-sha256-v1",
+        "signing_key_id": "objc3c-release-operations-local-installer-key-v1",
+        "subject": "local-installer",
+        "artifact": repo_rel(installer_archive),
+        "sha256": sha256_file(installer_archive),
+        "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "trust_scope": "checked-in-artifact-digest",
     }

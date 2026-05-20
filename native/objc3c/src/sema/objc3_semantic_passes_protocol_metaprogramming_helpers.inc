@@ -104,6 +104,27 @@ static bool IsSupportedMetaprogrammingMacroProvenanceToken(
   });
 }
 
+static bool IsSupportedMetaprogrammingMacroCacheKeyToken(
+    const std::string &cache_key_name) {
+  const std::string normalized =
+      NormalizeMetaprogrammingRawMacroToken(cache_key_name);
+  if (normalized.size() < 3u || normalized.size() > 160u ||
+      normalized.find("..") != std::string::npos) {
+    return false;
+  }
+  return std::all_of(normalized.begin(), normalized.end(), [](char c) {
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+           (c >= 'a' && c <= 'z') || c == '.' || c == ':' || c == '_' ||
+           c == '-';
+  });
+}
+
+static bool IsSupportedMetaprogrammingMacroSandboxPolicy(
+    const std::string &sandbox_policy_name) {
+  return BuildMetaprogrammingLowercaseMacroToken(sandbox_policy_name) ==
+         "deterministic";
+}
+
 static std::string BuildMetaprogrammingDerivedSelectorForInventoryRow(
     const std::string &canonical_derive_name) {
   if (canonical_derive_name == "Equality") {

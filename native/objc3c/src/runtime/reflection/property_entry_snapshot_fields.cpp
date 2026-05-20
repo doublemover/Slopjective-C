@@ -16,6 +16,15 @@ void ResetRuntimePropertyEntrySnapshot(
   snapshot.setter_available = 0;
   snapshot.has_runtime_getter = 0;
   snapshot.has_runtime_setter = 0;
+  snapshot.attribute_count = 0;
+  snapshot.is_readonly = 0;
+  snapshot.is_nonatomic = 0;
+  snapshot.is_strong = 0;
+  snapshot.is_assign = 0;
+  snapshot.is_weak = 0;
+  snapshot.is_copy = 0;
+  snapshot.has_custom_getter = 0;
+  snapshot.has_custom_setter = 0;
   snapshot.base_identity = 0;
   snapshot.slot_index = 0;
   snapshot.offset_bytes = 0;
@@ -43,6 +52,7 @@ void ResetRuntimePropertyEntrySnapshot(
   snapshot.ivar_layout_symbol = nullptr;
   snapshot.ivar_layout_replay_key = nullptr;
   snapshot.property_attribute_profile = nullptr;
+  snapshot.property_behavior_name = nullptr;
   snapshot.ownership_lifetime_profile = nullptr;
   snapshot.ownership_runtime_hook_profile = nullptr;
   snapshot.accessor_ownership_profile = nullptr;

@@ -4,17 +4,37 @@
 
 namespace objc3c::support {
 
+namespace {
+
+bool IsAsciiLowercase(char c) {
+  return c >= 'a' && c <= 'z';
+}
+
+bool SelectorStartsMethodFamily(std::string_view selector,
+                                std::string_view family) {
+  if (!StartsWith(selector, family)) {
+    return false;
+  }
+  return selector.size() == family.size() ||
+         !IsAsciiLowercase(selector[family.size()]);
+}
+
+}  // namespace
+
 std::string ClassifyMethodFamilyFromSelector(std::string_view selector) {
-  if (StartsWith(selector, "mutableCopy")) {
+  if (SelectorStartsMethodFamily(selector, "alloc")) {
+    return "alloc";
+  }
+  if (SelectorStartsMethodFamily(selector, "mutableCopy")) {
     return "mutableCopy";
   }
-  if (StartsWith(selector, "copy")) {
+  if (SelectorStartsMethodFamily(selector, "copy")) {
     return "copy";
   }
-  if (StartsWith(selector, "init")) {
+  if (SelectorStartsMethodFamily(selector, "init")) {
     return "init";
   }
-  if (StartsWith(selector, "new")) {
+  if (SelectorStartsMethodFamily(selector, "new")) {
     return "new";
   }
   return "none";

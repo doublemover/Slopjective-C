@@ -7,7 +7,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticGenericInvariantAssignment;\n\n@protocol Persistable\n@end\n\n@interface SemanticBase <Persistable>\n@end\n\n@implementation SemanticBase\n@end\n\n@interface SemanticBox : SemanticBase <Persistable>\n@end\n\n@implementation SemanticBox\n@end\n\n@interface SemanticInvariantBox<T : id<Persistable>>\n@end\n\n@implementation SemanticInvariantBox\n@end\n\nfn acceptInvariant(erased: SemanticInvariantBox<SemanticBase *> *?) -> i32 {\n  return 0;\n}\n\nfn rejectInvariant(boxes: SemanticInvariantBox<SemanticBox *> *?) -> i32 {\n  return acceptInvariant(boxes);\n}\n",
   "expect": {

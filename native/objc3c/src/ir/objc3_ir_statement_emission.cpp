@@ -13,6 +13,15 @@
 #include "ir/objc3_ir_statement_switch_emission.h"
 #include "ir/objc3_ir_type_model.h"
 
+namespace {
+
+bool IsTerminalReturnAwaitDirectCall(const Expr *expr) {
+  return expr != nullptr && expr->kind == Expr::Kind::Call &&
+         expr->await_expression_enabled;
+}
+
+}  // namespace
+
 void EmitObjc3IRStatement(
     const Stmt *stmt, FunctionContext &ctx,
     const Objc3IRStatementEmissionCallbacks &callbacks) {
@@ -96,6 +105,11 @@ void EmitObjc3IRStatement(
         }
         ctx.ownership_cleanup_call_indices[let->name] =
             ctx.pending_ownership_cleanup_calls.size();
+        if (!ctx.pending_scope_cleanup_actions.empty()) {
+          ctx.pending_scope_cleanup_actions.back().push_back(
+              {PendingScopeCleanupActionKind::Ownership,
+               ctx.pending_ownership_cleanup_calls.size()});
+        }
         ctx.pending_ownership_cleanup_calls.push_back(std::move(cleanup_call));
       }
       return;
@@ -106,14 +120,29 @@ void EmitObjc3IRStatement(
         return;
       }
       if (ret->value == nullptr) {
-        callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
         callbacks.emit_typed_return("0", ctx);
       } else {
+        const bool previous_return_await_cleanup_enabled =
+            ctx.return_await_cleanup_before_handoff_enabled;
+        const bool previous_return_await_cleanup_emitted =
+            ctx.return_await_cleanup_before_handoff_emitted;
+        const bool terminal_return_await =
+            IsTerminalReturnAwaitDirectCall(ret->value.get());
+        ctx.return_await_cleanup_before_handoff_enabled =
+            terminal_return_await;
+        ctx.return_await_cleanup_before_handoff_emitted = false;
         const std::string value = callbacks.emit_expr(ret->value.get(), ctx);
+        const bool return_await_cleanup_emitted =
+            terminal_return_await &&
+            ctx.return_await_cleanup_before_handoff_emitted;
+        ctx.return_await_cleanup_before_handoff_enabled =
+            previous_return_await_cleanup_enabled;
+        ctx.return_await_cleanup_before_handoff_emitted =
+            previous_return_await_cleanup_emitted ||
+            return_await_cleanup_emitted;
         if (ctx.terminated) {
           return;
         }
-        callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
         callbacks.emit_typed_return(value, ctx);
       }
       ctx.terminated = true;
@@ -195,6 +224,11 @@ void EmitObjc3IRStatement(
       const BlockStmt *block_stmt = stmt->block_stmt.get();
       if (block_stmt == nullptr || ctx.pending_defer_scope_blocks.empty()) {
         return;
+      }
+      if (!ctx.pending_scope_cleanup_actions.empty()) {
+        ctx.pending_scope_cleanup_actions.back().push_back(
+            {PendingScopeCleanupActionKind::Defer,
+             ctx.pending_defer_scope_blocks.back().size()});
       }
       ctx.pending_defer_scope_blocks.back().push_back(block_stmt);
       return;

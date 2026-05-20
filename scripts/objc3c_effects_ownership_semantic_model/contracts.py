@@ -59,7 +59,9 @@ POSITIVE_MIN_COUNTS = {
     "stack_to_heap_promotion_sites": 1,
     "byref_forwarding_cell_sites": 1,
     "copy_helper_required_sites": 1,
+    "copy_helper_symbolized_sites": 1,
     "dispose_helper_required_sites": 1,
+    "dispose_helper_symbolized_sites": 1,
     "captured_object_lifetime_sites": 3,
     "throws_propagation_sites": 2,
     "bridged_error_sites": 8,
@@ -88,6 +90,7 @@ SOURCE_REPLAY_SEGMENTS = [
     "async=",
     "actors=",
     "foreign=",
+    "block-helper-symbols=",
     "violations=",
 ]
 

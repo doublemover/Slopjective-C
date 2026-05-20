@@ -86,11 +86,21 @@ static void AccumulateThrowStatementSemantics(
   if (context.in_catch_body) {
     ++summary.rethrow_sites;
   }
+  if (context.local_handler_active) {
+    ++summary.local_handler_sites;
+  }
   if (!allow_source_only_error_runtime_surface) {
     RecordThrowUnsupportedRuntimeDiagnostic(summary, expr.line, expr.column,
                                             diagnostics);
   }
-  if (!(context.in_throws_callable || context.in_catch_body)) {
+  const bool can_propagate =
+      context.in_throws_callable || context.local_handler_active;
+  if (!can_propagate && context.in_catch_body) {
+    RecordRethrowContextDiagnostic(summary, expr.line, expr.column,
+                                   diagnostics);
+    return;
+  }
+  if (!can_propagate) {
     RecordThrowContextDiagnostic(summary, expr.line, expr.column, diagnostics);
   }
 }

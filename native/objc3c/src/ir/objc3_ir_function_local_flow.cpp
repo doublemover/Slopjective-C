@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "lower/contracts/concurrency_continuation_runtime_contracts.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 
@@ -9,6 +10,33 @@ namespace {
 
 std::string NewFunctionLocalTemp(FunctionContext &ctx) {
   return "%t" + std::to_string(ctx.temp_counter++);
+}
+
+std::string EmitObjc3IRAsyncReturnContinuationHandoff(
+    const std::string &returned_value, FunctionContext &ctx) {
+  if (!ctx.async_runtime_helper_enabled) {
+    return returned_value;
+  }
+
+  const std::string continuation_handle = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + continuation_handle + " = call i32 @" +
+      std::string(kObjc3RuntimeAllocateAsyncContinuationI32Symbol) +
+      "(i32 " + std::to_string(ctx.async_resume_entry_tag) + ", i32 " +
+      std::to_string(ctx.async_executor_tag) + ")");
+  const std::string handed_off_handle = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + handed_off_handle + " = call i32 @" +
+      std::string(kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol) +
+      "(i32 " + continuation_handle + ", i32 " +
+      std::to_string(ctx.async_executor_tag) + ")");
+  const std::string resumed_value = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + resumed_value + " = call i32 @" +
+      std::string(kObjc3RuntimeResumeAsyncContinuationI32Symbol) + "(i32 " +
+      handed_off_handle + ", i32 " + returned_value + ")");
+  ctx.global_proofs_invalidated = true;
+  return resumed_value;
 }
 
 }  // namespace
@@ -80,26 +108,38 @@ void EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
 void EmitObjc3IRFunctionLocalTypedReturn(
     const std::string &i32_value, FunctionContext &ctx,
     const Objc3IRFunctionLocalFlowContext &flow_context) {
+  const bool cleanup_already_emitted =
+      ctx.return_await_cleanup_before_handoff_emitted;
   if (ctx.return_type == ValueType::Void) {
-    EmitObjc3IRDeferredCleanupTerminalToDepth(
-        ctx, 0u, flow_context.scope_cleanup_callbacks);
-    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
-    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines);
-    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    if (!cleanup_already_emitted) {
+      EmitObjc3IRDeferredAndOwnershipCleanupTerminalToDepth(
+          ctx, 0u, 0u, flow_context.scope_cleanup_callbacks);
+      EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines);
+      EmitObjc3IRArcOwnedTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines, ctx.temp_counter);
+      EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+    }
     ctx.code_lines.push_back("  ret void");
     return;
   }
 
   std::string returned_value = i32_value;
-  if (ctx.arc_return_insert_retain) {
+  if (ctx.arc_return_insert_retain || ctx.arc_return_insert_autorelease) {
     const std::string retained_value = NewFunctionLocalTemp(ctx);
     ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
                              std::string(kObjc3RuntimeRetainI32Symbol) +
                              "(i32 " + returned_value + ")");
     returned_value = retained_value;
+  }
+  if (!cleanup_already_emitted) {
+    EmitObjc3IRDeferredAndOwnershipCleanupTerminalToDepth(
+        ctx, 0u, 0u, flow_context.scope_cleanup_callbacks);
+    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines);
+    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
   }
   if (ctx.arc_return_insert_autorelease) {
     const std::string autoreleased_value = NewFunctionLocalTemp(ctx);
@@ -108,20 +148,15 @@ void EmitObjc3IRFunctionLocalTypedReturn(
                              "(i32 " + returned_value + ")");
     returned_value = autoreleased_value;
   }
-
-  EmitObjc3IRDeferredCleanupTerminalToDepth(
-      ctx, 0u, flow_context.scope_cleanup_callbacks);
-  EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines, ctx.temp_counter);
-  EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines);
-  EmitObjc3IRArcOwnedTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines, ctx.temp_counter);
   if (ctx.return_type == ValueType::Bool) {
+    returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
+                                                              ctx);
     const std::string bool_i1 = CoerceObjc3IRI32ToBoolI1(returned_value, ctx);
     ctx.code_lines.push_back("  ret i1 " + bool_i1);
     return;
   }
+  returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
+                                                            ctx);
   ctx.code_lines.push_back("  ret i32 " + returned_value);
 }
 

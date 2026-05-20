@@ -17,6 +17,9 @@ set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
 add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp
   blocks/block_capture_storage.h
+  blocks/block_byref_cells.cpp
+  blocks/block_byref_cells.h
+  blocks/block_descriptor.h
   blocks/block_arc_snapshot.cpp
   blocks/block_invocation.cpp
   blocks/block_invocation_plan.cpp
@@ -261,6 +264,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_dispatch_state_clear.h
   state/runtime_instance_state_clear.cpp
   state/runtime_instance_state_clear.h
+  state/runtime_cache_invalidation.h
   state/runtime_state_clear.h
   state/runtime_state.cpp
   state/runtime_state.h
@@ -272,11 +276,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_local_reset.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
+  stdlib/core_runtime.cpp
+  stdlib/core_runtime_contract.h
 )
 add_subdirectory(classes)
 add_subdirectory(reflection)
 add_subdirectory(storage)
 objc3c_apply_build_defaults(${OBJC3_RUNTIME_LIBRARY_TARGET})
+objc3c_apply_sanitizers(${OBJC3_RUNTIME_LIBRARY_TARGET})
 target_link_libraries(${OBJC3_RUNTIME_LIBRARY_TARGET} PUBLIC
   objc3c_runtime_metadata
 )

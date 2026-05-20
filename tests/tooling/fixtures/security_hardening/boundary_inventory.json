@@ -63,12 +63,34 @@
     },
     "runtime_hardening_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
-      "supporting_contracts": [],
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+      ],
       "summary_implementation_anchor": "scripts/build_security_hardening_artifact_contract_summary.py",
       "check_implementation_anchors": [
         "scripts/check_security_hardening_runtime_hardening.py",
+        "scripts/check_security_sanitizer_validation.py",
         "scripts/check_objc3c_security_hardening_integration.py",
         "scripts/check_objc3c_security_hardening_end_to_end.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
+    },
+    "language_runtime_threat_model_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+        "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/check_security_language_runtime_threat_model.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_language_runtime_threat_model.py"
       ],
       "evidence_log_allowed": false,
       "retired_route_claims_allowed": false,
@@ -93,7 +115,10 @@
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
     "scripts/check_objc3c_platform_hardening_integration.py",
+    "scripts/check_security_sanitizer_validation.py",
+    "scripts/check_security_language_runtime_threat_model.py",
     "scripts/objc3c_workflow",
+    "native/objc3c/cmake/Objc3Sanitizers.cmake",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
@@ -113,6 +138,8 @@
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
     "tests/tooling/fixtures/native/macro_package_provenance_positive.objc3",
     "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
@@ -132,6 +159,8 @@
     "validate-distribution-credibility-end-to-end",
     "validate-security-hardening",
     "validate-security-hardening-end-to-end",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "validate-platform-hardening",
     "test-runtime-acceptance",
     "check-security-hardening-surface",
@@ -144,6 +173,8 @@
     "tmp/reports/security-hardening/schema-surface-summary.json",
     "tmp/reports/security-hardening/response-drill-summary.json",
     "tmp/reports/security-hardening/runtime-hardening-summary.json",
+    "tmp/reports/security-hardening/sanitizer-validation-summary.json",
+    "tmp/reports/security-hardening/language-runtime-threat-model-summary.json",
     "tmp/reports/security-hardening/security-posture-summary.json",
     "tmp/reports/security-hardening/integration-summary.json",
     "tmp/reports/security-hardening/publication-summary.json",
@@ -154,7 +185,7 @@
     "tmp/reports/distribution-credibility/publication-summary.json",
     "tmp/reports/distribution-credibility/end-to-end-summary.json",
     "tmp/reports/platform-hardening/integration-summary.json",
-    "checked_outputs/release-evidence/index.json"
+    "tmp/reports/release_proof/index.json"
   ],
   "gap_claims": [
     "no hosted advisory service claim",
@@ -165,7 +196,9 @@
     "no evidence-log security proof",
     "no local-only tabletop as capability truth",
     "no retired route or trust-bypass security claim",
-    "no wrapper-only security action claim"
+    "no wrapper-only security action claim",
+    "no sanitizer-positive claim without ASan and UBSan target application",
+    "no language/runtime threat-model closure without checked-in source truth"
   ],
   "successor_issues": [
     "M327-B001",

@@ -1,0 +1,16 @@
+module m267_rethrow_in_throws_catch_positive;
+
+extern fn risky(value: i32) throws -> i32;
+
+fn recover() throws -> i32 {
+  do {
+    return try risky(1);
+  } catch {
+    throw 2;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return 0;
+}

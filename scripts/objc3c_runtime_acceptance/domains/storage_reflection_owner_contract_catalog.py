@@ -82,16 +82,23 @@ IVAR_LAYOUT_ACCESSOR_OWNER_CONTRACT = StorageReflectionOwnerContract(
 RUNTIME_PROPERTY_REFLECTION_OWNER_CONTRACT = StorageReflectionOwnerContract(
     owner_id=RUNTIME_PROPERTY_REFLECTION_OWNER,
     owner_surface="runtime property metadata reflection",
-    case_ids=("property-reflection",),
+    case_ids=(
+        "property-reflection",
+        "property-ivar-invalid-layout-runtime",
+    ),
     source_modules=(
         "storage_reflection_runtime_property_reflection_cases",
         "storage_reflection_runtime_property_reflection_summary",
         "storage_reflection_runtime_property_reflection_assertions",
+        "storage_reflection_runtime_property_invalid_layout_cases",
+        "storage_reflection_runtime_property_invalid_layout_summary",
+        "storage_reflection_runtime_property_invalid_layout_assertions",
     ),
     owned_decisions=(
         "property registry reflection payload",
         "slot-backed property reflection counts",
         "runtime setter reflection availability",
+        "fail-closed invalid property/ivar layout reflection",
     ),
 )
 

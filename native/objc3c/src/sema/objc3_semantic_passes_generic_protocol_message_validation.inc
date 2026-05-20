@@ -24,7 +24,8 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                                      const std::unordered_map<std::string, FunctionInfo> &functions,
                                      std::vector<std::string> &diagnostics,
                                      std::size_t max_message_send_args,
-                                     const Objc3MessageSendResolutionContext &message_send_context) {
+                                     const Objc3MessageSendResolutionContext &message_send_context,
+                                     bool allow_throwing_call = false) {
   if (expr == nullptr) {
     return MakeScalarSemanticType(ValueType::Unknown);
   }

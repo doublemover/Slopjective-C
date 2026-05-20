@@ -73,6 +73,55 @@
       "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
     },
     {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+      "command": "npm run objc3c -- test-lowering-runtime-stress"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_build_objc3c_effects_ownership_semantic_model.py"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-01.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-02.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-03.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/EFF-8014-04.json"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_effects_diagnostics_model_summaries_effects_ownership.inc"
+    },
+    {
+      "capability_id": "compiler.sema.effects-ownership-model",
+      "support_claim": "objc3c.behavior.sema.effects-ownership-model",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_effects_ownership_semantic_model/semantic_model.py"
+    },
+    {
       "capability_id": "compiler.sema.canonical-diagnostics",
       "evidence_kind": "diagnostic",
       "path": "tests/conformance/diagnostics/manifest.json"
@@ -157,14 +206,264 @@
       "command": "npm run objc3c -- test-behavior-matrix"
     },
     {
-      "capability_id": "runtime.concurrency.async-actors",
-      "evidence_kind": "doc",
-      "path": "docs/spec/concurrency_reserved.md"
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py"
+    },
+    {
+      "capability_id": "language.errors.try-catch-semantics",
+      "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.error-unwind-cleanup",
+      "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_local_flow.cpp"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/error_bridge_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.errors.nserror-status-bridge",
+      "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/interop_semantic_model_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/arc_cleanup_integration/owner_contract.json"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_arc_cleanup_integration_owner_split.py"
+    },
+    {
+      "capability_id": "language.arc-cleanup.integration",
+      "support_claim": "objc3c.behavior.arc-cleanup.integration",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/suite_catalog.py"
     },
     {
       "capability_id": "runtime.concurrency.async-actors",
-      "evidence_kind": "diagnostic",
-      "path": "tests/conformance/diagnostics/manifest.json"
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_runtime_abi_cases.py"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/continuation_runtime_helper_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/continuation_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
@@ -180,6 +479,57 @@
       "capability_id": "runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_object_model_closure.md"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "source",
+      "path": "stdlib/compatibility_gates.json"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.core/module.json"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
+    },
+    {
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
     },
     {
       "capability_id": "language.advanced-runtime-closure",

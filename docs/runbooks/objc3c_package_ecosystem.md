@@ -113,7 +113,11 @@ canonical application surfaces. Lockfiles and mirrors are generated outputs:
 
 An offline mirror is a local artifact cache plus an index generated from a
 locked package graph. It must not fetch from the network during validation, and
-it is invalid if it contains package identities not present in the lock.
+it is invalid if it contains package identities not present in the lock. Each
+mirror package row points at a generated cache entry under
+`tmp/artifacts/package-ecosystem/mirrors/cache`, carries the source digest and
+cache-entry digest, and is restored only with a machine-owned receipt under
+`tmp/artifacts/package-ecosystem/offline-install`.
 
 ## Registry And Publication Semantics
 
@@ -126,6 +130,8 @@ Registry behavior is layered on top of the local lock and mirror model:
 - `local-index` is supported as a generated artifact over locked package
   metadata.
 - `offline-mirror` is supported only when derived from the lock graph.
+- `offline-restore-receipt` is supported only when every mirror cache entry
+  exists and digest-matches the mirror index.
 - `publication-metadata` is supported as replayable release/update/package
   channel metadata.
 - `hosted-registry` is explicitly deferred until a later milestone proves
@@ -186,8 +192,26 @@ Helper implementations are action-catalog-owned and are not direct package
 commands.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
-local registry index, and publication metadata under the package-ecosystem
-output root, and refuses to claim hosted registry support.
+digest-checked package cache entries, an offline restore receipt, local registry
+index, and publication metadata under the package-ecosystem output root, and
+refuses to claim hosted registry support.
+
+## ObjC++ And Swift Metadata Bridge Surfaces
+
+The checked-in source of truth for C, Objective-C, ObjC++, and Swift
+metadata bridge semantics is:
+
+- `tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json`
+
+That contract ties positive fixtures, negative fixtures, stable `O3PKG*`
+diagnostics, ABI alignment records, foreign type records, mixed-image loader
+records, explicit ObjC++/Swift bridge-surface rows, and package execution
+entries to package ids already present in the generated lock. The lock, mirror,
+local registry, publication metadata, and packaging-channel manifest all consume
+that same contract and carry bridge-surface counts. Malformed, unsupported,
+conflicting, and unsafe variants are negative fixtures with stable diagnostic
+codes and source ranges. Unsupported hosted registry restore, network-resolved
+interop metadata, and unchecked ABI alignment remain fail-closed.
 
 ## Public Workflow Integration
 

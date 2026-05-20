@@ -1,61 +1,77 @@
 module objc3_concurrency;
 
-fn objc3_concurrency_spawn_token(seed: i32) {
-  return seed + 1;
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_enter_task_group_scope_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_add_task_group_task_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_cancel_task_group_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32;
+
+async fn objc3_concurrency_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(global))) {
+  return objc3_runtime_spawn_task_i32(1, seed);
 }
 
-fn objc3_concurrency_child_spawn_token(seed: i32) {
-  return seed + 1;
+async fn objc3_concurrency_child_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(global))) {
+  return objc3_runtime_spawn_task_i32(1, seed);
 }
 
-fn objc3_concurrency_detached_spawn_token(seed: i32) {
-  return seed + 2;
+async fn objc3_concurrency_detached_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(named("objc3.concurrency.detached")))) {
+  return objc3_runtime_spawn_task_i32(2, seed);
 }
 
-fn objc3_concurrency_join_status(result_code: i32, cancelled: i32) {
-  if (cancelled) {
-    return 2;
+async fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32) -> i32 __attribute__((objc_executor(global))) {
+  let observed_cancelled = objc3_runtime_task_is_cancelled_i32(executor_tag);
+  if (cancelled || observed_cancelled) {
+    return objc3_runtime_task_on_cancel_i32(executor_tag);
   } else {
-    return result_code;
+    return objc3_runtime_executor_hop_i32(result_code, executor_tag);
   }
 }
 
-fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) {
+async fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) -> i32 __attribute__((objc_executor(global))) {
+  let scope = objc3_runtime_enter_task_group_scope_i32(parent_depth);
   if (child_tasks < 0) {
-    return parent_depth;
+    return objc3_runtime_cancel_task_group_i32(parent_depth);
   } else {
-    return parent_depth + child_tasks;
+    let last = scope;
+    for (let child = 0; child < child_tasks; child = child + 1) {
+      objc3_runtime_add_task_group_task_i32(parent_depth);
+    }
+    for (let child = 0; child < child_tasks; child = child + 1) {
+      last = await objc3_runtime_wait_task_group_next_i32(parent_depth);
+    }
+    return last;
   }
 }
 
-fn objc3_concurrency_cancellation_query(flag: i32) {
+async fn objc3_concurrency_cancellation_query(flag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return objc3_runtime_task_is_cancelled_i32(flag);
+}
+
+async fn objc3_concurrency_cancellation_checkpoint(flag: i32) -> i32 __attribute__((objc_executor(global))) {
   if (flag) {
-    return 1;
+    objc3_runtime_enter_task_group_scope_i32(flag);
+    return objc3_runtime_cancel_task_group_i32(flag);
   } else {
-    return 0;
+    return objc3_runtime_task_is_cancelled_i32(flag);
   }
 }
 
-fn objc3_concurrency_cancellation_checkpoint(flag: i32) {
-  if (flag) {
-    return 1;
-  } else {
-    return 0;
-  }
+fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32) {
+  return objc3_runtime_executor_hop_i32(value, executor_tag);
 }
 
-fn objc3_concurrency_executor_hop_token(current_executor: i32, target_executor: i32) {
-  if (target_executor) {
-    return target_executor;
-  } else {
-    return current_executor;
-  }
-}
-
-fn objc3_concurrency_actor_mailbox_token(actor_seed: i32, pending_messages: i32) {
+fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, pending_messages: i32) {
   if (pending_messages < 0) {
-    return actor_seed;
+    return objc3_runtime_actor_bind_executor_i32(actor_handle, executor_tag);
   } else {
-    return actor_seed + pending_messages;
+    objc3_runtime_actor_bind_executor_i32(actor_handle, executor_tag);
+    objc3_runtime_actor_mailbox_enqueue_i32(actor_handle, pending_messages, executor_tag);
+    return objc3_runtime_actor_mailbox_drain_next_i32(actor_handle, executor_tag);
   }
 }

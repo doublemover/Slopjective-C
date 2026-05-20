@@ -10,6 +10,7 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json`
 - `tests/tooling/fixtures/block_arc_closure/block_arc_lowering_runtime_abi_contract.json`
 - `tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json`
+- `tests/tooling/fixtures/block_arc_closure/issue_8033_escaping_owned_object_copy_dispose_evidence.json`
 
 Replayable public workflow actions:
 
@@ -47,8 +48,10 @@ ARC automation and lifetime insertion policy:
 Byref promotion, copy/dispose, and forwarding implementation:
 
 - byref forwarding remains supported only through the runtime-owned promotion, invoke, and final-release path
+- private runtime byref cells forward stack captures to shared heap cells across promoted blocks; compiler-emitted caller-frame forwarding remains a later lowering bridge
 - dispose is deferred until final release and invoke-after-release stays fail-closed
 - byref closure claims are grounded in the live runtime probes and packaged block/ARC execution path, not in evidence-only sidecars
+- issue #8033 escaping owned-object block copy/dispose proof is anchored by the live owned-capture lifetime runtime probe, which retains the captured object during block promotion, keeps it live after the original owner is released, releases it on final block dispose, and rejects stale invocation
 
 Lowering and runtime ABI contract:
 
@@ -71,7 +74,7 @@ Explicit non-goals:
 
 Follow-on tracks:
 
-- throws, cleanup, bridged errors, and executable propagation closure
+- native error runtime closure, owned by `docs/runbooks/objc3c_error_runtime_closure.md`
 - async/task/actor runtime execution, scheduling, and isolation closure
 - metaprogramming, property-behavior runtime materialization, and interop closure
 - full-envelope conformance, stability, and production claimability
@@ -99,7 +102,9 @@ Authoritative live surfaces:
   - `tests/tooling/runtime/README.md`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
-Generated evidence:
+Reproducible generated evidence:
 
 - `tmp/reports/block-arc-closure/boundary-inventory/block_arc_closure_boundary_inventory_summary.json`
 - `tmp/reports/block-arc-closure/boundary-inventory/block_arc_closure_boundary_inventory_summary.md`
+- `tmp/reports/block-arc-closure/byref-promotion-forwarding/byref_promotion_copy_dispose_forwarding_summary.json`
+- `tmp/reports/block-arc-closure/byref-promotion-forwarding/byref_promotion_copy_dispose_forwarding_summary.md`

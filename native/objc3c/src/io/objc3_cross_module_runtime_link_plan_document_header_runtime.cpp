@@ -84,6 +84,16 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderRuntimeSurfaces(
           .expected_block_ownership_runtime_support_library_link_wiring_contract_id);
   EmitStringField(
       out,
+      "block_retain_release_operation_lowering_contract_id",
+      inputs
+          .expected_block_ownership_retain_release_operation_lowering_contract_id);
+  EmitStringField(
+      out,
+      "block_autoreleasepool_scope_lowering_contract_id",
+      inputs
+          .expected_block_ownership_autoreleasepool_scope_lowering_contract_id);
+  EmitStringField(
+      out,
       "runtime_cross_module_storage_reflection_artifact_preservation_surface_contract_id",
       inputs.expected_storage_reflection_contract_id);
   EmitStringField(
@@ -116,7 +126,7 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderRuntimeSurfaces(
   EmitLiteralStringField(
       out,
       "block_ownership_artifact_preservation_model",
-      "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-and-runtime-link-facts-beyond-local-ir-object-emission");
+      "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-runtime-link-and-arc-cleanup-facts-beyond-local-ir-object-emission");
   EmitLiteralStringField(
       out,
       "storage_reflection_artifact_preservation_model",
@@ -124,5 +134,6 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderRuntimeSurfaces(
   out << "  \"imported_live_registration_replay_ready\": true,\n"
       << "  \"imported_live_restart_hardening_ready\": true,\n"
       << "  \"block_ownership_cross_module_preservation_ready\": true,\n"
+      << "  \"block_ownership_arc_cleanup_cross_module_preservation_ready\": true,\n"
       << "  \"storage_reflection_cross_module_preservation_ready\": true,\n";
 }

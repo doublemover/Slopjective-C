@@ -206,7 +206,8 @@ bool IsValidObjc3SuperDispatchMethodFamilyContract(
       contract.super_dispatch_enabled_sites) {
     return false;
   }
-  if (contract.method_family_init_sites + contract.method_family_copy_sites +
+  if (contract.method_family_alloc_sites + contract.method_family_init_sites +
+          contract.method_family_copy_sites +
           contract.method_family_mutable_copy_sites +
           contract.method_family_new_sites + contract.method_family_none_sites !=
       contract.message_send_sites) {
@@ -233,6 +234,8 @@ std::string Objc3SuperDispatchMethodFamilyReplayKey(
          std::to_string(contract.super_dispatch_enabled_sites) +
          ";super_dispatch_requires_class_context_sites=" +
          std::to_string(contract.super_dispatch_requires_class_context_sites) +
+         ";method_family_alloc_sites=" +
+         std::to_string(contract.method_family_alloc_sites) +
          ";method_family_init_sites=" +
          std::to_string(contract.method_family_init_sites) +
          ";method_family_copy_sites=" +

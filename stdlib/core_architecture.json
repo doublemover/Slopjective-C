@@ -9,6 +9,9 @@
     "stdlib/modules/objc3.core/module.objc3",
     "stdlib/modules/objc3.errors/module.objc3",
     "stdlib/modules/objc3.keypath/module.objc3",
+    "native/objc3c/src/runtime/stdlib/core_runtime_contract.h",
+    "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
     "scripts/check_stdlib_surface.py",
     "scripts/materialize_objc3c_stdlib_workspace.py",
     "scripts/objc3c_workflow/actions/application_stdlib_integrations.py",
@@ -43,7 +46,8 @@
       "join-and-wait",
       "task-group-scope",
       "cancellation-observation",
-      "executor-hop"
+      "executor-hop",
+      "actor-mailbox"
     ],
     "objc3.system": [
       "resource-cleanup",

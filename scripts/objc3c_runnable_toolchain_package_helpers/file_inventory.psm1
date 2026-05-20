@@ -61,6 +61,16 @@ function Get-RepoRelativeExecutionFixtureFiles {
     -MissingRootMessage "runnable toolchain package FAIL: missing execution fixture root $fixtureRoot")
 }
 
+function Get-RepoRelativeNativeFixtureFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $fixtureRoot = Join-Path $RepoRoot "tests/tooling/fixtures/native"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "tests/tooling/fixtures/native" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing native fixture root $fixtureRoot")
+}
+
 function Get-RepoRelativeStdlibFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -78,7 +88,18 @@ function Get-RepoRelativeConformanceFiles {
   return @(Get-RepoRelativeFilesUnderRoot `
     -RepoRoot $RepoRoot `
     -RelativeRoot "tests/conformance" `
-    -MissingRootMessage "runnable toolchain package FAIL: missing conformance root $conformanceRoot")
+      -MissingRootMessage "runnable toolchain package FAIL: missing conformance root $conformanceRoot")
+}
+
+function Get-RepoRelativeConformanceSurfacePythonFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $surfaceModelRoot = Join-Path $RepoRoot "scripts/conformance_corpus_surface_model"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "scripts/conformance_corpus_surface_model" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing conformance corpus surface model root $surfaceModelRoot" `
+    -Filter "*.py")
 }
 
 function Get-RepoRelativeNativeDocsFiles {
@@ -123,6 +144,17 @@ function Get-RepoRelativePythonSharedFiles {
     -Filter "*.py")
 }
 
+function Get-RepoRelativePackagedPythonScriptFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $scriptsRoot = Join-Path $RepoRoot "scripts"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "scripts" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing scripts root $scriptsRoot" `
+    -Filter "*.py")
+}
+
 function Get-RepoRelativeWorkflowPythonFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -132,6 +164,34 @@ function Get-RepoRelativeWorkflowPythonFiles {
     -RelativeRoot "scripts/objc3c_workflow" `
     -MissingRootMessage "runnable toolchain package FAIL: missing workflow Python root $workflowRoot" `
     -Filter "*.py")
+}
+
+function Get-RepoRelativePerformanceBenchmarkFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $performanceRoots = @(
+    "scripts/objc3c_performance_benchmark",
+    "scripts/objc3c_comparative_baselines"
+  )
+
+  return @(
+    "scripts/benchmark_objc3c_performance.py",
+    "scripts/benchmark_objc3c_runtime_performance.py",
+    "scripts/check_objc3c_performance_integration.py",
+    "scripts/check_objc3c_runtime_performance_integration.py",
+    "scripts/check_objc3c_runnable_performance_end_to_end.py",
+    "scripts/check_objc3c_runnable_runtime_performance_end_to_end.py",
+    "scripts/run_objc3c_comparative_baselines.py",
+    "scripts/objc3c_performance_reproducibility.py"
+    foreach ($performanceRoot in $performanceRoots) {
+      $absoluteRoot = Join-Path $RepoRoot $performanceRoot
+      Get-RepoRelativeFilesUnderRoot `
+        -RepoRoot $RepoRoot `
+        -RelativeRoot $performanceRoot `
+        -MissingRootMessage "runnable toolchain package FAIL: missing performance benchmark Python root $absoluteRoot" `
+        -Filter "*.py"
+    }
+  )
 }
 
 function Get-RepoRelativeRuntimeAcceptanceFiles {
@@ -218,11 +278,15 @@ function Get-RepoRelativeRecoveryPositiveFiles {
 Export-ModuleMember -Function @(
   "Copy-RepoRelativeFile",
   "Get-RepoRelativeConformanceFiles",
+  "Get-RepoRelativeConformanceSurfacePythonFiles",
   "Get-RepoRelativeExecutionFixtureFiles",
   "Get-RepoRelativeNativeCompileSupportFiles",
   "Get-RepoRelativeNativeDocsFiles",
   "Get-RepoRelativeNativeExecutionSupportFiles",
+  "Get-RepoRelativeNativeFixtureFiles",
   "Get-RepoRelativeNativeRuntimeSourceFiles",
+  "Get-RepoRelativePackagedPythonScriptFiles",
+  "Get-RepoRelativePerformanceBenchmarkFiles",
   "Get-RepoRelativePythonSharedFiles",
   "Get-RepoRelativePythonToolingFiles",
   "Get-RepoRelativeRecoveryPositiveFiles",

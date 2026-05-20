@@ -5,10 +5,14 @@ from __future__ import annotations
 from objc3c_runtime_acceptance.domains.object_model_cases import (
     check_canonical_dispatch_case,
     check_canonical_sample_set_case,
+    check_dispatch_lookup_runtime_probe_case,
     check_live_dispatch_fast_path_case,
     check_metaclass_graph_root_class_case,
+    check_method_cache_slow_path_probe_case,
     check_realization_lookup_reflection_runtime_case,
+    check_runtime_object_foundation_protocol_category_case,
     check_runtime_library_case,
+    check_typed_dispatch_abi_probe_case,
 )
 from objc3c_runtime_acceptance.domains.object_model_surface_cases import (
     build_runtime_category_attachment_merged_dispatch_surface,
@@ -37,10 +41,14 @@ _EXPORTED_CASE_NAMES = [
     "build_runtime_category_attachment_merged_dispatch_surface",
     "build_runtime_reflection_visibility_coherence_diagnostics_surface",
     "check_runtime_library_case",
+    "check_dispatch_lookup_runtime_probe_case",
+    "check_method_cache_slow_path_probe_case",
+    "check_typed_dispatch_abi_probe_case",
     "check_canonical_dispatch_case",
     "check_metaclass_graph_root_class_case",
     "check_canonical_sample_set_case",
     "check_realization_lookup_reflection_runtime_case",
+    "check_runtime_object_foundation_protocol_category_case",
     "check_live_dispatch_fast_path_case",
 ]
 

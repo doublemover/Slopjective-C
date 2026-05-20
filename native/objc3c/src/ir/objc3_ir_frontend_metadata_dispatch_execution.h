@@ -51,6 +51,7 @@ struct Objc3IRFrontendDispatchExecutionMetadata {
   std::size_t super_dispatch_method_family_receiver_super_identifier_sites = 0;
   std::size_t super_dispatch_method_family_enabled_sites = 0;
   std::size_t super_dispatch_method_family_requires_class_context_sites = 0;
+  std::size_t super_dispatch_method_family_alloc_sites = 0;
   std::size_t super_dispatch_method_family_init_sites = 0;
   std::size_t super_dispatch_method_family_copy_sites = 0;
   std::size_t super_dispatch_method_family_mutable_copy_sites = 0;

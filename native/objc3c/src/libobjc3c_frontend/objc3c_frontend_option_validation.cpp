@@ -1,5 +1,6 @@
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace objc3c::frontend {
@@ -11,6 +12,21 @@ bool ValidateFrontendEmitOptions(
     error =
         "compile_options.allow_live_error_runtime_surface must be 0 or 1.";
     return false;
+  }
+  if (options.imported_runtime_surface_path_count > 0 &&
+      options.imported_runtime_surface_paths == nullptr) {
+    error =
+        "compile_options.imported_runtime_surface_paths is required when imported_runtime_surface_path_count is non-zero.";
+    return false;
+  }
+  for (size_t index = 0; index < options.imported_runtime_surface_path_count;
+       ++index) {
+    if (IsMissingFrontendBorrowedPath(
+            options.imported_runtime_surface_paths[index])) {
+      error =
+          "compile_options.imported_runtime_surface_paths cannot contain empty paths.";
+      return false;
+    }
   }
   const bool wants_artifact = options.emit_manifest != 0 ||
                               options.emit_ir != 0 ||

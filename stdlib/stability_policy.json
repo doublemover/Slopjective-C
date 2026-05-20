@@ -17,7 +17,8 @@
       "join-and-wait",
       "task-group-scope",
       "cancellation-observation",
-      "executor-hop"
+      "executor-hop",
+      "actor-mailbox"
     ],
     "objc3.keypath": [
       "typed-keypath-application",

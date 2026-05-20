@@ -123,9 +123,9 @@ def validate_program_surface(
             "canonical-conversion-or-comparison-doc",
         ],
         "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
-        "comparison_claim_rule": "comparison-only capabilities must be framed as actor-shaped comparison or canonical conversion guidance rather than runnable parity stories",
+        "comparison_claim_rule": "comparison-only capabilities must be framed as canonical pattern-conversion guidance rather than runnable parity or retired-source support stories",
         "command_truth_rule": "package.json objc3c is the authoritative public npm entrypoint; workflow examples use npm run objc3c -- <action>",
-        "machine_noise_rule": "tmp artifacts and legacy redirect material may not appear as the primary onboarding route",
+        "machine_noise_rule": "tmp artifacts and archived redirect material may not appear as the primary onboarding route",
     }:
         return "program surface onboarding_policy drifted"
 

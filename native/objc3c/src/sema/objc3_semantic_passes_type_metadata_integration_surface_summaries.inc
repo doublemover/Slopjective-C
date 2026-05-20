@@ -65,14 +65,11 @@
   surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
   surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);
   surface.lightweight_generic_constraint_summary =
-      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
-          surface.type_annotation_surface_summary);
+      BuildLightweightGenericConstraintSummaryFromCanonicalTypes(surface);
   surface.nullability_flow_warning_precision_summary =
-      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
-          surface.type_annotation_surface_summary);
+      BuildNullabilityFlowWarningPrecisionSummaryFromCanonicalTypes(surface);
   surface.protocol_qualified_object_type_summary =
-      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
-          surface.type_annotation_surface_summary);
+      BuildProtocolQualifiedObjectTypeSummaryFromCanonicalTypes(surface);
   surface.variance_bridge_cast_summary =
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           surface.type_annotation_surface_summary,
@@ -115,10 +112,7 @@
       BuildResultLikeLoweringSummaryFromProgramAst(ast);
   surface.error_diagnostics_recovery_summary =
       BuildErrorDiagnosticsRecoverySummaryFromProgramAst(ast);
-  surface.unwind_cleanup_summary =
-      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
-          surface.throws_propagation_summary,
-          surface.result_like_lowering_summary);
+  surface.unwind_cleanup_summary = BuildUnwindCleanupSummaryFromProgramAst(ast);
   surface.ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromIntegrationSurface(surface);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);

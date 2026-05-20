@@ -91,10 +91,15 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       summary.retain_insertion_sites > 0 || summary.release_insertion_sites > 0 ||
       summary.autorelease_insertion_sites > 0 ||
       summary.weak_zeroing_sites > 0 || summary.autoreleasepool_scope_sites > 0;
+  const bool copy_dispose_helpers_symbolized =
+      summary.copy_helper_symbolized_sites >= summary.copy_helper_required_sites &&
+      summary.dispose_helper_symbolized_sites >=
+          summary.dispose_helper_required_sites;
   summary.block_escape_semantics_landed =
       summary.block_literal_sites > 0 &&
       summary.copy_helper_required_sites <= summary.block_literal_sites &&
-      summary.dispose_helper_required_sites <= summary.block_literal_sites;
+      summary.dispose_helper_required_sites <= summary.block_literal_sites &&
+      copy_dispose_helpers_symbolized;
   summary.throws_cleanup_semantics_landed =
       summary.throws_propagation_sites > 0 || summary.unwind_cleanup_sites > 0 ||
       summary.bridged_error_sites > 0;
@@ -108,6 +113,12 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       actor_summary.actor_member_metadata_sites > 0;
   summary.foreign_boundary_semantics_landed =
       summary.foreign_boundary_sites > 0 || interop_summary.deterministic;
+  const bool effects_interop_profile_deterministic =
+      interop_summary.foreign_annotation_source_supported &&
+      interop_summary.ownership_interaction_profile_frozen &&
+      interop_summary.async_affinity_profile_reused &&
+      interop_summary.actor_hazard_profile_reused &&
+      interop_summary.metadata_payload_profile_frozen;
   summary.deterministic =
       retain_release.deterministic && weak_unowned.deterministic &&
       autoreleasepool.deterministic && block_storage.deterministic &&
@@ -115,15 +126,29 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       unwind_summary.deterministic && bridge_summary.deterministic &&
       error_summary.deterministic && async_summary.deterministic &&
       task_summary.deterministic && actor_summary.deterministic &&
-      interop_summary.deterministic &&
+      effects_interop_profile_deterministic &&
       summary.copy_helper_required_sites <= summary.block_literal_sites &&
       summary.dispose_helper_required_sites <= summary.block_literal_sites &&
+      copy_dispose_helpers_symbolized &&
       summary.stack_to_heap_promotion_sites <= summary.block_literal_sites &&
       summary.weak_unowned_conflict_sites <=
           weak_unowned.ownership_candidate_sites &&
       summary.contract_violation_sites == 0;
-  summary.ready_for_lowering_and_runtime = summary.deterministic;
-  if (!summary.deterministic) {
+  const bool all_required_effect_slices_landed =
+      summary.arc_semantics_landed && summary.block_escape_semantics_landed &&
+      summary.throws_cleanup_semantics_landed &&
+      summary.async_task_semantics_landed && summary.actor_semantics_landed &&
+      summary.foreign_boundary_semantics_landed;
+  summary.ready_for_lowering_and_runtime =
+      summary.deterministic && all_required_effect_slices_landed;
+  if (!copy_dispose_helpers_symbolized) {
+    summary.failure_reason =
+        "effects/ownership block helper lowering is missing required copy/dispose helper symbols";
+  } else if (!all_required_effect_slices_landed) {
+    summary.failure_reason =
+        "effects/ownership semantic model is missing required ARC, block, "
+        "throws, async/task, actor, or foreign-boundary slices";
+  } else if (!summary.deterministic) {
     summary.failure_reason =
         "effects/ownership semantic model is not deterministic or has contract violations";
   }
@@ -142,6 +167,8 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       << summary.byref_forwarding_cell_sites << ":"
       << summary.copy_helper_required_sites << ":"
       << summary.dispose_helper_required_sites
+      << ";block-helper-symbols=" << summary.copy_helper_symbolized_sites << ":"
+      << summary.dispose_helper_symbolized_sites
       << ";throws=" << summary.throws_propagation_sites << ":"
       << summary.unwind_cleanup_sites << ":" << summary.bridged_error_sites
       << ":" << summary.nested_cleanup_sites

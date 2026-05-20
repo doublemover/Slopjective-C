@@ -3,7 +3,7 @@
 namespace objc3c::support {
 
 bool MethodFamilyReturnsRetainedResult(std::string_view family_name) {
-  return family_name == "init" || family_name == "copy" ||
+  return family_name == "alloc" || family_name == "init" || family_name == "copy" ||
          family_name == "mutableCopy" || family_name == "new";
 }
 

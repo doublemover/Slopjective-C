@@ -1,0 +1,31 @@
+module categoryMergeConflictingMethod;
+
+@interface Widget
+@end
+
+@implementation Widget
+@end
+
+@interface Widget (Alpha)
++ (i32) value;
+@end
+
+@implementation Widget (Alpha)
++ (i32) value {
+  return 1;
+}
+@end
+
+@interface Widget (Beta)
++ (bool) value;
+@end
+
+@implementation Widget (Beta)
++ (bool) value {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

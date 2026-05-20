@@ -148,6 +148,100 @@ def validate_showcase_portfolio(
     )
 
 
+def validate_showcase_demo_packages(
+    *,
+    package_root: Path,
+    demo_packages_manifest: Path,
+    manifest_demo_packages: object,
+    showcase_examples: list[Any],
+) -> list[Any]:
+    demo_payload = load_json(demo_packages_manifest)
+    expect(
+        demo_payload.get("contract_id") == "objc3c.showcase.demo.packages.v1",
+        "packaged showcase demo packages manifest published the wrong contract id",
+    )
+    reproducibility_contract = demo_payload.get("reproducibility_contract")
+    expect(
+        isinstance(reproducibility_contract, dict),
+        "packaged showcase demo packages manifest missing reproducibility contract",
+    )
+    assert isinstance(reproducibility_contract, dict)
+    expect(
+        reproducibility_contract.get("lockfile") == "package-lock.json",
+        "packaged showcase demo packages manifest lockfile drifted",
+    )
+    expect(
+        reproducibility_contract.get("offline_mirror_validation_action") == "validate-package-mirror",
+        "packaged showcase demo packages manifest offline mirror action drifted",
+    )
+    expect(
+        reproducibility_contract.get("tamper_rejection_diagnostic") == "O3PKG8054",
+        "packaged showcase demo packages manifest tamper diagnostic drifted",
+    )
+
+    packages = demo_payload.get("packages")
+    expect(
+        isinstance(packages, list) and packages,
+        "packaged showcase demo packages manifest did not publish packages",
+    )
+    assert isinstance(packages, list)
+    expect(
+        manifest_demo_packages == packages,
+        "package manifest showcase_demo_packages drifted from packaged demo manifest",
+    )
+
+    expected_ids = [
+        entry.get("example_id")
+        for entry in showcase_examples
+        if isinstance(entry, dict)
+    ]
+    actual_ids = [
+        entry.get("example_id")
+        for entry in packages
+        if isinstance(entry, dict)
+    ]
+    expect(
+        actual_ids == expected_ids,
+        "packaged showcase demo package ids drifted from showcase examples",
+    )
+    for package in packages:
+        expect(isinstance(package, dict), "packaged demo package entry must be an object")
+        assert isinstance(package, dict)
+        example_id = str(package.get("example_id"))
+        source = package_root / normalize_rel_path(str(package.get("source")))
+        workspace_manifest = package_root / normalize_rel_path(
+            str(package.get("workspace_manifest"))
+        )
+        require_file(source, f"packaged demo package missing source for {example_id}")
+        require_file(
+            workspace_manifest,
+            f"packaged demo package missing workspace manifest for {example_id}",
+        )
+        manifest_inputs = package.get("manifest_inputs")
+        expect(
+            isinstance(manifest_inputs, list)
+            and all(
+                isinstance(path, str)
+                and path
+                and not path.startswith("tmp/")
+                and not path.startswith("artifacts/")
+                for path in manifest_inputs
+            ),
+            f"packaged demo package manifest inputs must be checked-in paths for {example_id}",
+        )
+        smoke_commands = package.get("smoke_commands")
+        expect(
+            isinstance(smoke_commands, list)
+            and all(
+                isinstance(command, str)
+                and command.startswith("npm run objc3c -- ")
+                for command in smoke_commands
+            ),
+            f"packaged demo package smoke commands drifted for {example_id}",
+        )
+    return packages
+
+
 def load_showcase_package_surface(
     *,
     package_root: Path,
@@ -163,6 +257,10 @@ def load_showcase_package_surface(
     runtime_library = package_path(package_root, manifest["runtime_library"])
     showcase_portfolio = package_path(package_root, manifest["showcase_portfolio"])
     showcase_readme = package_path(package_root, manifest["showcase_readme"])
+    showcase_demo_packages_manifest = package_path(
+        package_root,
+        manifest["showcase_demo_packages_manifest"],
+    )
     guided_walkthrough_manifest = package_path(
         package_root,
         manifest["guided_walkthrough_manifest"],
@@ -174,9 +272,14 @@ def load_showcase_package_surface(
     bonus_experience_surfaces = manifest.get("bonus_experience_surfaces")
     bonus_tool_integration_surface = manifest.get("bonus_tool_integration_surface")
     command_surfaces = manifest.get("command_surfaces", {})
+    manifest_demo_packages = manifest.get("showcase_demo_packages")
 
     require_file(showcase_portfolio, "packaged runnable toolchain missing showcase portfolio")
     require_file(showcase_readme, "packaged runnable toolchain missing showcase README")
+    require_file(
+        showcase_demo_packages_manifest,
+        "packaged runnable toolchain missing showcase demo packages manifest",
+    )
     require_file(
         guided_walkthrough_manifest,
         "packaged runnable toolchain missing guided walkthrough manifest",
@@ -199,6 +302,12 @@ def load_showcase_package_surface(
         showcase_portfolio=showcase_portfolio,
         showcase_examples=showcase_examples,
     )
+    showcase_demo_packages = validate_showcase_demo_packages(
+        package_root=package_root,
+        demo_packages_manifest=showcase_demo_packages_manifest,
+        manifest_demo_packages=manifest_demo_packages,
+        showcase_examples=showcase_examples,
+    )
 
     return ShowcasePackageSurface(
         manifest=manifest,
@@ -206,10 +315,12 @@ def load_showcase_package_surface(
         runtime_library=runtime_library,
         showcase_portfolio=showcase_portfolio,
         showcase_readme=showcase_readme,
+        showcase_demo_packages_manifest=showcase_demo_packages_manifest,
         guided_walkthrough_manifest=guided_walkthrough_manifest,
         repo_superclean_surface=repo_superclean_surface,
         capability_probe_script=capability_probe_script,
         showcase_examples=showcase_examples,
+        showcase_demo_packages=showcase_demo_packages,
     )
 
 
@@ -220,6 +331,7 @@ __all__ = [
     "validate_bonus_experience_surfaces",
     "validate_bonus_tool_integration_surface",
     "validate_command_surfaces",
+    "validate_showcase_demo_packages",
     "validate_showcase_portfolio",
     "validate_tutorial_guides",
 ]

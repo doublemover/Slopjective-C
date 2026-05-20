@@ -22,6 +22,23 @@ struct DispatchCapture {
   int nil_dispatch_result = 0;
 };
 
+struct FromClassDispatchCapture {
+  int typed_super_status = 0;
+  int typed_super_value = 0;
+  int typed_super_return_kind = 0;
+  int i32_super_status = 0;
+  int i32_super_value = 0;
+  int i32_super_return_kind = 0;
+  int typed_self_status = 0;
+  int typed_self_value = 0;
+  int i32_self_status = 0;
+  int i32_self_value = 0;
+  int null_lookup_start_status = 0;
+  int empty_lookup_start_status = 0;
+  int missing_lookup_start_status = 0;
+  int unreachable_lookup_start_status = 0;
+};
+
 struct RegistrationSnapshotCapture {
   objc3_runtime_registration_state_snapshot snapshot{};
   int snapshot_status = 0;
@@ -37,6 +54,7 @@ struct DispatchLookupProbeResult {
   int register_status = 0;
   SelectorLookupCapture selectors;
   DispatchCapture dispatch;
+  FromClassDispatchCapture from_class;
   RegistrationSnapshotCapture registration;
   ResetLookupCapture reset_lookup;
 };

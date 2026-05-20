@@ -34,7 +34,7 @@ def build_runtime_package_loading_interop_implementation_surface(
             RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
         ],
         "implementation_model": (
-            "live-runtime-package-loader-snapshots-agree-with-the-emitted-interop-link-plan-and-bridge-artifacts-for-the-current-mixed-image-packaging-boundary"
+            "live-runtime-package-loader-snapshots-agree-with-the-emitted-interop-link-plan-and-bridge-artifacts-for-the-current-mixed-image-packaging-boundary-and-fail-closed-on-runtime-library-import-surface-drift"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -53,6 +53,7 @@ def build_runtime_package_loading_interop_implementation_surface(
         "requires_cross_module_link_plan_artifact": True,
         "requires_linked_runtime_probe": True,
         "requires_real_compile_output": True,
+        "requires_tampered_runtime_library_rejection": True,
     }
 
 

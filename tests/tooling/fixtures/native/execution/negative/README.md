@@ -48,7 +48,8 @@ Field notes:
 - `expect_failure.stage`: first failing pipeline stage (`compile`, `link`, or `run`).
 - `expect_failure.required_diagnostic_tokens`: case-sensitive substrings that must all appear in diagnostics for the failing stage.
 - `execution.requires_live_runtime_dispatch`: whether successful execution would require a live runtime dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
+- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true and one symbol is sufficient.
+- `execution.runtime_dispatch_symbols` (optional): expected dispatch symbols when the fixture proves multiple live runtime dispatch entrypoints. This field is mutually exclusive with `execution.runtime_dispatch_symbol` and must be absent when live dispatch is not required.
 
 ## Assignment fixture note
 
@@ -112,6 +113,21 @@ Field notes:
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a retired-mode support fixture.
 
+## Protocol/category diagnostic fixture notes
+
+- `category_attachment_collision.objc3` is a compile-stage negative expecting duplicate category diagnostics (`O3S200`).
+- `category_merge_conflicting_method.objc3` is a compile-stage negative expecting category method conflict diagnostics (`O3S219`).
+- `category_merge_conflicting_property.objc3` is a compile-stage negative expecting category property conflict diagnostics (`O3S219`).
+- `category_merge_missing_pair.objc3` is a compile-stage negative expecting category interface/implementation pair diagnostics (`O3S219`).
+- `category_unknown_class_rejected.objc3` is a compile-stage negative expecting category unknown-target diagnostics (`O3S219`).
+- `category_unavailable_class_rejected.objc3` is a compile-stage negative expecting category unavailable-target diagnostics (`O3S219`).
+- `category_method_dispatch_intent_rejected.objc3` is a compile-stage negative expecting category method dispatch-control diagnostics (`O3S315`).
+- `category_container_dispatch_intent_rejected.objc3` is a compile-stage negative expecting category container dispatch-control diagnostics (`O3S316`).
+- `duplicate_protocol_runtime_export.objc3` is a compile-stage negative expecting duplicate protocol diagnostics (`O3S200`).
+- `protocol_requirement_duplicate_conflict_rejected.objc3` is a compile-stage negative expecting duplicate protocol requirement diagnostics (`O3S218`).
+- `protocol_requirement_inherited_conflict_rejected.objc3` is a compile-stage negative expecting inherited protocol requirement conflict diagnostics (`O3S218`).
+- `protocol_dispatch_intent_rejected.objc3` is a compile-stage negative expecting protocol dispatch-control diagnostics (`O3S314`).
+
 ## id-alias parser fixture note
 
 - `id_parser_missing_param_colon.objc3` is a compile-stage negative expecting parser diagnostics (`O3P107`).
@@ -134,6 +150,10 @@ Field notes:
 - `unsupported_feature_claim_throws.objc3` is a compile-stage negative expecting `O3S221` because parsed `throws` declarations are not runnable native-mode coverage.
 - `unsupported_feature_claim_arc_parameter_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC parameter ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
 - `unsupported_feature_claim_arc_return_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC return ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
+
+## Block ARC fixture notes
+
+- `escaping_owned_object_block_conflicting_capture.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S301`) for conflicting explicit capture ownership modes on the same object identifier. It is issue #8033 fixture preparation and does not establish runtime support by itself.
 
 ## Prototype fixture notes
 

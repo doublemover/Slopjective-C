@@ -1,6 +1,7 @@
 #include "runtime/storage/property_lookup.h"
 
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/state/runtime_cache_invalidation.h"
 #include "runtime/state/runtime_state_records.h"
 
 #include <cstddef>
@@ -30,24 +31,30 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
   if (cache_it != state.property_lookup_cache.end()) {
     used_cache = true;
     ++state.property_lookup_cache_hit_count;
-    if (!cache_it->second.found) {
-      inherited = false;
-      resolved_node = nullptr;
-      return nullptr;
-    }
-    if (cache_it->second.resolved_node_index <
-        state.realized_class_nodes.size()) {
-      const RealizedClassNode &cached_node =
-          state.realized_class_nodes[cache_it->second.resolved_node_index];
-      if (cache_it->second.accessor_index <
-          cached_node.runtime_property_accessors.size()) {
-        resolved_node = &cached_node;
-        inherited = cache_it->second.inherited;
-        return &cached_node
-                    .runtime_property_accessors[cache_it->second.accessor_index];
+    if (!PropertyLookupCacheMutationGenerationsMatchUnlocked(state,
+                                                             cache_it->second)) {
+      state.property_lookup_cache.erase(cache_it);
+      used_cache = false;
+    } else {
+      if (!cache_it->second.found) {
+        inherited = false;
+        resolved_node = nullptr;
+        return nullptr;
       }
+      if (cache_it->second.resolved_node_index <
+          state.realized_class_nodes.size()) {
+        const RealizedClassNode &cached_node =
+            state.realized_class_nodes[cache_it->second.resolved_node_index];
+        if (cache_it->second.accessor_index <
+            cached_node.runtime_property_accessors.size()) {
+          resolved_node = &cached_node;
+          inherited = cache_it->second.inherited;
+          return &cached_node.runtime_property_accessors[
+              cache_it->second.accessor_index];
+        }
+      }
+      state.property_lookup_cache.erase(cache_it);
     }
-    state.property_lookup_cache.erase(cache_it);
   }
   ++state.property_lookup_cache_miss_count;
   std::unordered_set<const RealizedClassNode *> visited;
@@ -68,10 +75,10 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
               node - state.realized_class_nodes.data());
           const std::size_t accessor_index = static_cast<std::size_t>(
               &accessor - node->runtime_property_accessors.data());
-          state.property_lookup_cache.emplace(
-              std::move(cache_key),
-              PropertyLookupCacheEntry{true, inherited, resolved_node_index,
-                                       accessor_index});
+          PropertyLookupCacheEntry entry{true, inherited, resolved_node_index,
+                                         accessor_index};
+          StampPropertyLookupCacheMutationGenerationsUnlocked(entry, state);
+          state.property_lookup_cache.emplace(std::move(cache_key), entry);
           return &accessor;
         }
       }
@@ -84,8 +91,9 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
       node = nullptr;
     }
   }
-  state.property_lookup_cache.emplace(std::move(cache_key),
-                                      PropertyLookupCacheEntry{});
+  PropertyLookupCacheEntry entry;
+  StampPropertyLookupCacheMutationGenerationsUnlocked(entry, state);
+  state.property_lookup_cache.emplace(std::move(cache_key), entry);
   return nullptr;
 }
 

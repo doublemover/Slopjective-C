@@ -6,7 +6,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticNestedGenericConstraintViolation;\n\n@protocol Persistable\n@end\n\n@interface SemanticBox <Persistable>\n@end\n\n@implementation SemanticBox\n@end\n\n@interface PlainBox\n@end\n\n@implementation PlainBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable>>\n- (T)peek;\n@end\n\n@implementation SemanticVault\n@end\n\n@interface SemanticEnvelope<__covariant T>\n- (T)unwrap;\n@end\n\n@implementation SemanticEnvelope\n@end\n\nfn consume(bad: SemanticEnvelope<SemanticVault<PlainBox *> *> *?) -> i32 {\n  return 0;\n}",
   "expect": {

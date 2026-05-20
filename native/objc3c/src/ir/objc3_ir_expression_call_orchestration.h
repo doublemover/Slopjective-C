@@ -12,6 +12,7 @@
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 
 struct Expr;
@@ -37,12 +38,20 @@ struct Objc3IRExpressionCallEmissionServices {
 
 struct Objc3IRExpressionCallEmissionOptions {
   const std::map<std::string, std::string> &selector_pool_globals;
+  const std::map<std::string, std::string> &runtime_string_pool_globals;
   const std::unordered_map<std::string, int> &class_receiver_constants;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;
+  const std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      &direct_dispatch_signatures_by_key;
+  const std::unordered_map<std::string, ValueType>
+      &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, std::string>
+      &runtime_dispatch_superclass_by_name;
   std::size_t runtime_dispatch_arg_slots = 0;
   std::string runtime_dispatch_symbol;
   Objc3IRRuntimeDispatchCallState &runtime_dispatch_call_state;
+  bool arc_mode_enabled = false;
   const std::unordered_set<std::string> &defined_functions;
   const std::unordered_set<std::string> &declared_pure_functions;
   const std::unordered_set<std::string> &impure_functions;

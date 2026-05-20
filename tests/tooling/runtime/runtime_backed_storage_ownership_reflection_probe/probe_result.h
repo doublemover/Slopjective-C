@@ -35,6 +35,7 @@ struct StorageOwnershipPropertyObservation {
   std::string synthesized_binding_symbol;
   std::string ivar_layout_symbol;
   std::string property_attribute_profile;
+  std::string property_behavior_name;
   std::string ownership_lifetime_profile;
   std::string ownership_runtime_hook_profile;
   std::string accessor_ownership_profile;

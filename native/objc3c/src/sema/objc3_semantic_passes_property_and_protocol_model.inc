@@ -68,6 +68,8 @@
   info.executable_synthesized_binding_symbol =
       property.executable_synthesized_binding_symbol;
   info.property_attribute_profile = property.property_attribute_profile;
+  info.property_behavior_declared = property.property_behavior_declared;
+  info.property_behavior_name = property.property_behavior_name;
   info.effective_getter_selector = property.effective_getter_selector;
   info.effective_setter_available = property.effective_setter_available;
   info.effective_setter_selector = property.effective_setter_selector;

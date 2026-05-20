@@ -1,0 +1,13 @@
+{
+  "case_id": "non-reproducible-evidence",
+  "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-NON-REPRODUCIBLE",
+  "mutations": [
+    {
+      "fixture_id": "ecosystem_async_await_grammar_acceptance",
+      "set": {
+        "reproducibility.mode": "local-snapshot",
+        "reproducibility.requires_live_replay": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "contract_id": "objc3c.external_validation.repro_corpus.v1",
+  "schema_version": 1,
+  "corpus_id": "objc3c.external_validation.accepted_repro_corpus",
+  "corpus_revision": "2026-05-20.external-validation-repro-corpus.v1",
+  "source_manifests": {
+    "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
+    "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+    "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json"
+  },
+  "entries": [
+    {
+      "fixture_id": "ecosystem_async_await_grammar_acceptance",
+      "trust_state": "accepted",
+      "normalized_surface": "conformance-case",
+      "family": "parser",
+      "evidence_path": "tests/conformance/parser/ASY-01.json",
+      "evidence_sha256": "78e9502cf2b9819dabb656667a9742d4ffcbc04b740e4bbc556430156d8eb31a",
+      "replay_script": "scripts/check_objc3c_parser_replay_proof.ps1",
+      "replay_script_sha256": "9e52571886328b968e93495be90d5a5251ab2739f5c26f9f41d33c746edf39de",
+      "replay_command": "npm run objc3c -- test-external-validation-replay",
+      "reproducibility": {
+        "mode": "checked-in-replay",
+        "requires_live_replay": true,
+        "local_only": false,
+        "tmp_source_allowed": false
+      },
+      "support_claims": [
+        "objc3c.external_validation.support.accepted-repro-corpus"
+      ],
+      "adoption_claims": [
+        "evaluator-runnable-path"
+      ]
+    },
+    {
+      "fixture_id": "ecosystem_cross_module_conformance_replay",
+      "trust_state": "accepted",
+      "normalized_surface": "replay-contract",
+      "family": "module-roundtrip",
+      "evidence_path": "tests/tooling/fixtures/objc3c/validation_cross_module_conformance_contract/replay_run_1/module.manifest.json",
+      "evidence_sha256": "057ebe865434f4b418cba6e3723e61e81acc14a346613f4d8c600e87b3c9f729",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "replay_script_sha256": "4fd9b1873f28a2cb9540960337d78cb67ade1c76995a15a83a8a8c81c36ae712",
+      "replay_command": "npm run objc3c -- test-external-validation-replay",
+      "reproducibility": {
+        "mode": "checked-in-replay",
+        "requires_live_replay": true,
+        "local_only": false,
+        "tmp_source_allowed": false
+      },
+      "support_claims": [
+        "objc3c.external_validation.support.accepted-repro-corpus"
+      ],
+      "adoption_claims": [
+        "evaluator-runnable-path"
+      ]
+    },
+    {
+      "fixture_id": "ecosystem_module_import_graph_replay",
+      "trust_state": "accepted",
+      "normalized_surface": "replay-contract",
+      "family": "module-roundtrip",
+      "evidence_path": "tests/tooling/fixtures/objc3c/validation_module_import_graph_contract/replay_run_1/module.manifest.json",
+      "evidence_sha256": "459c137313706f2394eef1bb8dbb5be40b645f44e5f6e5c39ae437ba4827c42c",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "replay_script_sha256": "4fd9b1873f28a2cb9540960337d78cb67ade1c76995a15a83a8a8c81c36ae712",
+      "replay_command": "npm run objc3c -- test-external-validation-replay",
+      "reproducibility": {
+        "mode": "checked-in-replay",
+        "requires_live_replay": true,
+        "local_only": false,
+        "tmp_source_allowed": false
+      },
+      "support_claims": [
+        "objc3c.external_validation.support.accepted-repro-corpus"
+      ],
+      "adoption_claims": [
+        "evaluator-runnable-path"
+      ]
+    }
+  ]
+}

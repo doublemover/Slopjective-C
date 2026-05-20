@@ -1,6 +1,46 @@
 {
   "contract_id": "objc3c.packaging.channels.supported-platforms.v1",
   "default_platform_id": "windows-x64",
+  "matrix_dimensions": {
+    "host_os": [
+      "windows"
+    ],
+    "host_arch": [
+      "x64"
+    ],
+    "package_channels": [
+      "portable-archive",
+      "local-installer",
+      "offline-bundle"
+    ],
+    "runtime_acceptance_suites": [
+      "runtime-acceptance-fast",
+      "runnable-platform-hardening",
+      "packaging-channels-end-to-end"
+    ],
+    "release_validation_surfaces": [
+      "signed-installer",
+      "update-channel",
+      "rollback-diagnostics"
+    ]
+  },
+  "packaged_runtime_acceptance": [
+    {
+      "platform_id": "windows-x64",
+      "required_public_actions": [
+        "test-runtime-acceptance-fast",
+        "validate-platform-hardening-end-to-end",
+        "validate-packaging-channels-end-to-end"
+      ],
+      "required_artifacts": [
+        "portable_archive",
+        "installer_archive",
+        "offline_archive",
+        "installer_signature"
+      ],
+      "rollback_required": true
+    }
+  ],
   "supported_platforms": [
     {
       "platform_id": "windows-x64",

@@ -444,7 +444,8 @@
         "reflection",
         "public_abi",
         "registration",
-        "object_model"
+        "object_model",
+        "protocol_category"
       ],
       "positive_evidence": [
         "tests/tooling/runtime/property_layout_runtime_probe.cpp",
@@ -452,6 +453,8 @@
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
         "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
         "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp"
       ],

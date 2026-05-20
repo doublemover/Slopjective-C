@@ -1,0 +1,29 @@
+{
+  "objc_interop_ffi_metadata_interface_preservation": {
+    "deterministic": true,
+    "local_foreign_callable_count": 2,
+    "runtime_import_artifact_ready": true,
+    "separate_compilation_preservation_ready": true
+  },
+  "objc_interop_foreign_surface_interface_and_module_preservation": {
+    "deterministic": true,
+    "local_foreign_callable_count": 2,
+    "runtime_import_artifact_ready": true,
+    "separate_compilation_preservation_ready": true
+  },
+  "objc_interop_header_module_and_bridge_generation": {
+    "bridge_artifact_relative_path": "module.interop-bridge.json",
+    "cross_module_packaging_ready": true,
+    "deterministic": true,
+    "header_artifact_relative_path": "../tampered/module.interop-bridge.h",
+    "local_cpp_name_annotation_count": 0,
+    "local_foreign_callable_count": 2,
+    "local_header_name_annotation_count": 1,
+    "local_import_module_name_count": 1,
+    "local_swift_name_annotation_count": 0,
+    "module_artifact_relative_path": "module.interop-bridge.modulemap",
+    "preservation_replay_key": "ffi-preservation-key",
+    "replay_key": "bridge-generation-key",
+    "runtime_generation_ready": true
+  }
+}

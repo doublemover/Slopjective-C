@@ -46,9 +46,12 @@ def main() -> int:
             if isinstance(workspace, dict):
                 workspace_paths.extend(
                     str(workspace[field])
-                    for field in ("source", "materializer", "validation_script")
+                    for field in ("source",)
                     if isinstance(workspace.get(field), str)
                 )
+                anchors = workspace.get("implementation_anchors", [])
+                if isinstance(anchors, list):
+                    workspace_paths.extend(str(anchor) for anchor in anchors if isinstance(anchor, str))
     missing_paths = [
         path
         for path in [
@@ -75,10 +78,14 @@ def main() -> int:
         "lock_policy_linked": lock_policy.get("contract_id") == "objc3c.package_ecosystem.dependency_lock_policy.v1",
         "lock_root_under_tmp": str(generated_roots.get("lock_root", "")).startswith("tmp/artifacts/package-ecosystem/"),
         "mirror_root_under_tmp": str(generated_roots.get("mirror_root", "")).startswith("tmp/artifacts/package-ecosystem/"),
+        "mirror_cache_root_under_tmp": str(generated_roots.get("mirror_cache_root", "")).startswith("tmp/artifacts/package-ecosystem/"),
+        "offline_restore_receipt_root_under_tmp": str(generated_roots.get("offline_restore_receipt_root", "")).startswith("tmp/artifacts/package-ecosystem/"),
         "report_root_under_tmp": str(generated_roots.get("report_root", "")).startswith("tmp/reports/package-ecosystem"),
         "lock_ordering_stable": lockfile_semantics.get("ordering") == "stable-by-package-id-then-source-path",
         "mirror_no_network": offline_mirror_semantics.get("network_policy") == "no-network-during-validation",
         "mirror_lock_derived": offline_mirror_semantics.get("index_model") == "lock-derived-package-index",
+        "mirror_cache_digest_checked": offline_mirror_semantics.get("cache_model") == "digest-checked-local-artifact-cache-derived-from-locked-package-graph",
+        "restore_receipt_contract_declared": offline_mirror_semantics.get("restore_receipt_contract_id") == "objc3c.package_ecosystem.offline_mirror.restore_receipt.v1",
     }
     ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
 

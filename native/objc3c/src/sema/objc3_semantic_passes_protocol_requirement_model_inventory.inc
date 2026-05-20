@@ -52,12 +52,19 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
                             arc_mode_enabled,
                             diagnostics);
       const auto property_insert =
-          protocol_properties.emplace(property_decl.name, std::move(property_info));
+          protocol_properties.emplace(property_decl.name, property_info);
       if (!property_insert.second) {
+        const bool incompatible_duplicate =
+            !IsCompatiblePropertySignature(property_insert.first->second,
+                                           property_info);
         diagnostics.push_back(
-            MakeDiag(property_decl.line, property_decl.column, "O3S200",
-                     "duplicate protocol property '" + property_decl.name +
-                         "' in protocol '" + protocol_decl.name + "'"));
+            MakeDiag(property_decl.line, property_decl.column,
+                     incompatible_duplicate ? "O3S218" : "O3S200",
+                     (incompatible_duplicate
+                          ? "protocol requirement conflict: duplicate property '"
+                          : "duplicate protocol property '") +
+                         property_decl.name + "' in protocol '" +
+                         protocol_decl.name + "'"));
         continue;
       }
       ValidatePropertyAccessorSelectorUniqueness(
@@ -97,7 +104,9 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
                                           kContainerLabel, diagnostics);
       if (method_decl.objc_macro_declared ||
           method_decl.objc_macro_package_declared ||
-          method_decl.objc_macro_provenance_declared) {
+          method_decl.objc_macro_provenance_declared ||
+          method_decl.objc_macro_cache_key_declared ||
+          method_decl.objc_macro_sandbox_declared) {
         diagnostics.push_back(MakeDiag(
             method_decl.line, method_decl.column, "O3S325",
             "macro expansion is currently limited to free functions; " +
@@ -114,13 +123,29 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
 
       const std::string requirement_key = BuildProtocolRequirementKey(
           selector_contract.normalized_selector, method_decl.is_class_method);
-      if (definition_it->second.required_methods_by_key.find(requirement_key) !=
+      Objc3MethodInfo method_info =
+          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled);
+      const auto required_method_it =
+          definition_it->second.required_methods_by_key.find(requirement_key);
+      const auto optional_method_it =
+          definition_it->second.optional_methods_by_key.find(requirement_key);
+      if (required_method_it !=
               definition_it->second.required_methods_by_key.end() ||
-          definition_it->second.optional_methods_by_key.find(requirement_key) !=
+          optional_method_it !=
               definition_it->second.optional_methods_by_key.end()) {
+        const Objc3MethodInfo &existing_method =
+            required_method_it !=
+                    definition_it->second.required_methods_by_key.end()
+                ? required_method_it->second.method
+                : optional_method_it->second.method;
+        const bool incompatible_duplicate =
+            !IsCompatibleMethodSignature(existing_method, method_info);
         diagnostics.push_back(MakeDiag(
-            method_decl.line, method_decl.column, "O3S200",
-            "duplicate protocol selector '" +
+            method_decl.line, method_decl.column,
+            incompatible_duplicate ? "O3S218" : "O3S200",
+            std::string(incompatible_duplicate
+                            ? "protocol requirement conflict: duplicate selector '"
+                            : "duplicate protocol selector '") +
                 FormatMethodSelectorForDiagnostic(
                     selector_contract.normalized_selector,
                     method_decl.is_class_method) +
@@ -129,8 +154,7 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       }
       Objc3ProtocolRequirementInfo requirement;
       requirement.selector = selector_contract.normalized_selector;
-      requirement.method =
-          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled);
+      requirement.method = std::move(method_info);
       requirement.protocol_name = protocol_decl.name;
       requirement.line = method_decl.line;
       requirement.column = method_decl.column;
@@ -142,6 +166,40 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       }
       definition_it->second.required_methods_by_key.emplace(requirement_key,
                                                             std::move(requirement));
+    }
+  }
+  for (const auto &entry : definitions) {
+    if (entry.second.is_forward_declaration) {
+      continue;
+    }
+    Objc3ProtocolRequirementClosure closure;
+    std::unordered_set<std::string> active_protocols;
+    if (CollectProtocolRequirementClosure(definitions, entry.first,
+                                          active_protocols, closure) ||
+        closure.status != Objc3ProtocolRequirementClosureStatus::
+                              IncompatibleInheritedRequirement) {
+      continue;
+    }
+    if (closure.conflicting_member_is_method) {
+      diagnostics.push_back(MakeDiag(
+          closure.conflicting_member_line,
+          closure.conflicting_member_column,
+          "O3S218",
+          "protocol requirement conflict: protocol '" + entry.first +
+              "' inherits incompatible selector '" +
+              FormatMethodSelectorForDiagnostic(
+                  closure.conflicting_member_name,
+                  closure.conflicting_selector_is_class_method) +
+              "' from protocol '" + closure.failing_protocol_name + "'"));
+    } else {
+      diagnostics.push_back(MakeDiag(
+          closure.conflicting_member_line,
+          closure.conflicting_member_column,
+          "O3S218",
+          "protocol requirement conflict: protocol '" + entry.first +
+              "' inherits incompatible property '" +
+              closure.conflicting_member_name + "' from protocol '" +
+              closure.failing_protocol_name + "'"));
     }
   }
   return definitions;

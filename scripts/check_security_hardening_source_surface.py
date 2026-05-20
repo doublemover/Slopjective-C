@@ -25,6 +25,8 @@ EXPECTED_CONTRACT_IDS = {
     "supply_chain_audit_contract": "objc3c.security.hardening.supply.chain.audit.contract.v1",
     "response_drill_contract": "objc3c.security.hardening.response.drill.contract.v1",
     "runtime_hardening_contract": "objc3c.security.hardening.runtime.contract.v1",
+    "sanitizer_validation_contract": "objc3c.security.hardening.sanitizer.validation.contract.v1",
+    "language_runtime_threat_model_backlog": "objc3c.security.hardening.language.runtime.threat_model.backlog.v1",
     "schema_surface": "objc3c.security.hardening.schema.surface.v1",
     "workflow_surface": "objc3c.security.hardening.workflow.surface.v1",
 }

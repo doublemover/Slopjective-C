@@ -8,6 +8,7 @@
   "live_paths": [
     "stdlib/advanced_architecture.json",
     "stdlib/modules/objc3.concurrency/module.objc3",
+    "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
     "stdlib/modules/objc3.keypath/module.objc3",
     "stdlib/modules/objc3.system/module.objc3",
     "scripts/check_stdlib_surface.py",
@@ -23,7 +24,8 @@
       "join-and-wait",
       "task-group-scope",
       "cancellation-observation",
-      "executor-hop"
+      "executor-hop",
+      "actor-mailbox"
     ],
     "objc3.keypath": [
       "typed-keypath-application",

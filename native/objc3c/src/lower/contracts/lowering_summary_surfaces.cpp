@@ -134,8 +134,9 @@ std::string Objc3ErrorHandlingErrorRuntimeBridgeHelperSummary() {
   std::ostringstream out;
   // error-runtime/bridge-helper anchor: lane-D freezes the first
   // real private runtime helper ABI consumed by the runnable Part 6 lowering
-  // so thrown-error storage, bridge normalization, and do/catch dispatch stop
-  // pretending raw local slots are the runtime boundary.
+  // so thrown-error storage, bridge normalization, foreign-exception
+  // normalization, and do/catch dispatch stop pretending raw local slots are
+  // the runtime boundary.
   out << "contract=" << kObjc3ErrorHandlingErrorRuntimeBridgeHelperContractId
       << ";source_contract=" << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
       << ";replay_contract="
@@ -146,6 +147,8 @@ std::string Objc3ErrorHandlingErrorRuntimeBridgeHelperSummary() {
       << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
       << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
       << ";nserror_bridge_symbol=" << kObjc3RuntimeBridgeNSErrorErrorI32Symbol
+      << ";foreign_exception_bridge_symbol="
+      << kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol
       << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
       << ";fail_closed_model="
       << kObjc3ErrorHandlingErrorRuntimeBridgeHelperFailClosedModel
@@ -173,6 +176,8 @@ std::string Objc3ErrorHandlingLiveErrorRuntimeIntegrationSummary() {
       << ";store_symbol=" << kObjc3RuntimeStoreThrownErrorI32Symbol
       << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
       << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
+      << ";foreign_exception_bridge_symbol="
+      << kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol
       << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_error_bridge_state_for_testing"
       << ";fail_closed_model="

@@ -76,9 +76,16 @@ std::string EmitObjc3IRBlockLiteralStorage(
         "block literal exceeds current runnable invoke-thunk arity limit of 4");
   }
 
-  EmitObjc3IRBlockInvokeThunk(expr, lowering_context);
-  EmitObjc3IRBlockCopyHelper(expr, lowering_context);
-  EmitObjc3IRBlockDisposeHelper(expr, ctx, lowering_context);
+  Objc3IRBlockLoweringContext block_context = lowering_context;
+  block_context.current_implementation_name = ctx.current_implementation_name;
+  block_context.current_superclass_name = ctx.current_superclass_name;
+  block_context.current_method_is_class_method =
+      ctx.current_method_is_class_method;
+
+  EmitObjc3IRBlockInvokeThunk(expr, block_context);
+  EmitObjc3IRBlockDescriptor(expr, block_context);
+  EmitObjc3IRBlockCopyHelper(expr, block_context);
+  EmitObjc3IRBlockDisposeHelper(expr, ctx, block_context);
 
   const std::string storage_type = BuildBlockStorageType(expr);
   const bool pointer_capture_storage =
@@ -88,12 +95,12 @@ std::string EmitObjc3IRBlockLiteralStorage(
   ctx.entry_lines.push_back("  " + storage_ptr + " = alloca " +
                             storage_type + ", align 8");
 
-  const std::string invoke_ptr_slot = NewObjc3IRBlockTemp(ctx);
-  ctx.code_lines.push_back("  " + invoke_ptr_slot +
+  const std::string descriptor_ptr_slot = NewObjc3IRBlockTemp(ctx);
+  ctx.code_lines.push_back("  " + descriptor_ptr_slot +
                            " = getelementptr inbounds " + storage_type +
                            ", ptr " + storage_ptr + ", i32 0, i32 0");
-  ctx.code_lines.push_back("  store ptr @" + BuildBlockInvokeSymbol(expr) +
-                           ", ptr " + invoke_ptr_slot + ", align 8");
+  ctx.code_lines.push_back("  store ptr @" + BuildBlockDescriptorSymbol(expr) +
+                           ", ptr " + descriptor_ptr_slot + ", align 8");
 
   if (pointer_capture_storage) {
     const std::string copy_helper_slot = NewObjc3IRBlockTemp(ctx);
@@ -224,12 +231,20 @@ std::string EmitObjc3IRBlockInvokeCall(
   }
 
   const std::string storage_type = BuildBlockStorageType(*binding.literal);
+  const std::string descriptor_ptr_slot = NewObjc3IRBlockTemp(ctx);
+  const std::string descriptor_ptr = NewObjc3IRBlockTemp(ctx);
   const std::string invoke_ptr_slot = NewObjc3IRBlockTemp(ctx);
   const std::string invoke_ptr = NewObjc3IRBlockTemp(ctx);
-  ctx.code_lines.push_back("  " + invoke_ptr_slot +
+  ctx.code_lines.push_back("  " + descriptor_ptr_slot +
                            " = getelementptr inbounds " + storage_type +
                            ", ptr " + binding.storage_ptr +
                            ", i32 0, i32 0");
+  ctx.code_lines.push_back("  " + descriptor_ptr + " = load ptr, ptr " +
+                           descriptor_ptr_slot + ", align 8");
+  ctx.code_lines.push_back("  " + invoke_ptr_slot +
+                           " = getelementptr inbounds " +
+                           BuildBlockDescriptorType() + ", ptr " +
+                           descriptor_ptr + ", i32 0, i32 5");
   ctx.code_lines.push_back("  " + invoke_ptr + " = load ptr, ptr " +
                            invoke_ptr_slot + ", align 8");
 

@@ -14,7 +14,7 @@
   "negative_claim_authority": true,
   "selectors": [
     "blocking_condition:package-channel-install-failure",
-    "blocking_condition:revert-proof-failure",
+    "blocking_condition:rollback-proof-failure",
     "blocking_condition:release-operations-proof-failure",
     "blocking_condition:missing-release-evidence-index",
     "blocking_condition:runtime-hardening-regression",
@@ -29,6 +29,8 @@
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
     "unsupported_claim:runtime hardening without runnable evidence",
     "unsupported_claim:runtime retired route acceptance",

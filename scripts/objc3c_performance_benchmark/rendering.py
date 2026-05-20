@@ -15,15 +15,16 @@ def render_summary_payload(
     portfolio_path: Path,
     measurement_policy_path: Path,
     benchmark_parameters_path: Path,
+    root: Path,
 ) -> dict[str, Any]:
     return {
         "contract_id": "objc3c.performance.benchmark.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/benchmark_objc3c_performance.py",
-        "portfolio_path": repo_rel(portfolio_path),
-        "measurement_policy_path": repo_rel(measurement_policy_path),
-        "benchmark_parameters_path": repo_rel(benchmark_parameters_path),
+        "portfolio_path": repo_rel(portfolio_path, root=root),
+        "measurement_policy_path": repo_rel(measurement_policy_path, root=root),
+        "benchmark_parameters_path": repo_rel(benchmark_parameters_path, root=root),
         "telemetry_packets": packet_paths,
         "failures": failures,
     }

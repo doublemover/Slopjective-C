@@ -2,6 +2,7 @@
 
 #include "probe_state.h"
 #include "support/dispatch_expectations.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c {
 namespace runtime {
@@ -12,12 +13,15 @@ inline void CaptureRunnableInvocationAssertions(ProbeRun &run) {
   RuntimeFixture &fixture = run.fixture;
   RunnableInvocationAssertions &runnable = run.runnable;
 
-  runnable.alloc_value = objc3_runtime_dispatch_i32(
-      fixture.widget_class_receiver, "alloc", 0, 0, 0, 0);
-  runnable.init_value = objc3_runtime_dispatch_i32(runnable.alloc_value, "init",
-                                                   0, 0, 0, 0);
-  runnable.new_value = objc3_runtime_dispatch_i32(
-      fixture.widget_class_receiver, "new", 0, 0, 0, 0);
+  runnable.alloc_value =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.widget_class_receiver, "alloc");
+  runnable.init_value =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          runnable.alloc_value, "init");
+  runnable.new_value =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.widget_class_receiver, "new");
   runnable.inherited_value = objc3_runtime_dispatch_i32(
       runnable.init_value, "inheritedValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(

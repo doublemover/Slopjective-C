@@ -1,0 +1,74 @@
+module m8042_async_error_foreign_boundary_trace_positive;
+
+extern fn cleanup_scope_close_fd(value: i32) -> void;
+extern fn cleanup_release_temp(value: i32) -> void;
+extern fn foreignEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign, objc_import_module(named("AsyncErrorBridgeKit")), objc_foreign_type(named("AsyncErrorBridgeKit.Entry"))));
+extern fn task_spawn_child() -> i32;
+extern fn with_task_group_scope() -> i32;
+extern fn task_group_add_task() -> i32;
+extern fn task_group_wait_next() -> i32;
+extern fn task_group_cancel_all() -> i32;
+extern fn task_runtime_cancelled_value() -> i32;
+extern fn task_runtime_on_cancel() -> i32;
+
+fn mapStatus(status: i32) -> NSError {
+  return status + 40;
+}
+
+fn risky(value: i32) throws -> i32 {
+  if (value == 1) {
+    throw 31;
+  }
+  return value + 9;
+}
+
+fn bridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus))) {
+  if (value == 2) {
+    return 5;
+  }
+  return 0;
+}
+
+fn bridgedNestedCleanup(selector: SEL) throws -> i32 {
+  let propagated = try risky(0);
+  do {
+    @cleanup(cleanup_release_temp) let temp = 1;
+    defer {
+      cleanup_release_temp(6);
+    }
+    @resource(cleanup_scope_close_fd, invalid: -1) let fd = 4;
+    @autoreleasepool {
+      let bridged = try bridgeStatus(2, 0);
+      return propagated + bridged + foreignEntry(selector) + fd + temp;
+    }
+  } catch (NSError* error) {
+    return error;
+  } catch {
+    return 0;
+  }
+}
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn cancellationTrace() -> i32 __attribute__((objc_executor(named("com.example.async-error-boundary")))) {
+  task_spawn_child();
+  with_task_group_scope();
+  task_group_add_task();
+  @autoreleasepool {
+    defer {
+      task_runtime_on_cancel();
+    }
+    if (task_runtime_cancelled_value()) {
+      return task_group_cancel_all();
+    }
+    return await task_group_wait_next();
+  }
+}
+
+fn main() -> i32 {
+  let recovered = try? bridgedNestedCleanup(0);
+  return recovered + fetchValue();
+}

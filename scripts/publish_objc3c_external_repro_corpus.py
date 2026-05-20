@@ -14,6 +14,7 @@ from objc3c_tooling.subprocesses import python_script_command, run_capture
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "external_validation" / "source_surface.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "external_validation" / "artifact_surface.json"
+REPRO_CORPUS = ROOT / "tests" / "tooling" / "fixtures" / "external_validation" / "repro_corpus.json"
 INTAKE_REPLAY_SCRIPT = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
 SUMMARY_CONTRACT_ID = "objc3c.external_validation.publication.summary.v1"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "external-validation" / "publication-summary.json"
@@ -43,13 +44,32 @@ def main() -> int:
     replay_summary = ensure_replay_summary(ROOT / str(artifact_surface["intake_replay_summary"]))
     intake_manifest = load_json(ROOT / str(source_surface["intake_manifest"]))
     quarantine_manifest = load_json(ROOT / str(source_surface["quarantine_manifest"]))
+    repro_corpus = load_json(REPRO_CORPUS)
+    expect(
+        repro_corpus.get("contract_id") == "objc3c.external_validation.repro_corpus.v1",
+        "external repro corpus contract_id drifted",
+    )
+    expect(repro_corpus.get("schema_version") == 1, "external repro corpus schema_version drifted")
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     publication_root = ROOT / str(artifact_surface["publication_root"]) / run_id
     publication_root.mkdir(parents=True, exist_ok=True)
     corpus_path = publication_root / "external-repro-corpus.json"
 
-    accepted_entries = [entry for entry in intake_manifest["entries"] if entry.get("trust_state") == "accepted"]
+    accepted_entries = sorted(
+        repro_corpus["entries"],
+        key=lambda entry: str(entry.get("fixture_id")),
+    )
+    accepted_fixture_ids = {entry["fixture_id"] for entry in accepted_entries}
+    intake_fixture_ids = {
+        entry["fixture_id"]
+        for entry in intake_manifest["entries"]
+        if entry.get("trust_state") == "accepted"
+    }
+    expect(
+        accepted_fixture_ids == intake_fixture_ids,
+        "external repro corpus accepted fixtures drifted from intake manifest",
+    )
     redacted_entries = [
         {
             "fixture_id": entry["fixture_id"],
@@ -70,6 +90,8 @@ def main() -> int:
     corpus_payload = {
         "contract_id": "objc3c.external_validation.publication.corpus.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "source_corpus_path": repo_rel(REPRO_CORPUS),
+        "corpus_revision": repro_corpus["corpus_revision"],
         "accepted_entries": accepted_entries,
         "redacted_entries": redacted_entries,
         "blocked_fixture_ids": blocked_entries,
@@ -82,6 +104,8 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
         "runner_path": "scripts/publish_objc3c_external_repro_corpus.py",
+        "source_corpus_path": repo_rel(REPRO_CORPUS),
+        "corpus_revision": repro_corpus["corpus_revision"],
         "publication_artifact_path": repo_rel(corpus_path),
         "replay_summary_path": repo_rel(ROOT / str(artifact_surface["intake_replay_summary"])),
         "accepted_fixture_count": len(accepted_entries),

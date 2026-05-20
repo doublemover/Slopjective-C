@@ -26,6 +26,12 @@ bool RuntimePropertyIvarDescriptorHasStrictPublishedLayout(
     const EmittedIvarDescriptor &descriptor,
     std::size_t effective_offset,
     std::size_t effective_alignment) {
+  const bool extent_overflows =
+      descriptor.size_bytes >
+      std::numeric_limits<std::uint64_t>::max() - descriptor.offset_bytes;
+  const std::uint64_t descriptor_extent =
+      extent_overflows ? std::numeric_limits<std::uint64_t>::max()
+                       : descriptor.offset_bytes + descriptor.size_bytes;
   return descriptor.layout_record != nullptr && descriptor.layout_valid &&
          descriptor.layout_record->layout_valid &&
          descriptor.layout_record->layout_replay_key != nullptr &&
@@ -47,6 +53,10 @@ bool RuntimePropertyIvarDescriptorHasStrictPublishedLayout(
              descriptor.init_order_index &&
          descriptor.layout_record->destroy_order_index ==
              descriptor.destroy_order_index &&
+         descriptor.owner_size_bytes >= descriptor.inherited_size_bytes &&
+         descriptor.offset_bytes >= descriptor.inherited_size_bytes &&
+         !extent_overflows &&
+         descriptor_extent <= descriptor.owner_size_bytes &&
          effective_offset == static_cast<std::size_t>(descriptor.offset_bytes) &&
          effective_alignment != 0u &&
          effective_offset % effective_alignment == 0u;

@@ -19,6 +19,10 @@ def load_editor_surface(
             "capabilities_path:",
         ),
         "navigation_path": extract_output_line(editor_result_stdout, "navigation_path:"),
+        "workspace_index_path": extract_output_line(
+            editor_result_stdout,
+            "workspace_index_path:",
+        ),
         "formatter_path": extract_output_line(editor_result_stdout, "formatter_path:"),
         "debug_path": extract_output_line(editor_result_stdout, "debug_path:"),
     }
@@ -37,12 +41,17 @@ def load_editor_surface(
 def workspace_drill_commands(
     source_display: str,
     debug_payload: dict[str, object],
+    *,
+    workspace_index_path: str = "",
 ) -> dict[str, str]:
     return {
         "inspect_editor_tooling": (
             f"{WORKFLOW_COMMAND_TEXT} inspect-editor-tooling {source_display}"
         ),
         "format_preview": f"{WORKFLOW_COMMAND_TEXT} format-objc3c {source_display}",
+        "workspace_navigation_index": f"Get-Content -Raw '{workspace_index_path}'"
+        if workspace_index_path
+        else "",
         "object_symbol_inventory": str(
             debug_payload.get("object_symbol_inventory_command", "")
         ),

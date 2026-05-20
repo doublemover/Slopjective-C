@@ -1,0 +1,15 @@
+module m267_catch_body_return_type_negative;
+
+extern fn risky(value: i32) throws -> i32;
+
+fn recover() -> i32 {
+  do {
+    return try! risky(1);
+  } catch {
+    return missingCatchValue;
+  }
+}
+
+fn main() -> i32 {
+  return 0;
+}

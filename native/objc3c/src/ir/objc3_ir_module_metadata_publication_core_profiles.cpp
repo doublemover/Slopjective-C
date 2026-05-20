@@ -149,6 +149,7 @@ void EmitObjc3IRModuleMetadataCoreProfilePublication(
       << ", super_dispatch_enabled_sites=" << frontend_metadata_.super_dispatch_method_family_enabled_sites
       << ", super_dispatch_requires_class_context_sites="
       << frontend_metadata_.super_dispatch_method_family_requires_class_context_sites
+      << ", method_family_alloc_sites=" << frontend_metadata_.super_dispatch_method_family_alloc_sites
       << ", method_family_init_sites=" << frontend_metadata_.super_dispatch_method_family_init_sites
       << ", method_family_copy_sites=" << frontend_metadata_.super_dispatch_method_family_copy_sites
       << ", method_family_mutable_copy_sites="

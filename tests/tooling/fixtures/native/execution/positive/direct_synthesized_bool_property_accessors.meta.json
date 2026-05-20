@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "fixture": "direct_synthesized_bool_property_accessors.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbols": [
+      "objc3_runtime_dispatch_i32",
+      "objc3_runtime_dispatch_typed_value"
+    ]
+  }
+}

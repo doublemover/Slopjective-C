@@ -128,15 +128,50 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         None,
         None,
         None,
-        total_seconds=300.0,
+        total_seconds=1700.0,
         composite_action="validate-performance-governance",
     )
     release_foundation_budgets = validation_speed_budgets(
         None,
         None,
         None,
-        total_seconds=800.0,
+        total_seconds=2800.0,
         composite_action="validate-release-foundation",
+    )
+    packaging_channels_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=3200.0,
+        composite_action="validate-packaging-channels",
+    )
+    release_operations_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=3500.0,
+        composite_action="validate-release-operations",
+    )
+    distribution_credibility_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=4000.0,
+        composite_action="validate-distribution-credibility",
+    )
+    security_hardening_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=1600.0,
+        composite_action="validate-security-hardening",
+    )
+    stress_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=800.0,
+        composite_action="validate-stress",
     )
     default_budgets = validation_speed_budgets(
         None,
@@ -155,16 +190,51 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         for budget in release_foundation_budgets
         if budget["name"] == "composite_elapsed_seconds"
     )
+    packaging_channels_composite = next(
+        budget
+        for budget in packaging_channels_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    release_operations_composite = next(
+        budget
+        for budget in release_operations_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    distribution_credibility_composite = next(
+        budget
+        for budget in distribution_credibility_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    security_hardening_composite = next(
+        budget
+        for budget in security_hardening_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    stress_composite = next(
+        budget
+        for budget in stress_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
     default_composite = next(
         budget
         for budget in default_budgets
         if budget["name"] == "composite_elapsed_seconds"
     )
 
-    assert performance_governance_composite["threshold_seconds"] == 420.0
+    assert performance_governance_composite["threshold_seconds"] == 1800.0
     assert performance_governance_composite["status"] == "PASS"
-    assert release_foundation_composite["threshold_seconds"] == 900.0
+    assert release_foundation_composite["threshold_seconds"] == 3000.0
     assert release_foundation_composite["status"] == "PASS"
+    assert packaging_channels_composite["threshold_seconds"] == 3300.0
+    assert packaging_channels_composite["status"] == "PASS"
+    assert release_operations_composite["threshold_seconds"] == 3600.0
+    assert release_operations_composite["status"] == "PASS"
+    assert distribution_credibility_composite["threshold_seconds"] == 4200.0
+    assert distribution_credibility_composite["status"] == "PASS"
+    assert security_hardening_composite["threshold_seconds"] == 1800.0
+    assert security_hardening_composite["status"] == "PASS"
+    assert stress_composite["threshold_seconds"] == 900.0
+    assert stress_composite["status"] == "PASS"
     assert default_composite["threshold_seconds"] == 120.0
     assert default_composite["status"] == "FAIL"
 

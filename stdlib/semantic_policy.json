@@ -41,16 +41,17 @@
   ],
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
-    "capability_query_encoding": "0-means-missing-nonzero-means-present",
-    "option_unwrap_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default",
-    "string_view_length": "returns the provided unit count unchanged",
-    "string_view_prefix_units": "returns requested units clamped to the provided unit count and zero floor",
-    "byte_span_length": "returns the provided byte count unchanged",
-    "byte_span_prefix_length": "returns requested units clamped to the provided byte count and zero floor",
-    "array_count": "returns the provided element count unchanged",
-    "array_prefix_count": "returns requested elements clamped to the provided element count and zero floor",
+    "runtime_core_abi": "objc3.core helpers route through objc3_runtime_stdlib_core_* entrypoints and publish runtime-owned call evidence through objc3_runtime_copy_stdlib_core_state_for_testing",
+    "capability_query_encoding": "known Core-profile stdlib capability ordinals 1 through 4 are present; strict-system ordinal 5, zero, negative, and unknown positive ids fail closed as missing",
+    "option_unwrap_or": "routes through objc3_runtime_stdlib_core_option_unwrap_or_i32 and returns value when presence flag is nonzero, otherwise the caller-supplied default",
+    "string_view_length": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative unit counts",
+    "string_view_prefix_units": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested units to a zero floor",
+    "byte_span_length": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative byte counts",
+    "byte_span_prefix_length": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested units to a zero floor",
+    "array_count": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative element counts",
+    "array_prefix_count": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested elements to a zero floor",
     "map_entry_present": "0-means-absent-nonzero-means-present",
-    "map_entry_value_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default"
+    "map_entry_value_or": "routes through objc3_runtime_stdlib_core_map_entry_value_or_i32 and returns value when presence flag is nonzero, otherwise the caller-supplied default"
   },
   "error_semantics": {
     "result_ok_tag": 1,
@@ -78,16 +79,16 @@
     "runtime_composition_token": "returns component_count when imported_components is negative, otherwise component_count plus imported_components"
   },
   "concurrency_semantics": {
-    "spawn_token": "returns seed plus 1 as the canonical deterministic spawn token",
-    "child_spawn_token": "returns seed plus 1 as the structured child-spawn helper token",
-    "detached_spawn_token": "returns seed plus 2 as the detached-spawn helper token",
-    "join_status": "returns the provided result code unless cancelled is nonzero, in which case it returns 2",
-    "task_group_scope_depth": "returns parent_depth plus child_tasks when child_tasks is nonnegative, otherwise parent_depth",
-    "cancellation_query": "returns 1 when the provided flag is nonzero and 0 otherwise",
-    "cancellation_checkpoint": "returns 1 when the provided flag is nonzero and 0 otherwise",
-    "executor_hop_token": "returns target_executor when nonzero, otherwise current_executor",
-    "actor_mailbox_token": "returns actor_seed plus pending_messages when pending_messages is nonnegative, otherwise actor_seed",
-    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency",
+    "spawn_token": "routes structured spawn through objc3_runtime_spawn_task_i32 with task kind 1 and the caller-provided executor tag",
+    "child_spawn_token": "routes structured child spawn through objc3_runtime_spawn_task_i32 with task kind 1 and the caller-provided executor tag",
+    "detached_spawn_token": "routes detached spawn through objc3_runtime_spawn_task_i32 with task kind 2 and the caller-provided executor tag",
+    "join_status": "routes cancellation through objc3_runtime_task_on_cancel_i32 on the supplied executor and non-cancelled completion through objc3_runtime_executor_hop_i32 with the supplied result value and executor tag",
+    "task_group_scope_depth": "routes scope entry, one FIFO task addition and wait per requested child task through the runtime task-group helper cluster; invalid child counts fail closed through objc3_runtime_cancel_task_group_i32",
+    "cancellation_query": "routes cancellation observation through objc3_runtime_task_is_cancelled_i32",
+    "cancellation_checkpoint": "routes cancellation checkpoints through objc3_runtime_cancel_task_group_i32 when flagged and objc3_runtime_task_is_cancelled_i32 otherwise",
+    "executor_hop_token": "routes executor hops through objc3_runtime_executor_hop_i32 with distinct value and executor-tag operands",
+    "actor_mailbox_token": "routes actor mailbox binding, enqueue, and drain behavior through the runtime actor mailbox helper cluster with distinct actor-handle and executor-tag operands",
+    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop and actor-mailbox helpers may grow additively inside objc3.concurrency",
     "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
   },
   "system_semantics": {

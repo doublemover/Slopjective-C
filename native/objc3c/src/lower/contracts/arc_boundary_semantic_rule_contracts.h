@@ -13,6 +13,6 @@ inline constexpr const char *kObjc3ArcSemanticRulesSemanticModel =
 inline constexpr const char *kObjc3ArcSemanticRulesFailClosedModel =
     "forbidden-arc-property-forms-and-non-inferred-lifetime-semantics-terminate-deterministically";
 inline constexpr const char *kObjc3ArcSemanticRulesNonGoalModel =
-    "no-implicit-retain-release-inference-no-lifetime-extension-no-method-family-based-arc-semantics-yet";
+    "no-general-local-lifetime-extension-no-cross-module-arc-optimization-beyond-supported-signature-and-method-family-retained-result-cleanup";
 
 std::string Objc3ArcSemanticRulesSummary();

@@ -6,10 +6,13 @@ from pathlib import Path
 
 from .catalog import (
     ARC_AUTORELEASE_RETURN_FIXTURE,
+    ARC_AUTORELEASEPOOL_ORDER_FIXTURE,
     ARC_CLEANUP_SCOPE_FIXTURE,
     ARC_IMPLICIT_CLEANUP_FIXTURE,
     ARC_INFERENCE_FIXTURE,
+    ARC_METHOD_FAMILY_FIXTURE,
     ARC_MODE_FIXTURE,
+    ARC_WEAK_AUTORELEASEPOOL_FIXTURE,
     NONOWNING_CAPTURE_FIXTURE,
     OWNED_CAPTURE_FIXTURE,
 )
@@ -40,6 +43,18 @@ def load_block_arc_automation_artifacts(
         ),
         arc_autorelease_return=compile_fixture_artifact(
             ARC_AUTORELEASE_RETURN_FIXTURE,
+            case_dir,
+        ),
+        arc_autoreleasepool_order=compile_fixture_artifact(
+            ARC_AUTORELEASEPOOL_ORDER_FIXTURE,
+            case_dir,
+        ),
+        arc_weak_autoreleasepool=compile_fixture_artifact(
+            ARC_WEAK_AUTORELEASEPOOL_FIXTURE,
+            case_dir,
+        ),
+        arc_method_family=compile_fixture_artifact(
+            ARC_METHOD_FAMILY_FIXTURE,
             case_dir,
         ),
         negative_batch=compile_negative_diagnostics(case_dir),

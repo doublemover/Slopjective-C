@@ -42,6 +42,13 @@ def build_object_model_case_factories(
             ),
         ),
         (
+            "runtime-object-foundation-protocol-category",
+            lambda: domains.object_model.check_runtime_object_foundation_protocol_category_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
             "live-dispatch-fast-path",
             lambda: domains.object_model.check_live_dispatch_fast_path_case(
                 clangxx,

@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S218.\nmodule NegativeTypeSemanticProtocolMethodNullabilityConflict;\n\n@protocol Worker\n@required\n- (id!) requiredValue:(id!)value;\n@end\n\n@interface Widget <Worker>\n- (id?) requiredValue:(id?)value;\n@end\n\n@implementation Widget\n- (id?) requiredValue:(id?)value {\n  return value;\n}\n@end\n\nfn main() -> i32 {\n  return 0;\n}\n",
   "expect": {

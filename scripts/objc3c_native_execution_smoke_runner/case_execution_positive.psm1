@@ -56,7 +56,7 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
       -LlPath $llPath `
       -FixtureRel $fixtureRel `
       -RequiresLiveRuntimeDispatch $expectation.requires_live_runtime_dispatch `
-      -RuntimeDispatchSymbol $expectation.runtime_dispatch_symbol
+      -RuntimeDispatchSymbols $expectation.runtime_dispatch_symbols
   }
 
   $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel

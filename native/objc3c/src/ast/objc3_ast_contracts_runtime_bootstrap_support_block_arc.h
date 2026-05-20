@@ -26,7 +26,13 @@ inline constexpr const char
         "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
 inline constexpr const char
     *kObjc3RuntimeBlockArcRuntimeAbiBlockModel =
-        "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
+        "descriptor-backed-promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcRuntimeAbiDescriptorModel =
+        "storage-slot-zero-carries-an-internal-descriptor-pointer-whose-record-preserves-size-captures-flags-arity-and-invoke-thunk";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcRuntimeAbiInvokeThunkModel =
+        "runtime-invocation-plans-call-the-descriptor-owned-i32-invoke-thunk-with-copied-runtime-owned-storage";
 inline constexpr const char
     *kObjc3RuntimeBlockArcRuntimeAbiArcModel =
         "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints";

@@ -67,7 +67,6 @@ static void WalkDoCatchHandlers(
     const Objc3ErrorHandlingSemanticWalkContext &context) {
   for (const auto &clause : block.catch_clauses) {
     Objc3ErrorHandlingSemanticWalkContext catch_context = context;
-    catch_context.local_handler_active = false;
     catch_context.in_catch_body = true;
     for (const auto &body_stmt : clause.body) {
       WalkErrorHandlingTryDoCatchStmt(

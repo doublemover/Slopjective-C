@@ -3,6 +3,7 @@
 #include "runtime/memory/autorelease_pool_state.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace objc3c::runtime {
 
@@ -23,7 +24,7 @@ void PushRuntimeAutoreleasePoolFrame() {
       state.max_depth, static_cast<std::uint64_t>(state.frames.size()));
 }
 
-std::vector<int> PopRuntimeAutoreleasePoolFrameValues() {
+std::vector<int> PopRuntimeAutoreleasePoolFrameValuesInDrainOrder() {
   RuntimeAutoreleasePoolState &state =
       RuntimeAutoreleasePoolStateForCurrentThread();
   if (state.frames.empty()) {
@@ -32,6 +33,7 @@ std::vector<int> PopRuntimeAutoreleasePoolFrameValues() {
   RuntimeAutoreleasePoolFrame frame =
       std::move(state.frames.back());
   state.frames.pop_back();
+  std::reverse(frame.values.begin(), frame.values.end());
   return std::move(frame.values);
 }
 

@@ -12,14 +12,15 @@
     "sbom_path": { "type": "string" },
     "attested_digests": {
       "type": "object",
-      "required": ["release_manifest_sha256", "release_payload_digest_sha256", "package_manifest_sha256", "sbom_sha256", "repo_superclean_surface_sha256", "release_evidence_index_sha256"],
+      "required": ["release_manifest_sha256", "release_payload_digest_sha256", "package_manifest_sha256", "sbom_sha256", "repo_superclean_surface_sha256", "release_evidence_index_sha256", "abi_api_drift_summary_sha256"],
       "properties": {
         "release_manifest_sha256": { "type": "string" },
         "release_payload_digest_sha256": { "type": "string" },
         "package_manifest_sha256": { "type": "string" },
         "sbom_sha256": { "type": "string" },
         "repo_superclean_surface_sha256": { "type": "string" },
-        "release_evidence_index_sha256": { "type": "string" }
+        "release_evidence_index_sha256": { "type": "string" },
+        "abi_api_drift_summary_sha256": { "type": "string" }
       },
       "additionalProperties": false
     },

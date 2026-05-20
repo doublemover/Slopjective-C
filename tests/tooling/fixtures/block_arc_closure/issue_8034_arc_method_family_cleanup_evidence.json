@@ -1,0 +1,59 @@
+{
+  "issue": 8034,
+  "draft_id": "OC3-T10-001",
+  "contract_id": "objc3c.arc.method-family.retained-message-cleanup.evidence.v1",
+  "summary": "Objective-C method-family retained-result metadata is consumed by IR message-send lowering under ARC and lowered to scope-owned release cleanup for alloc, new, init, copy, mutableCopy, word-boundary selector variants, nested init chains, and branch-local retained sends.",
+  "production_code_paths": [
+    "native/objc3c/src/support/objc3_method_family.cpp",
+    "native/objc3c/src/support/objc3_method_family_retained_result.cpp",
+    "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations_annotation_parsing.inc",
+    "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_scope_cleanup_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+  ],
+  "fixtures": [
+    "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3"
+  ],
+  "acceptance_case_ids": [
+    "block-storage-arc-automation-semantics"
+  ],
+  "expected_manifest_signals": {
+    "super_dispatch_method_family_alloc_sites": 2,
+    "super_dispatch_method_family_new_sites": 3,
+    "super_dispatch_method_family_init_sites": 2,
+    "super_dispatch_method_family_copy_sites": 2,
+    "super_dispatch_method_family_mutable_copy_sites": 1,
+    "super_dispatch_method_family_none_sites": 4,
+    "super_dispatch_method_family_returns_retained_result_sites": 10,
+    "super_dispatch_method_family_returns_related_result_sites": 2,
+    "super_dispatch_method_family_contract_violation_sites": 0
+  },
+  "expected_ir_signals": [
+    "objc3_arc_method_family_retained_result_cleanup = alloc",
+    "objc3_arc_method_family_retained_result_cleanup = new",
+    "objc3_arc_method_family_retained_result_cleanup = init",
+    "objc3_arc_method_family_retained_result_cleanup = copy",
+    "objc3_arc_method_family_retained_result_cleanup = mutableCopy",
+    "objc3_arc_method_family_related_result_consumes_receiver_cleanup = init",
+    "store i32 0, ptr %objc3.arc.methodfamily.result.addr.",
+    "objc3_runtime_release_i32"
+  ],
+  "selector_family_boundary": {
+    "retained_families": [
+      "alloc",
+      "new",
+      "init",
+      "copy",
+      "mutableCopy",
+      "copyWithZone:",
+      "newValue"
+    ],
+    "near_miss_selectors": [
+      "copying",
+      "copycat",
+      "newton",
+      "initiate"
+    ],
+    "rule": "selector belongs to a method family only when the family prefix is followed by end-of-selector or a non-lowercase ASCII character"
+  }
+}

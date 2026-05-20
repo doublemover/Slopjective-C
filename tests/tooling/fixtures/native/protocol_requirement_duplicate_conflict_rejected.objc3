@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3S218.
+module protocolRequirementDuplicateConflictRejected;
+
+@protocol Worker
+- (i32)work;
+- (bool)work;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

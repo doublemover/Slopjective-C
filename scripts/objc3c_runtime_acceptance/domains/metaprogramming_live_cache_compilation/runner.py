@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.fixture_compile_runner import run_fixture_compile
 from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
@@ -48,6 +49,24 @@ class LiveMetaprogrammingCacheCommandRunner:
             ],
         )
         return load_provider_compile_artifacts(compile_dir)
+
+    def compile_provider_expect_failure(
+        self,
+        fixture: Path,
+        compile_dir: Path,
+        cache_root_args: tuple[str, ...],
+    ) -> subprocess.CompletedProcess[str]:
+        result, _ = run_fixture_compile(
+            fixture,
+            compile_dir,
+            extra_args=[
+                REGISTRATION_ORDINAL_FLAG,
+                "1",
+                *cache_root_args,
+            ],
+            write_provenance=False,
+        )
+        return result
 
     def compile_consumer(
         self,

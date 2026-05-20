@@ -93,10 +93,11 @@ def ir_emitter_contract_texts() -> tuple[str, str, str]:
     )
 
 
-def runtime_public_result_texts() -> tuple[str, str, str, str, str]:
+def runtime_public_result_texts() -> tuple[str, str, str, str, str, str]:
     return (
         read_text(SRC_ROOT / "runtime" / "CMakeLists.txt"),
         read_text(SRC_ROOT / "runtime" / "public" / "objc3_runtime_result.h"),
+        read_text(SRC_ROOT / "runtime" / "public" / "objc3_runtime_registration.h"),
         read_text(
             SRC_ROOT
             / "runtime"

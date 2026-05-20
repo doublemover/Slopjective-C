@@ -1,0 +1,47 @@
+module m8036_error_arc_cleanup_bridge_positive;
+
+extern fn cleanup_scope_close_fd(value: i32) -> void;
+extern fn cleanup_release_temp(value: i32) -> void;
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), cf_returns_not_retained));
+
+fn autoreleaseReturn(value: id) -> __autoreleasing id {
+  return value;
+}
+
+fn mapStatus(status: i32) -> NSError {
+  return status + 40;
+}
+
+fn unwindBridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus))) {
+  if (value == 2) {
+    return 5;
+  }
+  return 0;
+}
+
+fn runCase(owner: id) -> i32 {
+  do {
+    @cleanup(cleanup_release_temp) let temp = 1;
+    defer {
+      cleanup_release_temp(6);
+    }
+    @resource(cleanup_scope_close_fd, invalid: -1) let fd = 4;
+    @autoreleasepool {
+      let retained = CFRetain(owner);
+      let pooled = autoreleaseReturn(CFAutorelease(retained));
+      let bridged = try unwindBridgeStatus(2, 0);
+      return bridged + pooled - retained + fd + temp;
+    }
+  } catch (NSError* error) {
+    return error;
+  } catch {
+    return 0;
+  }
+}
+
+fn main() -> i32 {
+  return runCase(9);
+}

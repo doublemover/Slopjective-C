@@ -100,7 +100,7 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
       -LlPath $llPath `
       -FixtureRel $fixtureRel `
       -RequiresLiveRuntimeDispatch $spec.requires_live_runtime_dispatch `
-      -RuntimeDispatchSymbol $spec.runtime_dispatch_symbol
+      -RuntimeDispatchSymbols $spec.runtime_dispatch_symbols
   }
 
   $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel

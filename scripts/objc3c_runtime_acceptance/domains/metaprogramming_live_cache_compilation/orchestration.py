@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from subprocess import CompletedProcess
 
 from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_helpers import (
     remove_metaprogramming_cache_entry_from_artifact,
@@ -86,6 +87,17 @@ def compile_live_metaprogramming_cache_replay(
     )
 
 
+def compile_live_metaprogramming_cache_tampered_replay_expect_failure(
+    provider: LiveMetaprogrammingCacheProvider,
+    case_dir: Path,
+) -> CompletedProcess[str]:
+    return LiveMetaprogrammingCacheCommandRunner().compile_provider_expect_failure(
+        provider.fixture,
+        case_dir / "provider-tampered-cache-replay",
+        provider.cache_root_args,
+    )
+
+
 def compile_live_metaprogramming_cache_consumer(
     provider: LiveMetaprogrammingCacheProvider,
     case_dir: Path,
@@ -128,6 +140,7 @@ def _launch_attempted(candidate: LiveMetaprogrammingCacheCompile) -> bool:
 __all__ = [
     "compile_live_metaprogramming_cache_consumer",
     "compile_live_metaprogramming_cache_replay",
+    "compile_live_metaprogramming_cache_tampered_replay_expect_failure",
     "live_metaprogramming_cache_case_dir",
     "materialize_live_metaprogramming_cache_provider",
     "prepare_live_metaprogramming_cache_provider",

@@ -28,6 +28,16 @@ inline void CaptureRootClassInvariants(RootClassInvariants &invariants) {
       invariants.widget_own_state_storage.class_name,
       invariants.widget_own_state_storage.owner_identity);
 
+  invariants.widget_super_instance_value =
+      objc3_runtime_dispatch_i32_from_class(
+          kWidgetInstanceReceiver, kRootClassName, kRootValueSelector, 0, 0, 0,
+          0);
+  const objc3_runtime_dispatch_i32_result super_miss =
+      objc3_runtime_dispatch_i32_from_class_checked(
+          kWidgetInstanceReceiver, kRootClassName, kWidgetValueSelector, 0, 0,
+          0, 0);
+  invariants.widget_super_own_selector_status = super_miss.status_code;
+
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       kRootClassReceiver, kSharedSelector, &invariants.root_shared_entry);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
@@ -39,6 +49,9 @@ inline void CaptureRootClassInvariants(RootClassInvariants &invariants) {
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       kWidgetInstanceReceiver, kWidgetValueSelector,
       &invariants.widget_own_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      kWidgetInstanceReceiver, kRootValueSelector,
+      &invariants.widget_super_entry);
   ::objc3c::runtime::probe::StabilizeMethodCacheEntry(
       invariants.root_shared_entry,
       invariants.root_shared_entry_storage.selector,
@@ -59,6 +72,11 @@ inline void CaptureRootClassInvariants(RootClassInvariants &invariants) {
       invariants.widget_own_entry_storage.selector,
       invariants.widget_own_entry_storage.class_name,
       invariants.widget_own_entry_storage.owner_identity);
+  ::objc3c::runtime::probe::StabilizeMethodCacheEntry(
+      invariants.widget_super_entry,
+      invariants.widget_super_entry_storage.selector,
+      invariants.widget_super_entry_storage.class_name,
+      invariants.widget_super_entry_storage.owner_identity);
 }
 
 }  // namespace metaclass_graph_root_class

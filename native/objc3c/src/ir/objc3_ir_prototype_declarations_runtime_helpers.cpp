@@ -6,6 +6,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ast/objc3_ast_contracts.h"
+#include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_prototype_declarations.h"
 #include "lower/contracts/block_runtime_helper_contracts.h"
@@ -59,6 +60,11 @@ bool Objc3IRMethodRequiresArcHelperDeclarations(
 
 bool Objc3IRRequiresArcHelperDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options) {
+  if (options.frontend_metadata.arc_mode_enabled &&
+      options.frontend_metadata
+              .super_dispatch_method_family_returns_retained_result_sites > 0u) {
+    return true;
+  }
   for (const auto &fn : options.program.functions) {
     if (Objc3IRFunctionRequiresArcHelperDeclarations(fn,
                                                      options.frontend_metadata)) {
@@ -68,6 +74,34 @@ bool Objc3IRRequiresArcHelperDeclarations(
   for (const auto &method_def : options.method_definitions) {
     if (Objc3IRMethodRequiresArcHelperDeclarations(
             method_def, options.frontend_metadata)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Objc3IRFunctionRequiresAsyncRuntimeHelperDeclarations(
+    const FunctionDecl &fn) {
+  return fn.async_declared && fn.return_type != ValueType::Void &&
+         Objc3IRExecutorAffinityTag(fn) != 0;
+}
+
+bool Objc3IRMethodRequiresAsyncRuntimeHelperDeclarations(
+    const Objc3IRMethodDefinition &method_def) {
+  return method_def.method != nullptr && method_def.method->async_declared &&
+         method_def.method->return_type != ValueType::Void &&
+         Objc3IRExecutorAffinityTag(*method_def.method) != 0;
+}
+
+bool Objc3IRRequiresAsyncRuntimeHelperDeclarations(
+    const Objc3IRPrototypeDeclarationOptions &options) {
+  for (const auto &fn : options.program.functions) {
+    if (Objc3IRFunctionRequiresAsyncRuntimeHelperDeclarations(fn)) {
+      return true;
+    }
+  }
+  for (const auto &method_def : options.method_definitions) {
+    if (Objc3IRMethodRequiresAsyncRuntimeHelperDeclarations(method_def)) {
       return true;
     }
   }
@@ -92,9 +126,11 @@ bool Objc3IRRequiresRuntimeHelperDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options) {
   const Objc3IRFrontendMetadata &frontend_metadata = options.frontend_metadata;
   return options.synthesized_property_accessor_count > 0u ||
+         !options.method_definitions.empty() ||
          Objc3IRRequiresArcHelperDeclarations(options) ||
          !frontend_metadata.lowering_error_handling_throws_abi_propagation_replay_key
               .empty() ||
+         Objc3IRRequiresAsyncRuntimeHelperDeclarations(options) ||
          !frontend_metadata.lowering_async_continuation_replay_key.empty() ||
          !frontend_metadata.lowering_await_lowering_suspension_state_replay_key
               .empty() ||
@@ -126,6 +162,11 @@ void EmitObjc3IRRuntimeHelperDeclarations(
           std::string(kObjc3RuntimeExchangeCurrentPropertyI32Symbol) +
           "(i32)\n");
   EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeCurrentDispatchReceiverI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeCurrentDispatchReceiverI32Symbol) + "()\n");
+  EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeStoreThrownErrorI32Symbol,
       "declare void @" + std::string(kObjc3RuntimeStoreThrownErrorI32Symbol) +
           "(ptr, i32)\n");
@@ -141,6 +182,12 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       declared_symbols, emitted, out, kObjc3RuntimeBridgeNSErrorErrorI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimeBridgeNSErrorErrorI32Symbol) +
           "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol) +
+          "(i32, i32, i32)\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeCatchMatchesErrorI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimeCatchMatchesErrorI32Symbol) +

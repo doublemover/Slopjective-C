@@ -23,13 +23,13 @@ EXPECTED_SCHEMAS = (
     (
         "posture_schema",
         "objc3c-security-posture-v1",
-        "https://objc3.dev/schemas/objc3c-security-posture-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-security-posture-v1.schema.json",
         "objc3c.security.hardening.posture.v1",
     ),
     (
         "advisory_index_schema",
         "objc3c-security-advisory-index-v1",
-        "https://objc3.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
         "objc3c.security.hardening.advisory.index.v1",
     ),
 )

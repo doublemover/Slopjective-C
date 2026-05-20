@@ -8,9 +8,10 @@
   "references": [
     "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
-    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/runtime_import_type_system_preservation.cpp",
+    "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "provider: tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3\nconsumer: tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3\nconsumer flags: --objc3-import-runtime-surface <provider>/module.runtime-import-surface.json --objc3-bootstrap-registration-order-ordinal 2",
   "expect": {

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,58 @@ from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_output
 from objc3c_runtime_acceptance.paths import ROOT
 
 from ..runtime_contract_concurrency import RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
+
+
+def _assert_return_await_cleanup_ordering(ir_text: str) -> list[str]:
+    handoff_symbol = "objc3_runtime_handoff_async_continuation_to_executor_i32"
+    allocate_symbol = "objc3_runtime_allocate_async_continuation_i32"
+    resume_symbol = "objc3_runtime_resume_async_continuation_i32"
+    push_symbol = "objc3_runtime_push_autoreleasepool_scope"
+    pop_symbol = "objc3_runtime_pop_autoreleasepool_scope"
+    function_blocks = re.findall(
+        r"define\s+[^@]+@([^(]+)\([^)]*\)\s*\{\n(.*?)\n\}",
+        ir_text,
+        flags=re.DOTALL,
+    )
+    await_blocks = [
+        (symbol, body) for symbol, body in function_blocks if handoff_symbol in body
+    ]
+    expect(
+        len(await_blocks) == 2,
+        "expected async cleanup fixture to emit exactly two return-await bodies",
+    )
+    asserted_symbols: list[str] = []
+    for symbol, body in await_blocks:
+        push = body.find(push_symbol)
+        allocate = body.find(allocate_symbol)
+        pop = body.find(pop_symbol)
+        handoff = body.find(handoff_symbol)
+        resume = body.find(resume_symbol)
+        fetch_calls = [
+            match.start()
+            for match in re.finditer(r"call i32 @fetchValue\(", body)
+        ]
+        expect(
+            push != -1
+            and allocate != -1
+            and pop != -1
+            and handoff != -1
+            and resume != -1
+            and len(fetch_calls) >= 2,
+            f"expected {symbol} return-await body to carry cleanup and continuation helpers",
+        )
+        expect(
+            push
+            < fetch_calls[0]
+            < allocate
+            < fetch_calls[1]
+            < pop
+            < handoff
+            < resume,
+            f"expected {symbol} to run defer/autoreleasepool cleanup before await handoff",
+        )
+        asserted_symbols.append(symbol)
+    return sorted(asserted_symbols)
 
 
 def check_unified_concurrency_lowering_metadata_surface_case(
@@ -148,6 +201,29 @@ def check_unified_concurrency_lowering_metadata_surface_case(
                     "lowering_detail_contract_ids"
                 ),
             }
+
+    cleanup_fixture_path = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "async_cleanup_integration_positive.objc3"
+    )
+    cleanup_compile_dir = case_dir / "async_cleanup" / "compile"
+    _, cleanup_ll_path, cleanup_manifest_path = compile_fixture_outputs(
+        cleanup_fixture_path, cleanup_compile_dir
+    )
+    cleanup_symbols = _assert_return_await_cleanup_ordering(
+        cleanup_ll_path.read_text(encoding="utf-8")
+    )
+    summary["async_cleanup_ordering"] = {
+        "fixture": str(cleanup_fixture_path.relative_to(ROOT)).replace("\\", "/"),
+        "manifest": str(cleanup_manifest_path.relative_to(ROOT)).replace("\\", "/"),
+        "ir": str(cleanup_ll_path.relative_to(ROOT)).replace("\\", "/"),
+        "asserted_functions": cleanup_symbols,
+        "ordering": "defer-and-autoreleasepool-cleanup-before-await-handoff",
+    }
 
     return CaseResult(
         case_id="unified-concurrency-lowering-metadata-surface",

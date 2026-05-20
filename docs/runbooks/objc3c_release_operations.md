@@ -72,7 +72,11 @@ Support publication for release operations must emit:
 - a machine-owned update manifest with channel, version, and artifact pointers
 - a machine-owned upgrade-support report with support-window, upgrade-path, and
   warning details
+- signed local-installer digest validation copied from the package-channel
+  manifest into each update-channel artifact set
 - explicit revert guidance tied to the published installer/offline channels
+- user-facing rollback diagnostics with the rollback channel and operator
+  command needed to recover from blocked update publication
 - ABI/runtime/data-format rejection diagnostics as checked-in policy contracts
 - fail-closed diagnostics when required upstream release, package-channel,
   platform-support, or same-major revert artifacts are absent
@@ -85,7 +89,7 @@ as:
 - cross-major upgrade requests
 - deprecated channel usage
 - runtime/data-format rejection requirements
-- support-tier or archive support overclaim attempts outside the checked-in
+- support-tier or archive compatibility overclaim attempts outside the checked-in
   `windows-x64` package/install/update surface
 
 ## Release-Operations Workflow
@@ -110,6 +114,9 @@ publish:
 - the default supported platform id
 - the supported platform id set
 - the support-tier table reused from the platform-hardening surface
+- the local installer digest signature selected by the package-channel surface
+- rollback diagnostics derived from the checked-in fail-closed diagnostics
+  policy, not from prose release notes
 
 Those fields must stay aligned with
 the platform support matrix artifact selected by the checked-in

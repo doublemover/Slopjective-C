@@ -19,6 +19,8 @@ def validate_portfolio_contract(payload: dict[str, Any]) -> str | None:
         return "machine_report_root drifted"
     if payload.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
         return "package_stage_root drifted"
+    if payload.get("demo_packages_manifest") != "showcase/demo_packages.json":
+        return "demo_packages_manifest drifted"
 
     if "public_entrypoints" in payload:
         return "retired public_entrypoints present"

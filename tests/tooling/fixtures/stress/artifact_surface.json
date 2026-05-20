@@ -19,6 +19,7 @@
     "minimization": "tmp/reports/stress/minimization-summary.json",
     "crash_triage": "tmp/reports/stress/crash-triage-summary.json"
   },
+  "crash_triage_fixture_manifest": "tests/tooling/fixtures/stress/crash_triage_fixture_manifest.json",
   "failure_capsule_required_artifacts": [
     "source.objc3",
     "invocation.json",

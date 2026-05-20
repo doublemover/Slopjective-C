@@ -12,13 +12,15 @@
     "check-external-validation-surface",
     "test-external-validation-replay",
     "publish-external-repro-corpus",
+    "check-external-support-claim-gate",
     "validate-external-validation",
     "validate-external-validation-integration"
   ],
   "validate_child_actions": [
     "check-external-validation-surface",
     "test-external-validation-replay",
-    "publish-external-repro-corpus"
+    "publish-external-repro-corpus",
+    "check-external-support-claim-gate"
   ],
   "accepted_trust_states": [
     "accepted"
@@ -31,6 +33,7 @@
     "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
     "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
     "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1",
+    "tmp/reports/external-validation/claim-gate-summary.json": "objc3c.external_validation.support_claim_gate.summary.v1",
     "tmp/reports/external-validation/integration-summary.json": "objc3c.external_validation.integration.summary.v1"
   },
   "hard_cutover_guardrails": {
@@ -64,6 +67,15 @@
       "public_claim_owner": "external-validation-public-claims"
     },
     "publish-external-repro-corpus": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    },
+    "check-external-support-claim-gate": {
       "source_owner": "external-validation-source-surface",
       "trust_policy_owner": "external-validation-trust-policy",
       "intake_owner": "external-validation-intake",

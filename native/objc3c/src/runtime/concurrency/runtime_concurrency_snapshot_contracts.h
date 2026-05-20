@@ -10,8 +10,15 @@ typedef struct objc3_runtime_async_continuation_state_snapshot {
   uint64_t allocation_call_count;
   uint64_t handoff_call_count;
   uint64_t resume_call_count;
+  uint64_t cancel_call_count;
+  uint64_t rejected_operation_count;
   uint64_t live_continuation_handle_count;
+  uint64_t completed_continuation_count;
+  uint64_t cancelled_continuation_count;
+  uint64_t failed_continuation_count;
   int last_allocated_continuation_handle;
+  int last_allocated_continuation_slot;
+  int last_allocated_continuation_generation;
   int last_allocated_resume_entry_tag;
   int last_allocated_executor_tag;
   int last_handoff_continuation_handle;
@@ -19,7 +26,32 @@ typedef struct objc3_runtime_async_continuation_state_snapshot {
   int last_resume_continuation_handle;
   int last_resume_result_value;
   int last_resume_return_value;
+  int last_cancel_continuation_handle;
+  int last_cancel_return_value;
+  int last_operation_failure_code;
+  int last_observed_continuation_slot;
+  int last_observed_continuation_generation;
 } objc3_runtime_async_continuation_state_snapshot;
+
+enum {
+  OBJC3_RUNTIME_TASK_FAILURE_NONE = 0,
+  OBJC3_RUNTIME_TASK_FAILURE_INVALID_EXECUTOR = 1,
+  OBJC3_RUNTIME_TASK_FAILURE_UNSUPPORTED_TASK_KIND = 2,
+  OBJC3_RUNTIME_TASK_FAILURE_MISSING_TASK_GROUP = 3,
+  OBJC3_RUNTIME_TASK_FAILURE_TASK_GROUP_ALREADY_ACTIVE = 4,
+  OBJC3_RUNTIME_TASK_FAILURE_EXECUTOR_MISMATCH = 5,
+  OBJC3_RUNTIME_TASK_FAILURE_EMPTY_TASK_GROUP_QUEUE = 6,
+  OBJC3_RUNTIME_TASK_FAILURE_TASK_GROUP_ALREADY_CANCELLED = 7,
+  OBJC3_RUNTIME_TASK_FAILURE_SCHEDULER_QUEUE_DRIFT = 8,
+};
+
+enum {
+  OBJC3_RUNTIME_TASK_LIFECYCLE_IDLE = 0,
+  OBJC3_RUNTIME_TASK_LIFECYCLE_TASK_SPAWNED = 1,
+  OBJC3_RUNTIME_TASK_LIFECYCLE_GROUP_ACTIVE = 2,
+  OBJC3_RUNTIME_TASK_LIFECYCLE_GROUP_DRAINED = 3,
+  OBJC3_RUNTIME_TASK_LIFECYCLE_GROUP_CANCELLED = 4,
+};
 
 typedef struct objc3_runtime_task_runtime_state_snapshot {
   uint64_t spawn_call_count;
@@ -43,6 +75,33 @@ typedef struct objc3_runtime_task_runtime_state_snapshot {
   int last_wait_next_result;
   int last_cancel_all_result;
   int last_cancellation_poll_result;
+  int last_failure_reason;
+  int lifecycle_state;
+  int selected_executor_tag;
+  int active_group_executor_tag;
+  int active_group_task_count;
+  int pending_group_task_count;
+  int completed_group_task_count;
+  int cancelled_group_task_count;
+  int group_cancelled;
+  int cancellation_generation;
+  int observed_cancellation_generation;
+  int last_queue_depth;
+  int last_queue_drain_result;
+  uint64_t scheduler_enqueue_count;
+  uint64_t scheduler_dequeue_count;
+  uint64_t scheduler_cancelled_count;
+  int last_scheduled_task_handle;
+  int last_scheduled_executor_tag;
+  int last_dequeued_task_handle;
+  int last_dequeued_executor_tag;
+  int last_cancelled_task_handle;
+  int last_cancelled_executor_tag;
+  int last_executor_queue_depth;
+  int max_executor_queue_depth;
+  int scheduler_sequence;
+  int deadlock_guard_passed;
+  int race_guard_passed;
 } objc3_runtime_task_runtime_state_snapshot;
 
 typedef struct objc3_runtime_actor_runtime_state_snapshot {
@@ -54,6 +113,8 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   uint64_t bind_executor_call_count;
   uint64_t mailbox_enqueue_call_count;
   uint64_t mailbox_drain_call_count;
+  uint64_t failed_operation_count;
+  uint64_t actor_executor_binding_count;
   int last_isolation_executor_tag;
   int last_nonisolated_value;
   int last_nonisolated_executor_tag;
@@ -69,7 +130,21 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   int last_mailbox_executor_tag;
   int last_mailbox_depth;
   int last_mailbox_drained_value;
+  int last_expected_executor_tag;
+  int mailbox_identity_guard_passed;
+  int executor_binding_guard_passed;
+  int last_operation_succeeded;
+  int last_failure_code;
 } objc3_runtime_actor_runtime_state_snapshot;
+
+enum {
+  OBJC3_RUNTIME_ACTOR_FAILURE_NONE = 0,
+  OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR = 1,
+  OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE = 2,
+  OBJC3_RUNTIME_ACTOR_FAILURE_EMPTY_MAILBOX = 3,
+  OBJC3_RUNTIME_ACTOR_FAILURE_UNBOUND_ACTOR = 4,
+  OBJC3_RUNTIME_ACTOR_FAILURE_EXECUTOR_MISMATCH = 5,
+};
 
 // actor lowering/runtime anchor: actor thunk, nonisolated entry,
 // and executor-hop lowering remain private runtime helpers with a private
@@ -97,6 +172,7 @@ int objc3_runtime_handoff_async_continuation_to_executor_i32(
     int continuation_handle, int executor_tag);
 int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
                                                 int result_value);
+int objc3_runtime_cancel_async_continuation_i32(int continuation_handle);
 // task-runtime lowering anchor: the IR emitter now rewrites the
 // supported task/executor/cancellation symbol-profile family onto this private
 // helper cluster so task creation, task-group operations, cancellation polls,

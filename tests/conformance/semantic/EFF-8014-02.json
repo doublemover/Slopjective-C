@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_effects_ownership_async_throws.objc3",
-    "reports/claimability/effects-ownership-semantic-model/effects_ownership_semantic_model_summary.json"
+    "tmp/reports/claimability/effects-ownership-semantic-model/effects_ownership_semantic_model_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S226.\nmodule NegativeEffectsOwnershipAsyncThrows;\n\nasync fn main() throws -> i32 {\n  return 0;\n}\n",
   "expect": {

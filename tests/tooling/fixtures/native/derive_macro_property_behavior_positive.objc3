@@ -8,7 +8,7 @@ __attribute__((objc_derive(named("Equatable"))))
 @implementation Widget
 @end
 
-pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:abc123")))) {
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:abc123")), objc_macro_cache_key(named("Trace:v1:derive-macro-property-behavior")), objc_macro_sandbox(named("deterministic")))) {
   return 7;
 }
 

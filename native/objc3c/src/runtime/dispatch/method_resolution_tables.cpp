@@ -17,13 +17,16 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
     const char *selector_spelling, SlowPathResolution &resolution,
     bool &ambiguous, std::uint64_t &category_probe_count,
     std::uint64_t &protocol_probe_count) {
-  // protocol/category-aware resolution anchor: once class bodies miss,
-  // preferred category implementation records become the next live method tier.
+  // protocol/category-aware resolution anchor: preferred category
+  // implementation records form the first live method tier. Attachment order is
+  // oldest-to-newest; dispatch searches newest-to-oldest, then probes protocol
+  // declarations only after all category method bodies miss.
   if (node.class_name.empty() || !node.runtime_attachment_ready) {
     return false;
   }
-  for (const EmittedCategoryRecord *category_record :
-       node.attached_category_records) {
+  for (auto category_it = node.attached_category_records.rbegin();
+       category_it != node.attached_category_records.rend(); ++category_it) {
+    const EmittedCategoryRecord *category_record = *category_it;
     ++category_probe_count;
     if (!TryResolveMethodFromMethodListRefUnlocked(
             state, SelectRuntimeMethodListRef(*category_record, family),
@@ -35,6 +38,10 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
         HasTerminalStrictDispatchError(resolution)) {
       return true;
     }
+  }
+  for (auto category_it = node.attached_category_records.rbegin();
+       category_it != node.attached_category_records.rend(); ++category_it) {
+    const EmittedCategoryRecord *category_record = *category_it;
     if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
             state, category_record->adopted_protocol_refs, family,
             selector_stable_id, selector_spelling, protocol_probe_count,

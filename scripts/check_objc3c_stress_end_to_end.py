@@ -51,7 +51,7 @@ def run_checked(command: list[str], message: str) -> subprocess.CompletedProcess
 def ensure_integration_report() -> dict[str, Any]:
     if INTEGRATION_REPORT.is_file():
         report = load_json(INTEGRATION_REPORT)
-        if report.get("status") == "PASS":
+        if report.get("status") == "PASS" and isinstance(report.get("performance_regression_gate"), dict):
             return report
     run_checked(
         python_script_command(ROOT / "scripts" / "check_objc3c_stress_integration.py"),
@@ -71,6 +71,12 @@ def main() -> int:
     workflow_surface = load_workflow_surface()
     integration_report = ensure_integration_report()
     expect(integration_report.get("status") == "PASS", "stress integration report did not pass")
+    performance_gate = integration_report.get("performance_regression_gate")
+    expect(isinstance(performance_gate, dict), "stress integration report missing performance regression gate")
+    expect(
+        performance_gate.get("gate_id") == workflow_surface.get("performance_regression_gate_id"),
+        "stress integration performance regression gate id drifted",
+    )
 
     nightly_action = str(workflow_surface["nightly_action"])
     validate_action = str(workflow_surface["validate_action"])

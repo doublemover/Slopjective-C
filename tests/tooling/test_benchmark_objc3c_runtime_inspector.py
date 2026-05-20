@@ -62,6 +62,12 @@ def test_benchmark_writes_reproducible_summary(tmp_path: Path, monkeypatch) -> N
                     "help_duration_ms": 0.5,
                     "version_with_filetype_duration_ms": 0.75,
                 },
+                "capability_demo_compatibility": {
+                    "ok": True,
+                    "drift_checks": {
+                        "story_capabilities_match": True,
+                    },
+                },
             },
             indent=2,
         )

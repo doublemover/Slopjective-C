@@ -48,6 +48,20 @@ function Get-ExecutionReplayProofCases {
       fixture = "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3"
       required_ll_tokens = @()
       required_runtime_sections = @($requiredRuntimeSections)
+    },
+    [ordered]@{
+      case_id = "stdlib-core-runtime-helpers"
+      fixture = "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3"
+      required_ll_tokens = @(
+        "@objc3_runtime_stdlib_core_language_revision_i32",
+        "@objc3_runtime_stdlib_core_profile_revision_i32",
+        "@objc3_runtime_stdlib_core_has_capability_i32",
+        "@objc3_runtime_stdlib_core_option_unwrap_or_i32",
+        "@objc3_runtime_stdlib_core_count_i32",
+        "@objc3_runtime_stdlib_core_prefix_count_i32",
+        "@objc3_runtime_stdlib_core_map_entry_value_or_i32"
+      )
+      required_runtime_sections = @()
     }
   )
 }

@@ -109,3 +109,9 @@ entrypoint. Its implementation is split under
 `scripts/capability_docs_validator/` so matrix shape, support-claim manifest
 state rules, evidence-map projection keys, docs references, and CLI behavior have
 separate owners.
+
+`scripts/build_capability_support_docs.py` owns the generated markdown
+projections for `capability_matrix.md` and `evidence_map.md`. The validator
+checks those generated files for drift, so public support prose fails closed if
+it claims a behavior above the support matrix, evidence map, canonical fixture
+manifest, or conformance phase-owner contract.

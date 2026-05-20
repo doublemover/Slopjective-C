@@ -46,6 +46,7 @@ struct ConformanceQueryObservation {
   std::string protocol_name;
   std::string protocol_owner;
   std::string attachment_owner;
+  std::string failure_reason;
 };
 
 struct PropertyEntryObservation {

@@ -57,6 +57,7 @@ def main() -> int:
     benchmark_script = package_root / "scripts" / "benchmark_objc3c_runtime_performance.py"
     acceptance_script = package_root / "scripts" / "check_objc3c_runtime_acceptance.py"
     workload_manifest = package_root / normalize_rel_path(str(runtime_surface["workload_manifest"]))
+    fixture_manifest = package_root / normalize_rel_path(str(runtime_surface["executable_fixture_manifest"]))
     source_surface = package_root / normalize_rel_path(str(runtime_surface["source_surface_contract"]))
     artifact_surface = package_root / normalize_rel_path(str(runtime_surface["artifact_surface_contract"]))
     optimization_policy = package_root / normalize_rel_path(str(runtime_surface["optimization_policy"]))
@@ -81,6 +82,7 @@ def main() -> int:
         benchmark_script,
         acceptance_script,
         workload_manifest,
+        fixture_manifest,
         source_surface,
         artifact_surface,
         optimization_policy,
@@ -98,6 +100,8 @@ def main() -> int:
             "0",
             "--measured-runs",
             "1",
+            "--fixture-manifest",
+            str(fixture_manifest),
             "--summary-out",
             str(summary_out),
         ],
@@ -139,6 +143,7 @@ def main() -> int:
             "runbook": repo_rel(runbook),
             "source_surface_contract": repo_rel(source_surface),
             "workload_manifest": repo_rel(workload_manifest),
+            "executable_fixture_manifest": repo_rel(fixture_manifest),
             "artifact_surface_contract": repo_rel(artifact_surface),
             "optimization_policy": repo_rel(optimization_policy),
             "telemetry_schema": repo_rel(telemetry_schema),

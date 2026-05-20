@@ -60,6 +60,7 @@ def test_action_category_contract_has_no_alias_metadata() -> None:
 
     assert action_category("lint") == "lint"
     assert action_category("check-public-command-budget") == "check"
+    assert action_category("rewrite-objc3c-source") == "rewrite"
     assert payload["unknown_category_retired_route_allowed"] is False
     assert payload["public_command_aliases_allowed"] is False
     try:
@@ -75,6 +76,7 @@ def test_action_audience_contract_has_no_default_public_split() -> None:
 
     assert action_audience("build-native-full") == "operator"
     assert action_audience("build-site") == "maintainer"
+    assert action_audience("rewrite-objc3c-source") == "maintainer"
     assert action_audience("lint") == "maintainer"
     assert payload["hidden_internal_public_split_allowed"] is False
     assert payload["unknown_audience_retired_route_allowed"] is False

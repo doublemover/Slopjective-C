@@ -75,9 +75,9 @@ std::string Objc3ConcurrencyContinuationRuntimeHelperSummary() {
   std::ostringstream out;
   // continuation/runtime-helper anchor: lane-D freezes the first
   // real private Part 7 helper ABI. The helper cluster now allocates logical
-  // continuation handles and supports deterministic handoff/resume probes even
-  // though the current direct-call async lowering slice still does not consume
-  // those helpers for live suspension.
+  // continuation handles and supports deterministic handoff/resume/cancel
+  // probes even though the current direct-call async lowering slice still does
+  // not consume those helpers for live suspension.
   out << "contract=" << kObjc3ConcurrencyContinuationRuntimeHelperContractId
       << ";source_contract="
       << "objc3c.concurrency.continuation.abi.async.lowering.contract.v1"
@@ -94,6 +94,7 @@ std::string Objc3ConcurrencyContinuationRuntimeHelperSummary() {
       << ";handoff_symbol="
       << kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol
       << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
+      << ";cancel_symbol=" << kObjc3RuntimeCancelAsyncContinuationI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel
@@ -123,6 +124,7 @@ std::string Objc3ConcurrencyLiveContinuationRuntimeIntegrationSummary() {
       << ";handoff_symbol="
       << kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol
       << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
+      << ";cancel_symbol=" << kObjc3RuntimeCancelAsyncContinuationI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel

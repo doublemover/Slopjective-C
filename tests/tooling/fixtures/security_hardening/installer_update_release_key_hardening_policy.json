@@ -20,6 +20,7 @@
     "remote_key_custody_claim_allowed": false,
     "automatic_key_rotation_claim_allowed": false,
     "hosted_revocation_claim_allowed": false,
+    "retired_route_update_trust_allowed": false,
     "alternate_update_trust_allowed": false,
     "trust_bypass_for_unsigned_payload_allowed": false
   },
@@ -28,7 +29,7 @@
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
     "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
+    "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   ],
   "required_reports": [

@@ -1,7 +1,7 @@
 function Add-Objc3cParserReplayExpectedHeaderAssertions {
   param(
     [Parameter(Mandatory = $true)]$Header,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$FixtureErrors
+    [System.Collections.Generic.List[string]]$FixtureErrors
   )
 
   if (-not $Header.header_found) {
@@ -19,7 +19,7 @@ function Add-Objc3cParserReplayExitCodeAssertions {
   param(
     [Parameter(Mandatory = $true)][int]$Run1Exit,
     [Parameter(Mandatory = $true)][int]$Run2Exit,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$FixtureErrors
+    [System.Collections.Generic.List[string]]$FixtureErrors
   )
 
   if ($Run1Exit -eq 0) {
@@ -39,7 +39,7 @@ function Add-Objc3cParserReplayArtifactPresenceAssertions {
     [Parameter(Mandatory = $true)][bool]$Run2TxtPresent,
     [Parameter(Mandatory = $true)][bool]$Run1JsonPresent,
     [Parameter(Mandatory = $true)][bool]$Run2JsonPresent,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$FixtureErrors
+    [System.Collections.Generic.List[string]]$FixtureErrors
   )
 
   if (-not $Run1TxtPresent) {
@@ -66,7 +66,7 @@ function Add-Objc3cParserReplayDriftAssertions {
     [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Run2TxtCodes,
     [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Run1JsonCodes,
     [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Run2JsonCodes,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$FixtureErrors
+    [System.Collections.Generic.List[string]]$FixtureErrors
   )
 
   if ($Run1TxtHash -ne "" -and $Run2TxtHash -ne "" -and $Run1TxtHash -ne $Run2TxtHash) {
@@ -94,7 +94,7 @@ function Add-Objc3cParserReplayExpectedCodeAssertions {
     [Parameter(Mandatory = $true)]$Header,
     [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Run1TxtCodes,
     [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Run2TxtCodes,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$FixtureErrors
+    [System.Collections.Generic.List[string]]$FixtureErrors
   )
 
   if ($Header.expected_codes.Count -gt 0 -and $Run1TxtCodes.Count -gt 0) {

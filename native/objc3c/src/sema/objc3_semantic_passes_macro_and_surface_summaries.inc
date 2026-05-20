@@ -98,24 +98,157 @@ Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3Semanti
 
 #include "sema/objc3_semantic_passes_type_annotation_surface_summary.inc"
 
-static Objc3LightweightGenericConstraintSummary BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
-    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
+static void AccumulateCanonicalTypeForLightweightGenericConstraintSummary(
+    const Objc3SemanticCanonicalType &type,
+    Objc3LightweightGenericConstraintSummary &summary) {
+  if (!type.object_type_facts_authoritative ||
+      !type.generic_arguments_facts_authoritative) {
+    ++summary.contract_violation_sites;
+    summary.deterministic = false;
+    return;
+  }
+  if (type.is_objc_object_reference) {
+    ++summary.object_pointer_type_sites;
+  }
+  if (!type.has_generic_suffix) {
+    return;
+  }
+  ++summary.generic_constraint_sites;
+  ++summary.generic_suffix_sites;
+  if (!type.has_invalid_generic_suffix && !type.has_invalid_type_suffix) {
+    ++summary.terminated_generic_suffix_sites;
+  }
+  if (type.is_objc_object_reference && !type.has_invalid_generic_suffix &&
+      !type.has_invalid_type_suffix) {
+    ++summary.normalized_constraint_sites;
+  } else {
+    ++summary.contract_violation_sites;
+  }
+}
+
+static void AccumulateCanonicalTypeForNullabilityFlowWarningPrecisionSummary(
+    const Objc3SemanticCanonicalType &type,
+    Objc3NullabilityFlowWarningPrecisionSummary &summary) {
+  if (!type.object_type_facts_authoritative ||
+      !type.nullability_facts_authoritative) {
+    ++summary.contract_violation_sites;
+    summary.deterministic = false;
+    return;
+  }
+  if (type.is_objc_object_reference) {
+    ++summary.object_pointer_type_sites;
+  }
+  if (!type.has_explicit_nullability) {
+    return;
+  }
+  ++summary.nullability_flow_sites;
+  ++summary.nullability_suffix_sites;
+  if (type.nullability == Objc3SemanticCanonicalNullability::Nonnull) {
+    ++summary.nonnull_suffix_sites;
+  } else {
+    ++summary.nullable_suffix_sites;
+  }
+  if (type.is_objc_object_reference && !type.has_invalid_nullability_suffix &&
+      !type.has_invalid_type_suffix) {
+    ++summary.normalized_sites;
+  } else {
+    ++summary.contract_violation_sites;
+  }
+}
+
+template <typename Callback>
+static void ForEachCanonicalCallableTypeInSurface(
+    const Objc3SemanticIntegrationSurface &surface, Callback callback) {
+  for (const auto &function_entry : surface.functions) {
+    const FunctionInfo &function = function_entry.second;
+    for (const auto &param_type : function.param_canonical_types) {
+      callback(param_type);
+    }
+    callback(function.return_canonical_type);
+  }
+  const auto visit_container =
+      [&callback](const auto &container_map) {
+        for (const auto &container_entry : container_map) {
+          for (const auto &property_entry : container_entry.second.properties) {
+            callback(property_entry.second.canonical_type);
+          }
+          for (const auto &method_entry : container_entry.second.methods) {
+            const Objc3MethodInfo &method = method_entry.second;
+            for (const auto &param_type : method.param_canonical_types) {
+              callback(param_type);
+            }
+            callback(method.return_canonical_type);
+          }
+        }
+      };
+  visit_container(surface.interfaces);
+  visit_container(surface.implementations);
+}
+
+template <typename Callback>
+static void ForEachCanonicalCallableTypeInHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff, Callback callback) {
+  for (const auto &function : handoff.functions_lexicographic) {
+    for (const auto &param_type : function.param_canonical_types) {
+      callback(param_type);
+    }
+    callback(function.return_canonical_type);
+  }
+  const auto visit_container =
+      [&callback](const auto &containers) {
+        for (const auto &container : containers) {
+          for (const auto &property : container.properties_lexicographic) {
+            callback(property.canonical_type);
+          }
+          for (const auto &method : container.methods_lexicographic) {
+            for (const auto &param_type : method.param_canonical_types) {
+              callback(param_type);
+            }
+            callback(method.return_canonical_type);
+          }
+        }
+      };
+  visit_container(handoff.interfaces_lexicographic);
+  visit_container(handoff.implementations_lexicographic);
+}
+
+static Objc3LightweightGenericConstraintSummary
+BuildLightweightGenericConstraintSummaryFromCanonicalTypes(
+    const Objc3SemanticIntegrationSurface &surface) {
   Objc3LightweightGenericConstraintSummary summary;
-  summary.generic_constraint_sites = type_annotation_summary.generic_suffix_sites;
-  summary.generic_suffix_sites = type_annotation_summary.generic_suffix_sites;
-  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
-  summary.pointer_declarator_sites = type_annotation_summary.pointer_declarator_sites;
-  summary.terminated_generic_suffix_sites =
-      type_annotation_summary.generic_suffix_sites - type_annotation_summary.invalid_generic_suffix_sites;
-  summary.normalized_constraint_sites =
-      std::min(summary.terminated_generic_suffix_sites, summary.object_pointer_type_sites);
-  summary.contract_violation_sites =
-      type_annotation_summary.invalid_generic_suffix_sites +
-      (summary.generic_suffix_sites > summary.object_pointer_type_sites
-           ? summary.generic_suffix_sites - summary.object_pointer_type_sites
-           : 0u);
+  summary.pointer_declarator_sites =
+      surface.type_annotation_surface_summary.pointer_declarator_sites;
+  ForEachCanonicalCallableTypeInSurface(
+      surface,
+      [&summary](const Objc3SemanticCanonicalType &type) {
+        AccumulateCanonicalTypeForLightweightGenericConstraintSummary(type,
+                                                                     summary);
+      });
   summary.deterministic =
-      type_annotation_summary.deterministic &&
+      summary.deterministic &&
+      surface.type_annotation_surface_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.terminated_generic_suffix_sites <= summary.generic_suffix_sites &&
+      summary.normalized_constraint_sites <= summary.generic_constraint_sites &&
+      summary.contract_violation_sites <= summary.generic_constraint_sites;
+  return summary;
+}
+
+static Objc3LightweightGenericConstraintSummary
+BuildLightweightGenericConstraintSummaryFromCanonicalTypes(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3LightweightGenericConstraintSummary summary;
+  summary.pointer_declarator_sites =
+      handoff.type_annotation_surface_summary.pointer_declarator_sites;
+  ForEachCanonicalCallableTypeInHandoff(
+      handoff,
+      [&summary](const Objc3SemanticCanonicalType &type) {
+        AccumulateCanonicalTypeForLightweightGenericConstraintSummary(type,
+                                                                     summary);
+      });
+  summary.deterministic =
+      summary.deterministic &&
+      handoff.type_annotation_surface_summary.deterministic &&
       summary.contract_violation_sites == 0u &&
       summary.terminated_generic_suffix_sites <= summary.generic_suffix_sites &&
       summary.normalized_constraint_sites <= summary.generic_constraint_sites &&
@@ -124,23 +257,38 @@ static Objc3LightweightGenericConstraintSummary BuildLightweightGenericConstrain
 }
 
 static Objc3NullabilityFlowWarningPrecisionSummary
-BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
-    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
+BuildNullabilityFlowWarningPrecisionSummaryFromCanonicalTypes(
+    const Objc3SemanticIntegrationSurface &surface) {
   Objc3NullabilityFlowWarningPrecisionSummary summary;
-  summary.nullability_flow_sites = type_annotation_summary.nullability_suffix_sites;
-  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
-  summary.nullability_suffix_sites = type_annotation_summary.nullability_suffix_sites;
-  summary.nullable_suffix_sites = type_annotation_summary.nullability_suffix_sites;
-  summary.nonnull_suffix_sites = 0;
-  summary.normalized_sites =
-      summary.nullability_suffix_sites - type_annotation_summary.invalid_nullability_suffix_sites;
-  summary.contract_violation_sites =
-      type_annotation_summary.invalid_nullability_suffix_sites +
-      (summary.nullability_suffix_sites > summary.object_pointer_type_sites
-           ? summary.nullability_suffix_sites - summary.object_pointer_type_sites
-           : 0u);
+  ForEachCanonicalCallableTypeInSurface(
+      surface,
+      [&summary](const Objc3SemanticCanonicalType &type) {
+        AccumulateCanonicalTypeForNullabilityFlowWarningPrecisionSummary(
+            type, summary);
+      });
   summary.deterministic =
-      type_annotation_summary.deterministic &&
+      summary.deterministic &&
+      surface.type_annotation_surface_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.normalized_sites <= summary.nullability_flow_sites &&
+      summary.contract_violation_sites <= summary.nullability_flow_sites &&
+      summary.nullability_suffix_sites == summary.nullable_suffix_sites + summary.nonnull_suffix_sites;
+  return summary;
+}
+
+static Objc3NullabilityFlowWarningPrecisionSummary
+BuildNullabilityFlowWarningPrecisionSummaryFromCanonicalTypes(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3NullabilityFlowWarningPrecisionSummary summary;
+  ForEachCanonicalCallableTypeInHandoff(
+      handoff,
+      [&summary](const Objc3SemanticCanonicalType &type) {
+        AccumulateCanonicalTypeForNullabilityFlowWarningPrecisionSummary(
+            type, summary);
+      });
+  summary.deterministic =
+      summary.deterministic &&
+      handoff.type_annotation_surface_summary.deterministic &&
       summary.contract_violation_sites == 0u &&
       summary.normalized_sites <= summary.nullability_flow_sites &&
       summary.contract_violation_sites <= summary.nullability_flow_sites &&

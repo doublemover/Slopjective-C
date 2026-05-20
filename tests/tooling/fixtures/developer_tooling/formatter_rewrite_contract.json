@@ -1,0 +1,27 @@
+{
+  "contract_id": "objc3c.developer.tooling.formatter.rewrite.contract.v1",
+  "surface_kind": "developer-tooling-implementation-contract",
+  "milestone": "OC3-N23",
+  "issues": [
+    8071,
+    8072
+  ],
+  "summary_implementation_anchor": "scripts/check_developer_tooling_formatter_rewrite_surface.py",
+  "format_source": "tests/tooling/fixtures/developer_tooling/objc3_syntax_messy.objc3",
+  "expected_formatted_source": "tests/tooling/fixtures/developer_tooling/objc3_syntax_formatted.objc3",
+  "negative_format_source": "tests/tooling/fixtures/developer_tooling/objc3_syntax_unbalanced_negative.objc3",
+  "rewrite_source": "tests/tooling/fixtures/developer_tooling/rewrite_legacy_aliases.objc3",
+  "expected_rewritten_source": "tests/tooling/fixtures/developer_tooling/rewrite_legacy_aliases_expected.objc3",
+  "required_formatter_feature_ids": [
+    "objc-interface-declaration",
+    "actor-declaration",
+    "await-expression",
+    "message-send-or-indexing",
+    "objc-string-literal"
+  ],
+  "required_rewrite_rule_ids": [
+    "legacy-literal-aliases",
+    "rename-symbol"
+  ],
+  "expected_rewrite_edit_count": 5
+}

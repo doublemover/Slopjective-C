@@ -24,6 +24,15 @@ Objc3FrontendOptions BuildFrontendPipelineOptions(
     frontend_options.lowering.runtime_dispatch_symbol =
         options.runtime_dispatch_symbol;
   }
+  if (!IsMissingFrontendBorrowedPath(options.metaprogramming_cache_root)) {
+    frontend_options.metaprogramming_cache_root_relative_path =
+        options.metaprogramming_cache_root;
+  }
+  for (size_t index = 0; index < options.imported_runtime_surface_path_count;
+       ++index) {
+    frontend_options.imported_runtime_surface_paths.push_back(
+        options.imported_runtime_surface_paths[index]);
+  }
   return frontend_options;
 }
 

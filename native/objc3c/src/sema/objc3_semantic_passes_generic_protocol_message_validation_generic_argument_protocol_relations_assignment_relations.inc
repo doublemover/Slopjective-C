@@ -86,13 +86,13 @@ static bool IsGenericArgumentAssignableTo(
       ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
       true, target_specialized_object_name, true, target_generic_suffix_text,
       true, 1u, {}, false, false, false, false, false, false, false, false,
-      false, false, false, false);
+      false, false, false, false, false, false, false);
   SemanticTypeInfo value_info = MakeScalarSemanticType(ValueType::ObjCObjectPtr);
   value_info.canonical_type = BuildCanonicalSemanticType(
       ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
       true, value_specialized_object_name, true, value_generic_suffix_text,
       true, 1u, {}, false, false, false, false, false, false, false, false,
-      false, false, false, false);
+      false, false, false, false, false, false, false);
   const std::optional<bool> nested_compatibility =
       AreGenericSpecializationsVarianceAssignmentCompatible(target_info,
                                                             value_info,

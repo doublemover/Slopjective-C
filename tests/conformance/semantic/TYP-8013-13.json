@@ -7,7 +7,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "module TypeSemanticGenericVariancePositive;\n\n@protocol Persistable\n@end\n\n@interface SemanticBase <Persistable>\n@end\n\n@implementation SemanticBase\n@end\n\n@interface SemanticBox : SemanticBase <Persistable>\n@end\n\n@implementation SemanticBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable>>\n@end\n\n@implementation SemanticVault\n@end\n\nfn acceptCovariant(erased: SemanticVault<SemanticBase *> *?) -> i32 {\n  return 0;\n}\n\nfn consumeCovariant(boxes: SemanticVault<SemanticBox *> *?) -> i32 {\n  return acceptCovariant(boxes);\n}\n",
   "expect": {

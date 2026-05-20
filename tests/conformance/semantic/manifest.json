@@ -100,7 +100,9 @@
         "TYP-8013-15.json",
         "TYP-8013-16.json",
         "TYP-8013-17.json",
-        "TYP-8013-18.json"
+        "TYP-8013-18.json",
+        "TYP-8013-19.json",
+        "TYP-8013-20.json"
       ]
     },
     {
@@ -109,7 +111,9 @@
       "issue": 8014,
       "files": [
         "EFF-8014-01.json",
-        "EFF-8014-02.json"
+        "EFF-8014-02.json",
+        "EFF-8014-03.json",
+        "EFF-8014-04.json"
       ]
     },
     {

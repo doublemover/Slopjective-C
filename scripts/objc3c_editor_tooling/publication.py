@@ -17,6 +17,7 @@ class PublishedEditorToolingSurface:
     dump_path: str
     capabilities_path: str
     navigation_path: str
+    workspace_index_path: str
     formatter_path: str
     debug_path: str
 
@@ -33,6 +34,7 @@ def publish_editor_tooling_surface(
     write_json_file(paths.editor_surface, editor_surface)
     write_json_file(paths.language_server_capabilities, model.language_server)
     write_json_file(paths.navigation_index, model.navigation)
+    write_json_file(paths.workspace_index, model.workspace_index)
     write_json_file(paths.formatter_output, model.formatter)
     write_json_file(paths.debug_map, model.debug)
     return PublishedEditorToolingSurface(
@@ -40,6 +42,7 @@ def publish_editor_tooling_surface(
         dump_path=display_path(paths.editor_surface),
         capabilities_path=display_path(paths.language_server_capabilities),
         navigation_path=display_path(paths.navigation_index),
+        workspace_index_path=display_path(paths.workspace_index),
         formatter_path=display_path(paths.formatter_output),
         debug_path=display_path(paths.debug_map),
     )

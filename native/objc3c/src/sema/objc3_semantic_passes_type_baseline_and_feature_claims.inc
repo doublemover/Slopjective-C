@@ -40,11 +40,14 @@ using objc3c::support::IsObjCReferenceAliasValueType;
 struct Objc3ProtocolSemanticDefinition;
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
-    const FuncParam &param);
+    const FuncParam &param,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
-    const FunctionDecl &fn);
+    const FunctionDecl &fn,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
-    const Objc3MethodDecl &method);
+    const Objc3MethodDecl &method,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property);
 

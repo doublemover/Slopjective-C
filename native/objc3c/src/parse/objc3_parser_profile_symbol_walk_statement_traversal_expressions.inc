@@ -4,6 +4,12 @@ void WalkObjc3ProfileSymbolsInLetStmt(
     const Stmt *stmt,
     const Objc3ProfileSymbolWalker &walker) {
   if (stmt->let_stmt != nullptr) {
+    if (stmt->let_stmt->cleanup_attribute_declared) {
+      walker.Visit(stmt->let_stmt->cleanup_function_symbol);
+    }
+    if (stmt->let_stmt->resource_attribute_declared) {
+      walker.Visit(stmt->let_stmt->resource_close_symbol);
+    }
     WalkObjc3ProfileSymbolsInExpr(stmt->let_stmt->value.get(), walker);
   }
 }

@@ -145,6 +145,21 @@
                          inside_defer_body,
                          max_message_send_args, message_send_context);
       scopes.pop_back();
+      if (block_stmt->is_do_catch_scope) {
+        for (const auto &clause : block_stmt->catch_clauses) {
+          scopes.push_back({});
+          if (clause.has_binding && !clause.binding_name.empty()) {
+            scopes.back().emplace(clause.binding_name,
+                                  MakeScalarSemanticType(ValueType::ObjCId));
+          }
+          ValidateStatements(clause.body, scopes, globals, functions,
+                             expected_return_type, function_name, diagnostics,
+                             loop_depth, switch_depth, defer_loop_base_depth,
+                             defer_switch_base_depth, inside_defer_body,
+                             max_message_send_args, message_send_context);
+          scopes.pop_back();
+        }
+      }
       return;
     }
     case Stmt::Kind::Defer: {

@@ -59,6 +59,8 @@ def build_runtime_metaprogramming_semantics_surface(
             "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
             "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
             "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
             "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
             "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
         ],

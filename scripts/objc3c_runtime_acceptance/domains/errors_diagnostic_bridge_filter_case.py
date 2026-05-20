@@ -48,9 +48,9 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         "bridge_legality_landed": True,
         "try_bridge_filter_landed": True,
         "unsupported_combinations_fail_closed": True,
-        "native_emit_remains_fail_closed": True,
+        "native_emit_remains_fail_closed": False,
         "deterministic": True,
-        "ready_for_lowering_and_runtime": False,
+        "ready_for_lowering_and_runtime": True,
     }
     for field_name, expected_value in expected_fields.items():
         expect(
@@ -68,7 +68,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         "expected bridge legality diagnostics to preserve the positive bridge counts",
     )
 
-    native_fail_closed_fixture = (
+    live_bridge_fixture = (
         ROOT
         / "tests"
         / "tooling"
@@ -76,26 +76,29 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         / "native"
         / "bridge_legality_native_fail_closed.objc3"
     )
-    _, _, native_manifest_path = compile_live_error_runtime_fixture_outputs(
-        native_fail_closed_fixture, case_dir / "native-fail-closed"
+    _, _, live_bridge_manifest_path = compile_live_error_runtime_fixture_outputs(
+        live_bridge_fixture, case_dir / "live-runtime-surface"
     )
-    native_manifest = json.loads(native_manifest_path.read_text(encoding="utf-8"))
-    native_surface = (
-        native_manifest.get("frontend", {})
+    live_bridge_manifest = json.loads(
+        live_bridge_manifest_path.read_text(encoding="utf-8")
+    )
+    live_bridge_surface = (
+        live_bridge_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
         .get("objc_error_handling_error_bridge_legality", {})
     )
     expect(
-        isinstance(native_surface, dict),
-        "expected bridge native fail-closed fixture to publish objc_error_handling_error_bridge_legality",
+        isinstance(live_bridge_surface, dict),
+        "expected bridge live runtime fixture to publish objc_error_handling_error_bridge_legality",
     )
     expect(
-        native_surface.get("native_emit_remains_fail_closed") is True
-        and native_surface.get("bridge_callable_sites") == 1
-        and native_surface.get("objc_status_code_callable_sites") == 1
-        and native_surface.get("try_eligible_bridge_callable_sites") == 1,
-        "expected bridge native fail-closed fixture to preserve the lowered bridge boundary",
+        live_bridge_surface.get("native_emit_remains_fail_closed") is False
+        and live_bridge_surface.get("ready_for_lowering_and_runtime") is True
+        and live_bridge_surface.get("bridge_callable_sites") == 1
+        and live_bridge_surface.get("objc_status_code_callable_sites") == 1
+        and live_bridge_surface.get("try_eligible_bridge_callable_sites") == 1,
+        "expected bridge live runtime fixture to publish a ready lowered bridge boundary",
     )
 
     negatives = [
@@ -103,6 +106,11 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
             "bridge_legality_nserror_missing_out_negative.objc3",
             ["objc_nserror requires an NSError out parameter"],
             ["O3S275"],
+        ),
+        (
+            "bridge_legality_status_missing_out_negative.objc3",
+            ["objc_status_code requires an NSError out parameter"],
+            ["O3S279"],
         ),
         (
             "bridge_legality_nserror_bad_return_negative.objc3",
@@ -173,12 +181,15 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
             "try_eligible_bridge_callable_sites": surface.get(
                 "try_eligible_bridge_callable_sites"
             ),
-            "native_fail_closed_fixture": {
-                "fixture": str(native_fail_closed_fixture.relative_to(ROOT)).replace(
+            "live_runtime_surface_fixture": {
+                "fixture": str(live_bridge_fixture.relative_to(ROOT)).replace(
                     "\\", "/"
                 ),
-                "native_emit_remains_fail_closed": native_surface.get(
+                "native_emit_remains_fail_closed": live_bridge_surface.get(
                     "native_emit_remains_fail_closed"
+                ),
+                "ready_for_lowering_and_runtime": live_bridge_surface.get(
+                    "ready_for_lowering_and_runtime"
                 ),
             },
             "negative_fixtures": negative_summaries,

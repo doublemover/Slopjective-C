@@ -7,6 +7,7 @@ from scripts.objc3c_workflow.actions import (
     developer_tooling_dump_actions,
     developer_tooling_llvm_explorer,
     developer_tooling_playground,
+    migration_workflow,
 )
 
 DEVELOPER_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
@@ -16,4 +17,9 @@ DEVELOPER_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-runtime-inspector": developer_tooling_dump_actions.action_inspect_runtime_inspector,
     "inspect-editor-tooling": developer_tooling_playground.action_inspect_editor_tooling,
     "format-objc3c": developer_tooling_playground.action_format_objc3c,
+    "rewrite-objc3c-source": developer_tooling_playground.action_rewrite_objc3c_source,
+    "analyze-migration-source": migration_workflow.action_analyze_migration_source,
+    "rewrite-migration-source": migration_workflow.action_rewrite_migration_source,
+    "validate-migration-workflow": migration_workflow.action_validate_migration_workflow,
+    "check-developer-diagnostic-quality": developer_tooling_playground.action_check_developer_diagnostic_quality,
 }

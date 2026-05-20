@@ -11,6 +11,9 @@ std::string BuildMetaprogrammingMacroSafetySandboxDeterminismSummaryJson(
       << "\",\"macro_marker_sites\":" << summary.macro_marker_sites
       << ",\"macro_package_sites\":" << summary.macro_package_sites
       << ",\"macro_provenance_sites\":" << summary.macro_provenance_sites
+      << ",\"macro_cache_key_sites\":" << summary.macro_cache_key_sites
+      << ",\"macro_sandbox_policy_sites\":"
+      << summary.macro_sandbox_policy_sites
       << ",\"expansion_visible_macro_sites\":"
       << summary.expansion_visible_macro_sites
       << ",\"safe_macro_callable_sites\":"
@@ -22,6 +25,14 @@ std::string BuildMetaprogrammingMacroSafetySandboxDeterminismSummaryJson(
       << ",\"invalid_package_sites\":" << summary.invalid_package_sites
       << ",\"invalid_provenance_sites\":"
       << summary.invalid_provenance_sites
+      << ",\"missing_cache_key_sites\":"
+      << summary.missing_cache_key_sites
+      << ",\"invalid_cache_key_sites\":"
+      << summary.invalid_cache_key_sites
+      << ",\"missing_sandbox_policy_sites\":"
+      << summary.missing_sandbox_policy_sites
+      << ",\"invalid_sandbox_policy_sites\":"
+      << summary.invalid_sandbox_policy_sites
       << ",\"nondeterministic_callable_sites\":"
       << summary.nondeterministic_callable_sites
       << ",\"unsupported_callable_topology_sites\":"
@@ -34,6 +45,10 @@ std::string BuildMetaprogrammingMacroSafetySandboxDeterminismSummaryJson(
       << (summary.sandbox_namespace_enforced ? "true" : "false")
       << ",\"provenance_determinism_enforced\":"
       << (summary.provenance_determinism_enforced ? "true" : "false")
+      << ",\"cache_key_invalidation_enforced\":"
+      << (summary.cache_key_invalidation_enforced ? "true" : "false")
+      << ",\"sandbox_policy_deny_by_default_enforced\":"
+      << (summary.sandbox_policy_deny_by_default_enforced ? "true" : "false")
       << ",\"callable_determinism_enforced\":"
       << (summary.callable_determinism_enforced ? "true" : "false")
       << ",\"macro_execution_deferred\":"

@@ -8,11 +8,13 @@ OPERATOR_EXACT_ACTIONS: tuple[str, ...] = (
 )
 
 MAINTAINER_PREFIXES: tuple[str, ...] = (
+    "analyze-",
     "build-",
     "check-",
     "format-",
     "lint",
     "publish-",
+    "rewrite-",
 )
 
 OPERATOR_PREFIXES: tuple[str, ...] = (

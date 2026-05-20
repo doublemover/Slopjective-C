@@ -23,7 +23,13 @@ int InvokeRuntimeBlockI32(int block_handle, int a0, int a1, int a2, int a3) {
     std::lock_guard<std::mutex> lock(state.mutex);
     plan = BuildRuntimeBlockInvocationPlanUnlocked(state, block_handle);
   }
-  if (!RuntimeBlockInvocationPlanIsRunnable(plan)) {
+  debug_state.last_invoke_plan_storage_word_count = plan.storage_words.size();
+  debug_state.last_invoke_plan_has_descriptor =
+      plan.descriptor != nullptr ? 1 : 0;
+  debug_state.last_invoke_plan_has_invoke = plan.invoke != nullptr ? 1 : 0;
+  const bool runnable = RuntimeBlockInvocationPlanIsRunnable(plan);
+  debug_state.last_invoke_plan_was_runnable = runnable ? 1 : 0;
+  if (!runnable) {
     return 0;
   }
   const int result = InvokeRuntimeBlockInvocationPlan(plan, a0, a1, a2, a3);

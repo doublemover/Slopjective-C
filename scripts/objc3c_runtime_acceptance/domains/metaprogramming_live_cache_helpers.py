@@ -30,6 +30,46 @@ def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -
     return False
 
 
+def tamper_metaprogramming_cache_runtime_import_replay_key(
+    artifact: dict[str, Any],
+) -> bool:
+    relative_import_surface = artifact.get(
+        "cache_runtime_import_surface_relative_path"
+    )
+    relative_entry = artifact.get("cache_entry_relative_path")
+    relative_cache_root = artifact.get("cache_root_relative_path")
+    if (
+        not isinstance(relative_import_surface, str)
+        or not isinstance(relative_entry, str)
+        or not isinstance(relative_cache_root, str)
+        or relative_import_surface == ""
+        or relative_entry == ""
+        or relative_cache_root == ""
+    ):
+        return False
+    import_surface = ROOT / Path(relative_import_surface)
+    cache_entry = ROOT / Path(relative_entry)
+    cache_root = ROOT / Path(relative_cache_root)
+    try:
+        cache_entry.resolve().relative_to(cache_root.resolve())
+        import_surface.resolve().relative_to(cache_entry.resolve())
+    except ValueError:
+        return False
+    if not import_surface.is_file():
+        return False
+    payload = json.loads(import_surface.read_text(encoding="utf-8"))
+    surface_key = "objc_metaprogramming_macro_host_process_and_cache_runtime_integration"
+    surface = payload.get(surface_key)
+    if not isinstance(surface, dict):
+        return False
+    surface["replay_key"] = "tampered-metaprogramming-cache-replay-key"
+    import_surface.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return True
+
+
 def build_metaprogramming_cache_seed_macros(
     materialization_attempt: int,
     unique_suffix: str,
@@ -40,7 +80,9 @@ def build_metaprogramming_cache_seed_macros(
             f"pure fn cacheSeed{materialization_attempt}_{index}() -> i32 "
             '__attribute__((objc_macro(named("Trace")), '
             f'objc_macro_package(named("std.metaprogramming.trace.{materialization_attempt}")), '
-            f'objc_macro_provenance(named("sha256:{unique_suffix}{index:02d}")))) {{\n'
+            f'objc_macro_provenance(named("sha256:{unique_suffix}{index:02d}")), '
+            f'objc_macro_cache_key(named("Trace:v1:{unique_suffix}:{materialization_attempt}:{index}")), '
+            'objc_macro_sandbox(named("deterministic")))) {\n'
             f"  return {17 + index};\n"
             "}\n"
             for index in range(materialization_attempt)

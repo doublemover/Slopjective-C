@@ -118,7 +118,7 @@ class LongHorizonEvidencePaths:
             upgrade_support_report=artifacts
             / "release-operations"
             / "publication"
-            / "objc3c-upgrade-support-report.json",
+            / "objc3c-upgrade-report.json",
             package_integration=reports / "package-ecosystem" / "integration-summary.json",
             package_lock_summary=reports / "package-ecosystem" / "package-lock-summary.json",
             application_architecture_integration=reports

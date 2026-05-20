@@ -1,13 +1,16 @@
 {
   "contract_id": "objc3c.stress.lowering-runtime.manifest.v1",
   "schema_version": 1,
+  "compile_case_options": {
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3": [
+      "--objc3-enable-live-error-runtime-surface"
+    ]
+  },
   "compile_cases": [
     "tests/tooling/fixtures/native/async_lowering_positive.objc3",
     "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3",
-    "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
-    "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
     "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
     "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
     "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
@@ -17,11 +20,16 @@
     "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
     "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
-    "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3"
+    "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
   ],
   "execution_cases": [
     "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
     "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3",
     "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3"
+  ],
+  "semantic_provenance_cases": [
+    "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+    "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3"
   ]
 }

@@ -5,7 +5,7 @@ from __future__ import annotations
 from .cli import fail, main, parse_args
 from .commands import run
 from .fixtures import MODULE_DECL_RE
-from .paths import GUIDED_WALKTHROUGH, PORTFOLIO, ROOT, repo_relative
+from .paths import DEMO_PACKAGES, GUIDED_WALKTHROUGH, PORTFOLIO, ROOT, repo_relative
 from .validation import (
     GUIDED_WALKTHROUGH_CONTRACT_ID,
     SHOWCASE_SUMMARY_CONTRACT_ID,
@@ -14,6 +14,7 @@ from .validation import (
 
 __all__ = [
     "GUIDED_WALKTHROUGH",
+    "DEMO_PACKAGES",
     "GUIDED_WALKTHROUGH_CONTRACT_ID",
     "MODULE_DECL_RE",
     "PORTFOLIO",

@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-abi-api-governance-v1.schema.json",
+  "title": "objc3c ABI/API Governance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "release_blocker_issue_refs",
+    "gate_action",
+    "schema",
+    "source_manifests",
+    "module_policies",
+    "stdlib_public_api",
+    "stdlib_runtime_abi",
+    "frontend_c_api",
+    "compatibility_window_policy",
+    "private_helper_graduation_records",
+    "change_policy"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.foundation.abi_api_governance.v1" },
+    "schema_version": { "const": 1 },
+    "release_blocker_issue_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^#[0-9]+$" }
+    },
+    "gate_action": { "const": "check-release-abi-api-drift" },
+    "schema": { "const": "schemas/objc3c-abi-api-governance-v1.schema.json" },
+    "source_manifests": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "required": [
+        "stdlib_module_inventory",
+        "stdlib_stability_policy",
+        "stdlib_semantic_policy",
+        "stdlib_advanced_helper_package_surface",
+        "frontend_c_api_helper_contract",
+        "frontend_c_api_runner_contract",
+        "release_operations_versioning_model",
+        "long_horizon_deprecation_policy"
+      ]
+    },
+    "module_policies": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/modulePolicy" }
+    },
+    "stdlib_public_api": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/symbolSurface" }
+    },
+    "stdlib_runtime_abi": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/symbolSurface" }
+    },
+    "frontend_c_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "helper_contract",
+        "runner_contract",
+        "public_private_partition_owner",
+        "required_helpers",
+        "required_type_aliases"
+      ],
+      "properties": {
+        "helper_contract": { "type": "string", "minLength": 1 },
+        "runner_contract": { "type": "string", "minLength": 1 },
+        "public_private_partition_owner": { "type": "string", "minLength": 1 },
+        "required_helpers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_type_aliases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "compatibility_window_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "versioning_model",
+        "deprecation_policy",
+        "expected_supported_major_line",
+        "expected_current_minor_line",
+        "expected_channel_statuses",
+        "expected_forbidden_claims",
+        "claim_blocking_deprecation_states"
+      ],
+      "properties": {
+        "versioning_model": { "type": "string", "minLength": 1 },
+        "deprecation_policy": { "type": "string", "minLength": 1 },
+        "expected_supported_major_line": { "type": "integer", "minimum": 1 },
+        "expected_current_minor_line": { "type": "integer", "minimum": 0 },
+        "expected_channel_statuses": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "expected_forbidden_claims": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "claim_blocking_deprecation_states": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "private_helper_graduation_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/graduationRecord" }
+    },
+    "change_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unreviewed_symbol_additions",
+        "unreviewed_symbol_removals",
+        "signature_drift",
+        "private_helper_graduation_without_policy",
+        "compatibility_window_violations"
+      ],
+      "properties": {
+        "unreviewed_symbol_additions": { "const": "block-publication" },
+        "unreviewed_symbol_removals": { "const": "block-publication" },
+        "signature_drift": { "const": "block-publication" },
+        "private_helper_graduation_without_policy": { "const": "block-publication" },
+        "compatibility_window_violations": { "const": "block-publication" }
+      }
+    }
+  },
+  "$defs": {
+    "modulePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_profile",
+        "allowed_public_prefixes",
+        "allowed_runtime_prefixes",
+        "allowed_public_symbols"
+      ],
+      "properties": {
+        "required_profile": { "type": "string", "minLength": 1 },
+        "allowed_public_prefixes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "allowed_runtime_prefixes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "allowed_public_symbols": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "symbolSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "manifest",
+        "source",
+        "symbol_set_field",
+        "signature_field",
+        "symbols"
+      ],
+      "properties": {
+        "module": { "type": "string", "minLength": 1 },
+        "manifest": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "symbol_set_field": { "type": "string", "minLength": 1 },
+        "signature_field": { "type": "string", "minLength": 1 },
+        "symbols": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "graduationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "module",
+        "symbol",
+        "source_profile",
+        "target_profile",
+        "issue_refs",
+        "policy_state"
+      ],
+      "properties": {
+        "record_id": { "type": "string", "minLength": 1 },
+        "module": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "source_profile": { "type": "string", "minLength": 1 },
+        "target_profile": { "type": "string", "minLength": 1 },
+        "issue_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^#[0-9]+$" }
+        },
+        "policy_state": { "enum": ["approved", "rejected"] }
+      }
+    }
+  }
+}

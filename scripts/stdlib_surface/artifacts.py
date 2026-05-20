@@ -1,11 +1,72 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
 from objc3c_tooling.json_io import load_json_any as load_json
 
 from check_stdlib_surface_model import CanonicalModuleSurface, PackageImportSurface
+
+
+_DECLARATION_NAME_RE = re.compile(
+    r"^\s*(?:extern\s+fn|async\s+fn|fn|let)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+)
+
+
+def _normalize_signature_line(line: str) -> str | None:
+    stripped = line.strip()
+    if not stripped:
+        return None
+    match = _DECLARATION_NAME_RE.match(stripped)
+    if match is None:
+        return None
+    if "{" in stripped:
+        stripped = stripped.split("{", 1)[0].strip()
+    if stripped.endswith(";"):
+        stripped = stripped[:-1].strip()
+    return " ".join(stripped.split())
+
+
+def extract_stdlib_abi_signatures(source_text: str) -> dict[str, str]:
+    signatures: dict[str, str] = {}
+    for line in source_text.splitlines():
+        signature = _normalize_signature_line(line)
+        if signature is None:
+            continue
+        match = _DECLARATION_NAME_RE.match(signature)
+        if match is None:
+            continue
+        signatures[match.group("name")] = signature
+    return signatures
+
+
+def _validate_signature_manifest(
+    *,
+    module_name: str,
+    signature_label: str,
+    expected_names: list[str],
+    manifest_signatures: object,
+    source_signatures: dict[str, str],
+) -> str | None:
+    if not isinstance(manifest_signatures, dict):
+        return f"module manifest {signature_label} missing or malformed for {module_name}"
+    if set(manifest_signatures) != set(expected_names):
+        return f"module manifest {signature_label} keys drifted for {module_name}"
+    for symbol_name in expected_names:
+        expected_signature = manifest_signatures.get(symbol_name)
+        if not isinstance(expected_signature, str) or not expected_signature:
+            return (
+                f"module manifest {signature_label} entry malformed for "
+                f"{module_name}.{symbol_name}"
+            )
+        observed_signature = source_signatures.get(symbol_name)
+        if observed_signature != expected_signature:
+            return (
+                f"module source ABI signature drifted for {module_name}.{symbol_name}: "
+                f"expected {expected_signature!r}, observed {observed_signature!r}"
+            )
+    return None
 
 
 def validate_module_artifacts(
@@ -46,6 +107,7 @@ def validate_module_artifacts(
         if manifest_payload.get("smoke_source") != module_surface.smoke_source:
             return f"module manifest smoke_source drifted for {module_surface.module}"
         source_text = (root / module_surface.source).read_text(encoding="utf-8")
+        source_signatures = extract_stdlib_abi_signatures(source_text)
         expected_decl = module_surface.expected_source_declaration()
         if expected_decl not in source_text:
             return f"module source declaration drifted for {module_surface.module}"
@@ -69,4 +131,34 @@ def validate_module_artifacts(
         for export_name in manifest_exports:
             if export_name not in source_text:
                 return f"module source missing exported symbol spelling {export_name} for {module_surface.module}"
+        signature_error = _validate_signature_manifest(
+            module_name=module_surface.module,
+            signature_label="abi_signatures",
+            expected_names=manifest_exports,
+            manifest_signatures=manifest_payload.get("abi_signatures"),
+            source_signatures=source_signatures,
+        )
+        if signature_error is not None:
+            return signature_error
+        runtime_abi = manifest_payload.get("runtime_abi", [])
+        if runtime_abi:
+            if not isinstance(runtime_abi, list) or not all(
+                isinstance(value, str) and value for value in runtime_abi
+            ):
+                return f"module manifest runtime_abi malformed for {module_surface.module}"
+            for runtime_symbol in runtime_abi:
+                if f"extern fn {runtime_symbol}" not in source_text:
+                    return (
+                        f"module source missing runtime ABI extern {runtime_symbol} "
+                        f"for {module_surface.module}"
+                    )
+            runtime_signature_error = _validate_signature_manifest(
+                module_name=module_surface.module,
+                signature_label="runtime_abi_signatures",
+                expected_names=runtime_abi,
+                manifest_signatures=manifest_payload.get("runtime_abi_signatures"),
+                source_signatures=source_signatures,
+            )
+            if runtime_signature_error is not None:
+                return runtime_signature_error
     return None

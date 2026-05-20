@@ -12,6 +12,8 @@ struct RuntimeState;
 std::uint64_t RuntimeReceiverIdentityBase();
 std::uint64_t RuntimeReceiverIdentityStride();
 std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal);
+std::uint64_t BuildInstanceReceiverIdentity(std::uint64_t base_identity);
+std::uint64_t BuildClassReceiverIdentity(std::uint64_t base_identity);
 bool IsRuntimeReceiverBaseIdentity(std::uint64_t base_identity);
 bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
                             std::uint64_t &base_identity,

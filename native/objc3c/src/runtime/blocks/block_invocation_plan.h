@@ -9,6 +9,7 @@
 namespace objc3c::runtime {
 
 struct RuntimeBlockInvocationPlan {
+  const RuntimeBlockDescriptor *descriptor = nullptr;
   RuntimeBlockInvokeFn invoke = nullptr;
   std::vector<std::uint64_t> storage_words;
 };

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "protocol_requirement_inherited_conflict_rejected.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S218",
+      "protocol requirement conflict: protocol 'MixedReadable' inherits incompatible selector '-readValue' from protocol 'TextReadable'"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol conflict diagnostics",
+    "case": "inherited protocol requirement conflict"
+  }
+}

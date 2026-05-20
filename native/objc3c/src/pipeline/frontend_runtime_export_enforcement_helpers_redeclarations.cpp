@@ -41,6 +41,10 @@ bool AreCompatibleRuntimePropertyRedeclarations(
              implementation_record.executable_synthesized_binding_kind &&
          interface_record.property_attribute_profile ==
              implementation_record.property_attribute_profile &&
+         interface_record.property_behavior_declared ==
+             implementation_record.property_behavior_declared &&
+         interface_record.property_behavior_name ==
+             implementation_record.property_behavior_name &&
          interface_record.ownership_lifetime_profile ==
              implementation_record.ownership_lifetime_profile &&
          interface_record.ownership_runtime_hook_profile ==

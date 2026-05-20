@@ -98,12 +98,20 @@ def main() -> int:
     )
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_concurrency_runtime_closure_actor_semantics_summary.py",
+        "summary_script_link_matches": contract.get(
+            "summary_script",
+            contract.get("summary_implementation_anchor"),
+        ) == "scripts/build_concurrency_runtime_closure_actor_semantics_summary.py",
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
         "runbook_mentions_actor_semantics_boundary": "actor isolation entry, nonisolated entry, executor hops, replay proof, race guard, executor binding, and mailbox ownership remain supported only through the private actor helper cluster and runtime snapshots" in runbook_text,
-        "runbook_mentions_actor_interop_fail_closed": "broader interop and public actor runtime ABI claims remain out of scope for this milestone" in runbook_text,
+        "runbook_mentions_actor_interop_fail_closed": (
+            "broader interop and public actor runtime ABI claims remain out of scope for this milestone"
+            in runbook_text
+            or "broader interop and public actor runtime ABI claims remain out of scope for this closure surface"
+            in runbook_text
+        ),
         "conformance_report_passes": conformance_report.get("status") == "PASS",
         "conformance_report_preserves_required_case_ids": contains_required_case_ids(conformance_report, contract["authoritative_case_ids"]),
         "actor_payload_matches_contract": all(

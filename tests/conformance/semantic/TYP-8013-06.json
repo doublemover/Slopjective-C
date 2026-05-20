@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticUnknownProtocolComposition;\n\nfn consume(value: id<MissingProtocol>*?) -> i32 {\n  return 0;\n}\n\nfn main() -> i32 {\n  return 0;\n}\n",
   "expect": {

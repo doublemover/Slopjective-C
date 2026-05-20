@@ -9,6 +9,7 @@ from objc3c_runtime_acceptance.case_result import CaseResult
 from .storage_reflection_runtime_layout_artifacts import (
     INSTANCE_ALLOCATION_LAYOUT_CASE_ID,
     INSTANCE_ALLOCATION_LAYOUT_PROBE,
+    INHERITED_INSTANCE_ALLOCATION_LAYOUT_FIXTURE,
     PROPERTY_LAYOUT_CASE_ID,
     PROPERTY_LAYOUT_PROBE,
     SYNTHESIZED_ACCESSOR_PROPERTY_FIXTURE,
@@ -55,7 +56,7 @@ def check_instance_allocation_layout_runtime_case(
     return CaseResult(
         case_id=INSTANCE_ALLOCATION_LAYOUT_CASE_ID,
         probe=INSTANCE_ALLOCATION_LAYOUT_PROBE,
-        fixture=SYNTHESIZED_ACCESSOR_PROPERTY_FIXTURE,
+        fixture=INHERITED_INSTANCE_ALLOCATION_LAYOUT_FIXTURE,
         claim_class="linked-runtime-probe",
         passed=True,
         summary=build_instance_allocation_layout_summary(facts),

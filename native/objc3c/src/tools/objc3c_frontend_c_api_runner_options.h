@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "libobjc3c_frontend/c_api.h"
 
@@ -11,6 +12,8 @@ struct FrontendCApiRunnerOptions {
   std::filesystem::path out_dir =
       std::filesystem::path("tmp") / "artifacts" / "compilation" /
       "objc3c-native";
+  std::filesystem::path metaprogramming_cache_root;
+  std::vector<std::filesystem::path> imported_runtime_surface_paths;
   std::string emit_prefix = "module";
   std::filesystem::path clang_path = std::filesystem::path("clang");
   std::filesystem::path llc_path = std::filesystem::path("llc");

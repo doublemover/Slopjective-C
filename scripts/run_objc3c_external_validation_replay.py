@@ -23,6 +23,9 @@ ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "external_validatio
 SUMMARY_CONTRACT_ID = "objc3c.external_validation.intake.replay.summary.v1"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "external-validation" / "intake-replay-summary.json"
 SUMMARY_PATH_PATTERN = re.compile(r"summary_path:\s*(?P<path>\S+)")
+REPLAY_SCRIPT_ARGS = {
+    "scripts/check_objc3c_execution_replay_proof.ps1": ["-Limit", "1"],
+}
 
 
 
@@ -63,6 +66,7 @@ def main() -> int:
         if replay_script in seen_scripts:
             continue
         seen_scripts.add(replay_script)
+        replay_args = REPLAY_SCRIPT_ARGS.get(replay_script, [])
         result = run_capture(
             [
                 PWSH,
@@ -71,6 +75,7 @@ def main() -> int:
                 "Bypass",
                 "-File",
                 str(ROOT / replay_script),
+                *replay_args,
             ]
         )
         step_report_paths = extract_summary_paths(result.stdout)
@@ -78,6 +83,7 @@ def main() -> int:
         replay_steps.append(
             {
                 "replay_script": replay_script,
+                "replay_args": replay_args,
                 "exit_code": result.returncode,
                 "report_paths": step_report_paths,
             }

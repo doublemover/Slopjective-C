@@ -17,8 +17,9 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
     case_dir = run_dir / "block-storage-arc-automation-semantics"
     artifacts = load_block_arc_automation_artifacts(case_dir)
     assert_block_arc_automation_artifacts(artifacts)
-    weak_negative = artifacts.negative_batch["results"][0]
-    unowned_negative = artifacts.negative_batch["results"][1]
+    negative_results = {
+        result["key"]: result for result in artifacts.negative_batch["results"]
+    }
 
     return CaseResult(
         case_id="block-storage-arc-automation-semantics",
@@ -52,8 +53,30 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
                     "retain_release_operation_lowering_autorelease_insertion_sites"
                 )
             ),
-            "weak_negative_diagnostic_count": weak_negative["diagnostic_count"],
-            "unowned_negative_diagnostic_count": unowned_negative["diagnostic_count"],
+            "arc_autoreleasepool_destruction_order_scope_sites": (
+                artifacts.arc_autoreleasepool_order_sema.get(
+                    "autoreleasepool_scope_lowering_scope_sites"
+                )
+            ),
+            "arc_weak_autoreleasepool_scope_sites": (
+                artifacts.arc_weak_autoreleasepool_sema.get(
+                    "autoreleasepool_scope_lowering_scope_sites"
+                )
+            ),
+            "arc_weak_autoreleasepool_max_scope_depth": (
+                artifacts.arc_weak_autoreleasepool_sema.get(
+                    "autoreleasepool_scope_lowering_max_scope_depth"
+                )
+            ),
+            "weak_negative_diagnostic_count": negative_results[
+                "weak-mutation-negative"
+            ]["diagnostic_count"],
+            "unowned_negative_diagnostic_count": negative_results[
+                "unowned-mutation-negative"
+            ]["diagnostic_count"],
+            "weak_storage_mismatch_negative_diagnostic_count": negative_results[
+                "weak-storage-ownership-mismatch-negative"
+            ]["diagnostic_count"],
             "negative_diagnostics_batch": artifacts.negative_batch,
         },
     )

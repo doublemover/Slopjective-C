@@ -18,6 +18,13 @@ from .validation import (
 )
 
 
+def _display_path(path: object) -> str:
+    try:
+        return repo_rel(path)
+    except ValueError:
+        return str(path)
+
+
 def run(
     config: SourceSurfaceConfig,
     *,
@@ -34,7 +41,7 @@ def run(
     if surface.get("surface_kind") != config.source_surface_kind:
         return fail_handler("surface_kind drifted")
 
-    checked_paths = [repo_rel(config.source_surface)]
+    checked_paths = [_display_path(config.source_surface)]
     for field_name in config.expected_required_paths:
         relative_path = require_exact_path(
             surface,

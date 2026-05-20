@@ -199,3 +199,64 @@ def compile_protocol_generic_positive_summary(run: dict[str, Any]) -> dict[str, 
         "protocol_generic_covariant_value_adopts_constraint_protocol": isinstance(semantic_box, dict)
         and semantic_box.get("adopted_protocols_lexicographic") == ["Persistable"],
     }
+
+
+def compile_protocol_category_positive_summary(run: dict[str, Any]) -> dict[str, bool]:
+    manifest = run.get("manifest")
+    model = nested_semantic_model(manifest)
+    categories = manifest.get("categories", []) if isinstance(manifest, dict) else []
+    interfaces = manifest.get("interfaces", []) if isinstance(manifest, dict) else []
+    tracing_interface = next(
+        (
+            entry
+            for entry in categories
+            if entry.get("record_kind") == "interface"
+            and entry.get("class_name") == "Widget"
+            and entry.get("category_name") == "Tracing"
+        ),
+        None,
+    )
+    tracing_implementation = next(
+        (
+            entry
+            for entry in categories
+            if entry.get("record_kind") == "implementation"
+            and entry.get("class_name") == "Widget"
+            and entry.get("category_name") == "Tracing"
+        ),
+        None,
+    )
+    auxiliary_interface = next(
+        (
+            entry
+            for entry in categories
+            if entry.get("record_kind") == "interface"
+            and entry.get("class_name") == "Widget"
+            and entry.get("category_name") == "Auxiliary"
+        ),
+        None,
+    )
+    widget_interface = next((entry for entry in interfaces if entry.get("name") == "Widget"), None)
+    derived_interface = next((entry for entry in interfaces if entry.get("name") == "Derived"), None)
+    return {
+        "protocol_category_positive_fixture_compiles": run["exit_code"] == 0,
+        "protocol_category_positive_manifest_emitted": run["manifest_path"] is not None,
+        "protocol_category_positive_llvm_ir_emitted": run["llvm_ir_path"] is not None,
+        "protocol_category_positive_manifest_ready": bool(model and model.get("ready_for_lowering_and_runtime")),
+        "protocol_category_positive_contract_violations_zero": bool(
+            model and all(int(model.get(field, -1)) == 0 for field in ZERO_FIELDS)
+        ),
+        "protocol_category_interface_adopts_protocol": isinstance(tracing_interface, dict)
+        and tracing_interface.get("adopted_protocols") == ["protocol:Tracer"],
+        "protocol_category_interface_methods_preserved": isinstance(tracing_interface, dict)
+        and int(tracing_interface.get("method_count", -1)) == 2,
+        "protocol_category_implementation_pair_preserved": isinstance(tracing_implementation, dict)
+        and int(tracing_implementation.get("method_count", -1)) == 2,
+        "protocol_category_non_protocol_category_preserved": isinstance(auxiliary_interface, dict)
+        and auxiliary_interface.get("adopted_protocols") == []
+        and int(auxiliary_interface.get("method_count", -1)) == 1,
+        "protocol_category_base_class_protocol_adoption_preserved": isinstance(widget_interface, dict)
+        and widget_interface.get("adopted_protocols") == ["protocol:Worker"],
+        "protocol_category_inherited_class_protocol_adoption_preserved": isinstance(derived_interface, dict)
+        and derived_interface.get("adopted_protocols") == ["protocol:Tracer"],
+    }

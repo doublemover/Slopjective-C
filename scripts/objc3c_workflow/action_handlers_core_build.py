@@ -13,4 +13,5 @@ CORE_BUILD_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-native-full": native_build.action_build_native_full,
     "build-native-reconfigure": native_build.action_build_native_reconfigure,
     "compile-objc3c": native_build.action_compile_objc3c,
+    "validate-native-clean-room-rebuild": native_build.action_validate_native_clean_room_rebuild,
 }

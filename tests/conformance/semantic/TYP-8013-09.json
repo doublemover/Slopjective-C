@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S206.\r\nmodule NegativeTypeSemanticGenericConstraintViolation;\r\n\r\n@protocol Persistable\r\n@end\r\n\r\n@interface PersistedBox <Persistable>\r\n@end\r\n\r\n@implementation PersistedBox\r\n@end\r\n\r\n@interface PlainBox\r\n@end\r\n\r\n@implementation PlainBox\r\n@end\r\n\r\n@interface SemanticVault<__covariant T : id<Persistable>>\r\n- (T)peek;\r\n@end\r\n\r\n@implementation SemanticVault\r\n- (T)peek {\r\n  return nil;\r\n}\r\n@end\r\n\r\nfn consume(ok: SemanticVault<PersistedBox *> *?, bad: SemanticVault<PlainBox *> *?) -> i32 {\r\n  let value = [ok? peek];\r\n  let invalid = [bad? peek];\r\n  return 0;\r\n}\r\n",
   "expect": {

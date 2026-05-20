@@ -19,6 +19,9 @@ INDEX_PY = ROOT / "scripts" / "generate_conformance_corpus_index.py"
 SUITE_GATE_PS1 = ROOT / "scripts" / "check_conformance_suite.ps1"
 SURFACE_SUMMARY = ROOT / "tmp" / "reports" / "conformance" / "corpus-surface-summary.json"
 INDEX_SUMMARY = ROOT / "tmp" / "reports" / "conformance" / "corpus-index.json"
+SUPPORT_CLAIM_TRACEABILITY_SUMMARY = (
+    ROOT / "tmp" / "reports" / "conformance" / "runnable-claim-trace-summary.json"
+)
 REPORT_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.conformance.corpus.integration.summary.v1"
 
@@ -44,9 +47,19 @@ def main() -> int:
 
     expect(SURFACE_SUMMARY.is_file(), f"missing corpus surface summary: {repo_rel(SURFACE_SUMMARY)}", failures)
     expect(INDEX_SUMMARY.is_file(), f"missing corpus index summary: {repo_rel(INDEX_SUMMARY)}", failures)
+    expect(
+        SUPPORT_CLAIM_TRACEABILITY_SUMMARY.is_file(),
+        f"missing support claim traceability summary: {repo_rel(SUPPORT_CLAIM_TRACEABILITY_SUMMARY)}",
+        failures,
+    )
 
     surface_summary = load_json(SURFACE_SUMMARY) if SURFACE_SUMMARY.is_file() else {}
     index_summary = load_json(INDEX_SUMMARY) if INDEX_SUMMARY.is_file() else {}
+    traceability_summary = (
+        load_json(SUPPORT_CLAIM_TRACEABILITY_SUMMARY)
+        if SUPPORT_CLAIM_TRACEABILITY_SUMMARY.is_file()
+        else {}
+    )
 
     expect(
         surface_summary.get("contract_id") == "objc3c.conformance.corpus.surface.summary.v1",
@@ -56,6 +69,12 @@ def main() -> int:
     expect(
         index_summary.get("contract_id") == "objc3c.conformance.corpus.index.v1",
         "unexpected conformance corpus index contract id",
+        failures,
+    )
+    expect(
+        traceability_summary.get("contract_id")
+        == "objc3c.conformance.support_claim_runnable_evidence.summary.v1",
+        "unexpected support claim runnable evidence summary contract id",
         failures,
     )
     expect(
@@ -82,6 +101,15 @@ def main() -> int:
         "conformance corpus workflow surface drifted from the legacy suite gate contract",
         failures,
     )
+    support_claim_traceability = index_summary.get("support_claim_traceability")
+    expect(
+        isinstance(support_claim_traceability, dict)
+        and support_claim_traceability.get("row_count", 0) >= 1
+        and "objc3c.behavior.runtime.object-model-interface-method-table"
+        in support_claim_traceability.get("support_claims", []),
+        "conformance corpus index missing support-claim runnable traceability",
+        failures,
+    )
     expect(
         SUITE_GATE_PS1.is_file(),
         "conformance corpus legacy suite gate script is missing from the live repo surface",
@@ -93,7 +121,11 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/check_objc3c_conformance_corpus_integration.py",
-        "child_report_paths": [repo_rel(SURFACE_SUMMARY), repo_rel(INDEX_SUMMARY)],
+        "child_report_paths": [
+            repo_rel(SURFACE_SUMMARY),
+            repo_rel(INDEX_SUMMARY),
+            repo_rel(SUPPORT_CLAIM_TRACEABILITY_SUMMARY),
+        ],
         "workflow_actions": [
             "validate-conformance-corpus",
             "check-conformance-corpus-surface",
@@ -102,6 +134,11 @@ def main() -> int:
         "legacy_suite_gate_script": repo_rel(SUITE_GATE_PS1),
         "retained_suite_count": len(retained_partition) if isinstance(retained_partition, list) else 0,
         "manifest_summary_count": len(manifest_summaries) if isinstance(manifest_summaries, list) else 0,
+        "support_claim_traceability_row_count": (
+            support_claim_traceability.get("row_count", 0)
+            if isinstance(support_claim_traceability, dict)
+            else 0
+        ),
         "failures": failures,
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

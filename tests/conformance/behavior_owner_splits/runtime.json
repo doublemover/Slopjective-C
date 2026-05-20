@@ -38,6 +38,24 @@
       "disposition": "runtime example provenance only after runtime ownership is explicit"
     }
   ],
+  "runtime_acceptance_cases": [
+    {
+      "case_id": "runtime-object-foundation-protocol-category",
+      "implementation_anchor": "python scripts/check_objc3c_runtime_acceptance.py --case runtime-object-foundation-protocol-category",
+      "fixtures": [
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
+      ],
+      "probes": [
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+      ],
+      "conformance_rows": [
+        "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+        "tests/conformance/lowering_abi/OBJFND-8059-01.json"
+      ],
+      "disposition": "linked runtime protocol/category behavior and fail-closed malformed metadata evidence; tmp reports are scratch outputs only"
+    }
+  ],
   "canonical_anchor": "tests/native/runtime",
   "retired_surface_rule": "runtime retired route, runtime gates, old-mode runtime rows, compatibility interop, unresolved dispatch, alternate runtime acceptance, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, dashboard-only runtime rows, prose-only runtime rows, package-stage-only evidence, and release-evidence-log evidence are strict-error, canonical rejection, tracking-only, or provenance-only evidence"
 }

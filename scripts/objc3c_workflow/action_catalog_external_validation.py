@@ -26,6 +26,9 @@ EXTERNAL_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
     "publish-external-repro-corpus": EXTERNAL_VALIDATION_PUBLICATION_ACTION_SPECS[
         "publish-external-repro-corpus"
     ],
+    "check-external-support-claim-gate": EXTERNAL_VALIDATION_PUBLICATION_ACTION_SPECS[
+        "check-external-support-claim-gate"
+    ],
     "validate-external-validation": EXTERNAL_VALIDATION_WORKFLOW_ACTION_SPECS[
         "validate-external-validation"
     ],

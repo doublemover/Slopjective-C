@@ -57,5 +57,6 @@
           existing.param_has_invalid_protocol_composition[i] || param_protocol_composition.has_invalid_protocol_composition;
     }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_canonical_types.size(); ++i) {
-      existing.param_canonical_types[i] = BuildCanonicalSemanticTypeFromParam(fn.params[i]);
+      existing.param_canonical_types[i] =
+          BuildCanonicalSemanticTypeFromParam(fn.params[i], &generic_interface_names);
     }

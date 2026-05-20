@@ -98,6 +98,60 @@ def assert_release_foundation_schema_surface_rejects_broken_registered_contract(
     assert_fail_closed_without_summary(checker)
 
 
+def assert_release_foundation_schema_surface_rejects_abi_manifest_identity_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def break_abi_identity(payload: dict[str, Any]) -> None:
+        payload["properties"]["manifest_schema"]["const"] = "objc3-abi-broken"
+
+    checker = checker_with_broken_schema(
+        monkeypatch,
+        tmp_path,
+        "objc3-abi-2025Q4",
+        break_abi_identity,
+    )
+
+    assert_fail_closed_without_summary(checker)
+
+
+def assert_release_foundation_schema_surface_rejects_runtime_abi_manifest_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def break_runtime_identity(payload: dict[str, Any]) -> None:
+        payload["$defs"]["runtimeManifest"]["properties"]["artifact_id"]["const"] = (
+            "objc3-runtime-broken"
+        )
+
+    checker = checker_with_broken_schema(
+        monkeypatch,
+        tmp_path,
+        "objc3-runtime-2025Q4-manifest",
+        break_runtime_identity,
+    )
+
+    assert_fail_closed_without_summary(checker)
+
+
+def assert_release_foundation_schema_surface_rejects_package_attestation_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def remove_release_manifest_binding(payload: dict[str, Any]) -> None:
+        artifacts = payload["properties"]["channels"]["items"]["properties"]["artifacts"]
+        artifacts["required"].remove("release_manifest")
+
+    checker = checker_with_broken_schema(
+        monkeypatch,
+        tmp_path,
+        "objc3c-update-manifest-v1",
+        remove_release_manifest_binding,
+    )
+
+    assert_fail_closed_without_summary(checker)
+
+
 def checker_with_broken_schema(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

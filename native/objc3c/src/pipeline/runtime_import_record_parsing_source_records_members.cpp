@@ -36,6 +36,10 @@ bool ParseImportedRuntimePropertySourceRecord(
              record.executable_synthesized_binding_symbol, error) &&
          ReadOptionalStringMember(object, "property_attribute_profile",
                                   record.property_attribute_profile, error) &&
+         ReadOptionalBoolMember(object, "property_behavior_declared",
+                                record.property_behavior_declared, error) &&
+         ReadOptionalStringMember(object, "property_behavior_name",
+                                  record.property_behavior_name, error) &&
          ReadOptionalStringMember(object, "ownership_lifetime_profile",
                                   record.ownership_lifetime_profile, error) &&
          ReadOptionalStringMember(object, "ownership_runtime_hook_profile",

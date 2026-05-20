@@ -28,6 +28,14 @@ def read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def summary_anchor(contract: dict[str, Any]) -> str:
+    return str(
+        contract.get("summary_script")
+        or contract.get("summary_implementation_anchor")
+        or ""
+    )
+
+
 
 
 def main() -> int:
@@ -42,7 +50,7 @@ def main() -> int:
     ]
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_boundary_inventory_summary.py",
+        "summary_script_link_matches": summary_anchor(contract) == "scripts/build_developer_tooling_boundary_inventory_summary.py",
         "integration_summary_passes": integration.get("ok") is True,
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_report_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["report_paths"]),
@@ -50,7 +58,11 @@ def main() -> int:
         "runbook_mentions_current_capability_map": "## Current Capability Map" in runbook_text,
         "runbook_mentions_explicit_gap_inventory": "## Explicit Gap Inventory" in runbook_text,
         "runbook_mentions_language_server_surface": "manifest-backed language-server capabilities and navigation" in runbook_text,
-        "runbook_mentions_formatter_surface": "preview formatter output on the supported canonical subset" in runbook_text,
+        "runbook_mentions_workspace_semantic_index": "deterministic workspace semantic indexing" in runbook_text,
+        "runbook_mentions_formatter_surface": (
+            "preview formatter output on the supported canonical subset" in runbook_text
+            or "canonical Objective-C 3 source formatter output on the supported checked-in subset" in runbook_text
+        ),
         "runbook_mentions_debugger_surface": "declaration-breakpoint and object-symbol inspection debug anchors" in runbook_text and "statement-level stepping and full source-map publication remain fail-closed" in runbook_text,
     }
 

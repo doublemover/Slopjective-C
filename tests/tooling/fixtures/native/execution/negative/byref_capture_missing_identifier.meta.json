@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "byref_capture_missing_identifier.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P313",
+      "expected capture identifier in explicit block capture list"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

@@ -14,6 +14,7 @@ struct Stmt;
 struct Objc3IRBlockLoweringState {
   std::vector<std::string> *block_function_definitions = nullptr;
   std::unordered_set<std::string> *emitted_block_invoke_symbols = nullptr;
+  std::unordered_set<std::string> *emitted_block_descriptor_symbols = nullptr;
   std::unordered_set<std::string> *emitted_block_copy_helper_symbols = nullptr;
   std::unordered_set<std::string> *emitted_block_dispose_helper_symbols =
       nullptr;
@@ -35,6 +36,9 @@ struct Objc3IRBlockLoweringContext {
   Objc3IRBlockLoweringState state;
   Objc3IRScopeCleanupEmissionCallbacks scope_cleanup_callbacks;
   Objc3IRBlockLoweringCallbacks callbacks;
+  std::string current_implementation_name;
+  std::string current_superclass_name;
+  bool current_method_is_class_method = false;
 };
 
 std::string EmitObjc3IRPromotedBlockHandle(

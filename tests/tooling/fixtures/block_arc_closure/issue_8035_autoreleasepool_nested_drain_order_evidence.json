@@ -1,0 +1,42 @@
+{
+  "issue": 8035,
+  "draft_id": "OC3-T10-002",
+  "contract_id": "objc3c.arc.autoreleasepool.nested-drain-order.evidence.v1",
+  "claim_class": "private-helper-compile-coupled-runtime-reference",
+  "summary": "Autoreleasepool push/pop/drain behavior is runtime-owned: pushes create isolated stack frames, autorelease enqueues into the current frame, and pop drains only the top frame before the enclosing frame can drain.",
+  "runtime_code_paths": [
+    "native/objc3c/src/runtime/memory/autorelease_pool.h",
+    "native/objc3c/src/runtime/memory/autorelease_pool.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp"
+  ],
+  "fixtures": [
+    "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
+    "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3"
+  ],
+  "drain_order_rule": [
+    "nested pool frames drain innermost before outermost",
+    "each popped frame drains values in reverse enqueue order",
+    "managed receivers queued into each frame are destroyed by that frame pop",
+    "autorelease outside an explicit pool continues through the dispatch-frame autorelease queue"
+  ],
+  "expected_runtime_order": [
+    "push outer frame",
+    "enqueue outer values",
+    "push inner frame",
+    "enqueue inner values",
+    "pop and drain inner values newest-first and destroy the inner managed receiver",
+    "pop and drain outer values newest-first and destroy the outer managed receiver"
+  ],
+  "validation_needed": [
+    "compile tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3 with ARC enabled",
+    "run the narrow runtime autoreleasepool probes that inspect nested queue and last-drained state",
+    "run the issue-level acceptance command after parallel #8035 lowering edits settle"
+  ],
+  "claim_limitations": [
+    "private-helper-only",
+    "compile-coupled-fixture-reference",
+    "runtime-probe-reference-only",
+    "no-public-runtime-abi-widening",
+    "no-packaged-runnable-proof-claim"
+  ]
+}

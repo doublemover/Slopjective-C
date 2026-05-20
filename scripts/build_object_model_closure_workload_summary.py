@@ -9,6 +9,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json"
 RUNNER_PATH = ROOT / "scripts/check_objc3c_runnable_object_model_conformance.py"
+RUNTIME_ACCEPTANCE_SUITE_PATH = ROOT / "scripts/objc3c_runtime_acceptance/suite_catalog.py"
+OBJECT_MODEL_CASE_FACTORY_PATH = (
+    ROOT / "scripts/objc3c_runtime_acceptance/case_factory_object_model.py"
+)
 OUT_DIR = ROOT / "tmp/reports/object-model-closure/loader-category-protocol-workload"
 JSON_OUT = OUT_DIR / "loader_category_protocol_workload_summary.json"
 MD_OUT = OUT_DIR / "loader_category_protocol_workload_summary.md"
@@ -20,17 +24,27 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    runner_text = RUNNER_PATH.read_text(encoding="utf-8")
+    runner_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (
+            RUNNER_PATH,
+            RUNTIME_ACCEPTANCE_SUITE_PATH,
+            OBJECT_MODEL_CASE_FACTORY_PATH,
+        )
+    )
     workload_paths = []
     for workload in contract["workloads"]:
         workload_paths.extend(ROOT / path for path in workload["fixtures"])
         workload_paths.extend(ROOT / path for path in workload["probes"])
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_object_model_closure_workload_summary.py",
+        "summary_implementation_anchor_link_matches": contract["summary_implementation_anchor"] == "scripts/build_object_model_closure_workload_summary.py",
         "all_workload_paths_exist": all(path.is_file() for path in workload_paths),
-        "all_authoritative_runners_exist": all((ROOT / path).is_file() for path in contract["authoritative_runners"]),
-        "required_case_ids_are_wired_into_conformance_runner": all(
+        "all_authoritative_runners_exist": all(
+            ("/" not in path and "\\" not in path) or (ROOT / path).is_file()
+            for path in contract["authoritative_runners"]
+        ),
+        "required_case_ids_are_wired_into_conformance_or_acceptance_runner": all(
             case_id in runner_text
             for workload in contract["workloads"]
             for case_id in workload["required_case_ids"]

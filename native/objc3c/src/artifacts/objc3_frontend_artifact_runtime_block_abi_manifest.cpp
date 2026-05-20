@@ -78,6 +78,10 @@ void WriteRuntimeBlockArcRuntimeAbiSurface(
            << kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel
            << "\",\"block_runtime_model\":\""
            << kObjc3RuntimeBlockArcRuntimeAbiBlockModel
+           << "\",\"block_descriptor_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiDescriptorModel
+           << "\",\"block_invoke_thunk_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiInvokeThunkModel
            << "\",\"arc_runtime_model\":\""
            << kObjc3RuntimeBlockArcRuntimeAbiArcModel
            << "\",\"fail_closed_model\":\""

@@ -10,7 +10,8 @@ This runbook defines the checked-in packaging-channel surface for objc3c:
 - install smoke, rollback smoke, and channel metadata publication
 
 This milestone does not add a system package manager, hosted update service, or
-platform notarization/signing claim.
+platform notarization claim. Installer trust is represented by the
+machine-owned local installer digest signature in the package-channel manifest.
 
 ## Channel Architecture
 
@@ -56,7 +57,7 @@ Packaging-channel non-goals:
 
 - no Homebrew, apt, winget, Chocolatey, Scoop, or MSI publication claim
 - no daemonized updater
-- no signed/notarized installer claim
+- no OS notarization or external certificate-signing claim
 - no cross-platform parity claim beyond the checked-in `windows-x64` surface
 
 ## Trust and Ownership Boundary
@@ -85,6 +86,9 @@ Installer and bootstrap flows in this packaging-channel surface must follow thes
   network
 - archive and installer channels must preserve the same payload digest set as
   the canonical runnable package
+- the local installer archive must publish an `objc3c-local-sha256-v1`
+  signature payload whose artifact path, digest, and public verification command
+  are copied into release-update metadata
 
 Compatibility rules:
 
@@ -92,7 +96,7 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
-- archive support claims must remain tied to the same `windows-x64`
+- archive compatibility claims must remain tied to the same `windows-x64`
   runnable payload family; publishing a package does not imply cross-host reuse
 
 ## Workflow Surface
@@ -116,3 +120,15 @@ Current public platform-support entrypoints layered onto this surface:
 
 The package-channel manifest and summary must publish the same support-tier
 boundary as the machine-owned platform support matrix.
+
+The package-channel manifest and summary must also publish
+`installer_signature`. The end-to-end package-channel validator recomputes the
+installer archive digest and fails closed when the signature payload, artifact
+path, or public verification command drifts.
+
+The package-channel manifest also publishes the package-ecosystem interop loader
+summary from `tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json`.
+That keeps C and Objective-C header import/export support tied to the same
+fixture-backed header import/export counts, ABI alignment counts, foreign type
+counts, mixed-image package ids, negative diagnostics, and fail-closed tamper
+diagnostic used by the lock and mirror workflows.

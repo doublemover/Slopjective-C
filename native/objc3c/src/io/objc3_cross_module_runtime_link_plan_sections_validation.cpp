@@ -137,7 +137,15 @@ bool TryValidateImportedLinkPlanInput(
       imported_input
               .block_ownership_runtime_support_library_link_wiring_contract_id !=
           inputs
-              .expected_block_ownership_runtime_support_library_link_wiring_contract_id) {
+              .expected_block_ownership_runtime_support_library_link_wiring_contract_id ||
+      imported_input
+              .block_ownership_retain_release_operation_lowering_contract_id !=
+          inputs
+              .expected_block_ownership_retain_release_operation_lowering_contract_id ||
+      imported_input
+              .block_ownership_autoreleasepool_scope_lowering_contract_id !=
+          inputs
+              .expected_block_ownership_autoreleasepool_scope_lowering_contract_id) {
     error =
         "cross-module runtime link-plan block-ownership preservation contract mismatch for " +
         imported_input.module_name;
@@ -146,8 +154,13 @@ bool TryValidateImportedLinkPlanInput(
   if (!imported_input.block_ownership_runtime_import_artifact_ready ||
       !imported_input.block_ownership_separate_compilation_preservation_ready ||
       !imported_input.block_ownership_runtime_support_library_link_wiring_ready ||
+      !imported_input.block_ownership_arc_cleanup_preservation_ready ||
       !imported_input.block_ownership_deterministic ||
       imported_input.block_ownership_replay_key.empty() ||
+      imported_input
+          .block_ownership_retain_release_operation_lowering_replay_key.empty() ||
+      imported_input
+          .block_ownership_autoreleasepool_scope_lowering_replay_key.empty() ||
       imported_input.block_ownership_local_invoke_trampoline_symbolized_sites >
           imported_input.block_ownership_local_block_literal_sites ||
       imported_input.block_ownership_local_copy_helper_symbolized_sites >
@@ -155,7 +168,24 @@ bool TryValidateImportedLinkPlanInput(
       imported_input.block_ownership_local_dispose_helper_symbolized_sites >
           imported_input.block_ownership_local_dispose_helper_required_sites ||
       imported_input.block_ownership_local_escape_to_heap_sites >
-          imported_input.block_ownership_local_block_literal_sites) {
+          imported_input.block_ownership_local_block_literal_sites ||
+      imported_input.block_ownership_local_arc_contract_violation_sites != 0 ||
+      imported_input.block_ownership_local_autoreleasepool_contract_violation_sites !=
+          0 ||
+      imported_input
+              .block_ownership_local_autoreleasepool_scope_symbolized_sites >
+          imported_input.block_ownership_local_autoreleasepool_scope_sites ||
+      imported_input
+              .block_ownership_local_autoreleasepool_scope_entry_transition_sites !=
+          imported_input.block_ownership_local_autoreleasepool_scope_sites ||
+      imported_input
+              .block_ownership_local_autoreleasepool_scope_exit_transition_sites !=
+          imported_input.block_ownership_local_autoreleasepool_scope_sites ||
+      (imported_input.block_ownership_local_autoreleasepool_scope_sites == 0 &&
+       imported_input.block_ownership_local_autoreleasepool_max_scope_depth !=
+           0) ||
+      imported_input.block_ownership_local_autoreleasepool_max_scope_depth >
+          imported_input.block_ownership_local_autoreleasepool_scope_sites) {
     error =
         "cross-module runtime link-plan block-ownership preservation surface incomplete for " +
         imported_input.module_name;

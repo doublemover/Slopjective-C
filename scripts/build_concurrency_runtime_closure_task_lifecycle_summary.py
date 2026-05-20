@@ -14,7 +14,7 @@ MD_OUT = OUT_DIR / "task_continuation_lifecycle_summary.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_concurrency_runtime_closure.md"
 CONFORMANCE_REPORT = ROOT / "tmp/reports/runtime/runnable-concurrency-conformance/summary.json"
 E2E_REPORT = ROOT / "tmp/reports/runtime/runnable-concurrency-e2e/summary.json"
-TASK_HARDENING_PROBE = ROOT / "tests/tooling/runtime/task_runtime_hardening_probe.cpp"
+TASK_HARDENING_ASSERTIONS = ROOT / "tests/tooling/runtime/task_runtime_hardening_probe/runtime_assertion_helpers.h"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -32,8 +32,10 @@ def parse_hardening_probe(path: Path) -> dict[str, int]:
         "spawn_group": "pass1.spawn_group == ",
         "scope": "pass1.scope == ",
         "add_task": "pass1.add_task == ",
+        "add_second_task": "pass1.add_second_task == ",
         "cancelled": "pass1.cancelled == ",
         "wait_next": "pass1.wait_next == ",
+        "wait_second_next": "pass1.wait_second_next == ",
         "hop": "pass1.hop == ",
         "cancel_all": "pass1.cancel_all == ",
         "on_cancel": "pass1.on_cancel == ",
@@ -51,6 +53,56 @@ def parse_hardening_probe(path: Path) -> dict[str, int]:
         "last_wait_next_result": "pass1.task.last_wait_next_result == ",
         "last_executor_hop_executor_tag": "pass1.task.last_executor_hop_executor_tag == ",
         "last_executor_hop_value": "pass1.task.last_executor_hop_value == ",
+        "after_add_last_queue_depth": "pass1.after_add_task.last_queue_depth == ",
+        "after_add_scheduler_enqueue_count": "pass1.after_add_task.scheduler_enqueue_count == ",
+        "after_second_add_last_queue_depth": "pass1.after_second_add_task.last_queue_depth == ",
+        "after_second_add_scheduler_enqueue_count": "pass1.after_second_add_task.scheduler_enqueue_count == ",
+        "after_second_add_scheduler_dequeue_count": "pass1.after_second_add_task.scheduler_dequeue_count == ",
+        "after_second_add_last_scheduled_task_handle": "pass1.after_second_add_task.last_scheduled_task_handle == ",
+        "after_second_add_last_scheduled_executor_tag": "pass1.after_second_add_task.last_scheduled_executor_tag == ",
+        "after_second_add_last_executor_queue_depth": "pass1.after_second_add_task.last_executor_queue_depth == ",
+        "after_second_add_max_executor_queue_depth": "pass1.after_second_add_task.max_executor_queue_depth == ",
+        "after_second_add_scheduler_sequence": "pass1.after_second_add_task.scheduler_sequence == ",
+        "after_second_add_deadlock_guard_passed": "pass1.after_second_add_task.deadlock_guard_passed == ",
+        "after_second_add_race_guard_passed": "pass1.after_second_add_task.race_guard_passed == ",
+        "after_wait_last_queue_depth": "pass1.after_wait_next.last_queue_depth == ",
+        "after_wait_last_queue_drain_result": "pass1.after_wait_next.last_queue_drain_result == ",
+        "after_wait_scheduler_enqueue_count": "pass1.after_wait_next.scheduler_enqueue_count == ",
+        "after_wait_scheduler_dequeue_count": "pass1.after_wait_next.scheduler_dequeue_count == ",
+        "after_wait_last_scheduled_task_handle": "pass1.after_wait_next.last_scheduled_task_handle == ",
+        "after_wait_last_scheduled_executor_tag": "pass1.after_wait_next.last_scheduled_executor_tag == ",
+        "after_wait_last_dequeued_task_handle": "pass1.after_wait_next.last_dequeued_task_handle == ",
+        "after_wait_last_dequeued_executor_tag": "pass1.after_wait_next.last_dequeued_executor_tag == ",
+        "after_wait_last_executor_queue_depth": "pass1.after_wait_next.last_executor_queue_depth == ",
+        "after_wait_max_executor_queue_depth": "pass1.after_wait_next.max_executor_queue_depth == ",
+        "after_wait_scheduler_sequence": "pass1.after_wait_next.scheduler_sequence == ",
+        "after_wait_deadlock_guard_passed": "pass1.after_wait_next.deadlock_guard_passed == ",
+        "after_wait_race_guard_passed": "pass1.after_wait_next.race_guard_passed == ",
+        "after_second_wait_last_queue_depth": "pass1.after_second_wait_next.last_queue_depth == ",
+        "after_second_wait_last_queue_drain_result": "pass1.after_second_wait_next.last_queue_drain_result == ",
+        "after_second_wait_scheduler_enqueue_count": "pass1.after_second_wait_next.scheduler_enqueue_count == ",
+        "after_second_wait_scheduler_dequeue_count": "pass1.after_second_wait_next.scheduler_dequeue_count == ",
+        "after_second_wait_last_scheduled_task_handle": "pass1.after_second_wait_next.last_scheduled_task_handle == ",
+        "after_second_wait_last_scheduled_executor_tag": "pass1.after_second_wait_next.last_scheduled_executor_tag == ",
+        "after_second_wait_last_dequeued_task_handle": "pass1.after_second_wait_next.last_dequeued_task_handle == ",
+        "after_second_wait_last_dequeued_executor_tag": "pass1.after_second_wait_next.last_dequeued_executor_tag == ",
+        "after_second_wait_last_executor_queue_depth": "pass1.after_second_wait_next.last_executor_queue_depth == ",
+        "after_second_wait_max_executor_queue_depth": "pass1.after_second_wait_next.max_executor_queue_depth == ",
+        "after_second_wait_scheduler_sequence": "pass1.after_second_wait_next.scheduler_sequence == ",
+        "after_second_wait_deadlock_guard_passed": "pass1.after_second_wait_next.deadlock_guard_passed == ",
+        "after_second_wait_race_guard_passed": "pass1.after_second_wait_next.race_guard_passed == ",
+        "active_group_task_count": "pass1.task.active_group_task_count == ",
+        "completed_group_task_count": "pass1.task.completed_group_task_count == ",
+        "last_queue_drain_result": "pass1.task.last_queue_drain_result == ",
+        "scheduler_enqueue_count": "pass1.task.scheduler_enqueue_count == ",
+        "scheduler_dequeue_count": "pass1.task.scheduler_dequeue_count == ",
+        "last_scheduled_task_handle": "pass1.task.last_scheduled_task_handle == ",
+        "last_dequeued_task_handle": "pass1.task.last_dequeued_task_handle == ",
+        "last_executor_queue_depth": "pass1.task.last_executor_queue_depth == ",
+        "max_executor_queue_depth": "pass1.task.max_executor_queue_depth == ",
+        "scheduler_sequence": "pass1.task.scheduler_sequence == ",
+        "deadlock_guard_passed": "pass1.task.deadlock_guard_passed == ",
+        "race_guard_passed": "pass1.task.race_guard_passed == ",
         "autoreleasepool_depth": "pass1.memory.autoreleasepool_depth == ",
         "autoreleasepool_max_depth": "pass1.memory.autoreleasepool_max_depth == ",
         "autoreleasepool_push_count": "pass1.arc.autoreleasepool_push_count == ",
@@ -58,16 +110,30 @@ def parse_hardening_probe(path: Path) -> dict[str, int]:
     }
     summary: dict[str, int] = {}
     for key, marker in mapping.items():
-        idx = text.find(marker)
+        marker_candidates = [marker]
+        if marker.startswith("pass1."):
+            marker_candidates.append(marker.replace("pass1.", "pass.", 1))
+        idx = -1
+        matched_marker = marker
+        for candidate in marker_candidates:
+            idx = text.find(candidate)
+            if idx != -1:
+                matched_marker = candidate
+                break
         if idx == -1:
             continue
-        start = idx + len(marker)
+        start = idx + len(matched_marker)
         end = start
         while end < len(text) and text[end].isdigit():
             end += 1
         if end > start:
             summary[key] = int(text[start:end])
-    summary["replay_equal"] = 1 if "Equivalent(pass1, pass2)" in text else 0
+    summary["replay_equal"] = (
+        1
+        if "Equivalent(pass1, pass2)" in text
+        or "Equivalent(run.pass1, run.pass2)" in text
+        else 0
+    )
     return summary
 
 
@@ -83,10 +149,10 @@ def main() -> int:
 
     continuation_payload = e2e_report.get("probe_payloads", {}).get("continuation", {})
     task_payload = e2e_report.get("probe_payloads", {}).get("task", {})
-    hardening_values = parse_hardening_probe(TASK_HARDENING_PROBE)
+    hardening_values = parse_hardening_probe(TASK_HARDENING_ASSERTIONS)
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),

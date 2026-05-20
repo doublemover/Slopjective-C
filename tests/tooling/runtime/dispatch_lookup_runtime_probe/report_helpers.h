@@ -37,6 +37,31 @@ inline void PrintDispatchLookupProbeReport(
               result.dispatch.expected_dispatch_result);
   std::printf("\"nil_dispatch_result\":%d,",
               result.dispatch.nil_dispatch_result);
+  std::printf("\"typed_super_status\":%d,",
+              result.from_class.typed_super_status);
+  std::printf("\"typed_super_value\":%d,",
+              result.from_class.typed_super_value);
+  std::printf("\"typed_super_return_kind\":%d,",
+              result.from_class.typed_super_return_kind);
+  std::printf("\"i32_super_status\":%d,",
+              result.from_class.i32_super_status);
+  std::printf("\"i32_super_value\":%d,", result.from_class.i32_super_value);
+  std::printf("\"i32_super_return_kind\":%d,",
+              result.from_class.i32_super_return_kind);
+  std::printf("\"typed_self_status\":%d,",
+              result.from_class.typed_self_status);
+  std::printf("\"typed_self_value\":%d,",
+              result.from_class.typed_self_value);
+  std::printf("\"i32_self_status\":%d,", result.from_class.i32_self_status);
+  std::printf("\"i32_self_value\":%d,", result.from_class.i32_self_value);
+  std::printf("\"null_lookup_start_status\":%d,",
+              result.from_class.null_lookup_start_status);
+  std::printf("\"empty_lookup_start_status\":%d,",
+              result.from_class.empty_lookup_start_status);
+  std::printf("\"missing_lookup_start_status\":%d,",
+              result.from_class.missing_lookup_start_status);
+  std::printf("\"unreachable_lookup_start_status\":%d,",
+              result.from_class.unreachable_lookup_start_status);
   std::printf("\"snapshot_status\":%d,",
               result.registration.snapshot_status);
   std::printf("\"registered_image_count\":%llu,",

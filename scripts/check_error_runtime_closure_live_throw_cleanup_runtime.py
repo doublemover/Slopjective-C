@@ -71,13 +71,16 @@ def main() -> int:
     try_case = case_map.get("executable-try-throw-do-catch-semantics", {})
     try_summary = try_case.get("summary") if isinstance(try_case, dict) else None
     if isinstance(try_summary, dict):
-        native_fail_closed_fixture = try_summary.get("native_fail_closed_fixture")
+        live_runtime_surface_fixture = try_summary.get("live_runtime_surface_fixture")
         checks["try_throw_do_catch_semantics_summary_is_complete"] = (
             try_summary.get("try_expression_sites") == 3
             and try_summary.get("catch_clause_sites") == 2
             and try_summary.get("bridged_callable_try_sites") == 1
-            and isinstance(native_fail_closed_fixture, dict)
-            and native_fail_closed_fixture.get("native_emit_remains_fail_closed") is True
+            and isinstance(live_runtime_surface_fixture, dict)
+            and live_runtime_surface_fixture.get("native_emit_remains_fail_closed")
+            is False
+            and live_runtime_surface_fixture.get("ready_for_lowering_and_runtime")
+            is True
         )
 
     lowering_case = case_map.get("executable-throw-catch-cleanup-lowering", {})

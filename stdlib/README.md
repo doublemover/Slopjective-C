@@ -15,6 +15,7 @@ Live stdlib work must stay on these paths:
 - `stdlib/core_architecture.json`
 - `stdlib/advanced_architecture.json`
 - `stdlib/semantic_policy.json`
+- `stdlib/compatibility_gates.json`
 - `stdlib/lowering_import_surface.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
@@ -64,6 +65,9 @@ This root is not a place for:
   concurrency, reflection, interop, and runtime-composition helper families
 - `stdlib/semantic_policy.json` defines the observable stability and helper
   semantics for the current core and advanced stdlib surfaces
+- `stdlib/compatibility_gates.json` binds stdlib major-version `1` ABI,
+  semantic, package, and conformance gates to checked-in runtime-backed
+  evidence; it is the source for fail-closed compatibility decisions
 - `stdlib/lowering_import_surface.json` defines the real smoke-compile artifact
   names, import identity fields, and machine-owned lowering roots
 - `stdlib/advanced_helper_package_surface.json` defines how the advanced helper

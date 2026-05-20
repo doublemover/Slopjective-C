@@ -40,15 +40,28 @@ def dump_payload_path(contract: DeveloperToolingDumpContract) -> Path:
     return PUBLIC_WORKFLOW_REPORT_ROOT / contract.dump_filename
 
 
+def dump_artifact_root(contract: DeveloperToolingDumpContract) -> Path:
+    return ROOT / "tmp" / "artifacts" / "objc3c-public-workflow" / contract.action
+
+
+def repo_relative_text(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
 def frontend_dump_command(
     contract: DeveloperToolingDumpContract,
     source_text: str,
+    artifact_root: Path,
     summary_path: Path,
     passthrough: list[str],
 ) -> list[str]:
     return [
         str(FRONTEND_C_API_RUNNER_EXE),
         source_text,
+        "--out-dir",
+        repo_relative_text(artifact_root),
+        "--emit-prefix",
+        "module",
         SUMMARY_OUT_FLAG,
         str(summary_path),
         contract.dump_flag,
@@ -70,7 +83,15 @@ def run_developer_tooling_dump(
         return rc
     summary_path = dump_summary_path(contract)
     dump_path = dump_payload_path(contract)
-    command = frontend_dump_command(contract, source_text, summary_path, passthrough)
+    artifact_root = dump_artifact_root(contract)
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    command = frontend_dump_command(
+        contract,
+        source_text,
+        artifact_root,
+        summary_path,
+        passthrough,
+    )
     result = run_capture(command)
     if result.returncode != 0:
         return result.returncode

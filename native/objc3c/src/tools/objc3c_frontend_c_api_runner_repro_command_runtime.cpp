@@ -19,6 +19,10 @@ void AppendFrontendCApiRunnerReproRuntimeArgs(
   if (options.allow_live_error_runtime_surface) {
     command << " --objc3-enable-live-error-runtime-surface";
   }
+  for (const auto &path : options.imported_runtime_surface_paths) {
+    command << " --objc3-import-runtime-surface "
+            << QuoteFrontendCApiRunnerPowerShellArg(path.string());
+  }
   if (options.translation_unit_registration_order_ordinal != 0) {
     command << " --objc3-bootstrap-registration-order-ordinal "
             << std::to_string(

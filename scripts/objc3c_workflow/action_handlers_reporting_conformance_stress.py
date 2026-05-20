@@ -25,6 +25,7 @@ REPORTING_CONFORMANCE_STRESS_HANDLERS: dict[str, ActionHandler] = {
     "check-external-validation-surface": external_validation.action_check_external_validation_surface,
     "test-external-validation-replay": external_validation.action_test_external_validation_replay,
     "publish-external-repro-corpus": external_validation.action_publish_external_repro_corpus,
+    "check-external-support-claim-gate": external_validation.action_check_external_support_claim_gate,
     "validate-external-validation": external_validation.action_validate_external_validation,
     "validate-external-validation-integration": external_validation.action_validate_external_validation_integration,
 }

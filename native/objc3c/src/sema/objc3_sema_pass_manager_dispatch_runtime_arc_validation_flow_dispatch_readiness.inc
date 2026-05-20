@@ -92,6 +92,8 @@ static void PopulateObjc3SemaDispatchRuntimeArcValidationFlowDispatchReadiness(
       super_dispatch_summary.super_dispatch_requires_class_context_sites ==
           surface
               .super_dispatch_method_family_requires_class_context_sites_total &&
+      super_dispatch_summary.method_family_alloc_sites ==
+          surface.super_dispatch_method_family_alloc_sites_total &&
       super_dispatch_summary.method_family_init_sites ==
           surface.super_dispatch_method_family_init_sites_total &&
       super_dispatch_summary.method_family_copy_sites ==
@@ -114,7 +116,8 @@ static void PopulateObjc3SemaDispatchRuntimeArcValidationFlowDispatchReadiness(
           super_dispatch_summary.super_dispatch_enabled_sites &&
       super_dispatch_summary.super_dispatch_requires_class_context_sites ==
           super_dispatch_summary.super_dispatch_enabled_sites &&
-      super_dispatch_summary.method_family_init_sites +
+      super_dispatch_summary.method_family_alloc_sites +
+              super_dispatch_summary.method_family_init_sites +
               super_dispatch_summary.method_family_copy_sites +
               super_dispatch_summary.method_family_mutable_copy_sites +
               super_dispatch_summary.method_family_new_sites +

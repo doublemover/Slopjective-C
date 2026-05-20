@@ -10,7 +10,8 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
       << ";handle_type=i32"
       << ";promotion_abi=ptr-storage-plus-i64-size-plus-i32-pointer-capture-flag"
       << ";invoke_abi=i32-handle-plus-four-i32-arguments-returning-i32"
-      << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-invoke-pointer"
+      << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-internal-descriptor-with-invoke-thunk"
+      << ";descriptor_model=storage-slot-zero-points-to-internal-descriptor-with-size-capture-count-flags-arity-and-invoke-thunk"
       << ";object_layout_model=runtime-block-records-are-private-runtime-state-not-public-object-abi"
       << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-the-next-runtime-hardening-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-runtime-copy-dispose-allocation-surface";
@@ -28,8 +29,9 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
       << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
       << ";previous_contract=" << kObjc3RuntimeBlockApiObjectLayoutContractId
       << ";allocation_model=runtime-block-records-copy-promoted-storage-into-aligned-word-buffers"
+      << ";descriptor_model=promotion-validates-descriptor-storage-size-capture-count-flags-and-invoke-thunk-before-publishing-a-handle"
       << ";copy_dispose_model=pointer-capture-promotion-runs-copy-helper-and-final-release-runs-dispose-helper"
-      << ";invoke_model=runtime-invoke-supports-readonly-scalar-and-pointer-capture-block-records"
+      << ";invoke_model=runtime-invoke-loads-the-descriptor-owned-thunk-from-a-runnable-invocation-plan"
       << ";handle_lifetime_model=i32-block-handles-participate-in-runtime-retain-release"
       << ";fail_closed_model=byref-forwarding-runtime-reentrant-helper-bodies-and-owned-capture-escape-interop-remain-deferred-until-next-runtime-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-public-runtime-helper-surface";
@@ -38,19 +40,19 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
 
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
   std::ostringstream out;
-  // byref-forwarding/heap-promotion/ownership-interop
-  // implementation anchor: escaping pointer-capture block promotion now
-  // rewrites capture slots onto runtime-owned heap cells before helper
-  // execution so byref mutation and owned-capture lifetime hooks survive after
-  // the source frame returns.
+  // byref-forwarding/heap-promotion runtime interop
+  // implementation anchor: runtime opt-in byref-cell block promotion now
+  // updates stack cell forwarding pointers, shares heap cells across promoted
+  // blocks, and keeps raw pointer-capture lowering on an adapter path until
+  // compiler-emitted caller-frame byref cells land.
   out << "contract="
       << kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId
       << ";previous_contract="
       << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
-      << ";forwarding_model=escaping-pointer-capture-slots-rewrite-to-runtime-owned-forwarding-cells"
-      << ";heap_promotion_model=promotion-deep-copies-captured-i32-cells-before-helper-execution"
-      << ";ownership_interop_model=copy-dispose-helpers-run-against-runtime-owned-cells-for-owned-captures"
-      << ";invoke_model=escaped-byref-and-owned-capture-block-handles-invoke-after-source-frame-return"
+      << ";forwarding_model=runtime-byref-cell-captures-update-stack-forwarding-and-share-heap-cells-across-promoted-blocks"
+      << ";heap_promotion_model=byref-cell-promotion-preserves-shared-forwarded-i32-state-while-raw-pointer-capture-lowering-uses-private-adapter-cells"
+      << ";byref_cell_lifetime_model=copy-dispose-helpers-run-against-runtime-byref-probe-cells"
+      << ";invoke_model=runtime-probe-block-handles-invoke-through-shared-forwarding-cells-after-promotion"
       << ";fail_closed_model=no-public-block-abi-widening-and-no-outer-stack-cell-forwarding-bridge-yet"
       << ";non_goals=no-public-byref-layout-surface-no-generalized-foreign-abi-block-interoperability";
   return out.str();

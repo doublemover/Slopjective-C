@@ -38,18 +38,22 @@ def build_runtime_error_runtime_abi_cleanup_surface(
         "error_load_symbol": "objc3_runtime_load_thrown_error_i32",
         "error_status_bridge_symbol": "objc3_runtime_bridge_status_error_i32",
         "error_nserror_bridge_symbol": "objc3_runtime_bridge_nserror_error_i32",
+        "error_foreign_exception_bridge_symbol": (
+            "objc3_runtime_bridge_foreign_exception_error_i32"
+        ),
         "error_catch_match_symbol": "objc3_runtime_catch_matches_error_i32",
         "error_bridge_state_snapshot_symbol": (
             "objc3_runtime_copy_error_bridge_state_for_testing"
         ),
         "runtime_abi_boundary_model": (
             "private-runtime-abi-exposes-thrown-error-storage-status-bridge-"
-            "nserror-bridge-and-catch-match-helpers-through-stable-testable-"
-            "bootstrap-internal-entrypoints"
+            "nserror-bridge-foreign-exception-normalization-and-catch-match-"
+            "helpers-through-stable-testable-bootstrap-internal-entrypoints"
         ),
         "cleanup_runtime_model": (
             "lowered-throw-and-catch-paths-share-one-runtime-error-bridge-state-"
-            "snapshot-surface-for-store-load-bridge-and-catch-match-observation"
+            "snapshot-surface-for-store-load-bridge-foreign-exception-and-"
+            "catch-match-observation"
         ),
         "fail_closed_model": (
             "public-header-surface-stays-unchanged-while-private-error-runtime-abi-"
@@ -98,7 +102,8 @@ def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface
         ],
         "runtime_implementation_model": (
             "lowered-throw-catch-and-status-bridge-paths-execute-through-the-live-"
-            "error-runtime-helpers-and-publish-observable-bridge-state-snapshots"
+            "error-runtime-helpers-including-private-foreign-exception-normalization-"
+            "and-publish-observable-bridge-state-snapshots"
         ),
         "fail_closed_model": (
             "runtime-integration-remains-private-and-testable-through-runtime-probes-"

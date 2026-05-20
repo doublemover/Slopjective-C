@@ -45,20 +45,37 @@ def load_manifest(path: Path) -> dict[str, list[str]]:
         raise RuntimeError("lowering/runtime stress manifest contract_id drifted")
     if payload.get("schema_version") != 1:
         raise RuntimeError("lowering/runtime stress manifest schema_version drifted")
+    compile_case_options = payload.get("compile_case_options", {})
     compile_cases = payload.get("compile_cases")
     execution_cases = payload.get("execution_cases")
+    semantic_provenance_cases = payload.get("semantic_provenance_cases", [])
+    if not isinstance(compile_case_options, dict):
+        raise RuntimeError("lowering/runtime stress manifest compile_case_options drifted")
     if not isinstance(compile_cases, list) or not compile_cases:
         raise RuntimeError("lowering/runtime stress manifest missing compile_cases")
     if not isinstance(execution_cases, list) or not execution_cases:
         raise RuntimeError("lowering/runtime stress manifest missing execution_cases")
-    for relative_path in [*compile_cases, *execution_cases]:
+    if not isinstance(semantic_provenance_cases, list):
+        raise RuntimeError("lowering/runtime stress manifest semantic_provenance_cases drifted")
+    for relative_path in [*compile_cases, *execution_cases, *semantic_provenance_cases]:
         if not isinstance(relative_path, str) or not relative_path:
             raise RuntimeError("lowering/runtime stress manifest contains a non-string case path")
         if not (ROOT / relative_path).is_file():
             raise RuntimeError(f"lowering/runtime stress manifest references missing case {relative_path}")
+    compile_case_set = set(str(item) for item in compile_cases)
+    for relative_path, options in compile_case_options.items():
+        if relative_path not in compile_case_set:
+            raise RuntimeError(f"lowering/runtime stress manifest has options for non-compile case {relative_path}")
+        if not isinstance(options, list) or not all(isinstance(option, str) and option for option in options):
+            raise RuntimeError(f"lowering/runtime stress manifest has invalid compile options for {relative_path}")
     return {
         "compile_cases": [str(item) for item in compile_cases],
+        "compile_case_options": {
+            str(relative_path): [str(option) for option in options]
+            for relative_path, options in compile_case_options.items()
+        },
         "execution_cases": [str(item) for item in execution_cases],
+        "semantic_provenance_cases": [str(item) for item in semantic_provenance_cases],
     }
 
 
@@ -79,12 +96,18 @@ def build_native_binaries() -> None:
         raise RuntimeError("native binary build failed for lowering/runtime stress")
 
 
-def compile_cases(case_paths: list[str], run_root: Path) -> list[dict[str, Any]]:
+def compile_cases(
+    case_paths: list[str],
+    run_root: Path,
+    compile_case_options: dict[str, list[str]] | None = None,
+) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     compile_root = run_root / "compile"
+    compile_case_options = compile_case_options or {}
     for relative_path in case_paths:
         case_name = Path(relative_path).stem
         out_dir = compile_root / case_name
+        case_options = compile_case_options.get(relative_path, [])
         result = run_capture(
             [
                 PWSH,
@@ -98,6 +121,7 @@ def compile_cases(case_paths: list[str], run_root: Path) -> list[dict[str, Any]]
                 out_dir.relative_to(ROOT).as_posix(),
                 "--emit-prefix",
                 "module",
+                *case_options,
             ]
         )
         if result.returncode != 0:
@@ -109,6 +133,7 @@ def compile_cases(case_paths: list[str], run_root: Path) -> list[dict[str, Any]]
         records.append(
             {
                 "source": relative_path,
+                "compiler_options": case_options,
                 "out_dir": repo_rel(out_dir),
                 "manifest_path": repo_rel(manifest_path),
                 "llvm_ir_path": repo_rel(llvm_ir_path),
@@ -158,7 +183,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_root = ROOT / "tmp" / "artifacts" / "stress" / "lowering-runtime" / run_id
     run_root.mkdir(parents=True, exist_ok=True)
 
-    compile_records = compile_cases(manifest["compile_cases"], run_root)
+    compile_records = compile_cases(
+        manifest["compile_cases"],
+        run_root,
+        manifest["compile_case_options"],
+    )
     execution_summary = run_execution_subset(manifest["execution_cases"], run_root)
 
     payload = {
@@ -169,6 +198,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "run_root": repo_rel(run_root),
         "compile_case_count": len(compile_records),
         "execution_case_count": len(manifest["execution_cases"]),
+        "semantic_provenance_case_count": len(manifest["semantic_provenance_cases"]),
+        "compile_case_option_count": len(manifest["compile_case_options"]),
+        "semantic_provenance_cases": manifest["semantic_provenance_cases"],
         "compile_records": compile_records,
         "execution_summary": execution_summary,
     }

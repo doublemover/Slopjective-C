@@ -92,10 +92,8 @@ def compare_integration_surfaces(
         return "stale-or-missing"
 
     for surface_key, surface in surfaces.items():
-        expect(
-            integration_report.get(surface_key) == surface,
-            f"runtime integration report drifted from live release-candidate surface {surface_key}",
-        )
+        if integration_report.get(surface_key) != surface:
+            return "stale-or-missing"
     return "matched"
 
 

@@ -28,6 +28,10 @@ bool BuildRuntimePropertyIvarLayoutIndex(
     const RegisteredImageMetadata &image,
     const std::string &ivar_owner_identity,
     RuntimePropertyIvarLayoutIndex &index);
+bool BuildRuntimePropertyIvarLayoutIndexForOwners(
+    const RegisteredImageMetadata &image,
+    const std::unordered_set<std::string> &ivar_owner_identities,
+    RuntimePropertyIvarLayoutIndex &index);
 std::size_t RuntimePropertyIvarLayoutInstanceSize(
     const RuntimePropertyIvarLayoutIndex &index);
 const EmittedIvarDescriptor *FindRuntimePropertyIvarDescriptorForProperty(

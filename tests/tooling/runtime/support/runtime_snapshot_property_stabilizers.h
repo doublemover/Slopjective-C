@@ -59,6 +59,33 @@ inline void StabilizePropertyEntry(
     std::string &queried_class_storage, std::string &resolved_class_storage,
     std::string &property_name_storage,
     std::string &declaration_owner_storage,
+    std::string &export_owner_storage, std::string &getter_selector_storage,
+    std::string &setter_selector_storage,
+    std::string &effective_getter_selector_storage,
+    std::string &effective_setter_selector_storage,
+    std::string &ivar_binding_storage,
+    std::string &synthesized_binding_storage,
+    std::string &layout_symbol_storage,
+    std::string &property_behavior_name_storage,
+    std::string &getter_owner_storage,
+    std::string &setter_owner_storage) {
+  StabilizePropertyEntry(
+      snapshot, queried_class_storage, resolved_class_storage,
+      property_name_storage, declaration_owner_storage, export_owner_storage,
+      getter_selector_storage, setter_selector_storage,
+      effective_getter_selector_storage, effective_setter_selector_storage,
+      ivar_binding_storage, synthesized_binding_storage, layout_symbol_storage,
+      getter_owner_storage, setter_owner_storage);
+  StabilizeNullableCString(snapshot.property_behavior_name,
+                           property_behavior_name_storage,
+                           snapshot.property_behavior_name);
+}
+
+inline void StabilizePropertyEntry(
+    objc3_runtime_property_entry_snapshot &snapshot,
+    std::string &queried_class_storage, std::string &resolved_class_storage,
+    std::string &property_name_storage,
+    std::string &declaration_owner_storage,
     std::string &getter_owner_storage, std::string &setter_owner_storage,
     std::string &lifetime_storage, std::string &hook_storage,
     std::string &accessor_storage) {
@@ -151,6 +178,9 @@ inline void StabilizePropertyEntry(StablePropertyEntry &entry) {
   StabilizeNullableCString(entry.snapshot.property_attribute_profile,
                            entry.property_attribute_profile,
                            entry.snapshot.property_attribute_profile);
+  StabilizeNullableCString(entry.snapshot.property_behavior_name,
+                           entry.property_behavior_name,
+                           entry.snapshot.property_behavior_name);
   StabilizeNullableCString(entry.snapshot.ownership_lifetime_profile,
                            entry.ownership_lifetime_profile,
                            entry.snapshot.ownership_lifetime_profile);

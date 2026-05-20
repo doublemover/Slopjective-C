@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "stdlib_core_runtime_helper_signature_conflict.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "incompatible function signature"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

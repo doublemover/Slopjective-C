@@ -30,7 +30,7 @@ def build_macro_safety_negative_expectations(
             / "native"
             / "macro_safety_sandbox_negative_orphan_metadata.objc3",
             "O3S321",
-            "macro package/provenance markers require objc_macro",
+            "macro package/provenance/cache/sandbox markers require objc_macro",
         ),
         "invalid_package": (
             root
@@ -61,6 +61,26 @@ def build_macro_safety_negative_expectations(
             / "macro_safety_sandbox_negative_nonpure.objc3",
             "O3S324",
             "must be pure, body-backed, non-async, and non-throws",
+        ),
+        "missing_cache_key": (
+            root
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "macro_safety_sandbox_negative_missing_cache_key.objc3",
+            "O3S331",
+            "requires stable objc_macro_cache_key",
+        ),
+        "missing_sandbox_policy": (
+            root
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
+            "O3S332",
+            "requires objc_macro_sandbox",
         ),
         "method_topology": (
             root

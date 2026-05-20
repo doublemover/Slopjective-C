@@ -45,9 +45,9 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         "throw_surface_landed": True,
         "do_catch_surface_landed": True,
         "throwing_context_legality_enforced": True,
-        "native_emit_remains_fail_closed": True,
+        "native_emit_remains_fail_closed": False,
         "deterministic": True,
-        "ready_for_lowering_and_runtime": False,
+        "ready_for_lowering_and_runtime": True,
     }
     for field_name, expected_value in expected_try_fields.items():
         expect(
@@ -92,9 +92,9 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         "bridge_legality_landed": True,
         "try_bridge_filter_landed": True,
         "unsupported_combinations_fail_closed": True,
-        "native_emit_remains_fail_closed": True,
+        "native_emit_remains_fail_closed": False,
         "deterministic": True,
-        "ready_for_lowering_and_runtime": False,
+        "ready_for_lowering_and_runtime": True,
     }
     for field_name, expected_value in expected_bridge_fields.items():
         expect(

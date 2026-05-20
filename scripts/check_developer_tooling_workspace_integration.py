@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.public_workflow_output import extract_line_value
+from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,12 +26,11 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
-    result = subprocess.run(
+    result = run_capture(
         public_workflow_command("materialize-playground-workspace", contract["workspace_source"]),
         cwd=ROOT,
-        check=False,
-        text=True,
         capture_output=True,
+        echo=False,
     )
     if result.stdout:
         sys.stdout.write(result.stdout)
@@ -66,16 +65,45 @@ def main() -> int:
         expect(bool(workspace_drill_commands.get(field)), f"workspace drill command is empty: {field}", failures)
 
     editor_surface_path = ROOT / str(editor_tooling.get("editor_surface_path", "")) if editor_tooling.get("editor_surface_path") else Path()
+    workspace_index_path = ROOT / str(editor_tooling.get("workspace_index_path", "")) if editor_tooling.get("workspace_index_path") else Path()
     formatter_path = ROOT / str(editor_tooling.get("formatter_path", "")) if editor_tooling.get("formatter_path") else Path()
     debug_path = ROOT / str(editor_tooling.get("debug_path", "")) if editor_tooling.get("debug_path") else Path()
     expect(editor_surface_path.is_file(), "workspace editor surface path missing on disk", failures)
+    expect(workspace_index_path.is_file(), "workspace semantic index path missing on disk", failures)
     expect(formatter_path.is_file(), "workspace formatter path missing on disk", failures)
     expect(debug_path.is_file(), "workspace debug path missing on disk", failures)
 
     editor_surface = load_json(editor_surface_path) if editor_surface_path.is_file() else {}
+    workspace_index = load_json(workspace_index_path) if workspace_index_path.is_file() else {}
     expect(editor_surface.get("formatter", {}).get("supported") is True, "workspace editor surface formatter not supported", failures)
     expect(editor_surface.get("debug", {}).get("supported") is True, "workspace editor surface debug not supported", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "workspace editor surface must keep statement stepping fail-closed", failures)
+    expect(workspace_index.get("available") is True, "workspace semantic index not available", failures)
+    expect(
+        int(workspace_index.get("package_count", 0)) >= int(contract["minimum_workspace_package_count"]),
+        "workspace semantic index package count is too small",
+        failures,
+    )
+    expect(
+        int(workspace_index.get("cross_package_edge_count", 0)) >= int(contract["minimum_cross_package_edge_count"]),
+        "workspace semantic index cross-package edge count is too small",
+        failures,
+    )
+    expect(
+        workspace_index.get("guardrails", {}).get("ok") is True,
+        "workspace semantic index package guardrails failed",
+        failures,
+    )
+    expect(
+        editor_tooling.get("workspace_index_guardrails_ok") is True,
+        "workspace manifest did not preserve workspace index guardrail status",
+        failures,
+    )
+    expect(
+        len(str(editor_tooling.get("workspace_index_digest", ""))) == 64,
+        "workspace manifest did not preserve workspace index digest",
+        failures,
+    )
     expect(int(editor_tooling.get("declaration_breakpoint_anchor_count", 0)) >= 3, "workspace did not publish enough declaration breakpoint anchors", failures)
     expect(editor_tooling.get("debugger_model") == "declaration-breakpoint-and-object-symbol-inspection", "workspace debugger model drifted", failures)
     expect(editor_tooling.get("format_preview_supported") is True, "workspace formatter preview flag drifted", failures)

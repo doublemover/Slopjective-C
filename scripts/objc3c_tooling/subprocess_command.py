@@ -35,11 +35,49 @@ def _completed_from_launch_error(command: Sequence[object], returncode: int, std
     return subprocess.CompletedProcess([str(part) for part in command], returncode, stdout="", stderr=stderr)
 
 
+def _public_workflow_action_offset(command_list: Sequence[str]) -> int | None:
+    if (
+        len(command_list) >= 5
+        and command_list[0] == "npm"
+        and command_list[1] == "run"
+        and command_list[3] == "--"
+    ):
+        return 4
+    return None
+
+
+def _portable_public_workflow_command(
+    command_list: list[str],
+    *,
+    cwd: Path | str | None,
+) -> list[str]:
+    if cwd is None:
+        return command_list
+    try:
+        if Path(cwd).resolve() == ROOT.resolve():
+            return command_list
+    except OSError:
+        return command_list
+
+    action_offset = _public_workflow_action_offset(command_list)
+    if action_offset is None:
+        return command_list
+    return [sys.executable, "-m", "scripts.objc3c_workflow", *command_list[action_offset:]]
+
+
 def _completed_from_public_workflow_action(
     command_list: list[str],
     *,
+    cwd: Path | str | None,
     capture_output: bool,
 ) -> subprocess.CompletedProcess[str] | None:
+    if cwd is not None:
+        try:
+            if Path(cwd).resolve() != ROOT.resolve():
+                return None
+        except OSError:
+            return None
+
     root_text = str(ROOT)
     if root_text not in sys.path:
         sys.path.insert(0, root_text)
@@ -107,9 +145,11 @@ def run_completed(
     try:
         result = _completed_from_public_workflow_action(
             command_list,
+            cwd=cwd,
             capture_output=capture_output,
         )
         if result is None:
+            command_list = _portable_public_workflow_command(command_list, cwd=cwd)
             result = subprocess.run(
                 command_list,
                 cwd=cwd,

@@ -1,0 +1,171 @@
+{
+  "contract_id": "objc3c.showcase.demo.packages.v1",
+  "schema_version": 1,
+  "portfolio_manifest": "showcase/portfolio.json",
+  "package_bridge": "objc3c",
+  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "public_actions": {
+    "surface": "check-showcase-surface",
+    "integrated": "validate-showcase",
+    "packaged": "validate-runnable-showcase",
+    "package": "package-runnable-toolchain",
+    "lock": "build-package-lock",
+    "mirror": "validate-package-mirror",
+    "replay": "test-execution-replay"
+  },
+  "source_authority": {
+    "checked_in_roots": [
+      "showcase",
+      "stdlib",
+      "tests/tooling/fixtures/package_ecosystem",
+      "package.json",
+      "package-lock.json"
+    ],
+    "forbidden_source_roots": [
+      "tmp",
+      "artifacts"
+    ],
+    "machine_output_roots": [
+      "tmp/artifacts/showcase",
+      "tmp/reports/showcase",
+      "tmp/pkg/objc3c-native-runnable-toolchain"
+    ]
+  },
+  "reproducibility_contract": {
+    "lockfile": "package-lock.json",
+    "offline_mirror_validation_action": "validate-package-mirror",
+    "tamper_rejection_diagnostic": "O3PKG8054",
+    "mixed_version_policy": "same-package-manifest-version-required",
+    "package_manifest_fields": [
+      "showcase_demo_packages_manifest",
+      "showcase_demo_packages",
+      "copied_files"
+    ]
+  },
+  "packages": [
+    {
+      "package_id": "showcase:auroraBoard",
+      "smoke_id": "auroraBoard-object-model-smoke",
+      "example_id": "auroraBoard",
+      "coverage_domain": "object-model",
+      "source": "showcase/auroraBoard/main.objc3",
+      "workspace_manifest": "showcase/auroraBoard/workspace.json",
+      "package_stage_root": "showcase/auroraBoard",
+      "expected_exit_code": 33,
+      "required_story_capabilities": [
+        "categories",
+        "reflection",
+        "synthesized-behaviors"
+      ],
+      "stdlib_modules": [
+        "objc3.core",
+        "objc3.errors",
+        "objc3.keypath"
+      ],
+      "runtime_backed_behavior": [
+        "interface-method-table-dispatch",
+        "property-accessor-storage",
+        "category-protocol-composition"
+      ],
+      "manifest_inputs": [
+        "showcase/portfolio.json",
+        "showcase/demo_packages.json",
+        "showcase/auroraBoard/main.objc3",
+        "showcase/auroraBoard/workspace.json",
+        "package-lock.json"
+      ],
+      "artifact_outputs": [
+        "tmp/artifacts/showcase/auroraBoard/module.manifest.json",
+        "tmp/artifacts/showcase/auroraBoard/module.runtime-registration-manifest.json"
+      ],
+      "smoke_commands": [
+        "npm run objc3c -- check-showcase-surface --example auroraBoard",
+        "npm run objc3c -- validate-showcase",
+        "npm run objc3c -- validate-runnable-showcase"
+      ]
+    },
+    {
+      "package_id": "showcase:signalMesh",
+      "smoke_id": "signalMesh-concurrency-smoke",
+      "example_id": "signalMesh",
+      "coverage_domain": "concurrency",
+      "source": "showcase/signalMesh/main.objc3",
+      "workspace_manifest": "showcase/signalMesh/workspace.json",
+      "package_stage_root": "showcase/signalMesh",
+      "expected_exit_code": 13,
+      "required_story_capabilities": [
+        "status-bridging",
+        "actor-shaped-messaging",
+        "runtime-messaging"
+      ],
+      "stdlib_modules": [
+        "objc3.concurrency",
+        "objc3.system"
+      ],
+      "runtime_backed_behavior": [
+        "async-executor-annotation",
+        "task-runtime-cancellation-bridge",
+        "runtime-message-dispatch"
+      ],
+      "manifest_inputs": [
+        "showcase/portfolio.json",
+        "showcase/demo_packages.json",
+        "showcase/signalMesh/main.objc3",
+        "showcase/signalMesh/workspace.json",
+        "package-lock.json"
+      ],
+      "artifact_outputs": [
+        "tmp/artifacts/showcase/signalMesh/module.manifest.json",
+        "tmp/artifacts/showcase/signalMesh/module.runtime-registration-manifest.json"
+      ],
+      "smoke_commands": [
+        "npm run objc3c -- check-showcase-surface --example signalMesh",
+        "npm run objc3c -- validate-showcase",
+        "npm run objc3c -- validate-runnable-showcase"
+      ]
+    },
+    {
+      "package_id": "showcase:patchKit",
+      "smoke_id": "patchKit-interop-smoke",
+      "example_id": "patchKit",
+      "coverage_domain": "interop",
+      "source": "showcase/patchKit/main.objc3",
+      "workspace_manifest": "showcase/patchKit/workspace.json",
+      "package_stage_root": "showcase/patchKit",
+      "expected_exit_code": 7,
+      "required_story_capabilities": [
+        "derives",
+        "macros",
+        "property-behaviors",
+        "interop"
+      ],
+      "stdlib_modules": [
+        "objc3.keypath",
+        "objc3.system"
+      ],
+      "runtime_backed_behavior": [
+        "foreign-selector-import",
+        "macro-provenance-packet",
+        "property-behavior-metadata"
+      ],
+      "interop_metadata_package_id": "showcase:patchKit",
+      "manifest_inputs": [
+        "showcase/portfolio.json",
+        "showcase/demo_packages.json",
+        "showcase/patchKit/main.objc3",
+        "showcase/patchKit/workspace.json",
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+        "package-lock.json"
+      ],
+      "artifact_outputs": [
+        "tmp/artifacts/showcase/patchKit/module.manifest.json",
+        "tmp/artifacts/showcase/patchKit/module.runtime-registration-manifest.json"
+      ],
+      "smoke_commands": [
+        "npm run objc3c -- check-showcase-surface --example patchKit",
+        "npm run objc3c -- validate-showcase",
+        "npm run objc3c -- validate-runnable-showcase"
+      ]
+    }
+  ]
+}

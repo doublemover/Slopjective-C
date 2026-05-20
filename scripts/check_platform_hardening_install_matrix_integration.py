@@ -31,6 +31,50 @@ def run(command: list[str]) -> None:
         raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
 
 
+def summary_is_pass(path) -> bool:
+    return path.is_file() and summary_passes(load_json_object(path))
+
+
+def missing_input_paths(paths) -> list[str]:
+    return [repo_rel(path) for path in paths if not path.is_file()]
+
+
+def ensure_build_package_validation() -> dict[str, object]:
+    owned_inputs = (
+        SUPPORT_MATRIX_ARTIFACT_PATH,
+        BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+        PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+    )
+    missing = missing_input_paths(owned_inputs)
+    if missing or not summary_is_pass(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH):
+        run(python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT))
+        return {
+            "step": "build-package-validation",
+            "status": "ran",
+            "missing_inputs_before_run": missing,
+        }
+    return {
+        "step": "build-package-validation",
+        "status": "reused",
+        "summary": repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
+    }
+
+
+def ensure_toolchain_range_replay() -> dict[str, object]:
+    if not summary_is_pass(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH):
+        run(python_script_command(TOOLCHAIN_RANGE_REPLAY_SCRIPT))
+        return {
+            "step": "toolchain-range-replay",
+            "status": "ran",
+            "summary": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
+        }
+    return {
+        "step": "toolchain-range-replay",
+        "status": "reused",
+        "summary": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
+    }
+
+
 def main() -> int:
     contract = load_json_object(INSTALL_MATRIX_INTEGRATION_CONTRACT_PATH)
     owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform install matrix integration contract")
@@ -39,8 +83,10 @@ def main() -> int:
         surface_name="platform install matrix integration contract",
         required_blockers=("install matrix validation lost rollback evidence",),
     )
-    run(python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT))
-    run(python_script_command(TOOLCHAIN_RANGE_REPLAY_SCRIPT))
+    upstream_steps = [
+        ensure_build_package_validation(),
+        ensure_toolchain_range_replay(),
+    ]
     require_paths_exist((ROOT / raw_path for raw_path in contract["required_inputs"]), description="install-matrix input")
 
     matrix = load_json_object(SUPPORT_MATRIX_ARTIFACT_PATH)
@@ -69,6 +115,7 @@ def main() -> int:
         "build_package_validation_summary": repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
         "toolchain_range_replay_summary": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
         "packaging_end_to_end_summary": repo_rel(PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH),
+        "upstream_steps": upstream_steps,
         "required_checks": contract["required_checks"],
         "checks": checks,
     }

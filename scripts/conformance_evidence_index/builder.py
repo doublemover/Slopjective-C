@@ -12,6 +12,7 @@ from conformance_evidence_index.constants import (
     GENERATOR_PATH,
     INDEX_VERSION,
     SCHEMA_ID,
+    SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
 )
 from conformance_evidence_index.manifest import infer_profile_release
 from conformance_evidence_index.model import ArtifactRecord
@@ -20,6 +21,7 @@ from conformance_evidence_index.paths import (
     file_sha256,
     load_json_object,
     normalize_repo_path,
+    resolve_repo_path,
 )
 
 
@@ -147,6 +149,25 @@ def build_index_payload(
 ) -> dict[str, Any]:
     profiles = build_profiles_index(records)
     releases = build_releases_index(records)
+    support_claim_catalog_path = resolve_repo_path(SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG)
+    support_claim_traceability: dict[str, Any] | None = None
+    if support_claim_catalog_path.is_file():
+        support_claim_catalog = load_json_object(support_claim_catalog_path)
+        support_claim_rows = support_claim_catalog.get("rows", [])
+        if not isinstance(support_claim_rows, list):
+            support_claim_rows = []
+        support_claim_traceability = {
+            "catalog_path": normalize_repo_path(support_claim_catalog_path),
+            "contract_id": support_claim_catalog.get("contract_id"),
+            "row_count": len(support_claim_rows),
+            "support_claims": sorted(
+                {
+                    row["support_claim"]
+                    for row in support_claim_rows
+                    if isinstance(row, dict) and isinstance(row.get("support_claim"), str)
+                }
+            ),
+        }
     payload = {
         "schema_id": SCHEMA_ID,
         "index_version": INDEX_VERSION,
@@ -159,6 +180,7 @@ def build_index_payload(
         "artifacts": [record.as_dict() for record in records],
         "profiles": profiles,
         "releases": releases,
+        "support_claim_traceability": support_claim_traceability,
     }
     if output_path is not None:
         output_rel = normalize_repo_path(output_path)

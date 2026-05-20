@@ -13,6 +13,7 @@ def render_markdown(summary: dict) -> str:
         f"- Negative fail-closed fixtures: `{counts['negative_fixture_count']}`",
         f"- Private runtime helper symbols: `{counts['runtime_helper_symbol_count']}`",
         f"- Durable replay fixture directories: `{counts['durable_replay_fixture_dir_count']}`",
+        f"- Report output: `{summary['report_directory']}` (not source truth)",
         f"- Scratch output: `{summary['scratch_directory']}` (not source truth)",
         "",
         "## Checks",
@@ -23,6 +24,10 @@ def render_markdown(summary: dict) -> str:
     lines.extend(["", "## Fixture Coverage", ""])
     for name, item in summary["positive_compile"].items():
         lines.append(f"- `{name}`: `{item['fixture']}` compiled=`{str(item['compiled']).lower()}`")
+        for token, present in item["ir_call_tokens"].items():
+            lines.append(f"  - ir_call `{token}`: `{str(present).lower()}`")
+        for check, present in item["runtime_import_surface"].items():
+            lines.append(f"  - runtime_import `{check}`: `{str(present).lower()}`")
     for name, item in summary["negative_compile"].items():
         lines.append(
             f"- `{name}`: `{item['fixture']}` rejected=`{str(item['rejected']).lower()}` "

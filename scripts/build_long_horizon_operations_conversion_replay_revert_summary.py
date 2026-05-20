@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SEMANTICS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "conversion_replay_revert_support_window_semantics.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
-UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "conversion-replay-revert-support-window-summary.json"
 

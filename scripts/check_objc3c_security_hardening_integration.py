@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
@@ -16,16 +16,20 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-security-hardening.json"
 RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
+SANITIZER_VALIDATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "sanitizer-validation-summary.json"
+LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "language-runtime-threat-model-summary.json"
 POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publication-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "integration-summary.json"
 
 REQUIRED_STEPS = [
-    "check-security-response-drill",
-    "check-security-runtime-hardening",
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-runtime-hardening",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "build-security-posture",
+    "check-security-response-drill",
     "publish-security-advisories",
 ]
 
@@ -33,17 +37,7 @@ REQUIRED_STEPS = [
 
 
 def ensure_workflow_report() -> dict[str, Any]:
-    completed = subprocess.run(
-        public_workflow_command("validate-security-hardening"),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_capture(public_workflow_command("validate-security-hardening"), cwd=ROOT)
     if completed.returncode != 0:
         raise RuntimeError("validate-security-hardening command failed during integration validation")
     return load_json(WORKFLOW_REPORT)
@@ -68,13 +62,22 @@ def main() -> int:
         )
         return 1
 
-    for path in (RESPONSE_DRILL_SUMMARY, RUNTIME_HARDENING_SUMMARY, POSTURE_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (
+        RESPONSE_DRILL_SUMMARY,
+        RUNTIME_HARDENING_SUMMARY,
+        SANITIZER_VALIDATION_SUMMARY,
+        LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
+        POSTURE_SUMMARY,
+        PUBLICATION_SUMMARY,
+    ):
         if not path.is_file():
             print(f"objc3c-security-hardening-integration: FAIL\n- missing {repo_rel(path)}", file=sys.stderr)
             return 1
 
     response_drill = load_json(RESPONSE_DRILL_SUMMARY)
     runtime_hardening = load_json(RUNTIME_HARDENING_SUMMARY)
+    sanitizer_validation = load_json(SANITIZER_VALIDATION_SUMMARY)
+    language_runtime_threat_model = load_json(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY)
     posture = load_json(POSTURE_SUMMARY)
     publication = load_json(PUBLICATION_SUMMARY)
     if response_drill.get("status") != "PASS":
@@ -82,6 +85,12 @@ def main() -> int:
         return 1
     if runtime_hardening.get("status") != "PASS":
         print("objc3c-security-hardening-integration: FAIL\n- runtime hardening did not pass", file=sys.stderr)
+        return 1
+    if sanitizer_validation.get("status") != "PASS":
+        print("objc3c-security-hardening-integration: FAIL\n- sanitizer validation did not pass", file=sys.stderr)
+        return 1
+    if language_runtime_threat_model.get("status") != "PASS":
+        print("objc3c-security-hardening-integration: FAIL\n- language/runtime threat model did not pass", file=sys.stderr)
         return 1
     if posture.get("status") != "PASS" or publication.get("status") != "PASS":
         print("objc3c-security-hardening-integration: FAIL\n- publication artifacts did not pass", file=sys.stderr)
@@ -97,11 +106,15 @@ def main() -> int:
         "validated_steps": REQUIRED_STEPS,
         "response_drill_summary_path": repo_rel(RESPONSE_DRILL_SUMMARY),
         "runtime_hardening_summary_path": repo_rel(RUNTIME_HARDENING_SUMMARY),
+        "sanitizer_validation_summary_path": repo_rel(SANITIZER_VALIDATION_SUMMARY),
+        "language_runtime_threat_model_summary_path": repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
         "posture_summary_path": repo_rel(POSTURE_SUMMARY),
         "publication_summary_path": repo_rel(PUBLICATION_SUMMARY),
         "security_state": publication.get("security_state"),
         "response_trust_state": response_drill.get("trust_state"),
         "runtime_memory_safety_boundary": runtime_hardening.get("memory_safety_boundary"),
+        "sanitizer_coverage_matrix": sanitizer_validation.get("coverage_matrix"),
+        "language_runtime_threat_count": language_runtime_threat_model.get("threat_count"),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, payload)

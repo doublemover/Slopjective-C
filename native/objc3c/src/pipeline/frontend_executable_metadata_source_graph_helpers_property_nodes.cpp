@@ -37,6 +37,8 @@ void AddExecutableMetadataPropertyNodes(
     node.executable_synthesized_binding_symbol =
         property.executable_synthesized_binding_symbol;
     node.property_attribute_profile = property.property_attribute_profile;
+    node.property_behavior_declared = property.property_behavior_declared;
+    node.property_behavior_name = property.property_behavior_name;
     node.ownership_lifetime_profile = property.ownership_lifetime_profile;
     node.ownership_runtime_hook_profile =
         property.ownership_runtime_hook_profile;

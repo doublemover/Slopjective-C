@@ -16,7 +16,10 @@ from objc3c_runtime_acceptance.domains.block_arc_runtime_block_assertions import
     assert_byref_forwarding_probe_payload,
     assert_byref_runtime_fixture,
     assert_nonowning_runtime_fixture,
+    assert_owned_capture_lifetime_probe_payload,
     assert_owned_runtime_fixture,
+    byref_forwarding_probe_summary,
+    owned_capture_lifetime_probe_summary,
 )
 from objc3c_runtime_acceptance.domains.block_arc_runtime_shared import (
     block_copy_dispose_surface,
@@ -26,6 +29,7 @@ from objc3c_runtime_acceptance.domains.block_arc_runtime_shared import (
     runtime_probe,
     sema_pass_manager,
 )
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
 
 
 def check_block_helper_runtime_execution_case(
@@ -66,6 +70,19 @@ def check_block_helper_runtime_execution_case(
         and copy_dispose_payload.get("invoke_after_release_result") == 0,
         "expected block runtime copy/dispose invoke probe to preserve promoted pointer capture lifetime and reject stale post-release invocation",
     )
+
+    owned_capture_fixture_obj, _, _ = compile_fixture_outputs(
+        native_fixture("ownership_runtime_hook_emission_positive.objc3"),
+        case_dir / "owned-capture-runtime-fixture",
+    )
+    owned_capture_lifetime_payload = compile_run_json_probe(
+        clangxx,
+        runtime_probe("block_runtime_owned_capture_lifetime_probe.cpp"),
+        case_dir / "block_runtime_owned_capture_lifetime_probe.exe",
+        "block runtime owned capture lifetime probe",
+        link_inputs=[owned_capture_fixture_obj],
+    )
+    assert_owned_capture_lifetime_probe_payload(owned_capture_lifetime_payload)
 
     owned = compile_link_run_fixture(
         clangxx,
@@ -151,13 +168,7 @@ def check_block_helper_runtime_execution_case(
             "arc_inference_runtime_exit_code": arc_inference.returncode,
             "arc_cleanup_scope_runtime_exit_code": arc_cleanup_scope.returncode,
             "arc_implicit_cleanup_runtime_exit_code": arc_implicit_cleanup.returncode,
-            "byref_forwarding_probe_handle": byref_forwarding_payload.get("handle"),
-            "byref_forwarding_first_invoke_result": byref_forwarding_payload.get(
-                "first_invoke_result"
-            ),
-            "byref_forwarding_second_invoke_result": byref_forwarding_payload.get(
-                "second_invoke_result"
-            ),
+            **byref_forwarding_probe_summary(byref_forwarding_payload),
             "copy_dispose_probe_copy_count_after_promotion": copy_dispose_payload.get(
                 "copy_count_after_promotion"
             ),
@@ -169,6 +180,9 @@ def check_block_helper_runtime_execution_case(
             ),
             "copy_dispose_probe_post_release_callback_count": (
                 copy_dispose_payload.get("post_release_callback_count")
+            ),
+            **owned_capture_lifetime_probe_summary(
+                owned_capture_lifetime_payload
             ),
             "byref_copy_helper_required_sites": byref_copy_dispose_surface.get(
                 "copy_helper_required_sites"

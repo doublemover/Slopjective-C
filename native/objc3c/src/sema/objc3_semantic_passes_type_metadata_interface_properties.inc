@@ -78,6 +78,10 @@
       // than reconstructing ownership out of source text or manifests.
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
+      property_metadata.property_behavior_declared =
+          source.property_behavior_declared;
+      property_metadata.property_behavior_name =
+          source.property_behavior_name;
       // synthesized accessor/property lowering anchor: sema remains
       // the only authority for effective accessor selectors and synthesized
       // binding identities that lane-C may turn into executable bodies.

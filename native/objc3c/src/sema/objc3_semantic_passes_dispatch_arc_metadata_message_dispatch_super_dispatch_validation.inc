@@ -12,7 +12,9 @@ static Objc3SuperDispatchMethodFamilySummary BuildSuperDispatchMethodFamilySumma
     if (site.super_dispatch_requires_class_context) {
       ++summary.super_dispatch_requires_class_context_sites;
     }
-    if (site.method_family_name == "init") {
+    if (site.method_family_name == "alloc") {
+      ++summary.method_family_alloc_sites;
+    } else if (site.method_family_name == "init") {
       ++summary.method_family_init_sites;
     } else if (site.method_family_name == "copy") {
       ++summary.method_family_copy_sites;
@@ -46,7 +48,7 @@ static Objc3SuperDispatchMethodFamilySummary BuildSuperDispatchMethodFamilySumma
       contract_violation = true;
     }
     const bool retained_family =
-        site.method_family_name == "init" || site.method_family_name == "copy" ||
+        site.method_family_name == "alloc" || site.method_family_name == "init" || site.method_family_name == "copy" ||
         site.method_family_name == "mutableCopy" || site.method_family_name == "new";
     if (site.method_family_returns_retained_result != retained_family) {
       contract_violation = true;
@@ -60,7 +62,7 @@ static Objc3SuperDispatchMethodFamilySummary BuildSuperDispatchMethodFamilySumma
       summary.deterministic &&
       summary.receiver_super_identifier_sites == summary.super_dispatch_enabled_sites &&
       summary.super_dispatch_requires_class_context_sites == summary.super_dispatch_enabled_sites &&
-      summary.method_family_init_sites + summary.method_family_copy_sites + summary.method_family_mutable_copy_sites +
+      summary.method_family_alloc_sites + summary.method_family_init_sites + summary.method_family_copy_sites + summary.method_family_mutable_copy_sites +
               summary.method_family_new_sites + summary.method_family_none_sites ==
           summary.message_send_sites &&
       summary.method_family_returns_related_result_sites <= summary.method_family_init_sites &&

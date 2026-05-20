@@ -14,6 +14,11 @@ RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
   return state.has_testing_frame ? &state.testing_frame : nullptr;
 }
 
+int CurrentRuntimeDispatchReceiverI32() {
+  RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  return frame != nullptr ? frame->receiver : 0;
+}
+
 void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
                               const RealizedPropertyAccessor *accessor) {
   RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
@@ -75,3 +80,7 @@ bool EnqueueRuntimeDispatchFrameAutoreleaseValue(int value) {
 }
 
 }  // namespace objc3c::runtime
+
+extern "C" int objc3_runtime_current_dispatch_receiver_i32(void) {
+  return objc3c::runtime::CurrentRuntimeDispatchReceiverI32();
+}

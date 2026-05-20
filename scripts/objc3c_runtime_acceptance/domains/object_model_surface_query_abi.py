@@ -64,6 +64,7 @@ def build_runtime_object_model_abi_query_surface(
         "private_object_model_query_boundary": [
             "objc3_runtime_copy_realized_class_graph_state_for_testing",
             "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_instance_entry_for_testing",
             "objc3_runtime_copy_property_registry_state_for_testing",
             "objc3_runtime_copy_property_entry_for_testing",
             "objc3_runtime_copy_protocol_conformance_query_for_testing",

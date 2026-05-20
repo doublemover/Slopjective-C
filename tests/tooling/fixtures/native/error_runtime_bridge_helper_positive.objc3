@@ -32,7 +32,10 @@ fn main() -> i32 {
     return bridged;
   } catch (NSError* error) {
     let second = try? bridgeNSError(3, 77);
-    return direct + error + second;
+    if (second) {
+      return direct + error + 1;
+    }
+    return direct + error;
   } catch {
     return 0;
   }

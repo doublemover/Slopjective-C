@@ -1,0 +1,12 @@
+module m8035_arc_autoreleasepool_destruction_order_positive;
+
+fn helper(value: id) -> i32 {
+  @autoreleasepool {
+    let closure = ^() { return value; };
+    return closure();
+  }
+}
+
+fn main() -> i32 {
+  return helper(9);
+}

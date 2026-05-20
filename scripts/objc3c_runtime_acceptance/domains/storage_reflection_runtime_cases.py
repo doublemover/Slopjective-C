@@ -11,12 +11,14 @@ from objc3c_runtime_acceptance.domains.storage_reflection_runtime_layout_cases i
 )
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_property_cases import (
     check_property_execution_case,
+    check_property_invalid_layout_runtime_case,
     check_property_reflection_case,
     check_storage_ownership_reflection_case,
 )
 
 _EXPORTED_CASE_NAMES = [
     "check_property_reflection_case",
+    "check_property_invalid_layout_runtime_case",
     "check_property_execution_case",
     "check_storage_ownership_reflection_case",
     "check_synthesized_accessor_runtime_case",

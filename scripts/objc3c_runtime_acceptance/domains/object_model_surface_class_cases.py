@@ -42,6 +42,7 @@ def build_runtime_class_metaclass_protocol_realization_surface(
             "imported-runtime-packaging-replay",
             "canonical-dispatch",
             "metaclass-graph-root-class",
+            "runtime-object-foundation-protocol-category",
         }
     ]
     return {
@@ -79,11 +80,13 @@ def build_runtime_class_metaclass_protocol_realization_surface(
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3",
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -101,6 +104,7 @@ def build_runtime_category_attachment_merged_dispatch_surface(
             "imported-runtime-packaging-replay",
             "canonical-dispatch",
             "canonical-sample-set",
+            "runtime-object-foundation-protocol-category",
         }
     ]
     return {
@@ -140,11 +144,14 @@ def build_runtime_category_attachment_merged_dispatch_surface(
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+            "tests/tooling/fixtures/native/category_attachment_collision.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,

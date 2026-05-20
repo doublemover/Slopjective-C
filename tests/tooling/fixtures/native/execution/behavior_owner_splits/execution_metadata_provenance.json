@@ -14,6 +14,7 @@
     "meta fields:fixture",
     "meta fields:execution.requires_live_runtime_dispatch",
     "meta fields:execution.runtime_dispatch_symbol",
+    "meta fields:execution.runtime_dispatch_symbols",
     "meta fields:execution.native_compile_args",
     "meta fields:expect_failure.stage",
     "meta fields:expect_failure.required_diagnostic_tokens",

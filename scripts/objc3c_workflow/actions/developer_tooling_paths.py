@@ -14,6 +14,10 @@ RUNNABLE_DEVELOPER_TOOLING_E2E_PY = (
 )
 EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
 FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
+REWRITE_OBJC3C_SOURCE_PY = ROOT / "scripts" / "rewrite_objc3c_source.py"
+CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY = (
+    ROOT / "scripts" / "check_developer_tooling_diagnostic_quality.py"
+)
 BONUS_EXPERIENCE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 )

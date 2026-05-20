@@ -9,7 +9,8 @@ void ApplyFrontendCApiRunnerCompilePathInputOptions(
     objc3c_frontend_c_compile_options_t &compile_options,
     const FrontendCApiRunnerOptions &runner_options,
     const std::string &input_path_text,
-    const std::string &out_dir_text);
+    const std::string &out_dir_text,
+    const std::string &metaprogramming_cache_root_text);
 
 void ApplyFrontendCApiRunnerCompileBackendToolchainOptions(
     objc3c_frontend_c_compile_options_t &compile_options,

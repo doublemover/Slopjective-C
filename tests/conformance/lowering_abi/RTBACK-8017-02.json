@@ -14,11 +14,17 @@
     "scripts/build_objc3c_runtime_backed_semantics_closure.py",
     "tests/tooling/fixtures/native/escaping_block_with_handoff_rejected.objc3",
     "tests/tooling/fixtures/native/throw_requires_throws_or_catch_negative.objc3",
+    "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3",
+    "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
     "tests/tooling/fixtures/native/task_group_without_scope_rejected.objc3",
-    "tests/tooling/fixtures/native/actor_hop_without_async_rejected.objc3"
+    "tests/tooling/fixtures/native/actor_hop_without_async_rejected.objc3",
+    "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+    "tests/tooling/fixtures/native/non_actor_non_sendable_crossing_rejected.objc3",
+    "tests/tooling/fixtures/native/non_actor_actor_isolated_body_rejected.objc3",
+    "tests/tooling/fixtures/native/nonisolated_actor_isolated_body_rejected.objc3"
   ],
   "implementation_anchor": "scripts/build_objc3c_runtime_backed_semantics_closure.py --check",
-  "source": "// IMPLEMENTATION-ANCHOR: scripts/build_objc3c_runtime_backed_semantics_closure.py --check\n// Negative matrix: escaping block with actor handoff -> O3S294, throw without throws/catch -> O3S274, task group operation outside scope -> O3S228, actor hop outside async actor method -> O3S289\n",
+  "source": "// IMPLEMENTATION-ANCHOR: scripts/build_objc3c_runtime_backed_semantics_closure.py --check\n// Negative matrix: escaping block with actor handoff -> O3S294, throw without throws/local handler -> O3S274, catch-body rethrow without throws/local handler -> O3S284, throwing call without try -> O3S341, task group operation outside scope -> O3S228, actor hop outside async actor method -> O3S289, non-actor actor hop -> O3S342, non-actor non-sendable crossing -> O3S343, non-actor actor-isolated body site -> O3S344, objc_nonisolated actor method actor-isolated body site -> O3S345\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [
@@ -30,7 +36,17 @@
       {
         "code": "O3S274",
         "severity": "error",
-        "message": "throw statements require a throws function or a catch body"
+        "message": "throw statements require a throws function or an enclosing do/catch handler"
+      },
+      {
+        "code": "O3S284",
+        "severity": "error",
+        "message": "rethrow from catch requires a throws function or an enclosing do/catch handler"
+      },
+      {
+        "code": "O3S341",
+        "severity": "error",
+        "message": "throwing function 'risky' must be called with try, try?, or try!"
       },
       {
         "code": "O3S228",
@@ -41,6 +57,26 @@
         "code": "O3S289",
         "severity": "error",
         "message": "actor hop sites require an async actor method"
+      },
+      {
+        "code": "O3S342",
+        "severity": "error",
+        "message": "actor isolation semantics failed: actor hop sites are only valid in actor methods"
+      },
+      {
+        "code": "O3S343",
+        "severity": "error",
+        "message": "actor sendability semantics failed: non-sendable cross-actor crossings require an actor isolation context"
+      },
+      {
+        "code": "O3S344",
+        "severity": "error",
+        "message": "actor isolation semantics failed: actor-isolated body sites are only valid in actor methods"
+      },
+      {
+        "code": "O3S345",
+        "severity": "error",
+        "message": "actor isolation semantics failed: objc_nonisolated actor methods cannot access actor-isolated body sites"
       }
     ],
     "lowering": {
@@ -54,15 +90,21 @@
           ],
           "abi_requirements": [
             "Unsupported escaping block plus task-handoff combinations fail closed before a runtime-backed block support claim can be widened",
-            "Throw statements outside throws/catch contexts fail closed before error-out/runtime bridge lowering claims execution support",
+            "Throw statements outside throws/local-handler contexts fail closed before error-out/runtime bridge lowering claims execution support",
+            "Catch-body rethrows outside throws/local-handler contexts fail closed before error-out/runtime bridge lowering claims execution support",
+            "Throwing calls outside try operators fail closed before error-out/runtime bridge lowering claims execution support",
             "Task-group operations outside a same-function task-group scope fail closed before task runtime helper declarations are treated as runnable semantics",
-            "Actor hop sites outside async actor methods fail closed before actor mailbox/executor helper declarations are treated as runnable isolation semantics"
+            "Actor hop sites outside async actor methods fail closed before actor mailbox/executor helper declarations are treated as runnable isolation semantics",
+            "Actor hop sites in non-actor methods fail closed before actor mailbox/executor helper declarations are treated as runnable isolation semantics",
+            "Non-sendable cross-actor crossings in non-actor methods fail closed before actor sendability helper declarations are treated as runnable isolation semantics",
+            "Actor-isolated body sites in non-actor methods fail closed before actor isolation helper declarations are treated as runnable isolation semantics",
+            "Actor-isolated body sites in objc_nonisolated actor methods fail closed before nonisolated actor entry helper declarations are treated as runnable isolation semantics"
           ]
         }
       ],
       "negative_requirements": [
-        "The closure report must observe nonzero compiler exit codes for all four negative fixtures",
-        "The observed diagnostics must contain O3S294, O3S274, O3S228, and O3S289",
+        "The closure report must observe nonzero compiler exit codes for all ten negative fixtures",
+        "The observed diagnostics must contain O3S294, O3S274, O3S284, O3S341, O3S228, O3S289, O3S342, O3S343, O3S344, and O3S345",
         "No source-of-truth input, conformance fixture, or generated claimability report may live under tmp/",
         "tmp/artifacts may be used only as compiler scratch output regenerated by the runtime-backed semantics implementation anchor"
       ]

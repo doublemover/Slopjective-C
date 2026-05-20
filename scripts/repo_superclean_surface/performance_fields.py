@@ -42,6 +42,7 @@ PERFORMANCE_SURFACE_FIELDS = (
             "runbook": "docs/runbooks/objc3c_runtime_performance.md",
             "source_surface_contract": "tests/tooling/fixtures/runtime_performance/source_surface.json",
             "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+            "executable_fixture_manifest": "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
             "artifact_surface_contract": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
             "optimization_policy": "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
             "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",

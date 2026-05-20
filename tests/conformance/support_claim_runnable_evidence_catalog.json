@@ -1,0 +1,62 @@
+{
+  "contract_id": "objc3c.conformance.support_claim_runnable_evidence_catalog.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    8058,
+    8059
+  ],
+  "policy": {
+    "source_truth": "checked-in conformance rows, native fixtures, runtime probes, and canonical support manifests",
+    "generated_report_boundary": "tmp/reports/conformance/runnable-claim-trace-summary.json",
+    "tmp_source_truth_allowed": false,
+    "required_public_command_prefix": "npm run objc3c -- ",
+    "positive_negative_rule": "claim rows must carry at least one durable positive executable evidence path and at least one durable negative or strict-error evidence path"
+  },
+  "rows": [
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "capability_id": "runtime.object-model.interface-method-table",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+      "traceability_fixture": "tests/conformance/lowering_abi/OBJFND-8059-01.json",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance-fast",
+      "runtime_acceptance_case": "runtime-object-foundation-protocol-category",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_method.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_property.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_merge_missing_pair.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_unknown_class_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_unavailable_class_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_requirement_duplicate_conflict_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_requirement_inherited_conflict_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_dispatch_intent_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_method_dispatch_intent_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_container_dispatch_intent_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/duplicate_protocol_runtime_export.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S200",
+        "O3S218",
+        "O3S219",
+        "O3S314",
+        "O3S315",
+        "O3S316",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "The support claim remains the narrow interface method-table row in docs/support/capability_matrix.json",
+        "OBJFND-8058-01 carries the positive runtime acceptance mapping",
+        "OBJFND-8059-01 carries the negative diagnostic and malformed metadata mapping",
+        "tmp artifacts are compiler scratch or generated summaries only"
+      ]
+    }
+  ]
+}

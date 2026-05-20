@@ -23,6 +23,9 @@ def assert_block_arc_automation_artifacts(
     _assert_arc_inference_surfaces(artifacts)
     _assert_arc_cleanup_surfaces(artifacts)
     _assert_arc_autorelease_return_surfaces(artifacts)
+    _assert_arc_method_family_surfaces(artifacts)
+    _assert_arc_autoreleasepool_destruction_order_surfaces(artifacts)
+    _assert_arc_weak_autoreleasepool_surfaces(artifacts)
 
 
 def _assert_owned_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> None:
@@ -66,6 +69,18 @@ def _assert_owned_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> No
         "contract=objc3c.runtime.block.allocation.copy.dispose.invoke.support.v1"
         in artifacts.owned_ll,
         "expected owned object capture fixture LLVM IR to publish the block allocation/copy/dispose/invoke support surface",
+    )
+    expect(
+        "@__objc3_block_desc_" in artifacts.owned_ll
+        and " = internal constant { i64, i64, i32, i32, i32, ptr }"
+        in artifacts.owned_ll
+        and ", ptr @__objc3_block_invoke_" in artifacts.owned_ll,
+        "expected owned object capture fixture LLVM IR to emit concrete block descriptors that own invoke thunks",
+    )
+    expect(
+        "getelementptr inbounds { i64, i64, i32, i32, i32, ptr }"
+        in artifacts.owned_ll,
+        "expected owned object capture fixture LLVM IR to load invoke thunks through block descriptors",
     )
 
 
@@ -196,6 +211,159 @@ def _assert_arc_autorelease_return_surfaces(
         in artifacts.arc_autorelease_return_ll,
         "expected ARC autorelease-return fixture LLVM IR to publish the ARC block/autorelease-return lowering summary",
     )
+
+
+def _assert_arc_method_family_surfaces(
+    artifacts: BlockArcAutomationArtifacts,
+) -> None:
+    expect(
+        artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_alloc_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_new_sites"
+        )
+        == 3
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_init_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_copy_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_mutable_copy_sites"
+        )
+        == 1
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_none_sites"
+        )
+        == 4,
+        "expected ARC method-family fixture to classify alloc/new/init/copy/mutableCopy and near-miss selectors deterministically",
+    )
+    expect(
+        artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_returns_retained_result_sites"
+        )
+        == 10
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_returns_related_result_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_contract_violation_sites"
+        )
+        == 0,
+        "expected ARC method-family fixture to publish retained/related result counts without contract violations",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = alloc"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = new"
+        )
+        == 3
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = init"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = copy"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = mutableCopy"
+        )
+        == 1,
+        "expected ARC method-family fixture LLVM IR to mark exact retained-result cleanup counts for every retained family",
+    )
+    expect(
+        "objc3_arc_method_family_related_result_consumes_receiver_cleanup = init"
+        in artifacts.arc_method_family_ll,
+        "expected ARC method-family init chain to consume the pending owned receiver cleanup",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count(
+            "store i32 0, ptr %objc3.arc.methodfamily.result.addr."
+        )
+        >= 10,
+        "expected ARC method-family cleanup slots to be initialized before branch-local stores",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count("objc3_runtime_release_i32") >= 10,
+        "expected ARC method-family retained message results to lower to release helper traffic",
+    )
+
+
+def _assert_arc_autoreleasepool_destruction_order_surfaces(
+    artifacts: BlockArcAutomationArtifacts,
+) -> None:
+    expect(
+        artifacts.arc_autoreleasepool_order_sema.get(
+            "autoreleasepool_scope_lowering_scope_sites"
+        )
+        == 1
+        and artifacts.arc_autoreleasepool_order_sema.get(
+            "autoreleasepool_scope_lowering_scope_entry_transition_sites"
+        )
+        == 1
+        and artifacts.arc_autoreleasepool_order_sema.get(
+            "autoreleasepool_scope_lowering_scope_exit_transition_sites"
+        )
+        == 1,
+        "expected destruction-order fixture to publish one deterministic autoreleasepool scope",
+    )
+    ll = artifacts.arc_autoreleasepool_order_ll
+    push_index = ll.find("call void @objc3_runtime_push_autoreleasepool_scope")
+    release_index = ll.find("call i32 @objc3_runtime_release_i32")
+    pop_index = ll.find("call void @objc3_runtime_pop_autoreleasepool_scope")
+    expect(
+        push_index >= 0 and release_index >= 0 and pop_index >= 0,
+        "expected destruction-order fixture LLVM IR to contain push, ARC release, and pop helper calls",
+    )
+    expect(
+        push_index < release_index < pop_index,
+        "expected terminal ARC cleanup to release owned storage before draining the autoreleasepool",
+    )
+
+
+def _assert_arc_weak_autoreleasepool_surfaces(
+    artifacts: BlockArcAutomationArtifacts,
+) -> None:
+    expect(
+        artifacts.arc_weak_autoreleasepool_sema.get(
+            "autoreleasepool_scope_lowering_scope_sites"
+        )
+        == 2
+        and artifacts.arc_weak_autoreleasepool_sema.get(
+            "autoreleasepool_scope_lowering_scope_entry_transition_sites"
+        )
+        == 2
+        and artifacts.arc_weak_autoreleasepool_sema.get(
+            "autoreleasepool_scope_lowering_scope_exit_transition_sites"
+        )
+        == 2
+        and artifacts.arc_weak_autoreleasepool_sema.get(
+            "autoreleasepool_scope_lowering_max_scope_depth"
+        )
+        == 2,
+        "expected weak/autoreleasepool fixture to publish two nested autoreleasepool scopes",
+    )
+    ll = artifacts.arc_weak_autoreleasepool_ll
+    for helper in (
+        "objc3_runtime_store_weak_current_property_i32",
+        "objc3_runtime_load_weak_current_property_i32",
+        "objc3_runtime_push_autoreleasepool_scope",
+        "objc3_runtime_pop_autoreleasepool_scope",
+    ):
+        expect(
+            helper in ll,
+            f"expected weak/autoreleasepool fixture LLVM IR to reference {helper}",
+        )
 
 
 def _expect_arc_cleanup_counts(surface: ManifestSurface, message: str) -> None:

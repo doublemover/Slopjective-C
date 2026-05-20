@@ -26,10 +26,6 @@ inline constexpr std::uint64_t kObjc3RuntimeRegistrationTableAbiVersion = 2;
 inline constexpr std::uint64_t kObjc3RuntimeRegistrationTablePointerFieldCount =
     12;
 
-inline bool RuntimeRetiredRoutePathsAreAllowed() {
-  return false;
-}
-
 inline bool RuntimeOwnerSplitContractIsReady() {
   return kObjc3RuntimeOwnerSplitContractId[0] != '\0' &&
          kObjc3RuntimeMetadataModelOwner[0] != '\0' &&
@@ -41,8 +37,7 @@ inline bool RuntimeOwnerSplitContractIsReady() {
          kObjc3RuntimePublicDispatchDiagnosticsOwner[0] != '\0' &&
          kObjc3RuntimeFailClosedOwnershipModel[0] != '\0' &&
          kObjc3RuntimeRegistrationTableAbiVersion == 2 &&
-         kObjc3RuntimeRegistrationTablePointerFieldCount == 12 &&
-         !RuntimeRetiredRoutePathsAreAllowed();
+         kObjc3RuntimeRegistrationTablePointerFieldCount == 12;
 }
 
 }  // namespace objc3c::runtime

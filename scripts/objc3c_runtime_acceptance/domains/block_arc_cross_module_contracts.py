@@ -20,10 +20,21 @@ BLOCK_ESCAPE_RUNTIME_HOOK_LOWERING_CONTRACT_ID = (
 RUNTIME_SUPPORT_LIBRARY_LINK_WIRING_CONTRACT_ID = (
     "objc3c.runtime.support.library.link.wiring.v1"
 )
+RETAIN_RELEASE_OPERATION_LOWERING_CONTRACT_ID = (
+    "objc3c.retain.release.operation.lowering.v1"
+)
+AUTORELEASEPOOL_SCOPE_LOWERING_CONTRACT_ID = (
+    "objc3c.autoreleasepool.scope.lowering.v1"
+)
+BLOCK_OWNERSHIP_SOURCE_MODEL = (
+    "runtime-block-lowering-helper-surfaces-preserve-invoke-thunk-byref-"
+    "copy-dispose-escape-runtime-link-and-arc-cleanup-facts-for-separate-"
+    "compilation"
+)
 BLOCK_OWNERSHIP_PRESERVATION_MODEL = (
     "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-"
-    "preserve-block-ownership-lowering-helper-and-runtime-link-facts-beyond-local-"
-    "ir-object-emission"
+    "preserve-block-ownership-lowering-helper-runtime-link-and-arc-cleanup-"
+    "facts-beyond-local-ir-object-emission"
 )
 
 PROVIDER_BLOCK_OWNERSHIP_FIELDS = {
@@ -33,9 +44,11 @@ PROVIDER_BLOCK_OWNERSHIP_FIELDS = {
     "block_byref_helper_lowering_contract_id": BLOCK_BYREF_HELPER_LOWERING_CONTRACT_ID,
     "block_escape_runtime_hook_lowering_contract_id": BLOCK_ESCAPE_RUNTIME_HOOK_LOWERING_CONTRACT_ID,
     "runtime_support_library_link_wiring_contract_id": RUNTIME_SUPPORT_LIBRARY_LINK_WIRING_CONTRACT_ID,
+    "retain_release_operation_lowering_contract_id": RETAIN_RELEASE_OPERATION_LOWERING_CONTRACT_ID,
+    "autoreleasepool_scope_lowering_contract_id": AUTORELEASEPOOL_SCOPE_LOWERING_CONTRACT_ID,
     "surface_path": "frontend.pipeline.semantic_surface.objc_runtime_block_ownership_artifact_preservation",
     "import_artifact_member_name": "objc_runtime_block_ownership_artifact_preservation",
-    "source_model": "runtime-block-lowering-helper-surfaces-preserve-invoke-thunk-byref-copy-dispose-escape-and-runtime-link-facts-for-separate-compilation",
+    "source_model": BLOCK_OWNERSHIP_SOURCE_MODEL,
     "preservation_model": BLOCK_OWNERSHIP_PRESERVATION_MODEL,
     "fail_closed_model": "missing-or-drifted-block-ownership-preservation-packets-disable-cross-module-block-ownership-claims",
 }
@@ -77,6 +90,14 @@ LINK_PLAN_CONTRACT_FIELDS = (
         RUNTIME_SUPPORT_LIBRARY_LINK_WIRING_CONTRACT_ID,
     ),
     (
+        "block_retain_release_operation_lowering_contract_id",
+        RETAIN_RELEASE_OPERATION_LOWERING_CONTRACT_ID,
+    ),
+    (
+        "block_autoreleasepool_scope_lowering_contract_id",
+        AUTORELEASEPOOL_SCOPE_LOWERING_CONTRACT_ID,
+    ),
+    (
         "block_ownership_artifact_preservation_model",
         BLOCK_OWNERSHIP_PRESERVATION_MODEL,
     ),
@@ -87,6 +108,7 @@ IMPORTED_MODULE_FIELDS = (
     ("block_ownership_runtime_import_artifact_ready", True),
     ("block_ownership_separate_compilation_preservation_ready", True),
     ("block_ownership_runtime_support_library_link_wiring_ready", True),
+    ("block_ownership_arc_cleanup_preservation_ready", True),
     ("block_ownership_deterministic", True),
     (
         "block_ownership_contract_id",
@@ -111,6 +133,14 @@ IMPORTED_MODULE_FIELDS = (
     (
         "block_ownership_runtime_support_library_link_wiring_contract_id",
         RUNTIME_SUPPORT_LIBRARY_LINK_WIRING_CONTRACT_ID,
+    ),
+    (
+        "block_ownership_retain_release_operation_lowering_contract_id",
+        RETAIN_RELEASE_OPERATION_LOWERING_CONTRACT_ID,
+    ),
+    (
+        "block_ownership_autoreleasepool_scope_lowering_contract_id",
+        AUTORELEASEPOOL_SCOPE_LOWERING_CONTRACT_ID,
     ),
     ("block_ownership_local_block_literal_sites", 1),
     ("block_ownership_local_invoke_trampoline_symbolized_sites", 1),

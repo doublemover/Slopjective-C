@@ -8,9 +8,21 @@ namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
 
 struct CategoryAttachmentProtocolValues {
   int category_value = 0;
+  int category_cached_value = 0;
+  int auxiliary_category_value = 0;
+  int category_bool_value = 0;
   int class_value = 0;
+  int super_inherited_value = 0;
+  int super_cached_inherited_value = 0;
+  int nil_receiver_value = 0;
   int protocol_strict_error = 0;
   int protocol_strict_error_expected = 0;
+  objc3_runtime_dispatch_typed_result category_bool_typed_result{};
+  objc3_runtime_dispatch_i32_result super_inherited_i32_result{};
+  objc3_runtime_dispatch_i32_result nil_receiver_i32_result{};
+  objc3_runtime_dispatch_typed_result nil_receiver_typed_result{};
+  objc3_runtime_dispatch_i32_result protocol_strict_error_i32_result{};
+  objc3_runtime_dispatch_typed_result protocol_strict_error_typed_result{};
 };
 
 struct RealizedGraphStateObservation {
@@ -41,10 +53,20 @@ struct ProtocolConformanceObservation {
   std::string protocol_name;
   std::string protocol_owner;
   std::string attachment_owner;
+  std::string matched_class_name;
+  std::string matched_class_owner;
+  std::string failure_reason;
 };
 
 struct MethodCacheStateObservation {
   objc3_runtime_method_cache_state_snapshot state{};
+  std::string selector;
+  std::string class_name;
+  std::string owner;
+};
+
+struct MethodCacheEntryObservation {
+  objc3_runtime_method_cache_entry_snapshot entry{};
   std::string selector;
   std::string class_name;
   std::string owner;
@@ -58,7 +80,17 @@ struct CategoryAttachmentProtocolProbeRun {
   ProtocolConformanceObservation worker_query;
   ProtocolConformanceObservation tracer_query;
   ProtocolConformanceObservation base_worker_query;
+  ProtocolConformanceObservation derived_worker_query;
+  ProtocolConformanceObservation leaf_worker_query;
+  ProtocolConformanceObservation missing_protocol_query;
+  ProtocolConformanceObservation missing_class_query;
+  MethodCacheStateObservation category_first_state;
+  MethodCacheStateObservation category_second_state;
+  MethodCacheStateObservation super_first_state;
+  MethodCacheStateObservation super_second_state;
   MethodCacheStateObservation method_state;
+  MethodCacheEntryObservation category_entry;
+  MethodCacheEntryObservation strict_error_entry;
 };
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

@@ -1,0 +1,81 @@
+{
+  "contract_id": "objc3c.stdlib.compatibility_gates.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "module_inventory": "stdlib/module_inventory.json",
+  "package_surface": "stdlib/package_surface.json",
+  "semantic_policy": "stdlib/semantic_policy.json",
+  "stability_policy": "stdlib/stability_policy.json",
+  "stdlib_major_version": 1,
+  "abi_gate": {
+    "mode": "manifest-signature-exact-match",
+    "runtime_abi_source": "stdlib/modules/objc3.core/module.json#/runtime_abi",
+    "runtime_abi_signature_source": "stdlib/modules/objc3.core/module.json#/runtime_abi_signatures",
+    "public_export_signature_source": "stdlib/modules/objc3.core/module.json#/abi_signatures",
+    "runtime_contract_header": "native/objc3c/src/runtime/stdlib/core_runtime_contract.h",
+    "runtime_implementation": "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+    "drift_disposition": "fail-closed-before-package-claim"
+  },
+  "semantic_gate": {
+    "mode": "stdlib-v1-explicit-semantic-policy",
+    "semantic_policy_source": "stdlib/semantic_policy.json",
+    "required_semantics": [
+      "runtime_core_abi",
+      "capability_query_encoding",
+      "option_unwrap_or",
+      "string_view_length",
+      "string_view_prefix_units",
+      "array_count",
+      "array_prefix_count",
+      "map_entry_value_or"
+    ],
+    "capability_ordinals_present": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "capability_ordinals_fail_closed": [
+      0,
+      -1,
+      5,
+      99
+    ],
+    "strict_system_ordinal": 5,
+    "drift_disposition": "fail-closed-before-public-support-claim"
+  },
+  "package_gate": {
+    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+    "required_manifest_fields": [
+      "stdlib_compatibility_gates",
+      "stdlib_compatibility_gate_summary"
+    ],
+    "required_public_actions": [
+      "check-stdlib-surface",
+      "validate-stdlib-foundation",
+      "validate-runnable-stdlib-foundation",
+      "package-runnable-toolchain"
+    ],
+    "drift_disposition": "fail-closed-in-packaged-stdlib-validation"
+  },
+  "conformance_gate": {
+    "runtime_probe": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "positive_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+    "negative_fixture": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+    "positive_fixture_sidecar": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.meta.json",
+    "negative_fixture_sidecar": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.meta.json",
+    "required_commands": [
+      "npm run objc3c -- test-execution-smoke",
+      "npm run objc3c -- test-execution-replay",
+      "npm run objc3c -- validate-stdlib-foundation",
+      "npm run objc3c -- validate-runnable-stdlib-foundation"
+    ]
+  },
+  "unsupported_surfaces": [
+    "stdlib major-version compatibility shims",
+    "alternate stdlib import lanes",
+    "runtime helper signature aliases",
+    "strict-system capability widening into core profile",
+    "source-of-truth compatibility state under tmp"
+  ]
+}

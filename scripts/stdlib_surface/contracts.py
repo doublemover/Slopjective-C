@@ -23,6 +23,7 @@ def validate_document_headers(documents: StdlibSurfaceDocuments) -> str | None:
     core_architecture = documents.core_architecture
     advanced_architecture = documents.advanced_architecture
     semantic_policy = documents.semantic_policy
+    compatibility_gates = documents.compatibility_gates
     lowering_import_surface = documents.lowering_import_surface
 
     return _first_drift(
@@ -35,6 +36,7 @@ def validate_document_headers(documents: StdlibSurfaceDocuments) -> str | None:
             (workspace, "core_architecture", "stdlib/core_architecture.json", "workspace core_architecture path drifted"),
             (workspace, "advanced_architecture", "stdlib/advanced_architecture.json", "workspace advanced_architecture path drifted"),
             (workspace, "semantic_policy", "stdlib/semantic_policy.json", "workspace semantic_policy path drifted"),
+            (workspace, "compatibility_gates", "stdlib/compatibility_gates.json", "workspace compatibility_gates path drifted"),
             (workspace, "lowering_import_surface", "stdlib/lowering_import_surface.json", "workspace lowering_import_surface path drifted"),
             (workspace, "advanced_helper_package_surface", "stdlib/advanced_helper_package_surface.json", "workspace advanced_helper_package_surface path drifted"),
             (workspace, "program_surface", "stdlib/program_surface.json", "workspace program_surface path drifted"),
@@ -54,6 +56,7 @@ def validate_document_headers(documents: StdlibSurfaceDocuments) -> str | None:
             (package_surface, "core_architecture", "stdlib/core_architecture.json", "package surface core_architecture drifted"),
             (package_surface, "advanced_architecture", "stdlib/advanced_architecture.json", "package surface advanced_architecture drifted"),
             (package_surface, "semantic_policy", "stdlib/semantic_policy.json", "package surface semantic_policy drifted"),
+            (package_surface, "compatibility_gates", "stdlib/compatibility_gates.json", "package surface compatibility_gates drifted"),
             (package_surface, "lowering_import_surface", "stdlib/lowering_import_surface.json", "package surface lowering_import_surface drifted"),
             (package_surface, "advanced_helper_package_surface", "stdlib/advanced_helper_package_surface.json", "package surface advanced_helper_package_surface drifted"),
             (package_surface, "program_surface", "stdlib/program_surface.json", "package surface program_surface drifted"),
@@ -77,6 +80,13 @@ def validate_document_headers(documents: StdlibSurfaceDocuments) -> str | None:
             (semantic_policy, "workspace_contract", "stdlib/workspace.json", "semantic policy workspace_contract drifted"),
             (semantic_policy, "core_architecture", "stdlib/core_architecture.json", "semantic policy core_architecture drifted"),
             (semantic_policy, "advanced_architecture", "stdlib/advanced_architecture.json", "semantic policy advanced_architecture drifted"),
+            (compatibility_gates, "contract_id", "objc3c.stdlib.compatibility_gates.v1", "compatibility gate contract_id drifted"),
+            (compatibility_gates, "schema_version", 1, "compatibility gate schema_version drifted"),
+            (compatibility_gates, "workspace_contract", "stdlib/workspace.json", "compatibility gate workspace_contract drifted"),
+            (compatibility_gates, "module_inventory", "stdlib/module_inventory.json", "compatibility gate module_inventory drifted"),
+            (compatibility_gates, "package_surface", "stdlib/package_surface.json", "compatibility gate package_surface drifted"),
+            (compatibility_gates, "semantic_policy", "stdlib/semantic_policy.json", "compatibility gate semantic_policy drifted"),
+            (compatibility_gates, "stability_policy", "stdlib/stability_policy.json", "compatibility gate stability_policy drifted"),
             (lowering_import_surface, "contract_id", "objc3c.stdlib.lowering_import_surface.v1", "lowering/import surface contract_id drifted"),
             (lowering_import_surface, "schema_version", 1, "lowering/import surface schema_version drifted"),
             (lowering_import_surface, "workspace_contract", "stdlib/workspace.json", "lowering/import surface workspace_contract drifted"),

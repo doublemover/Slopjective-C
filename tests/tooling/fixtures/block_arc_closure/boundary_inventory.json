@@ -30,7 +30,10 @@
   "focus": [
     "escaping-block-promotion-and-invoke-runtime-closure",
     "byref-forwarding-copy-dispose-and-heap-promotion-closure",
-    "arc-lifetime-helper-automation-across-weak-autoreleasepool-and-current-property-surfaces"
+    "arc-lifetime-helper-automation-across-weak-autoreleasepool-and-current-property-surfaces",
+    "arc-method-family-retained-message-cleanup",
+    "arc-weak-zeroing-and-nested-autoreleasepool-runtime-proof",
+    "arc-autoreleasepool-terminal-cleanup-order"
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
@@ -41,6 +44,7 @@
     "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
     "native/objc3c/src/runtime/memory/arc.cpp",
     "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
     "native/objc3c/src/runtime/storage/current_property_weak.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_block_arc_conformance.py",
@@ -65,6 +69,7 @@
   "authoritative_probe_paths": [
     "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
     "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
     "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
     "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
@@ -76,12 +81,18 @@
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+    "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+    "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
     "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
     "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
     "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
     "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
     "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
     "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_destruction_order_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
+    "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3",
+    "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
     "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
   ],
   "claim_surfaces": [
@@ -116,12 +127,40 @@
       ]
     },
     {
+      "gap_id": "issue-8033-owned-capture-runtime-proof-landed",
+      "summary": "Escaping owned-object block copy/dispose behavior now has durable fixtures plus a live runtime probe that proves promotion-time retain, post-local-release invocation, final-dispose release, and stale-handle rejection without widening the public runtime ABI.",
+      "evidence_references": [
+        "tests/tooling/fixtures/block_arc_closure/issue_8033_escaping_owned_object_copy_dispose_evidence.json",
+        "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+        "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+        "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3"
+      ],
+      "successor_issue_codes": [
+        "OC3-T09-003"
+      ]
+    },
+    {
+      "gap_id": "issue-8034-method-family-retained-message-cleanup-landed",
+      "summary": "ARC method-family retained-result behavior now flows from selector classification through IR message-send lowering into scope-owned release cleanup, including alloc/new/init/copy/mutableCopy and word-boundary selector variants.",
+      "evidence_references": [
+        "tests/tooling/fixtures/block_arc_closure/issue_8034_arc_method_family_cleanup_evidence.json",
+        "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
+        "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp"
+      ],
+      "successor_issue_codes": [
+        "OC3-T10-001"
+      ]
+    },
+    {
       "gap_id": "arc-automation-claims-must-stay-on-runtime-owned-helper-surfaces",
       "summary": "ARC runtime support, autoreleasepool traffic, and weak/current-property helper behavior are live today, but the supported closure path still depends on private runtime-owned helpers and snapshots rather than a widened public ABI.",
       "evidence_references": [
         "docs/objc3c-native.md",
+        "tests/tooling/fixtures/block_arc_closure/issue_8035_weak_autoreleasepool_helper_evidence.json",
         "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/storage/current_property_value.cpp",
         "native/objc3c/src/runtime/storage/current_property_weak.cpp",
+        "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3",
         "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
       ],
@@ -129,6 +168,24 @@
         "M320-B002",
         "M320-C003",
         "M320-D003"
+      ]
+    },
+    {
+      "gap_id": "issue-8035-weak-autoreleasepool-and-destruction-order-evidence-landed",
+      "summary": "#8035 weak/current-property helpers, nested autoreleasepool drain order, and terminal cleanup-before-pop ordering are represented as private-helper compile-coupled evidence plus linked runtime probe assertions; this does not widen public ABI or claim a packaged runnable proof.",
+      "evidence_references": [
+        "tests/tooling/fixtures/block_arc_closure/issue_8035_weak_autoreleasepool_helper_evidence.json",
+        "tests/tooling/fixtures/block_arc_closure/issue_8035_autoreleasepool_cleanup_order_evidence.json",
+        "tests/tooling/fixtures/block_arc_closure/issue_8035_autoreleasepool_nested_drain_order_evidence.json",
+        "scripts/objc3c_runtime_acceptance/domains/block_arc_automation_artifacts/catalog.py",
+        "scripts/objc3c_runtime_acceptance/domains/block_arc_automation_assertions.py",
+        "scripts/objc3c_runtime_acceptance/domains/block_arc_property_cases.py",
+        "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+        "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+      ],
+      "successor_issue_codes": [
+        "OC3-T10-002"
       ]
     },
     {

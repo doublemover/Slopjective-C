@@ -1,0 +1,21 @@
+// Positive execution fixture: stdlib core helpers route through runtime ABI.
+module StdlibCoreRuntimeHelpers;
+
+extern fn objc3_runtime_stdlib_core_language_revision_i32() -> i32;
+extern fn objc3_runtime_stdlib_core_profile_revision_i32() -> i32;
+extern fn objc3_runtime_stdlib_core_has_capability_i32(capability: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_option_unwrap_or_i32(flag: i32, value: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_map_entry_value_or_i32(flag: i32, value: i32, default_value: i32) -> i32;
+
+fn main() -> i32 {
+  return objc3_runtime_stdlib_core_language_revision_i32()
+    + objc3_runtime_stdlib_core_profile_revision_i32()
+    + objc3_runtime_stdlib_core_has_capability_i32(1)
+    + objc3_runtime_stdlib_core_has_capability_i32(5)
+    + objc3_runtime_stdlib_core_option_unwrap_or_i32(0, 11, 13)
+    + objc3_runtime_stdlib_core_count_i32(-4)
+    + objc3_runtime_stdlib_core_prefix_count_i32(9, 4)
+    + objc3_runtime_stdlib_core_map_entry_value_or_i32(1, 17, 19);
+}

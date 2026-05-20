@@ -55,6 +55,8 @@ struct Objc3RuntimeMetadataPropertySourceRecord {
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;
+  bool property_behavior_declared = false;
+  std::string property_behavior_name;
   std::string ownership_lifetime_profile;
   std::string ownership_runtime_hook_profile;
   std::string effective_getter_selector;
@@ -140,7 +142,6 @@ struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataIvarSourceRecord> ivars_lexicographic;
   bool deterministic = false;
   bool metadata_model_owner_explicit = true;
-  bool retired_route_path_allowed = false;
 };
 
 inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
@@ -149,7 +150,6 @@ inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
          !records.metadata_model_owner.empty() &&
          !records.fail_closed_ownership_model.empty() &&
          records.metadata_model_owner_explicit &&
-         !records.retired_route_path_allowed &&
          objc3c::runtime::RuntimeOwnerSplitContractIsReady();
 }
 

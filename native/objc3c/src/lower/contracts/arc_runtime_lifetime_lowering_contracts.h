@@ -49,7 +49,7 @@ inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringModel =
 inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel =
     "only-supported-escaping-block-owned-capture-and-autorelease-return-edge-cases-materialize-runtime-lowering";
 inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel =
-    "no-general-method-family-arc-automation-no-public-runtime-arc-abi-no-cross-module-arc-optimization";
+    "no-public-runtime-arc-abi-no-cross-module-arc-optimization-no-method-family-automation-beyond-retained-message-result-cleanup";
 
 std::string Objc3ArcLoweringAbiCleanupModelSummary();
 std::string Objc3ArcAutomaticInsertionSummary();

@@ -9,6 +9,7 @@ from time import perf_counter
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.concurrency_actor_link_plan_assertions import (
     expect_actor_cross_module_link_plan,
+    expect_actor_cross_module_link_plan_rejects_metadata_count_drift,
     expect_provider_actor_import_surface,
 )
 from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
@@ -79,6 +80,14 @@ def check_cross_module_concurrency_actor_artifact_preservation_case(
         provider_registration_manifest,
         consumer_registration_manifest,
     )
+    rejected_actor_metadata_drift_field = (
+        expect_actor_cross_module_link_plan_rejects_metadata_count_drift(
+            link_plan,
+            provider_import_payload,
+            provider_registration_manifest,
+            consumer_registration_manifest,
+        )
+    )
 
     case_total_ms = int((perf_counter() - case_started) * 1000)
     return CaseResult(
@@ -101,6 +110,19 @@ def check_cross_module_concurrency_actor_artifact_preservation_case(
             "local_actor_registration_ordinal": local_module.get(
                 "translation_unit_registration_order_ordinal"
             ),
+            "imported_actor_interface_sites": imported_module.get(
+                "concurrency_actor_interface_sites"
+            ),
+            "imported_actor_method_sites": imported_module.get(
+                "concurrency_actor_method_sites"
+            ),
+            "imported_actor_executor_affinity_sites": imported_module.get(
+                "concurrency_actor_executor_affinity_sites"
+            ),
+            "imported_actor_replay_key": imported_module.get(
+                "concurrency_actor_mailbox_runtime_replay_key"
+            ),
+            "rejected_actor_metadata_drift_field": rejected_actor_metadata_drift_field,
         },
     )
 

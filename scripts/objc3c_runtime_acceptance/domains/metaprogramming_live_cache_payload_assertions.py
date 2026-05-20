@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
@@ -22,6 +23,11 @@ _MATERIALIZED_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_materialization_state": "materialized",
     "host_process_exit_code": 0,
     "deterministic": True,
+    "cache_validation_state": "validated-after-materialization",
+    "cache_artifact_contract_checked": True,
+    "provenance_integrity_checked": True,
+    "sandbox_policy_checked": True,
+    "diagnostic_contract_checked": True,
 }
 
 _CACHE_HIT_HOST_CACHE_FIELDS: dict[str, Any] = {
@@ -34,6 +40,11 @@ _CACHE_HIT_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_materialization_state": "cache-hit",
     "host_process_exit_code": 0,
     "deterministic": True,
+    "cache_validation_state": "validated-existing-cache-hit",
+    "cache_artifact_contract_checked": True,
+    "provenance_integrity_checked": True,
+    "sandbox_policy_checked": True,
+    "diagnostic_contract_checked": True,
 }
 
 _HOST_CACHE_RELATIVE_PATH_FIELDS = (
@@ -51,6 +62,10 @@ _CACHE_HIT_STABLE_FIELDS = (
     "cache_manifest_relative_path",
     "host_executable_relative_path",
     "cache_root_relative_path",
+    "cache_key_material_digest",
+    "invalidation_model",
+    "sandbox_policy_model",
+    "diagnostics_model",
     "replay_key",
 )
 
@@ -93,6 +108,21 @@ def assert_cache_hit_replay_payload(
         )
 
 
+def assert_tampered_cache_replay_key_rejected(
+    failure: CompletedProcess[str],
+) -> None:
+    expect(
+        failure.returncode != 0,
+        "expected metaprogramming host-cache replay with tampered runtime import surface to fail closed",
+    )
+    combined_output = f"{failure.stdout}\n{failure.stderr}"
+    expect(
+        "metaprogramming host/cache runtime import surface drifted from cache inputs"
+        in combined_output,
+        "expected tampered metaprogramming host-cache replay to report runtime import surface drift",
+    )
+
+
 def _assert_host_cache_fields(
     artifact: dict[str, Any],
     expected_fields: dict[str, Any],
@@ -108,4 +138,5 @@ def _assert_host_cache_fields(
 __all__ = [
     "assert_cache_hit_replay_payload",
     "assert_materialized_host_cache_payload",
+    "assert_tampered_cache_replay_key_rejected",
 ]

@@ -45,6 +45,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_name = requirement.property_name;
         closure.conflicting_member_is_method = false;
         closure.conflicting_selector_is_class_method = false;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }
@@ -61,6 +63,8 @@ static bool CollectProtocolRequirementClosure(
       closure.conflicting_member_name = requirement.property_name;
       closure.conflicting_member_is_method = false;
       closure.conflicting_selector_is_class_method = false;
+      closure.conflicting_member_line = requirement.line;
+      closure.conflicting_member_column = requirement.column;
       active_protocols.erase(protocol_name);
       return false;
     }
@@ -81,6 +85,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_name = requirement.property_name;
         closure.conflicting_member_is_method = false;
         closure.conflicting_selector_is_class_method = false;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }
@@ -97,6 +103,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_name = requirement.property_name;
         closure.conflicting_member_is_method = false;
         closure.conflicting_selector_is_class_method = false;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }
@@ -120,6 +128,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_is_method = true;
         closure.conflicting_selector_is_class_method =
             requirement.method.is_class_method;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }
@@ -137,6 +147,8 @@ static bool CollectProtocolRequirementClosure(
       closure.conflicting_member_is_method = true;
       closure.conflicting_selector_is_class_method =
           requirement.method.is_class_method;
+      closure.conflicting_member_line = requirement.line;
+      closure.conflicting_member_column = requirement.column;
       active_protocols.erase(protocol_name);
       return false;
     }
@@ -158,6 +170,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_is_method = true;
         closure.conflicting_selector_is_class_method =
             requirement.method.is_class_method;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }
@@ -175,6 +189,8 @@ static bool CollectProtocolRequirementClosure(
         closure.conflicting_member_is_method = true;
         closure.conflicting_selector_is_class_method =
             requirement.method.is_class_method;
+        closure.conflicting_member_line = requirement.line;
+        closure.conflicting_member_column = requirement.column;
         active_protocols.erase(protocol_name);
         return false;
       }

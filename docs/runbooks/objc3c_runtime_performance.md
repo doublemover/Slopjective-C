@@ -129,9 +129,14 @@ Disallowed optimization moves:
 - workload manifest and checked-in boundary metadata:
   - `tests/tooling/fixtures/runtime_performance/source_surface.json`
   - `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
+  - `tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json`
   - `tests/tooling/fixtures/runtime_performance/artifact_surface.json`
   - `tests/tooling/fixtures/runtime_performance/optimization_policy.json`
   - `tests/tooling/fixtures/runtime_performance/README.md`
+
+The executable fixture manifest is the durable source of truth for positive and
+negative runtime-performance fixtures. Runtime benchmark reports under `tmp/`
+must cite it, but generated timing packets cannot replace it.
 
 ## Exact Live Artifact And Output Paths
 

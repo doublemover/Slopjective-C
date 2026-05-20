@@ -75,6 +75,10 @@ Machine-readable indexes:
   that are not positive compatibility expectations)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
+- `tests/conformance/support_claim_runnable_evidence_catalog.json` (checked-in
+  traceability from implemented support claims to runnable conformance evidence,
+  with positive and negative/strict-error rows for the `#8058`/`#8059` object
+  foundation slice)
 - `tests/conformance/behavior_owner_splits/index.json` (behavior-first owner
   split for broad conformance buckets before parser, semantic, lowering, IR,
   runtime, e2e, or rejection evidence can be cited)

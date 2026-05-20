@@ -9,7 +9,10 @@ from objc3c_runtime_acceptance.domains.concurrency_surface_support import (
     authoritative_case_ids,
 )
 
-from ..c_api import PUBLIC_RUNTIME_ABI_BOUNDARY
+from ..c_api import (
+    PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY,
+    PUBLIC_RUNTIME_ABI_BOUNDARY,
+)
 from ..runtime_contract_concurrency import (
     RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID,
 )
@@ -54,29 +57,9 @@ def build_runtime_unified_concurrency_source_surface(
             "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendable_semantic_model",
         ],
         "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
-        "private_concurrency_runtime_boundary": [
-            "objc3_runtime_allocate_async_continuation_i32",
-            "objc3_runtime_handoff_async_continuation_to_executor_i32",
-            "objc3_runtime_resume_async_continuation_i32",
-            "objc3_runtime_spawn_task_i32",
-            "objc3_runtime_enter_task_group_scope_i32",
-            "objc3_runtime_add_task_group_task_i32",
-            "objc3_runtime_wait_task_group_next_i32",
-            "objc3_runtime_cancel_task_group_i32",
-            "objc3_runtime_task_is_cancelled_i32",
-            "objc3_runtime_task_on_cancel_i32",
-            "objc3_runtime_actor_enter_isolation_thunk_i32",
-            "objc3_runtime_actor_enter_nonisolated_i32",
-            "objc3_runtime_actor_hop_to_executor_i32",
-            "objc3_runtime_actor_record_replay_proof_i32",
-            "objc3_runtime_actor_record_race_guard_i32",
-            "objc3_runtime_actor_bind_executor_i32",
-            "objc3_runtime_actor_mailbox_enqueue_i32",
-            "objc3_runtime_actor_mailbox_drain_next_i32",
-            "objc3_runtime_copy_async_continuation_state_for_testing",
-            "objc3_runtime_copy_task_runtime_state_for_testing",
-            "objc3_runtime_copy_actor_runtime_state_for_testing",
-        ],
+        "private_concurrency_runtime_boundary": list(
+            PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY
+        ),
         "authoritative_case_ids": authoritative_case_ids(
             results,
             {"unified-concurrency-runtime-architecture"},

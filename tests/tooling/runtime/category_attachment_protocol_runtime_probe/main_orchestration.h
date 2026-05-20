@@ -10,8 +10,11 @@ namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
 inline void CaptureCategoryAttachmentProtocolRuntimeProbe(
     CategoryAttachmentProtocolProbeRun &run) {
   run = CategoryAttachmentProtocolProbeRun{};
-  CaptureCategoryAttachmentActions(run);
+  CaptureRealizedGraphState(run.graph_state);
+  CaptureRealizedClassEntry(kWidgetClassName, run.widget_entry);
+  CaptureRealizedClassEntry(kBaseClassName, run.base_entry);
   CaptureProtocolRuntimeAssertions(run);
+  CaptureCategoryAttachmentActions(run);
   CaptureCategoryAttachmentProtocolRuntimeSnapshots(run);
 }
 
@@ -19,7 +22,7 @@ inline int RunCategoryAttachmentProtocolRuntimeProbe() {
   CategoryAttachmentProtocolProbeRun run{};
   CaptureCategoryAttachmentProtocolRuntimeProbe(run);
   PrintCategoryAttachmentProtocolRuntimeReport(run);
-  return 0;
+  return CategoryAttachmentProtocolRuntimeProbePassed(run) ? 0 : 1;
 }
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

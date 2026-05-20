@@ -23,6 +23,7 @@ OWNER_MODULES = (
     "objc3c_editor_tooling.input_loading",
     "objc3c_editor_tooling.model",
     "objc3c_editor_tooling.validation",
+    "objc3c_editor_tooling.workspace_index",
     "objc3c_editor_tooling.rendering",
     "objc3c_editor_tooling.publication",
     "objc3c_editor_tooling.cli",
@@ -55,6 +56,9 @@ def test_editor_tooling_paths_preserve_default_surface_layout() -> None:
     assert paths.artifact_dir.relative_to(ROOT).as_posix() == (
         "tmp/artifacts/developer-tooling/editor-surface/hello-3bb3df22f2ea"
     )
+    assert paths.workspace_index.relative_to(ROOT).as_posix() == (
+        "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/workspace-index.json"
+    )
 
 
 def test_editor_tooling_model_keeps_manifest_backed_capabilities_and_fail_closed_debug() -> None:
@@ -66,12 +70,44 @@ def test_editor_tooling_model_keeps_manifest_backed_capabilities_and_fail_closed
     }
 
     symbols = extract_symbols(manifest)
+    workspace_index = {
+        "available": True,
+        "package_count": 2,
+        "package_symbols": [
+            {
+                "name": "objc3.core",
+                "kind": "stdlib-module",
+                "source_path": "stdlib/modules/objc3.core/module.objc3",
+                "package_id": "stdlib:objc3.core",
+                "definition": {
+                    "target_uri": "stdlib/modules/objc3.core/module.objc3",
+                    "target_range": {
+                        "start": {"line": 0, "character": 0},
+                        "end": {"line": 0, "character": 10},
+                    },
+                    "target_compiler_range": {
+                        "line": 1,
+                        "column": 1,
+                        "end_line": 1,
+                        "end_column": 11,
+                    },
+                },
+            }
+        ],
+    }
     language_server = build_language_server_payload(
         {"observability": {"status_name": "OK"}},
         "tmp/artifacts/module.manifest.json",
         symbols,
+        workspace_index,
     )
-    navigation = build_navigation_payload("tests/tooling/fixtures/native/hello.objc3", "tmp/artifacts/module.manifest.json", symbols)
+    navigation = build_navigation_payload(
+        "tests/tooling/fixtures/native/hello.objc3",
+        "Demo",
+        "tmp/artifacts/module.manifest.json",
+        symbols,
+        workspace_index,
+    )
     debug = build_debug_payload({"runtime_inspector": {"contract_id": "runtime.inspect.v1"}}, None, symbols)
 
     assert [symbol["name"] for symbol in symbols] == ["Widget", "main", "Widget", "Widget(Debug)"]
@@ -83,6 +119,10 @@ def test_editor_tooling_model_keeps_manifest_backed_capabilities_and_fail_closed
         "definition",
     ]
     assert navigation["symbol_count"] == 4
+    assert navigation["document_symbols"][0]["definition"]["target_uri"] == (
+        "tests/tooling/fixtures/native/hello.objc3"
+    )
+    assert navigation["workspace_symbols"][-1]["package_id"] == "stdlib:objc3.core"
     assert debug["supported"] is True
     assert debug["statement_level_stepping"] is False
     assert debug["support_class"] == "declaration-breakpoint-preview"

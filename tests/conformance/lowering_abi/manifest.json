@@ -51,6 +51,18 @@
       }
     },
     {
+      "name": "issue_8058_8059_runtime_object_foundation_protocol_category",
+      "feature": "runtime object-foundation protocol/category executable conformance and traceability",
+      "issues": [
+        8058,
+        8059
+      ],
+      "files": [
+        "OBJFND-8058-01.json",
+        "OBJFND-8059-01.json"
+      ]
+    },
+    {
       "name": "issue_81_async_coroutine_lowering",
       "feature": "coroutine-based async lowering and ABI stability",
       "issue": 81,

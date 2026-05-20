@@ -1,0 +1,15 @@
+{
+  "contract_id": "objc3c.release_evidence.gate_contract.v1",
+  "release_gate_checks": [
+    {
+      "check_id": "public-claim-drift",
+      "owner_issue_ref": "#8059",
+      "entrypoint": "scripts/check_objc3c_public_claim_drift.py --check"
+    },
+    {
+      "check_id": "evidence-index-replay",
+      "owner_issue_ref": "#8065",
+      "entrypoint": "scripts/generate_conformance_evidence_index.py"
+    }
+  ]
+}

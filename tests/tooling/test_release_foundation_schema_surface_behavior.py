@@ -5,9 +5,12 @@ from pathlib import Path
 import pytest
 
 from release_foundation_schema_surface_behavior import (
+    assert_release_foundation_schema_surface_rejects_abi_manifest_identity_drift,
     assert_release_foundation_schema_surface_rejects_broken_registered_contract,
     assert_release_foundation_schema_surface_rejects_broken_registered_draft,
     assert_release_foundation_schema_surface_rejects_broken_registered_schema_id,
+    assert_release_foundation_schema_surface_rejects_package_attestation_drift,
+    assert_release_foundation_schema_surface_rejects_runtime_abi_manifest_drift,
     assert_release_foundation_schema_surface_rejects_unregistered_surface_path,
     assert_release_foundation_schema_surface_uses_registered_schemas,
 )
@@ -50,6 +53,36 @@ def test_release_foundation_schema_surface_rejects_broken_registered_contract(
     tmp_path: Path,
 ) -> None:
     assert_release_foundation_schema_surface_rejects_broken_registered_contract(
+        monkeypatch,
+        tmp_path,
+    )
+
+
+def test_release_foundation_schema_surface_rejects_abi_manifest_identity_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    assert_release_foundation_schema_surface_rejects_abi_manifest_identity_drift(
+        monkeypatch,
+        tmp_path,
+    )
+
+
+def test_release_foundation_schema_surface_rejects_runtime_abi_manifest_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    assert_release_foundation_schema_surface_rejects_runtime_abi_manifest_drift(
+        monkeypatch,
+        tmp_path,
+    )
+
+
+def test_release_foundation_schema_surface_rejects_package_attestation_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    assert_release_foundation_schema_surface_rejects_package_attestation_drift(
         monkeypatch,
         tmp_path,
     )

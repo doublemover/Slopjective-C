@@ -44,6 +44,12 @@ def action_test_runtime_acceptance_block_arc(_: list[str]) -> int:
     return run_runtime_acceptance_action("test-runtime-acceptance-block-arc")
 
 
+def action_test_runtime_acceptance_arc_cleanup_integration(_: list[str]) -> int:
+    return run_runtime_acceptance_action(
+        "test-runtime-acceptance-arc-cleanup-integration"
+    )
+
+
 def action_test_runtime_acceptance_concurrency(_: list[str]) -> int:
     return run_runtime_acceptance_action("test-runtime-acceptance-concurrency")
 

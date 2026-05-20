@@ -84,6 +84,8 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
             "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3",
             "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
             "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
             "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
             "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
@@ -94,6 +96,7 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
         "authoritative_probe_paths": [
             "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
             "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
             "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [

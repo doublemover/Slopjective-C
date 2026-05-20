@@ -6,7 +6,8 @@
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
   "summary_implementation_anchor": "scripts/build_developer_tooling_lsp_policy_summary.py",
   "authoritative_code_paths": [
-    "scripts.objc3c_workflow",
+    "scripts/objc3c_workflow/__main__.py",
+    "scripts/objc3c_editor_tooling/workspace_index.py",
     "scripts/check_objc3c_developer_tooling_integration.py",
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp"
   ],

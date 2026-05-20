@@ -9,8 +9,10 @@
     "positive/README.md:execution.native_compile_args",
     "positive/README.md:execution.requires_live_runtime_dispatch",
     "positive/README.md:execution.runtime_dispatch_symbol",
+    "positive/README.md:execution.runtime_dispatch_symbols",
     "negative/README.md:execution.requires_live_runtime_dispatch",
     "negative/README.md:execution.runtime_dispatch_symbol",
+    "negative/README.md:execution.runtime_dispatch_symbols",
     "negative/runtime_dispatch_unresolved_symbol.meta.json",
     "negative/numeric_zero_receiver_runtime_dispatch_unresolved_symbol.meta.json",
     "positive/registration_reset_replay_runtime_entrypoints.meta.json"

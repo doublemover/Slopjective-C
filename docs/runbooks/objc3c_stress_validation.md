@@ -28,6 +28,10 @@ The current truthful stress-validation shape is:
 - `lowering-runtime-stress`
   - objective: widen checked-in lowering/runtime fixtures through the same
     compile and runtime launch paths already used by runnable validation
+  - semantic-provenance-only cases stay listed in the same manifest under
+    `semantic_provenance_cases`; they are not compiled by the runnable stress
+    harness when their current truthful behavior is a strict unsupported
+    semantic diagnostic
 - `mixed-module-differential`
   - objective: exercise provider/consumer and import/export stress cases
     without inventing a second module build pipeline
@@ -48,6 +52,14 @@ The checked-in machine-owned artifact and minimization surface lives at:
 
 - `tests/tooling/fixtures/stress/artifact_surface.json`
 
+The checked-in stress claim gate lives at:
+
+- `tests/tooling/fixtures/stress/claim_gate.json`
+
+The checked-in crash triage fixture catalog lives at:
+
+- `tests/tooling/fixtures/stress/crash_triage_fixture_manifest.json`
+
 Downstream work must preserve these rules:
 
 - prefer checked-in fixtures, deterministic mutations, and replay-backed seeds
@@ -59,6 +71,9 @@ Downstream work must preserve these rules:
 - record stable failure signatures before claiming a reducer result
 - never publish safety or coverage claims that cannot be traced back to
   checked-in sources and machine-readable outputs
+- keep claimable stress statements listed in `claim_gate.json`; unsupported
+  surfaces stay explicit and fail-closed until the executable reports and
+  durable inputs are added to the same gate
 
 ## Exact Live Implementation Paths
 
@@ -104,6 +119,10 @@ Downstream work must preserve these rules:
   - generated stress source-surface output selected by the checked-in stress contract
 - checked-in stress artifact/minimization contract:
   - `tests/tooling/fixtures/stress/artifact_surface.json`
+- checked-in stress claim gate:
+  - `tests/tooling/fixtures/stress/claim_gate.json`
+- checked-in crash triage fixture catalog:
+  - `tests/tooling/fixtures/stress/crash_triage_fixture_manifest.json`
 - current machine-owned fuzz root:
   - generated fuzz-safety output root
 - existing machine-owned validation roots that downstream work must reuse:
@@ -136,6 +155,8 @@ Downstream work must preserve these rules:
   - `npm run objc3c -- test-stress-crash-triage`
 - validate the checked-in stress source contract:
   - `npm run objc3c -- check-stress-surface`
+- publish the performance regression gate consumed by stress integration:
+  - `npm run objc3c -- build-performance-dashboard`
 - run the current executable smoke and replay evidence paths:
   - `npm run objc3c -- test-execution-smoke`
   - `npm run objc3c -- test-execution-replay`

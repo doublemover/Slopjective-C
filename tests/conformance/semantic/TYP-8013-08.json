@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S216.\nmodule NegativeTypeSemanticTypedObjectReceiverUnknownMessage;\n\n@interface Widget\n@property (readonly) id token;\n- (id) title;\n@end\n\n@implementation Widget\n- (id) title {\n  return nil;\n}\n@end\n\nfn consume(widget: Widget *?) -> i32 {\n  let token = [widget? token];\n  let ok = [widget? title];\n  let missing = [widget? missingTitle];\n  return 0;\n}\n",
   "expect": {

@@ -25,6 +25,7 @@ EXPECTED_CONTRACT_IDS = {
     "reproducibility_policy": "objc3c.release.foundation.reproducibility.policy.v1",
     "release_payload_policy": "objc3c.release.foundation.payload.policy.v1",
     "provenance_policy": "objc3c.release.foundation.provenance.policy.v1",
+    "abi_api_governance": "objc3c.release.foundation.abi_api_governance.v1",
     "workflow_surface": "objc3c.release.foundation.workflow.surface.v1",
     "schema_surface": "objc3c.release.foundation.schema.surface.v1",
 }
@@ -37,6 +38,7 @@ EXPECTED_REQUIRED_PATHS = {
     "reproducibility_policy": "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
     "release_payload_policy": "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
     "provenance_policy": "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+    "abi_api_governance": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
     "workflow_surface": "tests/tooling/fixtures/release_foundation/workflow_surface.json",
     "schema_surface": "tests/tooling/fixtures/release_foundation/schema_surface.json",
 }
@@ -61,6 +63,7 @@ GENERATED_UPSTREAM_SURFACES = frozenset(
 EXPECTED_BUILD_SCRIPTS = (
     "scripts/check_release_foundation_source_surface.py",
     "scripts/check_release_foundation_schema_surface.py",
+    "scripts/check_objc3c_release_abi_api_drift.py",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",
     "scripts/check_objc3c_release_foundation_integration.py",
@@ -82,6 +85,13 @@ EXPECTED_EXPLICIT_NON_GOALS = (
 def fail(message: str) -> int:
     print(f"release-foundation-source-surface: {message}", file=sys.stderr)
     return 1
+
+
+def display_path(path: Path) -> str:
+    try:
+        return repo_rel(path)
+    except ValueError:
+        return path.as_posix()
 
 
 def require_exact_path(source_surface: dict[str, object], field_name: str) -> str | None:
@@ -136,14 +146,14 @@ def require_exact_list(
 
 def main() -> int:
     if not SOURCE_SURFACE.is_file():
-        return fail(f"missing source surface {repo_rel(SOURCE_SURFACE)}")
+        return fail(f"missing source surface {display_path(SOURCE_SURFACE)}")
     source_surface = load_json(SOURCE_SURFACE)
     if source_surface.get("contract_id") != SOURCE_SURFACE_CONTRACT_ID:
         return fail("unexpected source surface contract_id")
     if source_surface.get("surface_kind") != SOURCE_SURFACE_KIND:
         return fail("unexpected source surface kind")
 
-    checked_paths: list[str] = [repo_rel(SOURCE_SURFACE)]
+    checked_paths: list[str] = [display_path(SOURCE_SURFACE)]
     for field_name, expected_contract_id in EXPECTED_CONTRACT_IDS.items():
         raw_path = require_exact_path(source_surface, field_name)
         if raw_path is None:
@@ -215,6 +225,7 @@ def main() -> int:
         "reproducibility_policy": EXPECTED_REQUIRED_PATHS["reproducibility_policy"],
         "release_payload_policy": EXPECTED_REQUIRED_PATHS["release_payload_policy"],
         "provenance_policy": EXPECTED_REQUIRED_PATHS["provenance_policy"],
+        "abi_api_governance": EXPECTED_REQUIRED_PATHS["abi_api_governance"],
         "workflow_surface": EXPECTED_REQUIRED_PATHS["workflow_surface"],
         "schema_surface": EXPECTED_REQUIRED_PATHS["schema_surface"],
         "checked_in_sources": list(checked_in_sources),

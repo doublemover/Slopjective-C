@@ -143,7 +143,7 @@ story.
 - archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
-## Toolchain-Range And Archive Support Policy
+## Toolchain-Range And Archive Compatibility Policy
 
 Toolchain-range and archive support claims must also stay narrower than
 the evidence.
@@ -225,6 +225,8 @@ The checked-in schema and contract surfaces for that artifact are:
 
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
+- generated artifact: `tmp/artifacts/platform-hardening/objc3c-platform-matrix.json`
+- generated summary: `tmp/reports/platform-hardening/platform-matrix-summary.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The generated summary family for platform hardening is selected by the
@@ -293,6 +295,10 @@ The runnable install-matrix proof for platform hardening is the composition of:
 - build/package validation on the checked-in host tier
 - toolchain/release support replay
 - installer and offline-bundle smoke under temp-owned roots
+- per-platform packaged runtime acceptance rows from the checked-in platform
+  matrix dimensions
+- local installer digest-signature validation and rollback diagnostics published
+  through package-channel and release-operation metadata
 
 The integrator for this slice is:
 
@@ -319,12 +325,15 @@ release/update metadata surfaces:
 These surfaces must publish the same support tiers and supported platform ids as
 the platform support matrix artifact selected by the checked-in
 platform-hardening contract.
+The matrix artifact also publishes the host OS, host architecture, package
+channel, runtime acceptance, and release-validation dimensions used to decide
+which public actions are allowed to back package and release claims.
 
 ## Explicit Non-Goals
 
 - no non-`windows-x64` support claim in the current milestone slice
 - no package-manager-specific install or upgrade semantics
-- no signed or notarized installer claim
+- no OS-notarized or external certificate-signed installer claim
 - no system-wide installer claim
 - no parallel portability harness outside the existing package, release, and
   public workflow paths

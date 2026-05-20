@@ -37,6 +37,12 @@ struct Objc3IREmitterServiceContextState {
   const std::map<std::string, LoweredFunctionSignature> &function_signatures;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;
+  const std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      &direct_dispatch_signatures_by_key;
+  const std::unordered_map<std::string, ValueType>
+      &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, std::string>
+      &runtime_dispatch_superclass_by_name;
   const std::map<std::string, std::string> &selector_pool_globals;
   const std::map<std::string, std::string> &runtime_string_pool_globals;
   const std::map<std::string, TypedKeyPathArtifact> &typed_keypath_artifacts;
@@ -45,6 +51,7 @@ struct Objc3IREmitterServiceContextState {
   std::size_t vector_signature_function_count = 0;
   std::vector<std::string> &block_function_definitions;
   std::unordered_set<std::string> &emitted_block_invoke_symbols;
+  std::unordered_set<std::string> &emitted_block_descriptor_symbols;
   std::unordered_set<std::string> &emitted_block_copy_helper_symbols;
   std::unordered_set<std::string> &emitted_block_dispose_helper_symbols;
   Objc3IRRuntimeDispatchCallState &runtime_dispatch_call_state;

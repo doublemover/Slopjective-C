@@ -147,10 +147,10 @@ def link_fixture(
 
 def canonical_link_text(fixture: BehaviorFixture, link_result: CommandExecution, compile_dir: Path) -> str:
     text = "\n".join(part for part in (link_result.stdout, link_result.stderr) if part)
-    symbol = fixture.runtime_dispatch_symbol
     canonical_lines: list[str] = []
-    if symbol and symbol in text:
-        canonical_lines.append(f"link.unresolved_symbol:{symbol}")
+    for symbol in fixture.runtime_dispatch_symbols:
+        if symbol and symbol in text:
+            canonical_lines.append(f"link.unresolved_symbol:{symbol}")
     if object_path(compile_dir).name.startswith("module."):
         canonical_lines.append("link.input_object_basename:module.")
     return "\n".join([text, *canonical_lines])

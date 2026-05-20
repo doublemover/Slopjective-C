@@ -1,9 +1,20 @@
 Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot "objc3c_parser_replay_proof_catalog.psm1") -Force -DisableNameChecking
-Import-Module (Join-Path $PSScriptRoot "objc3c_parser_replay_proof_invocation.psm1") -Force -DisableNameChecking
-Import-Module (Join-Path $PSScriptRoot "objc3c_parser_replay_proof_assertions.psm1") -Force -DisableNameChecking
+. ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot "objc3c_parser_replay_proof_invocation.psm1"))))
 Import-Module (Join-Path $PSScriptRoot "objc3c_parser_replay_proof_summary.psm1") -Force -DisableNameChecking
+
+$parserReplayProofAssertionRoot = Join-Path $PSScriptRoot "objc3c_parser_replay_proof_assertions"
+$parserReplayProofAssertionModules = @(
+  "data_helpers.psm1",
+  "diagnostic_expectations.psm1",
+  "assertion_categories.psm1",
+  "fixture_case.psm1"
+)
+
+foreach ($parserReplayProofAssertionModule in $parserReplayProofAssertionModules) {
+  . ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $parserReplayProofAssertionRoot $parserReplayProofAssertionModule))))
+}
 
 function Invoke-Objc3cParserReplayProof {
   param([Parameter(Mandatory = $true)][string]$ScriptRoot)
@@ -12,7 +23,6 @@ function Invoke-Objc3cParserReplayProof {
   if ($PSVersionTable.PSVersion.Major -ge 7) {
     $PSNativeCommandUseErrorActionPreference = $false
   }
-
   $repoRoot = (Resolve-Path (Join-Path $ScriptRoot "..")).Path
   $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
   $nativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"

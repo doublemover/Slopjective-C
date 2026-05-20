@@ -1,0 +1,95 @@
+{
+  "contract_id": "objc3c.security.hardening.sanitizer.validation.contract.v1",
+  "schema_version": 1,
+  "surface_kind": "security-sanitizer-validation-contract",
+  "public_action": "check-security-sanitizer-validation",
+  "summary_path": "tmp/reports/security-hardening/sanitizer-validation-summary.json",
+  "sanitizer_config": {
+    "path": "native/objc3c/cmake/Objc3Sanitizers.cmake",
+    "required_options": [
+      "OBJC3C_ENABLE_ASAN",
+      "OBJC3C_ENABLE_UBSAN"
+    ],
+    "required_compile_flags": [
+      "-fsanitize=${objc3c_sanitizer_flags}",
+      "-fno-omit-frame-pointer"
+    ],
+    "required_link_flags": [
+      "-fsanitize=${objc3c_sanitizer_flags}"
+    ],
+    "required_sanitizer_tokens": [
+      "address",
+      "undefined"
+    ]
+  },
+  "target_applications": [
+    {
+      "surface": "native_runtime",
+      "path": "native/objc3c/src/runtime/CMakeLists.txt",
+      "target_token": "${OBJC3_RUNTIME_LIBRARY_TARGET}",
+      "owner": "runtime_hardening_owner"
+    },
+    {
+      "surface": "native_compiler_frontend",
+      "path": "native/objc3c/src/libobjc3c_frontend/CMakeLists.txt",
+      "target_token": "objc3c_frontend",
+      "owner": "compiler_security_owner"
+    },
+    {
+      "surface": "native_compiler_cli",
+      "path": "native/objc3c/src/cli/CMakeLists.txt",
+      "target_token": "objc3c-native",
+      "owner": "compiler_security_owner"
+    },
+    {
+      "surface": "native_compiler_c_api_runner",
+      "path": "native/objc3c/src/tools/CMakeLists.txt",
+      "target_token": "objc3c_tools_frontend_c_api_runner",
+      "owner": "compiler_security_owner"
+    }
+  ],
+  "coverage_matrix": [
+    {
+      "sanitizer": "ASan",
+      "surface": "native_runtime",
+      "coverage": "config-backed",
+      "owner": "runtime_hardening_owner"
+    },
+    {
+      "sanitizer": "ASan",
+      "surface": "native_compiler",
+      "coverage": "config-backed",
+      "owner": "compiler_security_owner"
+    },
+    {
+      "sanitizer": "UBSan",
+      "surface": "native_runtime",
+      "coverage": "config-backed",
+      "owner": "runtime_hardening_owner"
+    },
+    {
+      "sanitizer": "UBSan",
+      "surface": "native_compiler",
+      "coverage": "config-backed",
+      "owner": "compiler_security_owner"
+    }
+  ],
+  "source_fixture": "tests/tooling/fixtures/security_hardening/sanitizer_validation_fixture.objc3",
+  "fixture_required_marker": "objc3c_sanitizer_validation_fixture",
+  "report_contract": {
+    "required_report_root": "tmp/reports/security-hardening",
+    "native_sanitizer_execution_claimed": false,
+    "platform_toolchain_gate": "actual sanitizer execution is owned by native build/runtime owners; this action fails closed unless ASan and UBSan config, target application, workflow action, fixture, and report surfaces are coherent"
+  },
+  "owner_boundaries": {
+    "runtime_hardening_owner": "owns runtime target sanitizer application and runtime security claim boundaries",
+    "compiler_security_owner": "owns frontend, CLI, and C API runner sanitizer application boundaries",
+    "security_hardening_gate": "owns this contract-level gate and summary publication"
+  },
+  "forbidden_claims": [
+    "no sanitizer-positive claim when ASan or UBSan config is missing",
+    "no runtime sanitizer claim when runtime target application is missing",
+    "no compiler sanitizer claim when frontend, CLI, or C API runner target application is missing",
+    "no native sanitizer execution claim from this contract-only validation action"
+  ]
+}

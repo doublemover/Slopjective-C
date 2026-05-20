@@ -7,7 +7,8 @@
           operand_type = ValidateExpr(expr->args.front().get(), scopes, globals,
                                       functions, diagnostics,
                                       max_message_send_args,
-                                      message_send_context);
+                                      message_send_context,
+                                      true);
         }
         return operand_type;
       }
@@ -127,6 +128,13 @@
       } else if (fn_it->second.arity != expr->args.size()) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S204",
                                        "arity mismatch for function '" + expr->ident + "'"));
+      }
+      if (fn_it != functions.end() && fn_it->second.throws_declared &&
+          !allow_throwing_call) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S341",
+            "throwing function '" + expr->ident +
+                "' must be called with try, try?, or try!"));
       }
 
       for (std::size_t i = 0; i < expr->args.size(); ++i) {

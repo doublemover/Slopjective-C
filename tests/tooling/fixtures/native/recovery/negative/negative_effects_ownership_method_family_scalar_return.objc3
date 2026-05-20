@@ -1,0 +1,17 @@
+// Expected diagnostic code(s): O3S305.
+module NegativeEffectsOwnershipMethodFamilyScalarReturn;
+
+@interface BadFactory
+- (i32)copy;
+@end
+
+@implementation BadFactory
+- (i32)copy {
+  return 7;
+}
+@end
+
+fn consume(object: BadFactory *?) -> i32 {
+  let copied = [object? copy];
+  return copied;
+}

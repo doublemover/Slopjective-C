@@ -7,12 +7,12 @@ from .action_spec import ActionSpec
 CORE_SUPERCLEAN_ACTION_SPECS: dict[str, ActionSpec] = {
     "check-release-evidence": ActionSpec(
         "check-release-evidence",
-        "check the generated-only release evidence surface",
+        "check the contract-backed release evidence surface",
         "python:scripts/check_release_evidence.py",
         validation_tier="repo",
         guarantee_owner=(
-            "release evidence indexes stay coherent and replayable from schemas plus "
-            "generated tmp artifacts"
+            "release evidence indexes stay coherent and replayable from the checked-in "
+            "release evidence contract, schemas, and generated tmp index"
         ),
     ),
     "check-repo-superclean-surface": ActionSpec(

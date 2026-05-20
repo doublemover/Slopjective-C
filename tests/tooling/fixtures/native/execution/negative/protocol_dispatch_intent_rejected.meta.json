@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "protocol_dispatch_intent_rejected.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S314",
+      "dispatch-control semantics failed: selector '-shared' in protocol 'P' cannot use Part 9 dispatch-control callable attributes"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol visibility diagnostics",
+    "case": "protocol dispatch-control denial"
+  }
+}

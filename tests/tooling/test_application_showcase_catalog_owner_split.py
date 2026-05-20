@@ -170,6 +170,59 @@ def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
         "shared_execution_replay_action": "test-execution-replay",
         "presentation_readme": "showcase/README.md",
     }
+    assert payload["demo_packages_manifest"] == "showcase/demo_packages.json"
+
+
+def test_showcase_demo_packages_publish_reproducible_application_smokes() -> None:
+    portfolio = json.loads(
+        (ROOT / "showcase" / "portfolio.json").read_text(encoding="utf-8")
+    )
+    payload = json.loads(
+        (ROOT / "showcase" / "demo_packages.json").read_text(encoding="utf-8")
+    )
+
+    assert payload["contract_id"] == "objc3c.showcase.demo.packages.v1"
+    assert payload["reproducibility_contract"] == {
+        "lockfile": "package-lock.json",
+        "offline_mirror_validation_action": "validate-package-mirror",
+        "tamper_rejection_diagnostic": "O3PKG8054",
+        "mixed_version_policy": "same-package-manifest-version-required",
+        "package_manifest_fields": [
+            "showcase_demo_packages_manifest",
+            "showcase_demo_packages",
+            "copied_files",
+        ],
+    }
+    assert payload["source_authority"]["forbidden_source_roots"] == ["tmp", "artifacts"]
+
+    examples = {entry["id"]: entry for entry in portfolio["examples"]}
+    packages = payload["packages"]
+    assert [entry["package_id"] for entry in packages] == [
+        "showcase:auroraBoard",
+        "showcase:signalMesh",
+        "showcase:patchKit",
+    ]
+    assert [entry["coverage_domain"] for entry in packages] == [
+        "object-model",
+        "concurrency",
+        "interop",
+    ]
+    for package in packages:
+        example = examples[package["example_id"]]
+        assert package["source"] == example["source"]
+        assert package["workspace_manifest"] == example["workspace_manifest"]
+        assert package["required_story_capabilities"] == example["story_capabilities"]
+        assert package["stdlib_modules"] == example["stdlib_followup_modules"]
+        assert all(
+            not path.startswith(("tmp/", "artifacts/"))
+            for path in package["manifest_inputs"]
+        )
+        assert all(
+            command.startswith("npm run objc3c -- ")
+            for command in package["smoke_commands"]
+        )
+        assert (ROOT / package["source"]).is_file()
+        assert (ROOT / package["workspace_manifest"]).is_file()
 
 
 def test_showcase_walkthrough_steps_use_workflow_actions_and_public_commands() -> None:

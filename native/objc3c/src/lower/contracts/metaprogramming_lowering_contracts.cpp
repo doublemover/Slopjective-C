@@ -166,6 +166,12 @@ std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary()
       << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel
       << ";cache_model="
       << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel
+      << ";invalidation_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationInvalidationModel
+      << ";sandbox_policy_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSandboxPolicyModel
+      << ";diagnostics_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationDiagnosticsModel
       << ";fail_closed_model="
       << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel
       << ";macro_host_execution_ready=true"

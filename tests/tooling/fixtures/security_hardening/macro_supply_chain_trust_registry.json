@@ -1,0 +1,215 @@
+{
+  "contract_id": "objc3c.security.hardening.macro.supply-chain.trust.registry.v1",
+  "surface_kind": "macro-supply-chain-trust-registry",
+  "schema_version": 1,
+  "policy_epoch": "2026-05-20T00:00:00Z",
+  "fail_closed_requirements": {
+    "deny_unknown_packages": true,
+    "deny_revoked_provenance": true,
+    "deny_untrusted_signers": true,
+    "require_signature_for_provenance": true,
+    "require_replay_metadata": true,
+    "require_cache_key_binding": true,
+    "require_deny_by_default_sandbox": true,
+    "require_deterministic_replay": true
+  },
+  "trusted_signing_keys": [
+    {
+      "key_id": "objc3c-macro-root-2026-a",
+      "trust_state": "trusted",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z",
+      "allowed_packages": [
+        "std.metaprogramming",
+        "std.metaprogramming.trace"
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "package": "std.metaprogramming",
+      "trust_state": "trusted",
+      "allowed_macros": [
+        "Trace"
+      ],
+      "allowed_sandbox_policies": [
+        "deterministic"
+      ],
+      "default_sandbox": "deny",
+      "network_allowed": false,
+      "filesystem_write_allowed": false
+    },
+    {
+      "package": "std.metaprogramming.trace",
+      "trust_state": "trusted",
+      "allowed_macros": [
+        "Trace"
+      ],
+      "allowed_sandbox_policies": [
+        "deterministic"
+      ],
+      "default_sandbox": "deny",
+      "network_allowed": false,
+      "filesystem_write_allowed": false
+    }
+  ],
+  "signed_artifacts": [
+    {
+      "package": "std.metaprogramming",
+      "macro": "Trace",
+      "provenance": "sha256:abc123",
+      "cache_key": "Trace:v1:macro-package-provenance",
+      "sandbox_policy": "deterministic",
+      "signer_key_id": "objc3c-macro-root-2026-a",
+      "manifest_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "signature_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "replay_metadata": {
+        "schema_version": 1,
+        "cache_namespace": "macro-package-provenance",
+        "input_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "output_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "deterministic": true
+      }
+    },
+    {
+      "package": "std.metaprogramming.trace",
+      "macro": "Trace",
+      "provenance": "sha256:abc123",
+      "cache_key": "Trace:v1:macro-safety-sandbox",
+      "sandbox_policy": "deterministic",
+      "signer_key_id": "objc3c-macro-root-2026-a",
+      "manifest_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "signature_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "replay_metadata": {
+        "schema_version": 1,
+        "cache_namespace": "macro-safety-sandbox",
+        "input_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "output_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "deterministic": true
+      }
+    },
+    {
+      "package": "std.metaprogramming.trace",
+      "macro": "Trace",
+      "provenance": "sha256:abc123",
+      "cache_key": "Trace:v1:macro-host-process-provider",
+      "sandbox_policy": "deterministic",
+      "signer_key_id": "objc3c-macro-root-2026-a",
+      "manifest_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "signature_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "replay_metadata": {
+        "schema_version": 1,
+        "cache_namespace": "macro-host-process-provider",
+        "input_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "output_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "deterministic": true
+      }
+    }
+  ],
+  "revocations": [
+    {
+      "package": "std.metaprogramming.trace",
+      "macro": "Trace",
+      "provenance": "sha256:deadbeef",
+      "cache_key": "Trace:v1:revoked",
+      "sandbox_policy": "deterministic",
+      "revoked_at": "2026-05-20T00:00:00Z",
+      "reason": "tabletop compromised macro artifact"
+    }
+  ],
+  "expected_denials": [
+    {
+      "case_id": "unknown-package-denied",
+      "candidate": {
+        "package": "thirdparty.runtime",
+        "macro": "Trace",
+        "provenance": "sha256:abc123",
+        "cache_key": "Trace:v1:unknown-package",
+        "sandbox_policy": "deterministic"
+      },
+      "expected_reason": "unknown-package"
+    },
+    {
+      "case_id": "revoked-provenance-denied",
+      "candidate": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:deadbeef",
+        "cache_key": "Trace:v1:revoked",
+        "sandbox_policy": "deterministic"
+      },
+      "expected_reason": "revoked-provenance"
+    },
+    {
+      "case_id": "unsigned-provenance-denied",
+      "candidate": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc124",
+        "cache_key": "Trace:v1:unsigned",
+        "sandbox_policy": "deterministic"
+      },
+      "expected_reason": "missing-signature"
+    },
+    {
+      "case_id": "sandbox-network-denied",
+      "candidate": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc123",
+        "cache_key": "Trace:v1:network",
+        "sandbox_policy": "network"
+      },
+      "expected_reason": "sandbox-policy-denied"
+    },
+    {
+      "case_id": "untrusted-signer-denied",
+      "candidate": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc125",
+        "cache_key": "Trace:v1:untrusted-signer",
+        "sandbox_policy": "deterministic"
+      },
+      "signature_record": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc125",
+        "cache_key": "Trace:v1:untrusted-signer",
+        "sandbox_policy": "deterministic",
+        "signer_key_id": "objc3c-macro-root-2025-retired",
+        "manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "signature_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "replay_metadata": {
+          "schema_version": 1,
+          "cache_namespace": "untrusted-signer",
+          "input_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "output_digest": "sha256:abababababababababababababababababababababababababababababababab",
+          "deterministic": true
+        }
+      },
+      "expected_reason": "untrusted-signer"
+    },
+    {
+      "case_id": "missing-replay-metadata-denied",
+      "candidate": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc126",
+        "cache_key": "Trace:v1:missing-replay",
+        "sandbox_policy": "deterministic"
+      },
+      "signature_record": {
+        "package": "std.metaprogramming.trace",
+        "macro": "Trace",
+        "provenance": "sha256:abc126",
+        "cache_key": "Trace:v1:missing-replay",
+        "sandbox_policy": "deterministic",
+        "signer_key_id": "objc3c-macro-root-2026-a",
+        "manifest_digest": "sha256:bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc",
+        "signature_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "expected_reason": "missing-replay-metadata"
+    }
+  ]
+}

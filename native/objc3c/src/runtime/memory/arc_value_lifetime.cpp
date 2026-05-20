@@ -22,7 +22,9 @@ void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
   (void)RetainRuntimeBlockHandleUnlocked(state, value);
 }
 
-void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
+void ReleaseRuntimeValueUnlocked(
+    RuntimeState &state, int value,
+    std::vector<RuntimeBlockRecord> *records_to_dispose) {
   if (!RuntimeArcValueIsRetainable(value)) {
     return;
   }
@@ -32,10 +34,10 @@ void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
       --instance_it->second.retain_count;
       return;
     }
-    DestroyRuntimeInstanceUnlocked(state, value);
+    DestroyRuntimeInstanceUnlocked(state, value, records_to_dispose);
     return;
   }
-  (void)ReleaseRuntimeBlockHandleUnlocked(state, value);
+  (void)ReleaseRuntimeBlockHandleUnlocked(state, value, records_to_dispose);
 }
 
 }  // namespace objc3c::runtime

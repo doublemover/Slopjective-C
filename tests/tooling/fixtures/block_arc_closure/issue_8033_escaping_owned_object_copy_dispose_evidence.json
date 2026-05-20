@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "issue": 8033,
+  "draft_id": "OC3-T09-003",
+  "surface_kind": "escaping-owned-object-block-copy-dispose-runtime-proof",
+  "scope": "runtime-implementation-and-fixture-evidence",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "runtime_probe_paths": [
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+  ],
+  "acceptance_case_ids": [
+    "block-helper-runtime-execution"
+  ],
+  "source_fixture_paths": {
+    "positive": [
+      "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3"
+    ],
+    "positive_sidecars": [
+      "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.exitcode.txt",
+      "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.meta.json"
+    ],
+    "negative": [
+      "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3"
+    ],
+    "negative_sidecars": [
+      "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.meta.json"
+    ]
+  },
+  "prepared_semantics": [
+    {
+      "semantic_id": "escaping-owned-object-capture-is-retained-by-block-copy",
+      "expected_owner": "runtime",
+      "summary": "The runtime probe retains the captured object during block promotion and observes retain-count growth before the original owner is released."
+    },
+    {
+      "semantic_id": "captured-object-survives-original-owner-release",
+      "expected_owner": "runtime",
+      "summary": "The promoted block invokes successfully after the original object owner releases, proving the block-owned retain is the live owner."
+    },
+    {
+      "semantic_id": "captured-object-releases-on-final-block-dispose",
+      "expected_owner": "runtime",
+      "summary": "The runtime dispose helper releases the captured object on final block release and the private instance snapshot reports the object destroyed."
+    },
+    {
+      "semantic_id": "conflicting-capture-ownership-modes-fail-closed",
+      "expected_owner": "sema",
+      "summary": "The negative fixture rejects the same captured object listed with weak and unowned modes, using the existing duplicate explicit capture diagnostic contract."
+    }
+  ],
+  "evidence_boundary": {
+    "runtime_cpp_probes_touched": true,
+    "python_acceptance_scripts_touched": true,
+    "public_runtime_abi_widened": false,
+    "tmp_source_of_truth": false,
+    "positive_support_requires_future_executable_proof": false,
+    "copy_dispose_helpers_run_outside_runtime_state_mutex": true,
+    "stale_block_handle_invocation_fail_closed": true
+  },
+  "claim_narrowing_constraints": [
+    "no-public-runtime-abi-widening",
+    "no-stack-only-byref-success-claim",
+    "no-evidence-only-positive-support-claim",
+    "no-temp-source-of-truth",
+    "no-public-block-layout-contract"
+  ]
+}

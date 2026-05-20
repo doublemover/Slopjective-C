@@ -22,6 +22,7 @@ std::size_t RuntimeBlockPointerCaptureSlotCount(
 }
 
 bool PromotePointerCaptureCellsIntoRuntimeOwnedStorage(
+    RuntimeState &state,
     RuntimeBlockRecord &record) {
   // Escaping pointer-capture blocks must own the captured cell storage instead
   // of borrowing stack-cell addresses after promotion.
@@ -40,7 +41,9 @@ bool PromotePointerCaptureCellsIntoRuntimeOwnedStorage(
   record.promoted_capture_cells.reserve(capture_slot_count);
   for (std::size_t slot_index = 0; slot_index < capture_slot_count;
        ++slot_index) {
-    PromoteRuntimeBlockPointerCaptureCell(record, slot_index);
+    if (!PromoteRuntimeBlockPointerCaptureCell(state, record, slot_index)) {
+      return false;
+    }
   }
   return true;
 }

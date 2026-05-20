@@ -1,0 +1,13 @@
+module duplicateProtocolRuntimeExport;
+
+@protocol Worker
+- (i32)value;
+@end
+
+@protocol Worker
+- (i32)otherValue;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

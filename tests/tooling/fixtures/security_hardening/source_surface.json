@@ -11,6 +11,8 @@
   "supply_chain_audit_contract": "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
   "response_drill_contract": "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
   "runtime_hardening_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+  "sanitizer_validation_contract": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+  "language_runtime_threat_model_backlog": "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
   "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
   "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
@@ -18,6 +20,8 @@
   "public_actions": [
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-sanitizer-validation",
+    "check-security-language-runtime-threat-model",
     "build-security-posture",
     "publish-security-advisories",
     "validate-security-hardening",
@@ -31,6 +35,8 @@
     "owned_actions": [
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
+      "check-security-sanitizer-validation",
+      "check-security-language-runtime-threat-model",
       "build-security-posture",
       "publish-security-advisories",
       "validate-security-hardening",
@@ -54,13 +60,22 @@
     "schemas/objc3c-security-advisory-index-v1.schema.json",
     "scripts/check_security_hardening_source_surface.py",
     "scripts/check_security_hardening_schema_surface.py",
+    "scripts/build_security_hardening_macro_trust_policy_summary.py",
     "scripts/build_objc3c_security_posture.py",
     "scripts/publish_objc3c_security_advisories.py",
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
+    "scripts/check_security_sanitizer_validation.py",
+    "scripts/check_security_language_runtime_threat_model.py",
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py",
     "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+    "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+    "tests/tooling/fixtures/security_hardening/sanitizer_validation_fixture.objc3",
+    "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
+    "docs/runbooks/objc3c_language_runtime_threat_model.md",
     "scripts/objc3c_workflow",
     "scripts/objc3c_workflow/actions/release_governance_security_targets.py",
     "package.json"
@@ -72,6 +87,8 @@
     "scripts/publish_objc3c_security_advisories.py",
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
+    "scripts/check_security_sanitizer_validation.py",
+    "scripts/check_security_language_runtime_threat_model.py",
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py"
   ],
@@ -88,6 +105,8 @@
     "no evidence-log security proof",
     "no local-only tabletop as capability truth",
     "no retired route or trust-bypass security claim",
-    "no wrapper-only security action claim"
+    "no wrapper-only security action claim",
+    "no sanitizer-positive claim without ASan and UBSan target application",
+    "no language/runtime threat-model claim without checked-in macro, runtime, and compiler evidence"
   ]
 }

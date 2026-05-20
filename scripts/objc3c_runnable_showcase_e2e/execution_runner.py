@@ -34,6 +34,18 @@ def run_showcase_example(
 
     workspace_payload = load_json(workspace_manifest)
     expected_exit = int(example["expected_exit_code"])
+    demo_packages_by_example = {
+        str(package.get("example_id")): package
+        for package in surface.showcase_demo_packages
+        if isinstance(package, dict)
+    }
+    demo_package = demo_packages_by_example.get(example_id)
+    expect(demo_package is not None, f"packaged demo package missing for {example_id}")
+    assert isinstance(demo_package, dict)
+    expect(
+        int(demo_package["expected_exit_code"]) == expected_exit,
+        f"packaged demo package expected exit drifted for {example_id}",
+    )
     expect(
         int(workspace_payload["runtime_surface"]["expected_exit_code"]) == expected_exit,
         f"workspace runtime surface drifted for {example_id}",
@@ -91,6 +103,8 @@ def run_showcase_example(
         run_log=repo_rel(run_log),
         expected_exit_code=expected_exit,
         actual_exit_code=actual_exit,
+        demo_package_id=str(demo_package["package_id"]),
+        coverage_domain=str(demo_package["coverage_domain"]),
     )
 
 

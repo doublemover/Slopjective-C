@@ -53,6 +53,7 @@ PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_load_thrown_error_i32",
     "objc3_runtime_bridge_status_error_i32",
     "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_bridge_foreign_exception_error_i32",
     "objc3_runtime_catch_matches_error_i32",
     "objc3_runtime_copy_error_bridge_state_for_testing",
 ]
@@ -60,6 +61,7 @@ PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_allocate_async_continuation_i32",
     "objc3_runtime_handoff_async_continuation_to_executor_i32",
     "objc3_runtime_resume_async_continuation_i32",
+    "objc3_runtime_cancel_async_continuation_i32",
     "objc3_runtime_spawn_task_i32",
     "objc3_runtime_enter_task_group_scope_i32",
     "objc3_runtime_add_task_group_task_i32",
@@ -85,13 +87,13 @@ UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-async-task-and-actor-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
 UNIFIED_CONCURRENCY_CONTINUATION_RUNTIME_MODEL = (
-    "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+    "continuation-allocation-handoff-resume-cancel-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL = (
     "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL = (
-    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-executor-binding-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL = (
     "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-concurrency-runtime-abi-widening"
@@ -100,7 +102,13 @@ BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
 BLOCK_ARC_RUNTIME_BLOCK_MODEL = (
-    "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints"
+    "descriptor-backed-promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL = (
+    "storage-slot-zero-carries-an-internal-descriptor-pointer-whose-record-preserves-size-captures-flags-arity-and-invoke-thunk"
+)
+BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL = (
+    "runtime-invocation-plans-call-the-descriptor-owned-i32-invoke-thunk-with-copied-runtime-owned-storage"
 )
 BLOCK_ARC_RUNTIME_ARC_MODEL = (
     "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints"

@@ -120,6 +120,29 @@ def build_dashboard_summary(
     if release_status not in allowed_statuses:
         failures.append("claim policy no longer admits the derived release_status")
 
+    regression_gate = {
+        "gate_id": "objc3c.performance.release.regression-gate.v1",
+        "passed": release_status == "release-ready",
+        "release_status": release_status,
+        "blocking_breach_count": blocking_breach_count,
+        "warning_breach_count": warning_breach_count,
+        "budget_ids": [
+            str(summary.get("budget_id", ""))
+            for summary in budget_evaluation.budget_family_summaries
+            if isinstance(summary.get("budget_id"), str)
+        ],
+        "blocking_breach_ids": [
+            str(breach.get("breach_id", ""))
+            for breach in breaches
+            if breach.get("severity") == "blocking"
+        ],
+        "child_report_paths": [
+            str(summary.get("child_report_path", ""))
+            for summary in budget_evaluation.budget_family_summaries
+            if isinstance(summary.get("child_report_path"), str)
+        ],
+    }
+
     generated_at = generated_at_utc or datetime.now(timezone.utc)
     return {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -144,6 +167,7 @@ def build_dashboard_summary(
         },
         "release_status": release_status,
         "claim_ready": release_status == "release-ready",
+        "regression_gate": regression_gate,
         "owner_split": inputs.source_surface.get("owner_split", {}),
         "workflow_actions": {
             "validate_action": inputs.workflow_surface.get("validate_action"),

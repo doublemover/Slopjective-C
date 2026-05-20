@@ -76,6 +76,10 @@ static bool EmitImplementationPropertyReflectionAccessorCompatibilityDiagnostics
   const bool reflection_profile_mismatch =
       interface_property.property_attribute_profile !=
           implementation_property.property_attribute_profile ||
+      interface_property.property_behavior_declared !=
+          implementation_property.property_behavior_declared ||
+      interface_property.property_behavior_name !=
+          implementation_property.property_behavior_name ||
       interface_property.ownership_lifetime_profile !=
           implementation_property.ownership_lifetime_profile ||
       interface_property.ownership_runtime_hook_profile !=

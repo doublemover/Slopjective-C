@@ -34,6 +34,7 @@ def run_inspect_editor_tooling_check(
     editor_surface = load_json(package_root / normalize_rel_path(str(dump_path_text)))
     debug_payload = editor_surface.get("debug", {})
     navigation_payload = editor_surface.get("navigation", {})
+    workspace_index = navigation_payload.get("workspace_index", {})
     formatter_payload = editor_surface.get("formatter", {})
     expect(
         formatter_payload.get("supported") is True,
@@ -55,6 +56,18 @@ def run_inspect_editor_tooling_check(
     expect(
         navigation_payload.get("available") is True,
         "packaged editor surface did not publish navigation availability",
+    )
+    expect(
+        workspace_index.get("available") is True,
+        "packaged editor surface did not publish workspace index availability",
+    )
+    expect(
+        int(workspace_index.get("package_count", 0)) >= 9,
+        "packaged editor surface workspace index did not include stdlib/showcase packages",
+    )
+    expect(
+        workspace_index.get("guardrails", {}).get("ok") is True,
+        "packaged editor surface workspace package guardrails failed",
     )
     expect(
         int(debug_payload.get("declaration_breakpoint_anchor_count", 0)) >= 3,
@@ -121,6 +134,14 @@ def run_workspace_check(
         workspace_editor_tooling.get("statement_level_stepping")
         is (not contract["expected_fail_closed_statement_stepping"]),
         "packaged workspace stepping availability drifted",
+    )
+    expect(
+        workspace_editor_tooling.get("workspace_index_guardrails_ok") is True,
+        "packaged workspace semantic index guardrail status drifted",
+    )
+    expect(
+        int(workspace_editor_tooling.get("workspace_package_count", 0)) >= 9,
+        "packaged workspace semantic index package count drifted",
     )
     for action in ("inspect-editor-tooling", "format-objc3c", "validate-developer-tooling"):
         expect(

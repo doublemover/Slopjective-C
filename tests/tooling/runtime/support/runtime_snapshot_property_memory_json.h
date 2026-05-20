@@ -43,6 +43,16 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
   PrintIntField("setter_available", snapshot.setter_available);
   PrintIntField("has_runtime_getter", snapshot.has_runtime_getter);
   PrintIntField("has_runtime_setter", snapshot.has_runtime_setter);
+  PrintUint64Field("attribute_count",
+                   static_cast<unsigned long long>(snapshot.attribute_count));
+  PrintIntField("is_readonly", snapshot.is_readonly);
+  PrintIntField("is_nonatomic", snapshot.is_nonatomic);
+  PrintIntField("is_strong", snapshot.is_strong);
+  PrintIntField("is_assign", snapshot.is_assign);
+  PrintIntField("is_weak", snapshot.is_weak);
+  PrintIntField("is_copy", snapshot.is_copy);
+  PrintIntField("has_custom_getter", snapshot.has_custom_getter);
+  PrintIntField("has_custom_setter", snapshot.has_custom_setter);
   PrintUint64Field("base_identity",
                    static_cast<unsigned long long>(snapshot.base_identity));
   PrintUint64Field("slot_index",
@@ -53,6 +63,22 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
                    static_cast<unsigned long long>(snapshot.size_bytes));
   PrintUint64Field("alignment_bytes",
                    static_cast<unsigned long long>(snapshot.alignment_bytes));
+  PrintUint64Field("padding_bytes",
+                   static_cast<unsigned long long>(snapshot.padding_bytes));
+  PrintUint64Field("inherited_slot_count",
+                   static_cast<unsigned long long>(
+                       snapshot.inherited_slot_count));
+  PrintUint64Field("inherited_size_bytes",
+                   static_cast<unsigned long long>(
+                       snapshot.inherited_size_bytes));
+  PrintUint64Field("owner_size_bytes",
+                   static_cast<unsigned long long>(snapshot.owner_size_bytes));
+  PrintUint64Field("init_order_index",
+                   static_cast<unsigned long long>(snapshot.init_order_index));
+  PrintUint64Field("destroy_order_index",
+                   static_cast<unsigned long long>(
+                       snapshot.destroy_order_index));
+  PrintIntField("layout_valid", snapshot.layout_valid);
   PrintUint64Field("instance_size_bytes", static_cast<unsigned long long>(
                                               snapshot.instance_size_bytes));
   PrintStringField("queried_class_name", snapshot.queried_class_name);
@@ -71,6 +97,16 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
   PrintStringField("synthesized_binding_symbol",
                    snapshot.synthesized_binding_symbol);
   PrintStringField("ivar_layout_symbol", snapshot.ivar_layout_symbol);
+  PrintStringField("ivar_layout_replay_key", snapshot.ivar_layout_replay_key);
+  PrintStringField("property_attribute_profile",
+                   snapshot.property_attribute_profile);
+  PrintStringField("property_behavior_name", snapshot.property_behavior_name);
+  PrintStringField("ownership_lifetime_profile",
+                   snapshot.ownership_lifetime_profile);
+  PrintStringField("ownership_runtime_hook_profile",
+                   snapshot.ownership_runtime_hook_profile);
+  PrintStringField("accessor_ownership_profile",
+                   snapshot.accessor_ownership_profile);
   PrintStringField("getter_owner_identity", snapshot.getter_owner_identity);
   PrintStringField("setter_owner_identity", snapshot.setter_owner_identity,
                    false);
@@ -247,6 +283,7 @@ inline void PrintPropertyEntryStorageOwnership(
                    snapshot.effective_setter_selector);
   PrintStringField("property_attribute_profile",
                    snapshot.property_attribute_profile);
+  PrintStringField("property_behavior_name", snapshot.property_behavior_name);
   PrintStringField("ownership_lifetime_profile",
                    snapshot.ownership_lifetime_profile);
   PrintStringField("ownership_runtime_hook_profile",

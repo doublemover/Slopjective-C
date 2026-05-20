@@ -27,8 +27,20 @@ void PopulateObjc3DriverCrossModuleRuntimeImportedInputBlockOwnership(
       .block_ownership_runtime_support_library_link_wiring_contract_id =
       imported_surface
           .block_ownership_runtime_support_library_link_wiring_contract_id;
+  imported_input
+      .block_ownership_retain_release_operation_lowering_contract_id =
+      imported_surface
+          .block_ownership_retain_release_operation_lowering_contract_id;
+  imported_input.block_ownership_autoreleasepool_scope_lowering_contract_id =
+      imported_surface
+          .block_ownership_autoreleasepool_scope_lowering_contract_id;
   imported_input.block_ownership_replay_key =
       imported_surface.block_ownership_replay_key;
+  imported_input.block_ownership_retain_release_operation_lowering_replay_key =
+      imported_surface
+          .block_ownership_retain_release_operation_lowering_replay_key;
+  imported_input.block_ownership_autoreleasepool_scope_lowering_replay_key =
+      imported_surface.block_ownership_autoreleasepool_scope_lowering_replay_key;
   imported_input.block_ownership_local_block_literal_sites =
       imported_surface.block_ownership_local_block_literal_sites;
   imported_input.block_ownership_local_invoke_trampoline_symbolized_sites =
@@ -45,4 +57,36 @@ void PopulateObjc3DriverCrossModuleRuntimeImportedInputBlockOwnership(
       imported_surface.block_ownership_local_escape_to_heap_sites;
   imported_input.block_ownership_local_byref_layout_symbolized_sites =
       imported_surface.block_ownership_local_byref_layout_symbolized_sites;
+  imported_input.block_ownership_local_arc_ownership_qualified_sites =
+      imported_surface.block_ownership_local_arc_ownership_qualified_sites;
+  imported_input.block_ownership_local_arc_retain_insertion_sites =
+      imported_surface.block_ownership_local_arc_retain_insertion_sites;
+  imported_input.block_ownership_local_arc_release_insertion_sites =
+      imported_surface.block_ownership_local_arc_release_insertion_sites;
+  imported_input.block_ownership_local_arc_autorelease_insertion_sites =
+      imported_surface.block_ownership_local_arc_autorelease_insertion_sites;
+  imported_input.block_ownership_local_arc_contract_violation_sites =
+      imported_surface.block_ownership_local_arc_contract_violation_sites;
+  imported_input.block_ownership_local_autoreleasepool_scope_sites =
+      imported_surface.block_ownership_local_autoreleasepool_scope_sites;
+  imported_input
+      .block_ownership_local_autoreleasepool_scope_symbolized_sites =
+      imported_surface
+          .block_ownership_local_autoreleasepool_scope_symbolized_sites;
+  imported_input.block_ownership_local_autoreleasepool_max_scope_depth =
+      imported_surface.block_ownership_local_autoreleasepool_max_scope_depth;
+  imported_input
+      .block_ownership_local_autoreleasepool_scope_entry_transition_sites =
+      imported_surface
+          .block_ownership_local_autoreleasepool_scope_entry_transition_sites;
+  imported_input
+      .block_ownership_local_autoreleasepool_scope_exit_transition_sites =
+      imported_surface
+          .block_ownership_local_autoreleasepool_scope_exit_transition_sites;
+  imported_input
+      .block_ownership_local_autoreleasepool_contract_violation_sites =
+      imported_surface
+          .block_ownership_local_autoreleasepool_contract_violation_sites;
+  imported_input.block_ownership_arc_cleanup_preservation_ready =
+      imported_surface.block_ownership_arc_cleanup_preservation_ready;
 }

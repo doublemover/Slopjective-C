@@ -6,6 +6,7 @@
   "machine_output_root": "tmp/artifacts/showcase",
   "machine_report_root": "tmp/reports/showcase",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "demo_packages_manifest": "showcase/demo_packages.json",
   "public_command_model": {
     "entrypoint_kind": "single-npm-bridge",
     "canonical_template": "npm run objc3c -- <action>",

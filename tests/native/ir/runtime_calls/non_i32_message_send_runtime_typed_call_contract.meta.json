@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "fixture": "non_i32_message_send_runtime_typed_call_contract.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "ir",
+  "behavior_family": "runtime_calls",
+  "fixture_kind": "strict-error",
+  "retired_surface_tags": [
+    "runtime-dispatch"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-strict-error",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "link",
+    "diagnostic_code": "link.unresolved_symbol",
+    "required_tokens": [
+      "link.unresolved_symbol:objc3_runtime_dispatch_typed_value",
+      "link.input_object_basename:module."
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_typed_value"
+  }
+}

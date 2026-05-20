@@ -45,6 +45,44 @@
       "operator_action": "require explicit conversion replay or do not claim support"
     }
   ],
+  "state_transition_policy": {
+    "allowed_transitions": [
+      {
+        "from": "active",
+        "to": "soft-deprecated",
+        "required_evidence": [
+          "successor-surface"
+        ]
+      },
+      {
+        "from": "soft-deprecated",
+        "to": "hard-deprecated",
+        "required_evidence": [
+          "successor-surface",
+          "generated-conversion-replay",
+          "generated-revert-evidence"
+        ]
+      },
+      {
+        "from": "hard-deprecated",
+        "to": "removed",
+        "required_evidence": [
+          "generated-conversion-replay",
+          "generated-revert-evidence",
+          "operator-publication"
+        ]
+      }
+    ],
+    "non_waivable_states": [
+      "hard-deprecated",
+      "removed"
+    ],
+    "forbidden_transitions": [
+      "removed->active",
+      "removed->soft-deprecated",
+      "hard-deprecated->active"
+    ]
+  },
   "claim_guardrails": [
     "Claims must cite a generated update manifest, upgrade support report, or long-horizon operations summary.",
     "Claims may not use release-operation forbidden phrases or imply evergreen support.",
@@ -58,6 +96,56 @@
     "successor_surface",
     "conversion_replay_evidence",
     "revert_evidence"
+  ],
+  "publication_field_requirements": [
+    {
+      "field": "support_window",
+      "required_for_states": [
+        "active",
+        "soft-deprecated",
+        "hard-deprecated",
+        "removed"
+      ]
+    },
+    {
+      "field": "deprecation_state",
+      "required_for_states": [
+        "active",
+        "soft-deprecated",
+        "hard-deprecated",
+        "removed"
+      ]
+    },
+    {
+      "field": "warning_class",
+      "required_for_states": [
+        "soft-deprecated",
+        "hard-deprecated",
+        "removed"
+      ]
+    },
+    {
+      "field": "successor_surface",
+      "required_for_states": [
+        "soft-deprecated",
+        "hard-deprecated",
+        "removed"
+      ]
+    },
+    {
+      "field": "conversion_replay_evidence",
+      "required_for_states": [
+        "hard-deprecated",
+        "removed"
+      ]
+    },
+    {
+      "field": "revert_evidence",
+      "required_for_states": [
+        "hard-deprecated",
+        "removed"
+      ]
+    }
   ],
   "release_blocking_conditions": [
     "missing support-window authority",

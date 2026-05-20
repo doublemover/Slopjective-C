@@ -80,6 +80,17 @@ static void RecordThrowContextDiagnostic(
     std::vector<std::string> &diagnostics) {
   RecordErrorHandlingSemanticDiagnostic(
       summary.contract_violation_sites, line, column, "O3S274",
-      "throw statements require a throws function or a catch body",
+      "throw statements require a throws function or an enclosing do/catch handler",
+      diagnostics);
+}
+
+static void RecordRethrowContextDiagnostic(
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
+    unsigned line,
+    unsigned column,
+    std::vector<std::string> &diagnostics) {
+  RecordErrorHandlingSemanticDiagnostic(
+      summary.contract_violation_sites, line, column, "O3S284",
+      "rethrow from catch requires a throws function or an enclosing do/catch handler",
       diagnostics);
 }

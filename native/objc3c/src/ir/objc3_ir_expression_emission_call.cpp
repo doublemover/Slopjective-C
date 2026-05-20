@@ -59,11 +59,9 @@ std::string EmitObjc3IRCallExpression(
       actual_result = result.substr(0, marker);
       failure_cond = result.substr(marker + 1);
     } else if (operand_signature->throws_declared) {
-      const std::string loaded_error = callbacks.new_temp(ctx);
       const std::string has_error = callbacks.new_temp(ctx);
-      ctx.code_lines.push_back("  " + loaded_error +
-                               " = load i32, ptr " + error_slot +
-                               ", align 4");
+      const std::string loaded_error =
+          callbacks.emit_load_thrown_error(error_slot, ctx);
       ctx.code_lines.push_back("  " + has_error + " = icmp ne i32 " +
                                loaded_error + ", 0");
       failure_cond = has_error;
@@ -125,11 +123,10 @@ std::string EmitObjc3IRCallExpression(
     return callbacks.emit_direct_function_call(
         expr, signature, ctx, ignored_error_slot, nullptr, nullptr);
   }
-  // implementation anchor: supported await-marked expressions
-  // currently reach native IR through the operand's direct-call lowering
-  // path. This emits runnable IR/object code for the non-suspending happy
-  // slice without materializing continuation allocation or a state
-  // machine; those surfaces remain later work.
+  // implementation anchor: supported await-marked expressions reach native IR
+  // through direct-call lowering, where executor-affined async contexts
+  // materialize the private continuation helper handoff. Unsupported await
+  // surfaces fail closed from that direct-call path.
   return callbacks.emit_direct_function_call(expr, signature, ctx, "",
                                              nullptr, nullptr);
 }

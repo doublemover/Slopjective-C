@@ -21,30 +21,66 @@ function Get-RuntimeDispatchExpectationFromSpec {
   $requiresLiveRuntimeDispatch = $false
   $requiresLiveRuntimeDispatchExplicit = $false
   $canonicalRuntimeDispatchSymbol = "objc3_runtime_dispatch_i32"
-  $runtimeDispatchSymbol = $canonicalRuntimeDispatchSymbol
+  $allowedRuntimeDispatchSymbols = @(
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_dispatch_i32_from_class",
+    "objc3_runtime_dispatch_typed_value",
+    "objc3_runtime_dispatch_typed_value_from_class"
+  )
+  $runtimeDispatchSymbols = @($canonicalRuntimeDispatchSymbol)
 
   if ($null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") {
     $requiresLiveRuntimeDispatch = [bool]$ExecutionSpec.requires_live_runtime_dispatch
     $requiresLiveRuntimeDispatchExplicit = $true
   }
-  if ($null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "runtime_dispatch_symbol") {
+  $hasScalarSymbol = $null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "runtime_dispatch_symbol"
+  $hasPluralSymbols = $null -ne $ExecutionSpec -and $ExecutionSpec.PSObject.Properties.Name -contains "runtime_dispatch_symbols"
+  if ($hasScalarSymbol -and $hasPluralSymbols) {
+    throw "execution smoke FAIL: runtime_dispatch_symbol and runtime_dispatch_symbols are mutually exclusive"
+  }
+  if ($hasScalarSymbol) {
     $candidate = "$($ExecutionSpec.runtime_dispatch_symbol)".Trim()
     if ([string]::IsNullOrWhiteSpace($candidate)) {
-      throw "execution smoke FAIL: runtime_dispatch_symbol must be omitted or set to $canonicalRuntimeDispatchSymbol"
+      throw "execution smoke FAIL: runtime_dispatch_symbol must be omitted or set to a live runtime dispatch symbol"
     }
-    if ($candidate -ne $canonicalRuntimeDispatchSymbol) {
-      throw "execution smoke FAIL: retired runtime dispatch symbol '$candidate' in execution metadata; expected $canonicalRuntimeDispatchSymbol"
+    if ($allowedRuntimeDispatchSymbols -notcontains $candidate) {
+      throw "execution smoke FAIL: unsupported runtime dispatch symbol '$candidate' in execution metadata"
     }
     if (-not $requiresLiveRuntimeDispatch) {
       throw "execution smoke FAIL: runtime_dispatch_symbol requires requires_live_runtime_dispatch=true"
     }
-    $runtimeDispatchSymbol = $candidate
+    $runtimeDispatchSymbols = @($candidate)
+  }
+  if ($hasPluralSymbols) {
+    $runtimeDispatchSymbols = @()
+    $seenRuntimeDispatchSymbols = @{}
+    foreach ($candidateValue in @($ExecutionSpec.runtime_dispatch_symbols)) {
+      $candidate = "$candidateValue".Trim()
+      if ([string]::IsNullOrWhiteSpace($candidate)) {
+        throw "execution smoke FAIL: runtime_dispatch_symbols entries must be non-empty live runtime dispatch symbols"
+      }
+      if ($allowedRuntimeDispatchSymbols -notcontains $candidate) {
+        throw "execution smoke FAIL: unsupported runtime dispatch symbol '$candidate' in execution metadata"
+      }
+      if ($seenRuntimeDispatchSymbols.ContainsKey($candidate)) {
+        throw "execution smoke FAIL: runtime_dispatch_symbols must not contain duplicate entries"
+      }
+      $seenRuntimeDispatchSymbols[$candidate] = $true
+      $runtimeDispatchSymbols += $candidate
+    }
+    if ($runtimeDispatchSymbols.Count -eq 0) {
+      throw "execution smoke FAIL: runtime_dispatch_symbols must contain at least one live runtime dispatch symbol"
+    }
+    if (-not $requiresLiveRuntimeDispatch) {
+      throw "execution smoke FAIL: runtime_dispatch_symbols requires requires_live_runtime_dispatch=true"
+    }
   }
 
   return [pscustomobject]@{
     requires_live_runtime_dispatch = $requiresLiveRuntimeDispatch
     requires_live_runtime_dispatch_explicit = $requiresLiveRuntimeDispatchExplicit
-    runtime_dispatch_symbol = $runtimeDispatchSymbol
+    runtime_dispatch_symbol = $runtimeDispatchSymbols[0]
+    runtime_dispatch_symbols = @($runtimeDispatchSymbols)
   }
 }
 
@@ -117,6 +153,7 @@ function Get-PositiveExpectation {
     requires_live_runtime_dispatch = $dispatchExpectation.requires_live_runtime_dispatch
     requires_live_runtime_dispatch_explicit = $dispatchExpectation.requires_live_runtime_dispatch_explicit
     runtime_dispatch_symbol = $dispatchExpectation.runtime_dispatch_symbol
+    runtime_dispatch_symbols = @($dispatchExpectation.runtime_dispatch_symbols)
     meta_path = $metaPath
   }
 }
@@ -159,6 +196,7 @@ function Get-NegativeExpectation {
     requires_live_runtime_dispatch = $dispatchExpectation.requires_live_runtime_dispatch
     requires_live_runtime_dispatch_explicit = $dispatchExpectation.requires_live_runtime_dispatch_explicit
     runtime_dispatch_symbol = $dispatchExpectation.runtime_dispatch_symbol
+    runtime_dispatch_symbols = @($dispatchExpectation.runtime_dispatch_symbols)
     required_link_tokens = @($requiredTokens)
     expectation_path = $expectPath
   }

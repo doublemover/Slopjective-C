@@ -42,6 +42,15 @@ def assert_named_summary_fields(summary: dict[str, Any], checker: ModuleType) ->
         summary["quarantine_manifest"]
         == checker.EXPECTED_REQUIRED_PATHS["quarantine_manifest"]
     )
+    assert summary["repro_corpus"] == checker.EXPECTED_REQUIRED_PATHS["repro_corpus"]
+    assert (
+        summary["support_claim_gate"]
+        == checker.EXPECTED_REQUIRED_PATHS["support_claim_gate"]
+    )
+    assert (
+        summary["support_claim_gate_script"]
+        == checker.EXPECTED_REQUIRED_PATHS["support_claim_gate_script"]
+    )
     assert (
         summary["artifact_surface"]
         == checker.EXPECTED_REQUIRED_PATHS["artifact_surface"]

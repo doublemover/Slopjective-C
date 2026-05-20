@@ -22,6 +22,8 @@ function Resolve-Objc3cNativeToolchain {
 
   $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
   $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
+  $llvmArTool = Join-Path $llvmRoot "bin\llvm-ar.exe"
+  $llvmRanlibTool = Join-Path $llvmRoot "bin\llvm-ranlib.exe"
   $llvmLibTool = Join-Path $llvmRoot "bin\llvm-lib.exe"
 
   if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
@@ -30,7 +32,23 @@ function Resolve-Objc3cNativeToolchain {
       $clangxx = $resolvedClangxx
       $clangBinDir = Split-Path -Parent $clangxx
       $llvmRoot = Split-Path -Parent $clangBinDir
+      $llvmArTool = Join-Path $llvmRoot "bin\llvm-ar.exe"
+      $llvmRanlibTool = Join-Path $llvmRoot "bin\llvm-ranlib.exe"
       $llvmLibTool = Join-Path $llvmRoot "bin\llvm-lib.exe"
+    }
+  }
+
+  if (!(Test-Path -LiteralPath $llvmArTool -PathType Leaf)) {
+    $resolvedLlvmAr = Resolve-Objc3cNativeCommandPath -CommandName "llvm-ar"
+    if ($null -ne $resolvedLlvmAr) {
+      $llvmArTool = $resolvedLlvmAr
+    }
+  }
+
+  if (!(Test-Path -LiteralPath $llvmRanlibTool -PathType Leaf)) {
+    $resolvedLlvmRanlib = Resolve-Objc3cNativeCommandPath -CommandName "llvm-ranlib"
+    if ($null -ne $resolvedLlvmRanlib) {
+      $llvmRanlibTool = $resolvedLlvmRanlib
     }
   }
 
@@ -52,6 +70,8 @@ function Resolve-Objc3cNativeToolchain {
   $nativeSourceRoot = Join-Path $RepoRoot "native/objc3c/src"
 
   Assert-Objc3cNativeToolchainPath -Path $clangxx -PathType Leaf -Message ("clang++ not found. set LLVM_ROOT or ensure clang++ is on PATH (attempted: " + $clangxx + ")")
+  Assert-Objc3cNativeToolchainPath -Path $llvmArTool -PathType Leaf -Message ("llvm-ar not found. set LLVM_ROOT or ensure llvm-ar is on PATH (attempted: " + $llvmArTool + ")")
+  Assert-Objc3cNativeToolchainPath -Path $llvmRanlibTool -PathType Leaf -Message ("llvm-ranlib not found. set LLVM_ROOT or ensure llvm-ranlib is on PATH (attempted: " + $llvmRanlibTool + ")")
   Assert-Objc3cNativeToolchainPath -Path $llvmLibTool -PathType Leaf -Message ("llvm-lib not found. set LLVM_ROOT or ensure llvm-lib is on PATH (attempted: " + $llvmLibTool + ")")
   if ($null -eq $libclang) {
     $attempted = [string]::Join(", ", $libclangCandidates)
@@ -65,6 +85,8 @@ function Resolve-Objc3cNativeToolchain {
   return [pscustomobject]@{
     LlvmRoot = $llvmRoot
     Clangxx = $clangxx
+    LlvmArTool = $llvmArTool
+    LlvmRanlibTool = $llvmRanlibTool
     LlvmLibTool = $llvmLibTool
     CmakeTool = $cmakeTool
     NinjaTool = $ninjaTool

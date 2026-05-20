@@ -97,6 +97,8 @@ def build_runtime_block_arc_unified_source_surface(
             "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
             "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
             "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
             "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
             "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
             "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
@@ -108,6 +110,7 @@ def build_runtime_block_arc_unified_source_surface(
         "authoritative_probe_paths": [
             "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
             "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
             "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
             BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],

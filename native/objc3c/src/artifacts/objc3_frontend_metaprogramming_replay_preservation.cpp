@@ -226,6 +226,9 @@ BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
              << summary.local_property_behavior_artifact_count
              << ";imported_module_count=" << summary.imported_module_count
              << ";cache_root_relative_path=" << summary.cache_root_relative_path
+             << ";invalidation_model=" << summary.invalidation_model
+             << ";sandbox_policy_model=" << summary.sandbox_policy_model
+             << ";diagnostics_model=" << summary.diagnostics_model
              << ";runtime_import_artifact_ready="
              << (summary.runtime_import_artifact_ready ? "true" : "false")
              << ";separate_compilation_ready="
@@ -254,6 +257,12 @@ std::string BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummaryJs
       << "\",\"toolchain_model\":\""
       << EscapeJsonString(summary.toolchain_model)
       << "\",\"cache_model\":\"" << EscapeJsonString(summary.cache_model)
+      << "\",\"invalidation_model\":\""
+      << EscapeJsonString(summary.invalidation_model)
+      << "\",\"sandbox_policy_model\":\""
+      << EscapeJsonString(summary.sandbox_policy_model)
+      << "\",\"diagnostics_model\":\""
+      << EscapeJsonString(summary.diagnostics_model)
       << "\",\"fail_closed_model\":\""
       << EscapeJsonString(summary.fail_closed_model)
       << "\",\"metaprogramming_replay_key\":\""

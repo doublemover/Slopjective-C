@@ -111,6 +111,17 @@ def main() -> int:
 
     parity_ll_labeled = count_ll_headers(parity_paths)
     parity_json_labeled = count_json_envelopes(parity_paths)
+    replay_ll_match_count = next(
+        (
+            entry['match_count']
+            for entry in synthetic_rule_counts
+            if entry['rule_id'] == 'objc3c.fixture.synthetic.replayll.v1'
+        ),
+        0,
+    )
+    parity_ll_match_count = sum(1 for path in parity_paths if path.endswith('.ll'))
+    synthetic_ll_inventory_count = inventory['authenticity_classes']['synthetic_or_replay_ll']['count']
+    synthetic_ll_classified_count = replay_ll_match_count + parity_ll_match_count
 
     summary = {
         'issue': 'source-hygiene-artifact-authenticity-classification',
@@ -122,12 +133,15 @@ def main() -> int:
         'synthetic_rule_counts': synthetic_rule_counts,
         'synthetic_total_match_count': len(total_synthetic_matches),
         'archive_reference_match_count': len(archive_matches),
+        'synthetic_ll_inventory_count': synthetic_ll_inventory_count,
+        'synthetic_ll_classified_count': synthetic_ll_classified_count,
         'library_cli_parity_labeled_ll_count': parity_ll_labeled,
         'library_cli_parity_labeled_json_count': parity_json_labeled,
         'checks': {
             'classification_contract_linked_from_policy': policy.get('classification_contract') == 'tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json',
             'generated_truth_paths_complete': len(generated_truth_present) == len(generated_truth_paths),
-            'synthetic_replay_ll_rule_matches_inventory': next((entry['match_count'] for entry in synthetic_rule_counts if entry['rule_id'] == 'objc3c.fixture.synthetic.replayll.v1'), -1) == inventory['authenticity_classes']['synthetic_or_replay_ll']['count'],
+            'synthetic_replay_ll_rule_matches_inventory': synthetic_ll_classified_count == synthetic_ll_inventory_count,
+            'synthetic_ll_rules_cover_inventory': synthetic_ll_classified_count == synthetic_ll_inventory_count,
             'synthetic_test_json_rule_covers_tests_json': next((entry['match_count'] for entry in synthetic_rule_counts if entry['rule_id'] == 'objc3c.fixture.synthetic.testjson.v1'), -1) >= inventory['authenticity_classes']['tracked_test_and_conformance_json']['count'],
             'library_cli_parity_has_labeled_examples': parity_json_labeled >= 3,
             'archive_reference_rule_has_matches': len(archive_matches) >= inventory['archive_file_count'],

@@ -44,7 +44,6 @@ void PublishRegistrationTableRecord(
       linker_anchor_matches_discovery_root;
   record.used_staged_registration_table = true;
   record.ownership_explicit = RuntimeOwnerSplitContractIsReady();
-  record.retired_route_path_allowed = RuntimeRetiredRoutePathsAreAllowed();
 }
 
 }  // namespace objc3c::runtime

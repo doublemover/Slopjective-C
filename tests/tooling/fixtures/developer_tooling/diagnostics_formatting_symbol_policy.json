@@ -6,14 +6,19 @@
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
   "summary_implementation_anchor": "scripts/build_developer_tooling_diagnostics_policy_summary.py",
   "authoritative_code_paths": [
-    "scripts.objc3c_workflow",
+    "scripts/objc3c_workflow/action_catalog_developer_inspection.py",
+    "scripts/objc3c_workflow/action_handlers_developer_inspection.py",
     "scripts/check_objc3c_developer_tooling_integration.py",
+    "scripts/check_developer_tooling_diagnostic_quality.py",
+    "scripts/check_developer_tooling_formatter_rewrite_surface.py",
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/hello.objc3",
-    "tests/tooling/fixtures/native/negative_undefined_symbol.objc3"
+    "tests/tooling/fixtures/native/negative_undefined_symbol.objc3",
+    "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+    "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json"
   ],
   "diagnostics_source_of_truth": [
     "frontend runner summary JSON is authoritative for compile status, blocking stage, and aggregate diagnostic severity",
@@ -26,11 +31,18 @@
   "formatting_policy": [
     "formatter output must be generated through the canonical developer-tooling surface after a real compile attempt",
     "formatter claims must fail closed outside the supported canonical subset",
-    "formatter output must never override compile-owned diagnostics or declaration coordinates"
+    "formatter output must never override compile-owned diagnostics or declaration coordinates",
+    "safe source rewrites must publish token-boundary edits and skip strings and comments"
+  ],
+  "diagnostic_quality_policy": [
+    "diagnostic taxonomy quality is checked against tests/conformance/diagnostics/manifest.json",
+    "diagnostic fix-its must carry structured ranges and replacement text before they count as machine-applicable",
+    "diagnostic quality summaries must be generated under tmp reports and never used as checked-in source truth"
   ],
   "claim_narrowing_constraints": [
     "no editor-only shadow parser may become the source of truth for diagnostics or symbol resolution",
-    "formatting support must be described as preview or fail-closed until a replayable formatter output surface exists",
+    "formatting support must be described as canonical Objective-C 3 source formatting or fail-closed only when the replayable formatter output surface exists",
+    "source rewrite support must stay limited to deterministic safe rewrites until compile-owned semantic rename contracts exist",
     "symbol navigation claims must stay limited to compile-owned declarations and artifact-backed locations"
   ]
 }

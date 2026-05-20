@@ -31,6 +31,14 @@ def build_summary_payload(
         "package_root": repo_rel(package_root),
         "showcase_portfolio": repo_rel(surface.showcase_portfolio),
         "showcase_readme": repo_rel(surface.showcase_readme),
+        "showcase_demo_packages_manifest": repo_rel(
+            surface.showcase_demo_packages_manifest
+        ),
+        "showcase_demo_package_ids": [
+            entry.get("package_id")
+            for entry in surface.showcase_demo_packages
+            if isinstance(entry, dict)
+        ],
         "examples": [entry.payload() for entry in execution_result.examples],
         "child_report_paths": extract_report_paths(package_result.stdout),
         "steps": [

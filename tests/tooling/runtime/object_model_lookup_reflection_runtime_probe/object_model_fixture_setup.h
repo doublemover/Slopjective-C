@@ -2,6 +2,7 @@
 #define OBJC3C_TESTS_TOOLING_RUNTIME_OBJECT_MODEL_LOOKUP_REFLECTION_RUNTIME_PROBE_OBJECT_MODEL_FIXTURE_SETUP_H_
 
 #include "probe_result.h"
+#include "support/typed_dispatch_helpers.h"
 
 namespace objc3c::runtime::probe::object_model_lookup_reflection_runtime {
 
@@ -25,10 +26,12 @@ inline void CaptureObjectModelFixture(ObjectModelFixture &fixture) {
       kWidgetClassName, &fixture.widget_class.snapshot);
   fixture.widget_class_receiver =
       WidgetClassReceiverIdentity(fixture.widget_class.snapshot);
-  fixture.widget_instance = objc3_runtime_dispatch_i32(
-      fixture.widget_class_receiver, kAllocSelector, 0, 0, 0, 0);
-  fixture.initialized_widget = objc3_runtime_dispatch_i32(
-      fixture.widget_instance, kInitSelector, 0, 0, 0, 0);
+  fixture.widget_instance =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.widget_class_receiver, kAllocSelector);
+  fixture.initialized_widget =
+      ::objc3c::runtime::probe::DispatchTypedObjectReference(
+          fixture.widget_instance, kInitSelector);
 }
 
 }  // namespace objc3c::runtime::probe::object_model_lookup_reflection_runtime

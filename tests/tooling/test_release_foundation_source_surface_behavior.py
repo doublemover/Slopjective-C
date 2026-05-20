@@ -40,6 +40,7 @@ def test_release_foundation_source_surface_writes_named_summary_fields() -> None
         )
         assert summary["runbook"] == checker.EXPECTED_RUNBOOK
         assert summary["artifact_taxonomy"] == checker.EXPECTED_REQUIRED_PATHS["artifact_taxonomy"]
+        assert summary["abi_api_governance"] == checker.EXPECTED_REQUIRED_PATHS["abi_api_governance"]
         assert summary["workflow_surface"] == checker.EXPECTED_REQUIRED_PATHS["workflow_surface"]
         assert summary["schema_surface"] == checker.EXPECTED_REQUIRED_PATHS["schema_surface"]
         assert summary["checked_in_sources"] == list(checker.EXPECTED_CHECKED_IN_SOURCES)

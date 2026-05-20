@@ -21,12 +21,26 @@ inline PassResult RunPass(const TaskRuntimeHardeningScenario &scenario) {
       objc3_runtime_enter_task_group_scope_i32(scenario.scope_group_tag);
   result.add_task =
       objc3_runtime_add_task_group_task_i32(scenario.group_task_tag);
+  result.after_add_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.after_add_task);
+  result.add_second_task =
+      objc3_runtime_add_task_group_task_i32(scenario.group_task_tag);
+  result.after_second_add_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(
+          &result.after_second_add_task);
   result.cancelled =
       objc3_runtime_task_is_cancelled_i32(scenario.cancellation_task_tag);
   result.wait_next =
       objc3_runtime_wait_task_group_next_i32(scenario.wait_group_tag);
+  result.after_wait_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.after_wait_next);
   result.hop =
       objc3_runtime_executor_hop_i32(result.wait_next, scenario.executor_hop_tag);
+  result.wait_second_next =
+      objc3_runtime_wait_task_group_next_i32(scenario.wait_group_tag);
+  result.after_second_wait_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(
+          &result.after_second_wait_next);
   result.cancel_all =
       objc3_runtime_cancel_task_group_i32(scenario.cancel_group_tag);
   result.on_cancel =
@@ -40,6 +54,48 @@ inline PassResult RunPass(const TaskRuntimeHardeningScenario &scenario) {
       objc3_runtime_copy_memory_management_state_for_testing(&result.memory);
   result.copy_arc_status =
       objc3_runtime_copy_arc_debug_state_for_testing(&result.arc);
+  return result;
+}
+
+inline InvalidHandleResult RunInvalidHandlePass() {
+  InvalidHandleResult result{};
+  ResetTaskRuntimeFixture();
+  result.invalid_spawn_kind = objc3_runtime_spawn_task_i32(99, 2);
+  result.invalid_spawn_executor = objc3_runtime_spawn_task_i32(1, -1);
+  result.missing_group_add = objc3_runtime_add_task_group_task_i32(2);
+  result.missing_group_wait = objc3_runtime_wait_task_group_next_i32(2);
+  result.missing_group_cancel = objc3_runtime_cancel_task_group_i32(2);
+  result.scope = objc3_runtime_enter_task_group_scope_i32(4);
+  result.executor_mismatch_add = objc3_runtime_add_task_group_task_i32(5);
+  result.copy_task_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.task);
+  return result;
+}
+
+inline CancelDrainResult RunCancelDrainPass() {
+  CancelDrainResult result{};
+  ResetTaskRuntimeFixture();
+  result.scope = objc3_runtime_enter_task_group_scope_i32(6);
+  result.add_task = objc3_runtime_add_task_group_task_i32(6);
+  result.add_second_task = objc3_runtime_add_task_group_task_i32(6);
+  result.cancel_all = objc3_runtime_cancel_task_group_i32(6);
+  result.copy_task_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.task);
+  return result;
+}
+
+inline ExecutorHopRaceGuardResult RunExecutorHopRaceGuardPass() {
+  ExecutorHopRaceGuardResult result{};
+  ResetTaskRuntimeFixture();
+  result.scope = objc3_runtime_enter_task_group_scope_i32(7);
+  result.add_task = objc3_runtime_add_task_group_task_i32(7);
+  result.wait_next = objc3_runtime_wait_task_group_next_i32(7);
+  result.stale_value_hop =
+      objc3_runtime_executor_hop_i32(result.wait_next + 1, 7);
+  result.wrong_executor_hop =
+      objc3_runtime_executor_hop_i32(result.wait_next, 8);
+  result.copy_task_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.task);
   return result;
 }
 

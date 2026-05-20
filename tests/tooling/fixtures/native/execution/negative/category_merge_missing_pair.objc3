@@ -1,0 +1,15 @@
+module categoryMergeMissingPair;
+
+@interface Widget
+@end
+
+@implementation Widget
+@end
+
+@interface Widget (Debug)
++ (i32) value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

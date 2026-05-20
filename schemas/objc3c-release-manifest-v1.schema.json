@@ -21,6 +21,8 @@
     "repo_superclean_surface_sha256",
     "release_evidence_index_path",
     "release_evidence_index_sha256",
+    "abi_api_drift_summary_path",
+    "abi_api_drift_summary_sha256",
     "source_stamps"
   ],
   "properties": {
@@ -71,6 +73,8 @@
     "repo_superclean_surface_sha256": { "type": "string" },
     "release_evidence_index_path": { "type": "string" },
     "release_evidence_index_sha256": { "type": "string" },
+    "abi_api_drift_summary_path": { "type": "string" },
+    "abi_api_drift_summary_sha256": { "type": "string" },
     "source_stamps": {
       "type": "object",
       "required": ["generated_at_utc", "git_commit", "git_tree_dirty"],

@@ -24,6 +24,8 @@ def build_synthesized_accessor_runtime_summary(
             "enabled_value": facts.payload["enabled_value"],
             "value_result": facts.payload["value_result"],
             "selector_table_entry_count": facts.selector_state.get("selector_table_entry_count"),
+            "count_synthesized_binding": facts.count_property.get("synthesized_binding_symbol"),
+            "value_synthesized_binding": facts.value_property.get("synthesized_binding_symbol"),
         },
     )
 

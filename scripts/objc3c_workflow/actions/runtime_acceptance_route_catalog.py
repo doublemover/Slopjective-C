@@ -44,6 +44,15 @@ RUNTIME_ACCEPTANCE_ROUTES: dict[str, RuntimeAcceptanceRoute] = {
             "Block, byref, ownership transfer, and ARC runtime acceptance surfaces"
         ),
     ),
+    "test-runtime-acceptance-arc-cleanup-integration": RuntimeAcceptanceRoute(
+        action="test-runtime-acceptance-arc-cleanup-integration",
+        suite="arc-cleanup-integration",
+        title="ARC cleanup integration runtime acceptance suite",
+        validation_tier="fast",
+        guarantee_owner=(
+            "ARC cleanup integration across block, property, error, async, and interop surfaces"
+        ),
+    ),
     "test-runtime-acceptance-concurrency": RuntimeAcceptanceRoute(
         action="test-runtime-acceptance-concurrency",
         suite="concurrency",

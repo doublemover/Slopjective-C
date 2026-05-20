@@ -5,6 +5,7 @@
   "schema_check_action": "check-release-foundation-schema-surface",
   "schema_check_command": "npm run objc3c -- check-release-foundation-schema-surface",
   "schema_check_script": "scripts/check_release_foundation_schema_surface.py",
+  "abi_api_governance_schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
   "release_manifest_schema": "schemas/objc3c-release-manifest-v1.schema.json",
   "release_sbom_schema": "schemas/objc3c-release-sbom-v1.schema.json",
   "release_attestation_schema": "schemas/objc3c-release-attestation-v1.schema.json"

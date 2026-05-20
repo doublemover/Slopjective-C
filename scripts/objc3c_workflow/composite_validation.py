@@ -16,8 +16,14 @@ from .composite_report_finalization import (
 from .composite_steps import run_composite_step
 
 
-def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]) -> int:
+def run_composite_validation(
+    action: str,
+    steps: list[tuple[str, Sequence[str]]],
+    *,
+    continue_on_failure: bool = False,
+) -> int:
     results: list[dict[str, object]] = []
+    first_failure_code = 0
     workflow_started_at = perf_counter()
     for index, (step_action, command) in enumerate(steps, start=1):
         previous = str(results[-1]["action"]) if results else "none"
@@ -38,11 +44,21 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
             workflow_started_at=workflow_started_at,
         )
         if step["exit_code"] != 0:
-            write_and_announce_composite_report(
-                action, results, status="FAIL"
-            )
-            return int(step["exit_code"])
-    report_path = write_and_announce_composite_report(action, results, status="PASS")
+            if first_failure_code == 0:
+                first_failure_code = int(step["exit_code"])
+            if not continue_on_failure:
+                write_and_announce_composite_report(
+                    action, results, status="FAIL"
+                )
+                return first_failure_code
+    report_status = "FAIL" if first_failure_code else "PASS"
+    report_path = write_and_announce_composite_report(
+        action,
+        results,
+        status=report_status,
+    )
+    if first_failure_code:
+        return first_failure_code
     if composite_report_failed(report_path):
         return 1
     return 0

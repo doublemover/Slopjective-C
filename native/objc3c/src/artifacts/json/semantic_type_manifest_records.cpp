@@ -68,6 +68,9 @@ void WriteSemanticPropertyTypeManifestRecord(
     const Objc3SemanticPropertyTypeMetadata &metadata) {
   JsonObjectWriter object(out);
   object.StringField("name", metadata.name);
+  object.BoolField("property_behavior_declared",
+                   metadata.property_behavior_declared);
+  object.StringField("property_behavior_name", metadata.property_behavior_name);
   object.RawJsonField("canonical_type",
                       RenderSemanticCanonicalType(metadata.canonical_type));
   object.End();

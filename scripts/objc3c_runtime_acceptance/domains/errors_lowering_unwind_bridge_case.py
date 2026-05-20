@@ -35,12 +35,17 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
         == "objc3c.error_handling.throws.abi.propagation.lowering.v1",
         "expected error lowering fixture to publish the throws ABI propagation lowering surface",
     )
+    helper_calls = {
+        "store": "call void @objc3_runtime_store_thrown_error_i32" in ll_text,
+        "load": "call i32 @objc3_runtime_load_thrown_error_i32" in ll_text,
+        "status_bridge": "call i32 @objc3_runtime_bridge_status_error_i32"
+        in ll_text,
+        "catch_match": "call i32 @objc3_runtime_catch_matches_error_i32"
+        in ll_text,
+    }
     expect(
-        "objc3_runtime_store_thrown_error_i32" in ll_text
-        and "objc3_runtime_load_thrown_error_i32" in ll_text
-        and "objc3_runtime_bridge_status_error_i32" in ll_text
-        and "objc3_runtime_catch_matches_error_i32" in ll_text,
-        "expected error lowering fixture to emit the runtime bridge helper calls",
+        all(helper_calls.values()),
+        "expected error lowering fixture to emit runtime bridge helper call sites",
     )
     return CaseResult(
         case_id="error-lowering-unwind-bridge-helper-surface",
@@ -52,6 +57,7 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
             "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
             "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
             "throws_abi_contract": throws_abi.get("contract_id"),
+            "helper_calls": helper_calls,
         },
     )
 

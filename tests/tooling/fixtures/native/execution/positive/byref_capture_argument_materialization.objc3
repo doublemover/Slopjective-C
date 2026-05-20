@@ -1,0 +1,15 @@
+module ByrefCaptureArgumentMaterializationExec;
+
+fn materialize(handle: i32) -> i32 {
+  return 35;
+}
+
+fn main() -> i32 {
+  let counter = 4;
+  let step = 3;
+  let closure = ^[__block counter, step] (i32 add) {
+    counter = counter + add + step;
+    return counter;
+  };
+  return materialize(closure);
+}

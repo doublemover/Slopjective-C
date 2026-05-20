@@ -192,7 +192,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                           &generic_interface_names);
       if (method_decl.objc_macro_declared ||
           method_decl.objc_macro_package_declared ||
-          method_decl.objc_macro_provenance_declared) {
+          method_decl.objc_macro_provenance_declared ||
+          method_decl.objc_macro_cache_key_declared ||
+          method_decl.objc_macro_sandbox_declared) {
         diagnostics.push_back(MakeDiag(
             method_decl.line, method_decl.column, "O3S325",
             "macro expansion is currently limited to free functions; " +

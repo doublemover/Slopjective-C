@@ -24,6 +24,10 @@ option(OBJC3C_ENABLE_WARNING_PARITY
   "Apply the warning-level parity flags used by scripts/build_objc3c_native.ps1."
   ON
 )
+option(OBJC3C_ENABLE_REPRODUCIBLE_BUILD
+  "Apply deterministic compile/link options required by clean-room bootstrap rebuild gates."
+  ON
+)
 option(OBJC3C_ENFORCE_SOURCE_SIZE_GATE
   "Fail CMake configure when native source files exceed the hard-cutover line budget."
   ON
@@ -44,7 +48,6 @@ if (OBJC3C_ENFORCE_SOURCE_SIZE_GATE)
     ${OBJC3C_MAX_NATIVE_HEADER_LINES}
   )
 endif()
-
 if (NOT OBJC3C_LLVM_INCLUDE_DIR AND OBJC3C_LLVM_ROOT)
   set(OBJC3C_LLVM_INCLUDE_DIR "${OBJC3C_LLVM_ROOT}/include")
 endif()
@@ -68,6 +71,21 @@ if (OBJC3C_ENABLE_WARNING_PARITY)
       -Wall
       -Wextra
       -pedantic
+    )
+  endif()
+endif()
+if (OBJC3C_ENABLE_REPRODUCIBLE_BUILD)
+  if (MSVC)
+    target_compile_options(objc3c_build_defaults INTERFACE
+      /Brepro
+    )
+    target_link_options(objc3c_build_defaults INTERFACE
+      /Brepro
+    )
+  else()
+    target_compile_options(objc3c_build_defaults INTERFACE
+      "-ffile-prefix-map=${CMAKE_SOURCE_DIR}=."
+      "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=."
     )
   endif()
 endif()

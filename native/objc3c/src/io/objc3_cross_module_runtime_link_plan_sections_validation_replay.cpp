@@ -65,6 +65,10 @@ bool TryValidateImportedLinkPlanReplaySurfaces(
     }
     if (!imported_input.concurrency_actor_mailbox_runtime_ready ||
         !imported_input.concurrency_actor_mailbox_runtime_deterministic ||
+        imported_input.concurrency_actor_interface_sites == 0u ||
+        imported_input.concurrency_actor_metadata_record_sites <
+            imported_input.concurrency_actor_interface_sites ||
+        imported_input.concurrency_actor_contract_violation_sites != 0u ||
         imported_input.concurrency_actor_mailbox_runtime_replay_key.empty() ||
         imported_input.concurrency_actor_lowering_replay_key.empty() ||
         imported_input.concurrency_actor_isolation_lowering_replay_key.empty()) {

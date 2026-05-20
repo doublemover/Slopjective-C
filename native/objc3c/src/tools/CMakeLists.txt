@@ -200,6 +200,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
 )
 objc3c_apply_build_defaults(objc3c_tools_frontend_c_api_runner)
 objc3c_apply_llvm_direct_config(objc3c_tools_frontend_c_api_runner)
+objc3c_apply_sanitizers(objc3c_tools_frontend_c_api_runner)
 objc3c_apply_runtime_output(objc3c_tools_frontend_c_api_runner)
 set_target_properties(objc3c_tools_frontend_c_api_runner PROPERTIES
   OUTPUT_NAME objc3c-frontend-c-api-runner

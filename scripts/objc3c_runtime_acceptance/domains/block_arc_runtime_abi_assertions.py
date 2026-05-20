@@ -10,7 +10,9 @@ from ..c_api import (
     BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
     BLOCK_ARC_RUNTIME_ARC_MODEL,
     BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+    BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL,
     BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
+    BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL,
 )
 
 
@@ -56,6 +58,8 @@ def assert_block_arc_runtime_abi_payload(payload: dict[str, Any]) -> int:
         ),
         "runtime_abi_boundary_model": BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
         "block_runtime_model": BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+        "block_descriptor_model": BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL,
+        "block_invoke_thunk_model": BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL,
         "arc_runtime_model": BLOCK_ARC_RUNTIME_ARC_MODEL,
         "fail_closed_model": BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
     }
@@ -68,12 +72,15 @@ def assert_block_arc_runtime_abi_payload(payload: dict[str, Any]) -> int:
         "autoreleased": 77,
         "released": 77,
         "invoke_result": 17,
+        "stale_invoke_result": 0,
+        "copy_count": 1,
+        "dispose_count": 1,
         "private_runtime_abi_ready": 1,
         "public_runtime_header_unchanged": 1,
         "deterministic": 1,
         "live_runtime_block_handle_count": 0,
         "block_promote_call_count": 1,
-        "block_invoke_call_count": 1,
+        "block_invoke_call_count": 2,
         "retain_call_count": 2,
         "release_call_count": 3,
         "autorelease_call_count": 1,
@@ -84,7 +91,20 @@ def assert_block_arc_runtime_abi_payload(payload: dict[str, Any]) -> int:
         "current_property_exchange_count": 0,
         "weak_current_property_load_count": 0,
         "weak_current_property_store_count": 0,
+        "last_descriptor_storage_size_bytes": 32,
+        "last_descriptor_capture_count": 1,
+        "last_descriptor_storage_word_count": 4,
+        "last_descriptor_flags": 7,
+        "last_invoke_plan_storage_word_count": 0,
         "last_promote_has_pointer_capture_storage": 1,
+        "last_descriptor_parameter_count": 4,
+        "last_descriptor_has_invoke": 1,
+        "last_descriptor_has_copy_helper": 1,
+        "last_descriptor_has_dispose_helper": 1,
+        "last_descriptor_has_pointer_capture_storage": 1,
+        "last_invoke_plan_has_descriptor": 0,
+        "last_invoke_plan_has_invoke": 0,
+        "last_invoke_plan_was_runnable": 0,
         "last_block_invoke_result": 17,
         "last_autorelease_value": 77,
         "arc_retain_call_count": 2,
@@ -94,6 +114,17 @@ def assert_block_arc_runtime_abi_payload(payload: dict[str, Any]) -> int:
         "arc_autoreleasepool_pop_count": 1,
     }
     _expect_preserved_fields(payload, expected_integer_fields)
+
+    expect(
+        isinstance(payload.get("last_descriptor_address"), int)
+        and payload["last_descriptor_address"] > 0,
+        "expected block ARC runtime ABI probe to publish a non-zero descriptor address",
+    )
+    expect(
+        isinstance(payload.get("last_descriptor_invoke_address"), int)
+        and payload["last_descriptor_invoke_address"] > 0,
+        "expected block ARC runtime ABI probe to publish a non-zero descriptor invoke address",
+    )
 
     handle = payload.get("handle")
     expect(

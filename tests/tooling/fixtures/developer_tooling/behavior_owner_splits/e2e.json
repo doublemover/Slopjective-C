@@ -8,9 +8,10 @@
     "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json",
     "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json",
     "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+    "tests/tooling/fixtures/developer_tooling/workspace_semantic_navigation_contract.json",
     "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json"
   ],
-  "support_boundary": "e2e/tooling ownership covers shipped developer-tooling contract behavior only: public actions, package bridge, formatter source pair, inspect-editor-tooling, format-objc3c, materialize-playground-workspace, compile observability, language-server published capabilities, declaration/symbol navigation, formatter debug surface, editor/debug artifact contract, workspace drill commands, packaged CLI-to-editor manifest fields, and runnable developer-tooling validation. Unpublished capabilities and hosted LLVM overclaims remain non-positive.",
+  "support_boundary": "e2e/tooling ownership covers shipped developer-tooling contract behavior only: public actions, package bridge, formatter source pair, inspect-editor-tooling, format-objc3c, materialize-playground-workspace, compile observability, language-server published capabilities, declaration/symbol navigation, formatter debug surface, editor/debug artifact contract, workspace drill commands, workspace semantic package navigation, packaged CLI-to-editor manifest fields, and runnable developer-tooling validation. Unpublished capabilities and hosted LLVM overclaims remain non-positive.",
   "phase_support_claim_authority": true,
   "selectors": [
     "public_action:inspect-editor-tooling",
@@ -23,9 +24,11 @@
     "supported_capability:documentSymbol",
     "supported_capability:workspaceSymbol",
     "supported_capability:definition",
+    "supported_capability:workspaceSemanticIndex",
     "supported_capability:documentFormatting",
     "supported_capability:debugArtifactInspection",
     "tooling_contract:formatter-output",
+    "tooling_contract:workspace-semantic-navigation",
     "tooling_contract:declaration-breakpoint-and-object-symbol-inspection",
     "tooling_contract:packaged-cli-to-editor"
   ],

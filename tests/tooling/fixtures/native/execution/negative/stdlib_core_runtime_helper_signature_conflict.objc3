@@ -1,0 +1,11 @@
+// Negative execution fixture: stdlib runtime helper contracts reject ABI drift.
+module StdlibCoreRuntimeHelperSignatureConflict;
+
+fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32;
+fn objc3_runtime_stdlib_core_count_i32(count: bool) -> i32 {
+  return count;
+}
+
+fn main() -> i32 {
+  return objc3_runtime_stdlib_core_count_i32(1);
+}

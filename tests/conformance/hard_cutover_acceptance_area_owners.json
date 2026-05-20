@@ -109,7 +109,10 @@
       "behavior_fixtures": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
-        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+        "tests/tooling/runtime/dispatch_lookup_runtime_probe.cpp",
+        "tests/tooling/fixtures/native/execution/positive/direct_synthesized_bool_property_accessors.objc3",
+        "tests/tooling/fixtures/native/execution/positive/typed_super_bool_dispatch.objc3"
       ],
       "retired_surface_disposition": "dispatch retired route and unknown receiver behavior are runtime strict errors"
     },
@@ -137,6 +140,7 @@
         "native/objc3c/src/runtime/public/objc3_runtime_registration.h",
         "native/objc3c/src/runtime/public/objc3_runtime_selector.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_dispatch_result.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
@@ -148,6 +152,7 @@
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
         "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/typed_dispatch_abi_probe.cpp",
         "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
       ],
       "retired_surface_disposition": "storage, reflection, and public ABI probes are canonical runtime ownership evidence; strict-result probes keep rejected dispatch as strict errors and do not create retired adapter, alternate acceptance path, or retired-source lane support"

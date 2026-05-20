@@ -8,7 +8,7 @@
     "canonical_behavior_root": "tests/native",
     "canonical_behavior_manifest": "tests/fixtures/canonical/manifest.json",
     "legacy_positive_residue_policy": "compatibility-looking positives are deleted or converted to tests/native rejection and strict-error fixtures",
-    "runtime_dispatch_symbol_rule": "runtime_dispatch_symbol is only present when execution.requires_live_runtime_dispatch is true",
+    "runtime_dispatch_symbol_rule": "runtime_dispatch_symbol or runtime_dispatch_symbols is only present when execution.requires_live_runtime_dispatch is true",
     "large_surface_split_rule": "large or legacy-looking fixture directories must be split by behavior owner before a fixture path can be cited as positive coverage",
     "behavior_owner_labels": [
       "parser",
@@ -242,9 +242,12 @@
         {
           "owner": "runtime",
           "selectors": [
-            "*runtime_dispatch*.meta.json"
+            "*runtime_dispatch*.meta.json",
+            "execution.requires_live_runtime_dispatch=true",
+            "direct_synthesized_bool_property_accessors.meta.json",
+            "typed_super_bool_dispatch.meta.json"
           ],
-          "disposition": "live dispatch positives must name objc3_runtime_dispatch_i32 and require live runtime dispatch"
+          "disposition": "live dispatch positives must name allowed runtime dispatch symbols and require live runtime dispatch"
         }
       ]
     },
@@ -263,7 +266,10 @@
         {
           "owner": "sema",
           "selectors": [
-            "expect_failure.stage=compile + O3S*"
+            "expect_failure.stage=compile + O3S*",
+            "category_*",
+            "protocol_*",
+            "duplicate_protocol_runtime_export.objc3"
           ],
           "disposition": "typed semantic, unsupported-feature, and conservative analysis rejection metadata"
         },
@@ -331,7 +337,8 @@
           "selectors": [
             "*runtime*_positive.objc3",
             "*library.objc3",
-            "*contract_positive.objc3"
+            "*contract_positive.objc3",
+            "category_attachment_protocol_runtime_library.objc3"
           ],
           "disposition": "runtime-backed behavior evidence only after canonical runtime ownership is indexed"
         },

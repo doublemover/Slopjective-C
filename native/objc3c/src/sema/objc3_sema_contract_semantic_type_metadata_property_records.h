@@ -64,6 +64,8 @@ struct Objc3SemanticPropertyTypeMetadata {
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;
+  bool property_behavior_declared = false;
+  std::string property_behavior_name;
   std::string effective_getter_selector;
   bool effective_setter_available = false;
   std::string effective_setter_selector;

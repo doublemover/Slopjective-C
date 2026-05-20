@@ -9,7 +9,11 @@ namespace tooling {
 namespace task_runtime_hardening_probe {
 
 inline ProbeRun RunTaskRuntimeHardeningScenarios() {
-  return ProbeRun{RunPass(kReplayScenario), RunPass(kReplayScenario)};
+  return ProbeRun{RunPass(kReplayScenario), RunPass(kReplayScenario),
+                  RunInvalidHandlePass(), RunInvalidHandlePass(),
+                  RunCancelDrainPass(), RunCancelDrainPass(),
+                  RunExecutorHopRaceGuardPass(),
+                  RunExecutorHopRaceGuardPass()};
 }
 
 } // namespace task_runtime_hardening_probe

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "fixture": "typed_super_bool_dispatch.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbols": [
+      "objc3_runtime_dispatch_i32",
+      "objc3_runtime_dispatch_typed_value_from_class"
+    ]
+  }
+}

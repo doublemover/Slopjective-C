@@ -11,6 +11,7 @@
     "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json",
     "tests/tooling/fixtures/developer_tooling/debugger_source_map_stepping_semantics.json",
     "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+    "tests/tooling/fixtures/developer_tooling/workspace_semantic_navigation_contract.json",
     "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json",
     "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
     "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3"

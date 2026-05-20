@@ -42,6 +42,7 @@ class Objc3IREmitterRuntimeSession {
   Objc3IREmitterRuntimeSessionInputs inputs_;
   std::vector<std::string> block_function_definitions_;
   std::unordered_set<std::string> emitted_block_invoke_symbols_;
+  std::unordered_set<std::string> emitted_block_descriptor_symbols_;
   std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
   std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
   Objc3IRRuntimeDispatchCallState runtime_dispatch_call_state_;
