@@ -11,8 +11,24 @@ from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )
+from ..fixture_compile_runner import run_fixture_compile
 from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
+
+
+def _write_tampered_bridge_import_surface(
+    source_path: Path,
+    target_path: Path,
+) -> None:
+    payload = json.loads(source_path.read_text(encoding="utf-8"))
+    bridge_surface = payload["objc_interop_header_module_and_bridge_generation"]
+    bridge_surface["header_artifact_relative_path"] = (
+        "../tampered/module.interop-bridge.h"
+    )
+    target_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
 
 
 def check_c_cpp_swift_bridge_semantics_case(
@@ -122,6 +138,40 @@ def check_c_cpp_swift_bridge_semantics_case(
         and imported_module.get("interop_header_module_bridge_contract_id")
         == "objc3c.interop.header.module.and.bridge.generation.v1",
         "expected consumer link plan to preserve the imported ffi and bridge contracts",
+    )
+
+    tampered_surface = (
+        case_dir / "provider.tampered-bridge-path.runtime-import-surface.json"
+    )
+    _write_tampered_bridge_import_surface(
+        provider_compile_dir / "module.runtime-import-surface.json",
+        tampered_surface,
+    )
+    tampered_result, _ = run_fixture_compile(
+        consumer_fixture,
+        case_dir / "consumer-tampered-bridge-path",
+        extra_args=[
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(tampered_surface),
+        ],
+        write_provenance=False,
+    )
+    tampered_diagnostics = (
+        case_dir / "consumer-tampered-bridge-path" / "module.diagnostics.txt"
+    )
+    tampered_output = f"{tampered_result.stderr}\n{tampered_result.stdout}"
+    if tampered_diagnostics.is_file():
+        tampered_output += "\n" + tampered_diagnostics.read_text(encoding="utf-8")
+    expect(
+        tampered_result.returncode != 0,
+        "expected consumer compile to fail closed on tampered bridge artifact metadata",
+    )
+    expect(
+        "active Part 11 header/module/bridge generation header artifact path must not traverse directories"
+        in tampered_output,
+        "expected consumer compile to report fail-closed bridge artifact path validation",
     )
 
     return CaseResult(
