@@ -56,9 +56,7 @@ Rules shown by this entry:
   "title": "Async and actor runtime closure",
   "state": "implemented",
   "summary": "The private runtime path has canonical actor executor behavior and runtime-acceptance evidence for async continuation, task scheduler, and actor mailbox helpers.",
-  "support_claims": [
-    "objc3c.behavior.runtime.concurrency-async-actors"
-  ],
+  "support_claims": ["objc3c.behavior.runtime.concurrency-async-actors"],
   "evidence": [
     {
       "kind": "test",
