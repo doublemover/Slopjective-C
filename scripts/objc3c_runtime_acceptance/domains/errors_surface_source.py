@@ -86,6 +86,7 @@ def build_runtime_catch_filter_finalization_source_surface(
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
             "tests/tooling/fixtures/native/throw_local_handler_positive.objc3",
+            "tests/tooling/fixtures/native/rethrow_in_throws_catch_positive.objc3",
             "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
             "tests/tooling/fixtures/native/try_requires_throwing_context_negative.objc3",
             "tests/tooling/fixtures/native/throw_requires_throws_or_catch_negative.objc3",
@@ -94,6 +95,7 @@ def build_runtime_catch_filter_finalization_source_surface(
             "tests/tooling/fixtures/native/catch_body_return_type_negative.objc3",
             "tests/tooling/fixtures/native/catch_after_catch_all_negative.objc3",
             "tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_status_missing_out_negative.objc3",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",

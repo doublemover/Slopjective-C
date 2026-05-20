@@ -114,6 +114,38 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         "expected local throw handler fixture to accept do/catch-contained throws in non-throws callables",
     )
 
+    rethrow_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "rethrow_in_throws_catch_positive.objc3"
+    )
+    _, _, rethrow_manifest_path = compile_live_error_runtime_fixture_outputs(
+        rethrow_fixture, case_dir / "rethrow-positive"
+    )
+    rethrow_manifest = json.loads(rethrow_manifest_path.read_text(encoding="utf-8"))
+    rethrow_surface = (
+        rethrow_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_error_handling_try_do_catch_semantics", {})
+    )
+    expect(
+        isinstance(rethrow_surface, dict),
+        "expected rethrow fixture to publish objc_error_handling_try_do_catch_semantics",
+    )
+    expect(
+        rethrow_surface.get("throw_statement_sites") == 1
+        and rethrow_surface.get("do_catch_sites") == 1
+        and rethrow_surface.get("catch_all_sites") == 1
+        and rethrow_surface.get("rethrow_sites") == 1
+        and rethrow_surface.get("contract_violation_sites") == 0
+        and rethrow_surface.get("ready_for_lowering_and_runtime") is True,
+        "expected catch-body rethrow in a throws callable to remain semantically valid",
+    )
+
     negatives = [
         (
             "try_requires_throwing_context_negative.objc3",
@@ -224,6 +256,10 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
                 "local_handler_sites": local_handler_surface.get(
                     "local_handler_sites"
                 ),
+            },
+            "rethrow_fixture": {
+                "fixture": str(rethrow_fixture.relative_to(ROOT)).replace("\\", "/"),
+                "rethrow_sites": rethrow_surface.get("rethrow_sites"),
             },
             "live_runtime_surface_fixture": {
                 "fixture": str(live_bridge_fixture.relative_to(ROOT)).replace(

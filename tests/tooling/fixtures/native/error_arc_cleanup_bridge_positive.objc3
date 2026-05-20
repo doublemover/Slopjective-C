@@ -7,6 +7,10 @@ extern fn CFRetain(value: id) -> id
 extern fn CFAutorelease(value: id) -> id
     __attribute__((objc_family_autorelease(CoreThing), cf_returns_not_retained));
 
+fn autoreleaseReturn(value: id) -> __autoreleasing id {
+  return value;
+}
+
 fn mapStatus(status: i32) -> NSError {
   return status + 40;
 }
@@ -27,7 +31,7 @@ fn runCase(owner: id) -> i32 {
     @resource(cleanup_scope_close_fd, invalid: -1) let fd = 4;
     @autoreleasepool {
       let retained = CFRetain(owner);
-      let pooled = CFAutorelease(retained);
+      let pooled = autoreleaseReturn(CFAutorelease(retained));
       let bridged = try unwindBridgeStatus(2, 0);
       return bridged + pooled - retained + fd + temp;
     }

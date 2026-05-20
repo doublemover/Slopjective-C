@@ -1,0 +1,5 @@
+module m267_bridge_legality_status_missing_out;
+extern fn mapStatus(status: i32) -> NSError;
+extern fn bad(payload: id) -> i32
+    __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+fn main() -> i32 { return 0; }

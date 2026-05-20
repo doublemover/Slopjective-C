@@ -52,7 +52,7 @@ Throws ABI and helper semantics implementation:
 
 Lowering and runtime artifact contract:
 
-- the error compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
+- the error compile-manifest and runtime-registration surface is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py` and exposed through `npm run objc3c -- test-runtime-acceptance-fast`
 - the error owner surfaces are `runtime_error_execution_cleanup_source_surface`, `runtime_catch_filter_finalization_source_surface`, `runtime_error_propagation_cleanup_semantics_surface`, `runtime_bridging_filter_unwind_diagnostics_surface`, `runtime_error_lowering_unwind_bridge_helper_surface`, `runtime_error_runtime_abi_cleanup_surface`, and `runtime_error_propagation_catch_cleanup_runtime_implementation_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 

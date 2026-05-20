@@ -65,19 +65,23 @@ def check_executable_throw_catch_cleanup_lowering_case(
         "expected executable error lowering fixture to preserve the unwind cleanup lowering contract",
     )
     helper_calls = {
-        "store": "objc3_runtime_store_thrown_error_i32" in ll_text,
-        "load": "objc3_runtime_load_thrown_error_i32" in ll_text,
-        "status_bridge": "objc3_runtime_bridge_status_error_i32" in ll_text,
-        "catch_match": "objc3_runtime_catch_matches_error_i32" in ll_text,
+        "store": "call void @objc3_runtime_store_thrown_error_i32" in ll_text,
+        "load": "call i32 @objc3_runtime_load_thrown_error_i32" in ll_text,
+        "status_bridge": "call i32 @objc3_runtime_bridge_status_error_i32"
+        in ll_text,
+        "catch_match": "call i32 @objc3_runtime_catch_matches_error_i32"
+        in ll_text,
     }
     cleanup_calls = {
         "cleanup_function": "call void @cleanup_release_temp" in ll_text,
         "defer_marker": "call void @cleanup_release_temp(i32 6)" in ll_text,
         "resource_cleanup": "call void @cleanup_scope_close_fd" in ll_text,
-        "arc_release": "objc3_runtime_release_i32" in ll_text,
-        "autorelease": "objc3_runtime_autorelease_i32" in ll_text,
-        "autoreleasepool_push": "objc3_runtime_push_autoreleasepool_scope" in ll_text,
-        "autoreleasepool_pop": "objc3_runtime_pop_autoreleasepool_scope" in ll_text,
+        "arc_release": "call i32 @objc3_runtime_release_i32" in ll_text,
+        "autorelease": "call i32 @objc3_runtime_autorelease_i32" in ll_text,
+        "autoreleasepool_push": "call void @objc3_runtime_push_autoreleasepool_scope"
+        in ll_text,
+        "autoreleasepool_pop": "call void @objc3_runtime_pop_autoreleasepool_scope"
+        in ll_text,
     }
     expect(
         all(helper_calls.values()),

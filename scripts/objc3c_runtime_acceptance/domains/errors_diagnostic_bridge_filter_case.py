@@ -108,6 +108,11 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
             ["O3S275"],
         ),
         (
+            "bridge_legality_status_missing_out_negative.objc3",
+            ["objc_status_code requires an NSError out parameter"],
+            ["O3S279"],
+        ),
+        (
             "bridge_legality_nserror_bad_return_negative.objc3",
             ["objc_nserror currently requires a BOOL-like success return"],
             ["O3S276"],
