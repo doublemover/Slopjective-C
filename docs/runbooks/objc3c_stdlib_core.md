@@ -26,6 +26,8 @@ Exact live implementation paths for downstream work:
 - `native/objc3c/src/runtime/stdlib/core_runtime_contract.h`
 - `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
 - `tests/tooling/runtime/stdlib_core_runtime_probe.cpp`
+- `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3`
+- `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3`
 - `stdlib/semantic_policy.json`
 - `stdlib/modules/objc3.core/module.json`
 - `stdlib/modules/objc3.errors/module.json`
@@ -157,6 +159,9 @@ modules without updating the checked-in architecture contract.
 
 - all core-stdlib helpers remain deterministic and route through the runtime
   stdlib core ABI
+- the execution fixture `stdlib_core_runtime_helpers.objc3` must keep proving
+  linked runtime calls, and `stdlib_core_runtime_helper_signature_conflict.objc3`
+  must keep ABI drift rejected before runtime execution
 - option and presence helpers use `0` for absent and nonzero for present
 - `unwrap_or` helpers return the live payload only when the checked-in
   presence or result tag says it is valid

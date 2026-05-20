@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "fixture": "stdlib_core_runtime_helpers.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}
