@@ -106,14 +106,12 @@ void EmitObjc3IRStatement(
         return;
       }
       if (ret->value == nullptr) {
-        callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
         callbacks.emit_typed_return("0", ctx);
       } else {
         const std::string value = callbacks.emit_expr(ret->value.get(), ctx);
         if (ctx.terminated) {
           return;
         }
-        callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
         callbacks.emit_typed_return(value, ctx);
       }
       ctx.terminated = true;

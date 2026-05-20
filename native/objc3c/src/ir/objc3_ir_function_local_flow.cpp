@@ -89,26 +89,19 @@ void EmitObjc3IRFunctionLocalTypedReturn(
         ctx, 0u, ctx.code_lines);
     EmitObjc3IRArcOwnedTerminalCleanupToDepth(
         ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
     ctx.code_lines.push_back("  ret void");
     return;
   }
 
   std::string returned_value = i32_value;
-  if (ctx.arc_return_insert_retain) {
+  if (ctx.arc_return_insert_retain || ctx.arc_return_insert_autorelease) {
     const std::string retained_value = NewFunctionLocalTemp(ctx);
     ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
                              std::string(kObjc3RuntimeRetainI32Symbol) +
                              "(i32 " + returned_value + ")");
     returned_value = retained_value;
   }
-  if (ctx.arc_return_insert_autorelease) {
-    const std::string autoreleased_value = NewFunctionLocalTemp(ctx);
-    ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +
-                             std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
-                             "(i32 " + returned_value + ")");
-    returned_value = autoreleased_value;
-  }
-
   EmitObjc3IRDeferredCleanupTerminalToDepth(
       ctx, 0u, flow_context.scope_cleanup_callbacks);
   EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
@@ -117,6 +110,14 @@ void EmitObjc3IRFunctionLocalTypedReturn(
       ctx, 0u, ctx.code_lines);
   EmitObjc3IRArcOwnedTerminalCleanupToDepth(
       ctx, 0u, ctx.code_lines, ctx.temp_counter);
+  EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+  if (ctx.arc_return_insert_autorelease) {
+    const std::string autoreleased_value = NewFunctionLocalTemp(ctx);
+    ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +
+                             std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
+                             "(i32 " + returned_value + ")");
+    returned_value = autoreleased_value;
+  }
   if (ctx.return_type == ValueType::Bool) {
     const std::string bool_i1 = CoerceObjc3IRI32ToBoolI1(returned_value, ctx);
     ctx.code_lines.push_back("  ret i1 " + bool_i1);

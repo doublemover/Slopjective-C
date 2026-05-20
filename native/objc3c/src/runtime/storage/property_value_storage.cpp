@@ -23,6 +23,11 @@ bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state,
              state.runtime_instances_by_receiver.end();
 }
 
+int NormalizeWeakRuntimeManagedPropertyValueUnlocked(
+    const RuntimeState &state, int value) {
+  return IsRuntimeManagedReceiverValueUnlocked(state, value) ? value : 0;
+}
+
 bool WriteWeakRuntimeManagedPropertyValueUnlocked(
     RuntimeState &state,
     RuntimeInstanceRecord &instance,
@@ -38,11 +43,13 @@ bool WriteWeakRuntimeManagedPropertyValueUnlocked(
   RemoveWeakSlotRefUnlocked(state, previous,
                             static_cast<int>(instance.receiver_identity),
                             span.offset, span.size);
-  if (!WriteRuntimeManagedPropertyValueRaw(instance, accessor, value)) {
+  const int stored_value =
+      NormalizeWeakRuntimeManagedPropertyValueUnlocked(state, value);
+  if (!WriteRuntimeManagedPropertyValueRaw(instance, accessor, stored_value)) {
     return false;
   }
-  if (IsRuntimeManagedReceiverValueUnlocked(state, value)) {
-    RegisterWeakSlotRefUnlocked(state, value,
+  if (stored_value != 0) {
+    RegisterWeakSlotRefUnlocked(state, stored_value,
                                 static_cast<int>(instance.receiver_identity),
                                 span.offset, span.size);
   }

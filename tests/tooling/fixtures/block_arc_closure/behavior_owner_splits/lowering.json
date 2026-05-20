@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
     "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
   ],
-  "support_boundary": "lowering ownership covers block/ARC helper emission, byref promotion/copy/dispose/forwarding packets, ARC retain/release/autorelease/autoreleasepool/weak helper traffic, compile-manifest/runtime-registration coupling, and generated artifact provenance before IR or runtime owners cite artifacts",
+  "support_boundary": "lowering ownership covers block/ARC helper emission, byref promotion/copy/dispose/forwarding packets, ARC retain/release/autorelease/autoreleasepool/weak helper traffic, autoreleasepool destruction-order emission, compile-manifest/runtime-registration coupling, and generated artifact provenance before IR or runtime owners cite artifacts",
   "phase_support_claim_authority": false,
   "selectors": [
     "compile_manifest_surface_keys:runtime_block_arc_unified_source_surface",
@@ -18,6 +18,8 @@
     "lowering_surface_paths:llvm_ir_summary.arc_block_autorelease_return_lowering",
     "lowering_surface_paths:llvm_ir_summary.objc3_arc_method_family_retained_result_cleanup",
     "lowering_surface_paths:llvm_ir_summary.executable_block_escape_runtime_hook_lowering",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/arc_autoreleasepool_destruction_order_positive.objc3",
     "implementation_invariants:promotion-runs-copy-helper-once-for-runtime-byref-probe-storage"
   ],
   "canonical_anchor": "tests/native/lowering",

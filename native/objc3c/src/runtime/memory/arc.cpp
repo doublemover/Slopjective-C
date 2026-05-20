@@ -48,7 +48,7 @@ extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
 extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   objc3c::runtime::RecordRuntimeArcAutoreleasePoolPopCall();
   const std::vector<int> values =
-      objc3c::runtime::PopRuntimeAutoreleasePoolFrameValues();
+      objc3c::runtime::PopRuntimeAutoreleasePoolFrameValuesInDrainOrder();
   if (values.empty()) {
     return;
   }
@@ -56,9 +56,9 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   std::vector<objc3c::runtime::RuntimeBlockRecord> records_to_dispose;
   {
     std::lock_guard<std::mutex> lock(state.mutex);
-    for (auto it = values.rbegin(); it != values.rend(); ++it) {
-      objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue(*it);
-      objc3c::runtime::ReleaseRuntimeValueUnlocked(state, *it,
+    for (const int value : values) {
+      objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue(value);
+      objc3c::runtime::ReleaseRuntimeValueUnlocked(state, value,
                                                    &records_to_dispose);
     }
   }

@@ -15,6 +15,7 @@
     "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface",
     "capture_profile_fields:cleanup_ownership_transfer_enforced",
     "capture_profile_fields:retainable_family_conflict_enforced",
+    "negative_fixture_paths:tests/tooling/fixtures/native/runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
     "frozen_semantic_models:escaping-block-capture-family-truth-stays-sema-owned-before-lowering",
     "claim_narrowing_constraints:no-evidence-only-sidecar-ownership-model"
   ],

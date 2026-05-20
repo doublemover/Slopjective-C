@@ -1,0 +1,21 @@
+module m8035_arc_autoreleasepool_nested_drain_order_positive;
+
+fn autoreleased(value: __autoreleasing id) -> __autoreleasing id {
+  return value;
+}
+
+fn nestedDrainOrder(outerValue: id, innerValue: id) -> i32 {
+  @autoreleasepool {
+    let outerFirst = autoreleased(outerValue);
+    let outerSecond = autoreleased(outerValue + 1);
+    @autoreleasepool {
+      let innerFirst = autoreleased(innerValue);
+      let innerSecond = autoreleased(innerValue + 1);
+      return outerFirst + outerSecond + innerFirst + innerSecond;
+    }
+  }
+}
+
+fn main() -> i32 {
+  return nestedDrainOrder(10, 20);
+}

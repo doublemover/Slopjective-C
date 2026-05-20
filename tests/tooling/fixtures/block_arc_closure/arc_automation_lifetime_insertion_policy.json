@@ -58,6 +58,14 @@
       "summary": "Cleanup scopes, implicit cleanup, and autorelease returns remain part of one coupled lowering and runtime story rather than independent advisory checks."
     },
     {
+      "policy_id": "autoreleasepool-drain-order-is-nested-lifo",
+      "summary": "Nested autoreleasepools drain the innermost frame first, and each frame drains autoreleased values in reverse enqueue order."
+    },
+    {
+      "policy_id": "weak-current-property-and-autoreleasepool-stay-private-helper-coupled",
+      "summary": "Weak current-property helper traffic and autoreleasepool push/pop traffic are represented through compile-coupled fixture artifacts and private runtime helper probes, not a public ABI or standalone runnable proof claim."
+    },
+    {
       "policy_id": "property-error-concurrency-interactions-remain-narrowed",
       "summary": "Property helper interaction is covered by the shared runtime-owned helper cluster, while error and concurrency interaction claims stay explicitly deferred to successor milestones."
     },
@@ -71,6 +79,7 @@
       "surface": "properties",
       "status": "supported-on-runtime-owned-helper-path",
       "evidence": [
+        "native/objc3c/src/runtime/storage/current_property_value.cpp",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
         "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
       ]
@@ -99,8 +108,16 @@
     "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
     "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
     "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_destruction_order_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
+    "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3",
     "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
     "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "negative_fixture_paths": [
+    "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+    "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3",
+    "tests/tooling/fixtures/native/runtime_backed_storage_ownership_weak_mismatch_negative.objc3"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",

@@ -253,12 +253,8 @@ void EmitObjc3IRBlockInvokeThunk(
   }
 
   if (!ctx.terminated) {
-    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
-    EmitObjc3IROwnershipCleanupUnwindToDepth(
-        ctx, 0u, context.scope_cleanup_callbacks);
-    EmitObjc3IRPendingBlockDisposeUnwindToDepth(ctx, 0u);
-    EmitObjc3IRArcOwnedCleanupReleases(
-        ctx, context.scope_cleanup_callbacks);
+    EmitObjc3IRTerminalCleanupToDepth(
+        ctx, 0u, 0u, 0u, 0u, 0u, context.scope_cleanup_callbacks);
     ctx.code_lines.push_back("  ret i32 0");
   }
 

@@ -97,7 +97,6 @@ void EmitObjc3IRFunctionDefinition(
   EmitObjc3IRStatementBody(fn.body, callbacks, ctx);
 
   if (!ctx.terminated) {
-    callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
     callbacks.emit_typed_return("0", ctx);
   }
 
@@ -167,7 +166,6 @@ void EmitObjc3IRMethodDefinition(
   EmitObjc3IRStatementBody(method.body, callbacks, ctx);
 
   if (!ctx.terminated) {
-    callbacks.emit_autoreleasepool_unwind_to_depth(ctx, 0u);
     callbacks.emit_typed_return("0", ctx);
   }
 

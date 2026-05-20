@@ -43,6 +43,10 @@ class BlockArcAutomationArtifacts:
     arc_implicit_cleanup_sema: ManifestSurface
     arc_autorelease_return_sema: ManifestSurface
     arc_autorelease_return_ll: str
+    arc_autoreleasepool_order_sema: ManifestSurface
+    arc_autoreleasepool_order_ll: str
+    arc_weak_autoreleasepool_sema: ManifestSurface
+    arc_weak_autoreleasepool_ll: str
     arc_method_family_sema: ManifestSurface
     arc_method_family_ll: str
     negative_batch: NegativeBatch

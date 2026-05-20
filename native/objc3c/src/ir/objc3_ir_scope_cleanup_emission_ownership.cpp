@@ -98,6 +98,18 @@ void EmitObjc3IROwnershipCleanupUnwindToDepth(
   }
 }
 
+void DiscardObjc3IROwnershipCleanupToDepth(FunctionContext &ctx,
+                                           std::size_t target_depth) {
+  while (ctx.pending_ownership_cleanup_calls.size() > target_depth) {
+    const PendingOwnershipCleanupCall call =
+        ctx.pending_ownership_cleanup_calls.back();
+    if (!call.binding_name.empty()) {
+      ctx.ownership_cleanup_call_indices.erase(call.binding_name);
+    }
+    ctx.pending_ownership_cleanup_calls.pop_back();
+  }
+}
+
 void EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
     const FunctionContext &ctx, std::size_t target_depth,
     std::vector<std::string> &out_lines, int &temp_counter) {

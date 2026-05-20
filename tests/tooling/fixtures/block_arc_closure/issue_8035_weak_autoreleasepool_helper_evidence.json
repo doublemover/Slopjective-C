@@ -1,0 +1,65 @@
+{
+  "issue": 8035,
+  "draft_id": "OC3-T10-002",
+  "contract_id": "objc3c.arc.weak-autoreleasepool.private-helper.evidence.v1",
+  "claim_class": "private-helper-compile-coupled-inspection-and-linked-runtime-probe",
+  "summary": "Weak current-property helper traffic and autoreleasepool push/pop traffic for #8035 are represented through the block-storage ARC automation artifact flow and the arc-property-helper linked runtime probe using checked-in positive and negative fixtures. The evidence is private-helper scoped; it does not claim public runtime ABI widening or packaged runnable proof.",
+  "production_code_paths": [
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp",
+    "native/objc3c/src/runtime/storage/property_value_storage.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp",
+    "native/objc3c/src/runtime/memory/autorelease_pool.cpp"
+  ],
+  "fixtures": {
+    "positive": [
+      "tests/tooling/fixtures/native/reference_counting_weak_autoreleasepool_positive.objc3"
+    ],
+    "negative": [
+      "tests/tooling/fixtures/native/runtime_backed_storage_ownership_weak_mismatch_negative.objc3"
+    ]
+  },
+  "acceptance_case_ids": [
+    "block-storage-arc-automation-semantics",
+    "arc-property-helper-abi"
+  ],
+  "expected_manifest_signals": {
+    "autoreleasepool_scope_lowering_scope_sites": 2,
+    "autoreleasepool_scope_lowering_scope_entry_transition_sites": 2,
+    "autoreleasepool_scope_lowering_scope_exit_transition_sites": 2,
+    "autoreleasepool_scope_lowering_max_scope_depth": 2
+  },
+  "expected_ir_helpers": [
+    "objc3_runtime_store_weak_current_property_i32",
+    "objc3_runtime_load_weak_current_property_i32",
+    "objc3_runtime_push_autoreleasepool_scope",
+    "objc3_runtime_pop_autoreleasepool_scope"
+  ],
+  "expected_negative_diagnostics": [
+    {
+      "fixture": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+      "expected_codes": [
+        "O3S206"
+      ],
+      "expected_snippets": [
+        "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
+      ]
+    }
+  ],
+  "runtime_probe_reference": "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
+  "expected_runtime_probe_signals": {
+    "arc_debug_probe.weak_after_strong_owner_release": 0,
+    "weak_stale_zeroed": 1,
+    "nested_lifo_drain_order_observed": 1,
+    "memory_nested_pool.autoreleasepool_depth": 2,
+    "memory_after_inner_pool.autoreleasepool_depth": 1,
+    "memory_after_outer_pool.autoreleasepool_depth": 0,
+    "memory_after_inner_pool.live_runtime_instance_count": "one managed receiver lower than memory_nested_pool",
+    "memory_after_outer_pool.live_runtime_instance_count": "two managed receivers lower than memory_nested_pool"
+  },
+  "claim_limitations": [
+    "private-helper-only",
+    "no-public-runtime-abi-widening",
+    "no-packaged-runnable-proof-claim"
+  ]
+}

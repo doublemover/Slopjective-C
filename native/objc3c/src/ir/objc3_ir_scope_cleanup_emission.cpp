@@ -120,6 +120,13 @@ void EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
   }
 }
 
+void DiscardObjc3IRPendingBlockDisposeToDepth(FunctionContext &ctx,
+                                              std::size_t target_depth) {
+  while (ctx.pending_block_dispose_calls.size() > target_depth) {
+    ctx.pending_block_dispose_calls.pop_back();
+  }
+}
+
 void PopObjc3IRScope(FunctionContext &ctx, bool emit_cleanup,
                      const Objc3IRScopeCleanupEmissionCallbacks &callbacks) {
   if (ctx.scopes.empty()) {
@@ -162,6 +169,12 @@ void PopObjc3IRScope(FunctionContext &ctx, bool emit_cleanup,
                                                 target_block_dispose_depth);
     EmitObjc3IRArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth,
                                             callbacks);
+  } else {
+    DiscardObjc3IROwnershipCleanupToDepth(ctx,
+                                          target_ownership_cleanup_depth);
+    DiscardObjc3IRPendingBlockDisposeToDepth(ctx,
+                                             target_block_dispose_depth);
+    DiscardObjc3IRArcOwnedCleanupToDepth(ctx, target_arc_cleanup_depth);
   }
   for (const auto &binding : scope_bindings) {
     ctx.block_bindings.erase(binding.first);
@@ -196,6 +209,24 @@ void EmitObjc3IRArcOwnedCleanupUnwindToDepth(
                              std::string(kObjc3RuntimeReleaseI32Symbol) +
                              "(i32 " + loaded_value + ")");
     (void)released_value;
+  }
+}
+
+void DiscardObjc3IRArcOwnedCleanupToDepth(FunctionContext &ctx,
+                                          std::size_t target_depth) {
+  while (ctx.arc_owned_cleanup_ptrs.size() > target_depth) {
+    const std::string ptr = ctx.arc_owned_cleanup_ptrs.back();
+    ctx.arc_owned_cleanup_ptrs.pop_back();
+    ctx.arc_owned_cleanup_ptr_set.erase(ptr);
+    ctx.arc_owned_storage_ptrs.erase(ptr);
+    for (auto it = ctx.arc_method_family_cleanup_ptr_by_value.begin();
+         it != ctx.arc_method_family_cleanup_ptr_by_value.end();) {
+      if (it->second == ptr) {
+        it = ctx.arc_method_family_cleanup_ptr_by_value.erase(it);
+      } else {
+        ++it;
+      }
+    }
   }
 }
 
@@ -241,11 +272,11 @@ void EmitObjc3IRTerminalCleanupToDepth(
     std::size_t ownership_cleanup_depth, std::size_t arc_cleanup_depth,
     const Objc3IRScopeCleanupEmissionCallbacks &callbacks) {
   EmitObjc3IRDeferredCleanupTerminalToDepth(ctx, scope_depth, callbacks);
-  EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
   EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
       ctx, ownership_cleanup_depth, ctx.code_lines, ctx.temp_counter);
   EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
       ctx, pending_block_dispose_depth, ctx.code_lines);
   EmitObjc3IRArcOwnedTerminalCleanupToDepth(
       ctx, arc_cleanup_depth, ctx.code_lines, ctx.temp_counter);
+  EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
 }

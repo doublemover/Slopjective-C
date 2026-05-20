@@ -27,9 +27,41 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
     exe_path = case_dir / "arc_debug_instrumentation_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "arc property helper probe")
+    reference_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "reference_counting_weak_autoreleasepool_positive.objc3"
+    )
+    reference_obj_path = compile_fixture(
+        reference_fixture, case_dir / "reference-counting-compile"
+    )
+    reference_probe = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "reference_counting_weak_autoreleasepool_probe.cpp"
+    )
+    reference_exe_path = (
+        case_dir / "reference_counting_weak_autoreleasepool_probe.exe"
+    )
+    compile_probe(clangxx, reference_probe, reference_exe_path, [reference_obj_path])
+    reference_payload = parse_json_output(
+        run_probe(reference_exe_path),
+        "reference counting weak/autoreleasepool probe",
+    )
 
     inside = payload.get("inside", {})
     after = payload.get("after", {})
+    reference_nested = reference_payload.get("memory_nested_pool", {})
+    reference_after_inner = reference_payload.get("memory_after_inner_pool", {})
+    reference_after_outer = reference_payload.get("memory_after_outer_pool", {})
+    reference_after_cleanup = reference_payload.get(
+        "memory_after_nested_release_cleanup", {}
+    )
 
     expect(payload.get("parent", 0) != 0 and payload.get("child", 0) != 0,
            "expected ArcBox runtime helper probe to allocate live receivers")
@@ -51,8 +83,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected weak-property helper write to preserve the child value")
     expect(payload.get("weak_inside_pool") == payload.get("child"),
            "expected weak-property helper read inside the pool to preserve the child value")
-    expect(payload.get("weak_after_pool") == payload.get("child"),
-           "expected weak-property helper read after pool pop to stay coherent")
+    expect(payload.get("weak_after_pool") == 0,
+           "expected weak-property helper read after strong owner release to zero the stale weak slot")
     expect(payload.get("released") == 9,
            "expected release helper accounting to preserve the released payload")
     expect(payload.get("parent_release_result") == payload.get("parent"),
@@ -123,10 +155,36 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected post-pool helper ABI debug state to preserve the bound weak property")
     expect(after.get("last_property_owner_identity") == "interface:ArcBox",
            "expected post-pool helper ABI debug state to preserve the ArcBox declaration owner identity")
+    expect(reference_payload.get("parent", 0) != 0 and reference_payload.get("child", 0) != 0,
+           "expected reference-counting weak/autoreleasepool probe to allocate live receivers")
+    expect(reference_payload.get("weak_inside_pool") == reference_payload.get("getter_value"),
+           "expected reference-counting probe to preserve the weak child inside the autoreleasepool")
+    expect(reference_payload.get("weak_after_pool") == 0,
+           "expected reference-counting probe to zero the weak slot after the child drains")
+    expect(reference_payload.get("weak_stale_zeroed") == 1,
+           "expected reference-counting probe to publish stale weak zeroing")
+    expect(reference_payload.get("nested_lifo_drain_order_observed") == 1,
+           "expected reference-counting probe to observe nested autoreleasepool LIFO drain order")
+    expect(reference_nested.get("autoreleasepool_depth") == 2,
+           "expected reference-counting probe to observe two nested autoreleasepool frames")
+    expect(reference_after_inner.get("autoreleasepool_depth") == 1,
+           "expected reference-counting probe to preserve the outer frame after inner drain")
+    expect(reference_after_outer.get("autoreleasepool_depth") == 0,
+           "expected reference-counting probe to drain all nested autoreleasepool frames")
+    expect(reference_after_inner.get("last_drained_autorelease_value") == reference_payload.get("nested_inner_autoreleased"),
+           "expected the inner autoreleasepool frame to drain before the outer frame")
+    expect(reference_after_outer.get("last_drained_autorelease_value") == reference_payload.get("nested_outer_autoreleased"),
+           "expected the outer autoreleasepool frame to drain after the inner frame")
+    expect(reference_after_inner.get("live_runtime_instance_count") + 1 == reference_nested.get("live_runtime_instance_count"),
+           "expected the inner autoreleasepool drain to destroy one managed receiver")
+    expect(reference_after_outer.get("live_runtime_instance_count") + 2 == reference_nested.get("live_runtime_instance_count"),
+           "expected nested autoreleasepool drains to destroy two managed receivers")
+    expect(reference_after_cleanup.get("live_runtime_instance_count") == reference_after_outer.get("live_runtime_instance_count"),
+           "expected nested autoreleasepool cleanup accounting to stay stable after drain")
 
     return CaseResult(
         case_id="arc-property-helper-abi",
-        probe="tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        probe="tests/tooling/runtime/arc_debug_instrumentation_probe.cpp;tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
         fixture="tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
@@ -138,10 +196,15 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
             "autoreleased": payload.get("autoreleased"),
             "released": payload.get("released"),
             "getter_value": payload.get("getter_value"),
-            "weak_after_pool": payload.get("weak_after_pool"),
+            "weak_after_strong_owner_release": payload.get("weak_after_pool"),
             "inside_retain_call_count": inside.get("retain_call_count"),
             "inside_current_property_exchange_count": inside.get("current_property_exchange_count"),
             "after_autoreleasepool_pop_count": after.get("autoreleasepool_pop_count"),
             "after_release_call_count": after.get("release_call_count"),
+            "reference_weak_stale_zeroed": reference_payload.get("weak_stale_zeroed"),
+            "reference_nested_lifo_drain_order_observed": reference_payload.get("nested_lifo_drain_order_observed"),
+            "reference_after_inner_last_drained": reference_after_inner.get("last_drained_autorelease_value"),
+            "reference_after_outer_last_drained": reference_after_outer.get("last_drained_autorelease_value"),
+            "reference_after_outer_live_runtime_instance_count": reference_after_outer.get("live_runtime_instance_count"),
         },
     )

@@ -1,0 +1,40 @@
+{
+  "issue": 8035,
+  "draft_id": "OC3-T10-002",
+  "contract_id": "objc3c.arc.autoreleasepool.terminal-cleanup-order.evidence.v1",
+  "claim_class": "private-helper-compile-coupled-inspection",
+  "summary": "Autoreleasepool terminal cleanup now drains after local ARC, block, ownership, and deferred cleanup on return/break/continue/error-style terminal paths, matching the normal lexical block destruction order and preventing autoreleasepool pop from racing ahead of owned local destruction.",
+  "production_code_paths": [
+    "native/objc3c/src/ir/objc3_ir_statement_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_function_local_flow.cpp",
+    "native/objc3c/src/ir/objc3_ir_scope_cleanup_emission.cpp"
+  ],
+  "fixtures": [
+    "tests/tooling/fixtures/native/arc_autoreleasepool_destruction_order_positive.objc3"
+  ],
+  "acceptance_case_ids": [
+    "block-storage-arc-automation-semantics"
+  ],
+  "expected_manifest_signals": {
+    "autoreleasepool_scope_lowering_scope_sites": 1,
+    "autoreleasepool_scope_lowering_scope_entry_transition_sites": 1,
+    "autoreleasepool_scope_lowering_scope_exit_transition_sites": 1
+  },
+  "expected_ir_order": [
+    "call void @objc3_runtime_push_autoreleasepool_scope",
+    "call i32 @objc3_runtime_release_i32",
+    "call void @objc3_runtime_pop_autoreleasepool_scope"
+  ],
+  "ordering_rule": "Terminal cleanup first emits local deferred/ownership/block/ARC destruction and only then unwinds autoreleasepool scopes to the requested depth.",
+  "artifact_flow": [
+    "scripts/objc3c_runtime_acceptance/domains/block_arc_automation_artifacts/catalog.py",
+    "scripts/objc3c_runtime_acceptance/domains/block_arc_automation_assertions.py",
+    "scripts/objc3c_runtime_acceptance/domains/block_arc_automation_cases.py"
+  ],
+  "claim_limitations": [
+    "private-helper-only",
+    "compile-coupled-inspection-only",
+    "no-public-runtime-abi-widening",
+    "no-packaged-runnable-proof-claim"
+  ]
+}

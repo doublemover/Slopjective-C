@@ -12,7 +12,8 @@ namespace objc3c::runtime {
 bool RuntimeAutoreleasePoolCanEnqueue(int value);
 void ResetRuntimeAutoreleasepoolStateForTesting();
 void PushRuntimeAutoreleasePoolFrame();
-std::vector<int> PopRuntimeAutoreleasePoolFrameValues();
+// Returns the popped frame's values in actual drain order: newest first.
+std::vector<int> PopRuntimeAutoreleasePoolFrameValuesInDrainOrder();
 std::uint64_t RuntimeAutoreleasePoolDepth();
 std::uint64_t RuntimeAutoreleasePoolMaxDepth();
 std::uint64_t CountQueuedAutoreleaseValues();

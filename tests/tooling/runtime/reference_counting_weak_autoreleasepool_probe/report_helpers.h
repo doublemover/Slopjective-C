@@ -25,8 +25,19 @@ inline void PrintReferenceCountingWeakAutoreleasepoolReport(
               operations.clear_strong_result);
   std::printf("\"weak_inside_pool\":%d,", operations.weak_inside_pool);
   std::printf("\"weak_after_pool\":%d,", operations.weak_after_pool);
+  std::printf("\"weak_stale_zeroed\":%d,", operations.weak_stale_zeroed);
   std::printf("\"parent_release_result\":%d,",
               operations.parent_release_result);
+  std::printf("\"nested_outer_retained\":%d,",
+              operations.nested_outer_retained);
+  std::printf("\"nested_inner_retained\":%d,",
+              operations.nested_inner_retained);
+  std::printf("\"nested_outer_autoreleased\":%d,",
+              operations.nested_outer_autoreleased);
+  std::printf("\"nested_inner_autoreleased\":%d,",
+              operations.nested_inner_autoreleased);
+  std::printf("\"nested_lifo_drain_order_observed\":%d,",
+              operations.nested_lifo_drain_order_observed);
   std::printf("\"graph_after_setup\":");
   ::objc3c::runtime::probe::PrintAllocationGraph(
       snapshots.graph_after_setup.snapshot);
@@ -48,6 +59,21 @@ inline void PrintReferenceCountingWeakAutoreleasepoolReport(
   std::printf(",\"memory_after_parent_release\":");
   ::objc3c::runtime::probe::PrintMemoryManagementState(
       snapshots.memory_after_parent_release.snapshot);
+  std::printf(",\"memory_before_nested_pool\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_before_nested_pool.snapshot);
+  std::printf(",\"memory_nested_pool\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_nested_pool.snapshot);
+  std::printf(",\"memory_after_inner_pool\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_after_inner_pool.snapshot);
+  std::printf(",\"memory_after_outer_pool\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_after_outer_pool.snapshot);
+  std::printf(",\"memory_after_nested_release_cleanup\":");
+  ::objc3c::runtime::probe::PrintMemoryManagementState(
+      snapshots.memory_after_nested_release_cleanup.snapshot);
   std::printf(",\"weak_value_entry\":");
   ::objc3c::runtime::probe::PrintPropertyEntryWeakAutoreleasepool(
       snapshots.weak_value_entry.snapshot);

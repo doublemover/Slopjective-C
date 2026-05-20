@@ -54,6 +54,21 @@ ARC_AUTORELEASE_RETURN_FIXTURE = FixtureArtifactSpec(
     output_dir_name="arc-autorelease-return-positive",
     extra_args=(ARC_ARG,),
 )
+ARC_AUTORELEASEPOOL_ORDER_FIXTURE = FixtureArtifactSpec(
+    key="arc-autoreleasepool-destruction-order",
+    fixture=(
+        NATIVE_FIXTURE_DIR
+        / "arc_autoreleasepool_destruction_order_positive.objc3"
+    ),
+    output_dir_name="arc-autoreleasepool-destruction-order-positive",
+    extra_args=(ARC_ARG,),
+)
+ARC_WEAK_AUTORELEASEPOOL_FIXTURE = FixtureArtifactSpec(
+    key="arc-weak-autoreleasepool-runtime-helpers",
+    fixture=NATIVE_FIXTURE_DIR / "reference_counting_weak_autoreleasepool_positive.objc3",
+    output_dir_name="arc-weak-autoreleasepool-positive",
+    extra_args=(ARC_ARG,),
+)
 ARC_METHOD_FAMILY_FIXTURE = FixtureArtifactSpec(
     key="arc-method-family-retained-message-cleanup",
     fixture=NATIVE_FIXTURE_DIR / "arc_method_family_retained_message_cleanup.objc3",
@@ -78,16 +93,27 @@ NEGATIVE_EXPECTATIONS = (
         ],
         expected_codes=["O3S206"],
     ),
+    NegativeDiagnosticExpectation(
+        key="weak-storage-ownership-mismatch-negative",
+        fixture=NATIVE_FIXTURE_DIR
+        / "runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+        expected_snippets=[
+            "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
+        ],
+        expected_codes=["O3S206"],
+    ),
 )
 
 
 __all__ = [
+    "ARC_AUTORELEASEPOOL_ORDER_FIXTURE",
     "ARC_AUTORELEASE_RETURN_FIXTURE",
     "ARC_CLEANUP_SCOPE_FIXTURE",
     "ARC_IMPLICIT_CLEANUP_FIXTURE",
     "ARC_INFERENCE_FIXTURE",
     "ARC_METHOD_FAMILY_FIXTURE",
     "ARC_MODE_FIXTURE",
+    "ARC_WEAK_AUTORELEASEPOOL_FIXTURE",
     "CASE_ID",
     "NATIVE_FIXTURE_DIR",
     "NEGATIVE_EXPECTATIONS",
