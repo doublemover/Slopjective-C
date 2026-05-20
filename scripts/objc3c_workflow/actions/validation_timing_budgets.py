@@ -13,6 +13,8 @@ DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS = 120.0
 COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
     "validate-performance-governance": 420.0,
     "validate-release-foundation": 900.0,
+    "validate-packaging-channels": 1200.0,
+    "validate-release-operations": 1500.0,
     "validate-stress": 300.0,
 }
 

@@ -130,6 +130,9 @@ def test_package_channel_script_rendering_is_owned_by_rendering_module() -> None
     offline_text = offline_bootstrap_script_text()
 
     assert "objc3c.packaging.channels.install-receipt.v1" in install_text
+    assert "bootstrap_entrypoint = \"Bootstrap-objc3cEnvironment.ps1\"" in install_text
+    assert "package_bridge = \"objc3c\"" in install_text
+    assert "install_command = \"npm run objc3c -- build-package-channels\"" in install_text
     assert "Copy-Item -LiteralPath $sourceRoot" in install_text
     assert "OfflineBootstrap-objc3c.ps1" not in install_text
     assert "objc3c-windows-x64-installer.zip" in offline_text

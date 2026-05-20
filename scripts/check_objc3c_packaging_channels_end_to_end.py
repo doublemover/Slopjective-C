@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import validate_json_schema
 from objc3c_tooling.subprocesses import python_script_command, run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
 
@@ -38,6 +39,17 @@ def extract_zip(zip_path: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as archive:
         archive.extractall(destination)
+
+
+def load_valid_install_receipt(receipt_path: Path, receipt_schema: dict[str, Any], install_root: Path) -> dict[str, Any]:
+    receipt = load_json(receipt_path)
+    validate_json_schema(receipt, receipt_schema, label=repo_rel(receipt_path))
+    expect(receipt["install_root"] == str(install_root), "install receipt root drifted from requested install root")
+    expect(receipt["install_home"] == str(install_root / "objc3c"), "install receipt home drifted from requested install root")
+    expect(receipt["bootstrap_entrypoint"] == "Bootstrap-objc3cEnvironment.ps1", "install receipt bootstrap entrypoint drifted")
+    expect(receipt["package_bridge"] == "objc3c", "install receipt package bridge drifted")
+    expect(receipt["install_command"] == "npm run objc3c -- build-package-channels", "install receipt command drifted")
+    return receipt
 
 
 
@@ -97,10 +109,8 @@ def main() -> int:
     expect(bootstrap_script.is_file(), "installer did not publish bootstrap script")
     expect(installed_exe.is_file(), "installer did not publish installed native executable")
 
-    receipt = load_json(receipt_path)
     receipt_schema = load_json(INSTALL_RECEIPT_SCHEMA)
-    for required_key in receipt_schema["required"]:
-        expect(required_key in receipt, f"install receipt missing required field {required_key}")
+    load_valid_install_receipt(receipt_path, receipt_schema, install_root)
 
     bootstrap_result = run_capture(
         [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(bootstrap_script)],
@@ -128,7 +138,9 @@ def main() -> int:
     )
     if offline_result.returncode != 0:
         raise RuntimeError("offline bundle bootstrap failed")
-    expect((offline_install_root / "objc3c-install-receipt.json").is_file(), "offline bootstrap did not publish install receipt")
+    offline_receipt_path = offline_install_root / "objc3c-install-receipt.json"
+    expect(offline_receipt_path.is_file(), "offline bootstrap did not publish install receipt")
+    load_valid_install_receipt(offline_receipt_path, receipt_schema, offline_install_root)
     expect((offline_install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe").is_file(), "offline bootstrap did not install native executable")
 
     end_to_end_summary = {

@@ -21,6 +21,8 @@
     "install_root",
     "install_home",
     "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
     "installed_at_utc"
   ]
 }

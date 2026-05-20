@@ -58,7 +58,10 @@ function Assert-ReceiptOwnsInstallHome {
   }
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
   if ($receipt.contract_id -ne "objc3c.packaging.channels.install-receipt.v1" -or
-      [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome) {
+      [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome -or
+      [string]$receipt.bootstrap_entrypoint -ne "Bootstrap-objc3cEnvironment.ps1" -or
+      [string]$receipt.package_bridge -ne "objc3c" -or
+      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels") {
     throw "installer target receipt does not own install home: $installHome"
   }
 }
@@ -82,7 +85,9 @@ $receipt = [ordered]@{
   contract_id = "objc3c.packaging.channels.install-receipt.v1"
   install_root = $resolvedInstallRoot
   install_home = $installHome
-  bootstrap_script = $bootstrapTarget
+  bootstrap_entrypoint = "Bootstrap-objc3cEnvironment.ps1"
+  package_bridge = "objc3c"
+  install_command = "npm run objc3c -- build-package-channels"
   installed_at_utc = [DateTime]::UtcNow.ToString("o")
 }
 $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
@@ -90,7 +95,7 @@ $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Enco
 Write-Output ("install_root: " + $resolvedInstallRoot)
 Write-Output ("install_home: " + $installHome)
 Write-Output ("receipt_path: " + $receiptPath)
-Write-Output ("bootstrap_script: " + $bootstrapTarget)
+Write-Output ("bootstrap_entrypoint: " + $bootstrapTarget)
 """
 
 
@@ -146,7 +151,10 @@ function Assert-ReceiptOwnsInstallHome {
   }
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
   if ($receipt.contract_id -ne "objc3c.packaging.channels.install-receipt.v1" -or
-      [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome) {
+      [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome -or
+      [string]$receipt.bootstrap_entrypoint -ne "Bootstrap-objc3cEnvironment.ps1" -or
+      [string]$receipt.package_bridge -ne "objc3c" -or
+      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels") {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
 }

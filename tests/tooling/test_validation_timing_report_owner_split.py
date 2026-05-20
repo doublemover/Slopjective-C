@@ -138,6 +138,20 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         total_seconds=800.0,
         composite_action="validate-release-foundation",
     )
+    packaging_channels_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=900.0,
+        composite_action="validate-packaging-channels",
+    )
+    release_operations_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=1200.0,
+        composite_action="validate-release-operations",
+    )
     stress_budgets = validation_speed_budgets(
         None,
         None,
@@ -162,6 +176,16 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         for budget in release_foundation_budgets
         if budget["name"] == "composite_elapsed_seconds"
     )
+    packaging_channels_composite = next(
+        budget
+        for budget in packaging_channels_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    release_operations_composite = next(
+        budget
+        for budget in release_operations_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
     stress_composite = next(
         budget
         for budget in stress_budgets
@@ -177,6 +201,10 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
     assert performance_governance_composite["status"] == "PASS"
     assert release_foundation_composite["threshold_seconds"] == 900.0
     assert release_foundation_composite["status"] == "PASS"
+    assert packaging_channels_composite["threshold_seconds"] == 1200.0
+    assert packaging_channels_composite["status"] == "PASS"
+    assert release_operations_composite["threshold_seconds"] == 1500.0
+    assert release_operations_composite["status"] == "PASS"
     assert stress_composite["threshold_seconds"] == 300.0
     assert stress_composite["status"] == "PASS"
     assert default_composite["threshold_seconds"] == 120.0
