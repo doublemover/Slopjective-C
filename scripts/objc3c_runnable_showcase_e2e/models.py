@@ -12,10 +12,12 @@ class ShowcasePackageSurface:
     runtime_library: Path
     showcase_portfolio: Path
     showcase_readme: Path
+    showcase_demo_packages_manifest: Path
     guided_walkthrough_manifest: Path
     repo_superclean_surface: Path
     capability_probe_script: Path
     showcase_examples: list[Any]
+    showcase_demo_packages: list[Any]
 
 
 @dataclass(frozen=True)
@@ -29,6 +31,8 @@ class ShowcaseExampleResult:
     run_log: str
     expected_exit_code: int
     actual_exit_code: int
+    demo_package_id: str
+    coverage_domain: str
 
     def payload(self) -> dict[str, Any]:
         return asdict(self)

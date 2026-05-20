@@ -18,11 +18,18 @@ PWSH = shutil.which("pwsh") or "pwsh"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
 PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
+DEMO_PACKAGES_PATH = ROOT / "showcase" / "demo_packages.json"
 SURFACE_REPORT = ROOT / "tmp" / "reports" / "showcase" / "summary.json"
 RUNTIME_REPORT = ROOT / "tmp" / "reports" / "showcase" / "runtime-summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "showcase" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.showcase.integration.summary.v1"
 EXPECTED_EXAMPLE_IDS = ["auroraBoard", "signalMesh", "patchKit"]
+EXPECTED_DEMO_PACKAGE_IDS = [
+    "showcase:auroraBoard",
+    "showcase:signalMesh",
+    "showcase:patchKit",
+]
+EXPECTED_COVERAGE_DOMAINS = ["object-model", "concurrency", "interop"]
 
 
 def expect(condition: bool, message: str) -> None:
@@ -44,6 +51,7 @@ def main() -> int:
     surface_summary = load_json(SURFACE_REPORT)
     runtime_summary = load_json(RUNTIME_REPORT)
     program_surface = load_json(PROGRAM_SURFACE_PATH)
+    demo_packages = load_json(DEMO_PACKAGES_PATH)
     expect(
         surface_summary.get("contract_id") == "objc3c.showcase.surface.summary.v1",
         "showcase surface report published the wrong contract id",
@@ -55,6 +63,18 @@ def main() -> int:
 
     selected_ids = surface_summary.get("selected_example_ids")
     expect(selected_ids == EXPECTED_EXAMPLE_IDS, "showcase surface report drifted from the full example set")
+    expect(
+        surface_summary.get("demo_packages_contract_id") == "objc3c.showcase.demo.packages.v1",
+        "showcase surface report drifted from the demo package contract",
+    )
+    expect(
+        surface_summary.get("demo_package_ids") == EXPECTED_DEMO_PACKAGE_IDS,
+        "showcase surface demo package ids drifted",
+    )
+    expect(
+        surface_summary.get("demo_package_coverage_domains") == EXPECTED_COVERAGE_DOMAINS,
+        "showcase surface demo package coverage drifted",
+    )
     program_examples = program_surface.get("capability_demo_examples")
     expect(isinstance(program_examples, list), "program surface did not publish capability_demo_examples")
     program_examples_by_id = {
@@ -77,6 +97,17 @@ def main() -> int:
             entry.get("stdlib_followup_modules") == program_entry.get("stdlib_followup_modules"),
             f"showcase surface stdlib_followup_modules drifted for {example_id}",
         )
+        demo_package = entry.get("demo_package")
+        expect(isinstance(demo_package, dict), f"showcase surface demo package missing for {example_id}")
+        assert isinstance(demo_package, dict)
+        expect(
+            demo_package.get("package_id") == f"showcase:{example_id}",
+            f"showcase surface demo package id drifted for {example_id}",
+        )
+        expect(
+            demo_package.get("coverage_domain") in EXPECTED_COVERAGE_DOMAINS,
+            f"showcase surface demo package coverage drifted for {example_id}",
+        )
 
     runtime_examples = runtime_summary.get("examples")
     expect(isinstance(runtime_examples, list), "showcase runtime report did not publish examples")
@@ -92,6 +123,17 @@ def main() -> int:
         actual_exit_codes == {"auroraBoard": 33, "signalMesh": 13, "patchKit": 7},
         "showcase runtime report drifted from the expected runnable exits",
     )
+    for entry in surface_examples:
+        if not isinstance(entry, dict):
+            continue
+        demo_package = entry.get("demo_package", {})
+        if not isinstance(demo_package, dict):
+            continue
+        example_id = str(entry.get("example_id"))
+        expect(
+            demo_package.get("expected_exit_code") == actual_exit_codes.get(example_id),
+            f"demo package expected exit drifted from runtime proof for {example_id}",
+        )
 
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -101,6 +143,8 @@ def main() -> int:
         "example_ids": EXPECTED_EXAMPLE_IDS,
         "child_report_paths": [repo_rel(SURFACE_REPORT), repo_rel(RUNTIME_REPORT)],
         "program_surface_contract": repo_rel(PROGRAM_SURFACE_PATH),
+        "demo_packages_manifest": repo_rel(DEMO_PACKAGES_PATH),
+        "demo_packages": demo_packages.get("packages"),
         "program_publish_inputs": program_surface.get("publish_inputs"),
         "capability_demo_examples": program_examples,
         "showcase_surface_summary": surface_summary,

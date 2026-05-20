@@ -4,6 +4,7 @@ function Get-ManifestProvenanceDocsShowcaseFiles {
   return @(
     "showcase/README.md",
     "showcase/portfolio.json",
+    "showcase/demo_packages.json",
     "showcase/tutorial_walkthrough.json",
     "showcase/auroraBoard/main.objc3",
     "showcase/auroraBoard/workspace.json",

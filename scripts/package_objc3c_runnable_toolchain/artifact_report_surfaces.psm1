@@ -14,6 +14,8 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
   $stdlibAdvancedHelperPackageSurfacePayload = $SurfacePayloads.StdlibAdvancedHelperPackageSurfacePayload
   $stdlibProgramSurfaceRelativePath = $SurfacePayloads.StdlibProgramSurfaceRelativePath
   $stdlibProgramSurfacePayload = $SurfacePayloads.StdlibProgramSurfacePayload
+  $showcaseDemoPackagesRelativePath = $SurfacePayloads.ShowcaseDemoPackagesRelativePath
+  $showcaseDemoPackagesPayload = $SurfacePayloads.ShowcaseDemoPackagesPayload
 
   return [ordered]@{
     repo_superclean_surface = $repoSupercleanSurfaceRelativePath
@@ -41,6 +43,10 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
     stdlib_program_command_surfaces = $stdlibProgramSurfacePayload["command_surfaces"]
     stdlib_program_publish_inputs = $stdlibProgramSurfacePayload["publish_inputs"]
     stdlib_program_examples = $stdlibProgramSurfacePayload["capability_demo_examples"]
+    showcase_demo_packages_manifest = $showcaseDemoPackagesRelativePath
+    showcase_demo_packages_contract_id = $showcaseDemoPackagesPayload["contract_id"]
+    showcase_demo_packages = $showcaseDemoPackagesPayload["packages"]
+    showcase_demo_package_reproducibility = $showcaseDemoPackagesPayload["reproducibility_contract"]
     stdlib_workspace_manifest = "stdlib/workspace.json"
     stdlib_module_inventory = "stdlib/module_inventory.json"
     stdlib_stability_policy = "stdlib/stability_policy.json"

@@ -13,7 +13,7 @@ from .constants import (
     SUMMARY_CONTRACT_ID,
 )
 from .execution import run_showcase_examples
-from .manifest import load_showcase_package_surface
+from .manifest import load_showcase_package_surface, validate_showcase_demo_packages
 from .models import (
     ShowcaseExecutionResult,
     ShowcaseExampleResult,
@@ -39,5 +39,6 @@ __all__ = [
     "main",
     "run_package_command",
     "run_showcase_examples",
+    "validate_showcase_demo_packages",
     "write_summary",
 ]

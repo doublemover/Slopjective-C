@@ -41,6 +41,7 @@ function Get-RunnableToolchainPackageSurfacePayloads {
   $stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
   $stdlibAdvancedHelperPackageSurfaceRelativePath = "stdlib/advanced_helper_package_surface.json"
   $stdlibProgramSurfaceRelativePath = "stdlib/program_surface.json"
+  $showcaseDemoPackagesRelativePath = "showcase/demo_packages.json"
 
   return [ordered]@{
     RepoSupercleanSurfaceRelativePath = $repoSupercleanSurfaceRelativePath
@@ -57,6 +58,10 @@ function Get-RunnableToolchainPackageSurfacePayloads {
     StdlibProgramSurfacePayload = Read-RunnableToolchainPackageJsonHashtable `
       -PackageRoot $PackageRoot `
       -RelativePath $stdlibProgramSurfaceRelativePath
+    ShowcaseDemoPackagesRelativePath = $showcaseDemoPackagesRelativePath
+    ShowcaseDemoPackagesPayload = Read-RunnableToolchainPackageJsonHashtable `
+      -PackageRoot $PackageRoot `
+      -RelativePath $showcaseDemoPackagesRelativePath
   }
 }
 

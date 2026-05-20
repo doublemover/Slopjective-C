@@ -16,6 +16,10 @@ from .validation.constants import (  # noqa: E402
     SHOWCASE_SUMMARY_CONTRACT_ID,
     WORKSPACE_CONTRACT_ID,
 )
+from .validation.demo_packages import (  # noqa: E402
+    demo_packages_by_example,
+    validate_demo_packages_contract,
+)
 from .validation.examples import (  # noqa: E402
     known_story_capabilities,
     showcase_example_ids,

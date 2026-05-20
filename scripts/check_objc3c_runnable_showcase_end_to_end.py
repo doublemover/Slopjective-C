@@ -20,6 +20,7 @@ try:
         main,
         run_package_command,
         run_showcase_examples,
+        validate_showcase_demo_packages,
         write_summary,
     )
 except ModuleNotFoundError as exc:
@@ -41,6 +42,7 @@ except ModuleNotFoundError as exc:
         main,
         run_package_command,
         run_showcase_examples,
+        validate_showcase_demo_packages,
         write_summary,
     )
 
@@ -61,6 +63,7 @@ __all__ = [
     "main",
     "run_package_command",
     "run_showcase_examples",
+    "validate_showcase_demo_packages",
     "write_summary",
 ]
 
