@@ -70,6 +70,7 @@ def assert_runtime_public_result_abi_uses_split_status_and_payload_headers() -> 
     (
         runtime_cmake,
         aggregate,
+        registration,
         registration_status,
         dispatch_status,
         dispatch_result,
@@ -110,7 +111,24 @@ def assert_runtime_public_result_abi_uses_split_status_and_payload_headers() -> 
         dispatch_result,
         [
             "typedef struct objc3_runtime_dispatch_i32_result",
+            "typedef struct objc3_runtime_dispatch_typed_result",
+            "#define OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION 3u",
+            "#define OBJC3_RUNTIME_DISPATCH_TYPED_RESULT_ABI_VERSION 2u",
+            "uint32_t abi_version;",
+            "uint32_t result_size;",
             "objc3_runtime_dispatch_status_code status_code;",
+            "const char *result_contract;",
+            "const char *diagnostic_owner_model;",
+            "const char *fail_closed_ownership_model;",
+        ],
+    )
+    assert_contains_all(
+        registration,
+        [
+            "#define OBJC3_RUNTIME_REGISTRATION_STATE_SNAPSHOT_ABI_VERSION 1u",
+            "typedef struct objc3_runtime_registration_state_snapshot",
+            "uint32_t abi_version;",
+            "uint32_t snapshot_size;",
         ],
     )
     assert_contains_all(

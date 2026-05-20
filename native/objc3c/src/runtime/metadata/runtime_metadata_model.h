@@ -140,7 +140,6 @@ struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataIvarSourceRecord> ivars_lexicographic;
   bool deterministic = false;
   bool metadata_model_owner_explicit = true;
-  bool retired_route_path_allowed = false;
 };
 
 inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
@@ -149,7 +148,6 @@ inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
          !records.metadata_model_owner.empty() &&
          !records.fail_closed_ownership_model.empty() &&
          records.metadata_model_owner_explicit &&
-         !records.retired_route_path_allowed &&
          objc3c::runtime::RuntimeOwnerSplitContractIsReady();
 }
 

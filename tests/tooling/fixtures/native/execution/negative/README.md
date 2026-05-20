@@ -48,7 +48,8 @@ Field notes:
 - `expect_failure.stage`: first failing pipeline stage (`compile`, `link`, or `run`).
 - `expect_failure.required_diagnostic_tokens`: case-sensitive substrings that must all appear in diagnostics for the failing stage.
 - `execution.requires_live_runtime_dispatch`: whether successful execution would require a live runtime dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
+- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true and one symbol is sufficient.
+- `execution.runtime_dispatch_symbols` (optional): expected dispatch symbols when the fixture proves multiple live runtime dispatch entrypoints. This field is mutually exclusive with `execution.runtime_dispatch_symbol` and must be absent when live dispatch is not required.
 
 ## Assignment fixture note
 

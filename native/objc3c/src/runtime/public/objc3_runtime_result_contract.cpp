@@ -31,7 +31,6 @@ objc3_runtime_dispatch_i32_result MakeRuntimeDispatchI32Envelope(
       RuntimeTypedDispatchContractForStatus(status_code));
   result.diagnostic_owner_model = RuntimeResultDiagnosticOwnerModel();
   result.fail_closed_ownership_model = RuntimeResultFailClosedOwnershipModel();
-  result.retired_route_path_allowed = RuntimeResultRetiredRoutePathAllowed();
   return result;
 }
 
@@ -86,7 +85,6 @@ objc3_runtime_dispatch_typed_result MakeRuntimeDispatchTypedResult(
       RuntimeTypedDispatchContractForStatus(status_code));
   result.diagnostic_owner_model = RuntimeResultDiagnosticOwnerModel();
   result.fail_closed_ownership_model = RuntimeResultFailClosedOwnershipModel();
-  result.retired_route_path_allowed = RuntimeResultRetiredRoutePathAllowed();
   return result;
 }
 

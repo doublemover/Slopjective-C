@@ -6,7 +6,9 @@ support without a matching capability matrix row.
 Current runtime public C API ownership lives in:
 
 - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- `native/objc3c/src/runtime/public/objc3_runtime_registration.h`
 - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
+- `native/objc3c/src/runtime/public/objc3_runtime_dispatch_result.h`
 - `native/objc3c/src/runtime/public/objc3_runtime_result_contract.h`
 
 The exported runtime surface is:
@@ -14,15 +16,36 @@ The exported runtime surface is:
 - `objc3_runtime_register_image`
 - `objc3_runtime_lookup_selector`
 - `objc3_runtime_dispatch_i32_checked`
+- `objc3_runtime_dispatch_i32_from_class_checked`
+- `objc3_runtime_dispatch_typed_checked`
+- `objc3_runtime_dispatch_typed_from_class_checked`
 - `objc3_runtime_dispatch_i32`
+- `objc3_runtime_dispatch_i32_from_class`
+- `objc3_runtime_dispatch_typed_value`
+- `objc3_runtime_dispatch_typed_value_from_class`
 - `objc3_runtime_copy_registration_state_for_testing`
 - `objc3_runtime_reset_for_testing`
 
 `objc3_runtime_dispatch_i32_checked` returns
-`objc3_runtime_dispatch_i32_result`, including a status code, value, diagnostic
-code, and diagnostic message. `objc3_runtime_dispatch_i32` remains the narrow
-plain i32 lowering entrypoint for supported live sends; it does not create a
-second dispatch mode or bypass the checked result ownership contract.
+`objc3_runtime_dispatch_i32_result`, including `abi_version`, `result_size`, a
+status code, value, diagnostic code, diagnostic message, result contract,
+diagnostic owner model, and fail-closed owner model.
+`objc3_runtime_dispatch_typed_checked` returns
+`objc3_runtime_dispatch_typed_result`, which carries `abi_version`,
+`result_size`, the same result ownership fields plus a return kind and exactly
+one populated typed payload field for successful non-void dispatch.
+`objc3_runtime_dispatch_i32` remains the narrow plain i32 lowering entrypoint
+for supported live sends; typed source lowering uses
+`objc3_runtime_dispatch_typed_value` or
+`objc3_runtime_dispatch_typed_value_from_class` when semantic analysis knows a
+non-i32 return shape, including `super` lookup that must start at an explicit
+class. These entrypoints do not create a second dispatch mode or bypass the
+checked result ownership contract.
+
+`objc3_runtime_registration_state_snapshot` is also ABI guarded with
+`abi_version` and `snapshot_size` fields. Snapshot strings are runtime-owned
+borrowed pointers, and callers must treat the struct shape as versioned public
+runtime ABI.
 
 Current frontend public C API ownership lives in:
 

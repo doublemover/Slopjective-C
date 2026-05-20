@@ -26,7 +26,6 @@ int RegisterImageUnlocked(
   // bootstrap-visible image-walk state.
   (void)RuntimeImageDescriptorOwnershipModel();
   state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
-  state.retired_route_path_allowed = RuntimeRetiredRoutePathsAreAllowed();
   if (!RuntimeImageDescriptorHasRequiredIdentity(image)) {
     MarkRejectedRegistrationUnlocked(
         state, image, OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR);

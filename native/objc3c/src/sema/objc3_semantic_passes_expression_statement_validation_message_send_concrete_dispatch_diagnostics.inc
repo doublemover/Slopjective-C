@@ -21,6 +21,54 @@
       // for those selectors.
       return MakeScalarSemanticType(ValueType::ObjCId);
     }
+    if (message_send_context.surface != nullptr) {
+      const Objc3ResolvedMessageSendPropertyAccessor property_resolution =
+          ResolveConcreteOwnerPropertyAccessor(
+              *message_send_context.surface, resolution.owner_name, selector,
+              resolution.is_class_method);
+      if (property_resolution.property != nullptr) {
+        const std::size_t expected_arity =
+            property_resolution.is_setter ? 1u : 0u;
+        if (expr->args.size() != expected_arity) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S216",
+              "selector resolution failed: property accessor selector '" +
+                  selector + "' resolves to arity " +
+                  std::to_string(expected_arity) +
+                  " for concrete dispatch receiver '" +
+                  resolution.owner_name + "'"));
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        if (property_resolution.is_setter) {
+          const SemanticTypeInfo arg_type = ValidateExpr(
+              expr->args[0].get(), scopes, globals, functions, diagnostics,
+              max_message_send_args, message_send_context);
+          const SemanticTypeInfo expected =
+              MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+          const bool bool_coercion =
+              !expected.is_vector && expected.type == ValueType::Bool &&
+              !arg_type.is_vector && arg_type.type == ValueType::I32;
+          const bool i32_alias_coercion =
+              AreScalarI32AliasCompatible(expected, arg_type);
+          const bool objc_reference_coercion =
+              AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+          if (!IsUnknownSemanticType(arg_type) &&
+              !IsUnknownSemanticType(expected) &&
+              !IsSameSemanticType(arg_type, expected) && !bool_coercion &&
+              !i32_alias_coercion && !objc_reference_coercion) {
+            diagnostics.push_back(MakeDiag(
+                expr->args[0]->line, expr->args[0]->column, "O3S206",
+                "type mismatch: property accessor selector '" + selector +
+                    "' on concrete dispatch receiver '" +
+                    resolution.owner_name + "' expects '" +
+                    SemanticTypeName(expected) + "', got '" +
+                    SemanticTypeName(arg_type) + "'"));
+          }
+          return MakeScalarSemanticType(ValueType::Void);
+        }
+        return MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+      }
+    }
     const unsigned diag_line =
         expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column =

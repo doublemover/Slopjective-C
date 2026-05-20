@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "strict_dispatch_error_status_probe/dispatch_fixture.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 
 namespace objc3c::runtime::typed_dispatch_abi_probe {
 
@@ -50,7 +51,16 @@ bool CommonTypedResultShapeIsValid(
          result.diagnostic_message != nullptr &&
          result.result_contract != nullptr &&
          std::strcmp(result.result_contract, "typed-dispatch-value-result") ==
-             0;
+             0 &&
+         result.diagnostic_owner_model != nullptr &&
+         std::strcmp(
+             result.diagnostic_owner_model,
+             ::objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner) ==
+             0 &&
+         result.fail_closed_ownership_model != nullptr &&
+         std::strcmp(
+             result.fail_closed_ownership_model,
+             ::objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel) == 0;
 }
 
 bool TypedValueFieldsMatch(const objc3_runtime_dispatch_typed_result &result,
@@ -94,6 +104,13 @@ bool TypedValueFieldsAreZero(const objc3_runtime_dispatch_typed_result &result) 
          result.selector_reference == 0 && result.protocol_reference == 0;
 }
 
+int ExpectedProjectedValue(const TypedDispatchCase &test_case) {
+  if (test_case.return_kind == OBJC3_RUNTIME_DISPATCH_RETURN_KIND_VOID) {
+    return 0;
+  }
+  return test_case.expected_value;
+}
+
 bool TypedStatusShapeIsValid(
     const objc3_runtime_dispatch_typed_result &result,
     objc3_runtime_dispatch_status_code expected_status,
@@ -111,7 +128,16 @@ bool TypedStatusShapeIsValid(
          result.diagnostic_message != nullptr &&
          result.diagnostic_message[0] != '\0' &&
          result.result_contract != nullptr &&
-         std::strcmp(result.result_contract, expected_contract) == 0;
+         std::strcmp(result.result_contract, expected_contract) == 0 &&
+         result.diagnostic_owner_model != nullptr &&
+         std::strcmp(
+             result.diagnostic_owner_model,
+             ::objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner) ==
+             0 &&
+         result.fail_closed_ownership_model != nullptr &&
+         std::strcmp(
+             result.fail_closed_ownership_model,
+             ::objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel) == 0;
 }
 
 bool I32StatusShapeIsValid(
@@ -128,7 +154,16 @@ bool I32StatusShapeIsValid(
          result.diagnostic_message != nullptr &&
          result.diagnostic_message[0] != '\0' &&
          result.result_contract != nullptr &&
-         std::strcmp(result.result_contract, expected_contract) == 0;
+         std::strcmp(result.result_contract, expected_contract) == 0 &&
+         result.diagnostic_owner_model != nullptr &&
+         std::strcmp(
+             result.diagnostic_owner_model,
+             ::objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner) ==
+             0 &&
+         result.fail_closed_ownership_model != nullptr &&
+         std::strcmp(
+             result.fail_closed_ownership_model,
+             ::objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel) == 0;
 }
 
 bool I32ValueShapeIsValid(const objc3_runtime_dispatch_i32_result &result,
@@ -144,7 +179,16 @@ bool I32ValueShapeIsValid(const objc3_runtime_dispatch_i32_result &result,
          result.diagnostic_message[0] == '\0' &&
          result.result_contract != nullptr &&
          std::strcmp(result.result_contract, "typed-dispatch-value-result") ==
-             0;
+             0 &&
+         result.diagnostic_owner_model != nullptr &&
+         std::strcmp(
+             result.diagnostic_owner_model,
+             ::objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner) ==
+             0 &&
+         result.fail_closed_ownership_model != nullptr &&
+         std::strcmp(
+             result.fail_closed_ownership_model,
+             ::objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel) == 0;
 }
 
 bool I32ProjectionIsRejected(const TypedDispatchCase &test_case) {
@@ -157,7 +201,7 @@ bool I32ProjectionIsRejected(const TypedDispatchCase &test_case) {
     if (!i32_valid) {
       std::fprintf(
           stderr,
-          "legacy i32 success check failed selector=%s status=%d kind=%d "
+          "checked i32 success check failed selector=%s status=%d kind=%d "
           "value=%d code=%s contract=%s\n",
           test_case.selector, i32_result.status_code, i32_result.return_kind,
           i32_result.value,
@@ -177,7 +221,7 @@ bool I32ProjectionIsRejected(const TypedDispatchCase &test_case) {
   if (!i32_rejected) {
     std::fprintf(
         stderr,
-        "legacy i32 mismatch check failed selector=%s status=%d kind=%d "
+        "checked i32 projection mismatch check failed selector=%s status=%d kind=%d "
         "value=%d code=%s contract=%s\n",
         test_case.selector, i32_result.status_code, i32_result.return_kind,
         i32_result.value,
@@ -203,17 +247,28 @@ bool RunTypedCase(const TypedDispatchCase &test_case) {
   const objc3_runtime_dispatch_typed_result cached_result =
       objc3_runtime_dispatch_typed_checked(1024, test_case.selector, 0, 0, 0,
                                            0);
+  const int projected_value =
+      objc3_runtime_dispatch_typed_value(test_case.return_kind, 1024,
+                                         test_case.selector, 0, 0, 0, 0);
+  const int projected_from_class_value =
+      objc3_runtime_dispatch_typed_value_from_class(
+          test_case.return_kind, 1024, "StrictDispatchCase",
+          test_case.selector, 0, 0, 0, 0);
+  const int expected_projected_value = ExpectedProjectedValue(test_case);
   if (!CommonTypedResultShapeIsValid(result, test_case) ||
       !TypedValueFieldsMatch(result, test_case) ||
       !CommonTypedResultShapeIsValid(cached_result, test_case) ||
-      !TypedValueFieldsMatch(cached_result, test_case)) {
+      !TypedValueFieldsMatch(cached_result, test_case) ||
+      projected_value != expected_projected_value ||
+      projected_from_class_value != expected_projected_value) {
     std::fprintf(
         stderr,
         "typed case failed: %s first_status=%d cached_status=%d first_kind=%d "
         "cached_kind=%d kind_name=%s cached_kind_name=%s i32=%d cached_i32=%d "
         "bool=%d cached_bool=%d object=%d cached_object=%d class=%d "
         "cached_class=%d selector_ref=%d cached_selector_ref=%d protocol=%d "
-        "cached_protocol=%d contract=%s cached_contract=%s\n",
+        "cached_protocol=%d projected=%d projected_from_class=%d "
+        "expected_projected=%d contract=%s cached_contract=%s\n",
         test_case.selector, result.status_code, cached_result.status_code,
         result.return_kind, cached_result.return_kind,
         result.return_kind_name != nullptr ? result.return_kind_name : "<null>",
@@ -225,7 +280,8 @@ bool RunTypedCase(const TypedDispatchCase &test_case) {
         cached_result.object_reference, result.class_reference,
         cached_result.class_reference, result.selector_reference,
         cached_result.selector_reference, result.protocol_reference,
-        cached_result.protocol_reference,
+        cached_result.protocol_reference, projected_value,
+        projected_from_class_value, expected_projected_value,
         result.result_contract != nullptr ? result.result_contract : "<null>",
         cached_result.result_contract != nullptr ? cached_result.result_contract
                                                 : "<null>");

@@ -28,11 +28,12 @@ Optional meta sidecar schema:
 - `fixture`: must match `<name>.objc3`.
 - `execution.native_compile_args`: optional string array appended to native compiler arguments.
 - `execution.requires_live_runtime_dispatch` (optional): defaults to `false`; set to `true` for fixtures that must keep a live runtime-dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
+- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true` and one symbol is sufficient.
+- `execution.runtime_dispatch_symbols` (optional): expected emitted dispatch symbols when a fixture must prove multiple live dispatch entrypoints, such as i32 plus typed/from-class dispatch. This field is mutually exclusive with `execution.runtime_dispatch_symbol` and must be absent when live dispatch is not required.
 
 ## Live-runtime dispatch note
 
-Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`, and the public `i32` entrypoint aborts instead of fabricating a value when strict dispatch fails.
+Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint family: `objc3_runtime_dispatch_i32`, `objc3_runtime_dispatch_i32_from_class`, `objc3_runtime_dispatch_typed_value`, or `objc3_runtime_dispatch_typed_value_from_class`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`, and the public `i32` entrypoint aborts instead of fabricating a value when strict dispatch fails.
 
 For `message_send_nil_receiver_short_circuit.objc3`:
 

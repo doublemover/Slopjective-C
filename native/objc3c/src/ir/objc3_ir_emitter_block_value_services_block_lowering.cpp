@@ -47,10 +47,13 @@ Objc3IRBlockLoweringContext BuildObjc3IREmitterBlockLoweringContext(
                     state, callbacks));
           },
           [state, callbacks](const std::string &name,
-                             FunctionContext &callback_ctx) {
+                              FunctionContext &callback_ctx) {
             return EmitObjc3IRIdentifierValue(
                 name, callback_ctx,
                 BuildObjc3IREmitterValueMaterializationContext(
                     state, callbacks));
-          }}};
+          }},
+      std::string{},
+      std::string{},
+      false};
 }

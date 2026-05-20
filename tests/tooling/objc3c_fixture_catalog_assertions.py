@@ -3,6 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable
 
+LIVE_RUNTIME_DISPATCH_SYMBOLS = {
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_dispatch_i32_from_class",
+    "objc3_runtime_dispatch_typed_value",
+    "objc3_runtime_dispatch_typed_value_from_class",
+}
+
 
 def assert_contains_all(text: str, tokens: Iterable[str]) -> None:
     for token in tokens:
@@ -40,5 +47,20 @@ def assert_no_compatibility_runtime_dispatch(serialized: str) -> None:
 
 
 def assert_live_runtime_dispatch(execution: dict[str, Any]) -> None:
-    assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
     assert execution["requires_live_runtime_dispatch"] is True
+    assert not (
+        "runtime_dispatch_symbol" in execution
+        and "runtime_dispatch_symbols" in execution
+    )
+    if "runtime_dispatch_symbols" in execution:
+        symbols = execution["runtime_dispatch_symbols"]
+        assert isinstance(symbols, list)
+        assert symbols
+    else:
+        symbols = [execution["runtime_dispatch_symbol"]]
+    seen_symbols = set()
+    for symbol in symbols:
+        assert isinstance(symbol, str)
+        assert symbol in LIVE_RUNTIME_DISPATCH_SYMBOLS
+        assert symbol not in seen_symbols
+        seen_symbols.add(symbol)

@@ -24,9 +24,7 @@ inline void PrintI32DispatchResult(
   PrintStringField("result_contract", result.result_contract);
   PrintStringField("diagnostic_owner_model", result.diagnostic_owner_model);
   PrintStringField("fail_closed_ownership_model",
-                   result.fail_closed_ownership_model);
-  PrintIntField("retired_route_path_allowed",
-                result.retired_route_path_allowed, false);
+                   result.fail_closed_ownership_model, false);
   std::printf("}");
 }
 
@@ -52,9 +50,7 @@ inline void PrintTypedDispatchResult(
   PrintStringField("result_contract", result.result_contract);
   PrintStringField("diagnostic_owner_model", result.diagnostic_owner_model);
   PrintStringField("fail_closed_ownership_model",
-                   result.fail_closed_ownership_model);
-  PrintIntField("retired_route_path_allowed",
-                result.retired_route_path_allowed, false);
+                   result.fail_closed_ownership_model, false);
   std::printf("}");
 }
 

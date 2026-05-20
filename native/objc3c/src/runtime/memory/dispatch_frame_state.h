@@ -9,6 +9,7 @@
 namespace objc3c::runtime {
 
 RuntimeDispatchFrame *CurrentRuntimeDispatchFrame();
+int CurrentRuntimeDispatchReceiverI32();
 void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
                               const RealizedPropertyAccessor *accessor);
 std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues();
@@ -20,3 +21,5 @@ void ResetRuntimeDispatchFrameStateForTesting();
 bool EnqueueRuntimeDispatchFrameAutoreleaseValue(int value);
 
 }  // namespace objc3c::runtime
+
+extern "C" int objc3_runtime_current_dispatch_receiver_i32(void);

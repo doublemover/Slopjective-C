@@ -203,7 +203,7 @@ def assert_positive_execution_sidecars_are_canonical_live_dispatch() -> None:
         assert_no_compatibility_runtime_dispatch(serialized)
         if execution.get("requires_live_runtime_dispatch", False):
             live_dispatch_sidecars.append(sidecar_path.name)
-            assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
+            assert_live_runtime_dispatch(execution)
 
     assert live_dispatch_sidecars
 
@@ -212,7 +212,7 @@ def assert_runtime_dispatch_symbols_are_only_live_dispatch_contracts(
     catalog: dict[str, Any],
 ) -> None:
     expected_rule = (
-        "runtime_dispatch_symbol is only present when "
+        "runtime_dispatch_symbol or runtime_dispatch_symbols is only present when "
         "execution.requires_live_runtime_dispatch is true"
     )
     assert (
@@ -227,9 +227,12 @@ def assert_runtime_dispatch_symbols_are_only_live_dispatch_contracts(
     ):
         sidecar = read_json(sidecar_path)
         execution = sidecar.get("execution", {})
-        has_dispatch_symbol = "runtime_dispatch_symbol" in execution
+        has_dispatch_symbol = (
+            "runtime_dispatch_symbol" in execution
+            or "runtime_dispatch_symbols" in execution
+        )
         if has_dispatch_symbol:
-            assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
+            assert_live_runtime_dispatch(execution)
         if has_dispatch_symbol and not execution.get(
             "requires_live_runtime_dispatch",
             False,
@@ -254,7 +257,13 @@ def assert_negative_execution_sidecars_are_strict_failures() -> None:
         assert sidecar["expect_failure"]["stage"] in {"link", "run"}
         assert_live_runtime_dispatch(execution)
         assert_no_compatibility_runtime_dispatch(serialized)
-        assert (
-            "O3RT002" in tokens
-            or "link.unresolved_symbol:objc3_runtime_dispatch_i32" in tokens
+        runtime_dispatch_symbols = execution.get(
+            "runtime_dispatch_symbols",
+            [execution.get("runtime_dispatch_symbol", "")],
+        )
+        if "O3RT002" in tokens:
+            continue
+        assert all(
+            f"link.unresolved_symbol:{symbol}" in tokens
+            for symbol in runtime_dispatch_symbols
         )

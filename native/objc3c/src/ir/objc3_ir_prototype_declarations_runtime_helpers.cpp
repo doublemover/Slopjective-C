@@ -97,6 +97,7 @@ bool Objc3IRRequiresRuntimeHelperDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options) {
   const Objc3IRFrontendMetadata &frontend_metadata = options.frontend_metadata;
   return options.synthesized_property_accessor_count > 0u ||
+         !options.method_definitions.empty() ||
          Objc3IRRequiresArcHelperDeclarations(options) ||
          !frontend_metadata.lowering_error_handling_throws_abi_propagation_replay_key
               .empty() ||
@@ -130,6 +131,11 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       "declare i32 @" +
           std::string(kObjc3RuntimeExchangeCurrentPropertyI32Symbol) +
           "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeCurrentDispatchReceiverI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeCurrentDispatchReceiverI32Symbol) + "()\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeStoreThrownErrorI32Symbol,
       "declare void @" + std::string(kObjc3RuntimeStoreThrownErrorI32Symbol) +

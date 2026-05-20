@@ -77,6 +77,11 @@ def check_typed_dispatch_abi_probe_case(clangxx: str, run_dir: Path) -> CaseResu
         passed=True,
         summary={
             "kind": "typed-dispatch-abi-probe",
+            "public_result_ownership_fields": "validated",
+            "typed_value_projection_entrypoints": [
+                "objc3_runtime_dispatch_typed_value",
+                "objc3_runtime_dispatch_typed_value_from_class",
+            ],
             "strict_i32_projection_rejection": "all-non-i32-return-kinds",
             "negative_matrix": [
                 "nil-receiver",

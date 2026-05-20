@@ -13,10 +13,12 @@ struct Objc3IRRuntimeDispatchCallRequest {
   std::string result_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string dispatch_symbol;
   std::string receiver;
+  std::string lookup_start_class_ptr;
   std::string selector_ptr;
   std::vector<std::string> args;
   int expected_return_kind = 0;
   bool uses_typed_value_dispatch = false;
+  bool uses_from_class_dispatch = false;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };

@@ -71,6 +71,10 @@ int CopyRuntimeRegistrationStateForTesting(
 
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->abi_version =
+      OBJC3_RUNTIME_REGISTRATION_STATE_SNAPSHOT_ABI_VERSION;
+  snapshot->snapshot_size =
+      sizeof(objc3_runtime_registration_state_snapshot);
   snapshot->registered_image_count = state.registered_image_count;
   snapshot->registered_descriptor_total = state.registered_descriptor_total;
   snapshot->next_expected_registration_order_ordinal =
@@ -107,7 +111,6 @@ int CopyRuntimeRegistrationStateForTesting(
       BorrowRuntimeCString(state.fail_closed_ownership_model);
   snapshot->runtime_owner_split_explicit =
       state.runtime_owner_split_explicit ? 1 : 0;
-  snapshot->retired_route_path_allowed = state.retired_route_path_allowed ? 1 : 0;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

@@ -31,7 +31,6 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
       kObjc3RuntimePublicDispatchDiagnosticsOwner;
   state.fail_closed_ownership_model = kObjc3RuntimeFailClosedOwnershipModel;
   state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
-  state.retired_route_path_allowed = RuntimeRetiredRoutePathsAreAllowed();
   state.registration_order_by_identity_key.clear();
   state.registered_image_metadata_by_identity_key.clear();
   state.selector_index_by_name.clear();

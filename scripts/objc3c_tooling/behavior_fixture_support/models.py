@@ -100,8 +100,20 @@ class BehaviorFixture:
         return bool(self.execution.get("requires_live_runtime_dispatch", False))
 
     @property
+    def runtime_dispatch_symbols(self) -> list[str]:
+        if "runtime_dispatch_symbols" in self.execution:
+            raw_symbols = self.execution["runtime_dispatch_symbols"]
+            if not isinstance(raw_symbols, list):
+                raise RuntimeError(f"runtime_dispatch_symbols must be a list in {repo_rel(self.metadata_path)}")
+            return [str(symbol) for symbol in raw_symbols]
+        if "runtime_dispatch_symbol" in self.execution:
+            return [str(self.execution["runtime_dispatch_symbol"])]
+        return ["objc3_runtime_dispatch_i32"]
+
+    @property
     def runtime_dispatch_symbol(self) -> str:
-        return str(self.execution.get("runtime_dispatch_symbol", "objc3_runtime_dispatch_i32"))
+        symbols = self.runtime_dispatch_symbols
+        return symbols[0] if symbols else ""
 
     def canonical_manifest_entry(self) -> dict[str, Any]:
         entry: dict[str, Any] = {

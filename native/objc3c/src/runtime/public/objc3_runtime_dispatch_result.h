@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION 2u
-#define OBJC3_RUNTIME_DISPATCH_TYPED_RESULT_ABI_VERSION 1u
+#define OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION 3u
+#define OBJC3_RUNTIME_DISPATCH_TYPED_RESULT_ABI_VERSION 2u
 
 typedef enum objc3_runtime_dispatch_return_kind_code {
   OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED = 0,
@@ -52,12 +52,10 @@ typedef struct objc3_runtime_dispatch_typed_result {
   const char *result_contract;
   /*
    * Runtime-owned provenance fields for the diagnostic and fail-closed
-   * ownership model. retired_route_path_allowed is a fixed runtime contract flag,
-   * not a compatibility escape hatch.
+   * ownership model.
    */
   const char *diagnostic_owner_model;
   const char *fail_closed_ownership_model;
-  int retired_route_path_allowed;
 } objc3_runtime_dispatch_typed_result;
 
 typedef struct objc3_runtime_dispatch_i32_result {
@@ -82,12 +80,10 @@ typedef struct objc3_runtime_dispatch_i32_result {
   const char *result_contract;
   /*
    * Runtime-owned provenance fields for the diagnostic and fail-closed
-   * ownership model. retired_route_path_allowed is a fixed runtime contract flag,
-   * not a compatibility escape hatch.
+   * ownership model.
    */
   const char *diagnostic_owner_model;
   const char *fail_closed_ownership_model;
-  int retired_route_path_allowed;
 } objc3_runtime_dispatch_i32_result;
 
 #ifdef __cplusplus

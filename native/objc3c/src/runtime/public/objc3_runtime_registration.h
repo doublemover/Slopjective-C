@@ -6,6 +6,8 @@
 extern "C" {
 #endif
 
+#define OBJC3_RUNTIME_REGISTRATION_STATE_SNAPSHOT_ABI_VERSION 1u
+
 typedef struct objc3_runtime_image_descriptor {
   /* Borrowed by the registration call and copied into runtime-owned storage. */
   const char *module_name;
@@ -19,6 +21,8 @@ typedef struct objc3_runtime_image_descriptor {
 } objc3_runtime_image_descriptor;
 
 typedef struct objc3_runtime_registration_state_snapshot {
+  uint32_t abi_version;
+  uint32_t snapshot_size;
   uint64_t registered_image_count;
   uint64_t registered_descriptor_total;
   uint64_t next_expected_registration_order_ordinal;
@@ -39,7 +43,6 @@ typedef struct objc3_runtime_registration_state_snapshot {
   const char *public_dispatch_diagnostics_owner;
   const char *fail_closed_ownership_model;
   int runtime_owner_split_explicit;
-  int retired_route_path_allowed;
 } objc3_runtime_registration_state_snapshot;
 
 #ifdef __cplusplus

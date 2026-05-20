@@ -26,7 +26,11 @@ std::string BuildObjc3IRRuntimeDispatchCall(
   if (request.uses_typed_value_dispatch) {
     call << "i32 " << request.expected_return_kind << ", ";
   }
-  call << "i32 " << request.receiver << ", ptr " << request.selector_ptr;
+  call << "i32 " << request.receiver;
+  if (request.uses_from_class_dispatch) {
+    call << ", ptr " << request.lookup_start_class_ptr;
+  }
+  call << ", ptr " << request.selector_ptr;
   for (const std::string &arg : request.args) {
     call << ", i32 " << arg;
   }

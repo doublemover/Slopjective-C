@@ -14,6 +14,7 @@ struct Expr;
 
 struct Objc3IRMessageSendEmissionOptions {
   const std::map<std::string, std::string> &selector_pool_globals;
+  const std::map<std::string, std::string> &runtime_string_pool_globals;
   const std::unordered_map<std::string, int> &class_receiver_constants;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;
@@ -31,6 +32,8 @@ struct Objc3IRMessageSendEmissionOptions {
 
 struct Objc3IRMessageSendEmissionCallbacks {
   std::function<std::string(const Expr *expr, FunctionContext &ctx)> emit_expr;
+  std::function<std::string(const std::string &name, FunctionContext &ctx)>
+      emit_identifier_value;
   std::function<std::string(FunctionContext &ctx)> new_temp;
   std::function<std::string(FunctionContext &ctx, const std::string &prefix)>
       new_label;

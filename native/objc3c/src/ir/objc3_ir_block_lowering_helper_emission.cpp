@@ -200,6 +200,9 @@ void EmitObjc3IRBlockInvokeThunk(
 
   FunctionContext ctx;
   ctx.return_type = ValueType::I32;
+  ctx.current_implementation_name = context.current_implementation_name;
+  ctx.current_superclass_name = context.current_superclass_name;
+  ctx.current_method_is_class_method = context.current_method_is_class_method;
   PushObjc3IRScope(ctx);
 
   const std::string block_storage_type = BuildBlockStorageType(expr);

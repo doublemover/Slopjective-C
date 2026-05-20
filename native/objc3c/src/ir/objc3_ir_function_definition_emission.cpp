@@ -10,6 +10,7 @@
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_receiver_identity_contracts.h"
 #include "ir/objc3_ir_type_model.h"
+#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
 
 namespace {
 
@@ -43,6 +44,38 @@ void EmitObjc3IRParameterStores(
     callbacks.emit_typed_param_store(param, i, ptr, ctx);
     ctx.scopes.back()[param.name] = ptr;
   }
+}
+
+void BindObjc3IRMethodSelfReceiver(int self_identity, FunctionContext &ctx) {
+  if (self_identity == 0) {
+    return;
+  }
+  ctx.immediate_identifiers["self"] = self_identity;
+  if (ctx.scopes.empty()) {
+    return;
+  }
+
+  const std::string current_receiver =
+      "%self.current." + std::to_string(ctx.temp_counter++);
+  const std::string has_current_receiver =
+      "%self.has_current." + std::to_string(ctx.temp_counter++);
+  const std::string selected_receiver =
+      "%self.value." + std::to_string(ctx.temp_counter++);
+  const std::string self_ptr =
+      "%self.addr." + std::to_string(ctx.temp_counter++);
+  ctx.entry_lines.push_back(
+      "  " + current_receiver + " = call i32 @" +
+      std::string(kObjc3RuntimeCurrentDispatchReceiverI32Symbol) + "()");
+  ctx.entry_lines.push_back("  " + has_current_receiver + " = icmp ne i32 " +
+                            current_receiver + ", 0");
+  ctx.entry_lines.push_back("  " + selected_receiver +
+                            " = select i1 " + has_current_receiver + ", i32 " +
+                            current_receiver + ", i32 " +
+                            std::to_string(self_identity));
+  ctx.entry_lines.push_back("  " + self_ptr + " = alloca i32, align 4");
+  ctx.entry_lines.push_back("  store i32 " + selected_receiver + ", ptr " +
+                            self_ptr + ", align 4");
+  ctx.scopes.back()["self"] = self_ptr;
 }
 
 void EmitObjc3IRStatementBody(
@@ -149,9 +182,7 @@ void EmitObjc3IRMethodDefinition(
       method.is_class_method
           ? BuildClassReceiverIdentityValue(implementation_class_identity)
           : BuildInstanceReceiverIdentityValue(implementation_class_identity);
-  if (self_identity != 0) {
-    ctx.immediate_identifiers["self"] = self_identity;
-  }
+  BindObjc3IRMethodSelfReceiver(self_identity, ctx);
   const int super_class_identity =
       callbacks.lookup_class_receiver_identity_value(method_def.superclass_name);
   const int super_identity =

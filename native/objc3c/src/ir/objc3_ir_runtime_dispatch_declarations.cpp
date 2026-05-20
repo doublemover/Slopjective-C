@@ -17,6 +17,8 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     }
     if (symbol == kObjc3RuntimeTypedDispatchValueFromClassSymbol) {
       out << "declare i32 @" << symbol << "(i32, i32, ptr, ptr";
+    } else if (symbol == kObjc3RuntimeDispatchFromClassSymbol) {
+      out << "declare i32 @" << symbol << "(i32, ptr, ptr";
     } else if (symbol == kObjc3RuntimeTypedDispatchValueSymbol) {
       out << "declare i32 @" << symbol << "(i32, i32, ptr";
     } else {

@@ -22,6 +22,7 @@
     ]
   },
   "execution": {
-    "requires_live_runtime_dispatch": true
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_typed_value"
   }
 }

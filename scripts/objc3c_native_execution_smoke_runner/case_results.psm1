@@ -29,6 +29,7 @@ function New-PositiveExecutionSmokeResult {
     requires_live_runtime_dispatch = $Expectation.requires_live_runtime_dispatch
     requires_live_runtime_dispatch_explicit = $Expectation.requires_live_runtime_dispatch_explicit
     runtime_dispatch_symbol = $Expectation.runtime_dispatch_symbol
+    runtime_dispatch_symbols = @($Expectation.runtime_dispatch_symbols)
     launch_integration_contract_id = $LaunchContract.launch_integration_contract_id
     registration_manifest = $LaunchContract.registration_manifest_relative_path
     runtime_library = $RuntimeLibrary.relative_path
@@ -66,6 +67,7 @@ function New-CompileNegativeExecutionSmokeResult {
     native_compile_args = @($Spec.compile_args)
     requires_live_runtime_dispatch = $Spec.requires_live_runtime_dispatch
     runtime_dispatch_symbol = $Spec.runtime_dispatch_symbol
+    runtime_dispatch_symbols = @($Spec.runtime_dispatch_symbols)
     compile_exit = $CompileExit
     link_exit = -1
     run_exit = -1
@@ -106,6 +108,7 @@ function New-LinkedNegativeExecutionSmokeResult {
     native_compile_args = @($Spec.compile_args)
     requires_live_runtime_dispatch = $Spec.requires_live_runtime_dispatch
     runtime_dispatch_symbol = $Spec.runtime_dispatch_symbol
+    runtime_dispatch_symbols = @($Spec.runtime_dispatch_symbols)
     launch_integration_contract_id = $LaunchContract.launch_integration_contract_id
     registration_manifest = $LaunchContract.registration_manifest_relative_path
     runtime_library = $RuntimeLibrary.relative_path

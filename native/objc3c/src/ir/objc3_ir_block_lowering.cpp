@@ -76,10 +76,16 @@ std::string EmitObjc3IRBlockLiteralStorage(
         "block literal exceeds current runnable invoke-thunk arity limit of 4");
   }
 
-  EmitObjc3IRBlockInvokeThunk(expr, lowering_context);
-  EmitObjc3IRBlockDescriptor(expr, lowering_context);
-  EmitObjc3IRBlockCopyHelper(expr, lowering_context);
-  EmitObjc3IRBlockDisposeHelper(expr, ctx, lowering_context);
+  Objc3IRBlockLoweringContext block_context = lowering_context;
+  block_context.current_implementation_name = ctx.current_implementation_name;
+  block_context.current_superclass_name = ctx.current_superclass_name;
+  block_context.current_method_is_class_method =
+      ctx.current_method_is_class_method;
+
+  EmitObjc3IRBlockInvokeThunk(expr, block_context);
+  EmitObjc3IRBlockDescriptor(expr, block_context);
+  EmitObjc3IRBlockCopyHelper(expr, block_context);
+  EmitObjc3IRBlockDisposeHelper(expr, ctx, block_context);
 
   const std::string storage_type = BuildBlockStorageType(expr);
   const bool pointer_capture_storage =

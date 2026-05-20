@@ -11,6 +11,7 @@ BuildObjc3IREmitterExpressionCallEmissionOptions(
     const Objc3IREmitterServiceContextCallbacks &callbacks) {
   return Objc3IRExpressionCallEmissionOptions{
       state.selector_pool_globals,
+      state.runtime_string_pool_globals,
       state.class_receiver_constants,
       state.direct_dispatch_symbols_by_key,
       state.direct_dispatch_signatures_by_key,

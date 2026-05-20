@@ -85,6 +85,7 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
       expr, ctx,
       Objc3IRMessageSendEmissionOptions{
           options.selector_pool_globals,
+          options.runtime_string_pool_globals,
           options.class_receiver_constants,
           options.direct_dispatch_symbols_by_key,
           options.direct_dispatch_signatures_by_key,
@@ -99,6 +100,7 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
             return EmitObjc3IRExpressionCallImpl(arg_expr, callback_ctx,
                                                  options);
           },
+          options.services.emit_identifier_value,
           options.services.new_temp,
           options.services.new_label,
           [&options](const Expr *receiver_expr,

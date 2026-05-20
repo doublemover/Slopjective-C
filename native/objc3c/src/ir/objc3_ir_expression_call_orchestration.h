@@ -38,6 +38,7 @@ struct Objc3IRExpressionCallEmissionServices {
 
 struct Objc3IRExpressionCallEmissionOptions {
   const std::map<std::string, std::string> &selector_pool_globals;
+  const std::map<std::string, std::string> &runtime_string_pool_globals;
   const std::unordered_map<std::string, int> &class_receiver_constants;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;

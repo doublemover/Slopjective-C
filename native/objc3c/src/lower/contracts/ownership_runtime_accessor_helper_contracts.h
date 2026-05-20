@@ -22,6 +22,8 @@ inline constexpr const char *kObjc3RuntimeWriteCurrentPropertyI32Symbol =
     "objc3_runtime_write_current_property_i32";
 inline constexpr const char *kObjc3RuntimeExchangeCurrentPropertyI32Symbol =
     "objc3_runtime_exchange_current_property_i32";
+inline constexpr const char *kObjc3RuntimeCurrentDispatchReceiverI32Symbol =
+    "objc3_runtime_current_dispatch_receiver_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =

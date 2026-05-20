@@ -1,0 +1,19 @@
+module directBoolMethodSend;
+
+__attribute__((objc_direct_members))
+@interface DirectBoolMethodBox
++ (bool) flag __attribute__((objc_direct));
+@end
+
+@implementation DirectBoolMethodBox
++ (bool) flag __attribute__((objc_direct)) {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  if ([DirectBoolMethodBox flag]) {
+    return 1;
+  }
+  return 0;
+}

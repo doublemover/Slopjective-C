@@ -215,26 +215,6 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
               bundle.ownership_runtime_hook_profile,
               bundle.accessor_ownership_profile,
           });
-          const auto direct_members_it =
-              interface_direct_members_by_name.find(bundle.owner_name);
-          const bool effective_direct_dispatch =
-              bundle.owner_kind == "class-implementation" &&
-              direct_members_it != interface_direct_members_by_name.end() &&
-              direct_members_it->second;
-          if (effective_direct_dispatch) {
-            Objc3IRDirectDispatchSignature signature;
-            signature.return_type =
-                kind == Objc3IRSyntheticMethodKind::PropertySetter
-                    ? ValueType::Void
-                    : property_type;
-            if (kind == Objc3IRSyntheticMethodKind::PropertySetter) {
-              signature.param_types.push_back(property_type);
-            }
-            if (!record_direct_dispatch(bundle.owner_name, selector, false,
-                                        "@" + symbol, signature)) {
-              return;
-            }
-          }
           if (!record_runtime_dispatch_return_type(
                   bundle.owner_name, selector, false,
                   kind == Objc3IRSyntheticMethodKind::PropertySetter

@@ -147,6 +147,26 @@ std::string ResolveObjc3IRMessageSendOwnerName(
   return {};
 }
 
+bool IsObjc3IRSuperMessageSend(const Expr *expr) {
+  return expr != nullptr && expr->receiver != nullptr &&
+         expr->receiver->kind == Expr::Kind::Identifier &&
+         expr->receiver->ident == "super";
+}
+
+bool Objc3IRMessageFamilyProducesObjectReference(const Expr *expr) {
+  if (expr == nullptr) {
+    return false;
+  }
+  if (expr->method_family_returns_related_result) {
+    return true;
+  }
+  return expr->method_family_name == "alloc" ||
+         expr->method_family_name == "copy" ||
+         expr->method_family_name == "mutableCopy" ||
+         expr->method_family_name == "new" ||
+         expr->method_family_name == "init";
+}
+
 ValueType ResolveObjc3IRRuntimeDispatchReturnType(
     const Expr *expr, const FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options) {
@@ -168,6 +188,9 @@ ValueType ResolveObjc3IRRuntimeDispatchReturnType(
                      ? std::string{}
                      : superclass_it->second;
   }
+  if (Objc3IRMessageFamilyProducesObjectReference(expr)) {
+    return ValueType::ObjCId;
+  }
   return ValueType::I32;
 }
 
@@ -181,11 +204,23 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
     return lowered;
   }
 
-  lowered.receiver_dispatch_facts.compile_time_nil_receiver =
-      callbacks.is_compile_time_nil_receiver_expr(expr->receiver.get(), ctx);
-  lowered.receiver_dispatch_facts.compile_time_nonzero_receiver =
-      callbacks.is_compile_time_known_non_nil_expr(expr->receiver.get(), ctx);
-  lowered.receiver = callbacks.emit_expr(expr->receiver.get(), ctx);
+  bool lowered_super_receiver = false;
+  if (IsObjc3IRSuperMessageSend(expr) && !ctx.current_superclass_name.empty()) {
+    if (callbacks.emit_identifier_value != nullptr) {
+      lowered.receiver = callbacks.emit_identifier_value("self", ctx);
+      lowered.receiver_dispatch_facts = Objc3IRKnownNonNilReceiverFacts();
+      lowered.uses_from_class_dispatch = true;
+      lowered.lookup_start_class_name = ctx.current_superclass_name;
+      lowered_super_receiver = true;
+    }
+  }
+  if (!lowered_super_receiver) {
+    lowered.receiver_dispatch_facts.compile_time_nil_receiver =
+        callbacks.is_compile_time_nil_receiver_expr(expr->receiver.get(), ctx);
+    lowered.receiver_dispatch_facts.compile_time_nonzero_receiver =
+        callbacks.is_compile_time_known_non_nil_expr(expr->receiver.get(), ctx);
+    lowered.receiver = callbacks.emit_expr(expr->receiver.get(), ctx);
+  }
   lowered.selector = expr->selector;
   lowered.method_family_name = expr->method_family_name;
   lowered.method_family_returns_retained_result =
@@ -310,6 +345,24 @@ std::string EmitObjc3IRRuntimeDispatch(
       ", i32 0, i32 0");
   options.runtime_dispatch_call_state.NoteSelectorPoolGep();
 
+  std::string lookup_start_class_ptr;
+  if (lowered.uses_from_class_dispatch) {
+    const auto lookup_start_it =
+        options.runtime_string_pool_globals.find(lowered.lookup_start_class_name);
+    if (lookup_start_it == options.runtime_string_pool_globals.end()) {
+      return callbacks.emit_unsupported_i32_value(
+          "missing runtime string global for lookup-start class '" +
+          lowered.lookup_start_class_name + "'");
+    }
+    const std::size_t lookup_start_len =
+        lowered.lookup_start_class_name.size() + 1;
+    lookup_start_class_ptr = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back(
+        "  " + lookup_start_class_ptr + " = getelementptr inbounds [" +
+        std::to_string(lookup_start_len) + " x i8], ptr " +
+        lookup_start_it->second + ", i32 0, i32 0");
+  }
+
   const auto emit_dispatch_call = [&](const std::string &dispatch_value,
                                       std::string &failure_reason) {
     // dispatch-surface classification anchor: instance/class/super/dynamic
@@ -353,15 +406,23 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.result_value = dispatch_value;
     request.result_owner = plan.dispatch_result_owner;
     request.result_owner_model = plan.dispatch_result_owner_model;
-    request.dispatch_symbol =
-        Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type)
-            ? kObjc3RuntimeTypedDispatchValueSymbol
-            : plan.dispatch_symbol;
+    const bool uses_typed_dispatch =
+        Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type);
+    if (uses_typed_dispatch && lowered.uses_from_class_dispatch) {
+      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueFromClassSymbol;
+    } else if (uses_typed_dispatch) {
+      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueSymbol;
+    } else if (lowered.uses_from_class_dispatch) {
+      request.dispatch_symbol = kObjc3RuntimeDispatchFromClassSymbol;
+    } else {
+      request.dispatch_symbol = plan.dispatch_symbol;
+    }
     request.receiver = lowered.receiver;
+    request.lookup_start_class_ptr = lookup_start_class_ptr;
     request.selector_ptr = selector_ptr;
     request.args = lowered.args;
-    request.uses_typed_value_dispatch =
-        Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type);
+    request.uses_typed_value_dispatch = uses_typed_dispatch;
+    request.uses_from_class_dispatch = lowered.uses_from_class_dispatch;
     request.expected_return_kind =
         Objc3IRRuntimeDispatchReturnKindForValueType(
             lowered.runtime_return_type);

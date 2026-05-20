@@ -9,6 +9,13 @@ from .constants import (
 )
 from .models import BehaviorFixture
 
+LIVE_RUNTIME_DISPATCH_SYMBOLS = {
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_dispatch_i32_from_class",
+    "objc3_runtime_dispatch_typed_value",
+    "objc3_runtime_dispatch_typed_value_from_class",
+}
+
 
 def validate_behavior_fixture(fixture: BehaviorFixture) -> None:
     metadata = fixture.metadata
@@ -94,4 +101,51 @@ def validate_behavior_fixture(fixture: BehaviorFixture) -> None:
     ):
         raise RuntimeError(
             f"expected_exit_code must be an integer in {fixture.relative_metadata}"
+        )
+    runtime_dispatch_symbol = execution.get("runtime_dispatch_symbol")
+    runtime_dispatch_symbols = execution.get("runtime_dispatch_symbols")
+    if runtime_dispatch_symbol is not None and runtime_dispatch_symbols is not None:
+        raise RuntimeError(
+            f"runtime_dispatch_symbol and runtime_dispatch_symbols are mutually exclusive in {fixture.relative_metadata}"
+        )
+    if runtime_dispatch_symbol is not None and (
+        not isinstance(runtime_dispatch_symbol, str) or not runtime_dispatch_symbol.strip()
+    ):
+        raise RuntimeError(
+            f"runtime_dispatch_symbol must be a non-empty string in {fixture.relative_metadata}"
+        )
+    if (
+        isinstance(runtime_dispatch_symbol, str)
+        and (runtime_dispatch_symbol_text := runtime_dispatch_symbol.strip())
+        and runtime_dispatch_symbol_text not in LIVE_RUNTIME_DISPATCH_SYMBOLS
+    ):
+        raise RuntimeError(
+            f"runtime_dispatch_symbol must be a live runtime dispatch symbol in {fixture.relative_metadata}"
+        )
+    if runtime_dispatch_symbols is not None:
+        if not isinstance(runtime_dispatch_symbols, list) or not runtime_dispatch_symbols:
+            raise RuntimeError(
+                f"runtime_dispatch_symbols must be a non-empty list in {fixture.relative_metadata}"
+            )
+        seen_runtime_dispatch_symbols: set[str] = set()
+        for symbol in runtime_dispatch_symbols:
+            if not isinstance(symbol, str) or not (symbol_text := symbol.strip()):
+                raise RuntimeError(
+                    f"runtime_dispatch_symbols entries must be non-empty strings in {fixture.relative_metadata}"
+                )
+            if symbol_text not in LIVE_RUNTIME_DISPATCH_SYMBOLS:
+                raise RuntimeError(
+                    f"runtime_dispatch_symbols entries must be live runtime dispatch symbols in {fixture.relative_metadata}"
+                )
+            if symbol_text in seen_runtime_dispatch_symbols:
+                raise RuntimeError(
+                    f"runtime_dispatch_symbols must not contain duplicates in {fixture.relative_metadata}"
+                )
+            seen_runtime_dispatch_symbols.add(symbol_text)
+    if (
+        (runtime_dispatch_symbol is not None or runtime_dispatch_symbols is not None)
+        and requires_live_runtime_dispatch is not True
+    ):
+        raise RuntimeError(
+            f"runtime dispatch symbols require requires_live_runtime_dispatch=true in {fixture.relative_metadata}"
         )

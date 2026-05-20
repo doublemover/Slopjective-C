@@ -76,63 +76,79 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     std::uint64_t image_category_probe_count = 0;
     std::uint64_t image_protocol_probe_count = 0;
     bool method_ambiguous = false;
-    if (!TryResolveMethodFromRealizedClassChainUnlocked(
-            state, &node, family, normalized_receiver_identity,
-            selector_stable_id, selector_spelling, image_resolution,
-            method_ambiguous, image_category_probe_count,
-            image_protocol_probe_count)) {
-      if (image_resolution.strict_error_status !=
-          OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR) {
-        return image_resolution;
-      }
-      SlowPathResolution malformed_resolution;
-      malformed_resolution.selector_storage =
-          selector_spelling != nullptr ? selector_spelling : "";
-      malformed_resolution.lookup_start_base_identity =
-          lookup_start_base_identity;
-      malformed_resolution.normalized_receiver_identity =
-          normalized_receiver_identity;
-      malformed_resolution.selector_stable_id = selector_stable_id;
-      malformed_resolution.strict_error_status =
-          OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
-      return malformed_resolution;
-    }
-    if (method_ambiguous) {
-      resolution = SlowPathResolution{};
-      resolution.ambiguous = true;
-      resolution.strict_error_status =
-          OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
-      resolution.selector_storage =
-          selector_spelling != nullptr ? selector_spelling : "";
-      resolution.lookup_start_base_identity = lookup_start_base_identity;
-      resolution.normalized_receiver_identity = normalized_receiver_identity;
-      resolution.selector_stable_id = selector_stable_id;
-      resolution.category_probe_count =
-          category_probe_count + image_category_probe_count;
-      resolution.protocol_probe_count =
-          protocol_probe_count + image_protocol_probe_count;
-      return resolution;
-    }
-    if (HasTerminalStrictDispatchError(image_resolution)) {
-      image_resolution.category_probe_count =
-          category_probe_count + image_category_probe_count;
-      image_resolution.protocol_probe_count =
-          protocol_probe_count + image_protocol_probe_count;
-      return image_resolution;
-    }
-    category_probe_count += image_category_probe_count;
-    protocol_probe_count += image_protocol_probe_count;
     if (family == DispatchFamily::Instance &&
         TryResolveRuntimeManagedPropertyAccessorUnlocked(
             state, node, normalized_receiver_identity, selector_stable_id,
             selector_spelling, image_resolution)) {
-      image_resolution.category_probe_count =
-          category_probe_count + image_category_probe_count;
-      image_resolution.protocol_probe_count =
-          protocol_probe_count + image_protocol_probe_count;
+      if (HasTerminalStrictDispatchError(image_resolution)) {
+        image_resolution.category_probe_count = category_probe_count;
+        image_resolution.protocol_probe_count = protocol_probe_count;
+        return image_resolution;
+      }
+      if (image_resolution.resolved) {
+        image_resolution.objc_final_declared =
+            image_resolution.objc_final_declared || node.objc_final_declared;
+        image_resolution.objc_sealed_declared =
+            image_resolution.objc_sealed_declared || node.objc_sealed_declared;
+        if (image_resolution.fast_path_reason.empty()) {
+          if (image_resolution.objc_final_declared) {
+            image_resolution.fast_path_reason = "class-final";
+          } else if (image_resolution.objc_sealed_declared) {
+            image_resolution.fast_path_reason = "class-sealed";
+          }
+        }
+        image_resolution.category_probe_count = category_probe_count;
+        image_resolution.protocol_probe_count = protocol_probe_count;
+        return image_resolution;
+      }
     }
-    if (HasTerminalStrictDispatchError(image_resolution)) {
-      return image_resolution;
+    if (!image_resolution.resolved) {
+      if (!TryResolveMethodFromRealizedClassChainUnlocked(
+              state, &node, family, normalized_receiver_identity,
+              selector_stable_id, selector_spelling, image_resolution,
+              method_ambiguous, image_category_probe_count,
+              image_protocol_probe_count)) {
+        if (image_resolution.strict_error_status !=
+            OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR) {
+          return image_resolution;
+        }
+        SlowPathResolution malformed_resolution;
+        malformed_resolution.selector_storage =
+            selector_spelling != nullptr ? selector_spelling : "";
+        malformed_resolution.lookup_start_base_identity =
+            lookup_start_base_identity;
+        malformed_resolution.normalized_receiver_identity =
+            normalized_receiver_identity;
+        malformed_resolution.selector_stable_id = selector_stable_id;
+        malformed_resolution.strict_error_status =
+            OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
+        return malformed_resolution;
+      }
+      if (method_ambiguous) {
+        resolution = SlowPathResolution{};
+        resolution.ambiguous = true;
+        resolution.strict_error_status =
+            OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
+        resolution.selector_storage =
+            selector_spelling != nullptr ? selector_spelling : "";
+        resolution.lookup_start_base_identity = lookup_start_base_identity;
+        resolution.normalized_receiver_identity = normalized_receiver_identity;
+        resolution.selector_stable_id = selector_stable_id;
+        resolution.category_probe_count =
+            category_probe_count + image_category_probe_count;
+        resolution.protocol_probe_count =
+            protocol_probe_count + image_protocol_probe_count;
+        return resolution;
+      }
+      if (HasTerminalStrictDispatchError(image_resolution)) {
+        image_resolution.category_probe_count =
+            category_probe_count + image_category_probe_count;
+        image_resolution.protocol_probe_count =
+            protocol_probe_count + image_protocol_probe_count;
+        return image_resolution;
+      }
+      category_probe_count += image_category_probe_count;
+      protocol_probe_count += image_protocol_probe_count;
     }
     if (image_resolution.resolved) {
       image_resolution.objc_final_declared =
