@@ -20,6 +20,8 @@ class MetaclassGraphProbeFacts:
     widget_shared_entry: dict[str, Any]
     widget_inherited_entry: dict[str, Any]
     widget_own_entry: dict[str, Any]
+    widget_super_entry: dict[str, Any]
+    fail_closed_diagnostics: dict[str, Any]
 
 
 @dataclass(frozen=True)

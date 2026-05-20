@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fail_closed_diagnostics.h"
 #include "fixture_runtime_setup.h"
 #include "metaclass_graph_assertions.h"
 #include "report_error_helpers.h"
@@ -15,6 +16,7 @@ inline int RunMetaclassGraphRootClassProbe() {
   CaptureRuntimeBootstrapFixture(run.fixture);
   CaptureMetaclassGraphAssertions(run.graph_assertions);
   CaptureRootClassInvariants(run.root_class_invariants);
+  CaptureFailClosedDiagnostics(run.fail_closed_diagnostics);
   PrintMetaclassGraphRootClassProbeReport(run);
   return 0;
 }

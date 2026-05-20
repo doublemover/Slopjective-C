@@ -52,6 +52,19 @@ METACLASS_GRAPH_RUNTIME_VALUE_EXPECTATIONS = (
         expected_value=23,
         message="expected Widget instance dispatch to resolve Widget -widgetValue",
     ),
+    FieldExpectation(
+        key="widget_super_instance_value",
+        expected_value=17,
+        message=(
+            "expected Widget super dispatch from RootObject to resolve "
+            "RootObject -rootValue"
+        ),
+    ),
+    FieldExpectation(
+        key="widget_super_own_selector_status",
+        expected_value=-1,
+        message="expected Widget super dispatch from RootObject to reject Widget-only selectors",
+    ),
 )
 
 METACLASS_GRAPH_STATE_EXPECTATION = MappingExpectation(
@@ -71,30 +84,51 @@ ROOT_ENTRY_EXPECTATION = MappingExpectation(
     expected_fields={
         "found": 1,
         "base_identity": 1024,
+        "instance_receiver_identity": 1025,
+        "class_receiver_identity": 1026,
         "is_root_class": 1,
+        "has_super_node": 0,
         "implementation_backed": 1,
+        "super_base_identity": 0,
         "class_name": "RootObject",
         "class_owner_identity": "class:RootObject",
         "metaclass_owner_identity": "metaclass:RootObject",
         "super_class_owner_identity": None,
         "super_metaclass_owner_identity": None,
+        "instance_isa_owner_identity": "class:RootObject",
+        "class_object_isa_owner_identity": "metaclass:RootObject",
+        "metaclass_object_isa_owner_identity": "metaclass:RootObject",
+        "root_class_owner_identity": "class:RootObject",
+        "root_metaclass_owner_identity": "metaclass:RootObject",
     },
-    message="expected RootObject entry to realize as an implementation-backed root with null superclass and metaclass-super links",
+    message=(
+        "expected RootObject entry to realize as an implementation-backed root "
+        "with self-consistent class/metaclass isa and null superclass links"
+    ),
 )
 
 WIDGET_ENTRY_EXPECTATION = MappingExpectation(
     expected_fields={
         "found": 1,
         "base_identity": 1041,
+        "instance_receiver_identity": 1042,
+        "class_receiver_identity": 1043,
         "is_root_class": 0,
+        "has_super_node": 1,
         "implementation_backed": 1,
+        "super_base_identity": 1024,
         "class_name": "Widget",
         "class_owner_identity": "class:Widget",
         "metaclass_owner_identity": "metaclass:Widget",
         "super_class_owner_identity": "class:RootObject",
         "super_metaclass_owner_identity": "metaclass:RootObject",
+        "instance_isa_owner_identity": "class:Widget",
+        "class_object_isa_owner_identity": "metaclass:Widget",
+        "metaclass_object_isa_owner_identity": "metaclass:RootObject",
+        "root_class_owner_identity": "class:RootObject",
+        "root_metaclass_owner_identity": "metaclass:RootObject",
     },
-    message="expected Widget entry to publish stable class/metaclass owner identities and RootObject superclass links",
+    message="expected Widget entry to publish stable class/metaclass owner identities and RootObject class/metaclass superclass links",
 )
 
 ROOT_CLASS_STATE_EXPECTATION = MappingExpectation(
@@ -159,6 +193,33 @@ METHOD_CACHE_ENTRY_EXPECTATIONS = (
         entry_name="widget_own_entry",
         expected_owner_identity="implementation:Widget::instance_method:widgetValue",
         expected_class_dispatch=0,
+    ),
+    CacheEntryExpectation(
+        entry_name="widget_super_entry",
+        expected_owner_identity="implementation:RootObject::instance_method:rootValue",
+        expected_class_dispatch=0,
+    ),
+)
+
+FAIL_CLOSED_DIAGNOSTICS_EXPECTATION = MappingExpectation(
+    expected_fields={
+        "root_super_metadata_rejected": 1,
+        "root_super_metadata_reason": (
+            "root class publishes superclass metaclass metadata for BrokenRoot"
+        ),
+        "subclass_missing_super_metadata_rejected": 1,
+        "subclass_missing_super_metadata_reason": (
+            "subclass class/metaclass superclass edge is incomplete for BrokenChild"
+        ),
+        "subclass_metaclass_link_mismatch_rejected": 1,
+        "subclass_metaclass_link_mismatch_reason": (
+            "subclass metaclass superclass owner does not match realized "
+            "superclass metaclass for BrokenChild"
+        ),
+    },
+    message=(
+        "expected malformed metaclass metadata diagnostics to fail closed with "
+        "stable reasons"
     ),
 )
 
@@ -277,6 +338,7 @@ __all__ = [
     "CANONICAL_WIDGET_ENTRY_EXPECTATIONS",
     "COUNT_PROPERTY_EXPECTATION",
     "CacheEntryExpectation",
+    "FAIL_CLOSED_DIAGNOSTICS_EXPECTATION",
     "FieldExpectation",
     "MappingExpectation",
     "METACLASS_GRAPH_RUNTIME_VALUE_EXPECTATIONS",

@@ -40,6 +40,11 @@ struct RealizedEntryReportStorage {
   std::string metaclass_owner_identity;
   std::string super_class_owner_identity;
   std::string super_metaclass_owner_identity;
+  std::string instance_isa_owner_identity;
+  std::string class_object_isa_owner_identity;
+  std::string metaclass_object_isa_owner_identity;
+  std::string root_class_owner_identity;
+  std::string root_metaclass_owner_identity;
 };
 
 struct MethodCacheStateReportStorage {
@@ -98,10 +103,20 @@ struct RootClassInvariants {
   int widget_super_own_selector_status = 0;
 };
 
+struct FailClosedDiagnostics {
+  std::string root_super_metadata_reason;
+  std::string subclass_missing_super_metadata_reason;
+  std::string subclass_metaclass_link_mismatch_reason;
+  int root_super_metadata_rejected = 0;
+  int subclass_missing_super_metadata_rejected = 0;
+  int subclass_metaclass_link_mismatch_rejected = 0;
+};
+
 struct ProbeRun {
   RuntimeBootstrapFixture fixture;
   MetaclassGraphAssertions graph_assertions;
   RootClassInvariants root_class_invariants;
+  FailClosedDiagnostics fail_closed_diagnostics;
 };
 
 }  // namespace metaclass_graph_root_class

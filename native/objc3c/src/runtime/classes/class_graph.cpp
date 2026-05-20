@@ -240,13 +240,6 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         bundle->metaclass_record.object_owner_identity != nullptr
             ? bundle->metaclass_record.object_owner_identity
             : "";
-    if (!RuntimeMetaclassEdgeIsMaterializable(
-            node.class_owner_identity.c_str(),
-            node.metaclass_owner_identity.c_str())) {
-      MarkMalformedRealizedClassGraphUnlocked(
-          state, "class/metaclass owner edge is incomplete for " + class_name);
-      return;
-    }
     node.super_class_owner_identity =
         bundle->class_record.super_owner_identity != nullptr
             ? bundle->class_record.super_owner_identity
@@ -255,9 +248,19 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         bundle->metaclass_record.super_owner_identity != nullptr
             ? bundle->metaclass_record.super_owner_identity
             : "";
+    node.is_root_class = bundle->class_record.super_bundle == nullptr;
+    std::string metaclass_failure_reason;
+    if (!RuntimeMetaclassMetadataIsConsistent(
+            node.class_name.c_str(), node.class_owner_identity.c_str(),
+            node.metaclass_owner_identity.c_str(),
+            node.super_class_owner_identity.c_str(),
+            node.super_metaclass_owner_identity.c_str(), node.is_root_class,
+            &metaclass_failure_reason)) {
+      MarkMalformedRealizedClassGraphUnlocked(state, metaclass_failure_reason);
+      return;
+    }
     node.registration_order_ordinal = record->registration_order_ordinal;
     node.base_identity = BuildReceiverBaseIdentity(ordinal_it->second);
-    node.is_root_class = bundle->class_record.super_bundle == nullptr;
     node.implementation_backed = selected->implementation_backed;
     node.objc_final_declared = bundle->class_record.objc_final_declared;
     node.objc_sealed_declared = bundle->class_record.objc_sealed_declared;
@@ -285,6 +288,20 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       if (super_it != node_index_by_bundle.end()) {
         node.super_node_index = super_it->second;
         node.has_super_node = true;
+        const RealizedClassNode &super_node =
+            state.realized_class_nodes[node.super_node_index];
+        std::string metaclass_failure_reason;
+        if (!RuntimeMetaclassSuperclassLinkIsConsistent(
+                node.class_name.c_str(),
+                node.super_class_owner_identity.c_str(),
+                node.super_metaclass_owner_identity.c_str(),
+                super_node.class_owner_identity.c_str(),
+                super_node.metaclass_owner_identity.c_str(),
+                &metaclass_failure_reason)) {
+          MarkMalformedRealizedClassGraphUnlocked(state,
+                                                  metaclass_failure_reason);
+          return;
+        }
         ++state.realized_metaclass_edge_count;
       } else {
         MarkMalformedRealizedClassGraphUnlocked(

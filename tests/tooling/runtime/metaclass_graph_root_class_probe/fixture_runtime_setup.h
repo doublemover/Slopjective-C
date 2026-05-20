@@ -8,6 +8,34 @@ namespace runtime {
 namespace probe {
 namespace metaclass_graph_root_class {
 
+inline void StabilizeMetaclassGraphRootClassEntry(
+    objc3_runtime_realized_class_entry_snapshot &snapshot,
+    RealizedEntryReportStorage &storage) {
+  ::objc3c::runtime::probe::StabilizeRealizedEntry(
+      snapshot, storage.module_name, storage.translation_unit_identity_key,
+      storage.class_name, storage.class_owner_identity,
+      storage.metaclass_owner_identity, storage.super_class_owner_identity,
+      storage.super_metaclass_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      snapshot.instance_isa_owner_identity, storage.instance_isa_owner_identity,
+      snapshot.instance_isa_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      snapshot.class_object_isa_owner_identity,
+      storage.class_object_isa_owner_identity,
+      snapshot.class_object_isa_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      snapshot.metaclass_object_isa_owner_identity,
+      storage.metaclass_object_isa_owner_identity,
+      snapshot.metaclass_object_isa_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      snapshot.root_class_owner_identity, storage.root_class_owner_identity,
+      snapshot.root_class_owner_identity);
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      snapshot.root_metaclass_owner_identity,
+      storage.root_metaclass_owner_identity,
+      snapshot.root_metaclass_owner_identity);
+}
+
 inline void CaptureRuntimeBootstrapFixture(RuntimeBootstrapFixture &fixture) {
   (void)objc3_runtime_copy_registration_state_for_testing(
       &fixture.registration_state);
@@ -27,22 +55,10 @@ inline void CaptureRuntimeBootstrapFixture(RuntimeBootstrapFixture &fixture) {
       fixture.graph_state, fixture.graph_state_storage.class_name,
       fixture.graph_state_storage.class_owner_identity,
       fixture.graph_state_storage.metaclass_owner_identity);
-  ::objc3c::runtime::probe::StabilizeRealizedEntry(
-      fixture.root_entry, fixture.root_entry_storage.module_name,
-      fixture.root_entry_storage.translation_unit_identity_key,
-      fixture.root_entry_storage.class_name,
-      fixture.root_entry_storage.class_owner_identity,
-      fixture.root_entry_storage.metaclass_owner_identity,
-      fixture.root_entry_storage.super_class_owner_identity,
-      fixture.root_entry_storage.super_metaclass_owner_identity);
-  ::objc3c::runtime::probe::StabilizeRealizedEntry(
-      fixture.widget_entry, fixture.widget_entry_storage.module_name,
-      fixture.widget_entry_storage.translation_unit_identity_key,
-      fixture.widget_entry_storage.class_name,
-      fixture.widget_entry_storage.class_owner_identity,
-      fixture.widget_entry_storage.metaclass_owner_identity,
-      fixture.widget_entry_storage.super_class_owner_identity,
-      fixture.widget_entry_storage.super_metaclass_owner_identity);
+  StabilizeMetaclassGraphRootClassEntry(fixture.root_entry,
+                                        fixture.root_entry_storage);
+  StabilizeMetaclassGraphRootClassEntry(fixture.widget_entry,
+                                        fixture.widget_entry_storage);
 }
 
 }  // namespace metaclass_graph_root_class

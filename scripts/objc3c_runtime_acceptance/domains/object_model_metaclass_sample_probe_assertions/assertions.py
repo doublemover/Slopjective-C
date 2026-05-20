@@ -9,6 +9,7 @@ from objc3c_runtime_acceptance.expectation_matching import expect
 from .catalog import CANONICAL_RUNTIME_VALUE_EXPECTATIONS
 from .catalog import CANONICAL_WIDGET_ENTRY_EXPECTATIONS
 from .catalog import COUNT_PROPERTY_EXPECTATION
+from .catalog import FAIL_CLOSED_DIAGNOSTICS_EXPECTATION
 from .catalog import METACLASS_GRAPH_RUNTIME_VALUE_EXPECTATIONS
 from .catalog import METACLASS_GRAPH_STATE_EXPECTATION
 from .catalog import METHOD_CACHE_ENTRY_EXPECTATIONS
@@ -43,6 +44,8 @@ def assert_metaclass_graph_probe_payload(
         widget_shared_entry=payload.get("widget_shared_entry", {}),
         widget_inherited_entry=payload.get("widget_inherited_entry", {}),
         widget_own_entry=payload.get("widget_own_entry", {}),
+        widget_super_entry=payload.get("widget_super_entry", {}),
+        fail_closed_diagnostics=payload.get("fail_closed_diagnostics", {}),
     )
 
     for expectation in METACLASS_GRAPH_RUNTIME_VALUE_EXPECTATIONS:
@@ -113,6 +116,14 @@ def assert_metaclass_graph_probe_payload(
             == expectation.expected_owner_identity,
             f"expected {expectation.entry_name} to publish a resolved method-cache entry with stable owner identity",
         )
+
+    expect(
+        mapping_has_expected_fields(
+            facts.fail_closed_diagnostics,
+            FAIL_CLOSED_DIAGNOSTICS_EXPECTATION.expected_fields,
+        ),
+        FAIL_CLOSED_DIAGNOSTICS_EXPECTATION.message,
+    )
 
     return facts
 
