@@ -17,6 +17,7 @@ from capability_docs_validator.constants import (
     MATRIX_PATH,
     PHASE_OWNER_CONTRACT_PATH,
     SCHEMA_PATH,
+    SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG_PATH,
 )
 from capability_docs_validator.conformance import _validate_conformance_manifest_links
 from capability_docs_validator.docs import _validate_docs_reference_rows
@@ -31,6 +32,9 @@ from capability_docs_validator.rendering import (
     _validate_generated_docs,
     render_support_docs,
 )
+from capability_docs_validator.runnable_evidence import (
+    _validate_support_claim_runnable_evidence_catalog,
+)
 from capability_docs_validator.support_links import _validate_support_claim_links
 
 
@@ -40,6 +44,7 @@ class CapabilityDocsInputs:
     evidence_map: dict[str, Any]
     manifest: dict[str, Any]
     phase_owner_contracts: dict[str, Any]
+    runnable_evidence_catalog: dict[str, Any]
     rows: list[dict[str, Any]]
 
 
@@ -50,6 +55,7 @@ def _load_validated_inputs() -> CapabilityDocsInputs:
     evidence_map_schema = load_json_object(EVIDENCE_MAP_SCHEMA_PATH)
     manifest = load_json_object(CANONICAL_MANIFEST_PATH)
     phase_owner_contracts = load_json_object(PHASE_OWNER_CONTRACT_PATH)
+    runnable_evidence_catalog = load_json_object(SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG_PATH)
     try:
         validate_json_schema(matrix, schema, label=display_path(MATRIX_PATH))
         validate_json_schema(evidence_map, evidence_map_schema, label=display_path(EVIDENCE_MAP_PATH))
@@ -61,11 +67,17 @@ def _load_validated_inputs() -> CapabilityDocsInputs:
     _validate_evidence_map_projection(rows, evidence_map)
     _validate_support_claim_links(rows, manifest)
     _validate_conformance_manifest_links(manifest, phase_owner_contracts)
+    _validate_support_claim_runnable_evidence_catalog(
+        rows,
+        manifest,
+        runnable_evidence_catalog,
+    )
     return CapabilityDocsInputs(
         matrix=matrix,
         evidence_map=evidence_map,
         manifest=manifest,
         phase_owner_contracts=phase_owner_contracts,
+        runnable_evidence_catalog=runnable_evidence_catalog,
         rows=rows,
     )
 

@@ -23,6 +23,7 @@ from conformance_evidence_index.constants import (
     INDEX_VERSION,
     ROOT,
     SCHEMA_ID,
+    SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
     UNKNOWN_PROFILE,
     UNKNOWN_RELEASE,
 )

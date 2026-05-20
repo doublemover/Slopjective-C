@@ -3,20 +3,27 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXTERNAL_VALIDATION_INTEGRATION_REPORT = (
+    ROOT / "tmp" / "reports" / "external-validation" / "integration-summary.json"
+)
+EXTERNAL_VALIDATION_PUBLICATION_REPORT = (
+    ROOT / "tmp" / "reports" / "external-validation" / "publication-summary.json"
+)
 VALIDATE_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-public-conformance-reporting.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "public-conformance" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.integration.summary.v1"
+EXTERNAL_VALIDATION_INTEGRATION_CONTRACT_ID = "objc3c.external_validation.integration.summary.v1"
+EXTERNAL_VALIDATION_PUBLICATION_CONTRACT_ID = "objc3c.external_validation.publication.summary.v1"
 REQUIRED_STEPS = [
     "check-public-conformance-reporting-surface",
     "check-public-conformance-schema-surface",
@@ -37,27 +44,43 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def ensure_validate_report() -> dict[str, Any]:
-    if VALIDATE_REPORT.is_file():
-        report = load_json(VALIDATE_REPORT)
-        if report.get("status") == "PASS":
-            return report
-    completed = subprocess.run(
-        public_workflow_command("validate-public-conformance-reporting"),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
+def ensure_external_validation_prerequisite() -> dict[str, Any]:
+    completed = run_capture(public_workflow_command("validate-external-validation-integration"))
+    expect(
+        completed.returncode == 0,
+        "validate-external-validation-integration command failed during public-conformance integration validation",
     )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
-    expect(completed.returncode == 0, "validate-public-conformance-reporting command failed during integration validation")
+    integration = load_json(EXTERNAL_VALIDATION_INTEGRATION_REPORT)
+    expect(
+        integration.get("contract_id") == EXTERNAL_VALIDATION_INTEGRATION_CONTRACT_ID,
+        "external-validation integration summary contract drifted",
+    )
+    expect(integration.get("status") == "PASS", "external-validation integration summary did not pass")
+    publication = load_json(EXTERNAL_VALIDATION_PUBLICATION_REPORT)
+    expect(
+        publication.get("contract_id") == EXTERNAL_VALIDATION_PUBLICATION_CONTRACT_ID,
+        "external-validation publication summary contract drifted",
+    )
+    expect(publication.get("status") == "PASS", "external-validation publication summary did not pass")
+    return {
+        "integration_report_path": repo_rel(EXTERNAL_VALIDATION_INTEGRATION_REPORT),
+        "publication_report_path": repo_rel(EXTERNAL_VALIDATION_PUBLICATION_REPORT),
+        "integration_status": integration["status"],
+        "publication_status": publication["status"],
+    }
+
+
+def ensure_validate_report() -> dict[str, Any]:
+    completed = run_capture(public_workflow_command("validate-public-conformance-reporting"))
+    expect(
+        completed.returncode == 0,
+        "validate-public-conformance-reporting command failed during integration validation",
+    )
     return load_json(VALIDATE_REPORT)
 
 
 def main() -> int:
+    external_validation = ensure_external_validation_prerequisite()
     workflow_report = ensure_validate_report()
     expect(workflow_report.get("status") == "PASS", "validate-public-conformance-reporting workflow report did not pass")
     steps = workflow_report.get("steps", [])
@@ -104,6 +127,7 @@ def main() -> int:
         "score": scorecard.get("score"),
         "badge": scorecard.get("badge"),
         "public_status": scorecard.get("public_status"),
+        "external_validation_prerequisite": external_validation,
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(REPORT_PATH, payload)

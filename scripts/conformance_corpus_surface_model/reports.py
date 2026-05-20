@@ -74,6 +74,9 @@ class ConformanceCorpusSurfaceSummary:
             "corpus_surface_contract": repo_rel(self.paths.corpus_surface_path),
             "coverage_map": self.surface["coverage_map"],
             "runbook": self.surface["runbook"],
+            "support_claim_runnable_evidence_catalog": self.surface[
+                "support_claim_runnable_evidence_catalog"
+            ],
             "primary_buckets": EXPECTED_PRIMARY_BUCKETS,
             "supplemental_buckets": EXPECTED_SUPPLEMENTAL_BUCKETS,
             "bucket_summaries": [summary.to_payload() for summary in self.bucket_summaries],

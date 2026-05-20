@@ -13,6 +13,7 @@ from .contracts import (
     EXPECTED_WORKFLOW_SURFACE,
     LONGITUDINAL_CONTRACT_ID,
     SURFACE_FIELDS,
+    SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
     SurfaceValidationError,
 )
 from .loading import (
@@ -72,6 +73,10 @@ class ConformanceCorpusSurfaceModel:
         self.paths.require_path("tests/conformance/README.md", kind="suite readme")
         self.paths.require_path("tests/conformance/COVERAGE_MAP.md", kind="coverage map")
         self.paths.require_path("docs/runbooks/objc3c_conformance_corpus.md", kind="runbook")
+        self.paths.require_path(
+            SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
+            kind="support claim runnable evidence catalog",
+        )
         self.paths.require_path(
             "tests/conformance/longitudinal_suites.json",
             kind="longitudinal suite manifest",
@@ -153,6 +158,11 @@ class ConformanceCorpusSurfaceModel:
             != "tmp/reports/conformance/corpus-index.json"
         ):
             raise SurfaceValidationError("artifact_surface.coverage_index drifted")
+        if (
+            artifact_surface.get("support_claim_traceability_summary")
+            != "tmp/reports/conformance/support-claim-runnable-evidence-summary.json"
+        ):
+            raise SurfaceValidationError("artifact_surface.support_claim_traceability_summary drifted")
 
         workflow_surface = surface.get("workflow_surface")
         if workflow_surface != EXPECTED_WORKFLOW_SURFACE:

@@ -142,13 +142,15 @@ function Get-RunnableToolchainPackageInputFiles {
     @(Get-RepoRelativeNativeRuntimeSourceFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativePythonSharedFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativePythonToolingFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeConformanceSurfacePythonFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeWorkflowPythonFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativePerformanceBenchmarkFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeRuntimeAcceptanceFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeRuntimeProbeFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeRecoveryPositiveFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeStdlibFiles -RepoRoot $RepoRoot) +
-    @(Get-RepoRelativeConformanceFiles -RepoRoot $RepoRoot)
+    @(Get-RepoRelativeConformanceFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativePackagedPythonScriptFiles -RepoRoot $RepoRoot)
   )
 }
 

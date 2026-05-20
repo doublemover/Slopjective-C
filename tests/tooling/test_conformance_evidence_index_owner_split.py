@@ -54,6 +54,10 @@ def test_legacy_entrypoint_reexports_split_owner_modules() -> None:
     assert module.build_parser is build_parser
     assert module.build_index_payload is build_index_payload
     assert module.ArtifactRecord is ArtifactRecord
+    assert (
+        module.SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG.as_posix()
+        == "tests/conformance/support_claim_runnable_evidence_catalog.json"
+    )
 
 
 def test_manifest_inference_stays_isolated_from_payload_grouping() -> None:
@@ -141,3 +145,15 @@ def test_bidirectional_grouping_is_payload_builder_owned() -> None:
         },
     ]
     assert build_releases_index(records)[0]["profiles"][0]["profile_id"] == "parser"
+    payload = build_index_payload(
+        records=records,
+        input_root=ROOT / "reports" / "conformance",
+        output_path=None,
+        release_label=None,
+        generated_at="2026-05-20T00:00:00Z",
+    )
+    assert payload["support_claim_traceability"]["row_count"] >= 1
+    assert (
+        "objc3c.behavior.runtime.object-model-interface-method-table"
+        in payload["support_claim_traceability"]["support_claims"]
+    )

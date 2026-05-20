@@ -120,6 +120,84 @@ def _parser_phase_contract(support_claim: str = PARSER_CLAIM["claim_id"]) -> dic
     }
 
 
+def _runtime_object_model_row() -> dict[str, Any]:
+    return {
+        "id": "runtime.object-model.interface-method-table",
+        "title": "Object model interface method table",
+        "state": "implemented",
+        "summary": "Runtime object-model row used by validator tests.",
+        "support_claims": [
+            "objc3c.behavior.runtime.object-model-interface-method-table"
+        ],
+        "owner_modules": ["native/objc3c/src/runtime/classes/class_graph.cpp"],
+        "evidence": [
+            {
+                "kind": "test",
+                "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+                "command": "npm run objc3c -- test-behavior-matrix",
+            },
+            {
+                "kind": "source",
+                "path": "native/objc3c/src/runtime/classes/class_graph.cpp",
+            },
+        ],
+    }
+
+
+def _runtime_object_model_manifest() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "support_claims": [
+            {
+                "claim_id": "objc3c.behavior.runtime.object-model-interface-method-table",
+                "owner_phase": "runtime",
+                "behavior_fixture": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+                "executable_command": "npm run objc3c -- test-behavior-matrix",
+            }
+        ],
+        "fixtures": [
+            {
+                "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+                "origin": "hand-authored",
+                "owner_phase": "runtime",
+                "behavior_family": "object_model",
+                "fixture_kind": "positive",
+                "expected_diagnostic_code": "",
+            }
+        ],
+    }
+
+
+def _runtime_object_model_runnable_catalog() -> dict[str, Any]:
+    return {
+        "contract_id": "objc3c.conformance.support_claim_runnable_evidence_catalog.v1",
+        "schema_version": 1,
+        "policy": {
+            "tmp_source_truth_allowed": False,
+            "generated_report_boundary": "tmp/reports/conformance/support-claim-runnable-evidence-summary.json",
+        },
+        "rows": [
+            {
+                "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+                "capability_id": "runtime.object-model.interface-method-table",
+                "owner_phase": "runtime",
+                "conformance_fixture": "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+                "traceability_fixture": "tests/conformance/lowering_abi/OBJFND-8059-01.json",
+                "runnable_command": "npm run objc3c -- test-runtime-acceptance-fast",
+                "positive_evidence": [
+                    "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+                    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+                    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+                ],
+                "negative_evidence": [
+                    "tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3"
+                ],
+                "required_diagnostic_codes": ["O3S200", "O3RT004"],
+            }
+        ],
+    }
+
+
 def test_public_capability_docs_reject_retired_public_surface_claims() -> None:
     for path in PUBLIC_CAPABILITY_DOCS:
         text = path.read_text(encoding="utf-8")
@@ -207,6 +285,44 @@ def test_conformance_phase_contracts_reject_generated_fixture_authority_for_supp
         validator._validate_conformance_manifest_links(
             _manifest_with_retired_fixture(PARSER_CLAIM),
             phase_contract,
+        )
+
+
+def test_support_claim_runnable_evidence_catalog_accepts_positive_and_negative_runtime_traceability() -> None:
+    validator = _load_validator()
+
+    validator._validate_support_claim_runnable_evidence_catalog(
+        [_runtime_object_model_row()],
+        _runtime_object_model_manifest(),
+        _runtime_object_model_runnable_catalog(),
+    )
+
+
+def test_support_claim_runnable_evidence_catalog_rejects_tmp_source_truth() -> None:
+    validator = _load_validator()
+    catalog = _runtime_object_model_runnable_catalog()
+    catalog["rows"][0]["negative_evidence"] = ["tmp/reports/conformance/negative.json"]
+
+    with pytest.raises(validator.CapabilityDocsError, match="cannot use tmp as source truth"):
+        validator._validate_support_claim_runnable_evidence_catalog(
+            [_runtime_object_model_row()],
+            _runtime_object_model_manifest(),
+            catalog,
+        )
+
+
+def test_support_claim_runnable_evidence_catalog_requires_manifest_behavior_fixture() -> None:
+    validator = _load_validator()
+    catalog = _runtime_object_model_runnable_catalog()
+    catalog["rows"][0]["positive_evidence"] = [
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
+    ]
+
+    with pytest.raises(validator.CapabilityDocsError, match="canonical manifest behavior fixture"):
+        validator._validate_support_claim_runnable_evidence_catalog(
+            [_runtime_object_model_row()],
+            _runtime_object_model_manifest(),
+            catalog,
         )
 
 

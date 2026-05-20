@@ -19,6 +19,9 @@ CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.
 PHASE_OWNER_CONTRACT_PATH = (
     ROOT / "tests" / "conformance" / "hard_cutover_behavior_phase_owner_contracts.json"
 )
+SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG_PATH = (
+    ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
+)
 BEHAVIOR_MATRIX_COMMAND = "npm run objc3c -- test-behavior-matrix"
 SUPPORT_CLAIM_RE = re.compile(r"\bobjc3c\.behavior\.[a-z0-9._-]+\b")
 

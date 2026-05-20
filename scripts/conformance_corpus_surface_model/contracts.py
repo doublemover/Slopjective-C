@@ -10,6 +10,9 @@ CHECKER_NAME = "conformance-corpus-surface"
 SURFACE_CONTRACT_ID = "objc3c.conformance.corpus.surface.v1"
 LONGITUDINAL_CONTRACT_ID = "objc3c.conformance.longitudinal_suites.v1"
 SUMMARY_CONTRACT_ID = "objc3c.conformance.corpus.surface.summary.v1"
+SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG = (
+    "tests/conformance/support_claim_runnable_evidence_catalog.json"
+)
 EXPECTED_PRIMARY_BUCKETS = [
     "parser",
     "semantic",
@@ -36,10 +39,12 @@ EXPECTED_WORKFLOW_SURFACE = {
     "implementation_anchors": [
         "scripts/check_conformance_corpus_surface.py",
         "scripts/generate_conformance_corpus_index.py",
+        "scripts/generate_conformance_evidence_index.py",
         "scripts/check_conformance_suite.ps1",
     ],
     "coverage_map": "tests/conformance/COVERAGE_MAP.md",
     "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json",
+    "support_claim_runnable_evidence_catalog": SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
 }
 
 
@@ -63,6 +68,11 @@ SURFACE_FIELDS = (
     SurfaceField("suite_readme", "tests/conformance/README.md", "suite_readme drifted"),
     SurfaceField("coverage_map", "tests/conformance/COVERAGE_MAP.md", "coverage_map drifted"),
     SurfaceField("runbook", "docs/runbooks/objc3c_conformance_corpus.md", "runbook drifted"),
+    SurfaceField(
+        "support_claim_runnable_evidence_catalog",
+        SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
+        "support_claim_runnable_evidence_catalog drifted",
+    ),
     SurfaceField("primary_buckets", EXPECTED_PRIMARY_BUCKETS, "primary_buckets drifted"),
     SurfaceField(
         "supplemental_buckets",
@@ -81,6 +91,7 @@ __all__ = (
     "SUMMARY_CONTRACT_ID",
     "SURFACE_CONTRACT_ID",
     "SURFACE_FIELDS",
+    "SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG",
     "SurfaceField",
     "SurfaceValidationError",
 )

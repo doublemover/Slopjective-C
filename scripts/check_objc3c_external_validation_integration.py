@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
@@ -55,21 +54,7 @@ def workflow_report_path(validate_action: str) -> Path:
 
 def ensure_validate_report(validate_action: str) -> dict[str, Any]:
     report_path = workflow_report_path(validate_action)
-    if report_path.is_file():
-        report = load_json(report_path)
-        if report.get("status") == "PASS":
-            return report
-    completed = subprocess.run(
-        public_workflow_command(validate_action),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_capture(public_workflow_command(validate_action))
     expect(completed.returncode == 0, f"{validate_action} command failed during integration validation")
     return load_json(report_path)
 

@@ -24,6 +24,7 @@ from capability_docs_validator.constants import (
     PHASE_OWNER_CONTRACT_PATH,
     SCHEMA_PATH,
     SUPPORT_DOCS_DIR,
+    SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG_PATH,
     SUPPORT_CLAIM_RE,
     capability_truth_owner_contract,
 )
@@ -42,6 +43,7 @@ from capability_docs_validator.matrix import (
     _validate_object_model_scope,
 )
 from capability_docs_validator.rendering import render_support_docs
+from capability_docs_validator.runnable_evidence import _validate_support_claim_runnable_evidence_catalog
 from capability_docs_validator.support_links import (
     _row_support_claims,
     _validate_support_claim_links,
