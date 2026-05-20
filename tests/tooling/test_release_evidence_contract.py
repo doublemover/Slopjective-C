@@ -22,15 +22,15 @@ def test_release_evidence_gate_contract_pins_pairs_empty_mode_and_attestation() 
     assert release_evidence.schema_data_pairs_from_contract(contract) == (
         (
             "schemas/objc3-abi-2025Q4.schema.json",
-            "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+            "conformance/manifests/objc3-abi-2025Q4.example.json",
         ),
         (
             "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
-            "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json",
+            "conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json",
         ),
         (
             "schemas/objc3-runtime-2025Q4.manifest.schema.json",
-            "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+            "conformance/manifests/objc3-runtime-2025Q4.manifest.json",
         ),
     )
 
@@ -39,10 +39,9 @@ def test_release_evidence_gate_contract_pins_pairs_empty_mode_and_attestation() 
     assert empty_input_mode["blocking_issue_refs"] == ["#8058", "#8059"]
 
     generated_index = release_evidence.generated_index_contract(contract)
-    assert (
-        generated_index["output_path"]
-        == "tmp/reports/release_evidence/evidence-index.json"
-    )
+    assert generated_index["output_name"] == "evidence-index.json"
+    expected_output_path = "/".join(("tmp", "release_evidence", "evidence-index.json"))
+    assert generated_index["output_path"] == expected_output_path
     assert (
         generated_index["artifact_authenticity"]["provenance_mode"]
         == "generator_replayable"

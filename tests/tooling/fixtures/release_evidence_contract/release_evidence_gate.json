@@ -3,7 +3,7 @@
   "release_label": "v0.11",
   "source_truth_policy": {
     "source_truth_roots": [
-      "reports/conformance",
+      "conformance",
       "schemas"
     ],
     "forbidden_source_truth_prefixes": [
@@ -14,7 +14,7 @@
   "empty_input_mode": {
     "allowed": true,
     "blocks_public_claims": true,
-    "reason": "reports/conformance is not materialized in this checkout yet; the gate may only emit a generated empty index and must not widen public support claims.",
+    "reason": "conformance is not materialized in this checkout yet; the gate may only emit a generated empty index and must not widen public support claims.",
     "blocking_issue_refs": [
       "#8058",
       "#8059"
@@ -24,22 +24,22 @@
     {
       "id": "abi-2025Q4",
       "schema": "schemas/objc3-abi-2025Q4.schema.json",
-      "data": "reports/conformance/manifests/objc3-abi-2025Q4.example.json"
+      "data": "conformance/manifests/objc3-abi-2025Q4.example.json"
     },
     {
       "id": "evidence-bundle-v1",
       "schema": "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
-      "data": "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json"
+      "data": "conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json"
     },
     {
       "id": "runtime-2025Q4",
       "schema": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
-      "data": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+      "data": "conformance/manifests/objc3-runtime-2025Q4.manifest.json"
     }
   ],
   "generated_index": {
     "schema_id": "objc3-conformance-evidence-index/v1",
-    "output_path": "tmp/reports/release_evidence/evidence-index.json",
+    "output_name": "evidence-index.json",
     "replay_cwd": ".",
     "artifact_authenticity": {
       "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",

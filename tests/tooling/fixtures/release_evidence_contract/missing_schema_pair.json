@@ -5,7 +5,7 @@
     {
       "id": "missing-schema",
       "schema": "tests/tooling/fixtures/release_evidence_contract/does_not_exist.schema.json",
-      "data": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+      "data": "conformance/manifests/objc3-runtime-2025Q4.manifest.json"
     }
   ]
 }

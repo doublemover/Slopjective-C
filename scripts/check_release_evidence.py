@@ -22,8 +22,8 @@ CONTRACT_PATH = (
     / "release_evidence_contract"
     / "release_evidence_gate.json"
 )
-EMPTY_INPUT_ROOT = ROOT / "tmp" / "reports" / "release_evidence" / "empty-input"
-REPORTS_CONFORMANCE_ROOT = ROOT / "reports" / "conformance"
+EMPTY_INPUT_ROOT = ROOT / "tmp" / "release_evidence" / "empty-input"
+CONFORMANCE_SOURCE_ROOT = ROOT / "conformance"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 
@@ -169,15 +169,16 @@ def generated_index_contract(contract: dict[str, Any]) -> dict[str, Any]:
         raise ReleaseEvidenceContractError(
             f"generated_index.schema_id must be {SCHEMA_ID}"
         )
-    output_path = normalize_contract_path(
-        require_string(generated_index, "output_path", "generated_index"),
-        "generated_index.output_path",
-        allow_tmp=True,
+    output_name = normalize_contract_path(
+        require_string(generated_index, "output_name", "generated_index"),
+        "generated_index.output_name",
+        allow_tmp=False,
     )
-    if not output_path.startswith("tmp/reports/release_evidence/"):
+    if "/" in output_name or not output_name.endswith(".json"):
         raise ReleaseEvidenceContractError(
-            "generated_index.output_path must stay under tmp/reports/release_evidence"
+            "generated_index.output_name must be a JSON filename"
         )
+    output_path = (Path("tmp") / "release_evidence" / output_name).as_posix()
     authenticity = generated_index.get("artifact_authenticity")
     if not isinstance(authenticity, dict):
         raise ReleaseEvidenceContractError(
@@ -190,6 +191,7 @@ def generated_index_contract(contract: dict[str, Any]) -> dict[str, Any]:
         )
     return {
         **generated_index,
+        "output_name": output_name,
         "output_path": output_path,
         "artifact_authenticity": authenticity,
     }
@@ -229,11 +231,11 @@ def main() -> int:
         return fail(str(exc))
 
     required_artifact_paths: set[str] = set()
-    input_root_arg = REPORTS_CONFORMANCE_ROOT.relative_to(ROOT).as_posix()
+    input_root_arg = CONFORMANCE_SOURCE_ROOT.relative_to(ROOT).as_posix()
     allow_empty_index = False
     index_output = ROOT / generated_index["output_path"]
 
-    if REPORTS_CONFORMANCE_ROOT.is_dir():
+    if CONFORMANCE_SOURCE_ROOT.is_dir():
         claim_drift_result = subprocess.run(
             python_script_command(PUBLIC_CLAIM_DRIFT_SCRIPT, "--check"),
             cwd=ROOT,
