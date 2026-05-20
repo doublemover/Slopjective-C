@@ -21,6 +21,157 @@ POSITIVE_FIXTURE_EXTRA_ARGS = {
     "live_error_runtime": [LIVE_ERROR_RUNTIME_SURFACE_FLAG],
 }
 
+POSITIVE_FIXTURE_IR_CALL_TOKENS = {
+    "block_arc_autorelease_return": [
+        "call void @__objc3_block_copy_helper_",
+        "call i32 @objc3_runtime_promote_block_i32",
+        "call void @__objc3_block_dispose_helper_",
+        "define internal i32 @__objc3_block_invoke_",
+        "@__objc3_block_desc_",
+        "call i32 @objc3_runtime_retain_i32",
+        "call i32 @objc3_runtime_release_i32",
+        "call i32 @objc3_runtime_autorelease_i32",
+    ],
+    "arc_weak_autoreleasepool": [
+        "call void @objc3_runtime_push_autoreleasepool_scope()",
+        "call void @objc3_runtime_pop_autoreleasepool_scope()",
+        "call i32 @objc3_runtime_read_current_property_i32()",
+        "call i32 @objc3_runtime_exchange_current_property_i32",
+        "call i32 @objc3_runtime_load_weak_current_property_i32()",
+        "call void @objc3_runtime_store_weak_current_property_i32",
+        "call i32 @objc3_runtime_retain_i32",
+        "call i32 @objc3_runtime_release_i32",
+        "call i32 @objc3_runtime_autorelease_i32",
+    ],
+    "error_runtime_bridge_helper": [
+        "call void @objc3_runtime_store_thrown_error_i32",
+        "call i32 @objc3_runtime_load_thrown_error_i32",
+        "call i32 @objc3_runtime_bridge_status_error_i32",
+        "call i32 @objc3_runtime_bridge_nserror_error_i32",
+        "call i32 @objc3_runtime_catch_matches_error_i32",
+    ],
+    "live_error_runtime": [
+        "call void @objc3_runtime_store_thrown_error_i32",
+        "call i32 @objc3_runtime_load_thrown_error_i32",
+        "call i32 @objc3_runtime_bridge_status_error_i32",
+        "call i32 @objc3_runtime_catch_matches_error_i32",
+    ],
+    "live_continuation_runtime": [
+        "call i32 @objc3_runtime_allocate_async_continuation_i32",
+        "call i32 @objc3_runtime_handoff_async_continuation_to_executor_i32",
+        "call i32 @objc3_runtime_resume_async_continuation_i32",
+    ],
+    "live_task_runtime": [
+        "call i32 @objc3_runtime_spawn_task_i32",
+        "call i32 @objc3_runtime_enter_task_group_scope_i32",
+        "call i32 @objc3_runtime_add_task_group_task_i32",
+        "call i32 @objc3_runtime_wait_task_group_next_i32",
+        "call i32 @objc3_runtime_cancel_task_group_i32",
+        "call i32 @objc3_runtime_task_is_cancelled_i32",
+        "call i32 @objc3_runtime_task_on_cancel_i32",
+        "call i32 @objc3_runtime_executor_hop_i32",
+    ],
+    "live_actor_mailbox_runtime": [
+        "call i32 @objc3_runtime_actor_mailbox_enqueue_i32",
+        "call i32 @objc3_runtime_actor_mailbox_drain_next_i32",
+        "call i32 @objc3_runtime_actor_record_replay_proof_i32",
+        "call i32 @objc3_runtime_actor_record_race_guard_i32",
+        "call i32 @objc3_runtime_actor_enter_nonisolated_i32",
+    ],
+}
+
+POSITIVE_FIXTURE_IMPORT_SURFACE_EXPECTATIONS = {
+    "block_arc_autorelease_return": {
+        "objc_runtime_block_ownership_artifact_preservation": {
+            "booleans": {
+                "runtime_import_artifact_ready": True,
+                "separate_compilation_preservation_ready": True,
+                "runtime_support_library_link_wiring_ready": True,
+                "arc_cleanup_preservation_ready": True,
+            },
+            "minimums": {
+                "local_block_literal_sites": 1,
+                "local_copy_helper_required_sites": 1,
+                "local_dispose_helper_required_sites": 1,
+                "local_copy_helper_symbolized_sites": 1,
+                "local_dispose_helper_symbolized_sites": 1,
+                "local_escape_to_heap_sites": 1,
+                "local_arc_autorelease_insertion_sites": 1,
+            },
+        },
+    },
+    "arc_weak_autoreleasepool": {
+        "objc_runtime_block_ownership_artifact_preservation": {
+            "booleans": {
+                "runtime_import_artifact_ready": True,
+                "separate_compilation_preservation_ready": True,
+                "runtime_support_library_link_wiring_ready": True,
+                "arc_cleanup_preservation_ready": True,
+            },
+            "minimums": {
+                "local_arc_retain_insertion_sites": 1,
+                "local_arc_release_insertion_sites": 1,
+                "local_autoreleasepool_scope_sites": 1,
+            },
+        },
+    },
+    "error_runtime_bridge_helper": {
+        "objc_error_handling_result_and_bridging_artifact_replay": {
+            "booleans": {
+                "runtime_import_artifact_ready": True,
+                "binary_artifact_replay_ready": True,
+                "separate_compilation_replay_ready": True,
+            },
+            "replay_key_minimums": {
+                "throws_replay_key": {
+                    "throws_propagation_sites": 1,
+                },
+                "ns_error_replay_key": {
+                    "ns_error_bridging_sites": 1,
+                    "ns_error_out_parameter_sites": 1,
+                },
+            },
+        },
+    },
+    "live_error_runtime": {
+        "objc_error_handling_result_and_bridging_artifact_replay": {
+            "booleans": {
+                "runtime_import_artifact_ready": True,
+                "binary_artifact_replay_ready": True,
+                "separate_compilation_replay_ready": True,
+            },
+            "replay_key_minimums": {
+                "throws_replay_key": {
+                    "throws_propagation_sites": 1,
+                },
+                "ns_error_replay_key": {
+                    "ns_error_bridging_sites": 1,
+                    "ns_error_out_parameter_sites": 1,
+                },
+            },
+        },
+    },
+    "live_actor_mailbox_runtime": {
+        "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface": {
+            "booleans": {
+                "actor_mailbox_runtime_ready": True,
+            },
+            "minimums": {
+                "actor_interface_sites": 1,
+                "actor_method_sites": 1,
+                "actor_metadata_record_sites": 1,
+                "nonisolated_entry_sites": 1,
+                "executor_affinity_sites": 1,
+                "actor_hop_artifact_sites": 1,
+                "actor_isolation_thunk_sites": 1,
+                "replay_proof_dependency_sites": 1,
+                "race_guard_dependency_sites": 1,
+                "task_handoff_sites": 1,
+            },
+        },
+    },
+}
+
 NEGATIVE_FIXTURES = {
     "escaping_block_actor_handoff": {
         "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "escaping_block_with_handoff_rejected.objc3",

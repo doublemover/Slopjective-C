@@ -9,6 +9,8 @@ from objc3c_runtime_backed_semantics_closure.contracts import check_stress_manif
 from objc3c_runtime_backed_semantics_closure.inputs import DURABLE_REPLAY_DIRS
 from objc3c_runtime_backed_semantics_closure.inputs import HELPER_SYMBOLS
 from objc3c_runtime_backed_semantics_closure.inputs import NEGATIVE_FIXTURES
+from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURE_IMPORT_SURFACE_EXPECTATIONS
+from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURE_IR_CALL_TOKENS
 from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURES
 from objc3c_runtime_backed_semantics_closure.inputs import REQUIRED_IR_TOKENS
 from objc3c_runtime_backed_semantics_closure.inputs import SOURCE_TOKENS
@@ -51,6 +53,12 @@ def build_summary() -> dict:
         "runtime_helper_symbol_count": len(HELPER_SYMBOLS),
         "required_ir_token_count": len(REQUIRED_IR_TOKENS),
         "durable_replay_fixture_dir_count": len(DURABLE_REPLAY_DIRS),
+        "positive_fixture_ir_call_token_count": sum(
+            len(tokens) for tokens in POSITIVE_FIXTURE_IR_CALL_TOKENS.values()
+        ),
+        "positive_fixture_import_surface_count": len(
+            POSITIVE_FIXTURE_IMPORT_SURFACE_EXPECTATIONS
+        ),
     }
     checks = {
         "positive_compile": all(
@@ -60,6 +68,16 @@ def build_summary() -> dict:
         "negative_compile": all(
             item["rejected"] and item["expected_codes_present"]
             for item in negative_compile.values()
+        ),
+        "positive_fixture_ir_call_tokens": all(
+            value
+            for item in positive_compile.values()
+            for value in item["ir_call_tokens"].values()
+        ),
+        "positive_fixture_import_surfaces": all(
+            value
+            for item in positive_compile.values()
+            for value in item["runtime_import_surface"].values()
         ),
         "required_ir_tokens": all(ir_tokens.values()),
         "runtime_helper_ir_declarations": all(helper_ir_declarations.values()),

@@ -67,8 +67,8 @@ Minimum scope:
 - `RTBACK-8017-01.json`, `RTBACK-8017-02.json`: runtime-backed semantics
   closure fixtures for issue `#8017`, covering block promotion/copy-dispose,
   ARC helper automation, error runtime bridges, continuation/task/actor helper
-  declarations, and fail-closed diagnostics for unsupported escape, throw,
-  task-group, and actor-hop edges.
+  calls, runtime-import helper surfaces, and fail-closed diagnostics for
+  unsupported escape, throw, task-group, and actor-hop edges.
 - `TRUTH-8018-01.json`, `TRUTH-8018-02.json`: manifest/object/IR truth-gate
   fixtures for issue `#8018`, covering deterministic manifest, IR, object,
   registration, runtime metadata, discovery/linker, conformance sidecars, and

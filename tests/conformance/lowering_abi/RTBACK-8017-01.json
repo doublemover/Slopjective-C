@@ -33,15 +33,16 @@
           "abi_requirements": [
             "Objc3RuntimeBackedSemanticsClosureSummary emits contract objc3c.runtime.backed.semantics.closure.v1 with block, ARC, error, continuation, task, and actor runtime-backed model strings",
             "Objc3IREmitter publishes a runtime_backed_semantics_closure IR comment in the same native lowering stream as runnable_block_execution_matrix, runnable_arc_closeout, error_handling_live_error_runtime_integration, concurrency_live_task_runtime_integration, and actor metadata contracts",
-            "Aggregate IR evidence includes concrete __objc3_block_copy_helper_ and __objc3_block_dispose_helper_ definitions or call sites for source constructs that require block copy/dispose lowering",
-            "The closure report compiles seven representative positive native fixtures and aggregates IR token evidence from block promotion/copy-dispose, ARC retain/release/autorelease/weak/autoreleasepool, error runtime bridge, continuation runtime, task runtime, and actor mailbox/replay surfaces",
+            "Per-fixture IR evidence includes concrete __objc3_block_copy_helper_ and __objc3_block_dispose_helper_ call sites for source constructs that require block copy/dispose lowering",
+            "The closure report compiles seven representative positive native fixtures and requires source-specific IR call tokens from block promotion/copy-dispose, ARC retain/release/autorelease/weak/autoreleasepool, error runtime bridge, continuation runtime, task runtime, and actor mailbox/replay surfaces",
+            "Runtime-import surface artifacts are checked for the relevant block ownership, ARC cleanup, error replay, and actor mailbox/isolation helper payloads instead of treating report-only or declaration-only tokens as support",
             "The private helper boundary contains exactly 36 helper symbols and no public runtime ABI widening is claimed by this fixture"
           ],
           "runtime_requirements": [
-            "objc3_runtime_promote_block_i32 and objc3_runtime_invoke_block_i32 back escaping block promotion and invoke paths",
+            "objc3_runtime_promote_block_i32 backs escaping block promotion while emitted block descriptors point at concrete invoke thunks",
             "objc3_runtime_retain_i32, objc3_runtime_release_i32, objc3_runtime_autorelease_i32, weak current-property helpers, and autoreleasepool push/pop helpers back the ARC slice",
             "objc3_runtime_store_thrown_error_i32, objc3_runtime_load_thrown_error_i32, bridge helpers, and catch-match helpers back thrown/error propagation",
-            "continuation, task-group, cancellation, executor-hop, actor isolation, mailbox, replay-proof, and race-guard helper declarations are present in emitted IR and implemented in the runtime source"
+            "continuation, task-group, cancellation, executor-hop, mailbox, replay-proof, race-guard, and nonisolated actor helper calls are present in the owning fixture IR, while the actor runtime-import artifact preserves isolation, hop, executor-affinity, replay, and race-guard metadata"
           ]
         }
       ],

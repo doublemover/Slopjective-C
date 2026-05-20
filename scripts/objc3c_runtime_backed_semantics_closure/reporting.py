@@ -24,6 +24,10 @@ def render_markdown(summary: dict) -> str:
     lines.extend(["", "## Fixture Coverage", ""])
     for name, item in summary["positive_compile"].items():
         lines.append(f"- `{name}`: `{item['fixture']}` compiled=`{str(item['compiled']).lower()}`")
+        for token, present in item["ir_call_tokens"].items():
+            lines.append(f"  - ir_call `{token}`: `{str(present).lower()}`")
+        for check, present in item["runtime_import_surface"].items():
+            lines.append(f"  - runtime_import `{check}`: `{str(present).lower()}`")
     for name, item in summary["negative_compile"].items():
         lines.append(
             f"- `{name}`: `{item['fixture']}` rejected=`{str(item['rejected']).lower()}` "
