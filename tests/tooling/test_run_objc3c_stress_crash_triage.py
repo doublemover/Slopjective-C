@@ -189,6 +189,9 @@ def test_stress_crash_triage_writes_replayable_signature_indexes() -> None:
         summary = json.loads(summary_out.read_text(encoding="utf-8"))
         assert summary["contract_id"] == "objc3c.stress.crash.triage.summary.v1"
         assert summary["status"] == "PASS"
+        assert summary["fixture_manifest_contract_id"] == (
+            "objc3c.stress.crash.triage.fixture.manifest.v1"
+        )
         assert summary["signature_count"] == 1
         assert summary["case_count"] == 1
 
@@ -203,6 +206,19 @@ def test_stress_crash_triage_writes_replayable_signature_indexes() -> None:
         shutil.rmtree(run_root, ignore_errors=True)
 
 
+def test_stress_crash_triage_fixture_manifest_validates_checked_in_cases() -> None:
+    runner = _load_runner()
+    manifest = runner.load_json(runner.FIXTURE_MANIFEST_PATH)
+
+    summary = runner.validate_fixture_manifest(manifest)
+
+    assert summary == {
+        "contract_id": "objc3c.stress.crash.triage.fixture.manifest.v1",
+        "positive_case_count": 1,
+        "negative_case_count": 2,
+    }
+
+
 def test_stress_crash_triage_rejects_missing_case_signature() -> None:
     runner = _load_runner()
     run_root = ROOT / "tmp" / "tests" / "stress-crash-triage" / "missing-signature"
@@ -214,6 +230,91 @@ def test_stress_crash_triage_rejects_missing_case_signature() -> None:
 
     try:
         with pytest.raises(RuntimeError, match="missing signature_sha256"):
+            runner.main(
+                [
+                    "--artifact-surface",
+                    str(artifact_surface),
+                    "--minimization-summary",
+                    str(minimization_summary),
+                    "--summary-out",
+                    str(summary_out),
+                ]
+            )
+        assert not summary_out.exists()
+    finally:
+        _remove_fixture_artifact_roots(run_root)
+        shutil.rmtree(run_root, ignore_errors=True)
+
+
+def test_stress_crash_triage_rejects_invalid_case_signature() -> None:
+    runner = _load_runner()
+    run_root = ROOT / "tmp" / "tests" / "stress-crash-triage" / "invalid-signature"
+    shutil.rmtree(run_root, ignore_errors=True)
+    artifact_surface, minimization_summary, summary_out = _write_valid_fixture(run_root)
+    payload = json.loads(minimization_summary.read_text(encoding="utf-8"))
+    payload["case_summaries"][0]["signature_sha256"] = "not-a-sha"
+    _write_json(minimization_summary, payload)
+
+    try:
+        with pytest.raises(RuntimeError, match="invalid signature_sha256"):
+            runner.main(
+                [
+                    "--artifact-surface",
+                    str(artifact_surface),
+                    "--minimization-summary",
+                    str(minimization_summary),
+                    "--summary-out",
+                    str(summary_out),
+                ]
+            )
+        assert not summary_out.exists()
+    finally:
+        _remove_fixture_artifact_roots(run_root)
+        shutil.rmtree(run_root, ignore_errors=True)
+
+
+def test_stress_crash_triage_rejects_artifacts_outside_machine_owned_roots() -> None:
+    runner = _load_runner()
+    run_root = ROOT / "tmp" / "tests" / "stress-crash-triage" / "outside-machine-root"
+    shutil.rmtree(run_root, ignore_errors=True)
+    artifact_surface, minimization_summary, summary_out = _write_valid_fixture(run_root)
+    payload = json.loads(minimization_summary.read_text(encoding="utf-8"))
+    outside_dir = run_root / "checked-in-looking-failure"
+    outside_dir.mkdir(parents=True, exist_ok=True)
+    payload["case_summaries"][0]["failure_dir"] = _repo_rel(outside_dir)
+    _write_json(minimization_summary, payload)
+
+    try:
+        with pytest.raises(RuntimeError, match="outside machine-owned artifact roots"):
+            runner.main(
+                [
+                    "--artifact-surface",
+                    str(artifact_surface),
+                    "--minimization-summary",
+                    str(minimization_summary),
+                    "--summary-out",
+                    str(summary_out),
+                ]
+            )
+        assert not summary_out.exists()
+    finally:
+        _remove_fixture_artifact_roots(run_root)
+        shutil.rmtree(run_root, ignore_errors=True)
+
+
+def test_stress_crash_triage_rejects_reducer_growth() -> None:
+    runner = _load_runner()
+    run_root = ROOT / "tmp" / "tests" / "stress-crash-triage" / "reducer-growth"
+    shutil.rmtree(run_root, ignore_errors=True)
+    artifact_surface, minimization_summary, summary_out = _write_valid_fixture(run_root)
+    payload = json.loads(minimization_summary.read_text(encoding="utf-8"))
+    minimized_dir = ROOT / payload["case_summaries"][0]["minimized_dir"]
+    reduced_summary = json.loads((minimized_dir / "reduced-summary.json").read_text(encoding="utf-8"))
+    reduced_summary["reduced_bytes"] = reduced_summary["original_bytes"] + 1
+    _write_json(minimized_dir / "reduced-summary.json", reduced_summary)
+
+    try:
+        with pytest.raises(RuntimeError, match="grew beyond original bytes"):
             runner.main(
                 [
                     "--artifact-surface",

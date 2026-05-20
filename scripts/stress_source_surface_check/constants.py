@@ -11,6 +11,7 @@ SURFACE_CONTRACT_ID = "objc3c.stress.source.surface.v1"
 SUMMARY_CONTRACT_ID = "objc3c.stress.source.surface.summary.v1"
 SOURCE_CHECK_SCRIPT = "scripts/check_stress_source_surface.py"
 WORKFLOW_SURFACE = "tests/tooling/fixtures/stress/workflow_surface.json"
+CLAIM_GATE = "tests/tooling/fixtures/stress/claim_gate.json"
 EXPECTED_FAMILIES = [
     "parser-sema-fuzz",
     "lowering-runtime-stress",

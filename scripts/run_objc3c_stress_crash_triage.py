@@ -17,6 +17,7 @@ from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_SURFACE_PATH = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "artifact_surface.json"
+FIXTURE_MANIFEST_PATH = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "crash_triage_fixture_manifest.json"
 MINIMIZATION_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "minimization-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "crash-triage-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stress.crash.triage.summary.v1"
@@ -40,6 +41,72 @@ def require_case_string(case: dict[str, Any], field_name: str) -> str:
         case_id = case.get("case_id", "<unknown>")
         raise RuntimeError(f"stress minimization case {case_id} missing {field_name}")
     return value
+
+
+def require_repo_file(path_value: object, *, case_id: str, field_name: str) -> None:
+    if not isinstance(path_value, str) or not path_value:
+        raise RuntimeError(f"stress crash triage fixture {case_id} missing {field_name}")
+    relative_path = Path(path_value)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise RuntimeError(f"stress crash triage fixture {case_id} {field_name} must be repo-relative")
+    resolved = (ROOT / relative_path).resolve()
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise RuntimeError(f"stress crash triage fixture {case_id} {field_name} escapes the repo") from exc
+    if not resolved.is_file():
+        raise RuntimeError(
+            f"stress crash triage fixture {case_id} missing {field_name}: {relative_path.as_posix()}"
+        )
+
+
+def validate_fixture_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload.get("contract_id") != "objc3c.stress.crash.triage.fixture.manifest.v1":
+        raise RuntimeError("stress crash triage fixture manifest contract_id drifted")
+    if payload.get("schema_version") != 1:
+        raise RuntimeError("stress crash triage fixture manifest schema_version drifted")
+    positive_cases = payload.get("positive_cases")
+    negative_cases = payload.get("negative_cases")
+    if not isinstance(positive_cases, list) or not positive_cases:
+        raise RuntimeError("stress crash triage fixture manifest missing positive_cases")
+    if not isinstance(negative_cases, list) or not negative_cases:
+        raise RuntimeError("stress crash triage fixture manifest missing negative_cases")
+
+    for case in positive_cases:
+        if not isinstance(case, dict):
+            raise RuntimeError("stress crash triage fixture manifest has non-object positive case")
+        case_id = str(case.get("case_id", ""))
+        if not case_id:
+            raise RuntimeError("stress crash triage fixture positive case missing case_id")
+        require_repo_file(case.get("source_path"), case_id=case_id, field_name="source_path")
+        artifacts = case.get("expected_triage_artifacts")
+        if not isinstance(artifacts, list) or not artifacts:
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing expected_triage_artifacts")
+        replay_fields = case.get("expected_replay_request_fields")
+        if not isinstance(replay_fields, list) or not replay_fields:
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing expected_replay_request_fields")
+
+    for case in negative_cases:
+        if not isinstance(case, dict):
+            raise RuntimeError("stress crash triage fixture manifest has non-object negative case")
+        case_id = str(case.get("case_id", ""))
+        if not case_id:
+            raise RuntimeError("stress crash triage fixture negative case missing case_id")
+        if not isinstance(case.get("expected_error"), str) or not case.get("expected_error"):
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing expected_error")
+        diagnostic = case.get("stable_diagnostic")
+        if not isinstance(diagnostic, dict):
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing stable_diagnostic")
+        if not isinstance(diagnostic.get("code"), str) or not diagnostic.get("code"):
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing stable diagnostic code")
+        if not isinstance(diagnostic.get("source_range"), dict):
+            raise RuntimeError(f"stress crash triage fixture {case_id} missing source_range")
+
+    return {
+        "contract_id": payload["contract_id"],
+        "positive_case_count": len(positive_cases),
+        "negative_case_count": len(negative_cases),
+    }
 
 
 def require_signature(case: dict[str, Any]) -> str:
@@ -272,6 +339,7 @@ def require_written_triage_artifacts(
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-surface", type=Path, default=ARTIFACT_SURFACE_PATH)
+    parser.add_argument("--fixture-manifest", type=Path, default=FIXTURE_MANIFEST_PATH)
     parser.add_argument("--minimization-summary", type=Path, default=MINIMIZATION_SUMMARY_PATH)
     parser.add_argument("--summary-out", type=Path, default=SUMMARY_PATH)
     parser.add_argument("--contract-mode", action="store_true")
@@ -281,6 +349,8 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     artifact_surface = load_json(args.artifact_surface.resolve())
+    fixture_manifest = load_json(args.fixture_manifest.resolve())
+    fixture_manifest_summary = validate_fixture_manifest(fixture_manifest)
     if artifact_surface.get("contract_id") != "objc3c.stress.artifact.surface.v1":
         raise RuntimeError("stress artifact surface contract_id drifted")
     if artifact_surface.get("schema_version") != 1:
@@ -397,6 +467,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
         "artifact_surface_path": repo_rel(args.artifact_surface.resolve()),
+        "fixture_manifest_path": repo_rel(args.fixture_manifest.resolve()),
+        "fixture_manifest_contract_id": fixture_manifest_summary["contract_id"],
+        "fixture_manifest_summary": fixture_manifest_summary,
         "minimization_summary_path": repo_rel(args.minimization_summary.resolve()),
         "triage_root": repo_rel(triage_root),
         "replay_root": repo_rel(replay_root),

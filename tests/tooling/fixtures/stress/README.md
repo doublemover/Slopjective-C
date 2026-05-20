@@ -25,3 +25,14 @@ The checked-in machine-owned artifact and minimization contract lives in
 
 The checked-in public workflow contract lives in
 `tests/tooling/fixtures/stress/workflow_surface.json`.
+
+The checked-in release-claim gate lives in
+`tests/tooling/fixtures/stress/claim_gate.json`. It names the stress claims that
+can be cited, the durable input catalogs behind them, the generated `tmp/`
+reports that must be reproduced, and the unsupported surfaces that remain
+fail-closed.
+
+The checked-in crash triage fixture catalog lives in
+`tests/tooling/fixtures/stress/crash_triage_fixture_manifest.json`. It names the
+positive replayable-signature case and fail-closed malformed-summary cases that
+the crash triage tests exercise.

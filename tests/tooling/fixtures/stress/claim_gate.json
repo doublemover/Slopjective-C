@@ -1,0 +1,63 @@
+{
+  "contract_id": "objc3c.stress.claim.gate.v1",
+  "schema_version": 1,
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/stress/workflow_surface.json",
+  "artifact_surface": "tests/tooling/fixtures/stress/artifact_surface.json",
+  "claim_boundary": "stress claims are claimable only when checked-in fixtures drive public workflow actions and every generated report remains under tmp/reports/stress",
+  "claims": [
+    {
+      "claim_id": "deterministic-malformed-input-fuzz",
+      "status": "supported",
+      "evidence_reports": [
+        "tmp/reports/stress/source-surface-summary.json",
+        "tmp/reports/stress/minimization-summary.json",
+        "tmp/reports/stress/crash-triage-summary.json"
+      ],
+      "durable_inputs": [
+        "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+        "tests/tooling/fixtures/stress/minimization_manifest.json",
+        "tests/tooling/fixtures/stress/crash_triage_fixture_manifest.json",
+        "tests/tooling/fixtures/parser_conformance_corpus/manifest.json",
+        "tests/tooling/fixtures/native/recovery/negative"
+      ],
+      "fail_closed_by": [
+        "tests/tooling/fixtures/stress/safety_policy.json",
+        "tests/tooling/fixtures/stress/artifact_surface.json",
+        "scripts/run_objc3c_fuzz_safety.py",
+        "scripts/run_objc3c_stress_minimization.py",
+        "scripts/run_objc3c_stress_crash_triage.py"
+      ],
+      "unsupported_surfaces": [
+        "unbounded random generation",
+        "network-fetched fuzz corpora",
+        "checked-in generated reducer outputs"
+      ]
+    },
+    {
+      "claim_id": "bounded-lowering-runtime-and-differential-stress",
+      "status": "partial",
+      "evidence_reports": [
+        "tmp/reports/stress/lowering-runtime-stress-summary.json",
+        "tmp/reports/stress/mixed-module-differential-summary.json"
+      ],
+      "durable_inputs": [
+        "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+        "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+        "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
+        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3"
+      ],
+      "fail_closed_by": [
+        "tests/tooling/fixtures/stress/safety_policy.json",
+        "tests/tooling/fixtures/stress/workflow_surface.json",
+        "scripts/run_objc3c_lowering_runtime_stress.py",
+        "scripts/run_objc3c_mixed_module_differential.py"
+      ],
+      "unsupported_surfaces": [
+        "full production soak",
+        "external third-party corpus certification",
+        "performance-governance closure"
+      ]
+    }
+  ]
+}
