@@ -58,7 +58,8 @@ struct RuntimeRegistrationTableWalkMutationCheckpoint {
         last_materialized_selector_pool_index(
             state.last_materialized_selector_pool_index),
         last_materialized_from_metadata(state.last_materialized_from_metadata),
-        last_materialized_keypath_handle(state.last_materialized_keypath_handle),
+        last_materialized_keypath_handle(
+            state.last_materialized_keypath_handle),
         last_materialized_keypath_registration_order_ordinal(
             state.last_materialized_keypath_registration_order_ordinal),
         last_materialized_keypath_profile(
@@ -67,6 +68,9 @@ struct RuntimeRegistrationTableWalkMutationCheckpoint {
   void Restore(RuntimeState &state) const {
     state.selector_index_by_name = selector_index_by_name;
     state.selector_slots = selector_slots;
+    for (SelectorSlot &slot : state.selector_slots) {
+      slot.handle.selector = slot.spelling_storage.c_str();
+    }
     state.keypath_slots = keypath_slots;
     state.metadata_backed_selector_count = metadata_backed_selector_count;
     state.dynamic_selector_count = dynamic_selector_count;
@@ -83,12 +87,11 @@ struct RuntimeRegistrationTableWalkMutationCheckpoint {
     state.last_materialized_keypath_handle = last_materialized_keypath_handle;
     state.last_materialized_keypath_registration_order_ordinal =
         last_materialized_keypath_registration_order_ordinal;
-    state.last_materialized_keypath_profile =
-        last_materialized_keypath_profile;
+    state.last_materialized_keypath_profile = last_materialized_keypath_profile;
   }
 };
 
-}  // namespace
+} // namespace
 
 bool TryWalkRegistrationTableUnlocked(
     RuntimeState &state,
@@ -117,8 +120,8 @@ bool TryWalkRegistrationTableUnlocked(
     return false;
   }
   std::string class_metadata_diagnostic_reason;
-  if (!RuntimeClassMetadataTableIsSupported(
-          state, registration_table, class_metadata_diagnostic_reason)) {
+  if (!RuntimeClassMetadataTableIsSupported(state, registration_table,
+                                            class_metadata_diagnostic_reason)) {
     ++state.malformed_class_metadata_rejection_count;
     state.last_malformed_class_graph_reason =
         std::move(class_metadata_diagnostic_reason);
@@ -163,10 +166,9 @@ bool TryWalkRegistrationTableUnlocked(
       state);
   for (std::uint64_t index = 0; index < counts.keypath_descriptor_count;
        ++index) {
-    const auto *descriptor =
-        reinterpret_cast<const EmittedKeyPathDescriptor *>(
-            RuntimeAggregateEntry(registration_table->keypath_descriptor_root,
-                                  index));
+    const auto *descriptor = reinterpret_cast<const EmittedKeyPathDescriptor *>(
+        RuntimeAggregateEntry(registration_table->keypath_descriptor_root,
+                              index));
     if (descriptor == nullptr ||
         !MaterializeKeyPathDescriptorUnlocked(
             state, *descriptor, image->registration_order_ordinal)) {
@@ -190,4 +192,4 @@ bool TryWalkRegistrationTableUnlocked(
   return true;
 }
 
-}  // namespace objc3c::runtime
+} // namespace objc3c::runtime

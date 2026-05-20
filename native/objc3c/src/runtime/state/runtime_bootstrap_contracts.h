@@ -49,6 +49,13 @@ typedef struct objc3_runtime_image_walk_state_snapshot {
 
 typedef struct objc3_runtime_reset_replay_state_snapshot {
   uint64_t retained_bootstrap_image_count;
+  uint64_t live_registration_order_entry_count;
+  uint64_t live_registered_metadata_entry_count;
+  uint64_t live_selector_table_entry_count;
+  uint64_t live_keypath_entry_count;
+  uint64_t live_realized_class_count;
+  uint64_t live_method_cache_entry_count;
+  uint64_t live_property_lookup_cache_entry_count;
   uint64_t last_reset_cleared_image_local_init_state_count;
   uint64_t last_replayed_image_count;
   uint64_t reset_generation;

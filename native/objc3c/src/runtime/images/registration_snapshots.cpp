@@ -48,8 +48,7 @@ int CopyRuntimeImageWalkStateForTesting(
       state.last_walked_ivar_descriptor_count;
   snapshot->last_walked_selector_pool_count =
       state.last_walked_selector_pool_count;
-  snapshot->last_walked_string_pool_count =
-      state.last_walked_string_pool_count;
+  snapshot->last_walked_string_pool_count = state.last_walked_string_pool_count;
   snapshot->last_walked_keypath_descriptor_count =
       state.last_walked_keypath_descriptor_count;
   snapshot->last_linker_anchor_matches_discovery_root =
@@ -71,10 +70,8 @@ int CopyRuntimeRegistrationStateForTesting(
 
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
-  snapshot->abi_version =
-      OBJC3_RUNTIME_REGISTRATION_STATE_SNAPSHOT_ABI_VERSION;
-  snapshot->snapshot_size =
-      sizeof(objc3_runtime_registration_state_snapshot);
+  snapshot->abi_version = OBJC3_RUNTIME_REGISTRATION_STATE_SNAPSHOT_ABI_VERSION;
+  snapshot->snapshot_size = sizeof(objc3_runtime_registration_state_snapshot);
   snapshot->registered_image_count = state.registered_image_count;
   snapshot->registered_descriptor_total = state.registered_descriptor_total;
   snapshot->next_expected_registration_order_ordinal =
@@ -122,8 +119,22 @@ int CopyRuntimeResetReplayStateForTesting(
 
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
-  snapshot->retained_bootstrap_image_count =
-      static_cast<std::uint64_t>(state.retained_bootstrap_identity_order.size());
+  snapshot->retained_bootstrap_image_count = static_cast<std::uint64_t>(
+      state.retained_bootstrap_identity_order.size());
+  snapshot->live_registration_order_entry_count = static_cast<std::uint64_t>(
+      state.registration_order_by_identity_key.size());
+  snapshot->live_registered_metadata_entry_count = static_cast<std::uint64_t>(
+      state.registered_image_metadata_by_identity_key.size());
+  snapshot->live_selector_table_entry_count =
+      static_cast<std::uint64_t>(state.selector_slots.size());
+  snapshot->live_keypath_entry_count =
+      static_cast<std::uint64_t>(state.keypath_slots.size());
+  snapshot->live_realized_class_count =
+      static_cast<std::uint64_t>(state.realized_class_nodes.size());
+  snapshot->live_method_cache_entry_count =
+      static_cast<std::uint64_t>(state.method_cache.size());
+  snapshot->live_property_lookup_cache_entry_count =
+      static_cast<std::uint64_t>(state.property_lookup_cache.size());
   snapshot->last_reset_cleared_image_local_init_state_count =
       state.last_reset_cleared_image_local_init_state_count;
   snapshot->last_replayed_image_count = state.last_replayed_image_count;
@@ -137,7 +148,7 @@ int CopyRuntimeResetReplayStateForTesting(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-}  // namespace objc3c::runtime
+} // namespace objc3c::runtime
 
 extern "C" int objc3_runtime_copy_image_walk_state_for_testing(
     objc3_runtime_image_walk_state_snapshot *snapshot) {

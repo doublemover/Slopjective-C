@@ -1,9 +1,9 @@
 #ifndef OBJC3C_TESTS_TOOLING_RUNTIME_MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE_PROBE_REPORT_H_
 #define OBJC3C_TESTS_TOOLING_RUNTIME_MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE_PROBE_REPORT_H_
 
+#include "../support/json_probe_writer.h"
 #include "image_fixture_setup.h"
 #include "probe_result.h"
-#include "../support/json_probe_writer.h"
 
 #include <cstdio>
 #include <string>
@@ -19,10 +19,8 @@ inline void PrintStartupFields(const RuntimeImageLifecycleState &startup) {
                 startup.registration.copy_status);
   PrintIntField("startup_walk_status", startup.walk.copy_status);
   PrintIntField("startup_graph_status", startup.graph.copy_status);
-  PrintIntField("startup_provider_status",
-                startup.provider_entry.copy_status);
-  PrintIntField("startup_consumer_status",
-                startup.consumer_entry.copy_status);
+  PrintIntField("startup_provider_status", startup.provider_entry.copy_status);
+  PrintIntField("startup_consumer_status", startup.consumer_entry.copy_status);
   PrintIntField("startup_replay_status", startup.replay.copy_status);
   PrintUint64Field("startup_registered_image_count",
                    startup.registration.snapshot.registered_image_count);
@@ -35,33 +33,28 @@ inline void PrintStartupFields(const RuntimeImageLifecycleState &startup) {
                    startup.graph.snapshot.realized_class_count);
   PrintUint64Field("startup_class_graph_generation",
                    startup.graph.snapshot.class_graph_generation);
-  PrintUint64Field(
-      "startup_category_attachment_generation",
-      startup.graph.snapshot.category_attachment_generation);
-  PrintUint64Field(
-      "startup_protocol_declaration_generation",
-      startup.graph.snapshot.protocol_declaration_generation);
+  PrintUint64Field("startup_category_attachment_generation",
+                   startup.graph.snapshot.category_attachment_generation);
+  PrintUint64Field("startup_protocol_declaration_generation",
+                   startup.graph.snapshot.protocol_declaration_generation);
   PrintUint64Field("startup_storage_surface_generation",
                    startup.graph.snapshot.storage_surface_generation);
   PrintUint64Field("startup_method_surface_generation",
                    startup.graph.snapshot.method_surface_generation);
-  PrintUint64Field(
-      "startup_retained_bootstrap_image_count",
-      startup.replay.snapshot.retained_bootstrap_image_count);
+  PrintUint64Field("startup_retained_bootstrap_image_count",
+                   startup.replay.snapshot.retained_bootstrap_image_count);
   PrintStringField("startup_last_walked_module_name",
                    NullableRuntimeString(startup.walk.last_walked_module_name));
-  PrintUint64Field(
-      "startup_provider_registration_order_ordinal",
-      startup.provider_entry.snapshot.registration_order_ordinal);
-  PrintUint64Field(
-      "startup_consumer_registration_order_ordinal",
-      startup.consumer_entry.snapshot.registration_order_ordinal);
-  PrintStringField(
-      "startup_provider_identity",
-      NullableRuntimeString(startup.provider_entry.translation_unit_identity_key));
-  PrintStringField(
-      "startup_consumer_identity",
-      NullableRuntimeString(startup.consumer_entry.translation_unit_identity_key));
+  PrintUint64Field("startup_provider_registration_order_ordinal",
+                   startup.provider_entry.snapshot.registration_order_ordinal);
+  PrintUint64Field("startup_consumer_registration_order_ordinal",
+                   startup.consumer_entry.snapshot.registration_order_ordinal);
+  PrintStringField("startup_provider_identity",
+                   NullableRuntimeString(
+                       startup.provider_entry.translation_unit_identity_key));
+  PrintStringField("startup_consumer_identity",
+                   NullableRuntimeString(
+                       startup.consumer_entry.translation_unit_identity_key));
 }
 
 inline void PrintResetFields(const char *prefix,
@@ -79,22 +72,53 @@ inline void PrintResetFields(const char *prefix,
   next_ordinal_field += "_reset_next_expected_registration_order_ordinal";
   std::string retained_bootstrap_count_field(prefix);
   retained_bootstrap_count_field += "_reset_retained_bootstrap_image_count";
+  std::string live_registration_order_count_field(prefix);
+  live_registration_order_count_field +=
+      "_reset_live_registration_order_entry_count";
+  std::string live_metadata_count_field(prefix);
+  live_metadata_count_field += "_reset_live_registered_metadata_entry_count";
+  std::string live_selector_count_field(prefix);
+  live_selector_count_field += "_reset_live_selector_table_entry_count";
+  std::string live_keypath_count_field(prefix);
+  live_keypath_count_field += "_reset_live_keypath_entry_count";
+  std::string live_class_count_field(prefix);
+  live_class_count_field += "_reset_live_realized_class_count";
+  std::string live_method_cache_count_field(prefix);
+  live_method_cache_count_field += "_reset_live_method_cache_entry_count";
+  std::string live_property_cache_count_field(prefix);
+  live_property_cache_count_field +=
+      "_reset_live_property_lookup_cache_entry_count";
   std::string cleared_init_state_count_field(prefix);
   cleared_init_state_count_field +=
       "_reset_cleared_image_local_init_state_count";
   std::string generation_field(prefix);
   generation_field += "_reset_generation";
 
-  PrintIntField(registration_status_field.c_str(), reset.registration.copy_status);
+  PrintIntField(registration_status_field.c_str(),
+                reset.registration.copy_status);
   PrintIntField(replay_status_field.c_str(), reset.replay.copy_status);
   PrintUint64Field(image_count_field.c_str(),
                    reset.registration.snapshot.registered_image_count);
   PrintUint64Field(
       next_ordinal_field.c_str(),
       reset.registration.snapshot.next_expected_registration_order_ordinal);
+  PrintUint64Field(retained_bootstrap_count_field.c_str(),
+                   reset.replay.snapshot.retained_bootstrap_image_count);
+  PrintUint64Field(live_registration_order_count_field.c_str(),
+                   reset.replay.snapshot.live_registration_order_entry_count);
+  PrintUint64Field(live_metadata_count_field.c_str(),
+                   reset.replay.snapshot.live_registered_metadata_entry_count);
+  PrintUint64Field(live_selector_count_field.c_str(),
+                   reset.replay.snapshot.live_selector_table_entry_count);
+  PrintUint64Field(live_keypath_count_field.c_str(),
+                   reset.replay.snapshot.live_keypath_entry_count);
+  PrintUint64Field(live_class_count_field.c_str(),
+                   reset.replay.snapshot.live_realized_class_count);
+  PrintUint64Field(live_method_cache_count_field.c_str(),
+                   reset.replay.snapshot.live_method_cache_entry_count);
   PrintUint64Field(
-      retained_bootstrap_count_field.c_str(),
-      reset.replay.snapshot.retained_bootstrap_image_count);
+      live_property_cache_count_field.c_str(),
+      reset.replay.snapshot.live_property_lookup_cache_entry_count);
   PrintUint64Field(
       cleared_init_state_count_field.c_str(),
       reset.replay.snapshot.last_reset_cleared_image_local_init_state_count);
@@ -198,15 +222,13 @@ inline void PrintReplayFields(const char *prefix,
   PrintStringField(
       last_replayed_module_field.c_str(),
       NullableRuntimeString(replayed.replay.last_replayed_module_name));
-  PrintUint64Field(
-      provider_ordinal_field.c_str(),
-      replayed.provider_entry.snapshot.registration_order_ordinal);
-  PrintUint64Field(
-      consumer_ordinal_field.c_str(),
-      replayed.consumer_entry.snapshot.registration_order_ordinal);
-  PrintStringField(
-      provider_identity_field.c_str(),
-      NullableRuntimeString(replayed.provider_entry.translation_unit_identity_key));
+  PrintUint64Field(provider_ordinal_field.c_str(),
+                   replayed.provider_entry.snapshot.registration_order_ordinal);
+  PrintUint64Field(consumer_ordinal_field.c_str(),
+                   replayed.consumer_entry.snapshot.registration_order_ordinal);
+  PrintStringField(provider_identity_field.c_str(),
+                   NullableRuntimeString(
+                       replayed.provider_entry.translation_unit_identity_key));
   if (print_consumer_identity) {
     PrintStringField(
         consumer_identity_field.c_str(),
@@ -215,7 +237,8 @@ inline void PrintReplayFields(const char *prefix,
   }
 }
 
-inline void PrintBlockedReplayFields(const BlockedReplayResult &blocked_replay) {
+inline void
+PrintBlockedReplayFields(const BlockedReplayResult &blocked_replay) {
   using objc3c::runtime::probe::PrintIntField;
   using objc3c::runtime::probe::PrintUint64Field;
 
@@ -227,6 +250,27 @@ inline void PrintBlockedReplayFields(const BlockedReplayResult &blocked_replay) 
   PrintUint64Field(
       "blocked_replay_last_replayed_image_count",
       blocked_replay.replay_state.snapshot.last_replayed_image_count);
+  PrintUint64Field(
+      "blocked_replay_live_registration_order_entry_count",
+      blocked_replay.replay_state.snapshot.live_registration_order_entry_count);
+  PrintUint64Field("blocked_replay_live_registered_metadata_entry_count",
+                   blocked_replay.replay_state.snapshot
+                       .live_registered_metadata_entry_count);
+  PrintUint64Field(
+      "blocked_replay_live_selector_table_entry_count",
+      blocked_replay.replay_state.snapshot.live_selector_table_entry_count);
+  PrintUint64Field(
+      "blocked_replay_live_keypath_entry_count",
+      blocked_replay.replay_state.snapshot.live_keypath_entry_count);
+  PrintUint64Field(
+      "blocked_replay_live_realized_class_count",
+      blocked_replay.replay_state.snapshot.live_realized_class_count);
+  PrintUint64Field(
+      "blocked_replay_live_method_cache_entry_count",
+      blocked_replay.replay_state.snapshot.live_method_cache_entry_count);
+  PrintUint64Field("blocked_replay_live_property_lookup_cache_entry_count",
+                   blocked_replay.replay_state.snapshot
+                       .live_property_lookup_cache_entry_count);
 }
 
 inline void PrintSecondReplayConsumerIdentityFinalField(
@@ -252,6 +296,6 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf("}\n");
 }
 
-}  // namespace objc3c::runtime::probe::multi_image_registration_reset_replay
+} // namespace objc3c::runtime::probe::multi_image_registration_reset_replay
 
-#endif  // OBJC3C_TESTS_TOOLING_RUNTIME_MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE_PROBE_REPORT_H_
+#endif // OBJC3C_TESTS_TOOLING_RUNTIME_MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE_PROBE_REPORT_H_
