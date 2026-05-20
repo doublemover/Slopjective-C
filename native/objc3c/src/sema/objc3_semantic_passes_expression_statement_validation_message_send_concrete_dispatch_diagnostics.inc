@@ -135,6 +135,12 @@
                 "'"));
       }
     }
-    return MakeSemanticTypeFromMethodInfoReturn(*resolution.method);
+    const SemanticTypeInfo return_type =
+        MakeSemanticTypeFromMethodInfoReturn(*resolution.method);
+    DiagnoseRetainedMethodFamilyReturnTypeMismatch(
+        expr, selector,
+        "concrete dispatch receiver '" + resolution.owner_name + "'",
+        return_type, diagnostics);
+    return return_type;
   }
   return MakeScalarSemanticType(ValueType::ObjCId);

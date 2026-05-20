@@ -134,5 +134,11 @@
                 SemanticTypeName(arg_type) + "'"));
       }
     }
-    return MakeSemanticTypeFromMethodInfoReturn(method);
+    const SemanticTypeInfo return_type = MakeSemanticTypeFromMethodInfoReturn(method);
+    DiagnoseRetainedMethodFamilyReturnTypeMismatch(
+        expr, selector,
+        "protocol-qualified receiver '" +
+            receiver_type.canonical_type.canonical_spelling + "'",
+        return_type, diagnostics);
+    return return_type;
   }

@@ -1,0 +1,22 @@
+{
+  "id": "EFF-8014-04",
+  "title": "Reject retained Objective-C method-family sends with scalar returns",
+  "feature": "Objective-C 3.0 effects and ownership semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_effects_ownership_method_family_scalar_return.objc3",
+    "tmp/reports/claimability/effects-ownership-semantic-model/effects_ownership_semantic_model_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S305.\nmodule NegativeEffectsOwnershipMethodFamilyScalarReturn;\n\n@interface BadFactory\n- (i32)copy;\n@end\n\n@implementation BadFactory\n- (i32)copy {\n  return 7;\n}\n@end\n\nfn consume(object: BadFactory *?) -> i32 {\n  let copied = [object? copy];\n  return copied;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S305",
+        "line": 15,
+        "column": 16
+      }
+    ]
+  }
+}

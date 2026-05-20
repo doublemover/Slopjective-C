@@ -125,8 +125,13 @@
                   "'"));
         }
       }
-      return SubstituteGenericReceiverType(
+      const SemanticTypeInfo return_type = SubstituteGenericReceiverType(
           MakeSemanticTypeFromMethodInfoReturn(method),
           receiver_type.canonical_type, *message_send_context.surface);
+      DiagnoseRetainedMethodFamilyReturnTypeMismatch(
+          expr, selector,
+          "typed receiver '" + receiver_type.object_pointer_type_name + "'",
+          return_type, diagnostics);
+      return return_type;
     }
   }
