@@ -102,6 +102,14 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `source` | `stdlib/compatibility_gates.json` |  |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `source` | `native/objc3c/src/runtime/stdlib/core_runtime_contract.h` |  |
+| `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `source` | `native/objc3c/src/runtime/stdlib/core_runtime.cpp` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_6_ERRORS_RESULTS_THROWS.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md` |  |

@@ -43,6 +43,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
 | `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
 | `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
+| `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
 
 ## Phase Owner Contract
 
@@ -417,6 +418,29 @@ the canonical manifest fixture and public npm command above.
   - doc: `docs/support/hard_cutover_capability_truth.md`
   - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
+
+### Runtime-backed core stdlib v1
+
+- Capability ID: `stdlib.core.runtime-backed-v1`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.core-runtime-v1`
+- Summary: The objc3.core v1 helpers route through the checked-in runtime stdlib core ABI, preserve explicit option/count/prefix/map semantics, and fail closed for unsupported capability ordinals. This row does not claim broad standard-library completeness, generic container ABI, or strict-system widening.
+- Owner modules:
+  - `stdlib/compatibility_gates.json`
+  - `stdlib/modules/objc3.core/module.json`
+  - `stdlib/modules/objc3.core/module.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/core_runtime_contract.h`
+  - `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - source: `stdlib/compatibility_gates.json`
+  - source: `stdlib/modules/objc3.core/module.json`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/core_runtime_contract.h`
+  - source: `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
 
 ### Advanced runtime-backed language closure
 

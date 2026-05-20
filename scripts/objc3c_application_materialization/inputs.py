@@ -22,6 +22,7 @@ class StdlibWorkspaceInputs:
     inventory: dict[str, Any]
     stability_policy: Any
     package_surface: Any
+    compatibility_gates: Any
 
 
 def load_canonical_application_inputs(
@@ -46,6 +47,7 @@ def load_stdlib_workspace_inputs(*, root: Path, workspace_path: Path) -> StdlibW
         inventory=_load_workspace_object(root, workspace, "module_inventory"),
         stability_policy=load_json_any(root / str(workspace["stability_policy"])),
         package_surface=load_json_any(root / str(workspace["package_surface"])),
+        compatibility_gates=load_json_any(root / str(workspace["compatibility_gates"])),
     )
 
 

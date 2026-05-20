@@ -169,6 +169,7 @@ def stdlib_workspace_summary_payload(
         "module_inventory": repo_rel(root / str(workspace["module_inventory"]), root=root),
         "stability_policy": repo_rel(root / str(workspace["stability_policy"]), root=root),
         "package_surface": repo_rel(root / str(workspace["package_surface"]), root=root),
+        "compatibility_gates": repo_rel(root / str(workspace["compatibility_gates"]), root=root),
         "modules": [module.to_payload() for module in materialization.modules],
         "copied_paths": unique_copied_paths,
         "copied_file_count": len(unique_copied_paths),

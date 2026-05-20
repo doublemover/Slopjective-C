@@ -670,6 +670,60 @@
       ]
     },
     {
+      "id": "stdlib.core.runtime-backed-v1",
+      "title": "Runtime-backed core stdlib v1",
+      "state": "implemented",
+      "summary": "The objc3.core v1 helpers route through the checked-in runtime stdlib core ABI, preserve explicit option/count/prefix/map semantics, and fail closed for unsupported capability ordinals. This row does not claim broad standard-library completeness, generic container ABI, or strict-system widening.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.core-runtime-v1"
+      ],
+      "owner_modules": [
+        "stdlib/compatibility_gates.json",
+        "stdlib/modules/objc3.core/module.json",
+        "stdlib/modules/objc3.core/module.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/core_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/compatibility_gates.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.core/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
+        }
+      ]
+    },
+    {
       "id": "language.advanced-runtime-closure",
       "title": "Advanced runtime-backed language closure",
       "state": "reserved",

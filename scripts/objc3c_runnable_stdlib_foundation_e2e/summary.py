@@ -43,6 +43,7 @@ def build_summary_payload(
             "module_inventory": repo_rel(surface.module_inventory),
             "stability_policy": repo_rel(surface.stability_policy),
             "package_surface": repo_rel(surface.package_surface),
+            "compatibility_gates": repo_rel(surface.compatibility_gates),
             "lowering_import_surface": repo_rel(surface.lowering_import_surface),
             "advanced_helper_package_surface": repo_rel(
                 surface.advanced_helper_package_surface
@@ -50,6 +51,7 @@ def build_summary_payload(
             "artifact_filenames": artifact_filenames,
             "import_surface": surface.lowering_import_surface_payload["import_surface"],
         },
+        "packaged_stdlib_compatibility_gates": manifest["stdlib_compatibility_gate_summary"],
         "packaged_stdlib_program_surface": {
             "publish_inputs": surface.packaged_publish_inputs,
             "command_surfaces": manifest["stdlib_program_command_surfaces"],

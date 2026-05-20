@@ -116,6 +116,7 @@ def stdlib_workspace_summary_for_tmp(tmp_path: Path) -> dict[str, Any]:
             "module_inventory": "stdlib/module_inventory.json",
             "stability_policy": "stdlib/stability_policy.json",
             "package_surface": "stdlib/package_surface.json",
+            "compatibility_gates": "stdlib/compatibility_gates.json",
         },
         materialization=materialization,
     )

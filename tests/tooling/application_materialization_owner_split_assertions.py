@@ -38,6 +38,7 @@ def assert_stdlib_workspace_summary_payload(payload: dict[str, Any]) -> None:
         "stdlib/core/main.objc3",
         "stdlib/workspace.json",
     ]
+    assert payload["compatibility_gates"] == "stdlib/compatibility_gates.json"
     assert payload["modules"] == [
         {
             "canonical_module": "objc3.core",

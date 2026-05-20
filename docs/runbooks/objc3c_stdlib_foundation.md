@@ -24,6 +24,7 @@ Authoritative inputs:
 - `stdlib/core_architecture.json`
 - `stdlib/advanced_architecture.json`
 - `stdlib/semantic_policy.json`
+- `stdlib/compatibility_gates.json`
 - `stdlib/lowering_import_surface.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
@@ -67,6 +68,18 @@ path:
 It also freezes the import identity handoff between canonical spec module names
 and identifier-safe implementation module declarations.
 
+## Stdlib V1 Compatibility Gates
+
+The checked-in stdlib v1 compatibility contract is:
+
+- `stdlib/compatibility_gates.json`
+
+It binds the public stdlib v1 claim to exact ABI signatures in module manifests,
+the explicit semantic policy, package manifest fields, and existing executable
+positive/negative stdlib evidence. ABI signature drift, semantic-policy drift,
+strict-system capability widening, missing package fields, or missing
+conformance evidence must fail closed before a support claim is published.
+
 ## Exact Live Implementation Paths
 
 - package bridge: `npm run objc3c -- <action>`
@@ -77,6 +90,7 @@ and identifier-safe implementation module declarations.
   - `npm run objc3c -- validate-runnable-stdlib-foundation`
   - `npm run objc3c -- package-runnable-toolchain`
 - `stdlib/advanced_architecture.json`
+- `stdlib/compatibility_gates.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
 - `docs/runbooks/objc3c_stdlib_advanced.md`

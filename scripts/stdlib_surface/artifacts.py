@@ -10,7 +10,7 @@ from check_stdlib_surface_model import CanonicalModuleSurface, PackageImportSurf
 
 
 _DECLARATION_NAME_RE = re.compile(
-    r"^\s*(?:extern\s+fn|fn|let)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+    r"^\s*(?:extern\s+fn|async\s+fn|fn|let)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
 )
 
 

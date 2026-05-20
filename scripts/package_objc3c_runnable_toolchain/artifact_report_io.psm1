@@ -39,6 +39,7 @@ function Get-RunnableToolchainPackageSurfacePayloads {
     )
 
   $stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
+  $stdlibCompatibilityGatesRelativePath = "stdlib/compatibility_gates.json"
   $stdlibAdvancedHelperPackageSurfaceRelativePath = "stdlib/advanced_helper_package_surface.json"
   $stdlibProgramSurfaceRelativePath = "stdlib/program_surface.json"
   $showcaseDemoPackagesRelativePath = "showcase/demo_packages.json"
@@ -50,6 +51,10 @@ function Get-RunnableToolchainPackageSurfacePayloads {
     StdlibLoweringImportSurfacePayload = Read-RunnableToolchainPackageJsonHashtable `
       -PackageRoot $PackageRoot `
       -RelativePath $stdlibLoweringImportSurfaceRelativePath
+    StdlibCompatibilityGatesRelativePath = $stdlibCompatibilityGatesRelativePath
+    StdlibCompatibilityGatesPayload = Read-RunnableToolchainPackageJsonHashtable `
+      -PackageRoot $PackageRoot `
+      -RelativePath $stdlibCompatibilityGatesRelativePath
     StdlibAdvancedHelperPackageSurfaceRelativePath = $stdlibAdvancedHelperPackageSurfaceRelativePath
     StdlibAdvancedHelperPackageSurfacePayload = Read-RunnableToolchainPackageJsonHashtable `
       -PackageRoot $PackageRoot `

@@ -10,6 +10,8 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
   $repoSupercleanSurfacePayload = $SurfacePayloads.RepoSupercleanSurfacePayload
   $stdlibLoweringImportSurfaceRelativePath = $SurfacePayloads.StdlibLoweringImportSurfaceRelativePath
   $stdlibLoweringImportSurfacePayload = $SurfacePayloads.StdlibLoweringImportSurfacePayload
+  $stdlibCompatibilityGatesRelativePath = $SurfacePayloads.StdlibCompatibilityGatesRelativePath
+  $stdlibCompatibilityGatesPayload = $SurfacePayloads.StdlibCompatibilityGatesPayload
   $stdlibAdvancedHelperPackageSurfaceRelativePath = $SurfacePayloads.StdlibAdvancedHelperPackageSurfaceRelativePath
   $stdlibAdvancedHelperPackageSurfacePayload = $SurfacePayloads.StdlibAdvancedHelperPackageSurfacePayload
   $stdlibProgramSurfaceRelativePath = $SurfacePayloads.StdlibProgramSurfaceRelativePath
@@ -52,6 +54,16 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
     stdlib_stability_policy = "stdlib/stability_policy.json"
     stdlib_package_surface = "stdlib/package_surface.json"
     stdlib_advanced_architecture = "stdlib/advanced_architecture.json"
+    stdlib_compatibility_gates = $stdlibCompatibilityGatesRelativePath
+    stdlib_compatibility_gate_summary = [ordered]@{
+      contract_id = $stdlibCompatibilityGatesPayload["contract_id"]
+      stdlib_major_version = $stdlibCompatibilityGatesPayload["stdlib_major_version"]
+      abi_gate_mode = $stdlibCompatibilityGatesPayload["abi_gate"]["mode"]
+      semantic_gate_mode = $stdlibCompatibilityGatesPayload["semantic_gate"]["mode"]
+      package_gate_manifest_fields = $stdlibCompatibilityGatesPayload["package_gate"]["required_manifest_fields"]
+      conformance_positive_fixture = $stdlibCompatibilityGatesPayload["conformance_gate"]["positive_fixture"]
+      conformance_negative_fixture = $stdlibCompatibilityGatesPayload["conformance_gate"]["negative_fixture"]
+    }
     stdlib_lowering_import_surface = $stdlibLoweringImportSurfaceRelativePath
     stdlib_advanced_helper_package_surface = $stdlibAdvancedHelperPackageSurfaceRelativePath
     stdlib_lowering_artifact_filenames = $stdlibLoweringImportSurfacePayload["artifact_filenames"]

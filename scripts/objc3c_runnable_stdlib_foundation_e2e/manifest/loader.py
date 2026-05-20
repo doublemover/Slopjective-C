@@ -48,6 +48,10 @@ def load_stdlib_package_surface(
     module_inventory = package_path(package_root, manifest["stdlib_module_inventory"])
     stability_policy = package_path(package_root, manifest["stdlib_stability_policy"])
     package_surface = package_path(package_root, manifest["stdlib_package_surface"])
+    compatibility_gates = package_path(
+        package_root,
+        manifest["stdlib_compatibility_gates"],
+    )
     lowering_import_surface = package_path(
         package_root,
         manifest["stdlib_lowering_import_surface"],
@@ -66,12 +70,14 @@ def load_stdlib_package_surface(
         module_inventory,
         stability_policy,
         package_surface,
+        compatibility_gates,
         lowering_import_surface,
         advanced_helper_package_surface,
     ):
         require_packaged_file(path)
 
     package_surface_payload = load_json(package_surface)
+    compatibility_gates_payload = load_json(compatibility_gates)
     stdlib_program_surface_payload = load_json(stdlib_program_contract)
     lowering_import_surface_payload = load_json(lowering_import_surface)
     advanced_helper_package_surface_payload = load_json(advanced_helper_package_surface)
@@ -79,6 +85,7 @@ def load_stdlib_package_surface(
         manifest=manifest,
         stdlib_surface=stdlib_surface,
         package_surface_payload=package_surface_payload,
+        compatibility_gates_payload=compatibility_gates_payload,
         stdlib_program_surface_payload=stdlib_program_surface_payload,
         lowering_import_surface_payload=lowering_import_surface_payload,
         advanced_helper_package_surface_payload=advanced_helper_package_surface_payload,
@@ -104,9 +111,11 @@ def load_stdlib_package_surface(
         module_inventory=module_inventory,
         stability_policy=stability_policy,
         package_surface=package_surface,
+        compatibility_gates=compatibility_gates,
         lowering_import_surface=lowering_import_surface,
         advanced_helper_package_surface=advanced_helper_package_surface,
         package_surface_payload=package_surface_payload,
+        compatibility_gates_payload=compatibility_gates_payload,
         stdlib_program_surface_payload=stdlib_program_surface_payload,
         lowering_import_surface_payload=lowering_import_surface_payload,
         advanced_helper_package_surface_payload=advanced_helper_package_surface_payload,

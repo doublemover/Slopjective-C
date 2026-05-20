@@ -29,6 +29,7 @@ Exact live implementation paths for downstream work:
 - `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3`
 - `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3`
 - `stdlib/semantic_policy.json`
+- `stdlib/compatibility_gates.json`
 - `stdlib/modules/objc3.core/module.json`
 - `stdlib/modules/objc3.errors/module.json`
 - `stdlib/modules/objc3.keypath/module.json`
@@ -159,6 +160,10 @@ modules without updating the checked-in architecture contract.
 
 - all core-stdlib helpers remain deterministic and route through the runtime
   stdlib core ABI
+- stdlib major-version `1` compatibility is gated by
+  `stdlib/compatibility_gates.json`; runtime ABI signatures must exactly match
+  the checked-in module manifest, semantic drift must fail closed, and packaged
+  stdlib validation must carry the same gate summary
 - the execution fixture `stdlib_core_runtime_helpers.objc3` must keep proving
   linked runtime calls, and `stdlib_core_runtime_helper_signature_conflict.objc3`
   must keep ABI drift rejected before runtime execution

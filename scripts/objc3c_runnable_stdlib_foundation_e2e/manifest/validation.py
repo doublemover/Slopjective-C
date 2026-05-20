@@ -52,6 +52,15 @@ def validate_manifest_surfaces(
         isinstance(stdlib_modules, list) and stdlib_modules,
         "package manifest missing stdlib_modules",
     )
+    expect(
+        isinstance(manifest.get("stdlib_compatibility_gates"), str)
+        and manifest["stdlib_compatibility_gates"] == "stdlib/compatibility_gates.json",
+        "package manifest missing stdlib compatibility gate contract",
+    )
+    expect(
+        isinstance(manifest.get("stdlib_compatibility_gate_summary"), dict),
+        "package manifest missing stdlib compatibility gate summary",
+    )
 
 
 def validate_surface_payloads(
@@ -59,6 +68,7 @@ def validate_surface_payloads(
     manifest: dict[str, Any],
     stdlib_surface: object,
     package_surface_payload: dict[str, Any],
+    compatibility_gates_payload: dict[str, Any],
     stdlib_program_surface_payload: dict[str, Any],
     lowering_import_surface_payload: dict[str, Any],
     advanced_helper_package_surface_payload: dict[str, Any],
@@ -76,6 +86,52 @@ def validate_surface_payloads(
         package_surface_payload.get("advanced_helper_package_surface")
         == "stdlib/advanced_helper_package_surface.json",
         "packaged stdlib package surface drifted from the advanced helper package contract",
+    )
+    expect(
+        package_surface_payload.get("compatibility_gates")
+        == "stdlib/compatibility_gates.json",
+        "packaged stdlib package surface drifted from the compatibility gate contract",
+    )
+    compatibility_summary = manifest.get("stdlib_compatibility_gate_summary")
+    expect(
+        isinstance(compatibility_summary, dict),
+        "package manifest stdlib compatibility summary malformed",
+    )
+    assert isinstance(compatibility_summary, dict)
+    expect(
+        compatibility_summary.get("contract_id")
+        == compatibility_gates_payload.get("contract_id"),
+        "package manifest stdlib compatibility contract id drifted",
+    )
+    expect(
+        compatibility_summary.get("stdlib_major_version")
+        == compatibility_gates_payload.get("stdlib_major_version"),
+        "package manifest stdlib compatibility major version drifted",
+    )
+    expect(
+        compatibility_summary.get("abi_gate_mode")
+        == compatibility_gates_payload.get("abi_gate", {}).get("mode"),
+        "package manifest stdlib ABI gate mode drifted",
+    )
+    expect(
+        compatibility_summary.get("semantic_gate_mode")
+        == compatibility_gates_payload.get("semantic_gate", {}).get("mode"),
+        "package manifest stdlib semantic gate mode drifted",
+    )
+    expect(
+        compatibility_summary.get("package_gate_manifest_fields")
+        == compatibility_gates_payload.get("package_gate", {}).get("required_manifest_fields"),
+        "package manifest stdlib compatibility required fields drifted",
+    )
+    expect(
+        compatibility_summary.get("conformance_positive_fixture")
+        == compatibility_gates_payload.get("conformance_gate", {}).get("positive_fixture"),
+        "package manifest stdlib compatibility positive fixture drifted",
+    )
+    expect(
+        compatibility_summary.get("conformance_negative_fixture")
+        == compatibility_gates_payload.get("conformance_gate", {}).get("negative_fixture"),
+        "package manifest stdlib compatibility negative fixture drifted",
     )
     expect(
         manifest.get("stdlib_program_command_surfaces")
