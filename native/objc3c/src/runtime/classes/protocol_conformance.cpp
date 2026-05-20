@@ -18,6 +18,17 @@
 
 namespace objc3c::runtime {
 
+namespace {
+
+void RecordProtocolQueryFailure(std::string &failure_reason,
+                                const char *reason) {
+  if (failure_reason.empty() && reason != nullptr && reason[0] != '\0') {
+    failure_reason = reason;
+  }
+}
+
+}  // namespace
+
 const void *ProtocolAggregateEntry(
     const objc3_runtime_pointer_aggregate *aggregate, std::uint64_t index) {
   return RuntimeAggregateEntry(aggregate, index);
@@ -48,7 +59,8 @@ bool QueryProtocolConformanceFromProtocolRecordUnlocked(
     const char *protocol_name,
     std::unordered_set<const EmittedProtocolRecord *> &visited,
     std::uint64_t &visited_protocol_count,
-    ProtocolConformanceMatch &match) {
+    ProtocolConformanceMatch &match,
+    std::string &failure_reason) {
   if (start_record == nullptr || protocol_name == nullptr ||
       protocol_name[0] == '\0') {
     return false;
@@ -64,6 +76,8 @@ bool QueryProtocolConformanceFromProtocolRecordUnlocked(
       continue;
     }
     if (record->protocol_name == nullptr || record->owner_identity == nullptr) {
+      RecordProtocolQueryFailure(failure_reason,
+                                 "malformed protocol descriptor");
       return false;
     }
     ++visited_protocol_count;
@@ -86,6 +100,8 @@ bool QueryProtocolConformanceFromProtocolRecordUnlocked(
       const auto *inherited_record = static_cast<const EmittedProtocolRecord *>(
           ProtocolAggregateEntry(inherited_refs, index));
       if (inherited_record == nullptr) {
+        RecordProtocolQueryFailure(failure_reason,
+                                   "malformed inherited protocol reference");
         return false;
       }
       stack.push_back({inherited_record, protocol_depth + 1});
@@ -99,7 +115,8 @@ bool QueryProtocolConformanceFromAggregateUnlocked(
     const char *protocol_name,
     std::unordered_set<const EmittedProtocolRecord *> &visited,
     std::uint64_t &visited_protocol_count,
-    ProtocolConformanceMatch &match) {
+    ProtocolConformanceMatch &match,
+    std::string &failure_reason) {
   if (protocol_refs == nullptr) {
     return false;
   }
@@ -107,12 +124,17 @@ bool QueryProtocolConformanceFromAggregateUnlocked(
     const auto *protocol_record = static_cast<const EmittedProtocolRecord *>(
         ProtocolAggregateEntry(protocol_refs, index));
     if (protocol_record == nullptr) {
+      RecordProtocolQueryFailure(failure_reason,
+                                 "malformed adopted protocol reference");
       return false;
     }
     if (QueryProtocolConformanceFromProtocolRecordUnlocked(
             protocol_record, protocol_name, visited, visited_protocol_count,
-            match)) {
+            match, failure_reason)) {
       return true;
+    }
+    if (!failure_reason.empty()) {
+      return false;
     }
   }
   return false;
@@ -146,7 +168,8 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
     const RealizedClassNode *start_node,
     const char *protocol_name,
     std::uint64_t &visited_protocol_count,
-    ProtocolConformanceMatch &match) {
+    ProtocolConformanceMatch &match,
+    std::string &failure_reason) {
   // category-attachment-protocol-conformance anchor: runtime-facing protocol
   // conformance queries walk realized class nodes, attached category protocol
   // refs, and inherited protocol closures without widening the public dispatch
@@ -160,18 +183,23 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
   const RealizedClassNode *node = start_node;
   while (node != nullptr && visited_nodes.insert(node).second) {
     if (node->bundle == nullptr) {
+      RecordProtocolQueryFailure(failure_reason,
+                                 "malformed realized class node");
       return false;
     }
     match.matched_attachment_owner_identity.clear();
     const EmittedClassRecord &record = node->bundle->class_record;
     if (QueryProtocolConformanceFromAggregateUnlocked(
             record.adopted_protocol_refs, protocol_name, visited_protocols,
-            visited_protocol_count, match)) {
+            visited_protocol_count, match, failure_reason)) {
       match.matched_class_name = node->class_name;
       match.matched_class_owner_identity = node->class_owner_identity;
       match.matched_from_category = false;
       match.matched_from_superclass = node != start_node;
       return true;
+    }
+    if (!failure_reason.empty()) {
+      return false;
     }
     for (const EmittedCategoryRecord *category_record :
          node->attached_category_records) {
@@ -180,7 +208,8 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
       }
       if (QueryProtocolConformanceFromAggregateUnlocked(
               category_record->adopted_protocol_refs, protocol_name,
-              visited_protocols, visited_protocol_count, match)) {
+              visited_protocols, visited_protocol_count, match,
+              failure_reason)) {
         match.matched_attachment_owner_identity =
             category_record->category_owner_identity != nullptr
                 ? category_record->category_owner_identity
@@ -190,6 +219,9 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
         match.matched_from_category = true;
         match.matched_from_superclass = node != start_node;
         return true;
+      }
+      if (!failure_reason.empty()) {
+        return false;
       }
     }
     node = node->has_super_node

@@ -22,6 +22,8 @@ bool RuntimeClassMetadataTableIsSupported(
     std::string &diagnostic_reason);
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
+std::vector<const EmittedClassBundle *> CollectClassBundlesForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name);
 std::string ResolveInterfaceOwnerIdentityForClass(
     const RegisteredImageMetadata &record, const std::string &class_name,
     const std::string &default_owner_identity);

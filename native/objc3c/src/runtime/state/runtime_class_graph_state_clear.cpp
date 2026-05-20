@@ -33,6 +33,7 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_conformance_attachment_owner_identity.clear();
   state.last_protocol_conformance_matched_class_name.clear();
   state.last_protocol_conformance_matched_class_owner_identity.clear();
+  state.last_protocol_conformance_failure_reason.clear();
   state.last_protocol_conformance_matched_protocol_depth = 0;
   state.last_protocol_conformance_matched_from_category = false;
   state.last_protocol_conformance_matched_from_superclass = false;
@@ -40,6 +41,7 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_query_class_found = false;
   state.last_protocol_query_protocol_found = false;
   state.last_protocol_query_conforms = false;
+  state.last_protocol_query_malformed_metadata = false;
   ResetRuntimePropertyReflectionQueryStateUnlocked(state);
 }
 

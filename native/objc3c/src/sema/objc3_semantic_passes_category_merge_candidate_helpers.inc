@@ -5,6 +5,11 @@ static bool IsRealizedClassOwner(const Objc3SemanticIntegrationSurface &surface,
              surface.implementations.end();
 }
 
+static bool IsDeclaredClassOwner(const Objc3SemanticIntegrationSurface &surface,
+                                 const std::string &class_name) {
+  return surface.interfaces.find(class_name) != surface.interfaces.end();
+}
+
 static void MergeCategoryMethodCandidate(
     const Objc3SemanticIntegrationSurface &surface, const std::string &class_name,
     const Objc3CategoryMergeOrderEntry &entry, const std::string &selector,

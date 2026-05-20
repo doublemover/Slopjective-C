@@ -107,20 +107,26 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          TypedStrictErrorResultPassed(
              values.protocol_strict_error_typed_result) &&
          graph.attached_category_count == 1 &&
+         graph.category_attachment_generation > 0 &&
+         graph.method_surface_generation > 0 &&
          graph.protocol_conformance_edge_count >= 2 &&
          widget.attached_category_count == 1 &&
          widget.direct_protocol_count == 1 &&
          widget.attached_protocol_count == 1 && base.found == 1 &&
          base.attached_protocol_count == 0 && worker.conforms == 1 &&
+         worker.malformed_metadata == 0 &&
          TextPresent(worker.matched_protocol_owner_identity) &&
          worker.matched_protocol_depth == 0 &&
          worker.matched_from_category == 0 && tracer.conforms == 1 &&
+         tracer.malformed_metadata == 0 &&
          tracer.visited_protocol_count >= 2 &&
          TextEquals(tracer.matched_attachment_owner_identity,
                     "category:Widget(Tracing)") &&
          base_worker.class_found == 1 && base_worker.protocol_found == 1 &&
-         base_worker.conforms == 0 && derived_worker.class_found == 1 &&
+         base_worker.conforms == 0 && base_worker.malformed_metadata == 0 &&
+         derived_worker.class_found == 1 &&
          derived_worker.protocol_found == 1 && derived_worker.conforms == 1 &&
+         derived_worker.malformed_metadata == 0 &&
          TextEquals(derived_worker.matched_protocol_owner_identity,
                     "protocol:Worker") &&
          TextEquals(derived_worker.matched_class_name, "Derived") &&
@@ -142,9 +148,17 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          TextEquals(category_entry.resolved_owner_identity,
                     "implementation:Widget(Tracing)::instance_method:"
                     "tracedValue") &&
+         category_entry.cache_category_attachment_generation ==
+             graph.category_attachment_generation &&
+         category_entry.cache_method_surface_generation ==
+             graph.method_surface_generation &&
          category_entry.category_probe_count >= 1 && strict_entry.found == 1 &&
          strict_entry.resolved == 0 &&
          TextEquals(strict_entry.selector, "ignoredValue") &&
+         strict_entry.cache_category_attachment_generation ==
+             graph.category_attachment_generation &&
+         strict_entry.cache_method_surface_generation ==
+             graph.method_surface_generation &&
          strict_entry.category_probe_count >= 1 &&
          strict_entry.protocol_probe_count >= 1;
 }

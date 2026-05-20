@@ -173,12 +173,14 @@ typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   int matched_from_category;
   int matched_from_superclass;
   int matched_via_inherited_protocol;
+  int malformed_metadata;
   const char *class_name;
   const char *protocol_name;
   const char *matched_protocol_owner_identity;
   const char *matched_attachment_owner_identity;
   const char *matched_class_name;
   const char *matched_class_owner_identity;
+  const char *failure_reason;
 } objc3_runtime_protocol_conformance_query_snapshot;
 
 typedef struct objc3_runtime_object_model_query_state_snapshot {

@@ -61,6 +61,9 @@ int ReplayRegisteredImagesForTestingUnlocked(
           ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);
       state.last_replay_status =
           OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+      state.last_replayed_image_count = 0;
+      state.last_replayed_module_name.clear();
+      state.last_replayed_translation_unit_identity_key.clear();
       return state.last_replay_status;
     }
 

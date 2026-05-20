@@ -50,6 +50,17 @@ void PublishInheritedOnlyRuntimeLayoutIfNeeded(
   BumpRuntimeStorageSurfaceGenerationUnlocked(state);
 }
 
+bool RejectRealizedPropertyLayoutUnlocked(RuntimeState &state,
+                                          const RealizedClassNode &node,
+                                          const char *reason) {
+  ++state.malformed_class_metadata_rejection_count;
+  state.last_malformed_class_graph_reason = "runtime-property-layout:";
+  state.last_malformed_class_graph_reason += node.class_name;
+  state.last_malformed_class_graph_reason += ":";
+  state.last_malformed_class_graph_reason += reason != nullptr ? reason : "";
+  return false;
+}
+
 }  // namespace
 
 bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
@@ -82,7 +93,8 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
        node.attached_category_records) {
     if (category_record == nullptr || category_record->owner_identity == nullptr ||
         category_record->owner_identity[0] == '\0') {
-      return false;
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "category-owner-identity-missing");
     }
     ivar_owner_identities.insert(category_record->owner_identity);
     descriptor_owner_identities.insert(category_record->owner_identity);
@@ -93,7 +105,8 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
                                                    ivar_layout_index)) {
     PublishInheritedOnlyRuntimeLayoutIfNeeded(state, node,
                                              inherited_size_bytes);
-    return false;
+    return RejectRealizedPropertyLayoutUnlocked(
+        state, node, "ivar-layout-index-invalid");
   }
   node.runtime_instance_size_bytes =
       std::max(RuntimePropertyIvarLayoutInstanceSize(ivar_layout_index),
@@ -105,7 +118,8 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
         RuntimeAggregateEntry(node.image->property_descriptor_root, index));
     if (descriptor == nullptr ||
         !RuntimePropertyDescriptorHasRealizableAccessorShape(*descriptor)) {
-      return false;
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "property-accessor-shape-invalid");
     }
     if (descriptor->declaration_owner_identity == nullptr ||
         descriptor_owner_identities.find(
@@ -121,12 +135,14 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
         FindRuntimePropertyIvarDescriptorForProperty(ivar_layout_index,
                                                      *descriptor);
     if (ivar_descriptor == nullptr) {
-      continue;
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "synthesized-storage-ivar-layout-missing");
     }
     RealizedPropertyAccessor accessor;
     if (!BuildRuntimePropertyAccessorRecord(*descriptor, *ivar_descriptor,
                                             accessor)) {
-      return false;
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "property-accessor-record-invalid");
     }
     node.runtime_property_accessors.push_back(std::move(accessor));
   }

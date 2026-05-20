@@ -170,6 +170,7 @@ struct RuntimeState {
   std::string last_protocol_conformance_attachment_owner_identity;
   std::string last_protocol_conformance_matched_class_name;
   std::string last_protocol_conformance_matched_class_owner_identity;
+  std::string last_protocol_conformance_failure_reason;
   std::uint64_t last_protocol_conformance_matched_protocol_depth = 0;
   bool last_protocol_conformance_matched_from_category = false;
   bool last_protocol_conformance_matched_from_superclass = false;
@@ -177,6 +178,7 @@ struct RuntimeState {
   bool last_protocol_query_class_found = false;
   bool last_protocol_query_protocol_found = false;
   bool last_protocol_query_conforms = false;
+  bool last_protocol_query_malformed_metadata = false;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
   std::unordered_map<int, RuntimeBlockRecord> runtime_blocks_by_handle;
   std::unordered_map<RuntimeBlockByrefCell *,

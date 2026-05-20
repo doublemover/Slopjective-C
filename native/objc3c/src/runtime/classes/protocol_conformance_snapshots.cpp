@@ -29,12 +29,14 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
   snapshot->matched_from_category = 0;
   snapshot->matched_from_superclass = 0;
   snapshot->matched_via_inherited_protocol = 0;
+  snapshot->malformed_metadata = 0;
   snapshot->class_name = nullptr;
   snapshot->protocol_name = nullptr;
   snapshot->matched_protocol_owner_identity = nullptr;
   snapshot->matched_attachment_owner_identity = nullptr;
   snapshot->matched_class_name = nullptr;
   snapshot->matched_class_owner_identity = nullptr;
+  snapshot->failure_reason = nullptr;
 
   if (class_name == nullptr || class_name[0] == '\0' ||
       protocol_name == nullptr || protocol_name[0] == '\0') {
@@ -49,6 +51,7 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
   state.last_protocol_conformance_attachment_owner_identity.clear();
   state.last_protocol_conformance_matched_class_name.clear();
   state.last_protocol_conformance_matched_class_owner_identity.clear();
+  state.last_protocol_conformance_failure_reason.clear();
   state.last_protocol_conformance_matched_protocol_depth = 0;
   state.last_protocol_conformance_matched_from_category = false;
   state.last_protocol_conformance_matched_from_superclass = false;
@@ -56,6 +59,7 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
   state.last_protocol_query_class_found = false;
   state.last_protocol_query_protocol_found = false;
   state.last_protocol_query_conforms = false;
+  state.last_protocol_query_malformed_metadata = false;
   snapshot->class_name =
       objc3c::runtime::BorrowRuntimeCString(
           state.last_protocol_conformance_class_name);
@@ -86,9 +90,10 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
       static_cast<std::uint64_t>(node.attached_category_records.size());
 
   objc3c::runtime::ProtocolConformanceMatch match;
+  std::string failure_reason;
   if (objc3c::runtime::QueryRealizedClassProtocolConformanceUnlocked(
           state, &node, protocol_name, snapshot->visited_protocol_count,
-          match)) {
+          match, failure_reason)) {
     snapshot->conforms = 1;
     state.last_protocol_query_conforms = true;
     state.last_protocol_conformance_owner_identity =
@@ -127,6 +132,14 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
     snapshot->matched_class_owner_identity =
         objc3c::runtime::BorrowRuntimeCString(
             state.last_protocol_conformance_matched_class_owner_identity);
+  }
+  if (!failure_reason.empty()) {
+    state.last_protocol_query_malformed_metadata = true;
+    state.last_protocol_conformance_failure_reason = failure_reason;
+    snapshot->malformed_metadata = 1;
+    snapshot->failure_reason =
+        objc3c::runtime::BorrowRuntimeCString(
+            state.last_protocol_conformance_failure_reason);
   }
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }

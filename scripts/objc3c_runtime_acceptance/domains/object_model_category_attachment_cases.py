@@ -105,12 +105,17 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected Widget to conform directly to Worker",
     )
     expect(
+        worker.get("malformed_metadata") == 0,
+        "expected direct Worker conformance query to avoid malformed metadata",
+    )
+    expect(
         worker.get("matched_protocol_depth", 0) == 0
         and worker.get("matched_from_category", 0) == 0,
         "expected direct Worker conformance to publish a direct class match route",
     )
     expect(
         tracer.get("conforms") == 1
+        and tracer.get("malformed_metadata") == 0
         and tracer.get("visited_protocol_count", 0) >= 2
         and tracer.get("matched_attachment_owner_identity") == "category:Widget(Tracing)",
         "expected Widget to conform to inherited Tracer protocol through the category attachment",
@@ -122,9 +127,14 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected Base/Worker conformance query to fail closed without inheriting subclass protocols",
     )
     expect(
+        base_worker.get("malformed_metadata") == 0,
+        "expected Base/Worker conformance miss to stay distinct from malformed metadata",
+    )
+    expect(
         derived_worker.get("class_found") == 1
         and derived_worker.get("protocol_found") == 1
         and derived_worker.get("conforms") == 1
+        and derived_worker.get("malformed_metadata") == 0
         and derived_worker.get("matched_protocol_owner_identity") == "protocol:Worker"
         and derived_worker.get("matched_class_name") == "Derived"
         and derived_worker.get("matched_protocol_depth", 0) >= 1
@@ -241,6 +251,60 @@ def _compile_category_conflict_diagnostics(case_dir: Path) -> dict[str, Any]:
                     "category merge failure: category interface 'Widget(Debug)' is missing category implementation for realized class 'Widget'",
                 ],
                 expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-unknown-class-rejected",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_unknown_class_rejected.objc3",
+                expected_snippets=[
+                    "category attachment failure: category interface 'MissingOwner(Tracing)' attaches to unknown class 'MissingOwner'",
+                    "category attachment failure: category implementation 'MissingOwner(Tracing)' attaches to unknown class 'MissingOwner'",
+                ],
+                expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="category-unavailable-class-rejected",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "category_unavailable_class_rejected.objc3",
+                expected_snippets=[
+                    "category attachment failure: category interface 'Widget(Tracing)' attaches to unavailable class 'Widget' without a realized implementation",
+                    "category attachment failure: category implementation 'Widget(Tracing)' attaches to unavailable class 'Widget' without a realized implementation",
+                ],
+                expected_codes=["O3S219"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="protocol-requirement-duplicate-conflict",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "protocol_requirement_duplicate_conflict_rejected.objc3",
+                expected_snippets=[
+                    "protocol requirement conflict: duplicate selector '-work' in protocol 'Worker'",
+                ],
+                expected_codes=["O3S218"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="protocol-requirement-inherited-conflict",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "protocol_requirement_inherited_conflict_rejected.objc3",
+                expected_snippets=[
+                    "protocol requirement conflict: protocol 'MixedReadable' inherits incompatible selector '-readValue' from protocol 'TextReadable'",
+                ],
+                expected_codes=["O3S218"],
             ),
             NegativeDiagnosticExpectation(
                 key="protocol-dispatch-intent-rejected",

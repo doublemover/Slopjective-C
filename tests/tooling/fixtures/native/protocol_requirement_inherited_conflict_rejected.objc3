@@ -1,0 +1,17 @@
+// Expected diagnostic code(s): O3S218.
+module protocolRequirementInheritedConflictRejected;
+
+@protocol TextReadable
+- (id)readValue;
+@end
+
+@protocol NumberReadable
+- (i32)readValue;
+@end
+
+@protocol MixedReadable <TextReadable, NumberReadable>
+@end
+
+fn main() -> i32 {
+  return 0;
+}

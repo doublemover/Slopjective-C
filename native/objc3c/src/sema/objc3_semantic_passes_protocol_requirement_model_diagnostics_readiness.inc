@@ -13,6 +13,8 @@ struct Objc3ProtocolRequirementClosure {
   std::string conflicting_member_name;
   bool conflicting_member_is_method = false;
   bool conflicting_selector_is_class_method = false;
+  unsigned conflicting_member_line = 1;
+  unsigned conflicting_member_column = 1;
   std::unordered_map<std::string, const Objc3ProtocolPropertyRequirementInfo *>
       required_properties_by_name;
   std::unordered_map<std::string, const Objc3ProtocolPropertyRequirementInfo *>

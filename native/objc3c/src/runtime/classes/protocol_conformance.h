@@ -26,7 +26,8 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
     const RealizedClassNode *start_node,
     const char *protocol_name,
     std::uint64_t &visited_protocol_count,
-    ProtocolConformanceMatch &match);
+    ProtocolConformanceMatch &match,
+    std::string &failure_reason);
 bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
                                                     const char *protocol_name);
 

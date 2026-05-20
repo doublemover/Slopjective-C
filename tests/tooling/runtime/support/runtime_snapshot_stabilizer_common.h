@@ -74,7 +74,8 @@ inline void StabilizeConformanceQuery(
     std::string &protocol_owner_storage,
     std::string &attachment_owner_storage,
     std::string *matched_class_storage = nullptr,
-    std::string *matched_class_owner_storage = nullptr) {
+    std::string *matched_class_owner_storage = nullptr,
+    std::string *failure_reason_storage = nullptr) {
   StabilizeNullableCString(snapshot.class_name, class_storage,
                            snapshot.class_name);
   StabilizeNullableCString(snapshot.protocol_name, protocol_storage,
@@ -94,6 +95,11 @@ inline void StabilizeConformanceQuery(
     StabilizeNullableCString(snapshot.matched_class_owner_identity,
                              *matched_class_owner_storage,
                              snapshot.matched_class_owner_identity);
+  }
+  if (failure_reason_storage != nullptr) {
+    StabilizeNullableCString(snapshot.failure_reason,
+                             *failure_reason_storage,
+                             snapshot.failure_reason);
   }
 }
 

@@ -10,7 +10,8 @@ inline void StabilizeConformanceQueryObservation(
     ConformanceQueryObservation &observation) {
   ::objc3c::runtime::probe::StabilizeConformanceQuery(
       observation.query, observation.class_name, observation.protocol_name,
-      observation.protocol_owner, observation.attachment_owner);
+      observation.protocol_owner, observation.attachment_owner, nullptr,
+      nullptr, &observation.failure_reason);
 }
 
 inline void StabilizePropertyEntryObservation(

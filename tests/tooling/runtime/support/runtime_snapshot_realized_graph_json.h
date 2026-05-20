@@ -225,6 +225,7 @@ inline void PrintConformanceQueryProtocolCategory(
   PrintIntField("matched_from_superclass", snapshot.matched_from_superclass);
   PrintIntField("matched_via_inherited_protocol",
                 snapshot.matched_via_inherited_protocol);
+  PrintIntField("malformed_metadata", snapshot.malformed_metadata);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
@@ -233,7 +234,8 @@ inline void PrintConformanceQueryProtocolCategory(
                    snapshot.matched_attachment_owner_identity);
   PrintStringField("matched_class_name", snapshot.matched_class_name);
   PrintStringField("matched_class_owner_identity",
-                   snapshot.matched_class_owner_identity, false);
+                   snapshot.matched_class_owner_identity);
+  PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
 
@@ -260,12 +262,14 @@ inline void PrintConformanceQueryCanonicalSummary(
     const objc3_runtime_protocol_conformance_query_snapshot &snapshot) {
   std::printf("{");
   PrintIntField("conforms", snapshot.conforms);
+  PrintIntField("malformed_metadata", snapshot.malformed_metadata);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
                    snapshot.matched_protocol_owner_identity);
   PrintStringField("matched_attachment_owner_identity",
-                   snapshot.matched_attachment_owner_identity, false);
+                   snapshot.matched_attachment_owner_identity);
+  PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
 
@@ -288,6 +292,7 @@ inline void PrintConformanceQueryProtocolInheritance(
   PrintIntField("matched_from_superclass", snapshot.matched_from_superclass);
   PrintIntField("matched_via_inherited_protocol",
                 snapshot.matched_via_inherited_protocol);
+  PrintIntField("malformed_metadata", snapshot.malformed_metadata);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
@@ -296,7 +301,8 @@ inline void PrintConformanceQueryProtocolInheritance(
                    snapshot.matched_attachment_owner_identity);
   PrintStringField("matched_class_name", snapshot.matched_class_name);
   PrintStringField("matched_class_owner_identity",
-                   snapshot.matched_class_owner_identity, false);
+                   snapshot.matched_class_owner_identity);
+  PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
 

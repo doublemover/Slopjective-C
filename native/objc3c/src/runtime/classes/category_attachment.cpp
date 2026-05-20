@@ -13,6 +13,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace objc3c::runtime {
@@ -29,13 +30,31 @@ struct PreferredCategoryRecord {
   const EmittedCategoryRecord *implementation_record = nullptr;
 };
 
+const char *RuntimeCategoryCString(const char *value) {
+  return value != nullptr ? value : "";
+}
+
+bool RuntimeCategoryCStringPresent(const char *value) {
+  return value != nullptr && value[0] != '\0';
+}
+
+void RecordCategoryAttachmentFailure(RuntimeState &state,
+                                     const std::string &class_name,
+                                     const std::string &reason) {
+  ++state.malformed_class_metadata_rejection_count;
+  state.last_malformed_class_graph_reason =
+      "category-attachment:" + reason + ":class=" + class_name;
+}
+
 bool AddPreferredCategoryRecord(
     const EmittedCategoryRecord &category_record,
-    std::unordered_map<std::string, PreferredCategoryRecord> &grouped_records) {
+    std::unordered_map<std::string, PreferredCategoryRecord> &grouped_records,
+    std::string &failure_reason) {
   if (category_record.class_name == nullptr ||
       category_record.category_name == nullptr ||
       category_record.record_kind == nullptr ||
       category_record.owner_identity == nullptr) {
+    failure_reason = "malformed-category-record";
     return false;
   }
   const std::string key =
@@ -47,6 +66,10 @@ bool AddPreferredCategoryRecord(
     if (preferred_record.implementation_record != nullptr &&
         std::string(preferred_record.implementation_record->owner_identity) !=
             std::string(category_record.owner_identity)) {
+      failure_reason =
+          "conflicting-category-implementation-owner:" +
+          std::string(category_record.class_name) + "(" +
+          std::string(category_record.category_name) + ")";
       return false;
     }
     preferred_record.implementation_record = &category_record;
@@ -56,18 +79,24 @@ bool AddPreferredCategoryRecord(
     if (preferred_record.interface_record != nullptr &&
         std::string(preferred_record.interface_record->owner_identity) !=
             std::string(category_record.owner_identity)) {
+      failure_reason =
+          "conflicting-category-interface-owner:" +
+          std::string(category_record.class_name) + "(" +
+          std::string(category_record.category_name) + ")";
       return false;
     }
     preferred_record.interface_record = &category_record;
     return true;
   }
+  failure_reason = "unknown-category-record-kind:" + record_kind;
   return false;
 }
 
 bool CollectPreferredCategoryRecords(
     const RuntimeState &state,
     const std::string &class_name,
-    std::vector<const EmittedCategoryRecord *> &preferred_records) {
+    std::vector<const EmittedCategoryRecord *> &preferred_records,
+    std::string &failure_reason) {
   // Class graph publication owns attachment selection: implementation records
   // win over interface records for the same category name, and conflicting
   // same-tier owners fail closed across the full registered-image set.
@@ -88,7 +117,8 @@ bool CollectPreferredCategoryRecords(
           class_name != category_record->class_name) {
         continue;
       }
-      if (!AddPreferredCategoryRecord(*category_record, grouped_records)) {
+      if (!AddPreferredCategoryRecord(*category_record, grouped_records,
+                                      failure_reason)) {
         return false;
       }
     }
@@ -117,6 +147,142 @@ bool CollectPreferredCategoryRecords(
   return true;
 }
 
+const EmittedMethodListEntry *RuntimeCategoryMethodListEntries(
+    const EmittedMethodListHeader *header) {
+  return header == nullptr
+             ? nullptr
+             : reinterpret_cast<const EmittedMethodListEntry *>(header + 1);
+}
+
+bool ValidateCategoryMethodList(
+    const EmittedMethodListRef *method_list_ref,
+    const char *family_name,
+    const std::string &class_name,
+    const char *category_name,
+    std::unordered_set<std::string> &category_method_keys,
+    std::string &failure_reason) {
+  if (method_list_ref == nullptr || method_list_ref->count == 0) {
+    return true;
+  }
+  if (method_list_ref->method_list == nullptr ||
+      !RuntimeCategoryCStringPresent(method_list_ref->owner_identity)) {
+    failure_reason =
+        std::string("malformed-category-") + family_name + "-method-list:" +
+        class_name + "(" + RuntimeCategoryCString(category_name) + ")";
+    return false;
+  }
+  const auto *header =
+      static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
+  if (header == nullptr || header->count != method_list_ref->count) {
+    failure_reason =
+        std::string("malformed-category-") + family_name +
+        "-method-list-count:" + class_name + "(" +
+        RuntimeCategoryCString(category_name) + ")";
+    return false;
+  }
+  const EmittedMethodListEntry *entries =
+      RuntimeCategoryMethodListEntries(header);
+  for (std::uint64_t index = 0; index < header->count; ++index) {
+    const EmittedMethodListEntry &entry = entries[index];
+    if (!RuntimeCategoryCStringPresent(entry.selector) ||
+        !RuntimeCategoryCStringPresent(entry.owner_identity) ||
+        !RuntimeCategoryCStringPresent(entry.return_type_name)) {
+      failure_reason =
+          std::string("malformed-category-") + family_name + "-method-entry:" +
+          class_name + "(" + RuntimeCategoryCString(category_name) + ")";
+      return false;
+    }
+    const std::string method_key =
+        std::string(family_name) + "\n" + std::string(entry.selector);
+    if (!category_method_keys.insert(method_key).second) {
+      failure_reason =
+          std::string("duplicate-category-") + family_name +
+          "-method-selector:" + std::string(entry.selector);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ValidateCategoryPropertyDescriptors(
+    const RuntimeState &state,
+    const std::vector<const EmittedCategoryRecord *> &category_records,
+    std::string &failure_reason) {
+  std::unordered_set<std::string> category_owner_identities;
+  category_owner_identities.reserve(category_records.size());
+  for (const EmittedCategoryRecord *category_record : category_records) {
+    if (category_record != nullptr &&
+        RuntimeCategoryCStringPresent(category_record->owner_identity)) {
+      category_owner_identities.insert(category_record->owner_identity);
+    }
+  }
+  if (category_owner_identities.empty()) {
+    return true;
+  }
+
+  std::unordered_set<std::string> category_property_names;
+  for (const RegisteredImageMetadata *record : OrderedClassGraphImages(state)) {
+    if (record == nullptr || record->property_descriptor_root == nullptr) {
+      continue;
+    }
+    for (std::uint64_t index = 0; index < record->property_descriptor_count;
+         ++index) {
+      const auto *descriptor = static_cast<const EmittedPropertyDescriptor *>(
+          RuntimeAggregateEntry(record->property_descriptor_root, index));
+      if (descriptor == nullptr) {
+        failure_reason = "malformed-category-property-descriptor";
+        return false;
+      }
+      if (!RuntimeCategoryCStringPresent(
+              descriptor->declaration_owner_identity)) {
+        continue;
+      }
+      if (category_owner_identities.find(
+              descriptor->declaration_owner_identity) ==
+          category_owner_identities.end()) {
+        continue;
+      }
+      if (!RuntimeCategoryCStringPresent(descriptor->property_name)) {
+        failure_reason = "malformed-category-property-descriptor";
+        return false;
+      }
+      if (!category_property_names.insert(descriptor->property_name).second) {
+        failure_reason =
+            "duplicate-category-property:" +
+            std::string(descriptor->property_name);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool ValidateCategoryMemberSurface(
+    const RuntimeState &state,
+    const std::string &class_name,
+    const std::vector<const EmittedCategoryRecord *> &category_records,
+    std::string &failure_reason) {
+  std::unordered_set<std::string> category_method_keys;
+  for (const EmittedCategoryRecord *category_record : category_records) {
+    if (category_record == nullptr) {
+      failure_reason = "malformed-category-record";
+      return false;
+    }
+    if (!ValidateCategoryMethodList(category_record->instance_method_list_ref,
+                                    "instance", class_name,
+                                    category_record->category_name,
+                                    category_method_keys, failure_reason) ||
+        !ValidateCategoryMethodList(category_record->class_method_list_ref,
+                                    "class", class_name,
+                                    category_record->category_name,
+                                    category_method_keys, failure_reason)) {
+      return false;
+    }
+  }
+  return ValidateCategoryPropertyDescriptors(state, category_records,
+                                             failure_reason);
+}
+
 }  // namespace
 
 bool RuntimeCategoryAttachmentIsMaterializable(const char *category_name,
@@ -133,11 +299,20 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
   node.attached_category_records.clear();
   node.runtime_attachment_ready = false;
   if (node.image == nullptr) {
+    RecordCategoryAttachmentFailure(state, node.class_name,
+                                    "missing-realized-class-image");
     return false;
   }
   std::vector<const EmittedCategoryRecord *> category_records;
+  std::string failure_reason;
   if (!CollectPreferredCategoryRecords(state, node.class_name,
-                                       category_records)) {
+                                       category_records, failure_reason)) {
+    RecordCategoryAttachmentFailure(state, node.class_name, failure_reason);
+    return false;
+  }
+  if (!ValidateCategoryMemberSurface(state, node.class_name, category_records,
+                                     failure_reason)) {
+    RecordCategoryAttachmentFailure(state, node.class_name, failure_reason);
     return false;
   }
   for (const EmittedCategoryRecord *category_record : category_records) {
@@ -147,9 +322,15 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
         category_record->owner_identity == nullptr ||
         !RuntimeCategoryAttachmentIsMaterializable(
             category_record->category_name, node.class_name.c_str())) {
+      RecordCategoryAttachmentFailure(state, node.class_name,
+                                      "malformed-category-attachment");
       return false;
     }
     if (node.class_owner_identity != category_record->class_owner_identity) {
+      RecordCategoryAttachmentFailure(
+          state, node.class_name,
+          "category-class-owner-mismatch:" +
+              std::string(RuntimeCategoryCString(category_record->category_name)));
       return false;
     }
     node.attached_category_records.push_back(category_record);

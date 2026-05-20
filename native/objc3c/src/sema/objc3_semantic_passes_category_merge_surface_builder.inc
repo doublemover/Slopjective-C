@@ -12,7 +12,23 @@ static void ValidateAndBuildCategoryMergeSurfaces(
     if (!interface_decl.has_category) {
       continue;
     }
+    if (!IsDeclaredClassOwner(surface, interface_decl.name)) {
+      diagnostics.push_back(MakeDiag(
+          interface_decl.line, interface_decl.column, "O3S219",
+          "category attachment failure: category interface '" +
+              FormatObjcContainerName(interface_decl.name, true,
+                                      interface_decl.category_name) +
+              "' attaches to unknown class '" + interface_decl.name + "'"));
+      continue;
+    }
     if (!IsRealizedClassOwner(surface, interface_decl.name)) {
+      diagnostics.push_back(MakeDiag(
+          interface_decl.line, interface_decl.column, "O3S219",
+          "category attachment failure: category interface '" +
+              FormatObjcContainerName(interface_decl.name, true,
+                                      interface_decl.category_name) +
+              "' attaches to unavailable class '" + interface_decl.name +
+              "' without a realized implementation"));
       continue;
     }
 
@@ -48,7 +64,25 @@ static void ValidateAndBuildCategoryMergeSurfaces(
     if (!implementation_decl.has_category) {
       continue;
     }
+    if (!IsDeclaredClassOwner(surface, implementation_decl.name)) {
+      diagnostics.push_back(MakeDiag(
+          implementation_decl.line, implementation_decl.column, "O3S219",
+          "category attachment failure: category implementation '" +
+              FormatObjcContainerName(implementation_decl.name, true,
+                                      implementation_decl.category_name) +
+              "' attaches to unknown class '" + implementation_decl.name +
+              "'"));
+      continue;
+    }
     if (!IsRealizedClassOwner(surface, implementation_decl.name)) {
+      diagnostics.push_back(MakeDiag(
+          implementation_decl.line, implementation_decl.column, "O3S219",
+          "category attachment failure: category implementation '" +
+              FormatObjcContainerName(implementation_decl.name, true,
+                                      implementation_decl.category_name) +
+              "' attaches to unavailable class '" +
+              implementation_decl.name +
+              "' without a realized implementation"));
       continue;
     }
 

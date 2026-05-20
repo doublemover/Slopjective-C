@@ -55,6 +55,15 @@ bool AttachRealizedPropertyLayoutRecordsInSuperclassOrderUnlocked(
   return true;
 }
 
+void MarkMalformedRealizedClassGraphUnlocked(RuntimeState &state,
+                                             std::string reason) {
+  ClearRealizedClassGraphUnlocked(state);
+  ++state.malformed_class_metadata_rejection_count;
+  state.last_malformed_class_graph_reason = std::move(reason);
+  BumpRuntimeClassGraphGenerationUnlocked(state);
+  BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+}
+
 }  // namespace
 
 void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
@@ -78,7 +87,9 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   for (const RegisteredImageMetadata *record : ordered_images) {
     std::vector<std::string> class_names;
     if (!CollectSortedImageClassNames(*record, class_names)) {
-      continue;
+      MarkMalformedRealizedClassGraphUnlocked(
+          state, "registered image contains malformed class names");
+      return;
     }
     global_class_name_set.reserve(global_class_name_set.size() +
                                   class_names.size());
@@ -112,7 +123,9 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   for (const RegisteredImageMetadata *record : ordered_images) {
     std::vector<std::string> class_names;
     if (!CollectSortedImageClassNames(*record, class_names)) {
-      continue;
+      MarkMalformedRealizedClassGraphUnlocked(
+          state, "registered image contains malformed class names");
+      return;
     }
     for (const std::string &class_name : class_names) {
       const auto ordinal_it = global_ordinal_by_class_name.find(class_name);
@@ -121,6 +134,11 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       }
       const auto bundles =
           CollectPreferredClassBundlesForImage(*record, class_name);
+      if (bundles.size() != 1u) {
+        MarkMalformedRealizedClassGraphUnlocked(
+            state, "ambiguous preferred class metadata for " + class_name);
+        return;
+      }
       for (const EmittedClassBundle *bundle : bundles) {
         if (bundle == nullptr) {
           continue;
@@ -174,6 +192,13 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         const std::size_t node_index = state.realized_class_nodes.size();
         state.realized_class_nodes.push_back(std::move(node));
         node_index_by_bundle.emplace(bundle, node_index);
+        const auto class_bundle_aliases =
+            CollectClassBundlesForImage(*record, class_name);
+        for (const EmittedClassBundle *alias_bundle : class_bundle_aliases) {
+          if (alias_bundle != nullptr) {
+            node_index_by_bundle.emplace(alias_bundle, node_index);
+          }
+        }
         state.realized_class_node_indices_by_name[class_name].push_back(
             node_index);
       }
@@ -192,12 +217,27 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         node.super_node_index = super_it->second;
         node.has_super_node = true;
         ++state.realized_metaclass_edge_count;
+      } else {
+        MarkMalformedRealizedClassGraphUnlocked(
+            state, "realized superclass link is missing for " +
+                       node.class_name);
+        return;
       }
     }
     if (node.is_root_class) {
       ++state.realized_root_class_count;
     }
-    (void)AttachRealizedCategoryRecordsUnlocked(state, node);
+    if (!AttachRealizedCategoryRecordsUnlocked(state, node)) {
+      const std::string reason =
+          state.last_malformed_class_graph_reason.empty()
+              ? "category attachment failed for " + node.class_name
+              : state.last_malformed_class_graph_reason;
+      ClearRealizedClassGraphUnlocked(state);
+      state.last_malformed_class_graph_reason = reason;
+      BumpRuntimeClassGraphGenerationUnlocked(state);
+      BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+      return;
+    }
   }
 
   std::vector<unsigned char> property_layout_visiting(

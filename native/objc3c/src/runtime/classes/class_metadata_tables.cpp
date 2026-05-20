@@ -75,6 +75,16 @@ bool RuntimeClassBundleShapeIsSupported(
   return true;
 }
 
+bool RuntimeClassBundleHasImplementationBacking(
+    const EmittedClassBundle &bundle) {
+  return (bundle.class_record.method_list_ref != nullptr &&
+          RuntimeImplementationOwnerIdentity(
+              bundle.class_record.method_list_ref->owner_identity)) ||
+         (bundle.metaclass_record.method_list_ref != nullptr &&
+          RuntimeImplementationOwnerIdentity(
+              bundle.metaclass_record.method_list_ref->owner_identity));
+}
+
 bool RuntimeSuperclassEdgeIsSupported(
     const EmittedClassBundle &bundle,
     const std::unordered_map<const EmittedClassBundle *,
@@ -109,6 +119,50 @@ bool RuntimeSuperclassEdgeIsSupported(
         std::string("superclass owner edge target mismatch for ") +
         bundle.class_record.class_name;
     return false;
+  }
+  return true;
+}
+
+struct RuntimeClassResolutionCounts {
+  std::uint64_t declaration_bundle_count = 0;
+  std::uint64_t implementation_bundle_count = 0;
+};
+
+bool AddClassResolutionCounts(
+    const objc3_runtime_pointer_aggregate *class_descriptor_root,
+    std::uint64_t class_descriptor_count,
+    std::unordered_map<std::string, RuntimeClassResolutionCounts>
+        &counts_by_class_name,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0; index < class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        ClassMetadataAggregateEntry(class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        bundle->class_record.class_name[0] == '\0') {
+      continue;
+    }
+    RuntimeClassResolutionCounts &counts =
+        counts_by_class_name[bundle->class_record.class_name];
+    if (RuntimeClassBundleHasImplementationBacking(*bundle)) {
+      ++counts.implementation_bundle_count;
+    } else {
+      ++counts.declaration_bundle_count;
+    }
+  }
+
+  for (const auto &entry : counts_by_class_name) {
+    const RuntimeClassResolutionCounts &counts = entry.second;
+    if (counts.implementation_bundle_count > 1u) {
+      diagnostic_reason =
+          "duplicate implementation-backed class metadata for " + entry.first;
+      return false;
+    }
+    if (counts.implementation_bundle_count == 0u &&
+        counts.declaration_bundle_count > 1u) {
+      diagnostic_reason =
+          "duplicate declaration-only class metadata for " + entry.first;
+      return false;
+    }
   }
   return true;
 }
@@ -161,6 +215,22 @@ bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
   return true;
 }
 
+std::vector<const EmittedClassBundle *> CollectClassBundlesForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name) {
+  std::vector<const EmittedClassBundle *> bundles;
+  bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        ClassMetadataAggregateEntry(record.class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        class_name != bundle->class_record.class_name) {
+      continue;
+    }
+    bundles.push_back(bundle);
+  }
+  return bundles;
+}
+
 bool RuntimeClassMetadataTableIsSupported(
     const RuntimeState &state,
     const objc3_runtime_registration_table *registration_table,
@@ -207,6 +277,29 @@ bool RuntimeClassMetadataTableIsSupported(
       return false;
     }
   }
+
+  std::unordered_map<std::string, RuntimeClassResolutionCounts>
+      counts_by_class_name;
+  counts_by_class_name.reserve(
+      static_cast<std::size_t>(
+          registration_table->image_descriptor->class_descriptor_count) +
+      state.realized_class_node_indices_by_name.size());
+  if (!AddClassResolutionCounts(
+          registration_table->class_descriptor_root,
+          registration_table->image_descriptor->class_descriptor_count,
+          counts_by_class_name, diagnostic_reason)) {
+    return false;
+  }
+  for (const RegisteredImageMetadata *record : OrderedClassGraphImages(state)) {
+    if (record == nullptr) {
+      continue;
+    }
+    if (!AddClassResolutionCounts(record->class_descriptor_root,
+                                  record->class_descriptor_count,
+                                  counts_by_class_name, diagnostic_reason)) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -214,22 +307,15 @@ std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name) {
   std::vector<const EmittedClassBundle *> implementation_bundles;
   std::vector<const EmittedClassBundle *> candidate_bundles;
-  implementation_bundles.reserve(
-      static_cast<std::size_t>(record.class_descriptor_count));
-  candidate_bundles.reserve(
-      static_cast<std::size_t>(record.class_descriptor_count));
-  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
-    const auto *bundle = static_cast<const EmittedClassBundle *>(
-        ClassMetadataAggregateEntry(record.class_descriptor_root, index));
-    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
-        class_name != bundle->class_record.class_name) {
+  const std::vector<const EmittedClassBundle *> bundles =
+      CollectClassBundlesForImage(record, class_name);
+  implementation_bundles.reserve(bundles.size());
+  candidate_bundles.reserve(bundles.size());
+  for (const EmittedClassBundle *bundle : bundles) {
+    if (bundle == nullptr) {
       continue;
     }
-    const bool implementation_backed =
-        bundle->class_record.method_list_ref != nullptr &&
-        RuntimeImplementationOwnerIdentity(
-            bundle->class_record.method_list_ref->owner_identity);
-    if (implementation_backed) {
+    if (RuntimeClassBundleHasImplementationBacking(*bundle)) {
       implementation_bundles.push_back(bundle);
     } else {
       candidate_bundles.push_back(bundle);

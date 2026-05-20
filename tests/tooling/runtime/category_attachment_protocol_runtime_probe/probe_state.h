@@ -46,6 +46,7 @@ struct ProtocolConformanceObservation {
   std::string attachment_owner;
   std::string matched_class_name;
   std::string matched_class_owner;
+  std::string failure_reason;
 };
 
 struct MethodCacheStateObservation {

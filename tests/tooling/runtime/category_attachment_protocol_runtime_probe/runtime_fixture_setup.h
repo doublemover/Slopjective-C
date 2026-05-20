@@ -45,7 +45,8 @@ inline void StabilizeProtocolConformanceObservation(
   ::objc3c::runtime::probe::StabilizeConformanceQuery(
       observation.query, observation.class_name, observation.protocol_name,
       observation.protocol_owner, observation.attachment_owner,
-      &observation.matched_class_name, &observation.matched_class_owner);
+      &observation.matched_class_name, &observation.matched_class_owner,
+      &observation.failure_reason);
 }
 
 inline void CaptureProtocolConformanceQuery(
