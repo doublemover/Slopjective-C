@@ -1,0 +1,13 @@
+{
+  "case_id": "local-only-evidence",
+  "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-LOCAL-ONLY",
+  "mutations": [
+    {
+      "fixture_id": "ecosystem_async_await_grammar_acceptance",
+      "set": {
+        "evidence_path": "tmp/external-validation/local-only.json",
+        "reproducibility.local_only": true
+      }
+    }
+  ]
+}

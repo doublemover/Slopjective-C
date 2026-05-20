@@ -137,6 +137,7 @@ def test_external_validation_catalog_preserves_public_order_and_owner_membership
         "check-external-validation-surface",
         "test-external-validation-replay",
         "publish-external-repro-corpus",
+        "check-external-support-claim-gate",
         "validate-external-validation",
         "validate-external-validation-integration",
     )
@@ -148,6 +149,9 @@ def test_external_validation_catalog_preserves_public_order_and_owner_membership
     )
     assert EXTERNAL_VALIDATION_ACTION_SPECS["publish-external-repro-corpus"] is (
         EXTERNAL_VALIDATION_PUBLICATION_ACTION_SPECS["publish-external-repro-corpus"]
+    )
+    assert EXTERNAL_VALIDATION_ACTION_SPECS["check-external-support-claim-gate"] is (
+        EXTERNAL_VALIDATION_PUBLICATION_ACTION_SPECS["check-external-support-claim-gate"]
     )
     assert EXTERNAL_VALIDATION_ACTION_SPECS["validate-external-validation"] is (
         EXTERNAL_VALIDATION_WORKFLOW_ACTION_SPECS["validate-external-validation"]

@@ -21,6 +21,9 @@ EXTERNAL_VALIDATION_REPLAY_PY = (
 EXTERNAL_VALIDATION_PUBLICATION_PY = (
     ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
 )
+EXTERNAL_VALIDATION_CLAIM_GATE_PY = (
+    ROOT / "scripts" / "check_objc3c_external_support_claim_gate.py"
+)
 EXTERNAL_VALIDATION_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_external_validation_integration.py"
 )
@@ -56,6 +59,13 @@ EXTERNAL_VALIDATION_TARGETS: dict[str, ExternalValidationTarget] = {
         EXTERNAL_VALIDATION_OWNER_CONTRACT_ID,
         "tmp/reports/external-validation/publication-summary.json",
         "accepted-fixture publication proof",
+    ),
+    "check-external-support-claim-gate": ExternalValidationTarget(
+        "check-external-support-claim-gate",
+        EXTERNAL_VALIDATION_CLAIM_GATE_PY,
+        EXTERNAL_VALIDATION_OWNER_CONTRACT_ID,
+        "tmp/reports/external-validation/support-claim-gate-summary.json",
+        "support and adoption claim gate over accepted external evidence",
     ),
 }
 

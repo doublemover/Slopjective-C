@@ -16,6 +16,7 @@ Use these checked-in roots directly:
   - `npm run objc3c -- test-execution-replay`
   - `npm run objc3c -- validate-conformance-corpus`
   - `npm run objc3c -- validate-runnable-conformance-corpus`
+  - `npm run objc3c -- check-external-support-claim-gate`
 - machine-owned outputs only:
   - `tmp/reports/external-validation/`
   - `tmp/artifacts/external-validation/`
@@ -24,6 +25,11 @@ The external-validation surface is layered on the existing checked-in corpus,
 replay proofs, and runnable package contracts. External evidence must terminate
 in the same live compile, replay, and executable validation paths that already
 back internal conformance claims.
+
+Support and adoption claims that cite external validation must pass the
+external support-claim gate. The gate consumes checked-in corpus metadata and
+accepted intake evidence, then fails closed for missing evidence, stale source
+hashes, non-replayable evidence, or local-only paths such as `tmp/` and `temp/`.
 
 ## Architecture
 
@@ -64,6 +70,8 @@ Fail-closed rule:
 Checked-in normalization manifest:
 
 - `tests/tooling/fixtures/external_validation/intake_manifest.json`
+- `tests/tooling/fixtures/external_validation/repro_corpus.json`
+- `tests/tooling/fixtures/external_validation/support_claim_gate.json`
 
 Normalization rules:
 
@@ -105,6 +113,7 @@ Stable machine-owned summaries:
 - `tmp/reports/external-validation/source-surface-summary.json`
 - `tmp/reports/external-validation/intake-replay-summary.json`
 - `tmp/reports/external-validation/publication-summary.json`
+- `tmp/reports/external-validation/support-claim-gate-summary.json`
 - `tmp/reports/external-validation/drill-summary.json`
 - `tmp/reports/external-validation/integration-summary.json`
 - `tmp/reports/external-validation/end-to-end-summary.json`
@@ -148,6 +157,7 @@ Current intake and replay tooling:
 
 - `npm run objc3c -- test-external-validation-replay`
 - `npm run objc3c -- publish-external-repro-corpus`
+- `npm run objc3c -- check-external-support-claim-gate`
 
 ## Claim Boundary
 

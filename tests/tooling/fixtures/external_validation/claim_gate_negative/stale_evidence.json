@@ -1,0 +1,12 @@
+{
+  "case_id": "stale-evidence",
+  "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-STALE-EVIDENCE",
+  "mutations": [
+    {
+      "fixture_id": "ecosystem_async_await_grammar_acceptance",
+      "set": {
+        "evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

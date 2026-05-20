@@ -11,6 +11,9 @@
   "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
   "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
   "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+  "repro_corpus": "tests/tooling/fixtures/external_validation/repro_corpus.json",
+  "support_claim_gate": "tests/tooling/fixtures/external_validation/support_claim_gate.json",
+  "support_claim_gate_script": "scripts/check_objc3c_external_support_claim_gate.py",
   "artifact_surface": "tests/tooling/fixtures/external_validation/artifact_surface.json",
   "workflow_surface": "tests/tooling/fixtures/external_validation/workflow_surface.json",
   "checked_in_roots": [
@@ -30,6 +33,8 @@
         "tests/tooling/fixtures/external_validation/trust_policy.json",
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+        "tests/tooling/fixtures/external_validation/repro_corpus.json",
+        "tests/tooling/fixtures/external_validation/support_claim_gate.json",
         "tests/tooling/fixtures/external_validation/artifact_surface.json",
         "tests/tooling/fixtures/external_validation/workflow_surface.json",
         "tests/tooling/fixtures/objc3c",
@@ -62,6 +67,21 @@
         "scripts/package_objc3c_runnable_toolchain.ps1",
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json"
+      ]
+    },
+    {
+      "family_id": "support-claim-gating",
+      "coverage_goal": "support and adoption claims that cite external validation must fail closed unless accepted fixtures have current checked-in replay evidence",
+      "source_paths": [
+        "tests/tooling/fixtures/external_validation/repro_corpus.json",
+        "tests/tooling/fixtures/external_validation/support_claim_gate.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/local_only_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/missing_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/non_reproducible_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/stale_evidence.json",
+        "scripts/check_objc3c_external_support_claim_gate.py",
+        "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+        "docs/runbooks/objc3c_external_validation.md"
       ]
     }
   ]

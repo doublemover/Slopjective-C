@@ -17,6 +17,9 @@ EXPECTED_REQUIRED_PATHS = {
     "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
     "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
     "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+    "repro_corpus": "tests/tooling/fixtures/external_validation/repro_corpus.json",
+    "support_claim_gate": "tests/tooling/fixtures/external_validation/support_claim_gate.json",
+    "support_claim_gate_script": "scripts/check_objc3c_external_support_claim_gate.py",
     "artifact_surface": "tests/tooling/fixtures/external_validation/artifact_surface.json",
     "workflow_surface": "tests/tooling/fixtures/external_validation/workflow_surface.json",
 }

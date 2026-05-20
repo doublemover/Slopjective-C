@@ -79,6 +79,7 @@ EXTERNAL_VALIDATION_OWNER_CONTRACT = ExternalValidationOwnerContract(
         "check-external-validation-surface",
         "test-external-validation-replay",
         "publish-external-repro-corpus",
+        "check-external-support-claim-gate",
         "validate-external-validation",
         "validate-external-validation-integration",
     ),
@@ -86,6 +87,7 @@ EXTERNAL_VALIDATION_OWNER_CONTRACT = ExternalValidationOwnerContract(
         "check-external-validation-surface",
         "test-external-validation-replay",
         "publish-external-repro-corpus",
+        "check-external-support-claim-gate",
     ),
     accepted_trust_states=("accepted",),
     quarantine_trust_states=("quarantined", "rejected"),
@@ -101,6 +103,10 @@ EXTERNAL_VALIDATION_OWNER_CONTRACT = ExternalValidationOwnerContract(
         (
             "tmp/reports/external-validation/publication-summary.json",
             "objc3c.external_validation.publication.summary.v1",
+        ),
+        (
+            "tmp/reports/external-validation/support-claim-gate-summary.json",
+            "objc3c.external_validation.support_claim_gate.summary.v1",
         ),
         (
             "tmp/reports/external-validation/integration-summary.json",

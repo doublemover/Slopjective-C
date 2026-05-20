@@ -10,28 +10,33 @@
     "check-external-validation-surface",
     "test-external-validation-replay",
     "publish-external-repro-corpus",
+    "check-external-support-claim-gate",
     "validate-external-validation",
     "validate-external-validation-integration"
   ],
   "validate_child_actions": [
     "check-external-validation-surface",
     "test-external-validation-replay",
-    "publish-external-repro-corpus"
+    "publish-external-repro-corpus",
+    "check-external-support-claim-gate"
   ],
   "required_child_reports": {
     "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
-    "checked_outputs/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
-    "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1"
+    "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
+    "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1",
+    "tmp/reports/external-validation/support-claim-gate-summary.json": "objc3c.external_validation.support_claim_gate.summary.v1"
   },
   "required_capability_truth_reports": {
-    "checked_outputs/external-validation/intake-replay-summary.json": "accepted external evidence replayed through live proof scripts",
+    "tmp/reports/external-validation/intake-replay-summary.json": "accepted external evidence replayed through live proof scripts",
     "tmp/reports/external-validation/publication-summary.json": "public credibility claims published only from accepted fixtures",
+    "tmp/reports/external-validation/support-claim-gate-summary.json": "support and adoption claims fail closed on missing stale non-reproducible or local-only external evidence",
     "tmp/reports/external-validation/integration-summary.json": "source, replay, publication, trust, quarantine, and artifact contracts are coherent"
   },
   "report_paths": [
     "tmp/reports/external-validation/source-surface-summary.json",
-    "checked_outputs/external-validation/intake-replay-summary.json",
+    "tmp/reports/external-validation/intake-replay-summary.json",
     "tmp/reports/external-validation/publication-summary.json",
+    "tmp/reports/external-validation/support-claim-gate-summary.json",
     "tmp/reports/external-validation/integration-summary.json"
   ]
 }

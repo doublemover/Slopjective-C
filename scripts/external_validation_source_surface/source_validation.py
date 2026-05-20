@@ -12,7 +12,11 @@ from .diagnostics import ValidationFailure
 from .evidence_validation import validate_intake_manifest, validate_quarantine_manifest
 from .path_validation import require_exact_list, require_exact_path, require_path
 from .paths import EXPECTED_REQUIRED_PATHS
-from .report_validation import validate_artifact_surface, validate_workflow_surface
+from .report_validation import (
+    validate_artifact_surface,
+    validate_claim_gate_contracts,
+    validate_workflow_surface,
+)
 from .source_model import (
     EXPECTED_FAMILY_IDS,
     EXPECTED_SOURCE_FAMILY_PATHS,
@@ -52,6 +56,7 @@ def validate_source_surface(
     intake_entry_summaries = validate_intake_manifest(required_paths, checked_paths)
     quarantine_entry_summaries = validate_quarantine_manifest(required_paths, checked_paths)
     validate_artifact_surface(required_paths)
+    validate_claim_gate_contracts(required_paths)
     validate_workflow_surface(surface, required_paths)
     family_summaries = validate_families(surface, checked_paths)
 

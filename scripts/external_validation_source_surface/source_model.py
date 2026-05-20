@@ -14,6 +14,7 @@ EXPECTED_FAMILY_IDS = (
     "intake-normalization-boundary",
     "independent-replay-proofs",
     "packaged-reproducibility-surface",
+    "support-claim-gating",
 )
 
 EXPECTED_SOURCE_FAMILY_PATHS = {
@@ -24,6 +25,8 @@ EXPECTED_SOURCE_FAMILY_PATHS = {
         "tests/tooling/fixtures/external_validation/trust_policy.json",
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+        "tests/tooling/fixtures/external_validation/repro_corpus.json",
+        "tests/tooling/fixtures/external_validation/support_claim_gate.json",
         "tests/tooling/fixtures/external_validation/artifact_surface.json",
         "tests/tooling/fixtures/external_validation/workflow_surface.json",
         "tests/tooling/fixtures/objc3c",
@@ -49,12 +52,25 @@ EXPECTED_SOURCE_FAMILY_PATHS = {
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json",
     ),
+    "support-claim-gating": (
+        "tests/tooling/fixtures/external_validation/repro_corpus.json",
+        "tests/tooling/fixtures/external_validation/support_claim_gate.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/local_only_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/missing_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/non_reproducible_evidence.json",
+        "tests/tooling/fixtures/external_validation/claim_gate_negative/stale_evidence.json",
+        "scripts/check_objc3c_external_support_claim_gate.py",
+        "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+        "docs/runbooks/objc3c_external_validation.md",
+    ),
 }
 
 EXPECTED_CONTRACT_IDS = {
     "trust_policy": "objc3c.external_validation.trust.policy.v1",
     "intake_manifest": "objc3c.external_validation.intake.manifest.v1",
     "quarantine_manifest": "objc3c.external_validation.quarantine.manifest.v1",
+    "repro_corpus": "objc3c.external_validation.repro_corpus.v1",
+    "support_claim_gate": "objc3c.external_validation.support_claim_gate.v1",
     "artifact_surface": "objc3c.external_validation.artifact.surface.v1",
     "workflow_surface": "objc3c.external_validation.workflow.surface.v1",
 }

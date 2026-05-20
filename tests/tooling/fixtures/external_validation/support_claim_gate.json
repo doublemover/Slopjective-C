@@ -1,0 +1,62 @@
+{
+  "contract_id": "objc3c.external_validation.support_claim_gate.v1",
+  "schema_version": 1,
+  "repro_corpus": "tests/tooling/fixtures/external_validation/repro_corpus.json",
+  "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
+  "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
+  "adoption_claim_policy": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+  "summary_path": "tmp/reports/external-validation/support-claim-gate-summary.json",
+  "negative_fixture_root": "tests/tooling/fixtures/external_validation/claim_gate_negative",
+  "claim_bindings": [
+    {
+      "claim_id": "evaluator-runnable-path",
+      "claim_kind": "adoption",
+      "required_fixture_ids": [
+        "ecosystem_async_await_grammar_acceptance",
+        "ecosystem_cross_module_conformance_replay",
+        "ecosystem_module_import_graph_replay"
+      ],
+      "publication_scope": "adoption evaluator path may cite external validation only through accepted checked-in replay fixtures"
+    },
+    {
+      "claim_id": "objc3c.external_validation.support.accepted-repro-corpus",
+      "claim_kind": "support",
+      "required_fixture_ids": [
+        "ecosystem_async_await_grammar_acceptance",
+        "ecosystem_cross_module_conformance_replay",
+        "ecosystem_module_import_graph_replay"
+      ],
+      "publication_scope": "support claims may cite only accepted external validation fixtures whose source hashes match checked-in replay evidence"
+    }
+  ],
+  "fail_closed_conditions": [
+    "claim binding references a fixture missing from the durable repro corpus",
+    "evidence path is absent or outside the repository",
+    "evidence hash differs from the checked-in source path",
+    "reproducibility mode is not checked-in-replay",
+    "fixture is marked local-only or allows tmp as source evidence",
+    "claim binding uses a fixture that is not accepted by the intake manifest"
+  ],
+  "negative_fixtures": [
+    {
+      "case_id": "local-only-evidence",
+      "path": "tests/tooling/fixtures/external_validation/claim_gate_negative/local_only_evidence.json",
+      "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-LOCAL-ONLY"
+    },
+    {
+      "case_id": "missing-evidence",
+      "path": "tests/tooling/fixtures/external_validation/claim_gate_negative/missing_evidence.json",
+      "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-MISSING-EVIDENCE"
+    },
+    {
+      "case_id": "non-reproducible-evidence",
+      "path": "tests/tooling/fixtures/external_validation/claim_gate_negative/non_reproducible_evidence.json",
+      "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-NON-REPRODUCIBLE"
+    },
+    {
+      "case_id": "stale-evidence",
+      "path": "tests/tooling/fixtures/external_validation/claim_gate_negative/stale_evidence.json",
+      "expected_diagnostic_code": "OBJC3-EXTERNAL-CLAIM-GATE-STALE-EVIDENCE"
+    }
+  ]
+}
