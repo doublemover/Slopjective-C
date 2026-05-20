@@ -22,6 +22,8 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
                kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId,
            .surface_path =
                kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath,
+           .import_artifact_member_name =
+               kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName,
            .artifact_relative_path =
                kObjc3MetaprogrammingMacroHostProcessCacheArtifactRelativePath,
            .host_executable_relative_path =
@@ -35,11 +37,26 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
                kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel,
            .cache_model =
                kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel,
+           .invalidation_model =
+               kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationInvalidationModel,
+           .sandbox_policy_model =
+               kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSandboxPolicyModel,
+           .diagnostics_model =
+               kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationDiagnosticsModel,
            .fail_closed_model =
                kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel,
            .replay_key =
                artifacts
                    .metaprogramming_macro_host_process_cache_runtime_integration_replay_key,
+           .runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol,
+           .max_message_send_args =
+               static_cast<std::uint32_t>(cli_options.max_message_send_args),
+           .bootstrap_registration_order_ordinal =
+               cli_options.bootstrap_registration_order_ordinal,
+           .allow_live_error_runtime_surface =
+               cli_options.allow_live_error_runtime_surface,
+           .imported_runtime_surface_paths =
+               cli_options.imported_runtime_surface_paths,
            .deterministic = true},
           cli_options.input,
           artifact_json,

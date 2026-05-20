@@ -78,6 +78,24 @@ def expect_macro_host_cache_surface(surface: dict[str, Any]) -> None:
         == "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-explicit-macro-cache-keys-and-policy-version-and-reused-on-subsequent-runs",
         "expected macro host process provider fixture to publish the explicit cache key model",
     )
+    expect(
+        surface.get("invalidation_model")
+        == "metaprogramming-replay-key-explicit-macro-cache-key-or-sandbox-policy-drift-invalidates-the-entry-while-corrupt-or-incomplete-cache-artifacts-fail-closed"
+        and surface.get("sandbox_policy_model")
+        == "macro-host-materialization-is-deny-by-default-and-only-admits-pure-free-functions-with-objc_macro_sandbox-named-deterministic"
+        and surface.get("diagnostics_model")
+        == "stable-O3S331-and-O3S332-diagnostics-gate-missing-or-invalid-macro-cache-key-and-sandbox-policy-metadata",
+        "expected macro host process provider fixture to publish cache invalidation, sandbox, and diagnostic models",
+    )
+    expect(
+        surface.get("cache_artifact_contract_checked") is True
+        and surface.get("provenance_integrity_checked") is True
+        and surface.get("sandbox_policy_checked") is True
+        and surface.get("diagnostic_contract_checked") is True
+        and isinstance(surface.get("cache_key_material_digest"), str)
+        and len(surface.get("cache_key_material_digest")) == 64,
+        "expected macro host process provider fixture to publish checked cache provenance and material digest evidence",
+    )
 
 
 def expect_macro_runtime_import_surface(surface: dict[str, Any]) -> None:

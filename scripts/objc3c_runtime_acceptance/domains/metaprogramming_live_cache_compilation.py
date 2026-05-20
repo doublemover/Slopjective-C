@@ -21,6 +21,7 @@ from .metaprogramming_live_cache_compilation.models import (  # noqa: E402
 from .metaprogramming_live_cache_compilation.orchestration import (  # noqa: E402
     compile_live_metaprogramming_cache_consumer,
     compile_live_metaprogramming_cache_replay,
+    compile_live_metaprogramming_cache_tampered_replay_expect_failure,
     live_metaprogramming_cache_case_dir,
     materialize_live_metaprogramming_cache_provider,
     prepare_live_metaprogramming_cache_provider,
@@ -36,6 +37,7 @@ __all__ = [
     "LiveMetaprogrammingCacheProvider",
     "compile_live_metaprogramming_cache_consumer",
     "compile_live_metaprogramming_cache_replay",
+    "compile_live_metaprogramming_cache_tampered_replay_expect_failure",
     "live_metaprogramming_cache_case_dir",
     "materialize_live_metaprogramming_cache_provider",
     "prepare_live_metaprogramming_cache_provider",

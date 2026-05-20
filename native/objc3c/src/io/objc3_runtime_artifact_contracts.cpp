@@ -118,11 +118,17 @@ bool ValidateMetaprogrammingMacroHostProcessCacheArtifactInputs(
     const std::filesystem::path &source_input_path,
     std::string &error) {
   if (inputs.contract_id.empty() || inputs.source_contract_id.empty() ||
-      inputs.surface_path.empty() || inputs.artifact_relative_path.empty() ||
+      inputs.surface_path.empty() || inputs.import_artifact_member_name.empty() ||
+      inputs.artifact_relative_path.empty() ||
       inputs.host_executable_relative_path.empty() ||
       inputs.cache_root_relative_path.empty() || inputs.host_model.empty() ||
       inputs.toolchain_model.empty() || inputs.cache_model.empty() ||
-      inputs.fail_closed_model.empty() || inputs.replay_key.empty()) {
+      inputs.invalidation_model.empty() || inputs.sandbox_policy_model.empty() ||
+      inputs.diagnostics_model.empty() ||
+      inputs.fail_closed_model.empty() || inputs.replay_key.empty() ||
+      inputs.runtime_dispatch_symbol.empty() ||
+      inputs.max_message_send_args == 0 ||
+      inputs.bootstrap_registration_order_ordinal == 0) {
     error = "metaprogramming macro host process/cache artifact inputs are incomplete";
     return false;
   }
@@ -130,6 +136,14 @@ bool ValidateMetaprogrammingMacroHostProcessCacheArtifactInputs(
     error = "metaprogramming macro host process/cache source input not found: " +
             source_input_path.generic_string();
     return false;
+  }
+  for (const auto &path : inputs.imported_runtime_surface_paths) {
+    if (path.empty() || !std::filesystem::exists(path)) {
+      error =
+          "metaprogramming macro host process/cache imported runtime surface not found: " +
+          path.generic_string();
+      return false;
+    }
   }
   return true;
 }

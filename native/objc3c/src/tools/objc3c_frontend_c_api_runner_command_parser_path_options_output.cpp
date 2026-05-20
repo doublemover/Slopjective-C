@@ -17,6 +17,15 @@ ParseFrontendCApiRunnerOutputPathStringOption(
     options.emit_prefix = argv[++index];
     return FrontendCApiRunnerCommandOptionParseResult::kHandled;
   }
+  if (arg == "--objc3-metaprogramming-cache-root" && index + 1 < argc) {
+    options.metaprogramming_cache_root = std::filesystem::path(argv[++index]);
+    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  }
+  if (arg == "--objc3-import-runtime-surface" && index + 1 < argc) {
+    options.imported_runtime_surface_paths.push_back(
+        std::filesystem::path(argv[++index]));
+    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  }
   return FrontendCApiRunnerCommandOptionParseResult::kNotHandled;
 }
 

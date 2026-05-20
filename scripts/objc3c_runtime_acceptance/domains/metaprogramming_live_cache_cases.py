@@ -9,14 +9,19 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_compilation im
     HOST_CACHE_PROBE_PATH,
     compile_live_metaprogramming_cache_consumer,
     compile_live_metaprogramming_cache_replay,
+    compile_live_metaprogramming_cache_tampered_replay_expect_failure,
     live_metaprogramming_cache_case_dir,
     materialize_live_metaprogramming_cache_provider,
     prepare_live_metaprogramming_cache_provider,
     run_live_metaprogramming_cache_probe,
 )
+from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_helpers import (
+    tamper_metaprogramming_cache_runtime_import_replay_key,
+)
 from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_payload_assertions import (
     assert_cache_hit_replay_payload,
     assert_materialized_host_cache_payload,
+    assert_tampered_cache_replay_key_rejected,
 )
 from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_runtime_assertions import (
     assert_cache_hit_runtime_surfaces,
@@ -28,6 +33,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_summary import
     build_live_metaprogramming_cache_runtime_integration_summary,
     live_metaprogramming_cache_provider_fixture_summary_path,
 )
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 
 def check_live_metaprogramming_cache_runtime_integration_case(
@@ -61,6 +67,18 @@ def check_live_metaprogramming_cache_runtime_integration_case(
         provider.cache_root_override,
     )
     assert_runtime_probe_payload(materialized, probe_run)
+
+    expect(
+        tamper_metaprogramming_cache_runtime_import_replay_key(
+            materialized.host_cache_artifact
+        ),
+        "expected live metaprogramming host-cache case to tamper cached runtime import surface",
+    )
+    tampered_replay = compile_live_metaprogramming_cache_tampered_replay_expect_failure(
+        provider,
+        case_dir,
+    )
+    assert_tampered_cache_replay_key_rejected(tampered_replay)
 
     return CaseResult(
         case_id="live-metaprogramming-cache-runtime-integration",
