@@ -19,8 +19,7 @@ Positive recovery fixtures are phase provenance only:
 - runtime-owned positives cover live-dispatch and fast-path dispatch evidence
   only when the canonical runtime entrypoint remains required.
 
-The e2e owner does not get a positive claim from this tree; executable success
-belongs in `execution/positive`.
+The e2e owner does not get a positive claim from this tree: executable success belongs in `execution/positive`, not in recovery provenance.
 
 ## Negative Surface
 
@@ -30,5 +29,4 @@ runtime-dispatch residues stay non-positive unless the canonical runtime owner
 indexes them as strict errors.
 
 Legacy-looking, retired-route-looking, gate-looking, unsupported, or
-compatibility-looking cases must remain rejection metadata or be absent from the
-positive surface.
+compatibility-looking cases must remain rejection metadata or be absent from the positive surface.
