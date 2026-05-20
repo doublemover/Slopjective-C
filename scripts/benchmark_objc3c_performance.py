@@ -30,6 +30,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_portfolio.json"
 MEASUREMENT_POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "measurement_policy.json"
 BENCHMARK_PARAMETERS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_parameters.json"
+PERFORMANCE_BUDGET_MODEL_PATH = (
+    ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "budget_model.json"
+)
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "performance" / "benchmark-summary.json"
 
 
@@ -54,6 +57,9 @@ def benchmark_compile_workload(
     profile: dict[str, Any],
     versions: dict[str, str],
     normalization_mode: str,
+    measurement_policy: dict[str, Any],
+    benchmark_parameters: dict[str, Any],
+    budget_model: dict[str, Any],
 ) -> tuple[Path, list[str]]:
     return _benchmark_compile_workload(
         workload,
@@ -63,6 +69,9 @@ def benchmark_compile_workload(
         profile=profile,
         versions=versions,
         normalization_mode=normalization_mode,
+        measurement_policy=measurement_policy,
+        benchmark_parameters=benchmark_parameters,
+        budget_model=budget_model,
         write_json_fn=write_json,
         root=ROOT,
         run_timed_step_fn=run_timed_step,
@@ -77,6 +86,9 @@ def benchmark_runtime_workload(
     profile: dict[str, Any],
     versions: dict[str, str],
     normalization_mode: str,
+    measurement_policy: dict[str, Any],
+    benchmark_parameters: dict[str, Any],
+    budget_model: dict[str, Any],
 ) -> tuple[Path, list[str]]:
     return _benchmark_runtime_workload(
         workload,
@@ -85,6 +97,9 @@ def benchmark_runtime_workload(
         profile=profile,
         versions=versions,
         normalization_mode=normalization_mode,
+        measurement_policy=measurement_policy,
+        benchmark_parameters=benchmark_parameters,
+        budget_model=budget_model,
         write_json_fn=write_json,
         root=ROOT,
         run_timed_step_fn=run_timed_step,
@@ -98,6 +113,7 @@ def main() -> int:
         portfolio_path=PORTFOLIO_PATH,
         measurement_policy_path=MEASUREMENT_POLICY_PATH,
         benchmark_parameters_path=BENCHMARK_PARAMETERS_PATH,
+        budget_model_path=PERFORMANCE_BUDGET_MODEL_PATH,
         summary_out=SUMMARY_OUT,
         load_json_fn=load_json,
         write_json_fn=write_json,
@@ -112,6 +128,7 @@ __all__ = [
     "BENCHMARK_PARAMETERS_PATH",
     "BenchmarkCatalog",
     "MEASUREMENT_POLICY_PATH",
+    "PERFORMANCE_BUDGET_MODEL_PATH",
     "PORTFOLIO_PATH",
     "ROOT",
     "SUMMARY_OUT",

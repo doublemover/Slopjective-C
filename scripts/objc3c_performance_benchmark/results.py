@@ -9,6 +9,7 @@ from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_performance_benchmark.comparison import summarize_durations
 from objc3c_performance_benchmark.execution import run_timed_step, sha256_digest
 from objc3c_performance_benchmark.paths import ROOT
+from objc3c_performance_reproducibility import build_workload_reproducibility_evidence
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:
@@ -25,6 +26,9 @@ def benchmark_compile_workload(
     profile: dict[str, Any],
     versions: dict[str, str],
     normalization_mode: str,
+    measurement_policy: dict[str, Any],
+    benchmark_parameters: dict[str, Any],
+    budget_model: dict[str, Any],
     write_json_fn: Callable[[Path, dict[str, Any]], None],
     root: Path = ROOT,
     run_timed_step_fn: Callable[[Sequence[str]], dict[str, Any]] = run_timed_step,
@@ -88,6 +92,16 @@ def benchmark_compile_workload(
         "normalized_summary": summarize_durations(durations, normalization_mode),
         "workload_id": workload_id,
         "source_path": source,
+        "reproducibility_evidence": build_workload_reproducibility_evidence(
+            root=root,
+            workload=workload,
+            measurement_policy=measurement_policy,
+            benchmark_parameters=benchmark_parameters,
+            budget_model=budget_model,
+            budget_id="comparative-baseline",
+            profile=profile,
+            versions=versions,
+        ),
         "failures": failures,
         "ok": not failures,
     }
@@ -104,6 +118,9 @@ def benchmark_runtime_workload(
     profile: dict[str, Any],
     versions: dict[str, str],
     normalization_mode: str,
+    measurement_policy: dict[str, Any],
+    benchmark_parameters: dict[str, Any],
+    budget_model: dict[str, Any],
     write_json_fn: Callable[[Path, dict[str, Any]], None],
     root: Path = ROOT,
     run_timed_step_fn: Callable[[Sequence[str]], dict[str, Any]] = run_timed_step,
@@ -158,6 +175,16 @@ def benchmark_runtime_workload(
         "normalized_summary": summarize_durations(durations, normalization_mode),
         "workload_id": workload_id,
         "source_path": str(workload["source"]),
+        "reproducibility_evidence": build_workload_reproducibility_evidence(
+            root=root,
+            workload=workload,
+            measurement_policy=measurement_policy,
+            benchmark_parameters=benchmark_parameters,
+            budget_model=budget_model,
+            budget_id="comparative-baseline",
+            profile=profile,
+            versions=versions,
+        ),
         "failures": failures,
         "ok": not failures,
     }

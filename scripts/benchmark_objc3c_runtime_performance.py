@@ -13,11 +13,14 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file as write_json
+from objc3c_performance_benchmark.profile import machine_profile, tool_versions
+from objc3c_performance_reproducibility import build_runtime_workload_reproducibility_evidence
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
+PERFORMANCE_BUDGET_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "budget_model.json"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "runtime-performance" / "benchmark-summary.json"
 SUPPORTED_WORKLOAD_IDS = (
     "startup-installation",
@@ -77,6 +80,9 @@ def main() -> int:
     args = parse_args(sys.argv[1:])
     workload_manifest = load_json(WORKLOAD_MANIFEST)
     artifact_surface = load_json(ARTIFACT_SURFACE)
+    budget_model = load_json(PERFORMANCE_BUDGET_MODEL)
+    profile = machine_profile()
+    versions = tool_versions()
     acceptance = load_runtime_acceptance_module()
     acceptance.ensure_native_binaries()
     clangxx = acceptance.find_clangxx()
@@ -157,6 +163,15 @@ def main() -> int:
                 "acceptance_case_id": str(workload["acceptance_case_id"]),
                 "summary": summarize_durations(durations),
                 "measured_fields": workload.get("measured_fields", []),
+                "reproducibility_evidence": build_runtime_workload_reproducibility_evidence(
+                    root=ROOT,
+                    workload=workload,
+                    workload_manifest_path=WORKLOAD_MANIFEST,
+                    artifact_surface_path=ARTIFACT_SURFACE,
+                    budget_model=budget_model,
+                    profile=profile,
+                    versions=versions,
+                ),
                 "samples": summary_rows,
             }
         )
@@ -167,6 +182,10 @@ def main() -> int:
         "ok": not failures,
         "artifact_surface_contract_id": artifact_surface["contract_id"],
         "workload_manifest_contract_id": workload_manifest["contract_id"],
+        "budget_model_contract_id": budget_model["contract_id"],
+        "budget_model_path": repo_rel(PERFORMANCE_BUDGET_MODEL),
+        "machine_profile": profile,
+        "tool_versions": versions,
         "selected_workload_ids": selected_ids,
         "packet_paths": packet_paths,
         "workloads": workload_summaries,

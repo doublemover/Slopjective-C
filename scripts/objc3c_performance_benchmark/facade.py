@@ -16,6 +16,7 @@ from objc3c_performance_benchmark.execution import run_timed_step
 from objc3c_performance_benchmark.paths import (
     BENCHMARK_PARAMETERS_PATH,
     MEASUREMENT_POLICY_PATH,
+    PERFORMANCE_BUDGET_MODEL_PATH,
     PORTFOLIO_PATH,
     ROOT,
     SUMMARY_OUT,
@@ -32,6 +33,7 @@ def run_benchmark(
     portfolio_path: Path = PORTFOLIO_PATH,
     measurement_policy_path: Path = MEASUREMENT_POLICY_PATH,
     benchmark_parameters_path: Path = BENCHMARK_PARAMETERS_PATH,
+    budget_model_path: Path = PERFORMANCE_BUDGET_MODEL_PATH,
     summary_out: Path = SUMMARY_OUT,
     load_json_fn: Callable[[Path], dict[str, Any]] = load_json,
     write_json_fn: Callable[[Path, dict[str, Any]], None] = write_json,
@@ -49,6 +51,9 @@ def run_benchmark(
         warmup_runs_override=args.warmup_runs,
         measured_runs_override=args.measured_runs,
     )
+    measurement_policy = load_json_fn(measurement_policy_path)
+    benchmark_parameters = load_json_fn(benchmark_parameters_path)
+    budget_model = load_json_fn(budget_model_path)
     compile_root = root / "tmp" / "artifacts" / "performance" / "compile"
     compile_root.mkdir(parents=True, exist_ok=True)
 
@@ -70,11 +75,14 @@ def run_benchmark(
             profile=profile,
             versions=versions,
             normalization_mode=catalog.normalization_mode,
+            measurement_policy=measurement_policy,
+            benchmark_parameters=benchmark_parameters,
+            budget_model=budget_model,
             root=root,
             write_json_fn=write_json_fn,
             run_timed_step_fn=run_timed_step_fn,
         )
-        packet_paths.append(repo_rel(compile_packet_path))
+        packet_paths.append(repo_rel(compile_packet_path, root=root))
         failures.extend(compile_failures)
 
         runtime_packet_path, runtime_failures = benchmark_runtime_workload(
@@ -84,11 +92,14 @@ def run_benchmark(
             profile=profile,
             versions=versions,
             normalization_mode=catalog.normalization_mode,
+            measurement_policy=measurement_policy,
+            benchmark_parameters=benchmark_parameters,
+            budget_model=budget_model,
             root=root,
             write_json_fn=write_json_fn,
             run_timed_step_fn=run_timed_step_fn,
         )
-        packet_paths.append(repo_rel(runtime_packet_path))
+        packet_paths.append(repo_rel(runtime_packet_path, root=root))
         failures.extend(runtime_failures)
 
     payload = render_summary_payload(
@@ -97,6 +108,7 @@ def run_benchmark(
         portfolio_path=portfolio_path,
         measurement_policy_path=measurement_policy_path,
         benchmark_parameters_path=benchmark_parameters_path,
+        root=root,
     )
     return publish_summary(args.summary_out, payload, failures=failures, write_json_fn=write_json_fn)
 

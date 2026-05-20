@@ -10,6 +10,7 @@ from objc3c_performance_benchmark.facade import main, run_benchmark
 from objc3c_performance_benchmark.paths import (
     BENCHMARK_PARAMETERS_PATH,
     MEASUREMENT_POLICY_PATH,
+    PERFORMANCE_BUDGET_MODEL_PATH,
     PORTFOLIO_PATH,
     ROOT,
     SUMMARY_OUT,
@@ -26,6 +27,7 @@ __all__ = [
     "BENCHMARK_PARAMETERS_PATH",
     "BenchmarkCatalog",
     "MEASUREMENT_POLICY_PATH",
+    "PERFORMANCE_BUDGET_MODEL_PATH",
     "PORTFOLIO_PATH",
     "ROOT",
     "SUMMARY_OUT",
