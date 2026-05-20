@@ -14,10 +14,9 @@ from objc3c_runtime_backed_semantics_closure.inputs import REQUIRED_IR_TOKENS
 from objc3c_runtime_backed_semantics_closure.paths import CONTRACT_ID
 from objc3c_runtime_backed_semantics_closure.paths import IR_EMITTER
 from objc3c_runtime_backed_semantics_closure.paths import ISSUE
-from objc3c_runtime_backed_semantics_closure.paths import JSON_OUT
 from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_CPP
 from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_H
-from objc3c_runtime_backed_semantics_closure.paths import MD_OUT
+from objc3c_runtime_backed_semantics_closure.paths import REPORT_DIR
 from objc3c_runtime_backed_semantics_closure.paths import RUNTIME
 from objc3c_runtime_backed_semantics_closure.paths import SCRATCH
 from objc3c_runtime_backed_semantics_closure.paths import SEMA_PASS_MANAGER
@@ -38,21 +37,20 @@ def build_summary() -> dict:
         symbol: symbol in aggregate_ir for symbol in HELPER_SYMBOLS
     }
 
+    source_truth_paths = [
+        *POSITIVE_FIXTURES.values(),
+        *(spec["path"] for spec in NEGATIVE_FIXTURES.values()),
+        LOWERING_CONTRACT_H,
+        LOWERING_CONTRACT_CPP,
+        IR_EMITTER,
+        SEMA_PASS_MANAGER,
+        SEMANTIC_PASSES,
+        STATIC_ANALYSIS,
+        RUNTIME,
+    ]
     no_source_truth_under_tmp = all(
         not rel(path).startswith("tmp/")
-        for path in [
-            *POSITIVE_FIXTURES.values(),
-            *(spec["path"] for spec in NEGATIVE_FIXTURES.values()),
-            LOWERING_CONTRACT_H,
-            LOWERING_CONTRACT_CPP,
-            IR_EMITTER,
-            SEMA_PASS_MANAGER,
-            SEMANTIC_PASSES,
-            STATIC_ANALYSIS,
-            RUNTIME,
-            JSON_OUT,
-            MD_OUT,
-        ]
+        for path in source_truth_paths
     )
 
     counts = {
@@ -101,4 +99,6 @@ def build_summary() -> dict:
         "conformance": conformance,
         "scratch_directory": rel(SCRATCH),
         "scratch_is_not_source_truth": True,
+        "report_directory": rel(REPORT_DIR),
+        "report_is_not_source_truth": True,
     }

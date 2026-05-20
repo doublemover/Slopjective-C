@@ -13,6 +13,7 @@ def render_markdown(summary: dict) -> str:
         f"- Negative fail-closed fixtures: `{counts['negative_fixture_count']}`",
         f"- Private runtime helper symbols: `{counts['runtime_helper_symbol_count']}`",
         f"- Durable replay fixture directories: `{counts['durable_replay_fixture_dir_count']}`",
+        f"- Report output: `{summary['report_directory']}` (not source truth)",
         f"- Scratch output: `{summary['scratch_directory']}` (not source truth)",
         "",
         "## Checks",

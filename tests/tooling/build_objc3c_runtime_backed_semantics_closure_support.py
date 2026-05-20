@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "build_objc3c_runtime_backed_semantics_closure.py"
 SUMMARY = (
     ROOT
+    / "tmp"
     / "reports"
     / "claimability"
     / "runtime-backed-semantics-closure"

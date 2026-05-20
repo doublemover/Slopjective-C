@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_DIR = ROOT / "reports" / "claimability" / "runtime-backed-semantics-closure"
+REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "runtime-backed-semantics-closure"
 JSON_OUT = REPORT_DIR / "runtime_backed_semantics_closure_summary.json"
 MD_OUT = REPORT_DIR / "runtime_backed_semantics_closure_summary.md"
 
