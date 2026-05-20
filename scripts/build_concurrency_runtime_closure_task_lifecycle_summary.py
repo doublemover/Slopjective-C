@@ -76,6 +76,8 @@ def parse_hardening_probe(path: Path) -> dict[str, int]:
         "after_wait_last_executor_queue_depth": "pass1.after_wait_next.last_executor_queue_depth == ",
         "after_wait_max_executor_queue_depth": "pass1.after_wait_next.max_executor_queue_depth == ",
         "after_wait_scheduler_sequence": "pass1.after_wait_next.scheduler_sequence == ",
+        "after_wait_deadlock_guard_passed": "pass1.after_wait_next.deadlock_guard_passed == ",
+        "after_wait_race_guard_passed": "pass1.after_wait_next.race_guard_passed == ",
         "after_second_wait_last_queue_depth": "pass1.after_second_wait_next.last_queue_depth == ",
         "after_second_wait_last_queue_drain_result": "pass1.after_second_wait_next.last_queue_drain_result == ",
         "after_second_wait_scheduler_enqueue_count": "pass1.after_second_wait_next.scheduler_enqueue_count == ",
@@ -108,16 +110,30 @@ def parse_hardening_probe(path: Path) -> dict[str, int]:
     }
     summary: dict[str, int] = {}
     for key, marker in mapping.items():
-        idx = text.find(marker)
+        marker_candidates = [marker]
+        if marker.startswith("pass1."):
+            marker_candidates.append(marker.replace("pass1.", "pass.", 1))
+        idx = -1
+        matched_marker = marker
+        for candidate in marker_candidates:
+            idx = text.find(candidate)
+            if idx != -1:
+                matched_marker = candidate
+                break
         if idx == -1:
             continue
-        start = idx + len(marker)
+        start = idx + len(matched_marker)
         end = start
         while end < len(text) and text[end].isdigit():
             end += 1
         if end > start:
             summary[key] = int(text[start:end])
-    summary["replay_equal"] = 1 if "Equivalent(pass1, pass2)" in text else 0
+    summary["replay_equal"] = (
+        1
+        if "Equivalent(pass1, pass2)" in text
+        or "Equivalent(run.pass1, run.pass2)" in text
+        else 0
+    )
     return summary
 
 
@@ -136,7 +152,7 @@ def main() -> int:
     hardening_values = parse_hardening_probe(TASK_HARDENING_ASSERTIONS)
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
