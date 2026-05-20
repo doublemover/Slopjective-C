@@ -24,6 +24,50 @@ class NegativeDiagnosticExpectation:
     allow_missing_structured_diagnostics: bool = False
 
 
+def _structured_diagnostic_locations(diagnostics: list[Any]) -> list[dict[str, Any]]:
+    locations: list[dict[str, Any]] = []
+    for diagnostic in diagnostics:
+        if not isinstance(diagnostic, dict):
+            continue
+        code = diagnostic.get("code")
+        if not isinstance(code, str):
+            continue
+        line = diagnostic.get("line", 0)
+        column = diagnostic.get("column", 0)
+        message = diagnostic.get("message", "")
+        locations.append(
+            {
+                "code": code,
+                "line": int(line) if isinstance(line, (int, float)) else 0,
+                "column": int(column) if isinstance(column, (int, float)) else 0,
+                "message": message if isinstance(message, str) else "",
+            }
+        )
+    return locations
+
+
+def _fixture_sidecar_metadata(fixture: Path) -> dict[str, Any]:
+    sidecar_path = fixture.with_name(f"{fixture.stem}.meta.json")
+    if not sidecar_path.is_file():
+        return {}
+    sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    expect(
+        sidecar.get("fixture") == fixture.name,
+        f"negative fixture sidecar {sidecar_path} does not point at {fixture.name}",
+    )
+    failure = sidecar.get("expect_failure", {})
+    tokens = failure.get("required_diagnostic_tokens", [])
+    expect(
+        isinstance(tokens, list) and all(isinstance(token, str) for token in tokens),
+        f"negative fixture sidecar {sidecar_path} does not publish required diagnostic tokens",
+    )
+    return {
+        "sidecar": repo_display_path(sidecar_path),
+        "sidecar_stage": failure.get("stage", ""),
+        "sidecar_required_diagnostic_tokens": tokens,
+    }
+
+
 def compile_fixture_expect_failure(
     fixture: Path,
     out_dir: Path,
@@ -81,12 +125,15 @@ def compile_fixture_expect_failure(
             expected_code in observed_codes,
             f"failed compile for {fixture} did not publish expected diagnostic code {expected_code}",
         )
+    diagnostic_locations = _structured_diagnostic_locations(diagnostics)
     return {
         "returncode": result.returncode,
         "diagnostic_count": len(diagnostics),
         "diagnostic_codes": sorted(observed_codes),
+        "diagnostic_locations": diagnostic_locations,
         "stderr": result.stderr,
         "diagnostics_path": repo_display_path(diagnostics_json_path),
+        "sidecar_metadata": _fixture_sidecar_metadata(fixture),
     }
 
 
@@ -116,11 +163,14 @@ def compile_negative_diagnostic_batch(
                 "key": expectation.key,
                 "fixture": repo_display_path(expectation.fixture),
                 "expected_codes": list(expectation.expected_codes),
+                "expected_snippets": list(expectation.expected_snippets),
                 "diagnostic_codes": negative_result["diagnostic_codes"],
                 "diagnostic_count": negative_result["diagnostic_count"],
+                "diagnostic_locations": negative_result["diagnostic_locations"],
                 "diagnostics": negative_result["diagnostics_path"],
                 "returncode": negative_result["returncode"],
                 "duration_seconds": round_seconds(perf_counter() - fixture_started_at),
+                **negative_result["sidecar_metadata"],
             }
         )
     return {

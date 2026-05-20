@@ -71,6 +71,10 @@ inline void CaptureCategoryAttachmentProtocolRuntimeSnapshots(
                                   run.base_worker_query);
   CaptureProtocolConformanceQuery(kDerivedClassName, kWorkerProtocolName,
                                   run.derived_worker_query);
+  CaptureProtocolConformanceQuery(kWidgetClassName, kMissingProtocolName,
+                                  run.missing_protocol_query);
+  CaptureProtocolConformanceQuery(kMissingClassName, kWorkerProtocolName,
+                                  run.missing_class_query);
 }
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

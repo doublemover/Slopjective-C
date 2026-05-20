@@ -40,6 +40,63 @@ const char *RuntimeProtocolCString(const char *value) {
   return value != nullptr ? value : "";
 }
 
+struct RuntimeProtocolRequirementSignature {
+  std::string return_type_name;
+  std::uint64_t parameter_count = 0;
+};
+
+using RuntimeProtocolRequirementMap =
+    std::unordered_map<std::string, RuntimeProtocolRequirementSignature>;
+
+std::string RuntimeProtocolRequirementKey(const char *family_name,
+                                          const char *selector) {
+  return std::string(RuntimeProtocolCString(family_name)) + "\n" +
+         RuntimeProtocolCString(selector);
+}
+
+bool RuntimeProtocolRequirementSignaturesMatch(
+    const RuntimeProtocolRequirementSignature &lhs,
+    const RuntimeProtocolRequirementSignature &rhs) {
+  return lhs.return_type_name == rhs.return_type_name &&
+         lhs.parameter_count == rhs.parameter_count;
+}
+
+bool AddRuntimeProtocolRequirementSignature(
+    const char *family_name,
+    const char *selector,
+    const char *return_type_name,
+    std::uint64_t parameter_count,
+    const std::string &context,
+    RuntimeProtocolRequirementMap &requirements_by_key,
+    bool duplicate_same_signature_is_error,
+    std::string &diagnostic_reason) {
+  const RuntimeProtocolRequirementSignature signature{
+      RuntimeProtocolCString(return_type_name), parameter_count};
+  const std::string requirement_key =
+      RuntimeProtocolRequirementKey(family_name, selector);
+  const auto inserted =
+      requirements_by_key.emplace(requirement_key, signature);
+  if (inserted.second) {
+    return true;
+  }
+  if (RuntimeProtocolRequirementSignaturesMatch(inserted.first->second,
+                                                signature)) {
+    if (duplicate_same_signature_is_error) {
+      diagnostic_reason =
+          "duplicate protocol " + std::string(family_name) +
+          " method requirement " + RuntimeProtocolCString(selector) +
+          " in " + context;
+      return false;
+    }
+    return true;
+  }
+  diagnostic_reason =
+      "conflicting protocol " + std::string(family_name) +
+      " method requirement " + RuntimeProtocolCString(selector) + " in " +
+      context;
+  return false;
+}
+
 bool ValidateRuntimeProtocolMethodList(
     const EmittedMethodListRef *method_list_ref,
     const char *family_name,
@@ -65,6 +122,8 @@ bool ValidateRuntimeProtocolMethodList(
   }
   const auto *entries =
       reinterpret_cast<const EmittedMethodListEntry *>(header + 1);
+  RuntimeProtocolRequirementMap requirements_by_key;
+  requirements_by_key.reserve(static_cast<std::size_t>(header->count));
   for (std::uint64_t index = 0; index < header->count; ++index) {
     const EmittedMethodListEntry &entry = entries[index];
     if (!RuntimeNonEmptyCString(entry.selector) ||
@@ -75,8 +134,76 @@ bool ValidateRuntimeProtocolMethodList(
           " method entry for " + RuntimeProtocolCString(protocol_name);
       return false;
     }
+    if (!AddRuntimeProtocolRequirementSignature(
+            family_name, entry.selector, entry.return_type_name,
+            entry.parameter_count,
+            "protocol " + std::string(RuntimeProtocolCString(protocol_name)),
+            requirements_by_key, true, diagnostic_reason)) {
+      return false;
+    }
   }
   return true;
+}
+
+bool AddRuntimeProtocolMethodListRequirements(
+    const EmittedMethodListRef *method_list_ref,
+    const char *family_name,
+    const std::string &context,
+    RuntimeProtocolRequirementMap &requirements_by_key,
+    std::string &diagnostic_reason) {
+  if (method_list_ref == nullptr || method_list_ref->count == 0) {
+    return true;
+  }
+  if (method_list_ref->method_list == nullptr ||
+      !RuntimeNonEmptyCString(method_list_ref->owner_identity)) {
+    diagnostic_reason =
+        std::string("malformed protocol ") + family_name +
+        " method list for " + context;
+    return false;
+  }
+  const auto *header =
+      static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
+  if (header == nullptr || header->count != method_list_ref->count) {
+    diagnostic_reason =
+        std::string("malformed protocol ") + family_name +
+        " method list count for " + context;
+    return false;
+  }
+  const auto *entries =
+      reinterpret_cast<const EmittedMethodListEntry *>(header + 1);
+  for (std::uint64_t index = 0; index < header->count; ++index) {
+    const EmittedMethodListEntry &entry = entries[index];
+    if (!RuntimeNonEmptyCString(entry.selector) ||
+        !RuntimeNonEmptyCString(entry.return_type_name)) {
+      diagnostic_reason =
+          std::string("malformed protocol ") + family_name +
+          " method entry for " + context;
+      return false;
+    }
+    if (!AddRuntimeProtocolRequirementSignature(
+            family_name, entry.selector, entry.return_type_name,
+            entry.parameter_count, context, requirements_by_key, false,
+            diagnostic_reason)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeForwardProtocolRecordIsEmpty(
+    const EmittedProtocolRecord &record) {
+  const bool has_inherited_protocols =
+      record.inherited_protocol_refs != nullptr &&
+      record.inherited_protocol_refs->count != 0;
+  const bool has_instance_methods =
+      record.instance_method_list_ref != nullptr &&
+      record.instance_method_list_ref->count != 0;
+  const bool has_class_methods = record.class_method_list_ref != nullptr &&
+                                 record.class_method_list_ref->count != 0;
+  return !has_inherited_protocols && !has_instance_methods &&
+         !has_class_methods && record.property_count == 0 &&
+         record.method_count == 0 && record.instance_method_count == 0 &&
+         record.class_method_count == 0;
 }
 
 bool AddKnownProtocolRecords(
@@ -106,6 +233,13 @@ bool AddKnownProtocolRecords(
             diagnostic_reason)) {
       return false;
     }
+    if (record->is_forward_declaration &&
+        !RuntimeForwardProtocolRecordIsEmpty(*record)) {
+      diagnostic_reason =
+          "forward protocol descriptor contains concrete requirements for " +
+          std::string(record->protocol_name);
+      return false;
+    }
     known_protocol_records.insert(record);
     if (record->is_forward_declaration) {
       continue;
@@ -117,6 +251,95 @@ bool AddKnownProtocolRecords(
       diagnostic_reason =
           "conflicting protocol owner for " +
           std::string(record->protocol_name);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool CollectRuntimeProtocolRequirementClosure(
+    const EmittedProtocolRecord *record,
+    const std::string &context,
+    RuntimeProtocolRequirementMap &requirements_by_key,
+    std::unordered_set<const EmittedProtocolRecord *> &visiting,
+    std::unordered_set<const EmittedProtocolRecord *> &visited,
+    std::string &diagnostic_reason) {
+  if (record == nullptr) {
+    diagnostic_reason = "unknown protocol reference in " + context;
+    return false;
+  }
+  if (!RuntimeNonEmptyCString(record->protocol_name) ||
+      !RuntimeNonEmptyCString(record->owner_identity)) {
+    diagnostic_reason = "malformed protocol descriptor in " + context;
+    return false;
+  }
+  if (record->is_forward_declaration) {
+    diagnostic_reason = "forward protocol reference in " + context;
+    return false;
+  }
+  if (visited.find(record) != visited.end()) {
+    return true;
+  }
+  if (!visiting.insert(record).second) {
+    diagnostic_reason = "cyclic protocol inheritance in " + context;
+    return false;
+  }
+
+  const objc3_runtime_pointer_aggregate *inherited_refs =
+      record->inherited_protocol_refs;
+  if (inherited_refs != nullptr) {
+    for (std::uint64_t index = 0; index < inherited_refs->count; ++index) {
+      const auto *inherited_record =
+          static_cast<const EmittedProtocolRecord *>(
+              RuntimeAggregateEntry(inherited_refs, index));
+      if (!CollectRuntimeProtocolRequirementClosure(
+              inherited_record, context, requirements_by_key, visiting,
+              visited, diagnostic_reason)) {
+        return false;
+      }
+    }
+  }
+  if (!AddRuntimeProtocolMethodListRequirements(
+          record->instance_method_list_ref, "instance", context,
+          requirements_by_key, diagnostic_reason) ||
+      !AddRuntimeProtocolMethodListRequirements(
+          record->class_method_list_ref, "class", context,
+          requirements_by_key, diagnostic_reason)) {
+    return false;
+  }
+  visiting.erase(record);
+  visited.insert(record);
+  return true;
+}
+
+bool RuntimeProtocolReferenceRequirementClosureIsSupported(
+    const objc3_runtime_pointer_aggregate *protocol_refs,
+    const std::string &context,
+    std::string &diagnostic_reason) {
+  if (protocol_refs == nullptr) {
+    return true;
+  }
+  RuntimeProtocolRequirementMap requirements_by_key;
+  requirements_by_key.reserve(static_cast<std::size_t>(protocol_refs->count));
+  std::unordered_set<const EmittedProtocolRecord *> visiting;
+  std::unordered_set<const EmittedProtocolRecord *> visited;
+  std::unordered_set<std::string> direct_protocol_owners;
+  direct_protocol_owners.reserve(static_cast<std::size_t>(protocol_refs->count));
+  for (std::uint64_t index = 0; index < protocol_refs->count; ++index) {
+    const auto *record = static_cast<const EmittedProtocolRecord *>(
+        RuntimeAggregateEntry(protocol_refs, index));
+    if (record == nullptr ||
+        !RuntimeNonEmptyCString(record->owner_identity)) {
+      diagnostic_reason = "unknown protocol reference in " + context;
+      return false;
+    }
+    if (!direct_protocol_owners.insert(record->owner_identity).second) {
+      diagnostic_reason = "duplicate protocol reference in " + context;
+      return false;
+    }
+    if (!CollectRuntimeProtocolRequirementClosure(
+            record, context, requirements_by_key, visiting, visited,
+            diagnostic_reason)) {
       return false;
     }
   }
@@ -169,6 +392,16 @@ bool RuntimeRegisteredProtocolMetadataIsSupported(
             diagnostic_reason)) {
       return false;
     }
+    if (!record->is_forward_declaration) {
+      RuntimeProtocolRequirementMap requirements_by_key;
+      std::unordered_set<const EmittedProtocolRecord *> visiting;
+      std::unordered_set<const EmittedProtocolRecord *> visited;
+      if (!CollectRuntimeProtocolRequirementClosure(
+              record, "protocol " + std::string(record->protocol_name),
+              requirements_by_key, visiting, visited, diagnostic_reason)) {
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -192,9 +425,17 @@ bool RuntimeClassProtocolReferencesAreSupported(
             bundle->class_record.adopted_protocol_refs, known_protocol_records,
             "class " + std::string(bundle->class_record.class_name),
             diagnostic_reason) ||
+        !RuntimeProtocolReferenceRequirementClosureIsSupported(
+            bundle->class_record.adopted_protocol_refs,
+            "class " + std::string(bundle->class_record.class_name),
+            diagnostic_reason) ||
         !RuntimeProtocolReferenceAggregateIsSupported(
             bundle->metaclass_record.adopted_protocol_refs,
             known_protocol_records,
+            "metaclass " + std::string(bundle->class_record.class_name),
+            diagnostic_reason) ||
+        !RuntimeProtocolReferenceRequirementClosureIsSupported(
+            bundle->metaclass_record.adopted_protocol_refs,
             "metaclass " + std::string(bundle->class_record.class_name),
             diagnostic_reason)) {
       return false;
@@ -222,6 +463,11 @@ bool RuntimeCategoryProtocolReferencesAreSupported(
     }
     if (!RuntimeProtocolReferenceAggregateIsSupported(
             record->adopted_protocol_refs, known_protocol_records,
+            "category " + std::string(record->class_name) + "(" +
+                std::string(record->category_name) + ")",
+            diagnostic_reason) ||
+        !RuntimeProtocolReferenceRequirementClosureIsSupported(
+            record->adopted_protocol_refs,
             "category " + std::string(record->class_name) + "(" +
                 std::string(record->category_name) + ")",
             diagnostic_reason)) {
@@ -489,7 +735,9 @@ bool QueryProtocolConformanceFromProtocolRecordUnlocked(
     }
     ++visited_protocol_count;
     if (record->is_forward_declaration) {
-      continue;
+      RecordProtocolQueryFailure(
+          failure_reason, "forward protocol reference in conformance query");
+      return false;
     }
     if (std::strcmp(record->protocol_name, protocol_name) == 0) {
       match.matched_protocol_owner_identity = record->owner_identity;

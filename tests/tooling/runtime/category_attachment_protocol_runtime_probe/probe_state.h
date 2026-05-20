@@ -9,9 +9,14 @@ namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
 struct CategoryAttachmentProtocolValues {
   int category_value = 0;
   int category_cached_value = 0;
+  int auxiliary_category_value = 0;
+  int category_bool_value = 0;
   int class_value = 0;
+  int super_inherited_value = 0;
+  int nil_receiver_value = 0;
   int protocol_strict_error = 0;
   int protocol_strict_error_expected = 0;
+  objc3_runtime_dispatch_typed_result category_bool_typed_result{};
   objc3_runtime_dispatch_i32_result protocol_strict_error_i32_result{};
   objc3_runtime_dispatch_typed_result protocol_strict_error_typed_result{};
 };
@@ -72,6 +77,8 @@ struct CategoryAttachmentProtocolProbeRun {
   ProtocolConformanceObservation tracer_query;
   ProtocolConformanceObservation base_worker_query;
   ProtocolConformanceObservation derived_worker_query;
+  ProtocolConformanceObservation missing_protocol_query;
+  ProtocolConformanceObservation missing_class_query;
   MethodCacheStateObservation category_first_state;
   MethodCacheStateObservation category_second_state;
   MethodCacheStateObservation method_state;

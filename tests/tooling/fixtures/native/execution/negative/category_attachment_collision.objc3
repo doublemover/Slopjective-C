@@ -1,0 +1,29 @@
+module m252CategoryAttachmentCollision;
+
+@interface Root
+- (i32) value;
+@end
+
+@implementation Root
+- (i32) value {
+  return 1;
+}
+@end
+
+@interface Root (Extras)
+- (i32) extra;
+@end
+
+@interface Root (Extras)
+- (i32) extraAgain;
+@end
+
+@implementation Root (Extras)
+- (i32) extra {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

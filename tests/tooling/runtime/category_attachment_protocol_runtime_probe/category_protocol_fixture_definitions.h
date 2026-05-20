@@ -10,11 +10,16 @@ struct RuntimeDispatch {
 inline constexpr const char *kWidgetClassName = "Widget";
 inline constexpr const char *kBaseClassName = "Base";
 inline constexpr const char *kDerivedClassName = "Derived";
+inline constexpr const char *kMissingClassName = "MissingConformanceClass";
 inline constexpr const char *kWorkerProtocolName = "Worker";
 inline constexpr const char *kTracerProtocolName = "Tracer";
+inline constexpr const char *kMissingProtocolName = "MissingProtocol";
 
 inline constexpr const char *kCategorySelector = "tracedValue";
+inline constexpr const char *kAuxiliaryCategorySelector = "auxiliaryValue";
+inline constexpr const char *kCategoryBoolSelector = "tracedReady";
 inline constexpr const char *kClassSelector = "classValue";
+inline constexpr const char *kSuperclassSelector = "inheritedValue";
 inline constexpr const char *kProtocolStrictErrorSelector = "ignoredValue";
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

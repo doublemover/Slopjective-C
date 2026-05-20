@@ -31,6 +31,9 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   const char *last_attached_category_name;
   const char *last_allocated_class_name;
   const char *last_malformed_class_graph_reason;
+  const char *last_malformed_class_graph_diagnostic_code;
+  const char *last_malformed_class_graph_diagnostic_message;
+  const char *last_malformed_class_graph_diagnostic_class;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {

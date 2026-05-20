@@ -266,7 +266,10 @@
         {
           "owner": "sema",
           "selectors": [
-            "expect_failure.stage=compile + O3S*"
+            "expect_failure.stage=compile + O3S*",
+            "category_*",
+            "protocol_*",
+            "duplicate_protocol_runtime_export.objc3"
           ],
           "disposition": "typed semantic, unsupported-feature, and conservative analysis rejection metadata"
         },

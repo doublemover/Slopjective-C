@@ -113,6 +113,21 @@ Field notes:
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a retired-mode support fixture.
 
+## Protocol/category diagnostic fixture notes
+
+- `category_attachment_collision.objc3` is a compile-stage negative expecting duplicate category diagnostics (`O3S200`).
+- `category_merge_conflicting_method.objc3` is a compile-stage negative expecting category method conflict diagnostics (`O3S219`).
+- `category_merge_conflicting_property.objc3` is a compile-stage negative expecting category property conflict diagnostics (`O3S219`).
+- `category_merge_missing_pair.objc3` is a compile-stage negative expecting category interface/implementation pair diagnostics (`O3S219`).
+- `category_unknown_class_rejected.objc3` is a compile-stage negative expecting category unknown-target diagnostics (`O3S219`).
+- `category_unavailable_class_rejected.objc3` is a compile-stage negative expecting category unavailable-target diagnostics (`O3S219`).
+- `category_method_dispatch_intent_rejected.objc3` is a compile-stage negative expecting category method dispatch-control diagnostics (`O3S315`).
+- `category_container_dispatch_intent_rejected.objc3` is a compile-stage negative expecting category container dispatch-control diagnostics (`O3S316`).
+- `duplicate_protocol_runtime_export.objc3` is a compile-stage negative expecting duplicate protocol diagnostics (`O3S200`).
+- `protocol_requirement_duplicate_conflict_rejected.objc3` is a compile-stage negative expecting duplicate protocol requirement diagnostics (`O3S218`).
+- `protocol_requirement_inherited_conflict_rejected.objc3` is a compile-stage negative expecting inherited protocol requirement conflict diagnostics (`O3S218`).
+- `protocol_dispatch_intent_rejected.objc3` is a compile-stage negative expecting protocol dispatch-control diagnostics (`O3S314`).
+
 ## id-alias parser fixture note
 
 - `id_parser_missing_param_colon.objc3` is a compile-stage negative expecting parser diagnostics (`O3P107`).

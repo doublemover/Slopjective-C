@@ -10,6 +10,7 @@ module categoryAttachmentProtocolRuntimeLibrary;
 @required
 - (i32) tracedValue;
 @optional
+- (bool) tracedReady;
 - (i32) ignoredValue;
 @end
 
@@ -37,19 +38,34 @@ module categoryAttachmentProtocolRuntimeLibrary;
 }
 @end
 
+@interface Widget (Auxiliary)
+- (i32) auxiliaryValue;
+@end
+
+@implementation Widget (Auxiliary)
+- (i32) auxiliaryValue {
+  return 29;
+}
+@end
+
 @interface Widget (Tracing) <Tracer>
 - (i32) tracedValue;
+- (bool) tracedReady;
 @end
 
 @implementation Widget (Tracing)
 - (i32) tracedValue {
   return 13;
 }
+- (bool) tracedReady {
+  return true;
+}
 @end
 
 @interface Derived : Base <Tracer>
 + (i32) classValue;
 - (i32) tracedValue;
+- (bool) tracedReady;
 @end
 
 @implementation Derived
@@ -58,5 +74,8 @@ module categoryAttachmentProtocolRuntimeLibrary;
 }
 - (i32) tracedValue {
   return 19;
+}
+- (bool) tracedReady {
+  return true;
 }
 @end

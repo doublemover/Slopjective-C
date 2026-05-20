@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "duplicate_protocol_runtime_export.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S200",
+      "duplicate protocol 'Worker'"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol conflict diagnostics",
+    "case": "duplicate protocol export"
+  }
+}

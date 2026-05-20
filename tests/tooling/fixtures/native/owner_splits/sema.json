@@ -24,7 +24,10 @@
       "surface": "tests/tooling/fixtures/native/execution/negative",
       "selectors": [
         "expect_failure.stage=compile + O3S*",
-        "unsupported_feature_claim_*"
+        "unsupported_feature_claim_*",
+        "category_*",
+        "protocol_*",
+        "duplicate_protocol_runtime_export.objc3"
       ],
       "disposition": "typed semantic diagnostics, unsupported-feature runnable-claim rejections, and conservative analysis failures"
     },

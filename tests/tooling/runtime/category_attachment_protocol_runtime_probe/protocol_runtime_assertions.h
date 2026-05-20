@@ -70,6 +70,20 @@ inline bool TypedStrictErrorResultPassed(
                     "typed-dispatch-strict-error-result");
 }
 
+inline bool TypedBoolCategoryResultPassed(
+    const objc3_runtime_dispatch_typed_result &result) {
+  return result.abi_version ==
+             OBJC3_RUNTIME_DISPATCH_TYPED_RESULT_ABI_VERSION &&
+         result.result_size == sizeof(objc3_runtime_dispatch_typed_result) &&
+         result.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         result.return_kind == OBJC3_RUNTIME_DISPATCH_RETURN_KIND_BOOL &&
+         TextEquals(result.return_kind_name, "bool") &&
+         result.i32_value == 0 && result.bool_value == 1 &&
+         result.object_reference == 0 && result.class_reference == 0 &&
+         result.selector_reference == 0 && result.protocol_reference == 0 &&
+         TextEquals(result.result_contract, "typed-dispatch-value-result");
+}
+
 inline bool CategoryAttachmentProtocolRuntimeProbePassed(
     const CategoryAttachmentProtocolProbeRun &run) {
   const CategoryAttachmentProtocolValues &values = run.values;
@@ -87,6 +101,10 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
       run.base_worker_query.query;
   const objc3_runtime_protocol_conformance_query_snapshot &derived_worker =
       run.derived_worker_query.query;
+  const objc3_runtime_protocol_conformance_query_snapshot &missing_protocol =
+      run.missing_protocol_query.query;
+  const objc3_runtime_protocol_conformance_query_snapshot &missing_class =
+      run.missing_class_query.query;
   const objc3_runtime_method_cache_state_snapshot &category_first =
       run.category_first_state.state;
   const objc3_runtime_method_cache_state_snapshot &category_second =
@@ -99,18 +117,22 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
       run.strict_error_entry.entry;
 
   return values.category_value == 13 && values.category_cached_value == 13 &&
-         values.class_value == 11 &&
+         values.auxiliary_category_value == 29 &&
+         values.category_bool_value == 1 &&
+         TypedBoolCategoryResultPassed(values.category_bool_typed_result) &&
+         values.class_value == 11 && values.super_inherited_value == 7 &&
+         values.nil_receiver_value == 0 &&
          values.protocol_strict_error ==
              values.protocol_strict_error_expected &&
          I32StrictErrorResultPassed(
              values.protocol_strict_error_i32_result) &&
          TypedStrictErrorResultPassed(
              values.protocol_strict_error_typed_result) &&
-         graph.attached_category_count == 1 &&
+         graph.attached_category_count == 2 &&
          graph.category_attachment_generation > 0 &&
          graph.method_surface_generation > 0 &&
          graph.protocol_conformance_edge_count >= 2 &&
-         widget.attached_category_count == 1 &&
+         widget.attached_category_count == 2 &&
          widget.direct_protocol_count == 1 &&
          widget.attached_protocol_count == 1 && base.found == 1 &&
          base.attached_protocol_count == 0 && worker.conforms == 1 &&
@@ -133,15 +155,27 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          derived_worker.matched_protocol_depth >= 1 &&
          derived_worker.matched_via_inherited_protocol == 1 &&
          derived_worker.matched_from_category == 0 &&
+         missing_protocol.class_found == 1 &&
+         missing_protocol.protocol_found == 0 &&
+         missing_protocol.conforms == 0 &&
+         missing_protocol.malformed_metadata == 0 &&
+         TextEquals(missing_protocol.class_name, "Widget") &&
+         TextEquals(missing_protocol.protocol_name, "MissingProtocol") &&
+         missing_class.class_found == 0 && missing_class.protocol_found == 1 &&
+         missing_class.conforms == 0 &&
+         missing_class.malformed_metadata == 0 &&
+         TextEquals(missing_class.class_name, "MissingConformanceClass") &&
+         TextEquals(missing_class.protocol_name, "Worker") &&
          TextEquals(strict_state.last_selector, "ignoredValue") &&
          strict_state.last_dispatch_strict_error == 1 &&
          TextEquals(category_first.last_selector, "tracedValue") &&
          category_first.last_dispatch_used_cache == 0 &&
          category_first.last_dispatch_resolved_live_method == 1 &&
-         category_first.last_category_probe_count >= 1 &&
+         category_first.last_category_probe_count == 1 &&
          TextEquals(category_second.last_selector, "tracedValue") &&
          category_second.last_dispatch_used_cache == 1 &&
          category_second.last_dispatch_resolved_live_method == 1 &&
+         category_second.last_category_probe_count == 1 &&
          category_entry.found == 1 && category_entry.resolved == 1 &&
          TextEquals(category_entry.selector, "tracedValue") &&
          TextEquals(category_entry.resolved_class_name, "Widget") &&
@@ -152,14 +186,14 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
              graph.category_attachment_generation &&
          category_entry.cache_method_surface_generation ==
              graph.method_surface_generation &&
-         category_entry.category_probe_count >= 1 && strict_entry.found == 1 &&
+         category_entry.category_probe_count == 1 && strict_entry.found == 1 &&
          strict_entry.resolved == 0 &&
          TextEquals(strict_entry.selector, "ignoredValue") &&
          strict_entry.cache_category_attachment_generation ==
              graph.category_attachment_generation &&
          strict_entry.cache_method_surface_generation ==
              graph.method_surface_generation &&
-         strict_entry.category_probe_count >= 1 &&
+         strict_entry.category_probe_count >= 2 &&
          strict_entry.protocol_probe_count >= 1;
 }
 

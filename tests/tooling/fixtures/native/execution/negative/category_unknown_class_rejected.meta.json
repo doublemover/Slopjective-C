@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture": "category_unknown_class_rejected.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S219",
+      "category attachment failure: category interface 'MissingOwner(Tracing)' attaches to unknown class 'MissingOwner'",
+      "category attachment failure: category implementation 'MissingOwner(Tracing)' attaches to unknown class 'MissingOwner'"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol availability diagnostics",
+    "case": "category unknown target class"
+  }
+}

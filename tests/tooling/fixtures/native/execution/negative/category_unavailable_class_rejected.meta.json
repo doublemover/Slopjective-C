@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture": "category_unavailable_class_rejected.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S219",
+      "category attachment failure: category interface 'Widget(Tracing)' attaches to unavailable class 'Widget' without a realized implementation",
+      "category attachment failure: category implementation 'Widget(Tracing)' attaches to unavailable class 'Widget' without a realized implementation"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol availability diagnostics",
+    "case": "category unavailable target class"
+  }
+}

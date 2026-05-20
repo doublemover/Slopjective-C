@@ -164,7 +164,12 @@ inline void PrintGraphStateProtocolCategory(
   PrintStringField("last_attached_category_owner_identity",
                    snapshot.last_attached_category_owner_identity);
   PrintStringField("last_attached_category_name",
-                   snapshot.last_attached_category_name, false);
+                   snapshot.last_attached_category_name);
+  PrintStringField("last_malformed_class_graph_diagnostic_code",
+                   snapshot.last_malformed_class_graph_diagnostic_code);
+  PrintStringField("last_malformed_class_graph_diagnostic_class",
+                   snapshot.last_malformed_class_graph_diagnostic_class,
+                   false);
   std::printf("}");
 }
 

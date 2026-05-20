@@ -67,6 +67,16 @@ extern "C" int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->last_malformed_class_graph_reason =
       objc3c::runtime::BorrowRuntimeCString(
           state.last_malformed_class_graph_reason);
+  const bool has_malformed_class_graph_reason =
+      !state.last_malformed_class_graph_reason.empty();
+  snapshot->last_malformed_class_graph_diagnostic_code =
+      has_malformed_class_graph_reason ? "O3RT004" : "";
+  snapshot->last_malformed_class_graph_diagnostic_message =
+      has_malformed_class_graph_reason
+          ? "runtime dispatch failed: malformed metadata"
+          : "";
+  snapshot->last_malformed_class_graph_diagnostic_class =
+      has_malformed_class_graph_reason ? "malformed-runtime-metadata" : "";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

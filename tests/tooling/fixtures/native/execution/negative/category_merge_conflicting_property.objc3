@@ -1,0 +1,27 @@
+module categoryMergeConflictingProperty;
+
+@interface Widget
+@end
+
+@implementation Widget
+@end
+
+@interface Widget (Alpha)
+@property (readonly) id token;
+@end
+
+@implementation Widget (Alpha)
+@property (readonly) id token;
+@end
+
+@interface Widget (Beta)
+@property (readonly) i32 token;
+@end
+
+@implementation Widget (Beta)
+@property (readonly) i32 token;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "category_method_dispatch_intent_rejected.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S315",
+      "dispatch-control semantics failed: selector '-shared' in category 'Box(Ext)' cannot use Part 9 dispatch-control callable attributes"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  },
+  "diagnostic_evidence": {
+    "issue": "#8024",
+    "surface": "category/protocol visibility diagnostics",
+    "case": "category method dispatch-control denial"
+  }
+}

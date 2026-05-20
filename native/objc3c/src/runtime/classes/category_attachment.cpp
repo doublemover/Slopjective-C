@@ -28,6 +28,16 @@ const void *CategoryAggregateEntry(
 struct PreferredCategoryRecord {
   const EmittedCategoryRecord *interface_record = nullptr;
   const EmittedCategoryRecord *implementation_record = nullptr;
+  std::uint64_t interface_registration_order_ordinal = 0;
+  std::uint64_t implementation_registration_order_ordinal = 0;
+  std::uint64_t interface_descriptor_index = 0;
+  std::uint64_t implementation_descriptor_index = 0;
+};
+
+struct PreferredCategoryAttachment {
+  const EmittedCategoryRecord *record = nullptr;
+  std::uint64_t registration_order_ordinal = 0;
+  std::uint64_t descriptor_index = 0;
 };
 
 const char *RuntimeCategoryCString(const char *value) {
@@ -48,6 +58,8 @@ void RecordCategoryAttachmentFailure(RuntimeState &state,
 
 bool AddPreferredCategoryRecord(
     const EmittedCategoryRecord &category_record,
+    std::uint64_t registration_order_ordinal,
+    std::uint64_t descriptor_index,
     std::unordered_map<std::string, PreferredCategoryRecord> &grouped_records,
     std::string &failure_reason) {
   if (category_record.class_name == nullptr ||
@@ -73,6 +85,9 @@ bool AddPreferredCategoryRecord(
       return false;
     }
     preferred_record.implementation_record = &category_record;
+    preferred_record.implementation_registration_order_ordinal =
+        registration_order_ordinal;
+    preferred_record.implementation_descriptor_index = descriptor_index;
     return true;
   }
   if (record_kind == "interface") {
@@ -86,6 +101,9 @@ bool AddPreferredCategoryRecord(
       return false;
     }
     preferred_record.interface_record = &category_record;
+    preferred_record.interface_registration_order_ordinal =
+        registration_order_ordinal;
+    preferred_record.interface_descriptor_index = descriptor_index;
     return true;
   }
   failure_reason = "unknown-category-record-kind:" + record_kind;
@@ -95,11 +113,12 @@ bool AddPreferredCategoryRecord(
 bool CollectPreferredCategoryRecords(
     const RuntimeState &state,
     const std::string &class_name,
-    std::vector<const EmittedCategoryRecord *> &preferred_records,
+    std::vector<PreferredCategoryAttachment> &preferred_records,
     std::string &failure_reason) {
   // Class graph publication owns attachment selection: implementation records
-  // win over interface records for the same category name, and conflicting
-  // same-tier owners fail closed across the full registered-image set.
+  // win over interface records for the same category name, conflicting
+  // same-tier owners fail closed across the full registered-image set, and
+  // the published vector preserves loader order for later newest-first lookup.
   std::unordered_map<std::string, PreferredCategoryRecord> grouped_records;
   for (const RegisteredImageMetadata *record : OrderedClassGraphImages(state)) {
     if (record == nullptr) {
@@ -117,7 +136,9 @@ bool CollectPreferredCategoryRecords(
           class_name != category_record->class_name) {
         continue;
       }
-      if (!AddPreferredCategoryRecord(*category_record, grouped_records,
+      if (!AddPreferredCategoryRecord(*category_record,
+                                      record->registration_order_ordinal,
+                                      index, grouped_records,
                                       failure_reason)) {
         return false;
       }
@@ -127,22 +148,52 @@ bool CollectPreferredCategoryRecords(
   preferred_records.reserve(grouped_records.size());
   for (const auto &entry : grouped_records) {
     const PreferredCategoryRecord &record = entry.second;
-    preferred_records.push_back(record.implementation_record != nullptr
-                                    ? record.implementation_record
-                                    : record.interface_record);
+    if (record.interface_record != nullptr &&
+        record.implementation_record == nullptr) {
+      const EmittedCategoryRecord *interface_record = record.interface_record;
+      failure_reason =
+          "missing-category-implementation:" +
+          std::string(RuntimeCategoryCString(interface_record->class_name)) +
+          "(" +
+          std::string(RuntimeCategoryCString(interface_record->category_name)) +
+          ")";
+      return false;
+    }
+    if (record.implementation_record != nullptr) {
+      preferred_records.push_back(PreferredCategoryAttachment{
+          record.implementation_record,
+          record.implementation_registration_order_ordinal,
+          record.implementation_descriptor_index});
+    }
   }
   std::sort(
       preferred_records.begin(), preferred_records.end(),
-      [](const EmittedCategoryRecord *lhs,
-         const EmittedCategoryRecord *rhs) {
-        return std::make_tuple(std::string(lhs->class_name),
-                               std::string(lhs->category_name),
-                               std::string(lhs->record_kind),
-                               std::string(lhs->owner_identity)) <
-               std::make_tuple(std::string(rhs->class_name),
-                               std::string(rhs->category_name),
-                               std::string(rhs->record_kind),
-                               std::string(rhs->owner_identity));
+      [](const PreferredCategoryAttachment &lhs,
+         const PreferredCategoryAttachment &rhs) {
+        const EmittedCategoryRecord *lhs_record = lhs.record;
+        const EmittedCategoryRecord *rhs_record = rhs.record;
+        return std::make_tuple(
+                   lhs.registration_order_ordinal, lhs.descriptor_index,
+                   std::string(RuntimeCategoryCString(
+                       lhs_record != nullptr ? lhs_record->class_name
+                                             : nullptr)),
+                   std::string(RuntimeCategoryCString(
+                       lhs_record != nullptr ? lhs_record->category_name
+                                             : nullptr)),
+                   std::string(RuntimeCategoryCString(
+                       lhs_record != nullptr ? lhs_record->owner_identity
+                                             : nullptr))) <
+               std::make_tuple(
+                   rhs.registration_order_ordinal, rhs.descriptor_index,
+                   std::string(RuntimeCategoryCString(
+                       rhs_record != nullptr ? rhs_record->class_name
+                                             : nullptr)),
+                   std::string(RuntimeCategoryCString(
+                       rhs_record != nullptr ? rhs_record->category_name
+                                             : nullptr)),
+                   std::string(RuntimeCategoryCString(
+                       rhs_record != nullptr ? rhs_record->owner_identity
+                                             : nullptr)));
       });
   return true;
 }
@@ -260,8 +311,13 @@ bool ValidateCategoryPropertyDescriptors(
 bool ValidateCategoryMemberSurface(
     const RuntimeState &state,
     const std::string &class_name,
-    const std::vector<const EmittedCategoryRecord *> &category_records,
+    const std::vector<PreferredCategoryAttachment> &category_attachments,
     std::string &failure_reason) {
+  std::vector<const EmittedCategoryRecord *> category_records;
+  category_records.reserve(category_attachments.size());
+  for (const PreferredCategoryAttachment &attachment : category_attachments) {
+    category_records.push_back(attachment.record);
+  }
   std::unordered_set<std::string> category_method_keys;
   for (const EmittedCategoryRecord *category_record : category_records) {
     if (category_record == nullptr) {
@@ -303,7 +359,7 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
                                     "missing-realized-class-image");
     return false;
   }
-  std::vector<const EmittedCategoryRecord *> category_records;
+  std::vector<PreferredCategoryAttachment> category_records;
   std::string failure_reason;
   if (!CollectPreferredCategoryRecords(state, node.class_name,
                                        category_records, failure_reason)) {
@@ -315,7 +371,8 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
     RecordCategoryAttachmentFailure(state, node.class_name, failure_reason);
     return false;
   }
-  for (const EmittedCategoryRecord *category_record : category_records) {
+  for (const PreferredCategoryAttachment &attachment : category_records) {
+    const EmittedCategoryRecord *category_record = attachment.record;
     if (category_record == nullptr ||
         category_record->class_owner_identity == nullptr ||
         category_record->category_owner_identity == nullptr ||
