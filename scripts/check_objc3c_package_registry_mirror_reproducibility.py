@@ -85,16 +85,27 @@ def collect_interop_loader_metadata_failures(
         )
 
     for package_id in sorted(lock_ids):
-        expected_digest = lock_metadata[package_id].get("digest")
-        mirror_digest = mirror_metadata.get(package_id, {}).get("digest")
-        registry_digest = registry_metadata.get(package_id, {}).get("digest")
+        expected_metadata = lock_metadata[package_id]
+        expected_digest = expected_metadata.get("digest")
+        mirror_payload = mirror_metadata.get(package_id, {})
+        registry_payload = registry_metadata.get(package_id, {})
+        mirror_digest = mirror_payload.get("digest")
+        registry_digest = registry_payload.get("digest")
         if mirror_digest != expected_digest:
             failures.append(
                 f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata digest mismatch for {package_id}"
             )
+        elif mirror_payload != expected_metadata:
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata payload mismatch for {package_id}"
+            )
         if registry_digest != expected_digest:
             failures.append(
                 f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: registry interop metadata digest mismatch for {package_id}"
+            )
+        elif registry_payload != expected_metadata:
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: registry interop metadata payload mismatch for {package_id}"
             )
 
     mirror_policy = mirror.get("integrity_policy", {})
@@ -116,6 +127,7 @@ def main() -> int:
         required_blockers=(
             "hosted registry claim did not fail closed",
             "offline mirror metadata digest mismatch did not fail closed",
+            "offline mirror metadata payload mismatch did not fail closed",
         ),
     )
     package = load_json(ROOT / "package.json")

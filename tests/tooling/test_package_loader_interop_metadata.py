@@ -85,3 +85,39 @@ def test_package_loader_interop_tamper_mismatch_reports_stable_code() -> None:
     assert failures == [
         f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata digest mismatch for showcase:patchKit"
     ]
+
+
+def test_package_loader_interop_payload_tamper_with_preserved_digest_reports_stable_code() -> None:
+    metadata = normalized_interop_metadata()
+    lock = {
+        "packages": [
+            {
+                "package_id": "showcase:patchKit",
+                "interop_loader_metadata": metadata["showcase:patchKit"],
+            }
+        ]
+    }
+    mirror_metadata = deepcopy(metadata["showcase:patchKit"])
+    mirror_metadata["header_exports"] = ["Tampered/PatchKit.h"]
+    mirror = {
+        "integrity_policy": {
+            "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        },
+        "packages": [
+            {
+                "package_id": "showcase:patchKit",
+                "interop_loader_metadata": mirror_metadata,
+            }
+        ],
+    }
+    registry = deepcopy(lock)
+    publication = {
+        "interop_loader_support": "local-mixed-image-metadata-digest-checked",
+        "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+    }
+
+    failures = collect_interop_loader_metadata_failures(lock, mirror, registry, publication)
+
+    assert failures == [
+        f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata payload mismatch for showcase:patchKit"
+    ]
