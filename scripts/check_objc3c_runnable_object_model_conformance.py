@@ -156,6 +156,11 @@ def main() -> int:
         "runtime_realization_lookup_reflection_implementation_surface"
     ]
     expect(
+        "objc3_runtime_copy_instance_entry_for_testing"
+        in object_model_surface.get("private_object_model_query_boundary", []),
+        "object-model ABI query surface must publish the runtime instance identity snapshot boundary",
+    )
+    expect(
         implementation_surface.get("object_model_query_state_snapshot_symbol")
         == "objc3_runtime_copy_object_model_query_state_for_testing",
         "object-model implementation surface drifted from the aggregate runtime query symbol",
