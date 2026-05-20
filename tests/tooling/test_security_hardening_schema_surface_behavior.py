@@ -54,8 +54,8 @@ def test_security_hardening_schema_surface_uses_registered_schemas() -> None:
             schema_path("objc3c-security-advisory-index-v1").relative_to(ROOT).as_posix(),
         ]
         assert summary["schema_ids"] == [
-            "https://objc3.dev/schemas/objc3c-security-posture-v1.schema.json",
-            "https://objc3.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-security-posture-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
         ]
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)
@@ -107,7 +107,7 @@ def test_security_hardening_schema_surface_rejects_broken_registered_schema_id(
     def broken_load_schema(schema_id: str) -> dict[str, Any]:
         payload = deepcopy(original_load_schema(schema_id))
         if schema_id == "objc3c-security-advisory-index-v1":
-            payload["$id"] = "https://objc3.dev/schemas/objc3c-security-advisory-index-broken.schema.json"
+            payload["$id"] = "https://objc3c.dev/schemas/objc3c-security-advisory-index-broken.schema.json"
         return payload
 
     monkeypatch.setattr(checker, "load_schema", broken_load_schema)

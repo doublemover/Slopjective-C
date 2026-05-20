@@ -143,7 +143,7 @@ story.
 - archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
-## Toolchain-Range And Archive Support Policy
+## Toolchain-Range And Archive Compatibility Policy
 
 Toolchain-range and archive support claims must also stay narrower than
 the evidence.
@@ -225,6 +225,8 @@ The checked-in schema and contract surfaces for that artifact are:
 
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
+- generated artifact: `tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`
+- generated summary: `tmp/reports/platform-hardening/platform-support-matrix-summary.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The generated summary family for platform hardening is selected by the

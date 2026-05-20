@@ -14,7 +14,7 @@
   "negative_claim_authority": true,
   "selectors": [
     "blocking_condition:package-channel-install-failure",
-    "blocking_condition:revert-proof-failure",
+    "blocking_condition:rollback-proof-failure",
     "blocking_condition:release-operations-proof-failure",
     "blocking_condition:missing-release-evidence-index",
     "blocking_condition:runtime-hardening-regression",

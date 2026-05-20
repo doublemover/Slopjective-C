@@ -17,7 +17,7 @@
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
-    "scripts.objc3c_workflow"
+    "scripts/objc3c_workflow"
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
@@ -77,10 +77,10 @@
     "tmp/reports/release-operations/publication-summary.json",
     "tmp/reports/release-operations/integration-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
-    "checked_outputs/platform-hardening/objc3c-platform-support-matrix.json",
-    "checked_outputs/platform-hardening/platform-support-matrix-summary.json",
+    "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+    "tmp/reports/platform-hardening/platform-support-matrix-summary.json",
     "tmp/reports/platform-hardening/boundary-inventory/boundary_inventory_summary.json",
-    "checked_outputs/platform-hardening/support-tier-policy/support_tier_policy_summary.json",
+    "tmp/reports/platform-hardening/support-tier-policy/support_tier_policy_summary.json",
     "tmp/reports/platform-hardening/unsupported-host-policy/unsupported_host_policy_summary.json",
     "tmp/reports/platform-hardening/toolchain-archive-policy/toolchain_archive_policy_summary.json",
     "tmp/reports/platform-hardening/artifact-contract/artifact_contract_summary.json",

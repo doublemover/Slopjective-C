@@ -6,8 +6,8 @@
   "schema_path": "schemas/objc3c-platform-support-matrix-v1.schema.json",
   "generator_script": "scripts/build_objc3c_platform_support_matrix.py",
   "summary_implementation_anchor": "scripts/build_platform_hardening_artifact_contract_summary.py",
-  "generated_artifact_path": "checked_outputs/platform-hardening/objc3c-platform-support-matrix.json",
-  "generated_summary_path": "checked_outputs/platform-hardening/platform-support-matrix-summary.json",
+  "generated_artifact_path": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "generated_summary_path": "tmp/reports/platform-hardening/platform-support-matrix-summary.json",
   "owner_policy": {
     "channel_owner": "packaging-channels-source",
     "platform_support_owner": "platform-hardening-support-source",

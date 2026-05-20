@@ -26,6 +26,7 @@ from platform_hardening_contracts import (
 )
 
 PROBE_SCRIPT = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
+RELEASE_OPERATIONS_INTEGRATION_SCRIPT = ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
 
 
 def run(command: list[str]) -> None:
@@ -47,8 +48,10 @@ def main() -> int:
     run(python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT))
     run(python_script_command(PROBE_SCRIPT, "--summary-out", repo_rel(probe_summary)))
     step_commands = {
-        "check-release-operations-integration": PUBLICATION_SURFACE["release_operations_command"],
-        "check-release-operations-end-to-end": PUBLICATION_SURFACE["release_operations_end_to_end_command"],
+        "check-release-operations-integration": python_script_command(RELEASE_OPERATIONS_INTEGRATION_SCRIPT),
+        "check-release-operations-end-to-end": public_workflow_command(
+            PUBLICATION_SURFACE["release_operations_end_to_end_command"]
+        ),
     }
     step_results: list[dict[str, Any]] = [
         {
@@ -60,8 +63,7 @@ def main() -> int:
     for step_name in contract["required_steps"]:
         if step_name == "probe-objc3c-llvm-capabilities":
             continue
-        action = step_commands[step_name]
-        command = public_workflow_command(str(action))
+        command = step_commands[step_name]
         run(command)
         step_results.append({"step": step_name, "command": command, "status": "PASS"})
 

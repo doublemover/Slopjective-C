@@ -11,12 +11,13 @@ from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "runtime_hardening_contract.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
+RUNTIME_ACCEPTANCE_SCRIPT = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 ACTION_REPORTS = {
     "test-runtime-acceptance": [
         ROOT / "tmp" / "reports" / "runtime" / "acceptance" / "summary.json",
@@ -41,11 +42,43 @@ def report_passes(path: Path) -> bool:
     return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
 
 
+def runtime_acceptance_report_covers_required_cases(path: Path, required_case_ids: list[str]) -> bool:
+    if not report_passes(path):
+        return False
+    payload = load_json(path)
+    case_ids = {
+        str(case.get("case_id"))
+        for case in payload.get("cases", [])
+        if isinstance(case, dict) and case.get("passed") is True
+    }
+    return all(case_id in case_ids for case_id in required_case_ids)
+
+
+def action_reports_pass(action: str, report_paths: list[Path], required_case_ids: list[str]) -> bool:
+    if not report_paths:
+        return False
+    if action == "test-runtime-acceptance":
+        return all(
+            runtime_acceptance_report_covers_required_cases(path, required_case_ids)
+            for path in report_paths
+        )
+    return all(report_passes(path) for path in report_paths)
+
+
 def ensure_action(action: str) -> bool:
     report_paths = ACTION_REPORTS.get(action, [])
-    if report_paths and all(report_passes(path) for path in report_paths):
+    contract = load_json(CONTRACT_PATH)
+    required_case_ids = [str(case_id) for case_id in contract["required_runtime_case_ids"]]
+    if action_reports_pass(action, report_paths, required_case_ids):
         return True
-    result = run_capture(public_workflow_command(action))
+    if action == "test-runtime-acceptance":
+        command = python_script_command(
+            RUNTIME_ACCEPTANCE_SCRIPT,
+            *(argument for case_id in required_case_ids for argument in ("--case", case_id)),
+        )
+        result = run_capture(command)
+    else:
+        result = run_capture(public_workflow_command(action))
     if result.returncode != 0:
         raise RuntimeError(f"{action} failed")
     return False

@@ -85,7 +85,7 @@ as:
 - cross-major upgrade requests
 - deprecated channel usage
 - runtime/data-format rejection requirements
-- support-tier or archive support overclaim attempts outside the checked-in
+- support-tier or archive compatibility overclaim attempts outside the checked-in
   `windows-x64` package/install/update surface
 
 ## Release-Operations Workflow

@@ -33,11 +33,11 @@
       "validate-platform-hardening"
     ],
     "workflow_child_actions": [
-      "check-security-response-drill",
-      "check-security-runtime-hardening",
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
+      "check-security-runtime-hardening",
       "build-security-posture",
+      "check-security-response-drill",
       "publish-security-advisories"
     ]
   },
@@ -53,11 +53,11 @@
     "security_positive_claim_requires_runtime_or_release_evidence": true
   },
   "validation_child_actions": [
-    "check-security-response-drill",
-    "check-security-runtime-hardening",
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-runtime-hardening",
     "build-security-posture",
+    "check-security-response-drill",
     "publish-security-advisories"
   ],
   "upstream_validate_actions": [

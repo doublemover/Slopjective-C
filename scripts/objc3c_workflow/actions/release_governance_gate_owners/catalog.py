@@ -225,11 +225,11 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "validate-platform-hardening",
             ),
             workflow_child_actions=(
-                "check-security-response-drill",
-                "check-security-runtime-hardening",
                 "check-security-hardening-surface",
                 "check-security-hardening-schema-surface",
+                "check-security-runtime-hardening",
                 "build-security-posture",
+                "check-security-response-drill",
                 "publish-security-advisories",
             ),
         ),

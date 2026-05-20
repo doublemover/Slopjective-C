@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
@@ -21,11 +20,11 @@ PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publica
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "integration-summary.json"
 
 REQUIRED_STEPS = [
-    "check-security-response-drill",
-    "check-security-runtime-hardening",
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-runtime-hardening",
     "build-security-posture",
+    "check-security-response-drill",
     "publish-security-advisories",
 ]
 
@@ -33,17 +32,7 @@ REQUIRED_STEPS = [
 
 
 def ensure_workflow_report() -> dict[str, Any]:
-    completed = subprocess.run(
-        public_workflow_command("validate-security-hardening"),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_capture(public_workflow_command("validate-security-hardening"), cwd=ROOT)
     if completed.returncode != 0:
         raise RuntimeError("validate-security-hardening command failed during integration validation")
     return load_json(WORKFLOW_REPORT)

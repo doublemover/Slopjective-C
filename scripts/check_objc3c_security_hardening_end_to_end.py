@@ -4,14 +4,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names, public_workflow_command
-from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,11 +27,11 @@ PACKAGE_JSON = ROOT / "package.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "end-to-end-summary.json"
 
 REQUIRED_STEPS = [
-    "check-security-response-drill",
-    "check-security-runtime-hardening",
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
+    "check-security-runtime-hardening",
     "build-security-posture",
+    "check-security-response-drill",
     "publish-security-advisories",
 ]
 
@@ -44,17 +42,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def ensure_workflow_report() -> dict[str, Any]:
-    completed = subprocess.run(
-        public_workflow_command("validate-security-hardening"),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_capture(public_workflow_command("validate-security-hardening"), cwd=ROOT)
     expect(completed.returncode == 0, "validate-security-hardening command failed during end-to-end validation")
     return load_json(WORKFLOW_REPORT)
 
@@ -75,17 +63,10 @@ def main() -> int:
         payload = load_json(path)
         expect(payload.get("status") == "PASS", f"security artifact did not pass: {repo_rel(path)}")
 
-    integration = subprocess.run(
+    integration = run_capture(
         python_script_command(ROOT / "scripts" / "check_objc3c_security_hardening_integration.py"),
         cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
     )
-    if integration.stdout:
-        sys.stdout.write(integration.stdout)
-    if integration.stderr:
-        sys.stderr.write(integration.stderr)
     expect(integration.returncode == 0, "security-hardening integration validation failed")
     expect(INTEGRATION_SUMMARY.is_file(), "security-hardening integration summary is missing")
 

@@ -15,6 +15,8 @@ COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
     "validate-release-foundation": 900.0,
     "validate-packaging-channels": 1200.0,
     "validate-release-operations": 1500.0,
+    "validate-distribution-credibility": 1500.0,
+    "validate-security-hardening": 1800.0,
     "validate-stress": 300.0,
 }
 

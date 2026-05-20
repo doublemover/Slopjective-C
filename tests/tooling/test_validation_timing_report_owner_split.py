@@ -152,6 +152,20 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         total_seconds=1200.0,
         composite_action="validate-release-operations",
     )
+    distribution_credibility_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=1200.0,
+        composite_action="validate-distribution-credibility",
+    )
+    security_hardening_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=1600.0,
+        composite_action="validate-security-hardening",
+    )
     stress_budgets = validation_speed_budgets(
         None,
         None,
@@ -186,6 +200,16 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         for budget in release_operations_budgets
         if budget["name"] == "composite_elapsed_seconds"
     )
+    distribution_credibility_composite = next(
+        budget
+        for budget in distribution_credibility_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    security_hardening_composite = next(
+        budget
+        for budget in security_hardening_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
     stress_composite = next(
         budget
         for budget in stress_budgets
@@ -205,6 +229,10 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
     assert packaging_channels_composite["status"] == "PASS"
     assert release_operations_composite["threshold_seconds"] == 1500.0
     assert release_operations_composite["status"] == "PASS"
+    assert distribution_credibility_composite["threshold_seconds"] == 1500.0
+    assert distribution_credibility_composite["status"] == "PASS"
+    assert security_hardening_composite["threshold_seconds"] == 1800.0
+    assert security_hardening_composite["status"] == "PASS"
     assert stress_composite["threshold_seconds"] == 300.0
     assert stress_composite["status"] == "PASS"
     assert default_composite["threshold_seconds"] == 120.0
