@@ -160,7 +160,7 @@ modules without updating the checked-in architecture contract.
 - option and presence helpers use `0` for absent and nonzero for present
 - `unwrap_or` helpers return the live payload only when the checked-in
   presence or result tag says it is valid
-- capability queries report only the Core-profile stdlib capability ordinals
+- capability queries recognize exactly the Core-profile stdlib capability ordinals
   `1` through `4`; strict-system ordinal `5`, zero, negative, and unknown
   positive ids fail closed as missing
 - option-to-result bridge helpers map presence directly onto the checked-in
