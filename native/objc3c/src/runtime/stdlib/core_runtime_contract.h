@@ -21,6 +21,14 @@ typedef struct objc3_runtime_stdlib_core_snapshot {
   int last_result;
 } objc3_runtime_stdlib_core_snapshot;
 
+typedef enum objc3_runtime_stdlib_core_capability_i32 {
+  OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_CORE = 1,
+  OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_ERRORS = 2,
+  OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_CONCURRENCY = 3,
+  OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_KEYPATH = 4,
+  OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_SYSTEM = 5,
+} objc3_runtime_stdlib_core_capability_i32;
+
 int objc3_runtime_stdlib_core_language_revision_i32(void);
 int objc3_runtime_stdlib_core_profile_revision_i32(void);
 int objc3_runtime_stdlib_core_has_capability_i32(int capability);

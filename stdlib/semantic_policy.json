@@ -42,7 +42,7 @@
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
     "runtime_core_abi": "objc3.core helpers route through objc3_runtime_stdlib_core_* entrypoints and publish runtime-owned call evidence through objc3_runtime_copy_stdlib_core_state_for_testing",
-    "capability_query_encoding": "positive capability ids mean present; zero and negative ids fail closed as missing",
+    "capability_query_encoding": "known Core-profile stdlib capability ordinals 1 through 4 are present; strict-system ordinal 5, zero, negative, and unknown positive ids fail closed as missing",
     "option_unwrap_or": "routes through objc3_runtime_stdlib_core_option_unwrap_or_i32 and returns value when presence flag is nonzero, otherwise the caller-supplied default",
     "string_view_length": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative unit counts",
     "string_view_prefix_units": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested units to a zero floor",

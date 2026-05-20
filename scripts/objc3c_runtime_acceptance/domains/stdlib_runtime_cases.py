@@ -19,11 +19,11 @@ def check_stdlib_core_runtime_probe_case(clangxx: str, run_dir: Path) -> CaseRes
     exe_path = case_dir / "stdlib_core_runtime_probe.exe"
     compile_probe(clangxx, probe, exe_path, [])
     payload = parse_json_output(run_probe(exe_path), "stdlib core runtime probe")
-    expect_equal(payload.get("total_call_count"), 17, "stdlib core runtime calls drifted")
+    expect_equal(payload.get("total_call_count"), 20, "stdlib core runtime calls drifted")
     expect_equal(payload.get("revision_call_count"), 2, "stdlib revision helper calls drifted")
     expect_equal(
         payload.get("capability_call_count"),
-        2,
+        5,
         "stdlib capability helper calls drifted",
     )
     expect_equal(payload.get("option_call_count"), 4, "stdlib option helper calls drifted")

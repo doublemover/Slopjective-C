@@ -45,6 +45,18 @@ int NormalizeCount(int count) {
   return std::max(count, 0);
 }
 
+bool IsSupportedCoreProfileCapability(int capability) {
+  switch (capability) {
+    case OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_CORE:
+    case OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_ERRORS:
+    case OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_CONCURRENCY:
+    case OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_KEYPATH:
+      return true;
+    default:
+      return false;
+  }
+}
+
 }  // namespace
 
 namespace objc3c::runtime {
@@ -88,7 +100,7 @@ extern "C" int objc3_runtime_stdlib_core_profile_revision_i32(void) {
 extern "C" int objc3_runtime_stdlib_core_has_capability_i32(int capability) {
   RuntimeStdlibCoreState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  const int result = capability > 0 ? 1 : 0;
+  const int result = IsSupportedCoreProfileCapability(capability) ? 1 : 0;
   RecordCall(state, state.capability_call_count, capability, 0, 0, result);
   return result;
 }

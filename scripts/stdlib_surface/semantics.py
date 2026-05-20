@@ -33,7 +33,7 @@ def validate_semantic_policy(
     ):
         return "semantic policy runtime_core_abi drifted", None
     if core_semantics.get("capability_query_encoding") != (
-        "positive capability ids mean present; zero and negative ids fail closed as missing"
+        "known Core-profile stdlib capability ordinals 1 through 4 are present; strict-system ordinal 5, zero, negative, and unknown positive ids fail closed as missing"
     ):
         return "semantic policy capability_query_encoding drifted", None
     if core_semantics.get("string_view_length") != (

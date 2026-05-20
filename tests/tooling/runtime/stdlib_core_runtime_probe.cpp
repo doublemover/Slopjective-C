@@ -21,9 +21,15 @@ int main() {
   if (objc3_runtime_stdlib_core_profile_revision_i32() != 1) {
     return Fail("profile revision did not come from runtime helper");
   }
-  if (objc3_runtime_stdlib_core_has_capability_i32(7) != 1 ||
+  if (objc3_runtime_stdlib_core_has_capability_i32(
+          OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_CORE) != 1 ||
+      objc3_runtime_stdlib_core_has_capability_i32(
+          OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_KEYPATH) != 1 ||
+      objc3_runtime_stdlib_core_has_capability_i32(
+          OBJC3_RUNTIME_STDLIB_CORE_CAPABILITY_SYSTEM) != 0 ||
+      objc3_runtime_stdlib_core_has_capability_i32(99) != 0 ||
       objc3_runtime_stdlib_core_has_capability_i32(-7) != 0) {
-    return Fail("capability helper did not fail closed for nonpositive ids");
+    return Fail("capability helper did not fail closed for unsupported ids");
   }
   if (objc3_runtime_stdlib_core_option_has_value_i32(4) != 1 ||
       objc3_runtime_stdlib_core_option_has_value_i32(0) != 0) {
@@ -55,8 +61,8 @@ int main() {
   if (objc3_runtime_copy_stdlib_core_state_for_testing(&snapshot) != 0) {
     return Fail("snapshot copy failed");
   }
-  if (snapshot.total_call_count != 17 || snapshot.revision_call_count != 2 ||
-      snapshot.capability_call_count != 2 || snapshot.option_call_count != 4 ||
+  if (snapshot.total_call_count != 20 || snapshot.revision_call_count != 2 ||
+      snapshot.capability_call_count != 5 || snapshot.option_call_count != 4 ||
       snapshot.count_call_count != 2 || snapshot.prefix_call_count != 3 ||
       snapshot.map_call_count != 4) {
     return Fail("runtime helper call counters drifted");
