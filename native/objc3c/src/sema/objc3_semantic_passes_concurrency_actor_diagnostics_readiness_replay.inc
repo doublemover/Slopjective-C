@@ -11,22 +11,46 @@ static void DiagnoseConcurrencyActorRaceHazardRules(
   }
   if (body_profile.race_guard_sites == 0u) {
     diagnostics.push_back(MakeDiag(
-        line, column, "O3S291",
+        body_profile.first_task_handoff_line != 0u
+            ? body_profile.first_task_handoff_line
+            : line,
+        body_profile.first_task_handoff_column != 0u
+            ? body_profile.first_task_handoff_column
+            : column,
+        "O3S291",
         "actor race-hazard semantics failed: task handoff in actor methods requires a race guard site"));
   }
   if (body_profile.replay_proof_sites == 0u) {
     diagnostics.push_back(MakeDiag(
-        line, column, "O3S292",
+        body_profile.first_task_handoff_line != 0u
+            ? body_profile.first_task_handoff_line
+            : line,
+        body_profile.first_task_handoff_column != 0u
+            ? body_profile.first_task_handoff_column
+            : column,
+        "O3S292",
         "actor race-hazard semantics failed: task handoff in actor methods requires replay proof coverage"));
   }
   if (body_profile.actor_isolation_sites == 0u) {
     diagnostics.push_back(MakeDiag(
-        line, column, "O3S293",
+        body_profile.first_task_handoff_line != 0u
+            ? body_profile.first_task_handoff_line
+            : line,
+        body_profile.first_task_handoff_column != 0u
+            ? body_profile.first_task_handoff_column
+            : column,
+        "O3S293",
         "actor race-hazard semantics failed: task handoff in actor methods requires actor isolation coverage"));
   }
   if (body_profile.escaping_block_literal_sites > 0u) {
     diagnostics.push_back(MakeDiag(
-        line, column, "O3S294",
+        body_profile.first_escaping_block_literal_line != 0u
+            ? body_profile.first_escaping_block_literal_line
+            : line,
+        body_profile.first_escaping_block_literal_column != 0u
+            ? body_profile.first_escaping_block_literal_column
+            : column,
+        "O3S294",
         "actor escape semantics failed: escaping block literals remain unsupported in actor methods that perform task handoff"));
   }
 }

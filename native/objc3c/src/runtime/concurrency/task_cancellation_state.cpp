@@ -60,7 +60,9 @@ int CancelRuntimeTaskGroup(RuntimeTaskState &state, int executor_tag) {
   state.group_cancelled = 1;
   ++state.cancellation_generation;
   state.pending_group_task_count = 0;
+  state.executor_ready_queues[executor_tag].clear();
   state.last_queue_depth = 0;
+  state.last_executor_queue_depth = 0;
   state.lifecycle_state = kRuntimeTaskLifecycleGroupCancelled;
   state.last_cancel_all_result = 31;
   return state.last_cancel_all_result;

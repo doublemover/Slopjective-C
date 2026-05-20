@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
+#include <unordered_map>
 
 namespace objc3c::runtime {
 
@@ -52,7 +54,70 @@ struct RuntimeTaskState {
   int observed_cancellation_generation = 0;
   int last_queue_depth = 0;
   int last_queue_drain_result = 0;
+  std::uint64_t scheduler_enqueue_count = 0;
+  std::uint64_t scheduler_dequeue_count = 0;
+  int last_scheduled_task_handle = 0;
+  int last_scheduled_executor_tag = 0;
+  int last_dequeued_task_handle = 0;
+  int last_dequeued_executor_tag = 0;
+  int last_executor_queue_depth = 0;
+  int max_executor_queue_depth = 0;
+  int scheduler_sequence = 0;
+  int deadlock_guard_passed = 1;
+  int race_guard_passed = 1;
+  std::unordered_map<int, std::deque<int>> executor_ready_queues;
 };
+
+inline int RuntimeTaskQueueDepthForExecutor(const RuntimeTaskState &state,
+                                            int executor_tag) {
+  const auto found = state.executor_ready_queues.find(executor_tag);
+  return found == state.executor_ready_queues.end()
+             ? 0
+             : static_cast<int>(found->second.size());
+}
+
+inline void RecordRuntimeTaskSchedulerEnqueue(RuntimeTaskState &state,
+                                              int executor_tag,
+                                              int task_handle) {
+  std::deque<int> &queue = state.executor_ready_queues[executor_tag];
+  queue.push_back(task_handle);
+  ++state.scheduler_enqueue_count;
+  ++state.scheduler_sequence;
+  state.last_scheduled_task_handle = task_handle;
+  state.last_scheduled_executor_tag = executor_tag;
+  state.last_executor_queue_depth = static_cast<int>(queue.size());
+  if (state.last_executor_queue_depth > state.max_executor_queue_depth) {
+    state.max_executor_queue_depth = state.last_executor_queue_depth;
+  }
+  state.deadlock_guard_passed =
+      state.scheduler_enqueue_count >= state.scheduler_dequeue_count ? 1 : 0;
+  state.race_guard_passed = task_handle > 0 && executor_tag >= 0 ? 1 : 0;
+}
+
+inline int DrainRuntimeTaskSchedulerQueue(RuntimeTaskState &state,
+                                          int executor_tag) {
+  auto found = state.executor_ready_queues.find(executor_tag);
+  if (found == state.executor_ready_queues.end() || found->second.empty()) {
+    state.last_dequeued_task_handle = 0;
+    state.last_dequeued_executor_tag = executor_tag;
+    state.last_executor_queue_depth = 0;
+    state.deadlock_guard_passed = 0;
+    return 0;
+  }
+
+  std::deque<int> &queue = found->second;
+  const int task_handle = queue.front();
+  queue.pop_front();
+  ++state.scheduler_dequeue_count;
+  ++state.scheduler_sequence;
+  state.last_dequeued_task_handle = task_handle;
+  state.last_dequeued_executor_tag = executor_tag;
+  state.last_executor_queue_depth = static_cast<int>(queue.size());
+  state.deadlock_guard_passed =
+      state.scheduler_enqueue_count >= state.scheduler_dequeue_count ? 1 : 0;
+  state.race_guard_passed = task_handle > 0 && executor_tag >= 0 ? 1 : 0;
+  return task_handle;
+}
 
 RuntimeTaskState &RuntimeTaskStateForCurrentThread();
 

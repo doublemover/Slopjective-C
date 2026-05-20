@@ -36,7 +36,11 @@ int SpawnRuntimeTask(RuntimeTaskState &state,
   }
   RecordRuntimeTaskSuccess(state, executor_tag);
   state.lifecycle_state = kRuntimeTaskLifecycleTaskSpawned;
-  return 100 + (task_kind * 10) + (executor_tag != 0 ? 1 : 0);
+  const int task_handle = 100 + (task_kind * 10) + (executor_tag != 0 ? 1 : 0);
+  if (task_kind == 2) {
+    RecordRuntimeTaskSchedulerEnqueue(state, executor_tag, task_handle);
+  }
+  return task_handle;
 }
 
 int HopRuntimeTaskExecutor(RuntimeTaskState &state,
@@ -53,6 +57,11 @@ int HopRuntimeTaskExecutor(RuntimeTaskState &state,
     return RecordRuntimeTaskFailure(
         state, kRuntimeTaskFailureEmptyTaskGroupQueue);
   }
+  state.race_guard_passed =
+      value == state.last_dequeued_task_handle &&
+              executor_tag == state.last_dequeued_executor_tag
+          ? 1
+          : 0;
   RecordRuntimeTaskSuccess(state, executor_tag);
   return value;
 }

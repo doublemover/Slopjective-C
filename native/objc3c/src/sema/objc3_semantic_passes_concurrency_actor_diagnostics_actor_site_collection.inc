@@ -12,10 +12,39 @@ struct Objc3ConcurrencyActorMethodBodyProfile {
   std::size_t actor_hop_sites = 0;
   std::size_t non_sendable_crossing_sites = 0;
   std::size_t escaping_block_literal_sites = 0;
+  unsigned first_replay_proof_line = 0;
+  unsigned first_replay_proof_column = 0;
+  unsigned first_race_guard_line = 0;
+  unsigned first_race_guard_column = 0;
+  unsigned first_task_handoff_line = 0;
+  unsigned first_task_handoff_column = 0;
+  unsigned first_actor_isolation_line = 0;
+  unsigned first_actor_isolation_column = 0;
+  unsigned first_actor_hop_line = 0;
+  unsigned first_actor_hop_column = 0;
+  unsigned first_non_sendable_crossing_line = 0;
+  unsigned first_non_sendable_crossing_column = 0;
+  unsigned first_escaping_block_literal_line = 0;
+  unsigned first_escaping_block_literal_column = 0;
 };
 
+static void RecordConcurrencyActorDiagnosticSite(unsigned line, unsigned column,
+                                                 unsigned &target_line,
+                                                 unsigned &target_column) {
+  if (line == 0u || column == 0u) {
+    return;
+  }
+  if (target_line == 0u ||
+      line < target_line ||
+      (line == target_line && column < target_column)) {
+    target_line = line;
+    target_column = column;
+  }
+}
+
 static void CollectConcurrencyActorMethodBodyProfileFromSymbol(
-    const std::string &symbol, Objc3ConcurrencyActorMethodBodyProfile &profile) {
+    const std::string &symbol, unsigned line, unsigned column,
+    Objc3ConcurrencyActorMethodBodyProfile &profile) {
   if (symbol.empty()) {
     return;
   }
@@ -23,32 +52,55 @@ static void CollectConcurrencyActorMethodBodyProfileFromSymbol(
   if (lowered.find("replay") != std::string::npos ||
       lowered.find("proof") != std::string::npos) {
     ++profile.replay_proof_sites;
+    RecordConcurrencyActorDiagnosticSite(
+        line, column, profile.first_replay_proof_line,
+        profile.first_replay_proof_column);
   }
   if (lowered.find("race") != std::string::npos ||
       lowered.find("raceguard") != std::string::npos ||
       lowered.find("race_guard") != std::string::npos ||
       lowered.find("lock") != std::string::npos) {
     ++profile.race_guard_sites;
+    RecordConcurrencyActorDiagnosticSite(
+        line, column, profile.first_race_guard_line,
+        profile.first_race_guard_column);
   }
   if (lowered.find("handoff") != std::string::npos ||
       lowered.find("await") != std::string::npos ||
       lowered.find("task") != std::string::npos) {
     ++profile.task_handoff_sites;
+    RecordConcurrencyActorDiagnosticSite(
+        line, column, profile.first_task_handoff_line,
+        profile.first_task_handoff_column);
   }
-  if (lowered.find("actor") != std::string::npos ||
-      lowered.find("isolation") != std::string::npos ||
-      lowered.find("isolated") != std::string::npos) {
+  const bool nonisolated_marker =
+      lowered.find("nonisolated") != std::string::npos ||
+      lowered.find("non_isolated") != std::string::npos;
+  if (!nonisolated_marker &&
+      (lowered.find("actor_isolated") != std::string::npos ||
+       lowered.find("actor_isolation") != std::string::npos ||
+       lowered.find("isolation_thunk") != std::string::npos ||
+       lowered.find("isolated") != std::string::npos)) {
     ++profile.actor_isolation_sites;
+    RecordConcurrencyActorDiagnosticSite(
+        line, column, profile.first_actor_isolation_line,
+        profile.first_actor_isolation_column);
   }
   if (lowered.find("hop_to") != std::string::npos ||
       lowered.find("enqueue") != std::string::npos ||
       lowered.find("executor") != std::string::npos) {
     ++profile.actor_hop_sites;
+    RecordConcurrencyActorDiagnosticSite(line, column,
+                                         profile.first_actor_hop_line,
+                                         profile.first_actor_hop_column);
   }
   if (lowered.find("non_sendable") != std::string::npos ||
       lowered.find("unsafe_sendable") != std::string::npos ||
       lowered.find("cross_actor") != std::string::npos) {
     ++profile.non_sendable_crossing_sites;
+    RecordConcurrencyActorDiagnosticSite(
+        line, column, profile.first_non_sendable_crossing_line,
+        profile.first_non_sendable_crossing_column);
   }
 }
 
@@ -62,7 +114,8 @@ static void CollectConcurrencyActorMethodBodyProfileExpr(
   }
   switch (expr->kind) {
   case Expr::Kind::Call:
-    CollectConcurrencyActorMethodBodyProfileFromSymbol(expr->ident, profile);
+    CollectConcurrencyActorMethodBodyProfileFromSymbol(
+        expr->ident, expr->line, expr->column, profile);
     for (const auto &arg : expr->args) {
       CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
     }
@@ -77,13 +130,18 @@ static void CollectConcurrencyActorMethodBodyProfileExpr(
     if (expr->block_storage_escape_to_heap ||
         expr->block_escape_shape_promotes_to_heap_candidate) {
       ++profile.escaping_block_literal_sites;
+      RecordConcurrencyActorDiagnosticSite(
+          expr->line, expr->column,
+          profile.first_escaping_block_literal_line,
+          profile.first_escaping_block_literal_column);
     }
     for (const auto &stmt : expr->block_body) {
       CollectConcurrencyActorMethodBodyProfileStmt(stmt.get(), profile);
     }
     return;
   case Expr::Kind::MessageSend:
-    CollectConcurrencyActorMethodBodyProfileFromSymbol(expr->selector, profile);
+    CollectConcurrencyActorMethodBodyProfileFromSymbol(
+        expr->selector, expr->line, expr->column, profile);
     CollectConcurrencyActorMethodBodyProfileExpr(expr->receiver.get(), profile);
     for (const auto &arg : expr->args) {
       CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
@@ -215,7 +273,6 @@ static Objc3ConcurrencyActorMethodBodyProfile BuildConcurrencyActorMethodBodyPro
   if (profile.task_handoff_sites == 0u) {
     profile.replay_proof_sites = 0u;
     profile.race_guard_sites = 0u;
-    profile.actor_isolation_sites = 0u;
   }
   return profile;
 }

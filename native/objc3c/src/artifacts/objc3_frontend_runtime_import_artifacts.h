@@ -18,6 +18,18 @@ struct Objc3ConcurrencyActorMailboxRuntimeImportSummary {
   std::string surface_path;
   std::string source_model;
   std::string fail_closed_model;
+  std::size_t actor_interface_sites = 0;
+  std::size_t actor_method_sites = 0;
+  std::size_t actor_metadata_record_sites = 0;
+  std::size_t nonisolated_entry_sites = 0;
+  std::size_t executor_affinity_sites = 0;
+  std::size_t actor_hop_artifact_sites = 0;
+  std::size_t actor_isolation_thunk_sites = 0;
+  std::size_t replay_proof_dependency_sites = 0;
+  std::size_t race_guard_dependency_sites = 0;
+  std::size_t task_handoff_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
   bool actor_mailbox_runtime_ready = false;
   bool deterministic = false;
   std::string replay_key;

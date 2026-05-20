@@ -101,6 +101,18 @@ def check_cross_module_concurrency_actor_artifact_preservation_case(
             "local_actor_registration_ordinal": local_module.get(
                 "translation_unit_registration_order_ordinal"
             ),
+            "imported_actor_interface_sites": imported_module.get(
+                "concurrency_actor_interface_sites"
+            ),
+            "imported_actor_method_sites": imported_module.get(
+                "concurrency_actor_method_sites"
+            ),
+            "imported_actor_executor_affinity_sites": imported_module.get(
+                "concurrency_actor_executor_affinity_sites"
+            ),
+            "imported_actor_replay_key": imported_module.get(
+                "concurrency_actor_mailbox_runtime_replay_key"
+            ),
         },
     )
 

@@ -7,8 +7,14 @@ int main() {
   const int spawn_group = objc3_runtime_spawn_task_i32(1, 2);
   const int scope = objc3_runtime_enter_task_group_scope_i32(2);
   const int add_task = objc3_runtime_add_task_group_task_i32(2);
+  objc3_runtime_task_runtime_state_snapshot after_add_snapshot{};
+  const int after_add_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&after_add_snapshot);
   const int cancelled = objc3_runtime_task_is_cancelled_i32(2);
   const int wait_next = objc3_runtime_wait_task_group_next_i32(2);
+  objc3_runtime_task_runtime_state_snapshot after_wait_snapshot{};
+  const int after_wait_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&after_wait_snapshot);
   const int hop = objc3_runtime_executor_hop_i32(wait_next, 2);
   const int cancel_all = objc3_runtime_cancel_task_group_i32(2);
   const int on_cancel = objc3_runtime_task_on_cancel_i32(2);
@@ -27,6 +33,31 @@ int main() {
   std::cout << "on_cancel=" << on_cancel << "\n";
   std::cout << "spawn_detached=" << spawn_detached << "\n";
   std::cout << "copy_status=" << copy_status << "\n";
+  std::cout << "after_add_copy_status=" << after_add_copy_status << "\n";
+  std::cout << "after_add_last_queue_depth=" << after_add_snapshot.last_queue_depth << "\n";
+  std::cout << "after_add_scheduler_enqueue_count=" << after_add_snapshot.scheduler_enqueue_count << "\n";
+  std::cout << "after_add_scheduler_dequeue_count=" << after_add_snapshot.scheduler_dequeue_count << "\n";
+  std::cout << "after_add_last_scheduled_task_handle=" << after_add_snapshot.last_scheduled_task_handle << "\n";
+  std::cout << "after_add_last_scheduled_executor_tag=" << after_add_snapshot.last_scheduled_executor_tag << "\n";
+  std::cout << "after_add_last_executor_queue_depth=" << after_add_snapshot.last_executor_queue_depth << "\n";
+  std::cout << "after_add_max_executor_queue_depth=" << after_add_snapshot.max_executor_queue_depth << "\n";
+  std::cout << "after_add_scheduler_sequence=" << after_add_snapshot.scheduler_sequence << "\n";
+  std::cout << "after_add_deadlock_guard_passed=" << after_add_snapshot.deadlock_guard_passed << "\n";
+  std::cout << "after_add_race_guard_passed=" << after_add_snapshot.race_guard_passed << "\n";
+  std::cout << "after_wait_copy_status=" << after_wait_copy_status << "\n";
+  std::cout << "after_wait_last_queue_depth=" << after_wait_snapshot.last_queue_depth << "\n";
+  std::cout << "after_wait_last_queue_drain_result=" << after_wait_snapshot.last_queue_drain_result << "\n";
+  std::cout << "after_wait_scheduler_enqueue_count=" << after_wait_snapshot.scheduler_enqueue_count << "\n";
+  std::cout << "after_wait_scheduler_dequeue_count=" << after_wait_snapshot.scheduler_dequeue_count << "\n";
+  std::cout << "after_wait_last_scheduled_task_handle=" << after_wait_snapshot.last_scheduled_task_handle << "\n";
+  std::cout << "after_wait_last_scheduled_executor_tag=" << after_wait_snapshot.last_scheduled_executor_tag << "\n";
+  std::cout << "after_wait_last_dequeued_task_handle=" << after_wait_snapshot.last_dequeued_task_handle << "\n";
+  std::cout << "after_wait_last_dequeued_executor_tag=" << after_wait_snapshot.last_dequeued_executor_tag << "\n";
+  std::cout << "after_wait_last_executor_queue_depth=" << after_wait_snapshot.last_executor_queue_depth << "\n";
+  std::cout << "after_wait_max_executor_queue_depth=" << after_wait_snapshot.max_executor_queue_depth << "\n";
+  std::cout << "after_wait_scheduler_sequence=" << after_wait_snapshot.scheduler_sequence << "\n";
+  std::cout << "after_wait_deadlock_guard_passed=" << after_wait_snapshot.deadlock_guard_passed << "\n";
+  std::cout << "after_wait_race_guard_passed=" << after_wait_snapshot.race_guard_passed << "\n";
   std::cout << "spawn_call_count=" << snapshot.spawn_call_count << "\n";
   std::cout << "scope_call_count=" << snapshot.scope_call_count << "\n";
   std::cout << "add_task_call_count=" << snapshot.add_task_call_count << "\n";
@@ -52,9 +83,44 @@ int main() {
   std::cout << "observed_cancellation_generation=" << snapshot.observed_cancellation_generation << "\n";
   std::cout << "last_queue_depth=" << snapshot.last_queue_depth << "\n";
   std::cout << "last_queue_drain_result=" << snapshot.last_queue_drain_result << "\n";
+  std::cout << "scheduler_enqueue_count=" << snapshot.scheduler_enqueue_count << "\n";
+  std::cout << "scheduler_dequeue_count=" << snapshot.scheduler_dequeue_count << "\n";
+  std::cout << "last_scheduled_task_handle=" << snapshot.last_scheduled_task_handle << "\n";
+  std::cout << "last_scheduled_executor_tag=" << snapshot.last_scheduled_executor_tag << "\n";
+  std::cout << "last_dequeued_task_handle=" << snapshot.last_dequeued_task_handle << "\n";
+  std::cout << "last_dequeued_executor_tag=" << snapshot.last_dequeued_executor_tag << "\n";
+  std::cout << "last_executor_queue_depth=" << snapshot.last_executor_queue_depth << "\n";
+  std::cout << "max_executor_queue_depth=" << snapshot.max_executor_queue_depth << "\n";
+  std::cout << "scheduler_sequence=" << snapshot.scheduler_sequence << "\n";
+  std::cout << "deadlock_guard_passed=" << snapshot.deadlock_guard_passed << "\n";
+  std::cout << "race_guard_passed=" << snapshot.race_guard_passed << "\n";
 
-  return (copy_status == 0 && spawn_group == 111 && scope == 1 && add_task == 1 &&
+  return (copy_status == 0 && after_add_copy_status == 0 &&
+          after_wait_copy_status == 0 && spawn_group == 111 && scope == 1 && add_task == 1 &&
           cancelled == 0 && wait_next == 23 && hop == 23 && cancel_all == 31 &&
+          after_add_snapshot.last_queue_depth == 1 &&
+          after_add_snapshot.scheduler_enqueue_count == 1 &&
+          after_add_snapshot.scheduler_dequeue_count == 0 &&
+          after_add_snapshot.last_scheduled_task_handle == 23 &&
+          after_add_snapshot.last_scheduled_executor_tag == 2 &&
+          after_add_snapshot.last_executor_queue_depth == 1 &&
+          after_add_snapshot.max_executor_queue_depth == 1 &&
+          after_add_snapshot.scheduler_sequence == 1 &&
+          after_add_snapshot.deadlock_guard_passed == 1 &&
+          after_add_snapshot.race_guard_passed == 1 &&
+          after_wait_snapshot.last_queue_depth == 0 &&
+          after_wait_snapshot.last_queue_drain_result == 23 &&
+          after_wait_snapshot.scheduler_enqueue_count == 1 &&
+          after_wait_snapshot.scheduler_dequeue_count == 1 &&
+          after_wait_snapshot.last_scheduled_task_handle == 23 &&
+          after_wait_snapshot.last_scheduled_executor_tag == 2 &&
+          after_wait_snapshot.last_dequeued_task_handle == 23 &&
+          after_wait_snapshot.last_dequeued_executor_tag == 2 &&
+          after_wait_snapshot.last_executor_queue_depth == 0 &&
+          after_wait_snapshot.max_executor_queue_depth == 1 &&
+          after_wait_snapshot.scheduler_sequence == 2 &&
+          after_wait_snapshot.deadlock_guard_passed == 1 &&
+          after_wait_snapshot.race_guard_passed == 1 &&
           on_cancel == 41 && spawn_detached == 121 && snapshot.spawn_call_count == 2 &&
           snapshot.scope_call_count == 1 && snapshot.add_task_call_count == 1 &&
           snapshot.wait_next_call_count == 1 && snapshot.cancel_all_call_count == 1 &&
@@ -68,7 +134,18 @@ int main() {
           snapshot.active_group_task_count == 1 && snapshot.pending_group_task_count == 0 &&
           snapshot.completed_group_task_count == 1 && snapshot.group_cancelled == 1 &&
           snapshot.cancellation_generation == 1 && snapshot.observed_cancellation_generation == 1 &&
-          snapshot.last_queue_depth == 0 && snapshot.last_queue_drain_result == 23)
+          snapshot.last_queue_depth == 0 && snapshot.last_queue_drain_result == 23 &&
+          snapshot.scheduler_enqueue_count == 2 &&
+          snapshot.scheduler_dequeue_count == 1 &&
+          snapshot.last_scheduled_task_handle == 121 &&
+          snapshot.last_scheduled_executor_tag == 3 &&
+          snapshot.last_dequeued_task_handle == 23 &&
+          snapshot.last_dequeued_executor_tag == 2 &&
+          snapshot.last_executor_queue_depth == 1 &&
+          snapshot.max_executor_queue_depth == 1 &&
+          snapshot.scheduler_sequence == 3 &&
+          snapshot.deadlock_guard_passed == 1 &&
+          snapshot.race_guard_passed == 1)
              ? 0
              : 1;
 }

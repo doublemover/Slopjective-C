@@ -87,7 +87,9 @@ bool PopulateImportedConcurrencyActorMailboxRuntimeImport(
   const RuntimeImportJsonValue *runtime_value = FindMember(
       root, "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface");
   if (runtime_value == nullptr) {
-    return true;
+    error =
+        "missing Part 7 actor mailbox runtime import surface in import artifact";
+    return false;
   }
 
   const RuntimeImportJsonValue::Object *runtime_object =
@@ -102,6 +104,36 @@ bool PopulateImportedConcurrencyActorMailboxRuntimeImport(
   if (!ReadStringMember(*runtime_object, "contract_id", contract_id, error) ||
       !ReadStringMember(*runtime_object, "source_contract_id",
                         source_contract_id, error) ||
+      !ReadSizeMember(*runtime_object, "actor_interface_sites",
+                      surface.concurrency_actor_interface_sites, error) ||
+      !ReadSizeMember(*runtime_object, "actor_method_sites",
+                      surface.concurrency_actor_method_sites, error) ||
+      !ReadSizeMember(*runtime_object, "actor_metadata_record_sites",
+                      surface.concurrency_actor_metadata_record_sites, error) ||
+      !ReadSizeMember(*runtime_object, "nonisolated_entry_sites",
+                      surface.concurrency_actor_nonisolated_entry_sites,
+                      error) ||
+      !ReadSizeMember(*runtime_object, "executor_affinity_sites",
+                      surface.concurrency_actor_executor_affinity_sites,
+                      error) ||
+      !ReadSizeMember(*runtime_object, "actor_hop_artifact_sites",
+                      surface.concurrency_actor_hop_artifact_sites, error) ||
+      !ReadSizeMember(*runtime_object, "actor_isolation_thunk_sites",
+                      surface.concurrency_actor_isolation_thunk_sites,
+                      error) ||
+      !ReadSizeMember(*runtime_object, "replay_proof_dependency_sites",
+                      surface.concurrency_actor_replay_proof_dependency_sites,
+                      error) ||
+      !ReadSizeMember(*runtime_object, "race_guard_dependency_sites",
+                      surface.concurrency_actor_race_guard_dependency_sites,
+                      error) ||
+      !ReadSizeMember(*runtime_object, "task_handoff_sites",
+                      surface.concurrency_actor_task_handoff_sites, error) ||
+      !ReadSizeMember(*runtime_object, "guard_blocked_sites",
+                      surface.concurrency_actor_guard_blocked_sites, error) ||
+      !ReadSizeMember(*runtime_object, "contract_violation_sites",
+                      surface.concurrency_actor_contract_violation_sites,
+                      error) ||
       !ReadBoolMember(*runtime_object, "actor_mailbox_runtime_ready",
                       surface.concurrency_actor_mailbox_runtime_ready,
                       error) ||
@@ -130,7 +162,14 @@ bool PopulateImportedConcurrencyActorMailboxRuntimeImport(
     return false;
   }
 
-  if (!surface.concurrency_actor_mailbox_runtime_ready) {
+  const bool has_actor_metadata =
+      HasObjc3ImportedConcurrencyActorRuntimeMetadata(surface);
+  if (!has_actor_metadata) {
+    if (surface.concurrency_actor_mailbox_runtime_ready) {
+      error =
+          "Part 7 actor mailbox runtime import surface is ready without actor metadata";
+      return false;
+    }
     return true;
   }
 
@@ -139,6 +178,12 @@ bool PopulateImportedConcurrencyActorMailboxRuntimeImport(
       std::move(contract_id);
   surface.concurrency_actor_mailbox_runtime_source_contract_id =
       std::move(source_contract_id);
+  if (!IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
+          surface)) {
+    error =
+        "Part 7 actor mailbox runtime import surface is incomplete for actor metadata";
+    return false;
+  }
   return true;
 }
 

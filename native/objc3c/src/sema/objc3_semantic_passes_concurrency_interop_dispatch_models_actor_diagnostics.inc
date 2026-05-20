@@ -34,6 +34,7 @@ BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
       }
       const Objc3ConcurrencyActorMethodBodyProfile body_profile =
           BuildConcurrencyActorMethodBodyProfile(method);
+      summary.actor_isolation_sites += body_profile.actor_isolation_sites;
       summary.actor_hop_sites += body_profile.actor_hop_sites;
       summary.non_sendable_crossing_sites +=
           body_profile.non_sendable_crossing_sites;
@@ -48,6 +49,14 @@ BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
       count_diagnostic_code("O3S289");
   summary.illegal_non_sendable_crossing_sites =
       count_diagnostic_code("O3S290");
+  summary.illegal_non_actor_actor_hop_sites =
+      count_diagnostic_code("O3S342");
+  summary.illegal_non_actor_non_sendable_crossing_sites =
+      count_diagnostic_code("O3S343");
+  summary.illegal_non_actor_actor_isolation_sites =
+      count_diagnostic_code("O3S344");
+  summary.illegal_nonisolated_actor_isolation_sites =
+      count_diagnostic_code("O3S345");
 
   summary.dependency_required = true;
   summary.non_actor_nonisolated_fail_closed =
@@ -63,6 +72,15 @@ BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
   summary.non_sendable_crossing_fail_closed =
       summary.illegal_non_sendable_crossing_sites <=
       summary.non_sendable_crossing_sites;
+  summary.non_actor_actor_semantics_fail_closed =
+      summary.illegal_non_actor_actor_hop_sites <= summary.actor_hop_sites &&
+      summary.illegal_non_actor_non_sendable_crossing_sites <=
+          summary.non_sendable_crossing_sites &&
+      summary.illegal_non_actor_actor_isolation_sites <=
+          summary.actor_isolation_sites;
+  summary.nonisolated_actor_isolation_fail_closed =
+      summary.illegal_nonisolated_actor_isolation_sites <=
+      summary.total_nonisolated_method_sites;
   summary.runnable_lowering_deferred = true;
   summary.actor_runtime_deferred = true;
   summary.executor_runtime_deferred = true;
@@ -71,7 +89,9 @@ BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
       summary.non_actor_nonisolated_fail_closed &&
       summary.nonisolated_combination_fail_closed &&
       summary.actor_hop_async_boundary_enforced &&
-      summary.non_sendable_crossing_fail_closed;
+      summary.non_sendable_crossing_fail_closed &&
+      summary.non_actor_actor_semantics_fail_closed &&
+      summary.nonisolated_actor_isolation_fail_closed;
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
@@ -82,12 +102,17 @@ BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
   out << summary.contract_id
       << ";dependency=" << summary.dependency_contract_id
       << ";actor-methods=" << summary.actor_method_sites
+      << ";actor-isolation=" << summary.actor_isolation_sites
       << ";nonisolated-sites=" << summary.total_nonisolated_method_sites
       << ";illegal-sites=" << summary.illegal_non_actor_nonisolated_sites << ":"
       << summary.illegal_nonisolated_async_sites << ":"
       << summary.illegal_nonisolated_executor_sites << ":"
       << summary.illegal_actor_hop_without_async_sites << ":"
-      << summary.illegal_non_sendable_crossing_sites
+      << summary.illegal_non_sendable_crossing_sites << ":"
+      << summary.illegal_non_actor_actor_hop_sites << ":"
+      << summary.illegal_non_actor_non_sendable_crossing_sites << ":"
+      << summary.illegal_non_actor_actor_isolation_sites << ":"
+      << summary.illegal_nonisolated_actor_isolation_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;

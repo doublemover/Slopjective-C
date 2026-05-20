@@ -16,9 +16,13 @@ struct PassResult {
   int cancel_all = 0;
   int on_cancel = 0;
   int spawn_detached = 0;
+  int after_add_copy_status = 0;
+  int after_wait_copy_status = 0;
   int copy_task_status = 0;
   int copy_memory_status = 0;
   int copy_arc_status = 0;
+  objc3_runtime_task_runtime_state_snapshot after_add_task{};
+  objc3_runtime_task_runtime_state_snapshot after_wait_next{};
   objc3_runtime_task_runtime_state_snapshot task{};
   objc3_runtime_memory_management_state_snapshot memory{};
   objc3_runtime_arc_debug_state_snapshot arc{};

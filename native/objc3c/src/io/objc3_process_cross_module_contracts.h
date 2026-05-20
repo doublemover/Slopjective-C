@@ -47,6 +47,18 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string error_handling_ns_error_replay_key;
   std::string error_handling_unwind_replay_key;
   bool concurrency_actor_mailbox_runtime_import_present = false;
+  std::size_t concurrency_actor_interface_sites = 0;
+  std::size_t concurrency_actor_method_sites = 0;
+  std::size_t concurrency_actor_metadata_record_sites = 0;
+  std::size_t concurrency_actor_nonisolated_entry_sites = 0;
+  std::size_t concurrency_actor_executor_affinity_sites = 0;
+  std::size_t concurrency_actor_hop_artifact_sites = 0;
+  std::size_t concurrency_actor_isolation_thunk_sites = 0;
+  std::size_t concurrency_actor_replay_proof_dependency_sites = 0;
+  std::size_t concurrency_actor_race_guard_dependency_sites = 0;
+  std::size_t concurrency_actor_task_handoff_sites = 0;
+  std::size_t concurrency_actor_guard_blocked_sites = 0;
+  std::size_t concurrency_actor_contract_violation_sites = 0;
   bool concurrency_actor_mailbox_runtime_ready = false;
   bool concurrency_actor_mailbox_runtime_deterministic = false;
   std::string concurrency_actor_contract_id;

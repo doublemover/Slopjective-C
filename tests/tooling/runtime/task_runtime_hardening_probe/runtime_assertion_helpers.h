@@ -12,6 +12,8 @@ inline bool Equivalent(const PassResult &lhs, const PassResult &rhs) {
          lhs.wait_next == rhs.wait_next && lhs.hop == rhs.hop &&
          lhs.cancel_all == rhs.cancel_all && lhs.on_cancel == rhs.on_cancel &&
          lhs.spawn_detached == rhs.spawn_detached &&
+         lhs.after_add_copy_status == rhs.after_add_copy_status &&
+         lhs.after_wait_copy_status == rhs.after_wait_copy_status &&
          lhs.copy_task_status == rhs.copy_task_status &&
          lhs.copy_memory_status == rhs.copy_memory_status &&
          lhs.copy_arc_status == rhs.copy_arc_status &&
@@ -24,6 +26,52 @@ inline bool Equivalent(const PassResult &lhs, const PassResult &rhs) {
              rhs.task.cancellation_poll_call_count &&
          lhs.task.on_cancel_call_count == rhs.task.on_cancel_call_count &&
          lhs.task.executor_hop_call_count == rhs.task.executor_hop_call_count &&
+         lhs.after_add_task.last_queue_depth ==
+             rhs.after_add_task.last_queue_depth &&
+         lhs.after_add_task.scheduler_enqueue_count ==
+             rhs.after_add_task.scheduler_enqueue_count &&
+         lhs.after_add_task.scheduler_dequeue_count ==
+             rhs.after_add_task.scheduler_dequeue_count &&
+         lhs.after_add_task.last_scheduled_task_handle ==
+             rhs.after_add_task.last_scheduled_task_handle &&
+         lhs.after_add_task.last_scheduled_executor_tag ==
+             rhs.after_add_task.last_scheduled_executor_tag &&
+         lhs.after_add_task.last_executor_queue_depth ==
+             rhs.after_add_task.last_executor_queue_depth &&
+         lhs.after_add_task.max_executor_queue_depth ==
+             rhs.after_add_task.max_executor_queue_depth &&
+         lhs.after_add_task.scheduler_sequence ==
+             rhs.after_add_task.scheduler_sequence &&
+         lhs.after_add_task.deadlock_guard_passed ==
+             rhs.after_add_task.deadlock_guard_passed &&
+         lhs.after_add_task.race_guard_passed ==
+             rhs.after_add_task.race_guard_passed &&
+         lhs.after_wait_next.last_queue_depth ==
+             rhs.after_wait_next.last_queue_depth &&
+         lhs.after_wait_next.last_queue_drain_result ==
+             rhs.after_wait_next.last_queue_drain_result &&
+         lhs.after_wait_next.scheduler_enqueue_count ==
+             rhs.after_wait_next.scheduler_enqueue_count &&
+         lhs.after_wait_next.scheduler_dequeue_count ==
+             rhs.after_wait_next.scheduler_dequeue_count &&
+         lhs.after_wait_next.last_scheduled_task_handle ==
+             rhs.after_wait_next.last_scheduled_task_handle &&
+         lhs.after_wait_next.last_scheduled_executor_tag ==
+             rhs.after_wait_next.last_scheduled_executor_tag &&
+         lhs.after_wait_next.last_dequeued_task_handle ==
+             rhs.after_wait_next.last_dequeued_task_handle &&
+         lhs.after_wait_next.last_dequeued_executor_tag ==
+             rhs.after_wait_next.last_dequeued_executor_tag &&
+         lhs.after_wait_next.last_executor_queue_depth ==
+             rhs.after_wait_next.last_executor_queue_depth &&
+         lhs.after_wait_next.max_executor_queue_depth ==
+             rhs.after_wait_next.max_executor_queue_depth &&
+         lhs.after_wait_next.scheduler_sequence ==
+             rhs.after_wait_next.scheduler_sequence &&
+         lhs.after_wait_next.deadlock_guard_passed ==
+             rhs.after_wait_next.deadlock_guard_passed &&
+         lhs.after_wait_next.race_guard_passed ==
+             rhs.after_wait_next.race_guard_passed &&
          lhs.task.last_spawn_kind == rhs.task.last_spawn_kind &&
          lhs.task.last_spawn_executor_tag == rhs.task.last_spawn_executor_tag &&
          lhs.task.last_wait_next_result == rhs.task.last_wait_next_result &&
@@ -50,6 +98,26 @@ inline bool Equivalent(const PassResult &lhs, const PassResult &rhs) {
          lhs.task.last_queue_depth == rhs.task.last_queue_depth &&
          lhs.task.last_queue_drain_result ==
              rhs.task.last_queue_drain_result &&
+         lhs.task.scheduler_enqueue_count ==
+             rhs.task.scheduler_enqueue_count &&
+         lhs.task.scheduler_dequeue_count ==
+             rhs.task.scheduler_dequeue_count &&
+         lhs.task.last_scheduled_task_handle ==
+             rhs.task.last_scheduled_task_handle &&
+         lhs.task.last_scheduled_executor_tag ==
+             rhs.task.last_scheduled_executor_tag &&
+         lhs.task.last_dequeued_task_handle ==
+             rhs.task.last_dequeued_task_handle &&
+         lhs.task.last_dequeued_executor_tag ==
+             rhs.task.last_dequeued_executor_tag &&
+         lhs.task.last_executor_queue_depth ==
+             rhs.task.last_executor_queue_depth &&
+         lhs.task.max_executor_queue_depth ==
+             rhs.task.max_executor_queue_depth &&
+         lhs.task.scheduler_sequence == rhs.task.scheduler_sequence &&
+         lhs.task.deadlock_guard_passed ==
+             rhs.task.deadlock_guard_passed &&
+         lhs.task.race_guard_passed == rhs.task.race_guard_passed &&
          lhs.memory.autoreleasepool_depth ==
              rhs.memory.autoreleasepool_depth &&
          lhs.memory.autoreleasepool_max_depth ==
@@ -88,11 +156,32 @@ inline bool Equivalent(const InvalidHandleResult &lhs,
              rhs.task.completed_group_task_count &&
          lhs.task.group_cancelled == rhs.task.group_cancelled &&
          lhs.task.last_wait_next_result == rhs.task.last_wait_next_result &&
-         lhs.task.last_cancel_all_result == rhs.task.last_cancel_all_result;
+         lhs.task.last_cancel_all_result == rhs.task.last_cancel_all_result &&
+         lhs.task.scheduler_enqueue_count ==
+             rhs.task.scheduler_enqueue_count &&
+         lhs.task.scheduler_dequeue_count ==
+             rhs.task.scheduler_dequeue_count &&
+         lhs.task.last_scheduled_task_handle ==
+             rhs.task.last_scheduled_task_handle &&
+         lhs.task.last_scheduled_executor_tag ==
+             rhs.task.last_scheduled_executor_tag &&
+         lhs.task.last_dequeued_task_handle ==
+             rhs.task.last_dequeued_task_handle &&
+         lhs.task.last_dequeued_executor_tag ==
+             rhs.task.last_dequeued_executor_tag &&
+         lhs.task.last_executor_queue_depth ==
+             rhs.task.last_executor_queue_depth &&
+         lhs.task.max_executor_queue_depth ==
+             rhs.task.max_executor_queue_depth &&
+         lhs.task.scheduler_sequence == rhs.task.scheduler_sequence &&
+         lhs.task.deadlock_guard_passed ==
+             rhs.task.deadlock_guard_passed &&
+         lhs.task.race_guard_passed == rhs.task.race_guard_passed;
 }
 
 inline bool SnapshotCopiesSucceeded(const PassResult &pass) {
-  return pass.copy_task_status == 0 && pass.copy_memory_status == 0 &&
+  return pass.after_add_copy_status == 0 && pass.after_wait_copy_status == 0 &&
+         pass.copy_task_status == 0 && pass.copy_memory_status == 0 &&
          pass.copy_arc_status == 0;
 }
 
@@ -116,6 +205,29 @@ inline bool TaskRuntimeCountersMatchExpectedValues(const PassResult &pass) {
          pass.task.last_wait_next_result == 23 &&
          pass.task.last_executor_hop_executor_tag == 2 &&
          pass.task.last_executor_hop_value == 23 &&
+         pass.after_add_task.last_queue_depth == 1 &&
+         pass.after_add_task.scheduler_enqueue_count == 1 &&
+         pass.after_add_task.scheduler_dequeue_count == 0 &&
+         pass.after_add_task.last_scheduled_task_handle == 23 &&
+         pass.after_add_task.last_scheduled_executor_tag == 2 &&
+         pass.after_add_task.last_executor_queue_depth == 1 &&
+         pass.after_add_task.max_executor_queue_depth == 1 &&
+         pass.after_add_task.scheduler_sequence == 1 &&
+         pass.after_add_task.deadlock_guard_passed == 1 &&
+         pass.after_add_task.race_guard_passed == 1 &&
+         pass.after_wait_next.last_queue_depth == 0 &&
+         pass.after_wait_next.last_queue_drain_result == 23 &&
+         pass.after_wait_next.scheduler_enqueue_count == 1 &&
+         pass.after_wait_next.scheduler_dequeue_count == 1 &&
+         pass.after_wait_next.last_scheduled_task_handle == 23 &&
+         pass.after_wait_next.last_scheduled_executor_tag == 2 &&
+         pass.after_wait_next.last_dequeued_task_handle == 23 &&
+         pass.after_wait_next.last_dequeued_executor_tag == 2 &&
+         pass.after_wait_next.last_executor_queue_depth == 0 &&
+         pass.after_wait_next.max_executor_queue_depth == 1 &&
+         pass.after_wait_next.scheduler_sequence == 2 &&
+         pass.after_wait_next.deadlock_guard_passed == 1 &&
+         pass.after_wait_next.race_guard_passed == 1 &&
          pass.task.last_failure_reason == OBJC3_RUNTIME_TASK_FAILURE_NONE &&
          pass.task.lifecycle_state ==
              OBJC3_RUNTIME_TASK_LIFECYCLE_TASK_SPAWNED &&
@@ -128,7 +240,18 @@ inline bool TaskRuntimeCountersMatchExpectedValues(const PassResult &pass) {
          pass.task.cancellation_generation == 1 &&
          pass.task.observed_cancellation_generation == 1 &&
          pass.task.last_queue_depth == 0 &&
-         pass.task.last_queue_drain_result == 23;
+         pass.task.last_queue_drain_result == 23 &&
+         pass.task.scheduler_enqueue_count == 2 &&
+         pass.task.scheduler_dequeue_count == 1 &&
+         pass.task.last_scheduled_task_handle == 121 &&
+         pass.task.last_scheduled_executor_tag == 3 &&
+         pass.task.last_dequeued_task_handle == 23 &&
+         pass.task.last_dequeued_executor_tag == 2 &&
+         pass.task.last_executor_queue_depth == 1 &&
+         pass.task.max_executor_queue_depth == 1 &&
+         pass.task.scheduler_sequence == 3 &&
+         pass.task.deadlock_guard_passed == 1 &&
+         pass.task.race_guard_passed == 1;
 }
 
 inline bool MemoryAndArcHardeningCountersMatchExpectedValues(
@@ -179,7 +302,16 @@ inline bool InvalidHandleAssertionsPassed(const InvalidHandleResult &pass) {
          pass.task.last_wait_next_result ==
              -OBJC3_RUNTIME_TASK_FAILURE_MISSING_TASK_GROUP &&
          pass.task.last_cancel_all_result ==
-             -OBJC3_RUNTIME_TASK_FAILURE_MISSING_TASK_GROUP;
+             -OBJC3_RUNTIME_TASK_FAILURE_MISSING_TASK_GROUP &&
+         pass.task.scheduler_enqueue_count == 0 &&
+         pass.task.scheduler_dequeue_count == 0 &&
+         pass.task.last_scheduled_task_handle == 0 &&
+         pass.task.last_dequeued_task_handle == 0 &&
+         pass.task.last_executor_queue_depth == 0 &&
+         pass.task.max_executor_queue_depth == 0 &&
+         pass.task.scheduler_sequence == 0 &&
+         pass.task.deadlock_guard_passed == 1 &&
+         pass.task.race_guard_passed == 1;
 }
 
 inline bool ProbeAssertionsPassed(const ProbeRun &run) {

@@ -6,5 +6,7 @@ bool IsReadyObjc3ImportedRuntimeModuleSurfaceCrossModuleContract(
          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
              surface.frontend_closure_summary) &&
          surface.frontend_closure_summary.ready_for_frontend_module_consumption &&
-         surface.frontend_closure_summary.runtime_metadata_source_records_ready;
+         surface.frontend_closure_summary.runtime_metadata_source_records_ready &&
+         IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
+             surface);
 }

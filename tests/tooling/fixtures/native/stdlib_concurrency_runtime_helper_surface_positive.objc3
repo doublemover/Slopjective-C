@@ -1,0 +1,43 @@
+module StdlibConcurrencyRuntimeHelperSurfacePositive;
+
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_enter_task_group_scope_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_add_task_group_task_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32;
+
+fn objc3_concurrency_child_spawn_token(executor_tag: i32) {
+  return objc3_runtime_spawn_task_i32(1, executor_tag);
+}
+
+fn objc3_concurrency_task_group_scope_depth(executor_tag: i32, child_tasks: i32) {
+  objc3_runtime_enter_task_group_scope_i32(executor_tag);
+  objc3_runtime_add_task_group_task_i32(executor_tag);
+  return objc3_runtime_wait_task_group_next_i32(executor_tag) + child_tasks;
+}
+
+fn objc3_concurrency_cancellation_query(executor_tag: i32) {
+  return objc3_runtime_task_is_cancelled_i32(executor_tag);
+}
+
+fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32) {
+  return objc3_runtime_executor_hop_i32(value, executor_tag);
+}
+
+fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, value: i32) {
+  objc3_runtime_actor_bind_executor_i32(actor_handle, actor_handle);
+  objc3_runtime_actor_mailbox_enqueue_i32(actor_handle, value, actor_handle);
+  return objc3_runtime_actor_mailbox_drain_next_i32(actor_handle, actor_handle);
+}
+
+fn main() -> i32 {
+  return objc3_concurrency_child_spawn_token(1)
+    + objc3_concurrency_task_group_scope_depth(1, 1)
+    + objc3_concurrency_cancellation_query(1)
+    + objc3_concurrency_executor_hop_token(21, 1)
+    + objc3_concurrency_actor_mailbox_token(1, 13);
+}

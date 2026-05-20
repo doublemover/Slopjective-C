@@ -39,6 +39,17 @@ void ResetRuntimeTaskRuntimeStateSnapshot(
   snapshot.observed_cancellation_generation = 0;
   snapshot.last_queue_depth = 0;
   snapshot.last_queue_drain_result = 0;
+  snapshot.scheduler_enqueue_count = 0;
+  snapshot.scheduler_dequeue_count = 0;
+  snapshot.last_scheduled_task_handle = 0;
+  snapshot.last_scheduled_executor_tag = 0;
+  snapshot.last_dequeued_task_handle = 0;
+  snapshot.last_dequeued_executor_tag = 0;
+  snapshot.last_executor_queue_depth = 0;
+  snapshot.max_executor_queue_depth = 0;
+  snapshot.scheduler_sequence = 0;
+  snapshot.deadlock_guard_passed = 1;
+  snapshot.race_guard_passed = 1;
 }
 
 void PopulateRuntimeTaskRuntimeStateSnapshot(
@@ -81,6 +92,17 @@ void PopulateRuntimeTaskRuntimeStateSnapshot(
       state.observed_cancellation_generation;
   snapshot.last_queue_depth = state.last_queue_depth;
   snapshot.last_queue_drain_result = state.last_queue_drain_result;
+  snapshot.scheduler_enqueue_count = state.scheduler_enqueue_count;
+  snapshot.scheduler_dequeue_count = state.scheduler_dequeue_count;
+  snapshot.last_scheduled_task_handle = state.last_scheduled_task_handle;
+  snapshot.last_scheduled_executor_tag = state.last_scheduled_executor_tag;
+  snapshot.last_dequeued_task_handle = state.last_dequeued_task_handle;
+  snapshot.last_dequeued_executor_tag = state.last_dequeued_executor_tag;
+  snapshot.last_executor_queue_depth = state.last_executor_queue_depth;
+  snapshot.max_executor_queue_depth = state.max_executor_queue_depth;
+  snapshot.scheduler_sequence = state.scheduler_sequence;
+  snapshot.deadlock_guard_passed = state.deadlock_guard_passed;
+  snapshot.race_guard_passed = state.race_guard_passed;
 }
 
 }  // namespace objc3c::runtime

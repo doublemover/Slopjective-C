@@ -80,6 +80,18 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string error_handling_result_like_replay_key;
   std::string error_handling_ns_error_replay_key;
   std::string error_handling_unwind_replay_key;
+  std::size_t concurrency_actor_interface_sites = 0;
+  std::size_t concurrency_actor_method_sites = 0;
+  std::size_t concurrency_actor_metadata_record_sites = 0;
+  std::size_t concurrency_actor_nonisolated_entry_sites = 0;
+  std::size_t concurrency_actor_executor_affinity_sites = 0;
+  std::size_t concurrency_actor_hop_artifact_sites = 0;
+  std::size_t concurrency_actor_isolation_thunk_sites = 0;
+  std::size_t concurrency_actor_replay_proof_dependency_sites = 0;
+  std::size_t concurrency_actor_race_guard_dependency_sites = 0;
+  std::size_t concurrency_actor_task_handoff_sites = 0;
+  std::size_t concurrency_actor_guard_blocked_sites = 0;
+  std::size_t concurrency_actor_contract_violation_sites = 0;
   bool concurrency_actor_mailbox_runtime_ready = false;
   bool concurrency_actor_mailbox_runtime_deterministic = false;
   std::string concurrency_actor_mailbox_runtime_contract_id;
@@ -259,6 +271,39 @@ struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {
 
 bool IsReadyObjc3ImportedRuntimeModuleSurfaceCrossModuleContract(
     const Objc3ImportedRuntimeModuleSurface &surface);
+
+inline bool HasObjc3ImportedConcurrencyActorRuntimeMetadata(
+    const Objc3ImportedRuntimeModuleSurface &surface) {
+  return surface.concurrency_actor_interface_sites != 0u ||
+         surface.concurrency_actor_method_sites != 0u ||
+         surface.concurrency_actor_metadata_record_sites != 0u ||
+         surface.concurrency_actor_nonisolated_entry_sites != 0u ||
+         surface.concurrency_actor_executor_affinity_sites != 0u ||
+         surface.concurrency_actor_hop_artifact_sites != 0u ||
+         surface.concurrency_actor_isolation_thunk_sites != 0u ||
+         surface.concurrency_actor_replay_proof_dependency_sites != 0u ||
+         surface.concurrency_actor_race_guard_dependency_sites != 0u ||
+         surface.concurrency_actor_task_handoff_sites != 0u;
+}
+
+inline bool IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
+    const Objc3ImportedRuntimeModuleSurface &surface) {
+  if (!HasObjc3ImportedConcurrencyActorRuntimeMetadata(surface)) {
+    return !surface.concurrency_actor_mailbox_runtime_import_present &&
+           !surface.concurrency_actor_mailbox_runtime_ready;
+  }
+  return surface.concurrency_actor_mailbox_runtime_import_present &&
+         surface.concurrency_actor_mailbox_runtime_ready &&
+         surface.concurrency_actor_mailbox_runtime_deterministic &&
+         !surface.concurrency_actor_mailbox_runtime_contract_id.empty() &&
+         !surface.concurrency_actor_mailbox_runtime_source_contract_id.empty() &&
+         !surface.concurrency_actor_mailbox_runtime_replay_key.empty() &&
+         !surface.concurrency_actor_lowering_replay_key.empty() &&
+         !surface.concurrency_actor_isolation_lowering_replay_key.empty() &&
+         surface.concurrency_actor_metadata_record_sites >=
+             surface.concurrency_actor_interface_sites &&
+         surface.concurrency_actor_contract_violation_sites == 0u;
+}
 
 bool IsReadyObjc3ImportedRuntimeModulePackagingLinkPlan(
     const Objc3ImportedRuntimeModulePackagingPeerArtifacts &artifacts);

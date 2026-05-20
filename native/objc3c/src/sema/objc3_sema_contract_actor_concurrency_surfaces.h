@@ -82,7 +82,7 @@ inline constexpr const char
         "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendability_enforcement";
 inline constexpr const char
     *kObjc3ConcurrencyActorIsolationSendabilityEnforcementRule =
-        "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-and-non-sendable-crossings-while-runnable-actor-mailbox-runtime-remains-later-runtime-work";
+        "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-non-sendable-crossings-non-actor-actor-body-sites-and-nonisolated-actor-isolation-access-while-runnable-actor-mailbox-runtime-remains-later-runtime-work";
 inline constexpr const char
     *kObjc3ConcurrencyActorIsolationSendabilityEnforcementDeferredRule =
         "full-cross-module-actor-runtime-mailboxes-race-hazard-closure-and-runnable-strict-concurrency-scheduling-remain-deferred-to-later-runtime-lanes";
@@ -103,6 +103,7 @@ struct Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary {
   std::size_t objc_nonisolated_annotation_sites = 0;
   std::size_t actor_member_executor_annotation_sites = 0;
   std::size_t actor_async_method_sites = 0;
+  std::size_t actor_isolation_sites = 0;
   std::size_t actor_hop_sites = 0;
   std::size_t non_sendable_crossing_sites = 0;
   std::size_t total_nonisolated_method_sites = 0;
@@ -111,11 +112,17 @@ struct Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary {
   std::size_t illegal_nonisolated_executor_sites = 0;
   std::size_t illegal_actor_hop_without_async_sites = 0;
   std::size_t illegal_non_sendable_crossing_sites = 0;
+  std::size_t illegal_non_actor_actor_hop_sites = 0;
+  std::size_t illegal_non_actor_non_sendable_crossing_sites = 0;
+  std::size_t illegal_non_actor_actor_isolation_sites = 0;
+  std::size_t illegal_nonisolated_actor_isolation_sites = 0;
   bool dependency_required = false;
   bool non_actor_nonisolated_fail_closed = false;
   bool nonisolated_combination_fail_closed = false;
   bool actor_hop_async_boundary_enforced = false;
   bool non_sendable_crossing_fail_closed = false;
+  bool non_actor_actor_semantics_fail_closed = false;
+  bool nonisolated_actor_isolation_fail_closed = false;
   bool runnable_lowering_deferred = false;
   bool actor_runtime_deferred = false;
   bool executor_runtime_deferred = false;
@@ -132,6 +139,8 @@ inline bool IsReadyObjc3ConcurrencyActorIsolationSendabilityEnforcementSummary(
          summary.nonisolated_combination_fail_closed &&
          summary.actor_hop_async_boundary_enforced &&
          summary.non_sendable_crossing_fail_closed &&
+         summary.non_actor_actor_semantics_fail_closed &&
+         summary.nonisolated_actor_isolation_fail_closed &&
          summary.runnable_lowering_deferred && summary.actor_runtime_deferred &&
          summary.executor_runtime_deferred && summary.deterministic &&
          summary.ready_for_lowering_and_runtime &&

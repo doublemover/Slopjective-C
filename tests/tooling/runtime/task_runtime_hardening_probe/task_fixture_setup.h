@@ -21,10 +21,14 @@ inline PassResult RunPass(const TaskRuntimeHardeningScenario &scenario) {
       objc3_runtime_enter_task_group_scope_i32(scenario.scope_group_tag);
   result.add_task =
       objc3_runtime_add_task_group_task_i32(scenario.group_task_tag);
+  result.after_add_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.after_add_task);
   result.cancelled =
       objc3_runtime_task_is_cancelled_i32(scenario.cancellation_task_tag);
   result.wait_next =
       objc3_runtime_wait_task_group_next_i32(scenario.wait_group_tag);
+  result.after_wait_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.after_wait_next);
   result.hop =
       objc3_runtime_executor_hop_i32(result.wait_next, scenario.executor_hop_tag);
   result.cancel_all =

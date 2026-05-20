@@ -86,6 +86,17 @@ typedef struct objc3_runtime_task_runtime_state_snapshot {
   int observed_cancellation_generation;
   int last_queue_depth;
   int last_queue_drain_result;
+  uint64_t scheduler_enqueue_count;
+  uint64_t scheduler_dequeue_count;
+  int last_scheduled_task_handle;
+  int last_scheduled_executor_tag;
+  int last_dequeued_task_handle;
+  int last_dequeued_executor_tag;
+  int last_executor_queue_depth;
+  int max_executor_queue_depth;
+  int scheduler_sequence;
+  int deadlock_guard_passed;
+  int race_guard_passed;
 } objc3_runtime_task_runtime_state_snapshot;
 
 typedef struct objc3_runtime_actor_runtime_state_snapshot {
