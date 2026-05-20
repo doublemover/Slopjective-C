@@ -13,6 +13,7 @@ from objc3c_effects_ownership_semantic_model.contracts import VALIDATION_COMMAND
 from objc3c_effects_ownership_semantic_model.inputs import build_static_presence
 from objc3c_effects_ownership_semantic_model.inputs import load_semantic_inputs
 from objc3c_effects_ownership_semantic_model.inputs import source_truth_paths
+from objc3c_effects_ownership_semantic_model.paths import METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import POSITIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
@@ -33,6 +34,10 @@ def build_summary() -> dict[str, Any]:
         MISSING_REQUIRED_SLICES_FIXTURE, TMP_ROOT / "missing-required-slices"
     )
     negative_run = run_compiler(NEGATIVE_FIXTURE, TMP_ROOT / "negative-async-throws")
+    method_family_scalar_return_negative_run = run_compiler(
+        METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE,
+        TMP_ROOT / "negative-method-family-scalar-return",
+    )
     model = find_effects_model(positive_run.get("manifest")) if positive_run.get("manifest") else None
     missing_required_slices_model = (
         find_effects_model(missing_required_slices_run.get("manifest"))
@@ -54,6 +59,7 @@ def build_summary() -> dict[str, Any]:
         source_truth_paths=truth_paths,
         missing_required_slices_run=missing_required_slices_run,
         missing_required_slices_model=missing_required_slices_model,
+        method_family_scalar_return_negative_run=method_family_scalar_return_negative_run,
     )
     status = "PASS" if all(checks.values()) else "FAIL"
     return {
@@ -66,11 +72,15 @@ def build_summary() -> dict[str, Any]:
         "positive_fixture": rel(POSITIVE_FIXTURE),
         "missing_required_slices_fixture": rel(MISSING_REQUIRED_SLICES_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
+        "method_family_scalar_return_negative_fixture": rel(METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE),
         "positive_compile": {key: value for key, value in positive_run.items() if key != "manifest"},
         "missing_required_slices_compile": {
             key: value for key, value in missing_required_slices_run.items() if key != "manifest"
         },
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
+        "method_family_scalar_return_negative_compile": {
+            key: value for key, value in method_family_scalar_return_negative_run.items() if key != "manifest"
+        },
         "effects_ownership_semantic_model": model,
         "missing_required_slices_effects_ownership_semantic_model": missing_required_slices_model,
         "positive_minimum_counts": POSITIVE_MIN_COUNTS,

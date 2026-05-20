@@ -15,6 +15,7 @@ from objc3c_type_semantic_model_closure.paths import CONFORMANCE_POSITIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_GENERIC_POSITIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE
+from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE
@@ -31,6 +32,7 @@ from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import RUNTIME_IMPORT_SURFACE
@@ -58,6 +60,7 @@ def compile_conformance_checks() -> dict[str, bool]:
     conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
     conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
     conformance_protocol_property_nullability_negative = load_json(CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE)
+    conformance_protocol_optional_required_conflict_negative = load_json(CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE)
     conformance_unknown_protocol_composition_negative = load_json(CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE)
     conformance_protocol_qualified_unknown_message_negative = load_json(CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE)
     conformance_typed_object_receiver_unknown_message_negative = load_json(CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE)
@@ -85,6 +88,7 @@ def compile_conformance_checks() -> dict[str, bool]:
         "semantic_manifest_indexes_typ_8013_16": "TYP-8013-16.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_17": "TYP-8013-17.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_18": "TYP-8013-18.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_19": "TYP-8013-19.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
@@ -116,6 +120,7 @@ def compile_conformance_checks() -> dict[str, bool]:
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
         "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
         "protocol_property_nullability_negative_conformance_references_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_property_nullability_negative.get("references", []),
+        "protocol_optional_required_conflict_negative_conformance_references_fixture": rel(PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE) in conformance_protocol_optional_required_conflict_negative.get("references", []),
         "unknown_protocol_composition_negative_conformance_references_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE) in conformance_unknown_protocol_composition_negative.get("references", []),
         "protocol_qualified_unknown_message_negative_conformance_references_fixture": rel(PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_protocol_qualified_unknown_message_negative.get("references", []),
         "typed_object_receiver_unknown_message_negative_conformance_references_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_typed_object_receiver_unknown_message_negative.get("references", []),
@@ -128,6 +133,7 @@ def compile_conformance_checks() -> dict[str, bool]:
         "nullability_negative_conformance_expects_o3s227_location": conformance_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S227", "line": 9, "column": 23}],
         "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
         "protocol_property_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_property_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
+        "protocol_optional_required_conflict_negative_conformance_expects_o3s218_location": conformance_protocol_optional_required_conflict_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 6, "column": 1}],
         "unknown_protocol_composition_negative_conformance_expects_o3s206_location": conformance_unknown_protocol_composition_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 4, "column": 21}],
         "protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location": conformance_protocol_qualified_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],
         "typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location": conformance_typed_object_receiver_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],

@@ -19,6 +19,7 @@ from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import ROOT
@@ -119,6 +120,7 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         "nullability_negative_run": run_compiler(ROOT, COMPILER, NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow"),
         "protocol_method_nullability_negative_run": run_compiler(ROOT, COMPILER, PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability"),
         "protocol_property_nullability_negative_run": run_compiler(ROOT, COMPILER, PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-property-nullability"),
+        "protocol_optional_required_conflict_negative_run": run_compiler(ROOT, COMPILER, PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-optional-required-conflict"),
         "unknown_protocol_composition_negative_run": run_compiler(ROOT, COMPILER, UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-unknown-protocol-composition"),
         "protocol_qualified_unknown_message_negative_run": run_compiler(ROOT, COMPILER, PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-qualified-unknown-message"),
         "typed_object_receiver_unknown_message_negative_run": run_compiler(ROOT, COMPILER, TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-typed-object-receiver-unknown-message"),

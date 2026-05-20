@@ -9,6 +9,7 @@ from objc3c_effects_ownership_semantic_model.contracts import RUNTIME_REPLAY_SEG
 from objc3c_effects_ownership_semantic_model.contracts import SUMMARY_FIELDS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
+from objc3c_effects_ownership_semantic_model.paths import METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import POSITIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import rel
@@ -34,6 +35,7 @@ def build_checks(
     source_truth_paths: list[Path],
     missing_required_slices_run: dict[str, Any],
     missing_required_slices_model: dict[str, Any] | None,
+    method_family_scalar_return_negative_run: dict[str, Any],
 ) -> dict[str, bool]:
     manifest_text = semantic_inputs["manifest_text"]
     readme_text = semantic_inputs["readme_text"]
@@ -41,6 +43,9 @@ def build_checks(
     conformance_positive = semantic_inputs["conformance_positive"]
     conformance_negative = semantic_inputs["conformance_negative"]
     conformance_helper_symbols = semantic_inputs["conformance_helper_symbols"]
+    conformance_method_family_scalar_return_negative = semantic_inputs[
+        "conformance_method_family_scalar_return_negative"
+    ]
 
     return {
         "positive_fixture_compiles": positive_run["exit_code"] == 0,
@@ -72,14 +77,20 @@ def build_checks(
         "negative_fixture_fails_closed": negative_run["exit_code"] != 0,
         "negative_diagnostics_json_emitted": negative_run["diagnostics_path"] is not None,
         "negative_async_throws_diagnostic_observed": diagnostic_matches(negative_run["diagnostics"], "O3S226", 4, 10),
+        "method_family_scalar_return_negative_fixture_fails_closed": method_family_scalar_return_negative_run["exit_code"] != 0,
+        "method_family_scalar_return_negative_diagnostics_json_emitted": method_family_scalar_return_negative_run["diagnostics_path"] is not None,
+        "method_family_scalar_return_diagnostic_observed": diagnostic_matches(method_family_scalar_return_negative_run["diagnostics"], "O3S305", 15, 16),
         "semantic_manifest_indexes_eff_8014_01": "EFF-8014-01.json" in manifest_text,
         "semantic_manifest_indexes_eff_8014_02": "EFF-8014-02.json" in manifest_text,
         "semantic_manifest_indexes_eff_8014_03": "EFF-8014-03.json" in manifest_text,
+        "semantic_manifest_indexes_eff_8014_04": "EFF-8014-04.json" in manifest_text,
         "semantic_readme_mentions_issue_8014": "#8014" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
+        "method_family_scalar_return_negative_conformance_references_fixture": rel(METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE)
+        in conformance_method_family_scalar_return_negative.get("references", []),
         "helper_symbol_conformance_references_summary": "tmp/reports/claimability/effects-ownership-semantic-model/effects_ownership_semantic_model_summary.json"
         in conformance_helper_symbols.get("references", []),
         "helper_symbol_conformance_requires_symbolized_counts": conformance_helper_symbols.get("expect", {})
@@ -92,6 +103,8 @@ def build_checks(
         == ">= dispose_helper_required_sites",
         "negative_conformance_expects_o3s226_location": conformance_negative.get("expect", {}).get("diagnostics")
         == [{"code": "O3S226", "line": 4, "column": 10}],
+        "method_family_scalar_return_negative_conformance_expects_o3s305_location": conformance_method_family_scalar_return_negative.get("expect", {}).get("diagnostics")
+        == [{"code": "O3S305", "line": 15, "column": 16}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": all(not rel(path).startswith("tmp/") for path in source_truth_paths),
         "static_sources_thread_surface": all(all(values.values()) for values in static_presence.values()),

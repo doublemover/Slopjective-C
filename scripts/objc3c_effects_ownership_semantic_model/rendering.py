@@ -18,6 +18,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Positive fixture: `{summary['positive_fixture']}`",
         f"- Missing required slices fixture: `{summary['missing_required_slices_fixture']}`",
         f"- Negative fixture: `{summary['negative_fixture']}`",
+        f"- Method-family scalar-return negative fixture: `{summary['method_family_scalar_return_negative_fixture']}`",
         "",
         "## Checks",
     ]

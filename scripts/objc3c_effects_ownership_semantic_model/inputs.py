@@ -15,7 +15,9 @@ from objc3c_effects_ownership_semantic_model.contracts import SOURCE_REPLAY_SEGM
 from objc3c_effects_ownership_semantic_model.contracts import SUMMARY_FIELDS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_HELPER_SYMBOLS
+from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_METHOD_FAMILY_SCALAR_RETURN_NEGATIVE
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
+from objc3c_effects_ownership_semantic_model.paths import METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import POSITIVE_FIXTURE
@@ -53,6 +55,7 @@ def load_semantic_inputs() -> dict[str, Any]:
         "conformance_positive": load_json(CONFORMANCE_POSITIVE),
         "conformance_negative": load_json(CONFORMANCE_NEGATIVE),
         "conformance_helper_symbols": load_json(CONFORMANCE_HELPER_SYMBOLS),
+        "conformance_method_family_scalar_return_negative": load_json(CONFORMANCE_METHOD_FAMILY_SCALAR_RETURN_NEGATIVE),
     }
 
 
@@ -90,9 +93,11 @@ def source_truth_paths() -> list[Path]:
         POSITIVE_FIXTURE,
         MISSING_REQUIRED_SLICES_FIXTURE,
         NEGATIVE_FIXTURE,
+        METHOD_FAMILY_SCALAR_RETURN_NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_HELPER_SYMBOLS,
+        CONFORMANCE_METHOD_FAMILY_SCALAR_RETURN_NEGATIVE,
         SEMANTIC_MANIFEST,
         SEMANTIC_README,
         STRESS_MANIFEST,

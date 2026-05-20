@@ -16,6 +16,7 @@ from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import SOURCE_TRUTH_PATHS
@@ -59,6 +60,7 @@ def build_summary_payload(
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_property_nullability_negative_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE),
+        "protocol_optional_required_conflict_negative_fixture": rel(PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE),
         "unknown_protocol_composition_negative_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE),
         "protocol_qualified_unknown_message_negative_fixture": rel(PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
         "typed_object_receiver_unknown_message_negative_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
@@ -81,6 +83,7 @@ def build_summary_payload(
         "nullability_negative_compile": _without_manifest(runs["nullability_negative_run"]),
         "protocol_method_nullability_negative_compile": _without_manifest(runs["protocol_method_nullability_negative_run"]),
         "protocol_property_nullability_negative_compile": _without_manifest(runs["protocol_property_nullability_negative_run"]),
+        "protocol_optional_required_conflict_negative_compile": _without_manifest(runs["protocol_optional_required_conflict_negative_run"]),
         "unknown_protocol_composition_negative_compile": _without_manifest(runs["unknown_protocol_composition_negative_run"]),
         "protocol_qualified_unknown_message_negative_compile": _without_manifest(runs["protocol_qualified_unknown_message_negative_run"]),
         "typed_object_receiver_unknown_message_negative_compile": _without_manifest(runs["typed_object_receiver_unknown_message_negative_run"]),

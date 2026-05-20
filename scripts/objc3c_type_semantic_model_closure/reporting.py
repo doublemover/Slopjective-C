@@ -66,6 +66,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Nullability negative fixture: `{summary['nullability_negative_fixture']}`",
         f"- Protocol method nullability negative fixture: `{summary['protocol_method_nullability_negative_fixture']}`",
         f"- Protocol property nullability negative fixture: `{summary['protocol_property_nullability_negative_fixture']}`",
+        f"- Protocol optional/required conflict negative fixture: `{summary['protocol_optional_required_conflict_negative_fixture']}`",
         f"- Unknown protocol composition negative fixture: `{summary['unknown_protocol_composition_negative_fixture']}`",
         f"- Protocol-qualified unknown message negative fixture: `{summary['protocol_qualified_unknown_message_negative_fixture']}`",
         f"- Typed object receiver unknown message negative fixture: `{summary['typed_object_receiver_unknown_message_negative_fixture']}`",

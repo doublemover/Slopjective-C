@@ -62,6 +62,7 @@ def compile_summary_checks(
         nullability_negative_run=runs["nullability_negative_run"],
         protocol_method_nullability_negative_run=runs["protocol_method_nullability_negative_run"],
         protocol_property_nullability_negative_run=runs["protocol_property_nullability_negative_run"],
+        protocol_optional_required_conflict_negative_run=runs["protocol_optional_required_conflict_negative_run"],
         unknown_protocol_composition_negative_run=runs["unknown_protocol_composition_negative_run"],
         protocol_qualified_unknown_message_negative_run=runs["protocol_qualified_unknown_message_negative_run"],
         typed_object_receiver_unknown_message_negative_run=runs["typed_object_receiver_unknown_message_negative_run"],

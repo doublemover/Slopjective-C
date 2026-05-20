@@ -19,6 +19,7 @@ NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recover
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
 PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
 PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_property_nullability_conflict.objc3"
+PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_optional_required_conflict.objc3"
 UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_unknown_protocol_composition.objc3"
 PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_qualified_unknown_message.objc3"
 TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_typed_object_receiver_unknown_message.objc3"
@@ -39,6 +40,7 @@ CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-0
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
 CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-05.json"
+CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-19.json"
 CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-06.json"
 CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-07.json"
 CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-08.json"
@@ -65,6 +67,7 @@ SOURCE_TRUTH_PATHS = [
     NULLABILITY_NEGATIVE_FIXTURE,
     PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
     PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE,
+    PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE,
     UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE,
     PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
     TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
@@ -83,6 +86,7 @@ SOURCE_TRUTH_PATHS = [
     CONFORMANCE_NULLABILITY_NEGATIVE,
     CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
     CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE,
+    CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE,
     CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE,
     CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE,
     CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE,
