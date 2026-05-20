@@ -23,7 +23,7 @@ milestone evidence builders, not a separate public command surface.
 Current closure scope:
 
 - thrown-error storage, try/throw/catch legality, and cleanup/unwind ordering on the live compiler/runtime path
-- NSError/status bridging, catch-match behavior, and runtime-owned bridge-state observation over the private helper ABI
+- NSError/status bridging, private foreign-exception normalization, catch-match behavior, and runtime-owned bridge-state observation over the private helper ABI
 - cross-module replay and packaged execution proof for the current bridged error path
 
 Current closure constraints:
@@ -40,15 +40,15 @@ Error propagation, unwind ordering, and cleanup semantic model:
 
 Bridged error and cross-module policy:
 
-- bridged NSError/status behavior is supported only through the currently emitted lowering packets, private runtime helper ABI, and replayable cross-module artifact surfaces
+- bridged NSError/status and private foreign-exception normalization behavior is supported only through the currently emitted lowering packets, private runtime helper ABI, and replayable cross-module artifact surfaces
 - cross-module propagation claims are limited to the manifest/runtime-registration/replay path already exercised by the shared conformance and packaged e2e reports
 - cross-module claims remain fail-closed where a wider public ABI, richer interop surface, or new transport model would be required
 
 Throws ABI and helper semantics implementation:
 
-- helper semantics remain supported only through runtime-owned thrown-error store/load, status bridge, NSError bridge, catch-match, and bridge-state snapshot helpers
+- helper semantics remain supported only through runtime-owned thrown-error store/load, status bridge, NSError bridge, private foreign-exception bridge, catch-match, and bridge-state snapshot helpers
 - executable claims must stay grounded in the live runtime probes and packaged runnable error path rather than deleted milestone scripts or sidecar notes
-- any broader public ABI or foreign-runtime error model is out of scope for this closure surface
+- any broader public ABI or foreign-runtime error model beyond the private helper-backed normalization path is out of scope for this closure surface
 
 Lowering and runtime artifact contract:
 

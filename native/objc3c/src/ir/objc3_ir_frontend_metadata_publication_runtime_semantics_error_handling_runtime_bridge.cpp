@@ -21,6 +21,8 @@ void EmitObjc3IRErrorRuntimeBridgeMetadataNodes(std::ostringstream &out) {
       << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeBridgeNSErrorErrorI32Symbol)
       << "\", !\""
+      << EscapeCStringLiteral(kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol)
+      << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
       << "\", !\""
       << EscapeCStringLiteral(
@@ -43,6 +45,8 @@ void EmitObjc3IRErrorRuntimeBridgeMetadataNodes(std::ostringstream &out) {
       << EscapeCStringLiteral(kObjc3RuntimeLoadThrownErrorI32Symbol)
       << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeBridgeStatusErrorI32Symbol)
+      << "\", !\""
+      << EscapeCStringLiteral(kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol)
       << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
       << "\", !\""

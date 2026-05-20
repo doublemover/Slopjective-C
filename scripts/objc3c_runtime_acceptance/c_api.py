@@ -53,6 +53,7 @@ PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_load_thrown_error_i32",
     "objc3_runtime_bridge_status_error_i32",
     "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_bridge_foreign_exception_error_i32",
     "objc3_runtime_catch_matches_error_i32",
     "objc3_runtime_copy_error_bridge_state_for_testing",
 ]

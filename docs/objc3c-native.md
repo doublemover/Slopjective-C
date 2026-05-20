@@ -783,9 +783,10 @@ artifact surface that packaged builds actually consume.
   - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
 
 This is the authoritative runtime ABI boundary for thrown-error storage,
-NSError/status bridging, and catch-match cleanup helpers. It freezes the
-private testable entrypoints the lowered error path actually calls while keeping
-the public runtime header unchanged until a wider ABI commitment is warranted.
+NSError/status bridging, private foreign-exception normalization, and
+catch-match cleanup helpers. It freezes the private testable entrypoints the
+lowered error path actually calls while keeping the public runtime header
+unchanged until a wider ABI commitment is warranted.
 
 ## Error Propagation Catch And Cleanup Runtime Implementation Surface
 
@@ -811,7 +812,7 @@ This is the authoritative live runtime implementation boundary for the lowered
 throw/catch/status-bridge path. It freezes the observable runtime behavior of
 the real lowered fixture against the private helper ABI so later milestones
 cannot regress executable error propagation while keeping public ABI widening
-and generalized foreign exception/error interop out of scope.
+and generalized public foreign exception/error interop out of scope.
 
 ## Object-Model Realization Source Surface
 

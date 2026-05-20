@@ -31,6 +31,12 @@ extern "C" int objc3_runtime_bridge_nserror_error_i32(int error_value) {
   return objc3c::runtime::RuntimeBridgeNSErrorErrorI32(error_value);
 }
 
+extern "C" int objc3_runtime_bridge_foreign_exception_error_i32(
+    int foreign_kind, int payload_value, int mapped_error_value) {
+  return objc3c::runtime::RuntimeBridgeForeignExceptionErrorI32(
+      foreign_kind, payload_value, mapped_error_value);
+}
+
 extern "C" int objc3_runtime_catch_matches_error_i32(int error_value,
                                                      int catch_kind,
                                                      int catch_all) {

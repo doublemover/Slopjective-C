@@ -183,6 +183,12 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       "declare i32 @" + std::string(kObjc3RuntimeBridgeNSErrorErrorI32Symbol) +
           "(i32)\n");
   EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeBridgeForeignExceptionErrorI32Symbol) +
+          "(i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeCatchMatchesErrorI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimeCatchMatchesErrorI32Symbol) +
           "(i32, i32, i32)\n");
