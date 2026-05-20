@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from objc3c_runtime_backed_semantics_closure.paths import IR_EMITTER
 from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_CPP
-from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_H
 from objc3c_runtime_backed_semantics_closure.paths import ROOT
-from objc3c_runtime_backed_semantics_closure.paths import RUNTIME
-from objc3c_runtime_backed_semantics_closure.paths import SEMA_PASS_MANAGER
-from objc3c_runtime_backed_semantics_closure.paths import SEMANTIC_PASSES
 from objc3c_runtime_backed_semantics_closure.paths import STATIC_ANALYSIS
+
+LIVE_ERROR_RUNTIME_SURFACE_FLAG = "--objc3-enable-live-error-runtime-surface"
 
 POSITIVE_FIXTURES = {
     "block_arc_autorelease_return": ROOT / "tests" / "tooling" / "fixtures" / "native" / "arc_block_autorelease_return_positive.objc3",
@@ -17,6 +14,11 @@ POSITIVE_FIXTURES = {
     "live_continuation_runtime": ROOT / "tests" / "tooling" / "fixtures" / "native" / "live_continuation_runtime_integration_positive.objc3",
     "live_task_runtime": ROOT / "tests" / "tooling" / "fixtures" / "native" / "live_task_runtime_and_executor_implementation_positive.objc3",
     "live_actor_mailbox_runtime": ROOT / "tests" / "tooling" / "fixtures" / "native" / "live_actor_mailbox_runtime_positive.objc3",
+}
+
+POSITIVE_FIXTURE_EXTRA_ARGS = {
+    "error_runtime_bridge_helper": [LIVE_ERROR_RUNTIME_SURFACE_FLAG],
+    "live_error_runtime": [LIVE_ERROR_RUNTIME_SURFACE_FLAG],
 }
 
 NEGATIVE_FIXTURES = {
@@ -137,7 +139,7 @@ REQUIRED_IR_TOKENS = [
 
 SOURCE_TOKENS = {
     "lowering_contract_header": {
-        LOWERING_CONTRACT_H: [
+        ROOT / "native" / "objc3c" / "src" / "lower" / "contracts" / "block_runtime_helper_contracts.h": [
             "kObjc3RuntimeBackedSemanticsClosureContractId",
             "kObjc3RuntimeBackedSemanticsClosureBlockModel",
             "kObjc3RuntimeBackedSemanticsClosureArcModel",
@@ -154,29 +156,39 @@ SOURCE_TOKENS = {
         ],
     },
     "ir_emitter": {
-        IR_EMITTER: [
+        ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_module_metadata_publication_runtime_gates.cpp": [
             "runtime_backed_semantics_closure",
             "Objc3RuntimeBackedSemanticsClosureSummary()",
             "Objc3RunnableArcCloseoutSummary()",
         ],
     },
     "sema_pass_manager": {
-        SEMA_PASS_MANAGER: [
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_block_equivalence.cpp": [
             "IsEquivalentBlockStorageEscapeSemanticsSummary",
             "IsEquivalentBlockCopyDisposeSemanticsSummary",
+        ],
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_dispatch_ownership_equivalence.cpp": [
             "IsEquivalentRetainReleaseOperationSummary",
             "IsEquivalentWeakUnownedSemanticsSummary",
+        ],
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_type_summary_equivalence.cpp": [
             "IsEquivalentThrowsPropagationSummary",
             "IsEquivalentAsyncContinuationSummary",
             "IsEquivalentTaskRuntimeCancellationSummary",
             "IsEquivalentActorIsolationSendabilitySummary",
+        ],
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_control_flow_equivalence.cpp": [
             "IsEquivalentConcurrencyReplayRaceGuardSummary",
         ],
     },
     "semantic_passes": {
-        SEMANTIC_PASSES: [
-            "ResolveGlobalInitializerValues",
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes_body_validation_entrypoints.inc": [
+            "ResolveObjc3GlobalInitializerValues",
+        ],
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes_generic_protocol_message_validation_block_captures.inc": [
             "ResolveBlockCaptureSemanticType",
+        ],
+        ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes_task_runtime_summary_builders.inc": [
             "BuildTaskRuntimeCancellationSummaryFromIntegrationSurface",
         ],
     },

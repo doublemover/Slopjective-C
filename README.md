@@ -6,6 +6,22 @@ accepts checked-in `.objc3` sources, emits compiler artifacts, and validates the
 current language surface through the public `npm run objc3c -- <action>` command
 model.
 
+## Start Here
+
+Use this README as the root routing page. It points to the current language
+surface, the public command bridge, the support matrix, and the generated
+published site without making independent capability claims.
+
+Canonical roots:
+
+- `README.md`: top-level orientation and first-session routing.
+- `CONTRIBUTING.md`: contributor boundaries and repo hygiene expectations.
+- `docs/tutorials/`: guided setup, migration, and comparison tutorials.
+- `showcase/README.md`: checked-in example portfolio.
+- `docs/runbooks/objc3c_public_command_surface.md`: synchronized command
+  reference.
+- `docs/support/capability_matrix.json`: machine-readable support truth.
+
 ## Objective-C 3.0 In One File
 
 This is a checked-in showcase program from `showcase/signalMesh/main.objc3`:
@@ -135,7 +151,7 @@ Showcase validation writes machine-owned artifacts under `tmp/artifacts/showcase
 and reports under `tmp/reports/showcase/`. The checked-in sources and workspace
 contracts under `showcase/` remain the example inputs.
 
-## Quick Start
+## Fresh Setup
 
 This repository is easiest to use on Windows with PowerShell 7.
 
@@ -176,6 +192,8 @@ Build the compiler and runtime archive:
 npm run objc3c -- build-native-binaries
 ```
 
+## First Working Session
+
 Compile a checked-in program:
 
 ```powershell
@@ -214,7 +232,7 @@ helpers, and hard-cutover capability truth. Those internal rows explain
 implementation ownership; public language behavior claims come from implemented
 behavior rows.
 
-## Public Commands
+## Public Command Surface
 
 Use this command shape for normal work:
 
@@ -234,6 +252,39 @@ Common actions:
 
 The synchronized command reference is
 [`docs/runbooks/objc3c_public_command_surface.md`](docs/runbooks/objc3c_public_command_surface.md).
+
+## Spec Structure
+
+Specification and reader-facing docs are split by role:
+
+- `spec/`: language, ABI, runtime, and metadata contracts.
+- `docs/tutorials/`: task-oriented reader paths.
+- `docs/runbooks/`: operator and maintainer workflows.
+- `docs/support/`: support claims, evidence maps, schema examples, and claim
+  responsibility.
+- `site/`: generated public overview for the published site.
+
+Support prose in these files must route back to the capability matrix and
+evidence map. A spec chapter, runbook, tutorial, generated report, or issue
+closeout payload does not promote a reserved or internal row into public
+runtime behavior.
+
+## Superclean Boundary
+
+`tmp/` and `artifacts/` are machine-owned output roots. They can contain build
+products, reports, packages, compiler artifacts, and replay evidence, but they
+are not source-of-truth inputs for capability state. Durable support claims live
+in checked-in source, tests, schemas, and the support matrix.
+
+Explicit non-goals for cleanup work:
+
+- Do not convert generated reports into editable support truth.
+- Do not treat a passing generated report as issue closure without the matching
+  checked-in owner surface and validation evidence.
+- Do not revive retired modes, retired adapters, alternate acceptance paths, or
+  compatibility labels as public Objective-C 3.0 support.
+- Do not replace the `npm run objc3c -- <action>` bridge with direct helper
+  commands in public docs.
 
 ## Repository Map
 

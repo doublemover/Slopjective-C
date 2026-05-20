@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -146,3 +147,26 @@ def test_support_claim_links_require_every_manifest_claim_in_the_matrix() -> Non
 
     with pytest.raises(validator.CapabilityDocsError, match="missing from capability matrix"):
         validator._validate_support_claim_links([_parser_row()], _manifest(PARSER_CLAIM, RUNTIME_CLAIM))
+
+
+def test_runtime_concurrency_claim_is_implemented_and_probe_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["runtime.concurrency.async-actors"]
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.runtime.concurrency-async-actors"
+    ]
+    evidence_paths = {evidence["path"] for evidence in row["evidence"]}
+    assert {
+        "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+        "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+        "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+        "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+    } <= evidence_paths

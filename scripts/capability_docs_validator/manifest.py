@@ -4,8 +4,9 @@ from typing import Any
 
 from objc3c_tooling.paths import resolve_repo_path
 
-from capability_docs_validator.constants import BEHAVIOR_MATRIX_COMMAND
 from capability_docs_validator.errors import CapabilityDocsError
+
+PUBLIC_OBJC3C_COMMAND_PREFIX = "npm run objc3c -- "
 
 
 def _manifest_support_claims(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
@@ -47,9 +48,14 @@ def _manifest_support_claims(manifest: dict[str, Any]) -> dict[str, dict[str, st
             )
         if not resolve_repo_path(behavior_fixture).is_file():
             raise CapabilityDocsError(f"{claim_id} behavior fixture is missing: {behavior_fixture}")
-        if executable_command != BEHAVIOR_MATRIX_COMMAND:
+        if (
+            not isinstance(executable_command, str)
+            or not executable_command.startswith(PUBLIC_OBJC3C_COMMAND_PREFIX)
+            or executable_command == PUBLIC_OBJC3C_COMMAND_PREFIX
+        ):
             raise CapabilityDocsError(
-                f"{claim_id} must use executable command {BEHAVIOR_MATRIX_COMMAND!r}"
+                f"{claim_id} must use executable command through "
+                f"{PUBLIC_OBJC3C_COMMAND_PREFIX}<action>"
             )
         claims[claim_id] = {
             "claim_id": claim_id,

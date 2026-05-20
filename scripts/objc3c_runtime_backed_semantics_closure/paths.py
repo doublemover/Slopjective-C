@@ -19,6 +19,7 @@ SEMA_PASS_MANAGER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pa
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
 STATIC_ANALYSIS = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_static_analysis.cpp"
 RUNTIME = ROOT / "native" / "objc3c" / "src" / "runtime" / "objc3_runtime.cpp"
+RUNTIME_SOURCE_ROOT = ROOT / "native" / "objc3c" / "src" / "runtime"
 STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
 CONFORMANCE_MANIFEST = ROOT / "tests" / "conformance" / "lowering_abi" / "manifest.json"
 CONFORMANCE_README = ROOT / "tests" / "conformance" / "lowering_abi" / "README.md"

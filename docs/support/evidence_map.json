@@ -251,13 +251,59 @@
     },
     {
       "capability_id": "runtime.concurrency.async-actors",
-      "evidence_kind": "doc",
-      "path": "docs/spec/concurrency_reserved.md"
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
     },
     {
       "capability_id": "runtime.concurrency.async-actors",
-      "evidence_kind": "diagnostic",
-      "path": "tests/conformance/diagnostics/manifest.json"
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_runtime_abi_cases.py"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/continuation_runtime_helper_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/continuation_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
     },
     {
       "capability_id": "runtime.object-model.full-realization",

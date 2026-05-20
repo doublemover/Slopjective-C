@@ -9,10 +9,12 @@
 #include "runtime/state/runtime_state_records.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <utility>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -25,6 +27,201 @@ void RecordProtocolQueryFailure(std::string &failure_reason,
   if (failure_reason.empty() && reason != nullptr && reason[0] != '\0') {
     failure_reason = reason;
   }
+}
+
+bool RuntimeNonEmptyCString(const char *value) {
+  return value != nullptr && value[0] != '\0';
+}
+
+const char *RuntimeProtocolCString(const char *value) {
+  return value != nullptr ? value : "";
+}
+
+bool ValidateRuntimeProtocolMethodList(
+    const EmittedMethodListRef *method_list_ref,
+    const char *family_name,
+    const char *protocol_name,
+    std::string &diagnostic_reason) {
+  if (method_list_ref == nullptr || method_list_ref->count == 0) {
+    return true;
+  }
+  if (method_list_ref->method_list == nullptr ||
+      !RuntimeNonEmptyCString(method_list_ref->owner_identity)) {
+    diagnostic_reason =
+        std::string("malformed protocol ") + family_name + " method list for " +
+        RuntimeProtocolCString(protocol_name);
+    return false;
+  }
+  const auto *header =
+      static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
+  if (header == nullptr || header->count != method_list_ref->count) {
+    diagnostic_reason =
+        std::string("malformed protocol ") + family_name +
+        " method list count for " + RuntimeProtocolCString(protocol_name);
+    return false;
+  }
+  const auto *entries =
+      reinterpret_cast<const EmittedMethodListEntry *>(header + 1);
+  for (std::uint64_t index = 0; index < header->count; ++index) {
+    const EmittedMethodListEntry &entry = entries[index];
+    if (!RuntimeNonEmptyCString(entry.selector) ||
+        !RuntimeNonEmptyCString(entry.owner_identity) ||
+        !RuntimeNonEmptyCString(entry.return_type_name)) {
+      diagnostic_reason =
+          std::string("malformed protocol ") + family_name +
+          " method entry for " + RuntimeProtocolCString(protocol_name);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool AddKnownProtocolRecords(
+    const objc3_runtime_pointer_aggregate *protocol_descriptor_root,
+    std::uint64_t protocol_descriptor_count,
+    std::unordered_set<const EmittedProtocolRecord *> &known_protocol_records,
+    std::unordered_map<std::string, std::string>
+        &concrete_protocol_owner_by_name,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0; index < protocol_descriptor_count; ++index) {
+    const auto *record = static_cast<const EmittedProtocolRecord *>(
+        RuntimeAggregateEntry(protocol_descriptor_root, index));
+    if (record == nullptr) {
+      diagnostic_reason = "protocol descriptor root contains a null protocol";
+      return false;
+    }
+    if (!RuntimeNonEmptyCString(record->protocol_name) ||
+        !RuntimeNonEmptyCString(record->owner_identity)) {
+      diagnostic_reason = "protocol descriptor is missing identity";
+      return false;
+    }
+    if (!ValidateRuntimeProtocolMethodList(
+            record->instance_method_list_ref, "instance",
+            record->protocol_name, diagnostic_reason) ||
+        !ValidateRuntimeProtocolMethodList(
+            record->class_method_list_ref, "class", record->protocol_name,
+            diagnostic_reason)) {
+      return false;
+    }
+    known_protocol_records.insert(record);
+    if (record->is_forward_declaration) {
+      continue;
+    }
+    const auto inserted = concrete_protocol_owner_by_name.emplace(
+        record->protocol_name, record->owner_identity);
+    if (!inserted.second &&
+        inserted.first->second != std::string(record->owner_identity)) {
+      diagnostic_reason =
+          "conflicting protocol owner for " +
+          std::string(record->protocol_name);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeProtocolReferenceAggregateIsSupported(
+    const objc3_runtime_pointer_aggregate *protocol_refs,
+    const std::unordered_set<const EmittedProtocolRecord *>
+        &known_protocol_records,
+    const std::string &context,
+    std::string &diagnostic_reason) {
+  if (protocol_refs == nullptr) {
+    return true;
+  }
+  for (std::uint64_t index = 0; index < protocol_refs->count; ++index) {
+    const auto *record = static_cast<const EmittedProtocolRecord *>(
+        RuntimeAggregateEntry(protocol_refs, index));
+    if (record == nullptr ||
+        known_protocol_records.find(record) == known_protocol_records.end()) {
+      diagnostic_reason = "unknown protocol reference in " + context;
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeRegisteredProtocolMetadataIsSupported(
+    const objc3_runtime_registration_table *registration_table,
+    const std::unordered_set<const EmittedProtocolRecord *>
+        &known_protocol_records,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0;
+       index < registration_table->image_descriptor->protocol_descriptor_count;
+       ++index) {
+    const auto *record = static_cast<const EmittedProtocolRecord *>(
+        RuntimeAggregateEntry(registration_table->protocol_descriptor_root,
+                              index));
+    if (record == nullptr) {
+      diagnostic_reason = "protocol descriptor root contains a null protocol";
+      return false;
+    }
+    if (!RuntimeProtocolReferenceAggregateIsSupported(
+            record->inherited_protocol_refs, known_protocol_records,
+            "protocol " + std::string(record->protocol_name),
+            diagnostic_reason)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeClassProtocolReferencesAreSupported(
+    const objc3_runtime_registration_table *registration_table,
+    const std::unordered_set<const EmittedProtocolRecord *>
+        &known_protocol_records,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0;
+       index < registration_table->image_descriptor->class_descriptor_count;
+       ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        RuntimeAggregateEntry(registration_table->class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr) {
+      diagnostic_reason =
+          "class descriptor root contains malformed protocol refs";
+      return false;
+    }
+    if (!RuntimeProtocolReferenceAggregateIsSupported(
+            bundle->class_record.adopted_protocol_refs, known_protocol_records,
+            "class " + std::string(bundle->class_record.class_name),
+            diagnostic_reason) ||
+        !RuntimeProtocolReferenceAggregateIsSupported(
+            bundle->metaclass_record.adopted_protocol_refs,
+            known_protocol_records,
+            "metaclass " + std::string(bundle->class_record.class_name),
+            diagnostic_reason)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeCategoryProtocolReferencesAreSupported(
+    const objc3_runtime_registration_table *registration_table,
+    const std::unordered_set<const EmittedProtocolRecord *>
+        &known_protocol_records,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0;
+       index < registration_table->image_descriptor->category_descriptor_count;
+       ++index) {
+    const auto *record = static_cast<const EmittedCategoryRecord *>(
+        RuntimeAggregateEntry(registration_table->category_descriptor_root,
+                              index));
+    if (record == nullptr || record->class_name == nullptr ||
+        record->category_name == nullptr) {
+      diagnostic_reason =
+          "category descriptor root contains malformed protocol refs";
+      return false;
+    }
+    if (!RuntimeProtocolReferenceAggregateIsSupported(
+            record->adopted_protocol_refs, known_protocol_records,
+            "category " + std::string(record->class_name) + "(" +
+                std::string(record->category_name) + ")",
+            diagnostic_reason)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace
@@ -235,6 +432,58 @@ bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
                                                     const char *protocol_name) {
   return class_name != nullptr && class_name[0] != '\0' &&
          protocol_name != nullptr && protocol_name[0] != '\0';
+}
+
+bool RuntimeProtocolCategoryMetadataTableIsSupported(
+    const RuntimeState &state,
+    const objc3_runtime_registration_table *registration_table,
+    std::string &diagnostic_reason) {
+  diagnostic_reason.clear();
+  if (registration_table == nullptr ||
+      registration_table->image_descriptor == nullptr ||
+      registration_table->protocol_descriptor_root == nullptr ||
+      registration_table->class_descriptor_root == nullptr ||
+      registration_table->category_descriptor_root == nullptr) {
+    diagnostic_reason = "registration table is missing protocol metadata";
+    return false;
+  }
+
+  std::unordered_set<const EmittedProtocolRecord *> known_protocol_records;
+  std::unordered_map<std::string, std::string>
+      concrete_protocol_owner_by_name;
+  const std::size_t estimated_protocol_count =
+      static_cast<std::size_t>(
+          registration_table->image_descriptor->protocol_descriptor_count) +
+      state.registered_image_metadata_by_identity_key.size();
+  known_protocol_records.reserve(estimated_protocol_count);
+  concrete_protocol_owner_by_name.reserve(estimated_protocol_count);
+
+  if (!AddKnownProtocolRecords(
+          registration_table->protocol_descriptor_root,
+          registration_table->image_descriptor->protocol_descriptor_count,
+          known_protocol_records, concrete_protocol_owner_by_name,
+          diagnostic_reason)) {
+    return false;
+  }
+  for (const RegisteredImageMetadata *record : OrderedProtocolImages(state)) {
+    if (record == nullptr) {
+      continue;
+    }
+    if (!AddKnownProtocolRecords(record->protocol_descriptor_root,
+                                 record->protocol_descriptor_count,
+                                 known_protocol_records,
+                                 concrete_protocol_owner_by_name,
+                                 diagnostic_reason)) {
+      return false;
+    }
+  }
+
+  return RuntimeRegisteredProtocolMetadataIsSupported(
+             registration_table, known_protocol_records, diagnostic_reason) &&
+         RuntimeClassProtocolReferencesAreSupported(
+             registration_table, known_protocol_records, diagnostic_reason) &&
+         RuntimeCategoryProtocolReferencesAreSupported(
+             registration_table, known_protocol_records, diagnostic_reason);
 }
 
 }  // namespace objc3c::runtime

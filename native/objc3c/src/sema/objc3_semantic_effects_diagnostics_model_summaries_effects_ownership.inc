@@ -122,8 +122,18 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       summary.weak_unowned_conflict_sites <=
           weak_unowned.ownership_candidate_sites &&
       summary.contract_violation_sites == 0;
-  summary.ready_for_lowering_and_runtime = summary.deterministic;
-  if (!summary.deterministic) {
+  const bool all_required_effect_slices_landed =
+      summary.arc_semantics_landed && summary.block_escape_semantics_landed &&
+      summary.throws_cleanup_semantics_landed &&
+      summary.async_task_semantics_landed && summary.actor_semantics_landed &&
+      summary.foreign_boundary_semantics_landed;
+  summary.ready_for_lowering_and_runtime =
+      summary.deterministic && all_required_effect_slices_landed;
+  if (!all_required_effect_slices_landed) {
+    summary.failure_reason =
+        "effects/ownership semantic model is missing required ARC, block, "
+        "throws, async/task, actor, or foreign-boundary slices";
+  } else if (!summary.deterministic) {
     summary.failure_reason =
         "effects/ownership semantic model is not deterministic or has contract violations";
   }

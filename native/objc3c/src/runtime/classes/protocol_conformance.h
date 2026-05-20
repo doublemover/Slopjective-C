@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/state/runtime_bootstrap_contracts.h"
+
 #include <cstdint>
 #include <string>
 
@@ -30,5 +32,9 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
     std::string &failure_reason);
 bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
                                                     const char *protocol_name);
+bool RuntimeProtocolCategoryMetadataTableIsSupported(
+    const RuntimeState &state,
+    const objc3_runtime_registration_table *registration_table,
+    std::string &diagnostic_reason);
 
 }  // namespace objc3c::runtime

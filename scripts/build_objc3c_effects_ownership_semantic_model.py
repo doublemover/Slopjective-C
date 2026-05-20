@@ -31,6 +31,7 @@ from objc3c_effects_ownership_semantic_model.paths import IR_EMITTER_H
 from objc3c_effects_ownership_semantic_model.paths import JSON_OUT
 from objc3c_effects_ownership_semantic_model.paths import LOWERING_CONTRACT
 from objc3c_effects_ownership_semantic_model.paths import MD_OUT
+from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import POSITIVE_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import REPORT_DIR
@@ -69,6 +70,7 @@ __all__ = [
     "LOWERING_CONTRACT",
     "LOWERING_CONTRACT_TOKENS",
     "MD_OUT",
+    "MISSING_REQUIRED_SLICES_FIXTURE",
     "NEGATIVE_FIXTURE",
     "POSITIVE_FIXTURE",
     "POSITIVE_MIN_COUNTS",

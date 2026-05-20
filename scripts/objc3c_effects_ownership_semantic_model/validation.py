@@ -32,6 +32,8 @@ def build_checks(
     semantic_inputs: dict[str, Any],
     static_presence: dict[str, dict[str, bool]],
     source_truth_paths: list[Path],
+    missing_required_slices_run: dict[str, Any],
+    missing_required_slices_model: dict[str, Any] | None,
 ) -> dict[str, bool]:
     manifest_text = semantic_inputs["manifest_text"]
     readme_text = semantic_inputs["readme_text"]
@@ -52,6 +54,14 @@ def build_checks(
         "positive_ready_and_deterministic": bool(model)
         and bool(model.get("deterministic"))
         and bool(model.get("ready_for_lowering_and_runtime")),
+        "missing_required_slices_fixture_compiles": missing_required_slices_run["exit_code"] == 0,
+        "missing_required_slices_manifest_emitted": missing_required_slices_run["manifest_path"] is not None,
+        "missing_required_slices_model_emitted": missing_required_slices_model is not None,
+        "missing_required_slices_fail_closed_readiness": bool(missing_required_slices_model)
+        and not bool(missing_required_slices_model.get("ready_for_lowering_and_runtime"))
+        and any(not bool(missing_required_slices_model.get(flag)) for flag in LANDED_FLAGS),
+        "missing_required_slices_failure_reason_observed": bool(missing_required_slices_model)
+        and "missing required" in str(missing_required_slices_model.get("failure_reason", "")),
         "replay_key_covers_effects_axes": all(segment in replay_key for segment in RUNTIME_REPLAY_SEGMENTS),
         "negative_fixture_fails_closed": negative_run["exit_code"] != 0,
         "negative_diagnostics_json_emitted": negative_run["diagnostics_path"] is not None,

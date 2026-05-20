@@ -429,21 +429,57 @@
     {
       "id": "runtime.concurrency.async-actors",
       "title": "Async and actor runtime closure",
-      "state": "reserved",
-      "summary": "Async, task, and actor syntax and runtime concepts remain unavailable unless an entry is separately marked implemented here.",
+      "state": "implemented",
+      "summary": "The private runtime path now has canonical actor executor behavior plus runtime-acceptance evidence for async continuation, task scheduler, and actor mailbox helpers. Public ABI widening and broad language closure remain outside this narrow runtime claim.",
+      "support_claims": [
+        "objc3c.behavior.runtime.concurrency-async-actors"
+      ],
       "owner_modules": [
-        "native/objc3c/src/parse/objc3_parser_actor_isolation_sendability_profiles.cpp",
-        "native/objc3c/src/parse/objc3_parser_async_continuation_profiles.cpp",
-        "native/objc3c/src/runtime/concurrency/task_snapshot.cpp"
+        "native/objc3c/src/runtime/concurrency/continuation_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/continuation_resume_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/executor.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp"
       ],
       "evidence": [
         {
-          "kind": "doc",
-          "path": "docs/spec/concurrency_reserved.md"
+          "kind": "test",
+          "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
         },
         {
-          "kind": "diagnostic",
-          "path": "tests/conformance/diagnostics/manifest.json"
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_runtime_abi_cases.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/continuation_runtime_helper_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/continuation_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
         }
       ]
     },

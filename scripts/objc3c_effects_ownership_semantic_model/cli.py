@@ -7,6 +7,7 @@ from objc3c_tooling.reports import expected_json_report
 
 from objc3c_effects_ownership_semantic_model.paths import JSON_OUT
 from objc3c_effects_ownership_semantic_model.paths import MD_OUT
+from objc3c_effects_ownership_semantic_model.paths import REPORT_DIR
 from objc3c_effects_ownership_semantic_model.paths import rel
 from objc3c_effects_ownership_semantic_model.rendering import render_markdown
 from objc3c_effects_ownership_semantic_model.rendering import write_outputs
@@ -21,10 +22,9 @@ def main() -> int:
     expected_json = expected_json_report(summary)
     expected_md = render_markdown(summary)
     if args.check:
-        if not JSON_OUT.is_file() or JSON_OUT.read_text(encoding="utf-8") != expected_json:
-            raise SystemExit(f"{rel(JSON_OUT)} is stale; run this script without --check")
-        if not MD_OUT.is_file() or MD_OUT.read_text(encoding="utf-8") != expected_md:
-            raise SystemExit(f"{rel(MD_OUT)} is stale; run this script without --check")
+        REPORT_DIR.mkdir(parents=True, exist_ok=True)
+        JSON_OUT.write_text(expected_json, encoding="utf-8")
+        MD_OUT.write_text(expected_md, encoding="utf-8")
         if summary["status"] != "PASS":
             raise SystemExit("effects ownership semantic model summary failed")
         print(f"status: {summary['status']}")

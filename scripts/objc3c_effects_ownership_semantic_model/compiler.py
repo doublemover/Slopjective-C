@@ -13,14 +13,26 @@ from objc3c_effects_ownership_semantic_model.paths import ROOT
 from objc3c_effects_ownership_semantic_model.paths import rel
 
 
-def run_compiler(source: Path, out_dir: Path) -> dict[str, Any]:
+def run_compiler(
+    source: Path,
+    out_dir: Path,
+    extra_args: list[str] | None = None,
+) -> dict[str, Any]:
     if not COMPILER.is_file():
         raise SystemExit(f"missing native compiler at {rel(COMPILER)}; run scripts/build_objc3c_native.ps1 first")
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     completed = subprocess.run(
-        [str(COMPILER), str(source), "--out-dir", str(out_dir), "--emit-prefix", "module"],
+        [
+            str(COMPILER),
+            str(source),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+            *(extra_args or []),
+        ],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

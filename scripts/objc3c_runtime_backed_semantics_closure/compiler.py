@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from objc3c_runtime_backed_semantics_closure.inputs import NEGATIVE_FIXTURES
+from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURE_EXTRA_ARGS
 from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURES
 from objc3c_runtime_backed_semantics_closure.paths import COMPILER
 from objc3c_runtime_backed_semantics_closure.paths import ROOT
@@ -14,7 +15,11 @@ from objc3c_runtime_backed_semantics_closure.paths import read
 from objc3c_runtime_backed_semantics_closure.paths import rel
 
 
-def run_compiler(source: Path, out_dir: Path) -> subprocess.CompletedProcess[str]:
+def run_compiler(
+    source: Path,
+    out_dir: Path,
+    extra_args: list[str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -26,6 +31,7 @@ def run_compiler(source: Path, out_dir: Path) -> subprocess.CompletedProcess[str
             str(out_dir),
             "--emit-prefix",
             "module",
+            *(extra_args or []),
         ],
         cwd=ROOT,
         text=True,
@@ -46,7 +52,11 @@ def compile_positive_fixtures() -> tuple[dict[str, dict], str]:
     ir_chunks: list[str] = []
     for name, fixture in POSITIVE_FIXTURES.items():
         out_dir = SCRATCH / "positive" / name
-        result = run_compiler(fixture, out_dir)
+        result = run_compiler(
+            fixture,
+            out_dir,
+            POSITIVE_FIXTURE_EXTRA_ARGS.get(name),
+        )
         ir_path = out_dir / "module.ll"
         manifest_path = out_dir / "module.manifest.json"
         ir_text = read(ir_path) if ir_path.is_file() else ""

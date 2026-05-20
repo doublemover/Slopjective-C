@@ -104,7 +104,10 @@ fn recover() throws -> i32 {
     return propagated + bridged + cppBridge(1);
   } catch (NSError* error) {
     let second = try? bridgeNSError(3, 77);
-    return error + second;
+    if (second) {
+      return error + 1;
+    }
+    return error;
   } catch {
     return 0;
   }

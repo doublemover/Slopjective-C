@@ -11,17 +11,11 @@ from objc3c_runtime_backed_semantics_closure.inputs import HELPER_SYMBOLS
 from objc3c_runtime_backed_semantics_closure.inputs import NEGATIVE_FIXTURES
 from objc3c_runtime_backed_semantics_closure.inputs import POSITIVE_FIXTURES
 from objc3c_runtime_backed_semantics_closure.inputs import REQUIRED_IR_TOKENS
+from objc3c_runtime_backed_semantics_closure.inputs import SOURCE_TOKENS
 from objc3c_runtime_backed_semantics_closure.paths import CONTRACT_ID
-from objc3c_runtime_backed_semantics_closure.paths import IR_EMITTER
 from objc3c_runtime_backed_semantics_closure.paths import ISSUE
-from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_CPP
-from objc3c_runtime_backed_semantics_closure.paths import LOWERING_CONTRACT_H
 from objc3c_runtime_backed_semantics_closure.paths import REPORT_DIR
-from objc3c_runtime_backed_semantics_closure.paths import RUNTIME
 from objc3c_runtime_backed_semantics_closure.paths import SCRATCH
-from objc3c_runtime_backed_semantics_closure.paths import SEMA_PASS_MANAGER
-from objc3c_runtime_backed_semantics_closure.paths import SEMANTIC_PASSES
-from objc3c_runtime_backed_semantics_closure.paths import STATIC_ANALYSIS
 from objc3c_runtime_backed_semantics_closure.paths import rel
 
 
@@ -40,13 +34,11 @@ def build_summary() -> dict:
     source_truth_paths = [
         *POSITIVE_FIXTURES.values(),
         *(spec["path"] for spec in NEGATIVE_FIXTURES.values()),
-        LOWERING_CONTRACT_H,
-        LOWERING_CONTRACT_CPP,
-        IR_EMITTER,
-        SEMA_PASS_MANAGER,
-        SEMANTIC_PASSES,
-        STATIC_ANALYSIS,
-        RUNTIME,
+        *{
+            path
+            for file_tokens in SOURCE_TOKENS.values()
+            for path in file_tokens
+        },
     ]
     no_source_truth_under_tmp = all(
         not rel(path).startswith("tmp/")

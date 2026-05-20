@@ -48,22 +48,27 @@ Rules shown by this entry:
 - Source files and `owner_modules` may bound the implementation without
   becoming public command surface.
 
-## Reserved Capability Entry
+## Implemented Runtime Capability Entry
 
 ```json
 {
   "id": "runtime.concurrency.async-actors",
   "title": "Async and actor runtime closure",
-  "state": "reserved",
-  "summary": "Async, task, and actor syntax and runtime concepts remain unavailable unless an entry is separately marked implemented here.",
+  "state": "implemented",
+  "summary": "The private runtime path has canonical actor executor behavior and runtime-acceptance evidence for async continuation, task scheduler, and actor mailbox helpers.",
+  "support_claims": [
+    "objc3c.behavior.runtime.concurrency-async-actors"
+  ],
   "evidence": [
     {
-      "kind": "doc",
-      "path": "docs/spec/concurrency_reserved.md"
+      "kind": "test",
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
     },
     {
-      "kind": "diagnostic",
-      "path": "tests/conformance/diagnostics/manifest.json"
+      "kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
     }
   ]
 }
@@ -71,12 +76,12 @@ Rules shown by this entry:
 
 Rules shown by this entry:
 
-- Reserved is an unavailable state, not an alternate acceptance mode.
-- A reserved row can point to docs or diagnostics instead of runnable tests.
-- Reserved, rejected, and internal rows do not carry public behavior support
-  claims.
-- A row that moves this capability out of `reserved` must carry evidence before
-  docs can claim public support.
+- Implemented runtime rows must carry a canonical behavior fixture and an npm
+  bridge command.
+- Runtime probe evidence may narrow the support claim without widening public
+  ABI support.
+- Reserved, rejected, and internal rows still do not carry public behavior
+  support claims.
 
 ## Retired Surface Term
 

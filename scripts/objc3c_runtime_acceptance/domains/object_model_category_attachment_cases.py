@@ -26,6 +26,9 @@ RUNTIME_OBJECT_FOUNDATION_FIXTURE = (
 RUNTIME_OBJECT_FOUNDATION_PROBE = (
     "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
 )
+RUNTIME_OBJECT_FOUNDATION_INVALID_METADATA_PROBE = (
+    "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+)
 
 
 def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
@@ -192,6 +195,29 @@ def _assert_protocol_category_compile_artifacts(manifest: dict[str, Any]) -> Non
         realization_surface.get("contract_id")
         == "objc3c.runtime.class.metaclass.protocol.realization.v1",
         "expected fixture manifest to publish class/metaclass/protocol realization surface",
+    )
+
+
+def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
+    expect(
+        payload.get("registration_status") == -4
+        and payload.get("last_registration_status") == -4,
+        "expected unregistered protocol reference to fail image registration",
+    )
+    expect(
+        payload.get("registered_image_count") == 0
+        and payload.get("realized_class_count") == 0
+        and payload.get("class_found") == 0,
+        "expected invalid protocol metadata to publish no image or class graph",
+    )
+    expect(
+        payload.get("malformed_class_metadata_rejection_count", 0) >= 1,
+        "expected invalid protocol metadata to increment malformed metadata rejection count",
+    )
+    expect(
+        payload.get("last_malformed_class_graph_reason")
+        == "unknown protocol reference in class BrokenProtocolRef",
+        "expected stable fail-closed diagnostic reason for unregistered protocol refs",
     )
 
 
@@ -374,11 +400,19 @@ def check_runtime_object_foundation_protocol_category_case(
     payload = parse_json_output(
         run_probe(exe_path), "runtime object foundation protocol/category probe"
     )
+    invalid_metadata_probe = ROOT / RUNTIME_OBJECT_FOUNDATION_INVALID_METADATA_PROBE
+    invalid_metadata_exe = case_dir / "protocol_category_invalid_metadata_probe.exe"
+    compile_probe(clangxx, invalid_metadata_probe, invalid_metadata_exe, [])
+    invalid_metadata_payload = parse_json_output(
+        run_probe(invalid_metadata_exe),
+        "runtime protocol/category invalid metadata probe",
+    )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     conflict_diagnostics = _compile_category_conflict_diagnostics(case_dir)
 
     _assert_protocol_category_payload(payload)
     _assert_protocol_category_compile_artifacts(manifest)
+    _assert_invalid_protocol_metadata_payload(invalid_metadata_payload)
 
     return CaseResult(
         case_id=RUNTIME_OBJECT_FOUNDATION_CASE_ID,
@@ -421,6 +455,12 @@ def check_runtime_object_foundation_protocol_category_case(
             "category_protocol_negative_fixture_count": conflict_diagnostics[
                 "fixture_count"
             ],
+            "invalid_protocol_metadata_registration_status": invalid_metadata_payload[
+                "registration_status"
+            ],
+            "invalid_protocol_metadata_reason": invalid_metadata_payload[
+                "last_malformed_class_graph_reason"
+            ],
         },
     )
 
@@ -428,6 +468,7 @@ def check_runtime_object_foundation_protocol_category_case(
 __all__ = [
     "RUNTIME_OBJECT_FOUNDATION_CASE_ID",
     "RUNTIME_OBJECT_FOUNDATION_FIXTURE",
+    "RUNTIME_OBJECT_FOUNDATION_INVALID_METADATA_PROBE",
     "RUNTIME_OBJECT_FOUNDATION_PROBE",
     "check_runtime_object_foundation_protocol_category_case",
 ]

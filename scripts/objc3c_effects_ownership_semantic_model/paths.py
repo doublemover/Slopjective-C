@@ -3,13 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_DIR = ROOT / "reports" / "claimability" / "effects-ownership-semantic-model"
+REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "effects-ownership-semantic-model"
 JSON_OUT = REPORT_DIR / "effects_ownership_semantic_model_summary.json"
 MD_OUT = REPORT_DIR / "effects_ownership_semantic_model_summary.md"
 TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "effects-ownership-semantic-model"
 
 COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "effects_ownership_semantic_model_positive.objc3"
+MISSING_REQUIRED_SLICES_FIXTURE = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "native"
+    / "effects_ownership_missing_required_slices.objc3"
+)
 NEGATIVE_FIXTURE = (
     ROOT
     / "tests"
@@ -29,9 +37,16 @@ SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contra
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
 SEMANTIC_PASSES_H = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
 FRONTEND_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
-FRONTEND_PIPELINE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
+FRONTEND_PIPELINE = (
+    ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "pipeline"
+    / "frontend_pipeline_orchestration_semantic_models.cpp"
+)
 FRONTEND_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
-LOWERING_CONTRACT = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.cpp"
+LOWERING_CONTRACT = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.h"
 IR_EMITTER = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.cpp"
 IR_EMITTER_H = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.h"
 

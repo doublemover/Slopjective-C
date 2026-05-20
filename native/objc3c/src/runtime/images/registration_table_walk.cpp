@@ -1,6 +1,7 @@
 #include "runtime/images/registration_table_walk.h"
 
 #include "runtime/classes/class_metadata_tables.h"
+#include "runtime/classes/protocol_conformance.h"
 #include "runtime/images/image_descriptor.h"
 #include "runtime/images/registration_table_record.h"
 #include "runtime/metadata/runtime_emitted_records.h"
@@ -50,6 +51,14 @@ bool TryWalkRegistrationTableUnlocked(
     ++state.malformed_class_metadata_rejection_count;
     state.last_malformed_class_graph_reason =
         std::move(class_metadata_diagnostic_reason);
+    return false;
+  }
+  std::string protocol_metadata_diagnostic_reason;
+  if (!RuntimeProtocolCategoryMetadataTableIsSupported(
+          state, registration_table, protocol_metadata_diagnostic_reason)) {
+    ++state.malformed_class_metadata_rejection_count;
+    state.last_malformed_class_graph_reason =
+        std::move(protocol_metadata_diagnostic_reason);
     return false;
   }
 

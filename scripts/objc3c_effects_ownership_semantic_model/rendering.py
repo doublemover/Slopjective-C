@@ -16,6 +16,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Status: `{summary['status']}`",
         f"- Issue: `{summary['issue']}`",
         f"- Positive fixture: `{summary['positive_fixture']}`",
+        f"- Missing required slices fixture: `{summary['missing_required_slices_fixture']}`",
         f"- Negative fixture: `{summary['negative_fixture']}`",
         "",
         "## Checks",
