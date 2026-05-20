@@ -16,13 +16,21 @@ int BindRuntimeActorMailboxExecutor(RuntimeActorState &state,
   state.last_bound_executor_tag = executor_tag;
   state.last_mailbox_actor_handle = actor_handle;
   state.last_mailbox_executor_tag = executor_tag;
-  if (!RuntimeActorHandleIsValid(actor_handle) ||
-      !RuntimeExecutorTagIsValid(executor_tag)) {
+  if (!RuntimeActorHandleIsValid(actor_handle)) {
     state.last_mailbox_depth = 0;
+    RecordRuntimeActorFailure(
+        state, OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE);
+    return 0;
+  }
+  if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    state.last_mailbox_depth = 0;
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
   state.last_mailbox_depth =
       static_cast<int>(state.mailboxes[actor_handle].size());
+  RecordRuntimeActorSuccess(state);
   return executor_tag;
 }
 
@@ -34,14 +42,22 @@ int EnqueueRuntimeActorMailboxValue(RuntimeActorState &state,
   state.last_mailbox_actor_handle = actor_handle;
   state.last_mailbox_enqueued_value = value;
   state.last_mailbox_executor_tag = executor_tag;
-  if (!RuntimeActorHandleIsValid(actor_handle) ||
-      !RuntimeExecutorTagIsValid(executor_tag)) {
+  if (!RuntimeActorHandleIsValid(actor_handle)) {
     state.last_mailbox_depth = 0;
+    RecordRuntimeActorFailure(
+        state, OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE);
+    return 0;
+  }
+  if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    state.last_mailbox_depth = 0;
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
   std::deque<int> &mailbox = state.mailboxes[actor_handle];
   mailbox.push_back(value);
   state.last_mailbox_depth = static_cast<int>(mailbox.size());
+  RecordRuntimeActorSuccess(state);
   return value;
 }
 
@@ -51,22 +67,33 @@ int DrainRuntimeActorMailboxNextValue(RuntimeActorState &state,
   ++state.mailbox_drain_call_count;
   state.last_mailbox_actor_handle = actor_handle;
   state.last_mailbox_executor_tag = executor_tag;
-  if (!RuntimeActorHandleIsValid(actor_handle) ||
-      !RuntimeExecutorTagIsValid(executor_tag)) {
+  if (!RuntimeActorHandleIsValid(actor_handle)) {
     state.last_mailbox_depth = 0;
     state.last_mailbox_drained_value = 0;
+    RecordRuntimeActorFailure(
+        state, OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE);
+    return 0;
+  }
+  if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    state.last_mailbox_depth = 0;
+    state.last_mailbox_drained_value = 0;
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
   std::deque<int> &mailbox = state.mailboxes[actor_handle];
   if (mailbox.empty()) {
     state.last_mailbox_depth = 0;
     state.last_mailbox_drained_value = 0;
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_EMPTY_MAILBOX);
     return 0;
   }
   const int value = mailbox.front();
   mailbox.pop_front();
   state.last_mailbox_depth = static_cast<int>(mailbox.size());
   state.last_mailbox_drained_value = value;
+  RecordRuntimeActorSuccess(state);
   return value;
 }
 

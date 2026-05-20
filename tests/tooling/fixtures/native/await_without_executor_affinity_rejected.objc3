@@ -1,0 +1,9 @@
+module AwaitWithoutExecutorAffinityRejected;
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn missingExecutor() -> i32 {
+  return await fetchValue();
+}

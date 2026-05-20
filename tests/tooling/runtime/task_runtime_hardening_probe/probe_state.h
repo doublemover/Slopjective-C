@@ -24,9 +24,23 @@ struct PassResult {
   objc3_runtime_arc_debug_state_snapshot arc{};
 };
 
+struct InvalidHandleResult {
+  int invalid_spawn_kind = 0;
+  int invalid_spawn_executor = 0;
+  int missing_group_add = 0;
+  int missing_group_wait = 0;
+  int missing_group_cancel = 0;
+  int scope = 0;
+  int executor_mismatch_add = 0;
+  int copy_task_status = 0;
+  objc3_runtime_task_runtime_state_snapshot task{};
+};
+
 struct ProbeRun {
   PassResult pass1;
   PassResult pass2;
+  InvalidHandleResult invalid1;
+  InvalidHandleResult invalid2;
 };
 
 } // namespace task_runtime_hardening_probe

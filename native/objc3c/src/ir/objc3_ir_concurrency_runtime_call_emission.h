@@ -18,6 +18,8 @@ bool TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall(
     const Objc3IRConcurrencyRuntimeCallEmissionCallbacks &callbacks,
     std::string &result_out);
 
+bool IsObjc3IRConcurrencyTaskRuntimeHelperName(const std::string &name);
+
 bool TryEmitObjc3IRConcurrencyActorLoweringCall(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRConcurrencyRuntimeCallEmissionCallbacks &callbacks,

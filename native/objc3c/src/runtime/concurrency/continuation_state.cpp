@@ -30,6 +30,14 @@ extern "C" int objc3_runtime_resume_async_continuation_i32(
       state, continuation_handle, result_value);
 }
 
+extern "C" int objc3_runtime_cancel_async_continuation_i32(
+    int continuation_handle) {
+  objc3c::runtime::RuntimeContinuationState &state =
+      objc3c::runtime::RuntimeContinuationStateForCurrentThread();
+  return objc3c::runtime::CancelRuntimeAsyncContinuation(state,
+                                                         continuation_handle);
+}
+
 extern "C" int objc3_runtime_copy_async_continuation_state_for_testing(
     objc3_runtime_async_continuation_state_snapshot *snapshot) {
   if (snapshot == nullptr) {

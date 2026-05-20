@@ -64,6 +64,7 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
                 function_name, options.defined_functions,
                 options.declared_pure_functions, options.impure_functions);
           },
+          options.services.emit_unsupported_i32_value,
           [&options](const Expr *call_expr, FunctionContext &callback_ctx,
                      std::string &result_out) {
             return TryEmitObjc3IRExpressionCallConcurrencyActorLoweringCall(

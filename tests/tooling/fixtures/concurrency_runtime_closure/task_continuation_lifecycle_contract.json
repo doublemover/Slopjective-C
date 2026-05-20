@@ -56,12 +56,20 @@
   "required_continuation_probe_payload": {
     "runTask": 7,
     "loadValue": 7,
-    "allocation_call_count": 2,
-    "handoff_call_count": 2,
-    "resume_call_count": 2,
+    "allocation_call_count": 4,
+    "handoff_call_count": 4,
+    "resume_call_count": 4,
+    "cancel_call_count": 0,
+    "rejected_operation_count": 0,
     "live_continuation_handle_count": 0,
+    "completed_continuation_count": 4,
+    "cancelled_continuation_count": 0,
+    "failed_continuation_count": 0,
+    "last_allocated_continuation_slot": 1,
+    "last_allocated_continuation_generation": 3,
     "last_handoff_executor_tag": 1,
-    "last_resume_return_value": 7
+    "last_resume_return_value": 7,
+    "last_operation_failure_code": 0
   },
   "required_task_probe_payload": {
     "spawn_group": 111,

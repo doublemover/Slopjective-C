@@ -123,11 +123,10 @@ std::string EmitObjc3IRCallExpression(
     return callbacks.emit_direct_function_call(
         expr, signature, ctx, ignored_error_slot, nullptr, nullptr);
   }
-  // implementation anchor: supported await-marked expressions
-  // currently reach native IR through the operand's direct-call lowering
-  // path. This emits runnable IR/object code for the non-suspending happy
-  // slice without materializing continuation allocation or a state
-  // machine; those surfaces remain later work.
+  // implementation anchor: supported await-marked expressions reach native IR
+  // through direct-call lowering, where executor-affined async contexts
+  // materialize the private continuation helper handoff. Unsupported await
+  // surfaces fail closed from that direct-call path.
   return callbacks.emit_direct_function_call(expr, signature, ctx, "",
                                              nullptr, nullptr);
 }

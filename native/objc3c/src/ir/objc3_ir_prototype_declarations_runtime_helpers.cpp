@@ -6,6 +6,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ast/objc3_ast_contracts.h"
+#include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_prototype_declarations.h"
 #include "lower/contracts/block_runtime_helper_contracts.h"
@@ -79,6 +80,34 @@ bool Objc3IRRequiresArcHelperDeclarations(
   return false;
 }
 
+bool Objc3IRFunctionRequiresAsyncRuntimeHelperDeclarations(
+    const FunctionDecl &fn) {
+  return fn.async_declared && fn.return_type != ValueType::Void &&
+         Objc3IRExecutorAffinityTag(fn) != 0;
+}
+
+bool Objc3IRMethodRequiresAsyncRuntimeHelperDeclarations(
+    const Objc3IRMethodDefinition &method_def) {
+  return method_def.method != nullptr && method_def.method->async_declared &&
+         method_def.method->return_type != ValueType::Void &&
+         Objc3IRExecutorAffinityTag(*method_def.method) != 0;
+}
+
+bool Objc3IRRequiresAsyncRuntimeHelperDeclarations(
+    const Objc3IRPrototypeDeclarationOptions &options) {
+  for (const auto &fn : options.program.functions) {
+    if (Objc3IRFunctionRequiresAsyncRuntimeHelperDeclarations(fn)) {
+      return true;
+    }
+  }
+  for (const auto &method_def : options.method_definitions) {
+    if (Objc3IRMethodRequiresAsyncRuntimeHelperDeclarations(method_def)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 bool EmitObjc3IRDeclarationOnce(std::unordered_set<std::string> &declared_symbols,
@@ -101,6 +130,7 @@ bool Objc3IRRequiresRuntimeHelperDeclarations(
          Objc3IRRequiresArcHelperDeclarations(options) ||
          !frontend_metadata.lowering_error_handling_throws_abi_propagation_replay_key
               .empty() ||
+         Objc3IRRequiresAsyncRuntimeHelperDeclarations(options) ||
          !frontend_metadata.lowering_async_continuation_replay_key.empty() ||
          !frontend_metadata.lowering_await_lowering_suspension_state_replay_key
               .empty() ||

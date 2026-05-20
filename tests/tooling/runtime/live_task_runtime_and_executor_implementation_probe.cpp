@@ -40,6 +40,18 @@ int main() {
   std::cout << "last_wait_next_result=" << snapshot.last_wait_next_result << "\n";
   std::cout << "last_executor_hop_executor_tag=" << snapshot.last_executor_hop_executor_tag << "\n";
   std::cout << "last_executor_hop_value=" << snapshot.last_executor_hop_value << "\n";
+  std::cout << "last_failure_reason=" << snapshot.last_failure_reason << "\n";
+  std::cout << "lifecycle_state=" << snapshot.lifecycle_state << "\n";
+  std::cout << "selected_executor_tag=" << snapshot.selected_executor_tag << "\n";
+  std::cout << "active_group_executor_tag=" << snapshot.active_group_executor_tag << "\n";
+  std::cout << "active_group_task_count=" << snapshot.active_group_task_count << "\n";
+  std::cout << "pending_group_task_count=" << snapshot.pending_group_task_count << "\n";
+  std::cout << "completed_group_task_count=" << snapshot.completed_group_task_count << "\n";
+  std::cout << "group_cancelled=" << snapshot.group_cancelled << "\n";
+  std::cout << "cancellation_generation=" << snapshot.cancellation_generation << "\n";
+  std::cout << "observed_cancellation_generation=" << snapshot.observed_cancellation_generation << "\n";
+  std::cout << "last_queue_depth=" << snapshot.last_queue_depth << "\n";
+  std::cout << "last_queue_drain_result=" << snapshot.last_queue_drain_result << "\n";
 
   return (copy_status == 0 && spawn_group == 111 && scope == 1 && add_task == 1 &&
           cancelled == 0 && wait_next == 23 && hop == 23 && cancel_all == 31 &&
@@ -49,7 +61,14 @@ int main() {
           snapshot.cancellation_poll_call_count == 1 && snapshot.on_cancel_call_count == 1 &&
           snapshot.executor_hop_call_count == 1 && snapshot.last_spawn_kind == 2 &&
           snapshot.last_spawn_executor_tag == 3 && snapshot.last_wait_next_result == 23 &&
-          snapshot.last_executor_hop_executor_tag == 2 && snapshot.last_executor_hop_value == 23)
+          snapshot.last_executor_hop_executor_tag == 2 && snapshot.last_executor_hop_value == 23 &&
+          snapshot.last_failure_reason == OBJC3_RUNTIME_TASK_FAILURE_NONE &&
+          snapshot.lifecycle_state == OBJC3_RUNTIME_TASK_LIFECYCLE_TASK_SPAWNED &&
+          snapshot.selected_executor_tag == 3 && snapshot.active_group_executor_tag == 2 &&
+          snapshot.active_group_task_count == 1 && snapshot.pending_group_task_count == 0 &&
+          snapshot.completed_group_task_count == 1 && snapshot.group_cancelled == 1 &&
+          snapshot.cancellation_generation == 1 && snapshot.observed_cancellation_generation == 1 &&
+          snapshot.last_queue_depth == 0 && snapshot.last_queue_drain_result == 23)
              ? 0
              : 1;
 }

@@ -30,6 +30,18 @@ std::string EmitObjc3IRRuntimeCallFirstArgOrZero(
 
 }  // namespace
 
+bool IsObjc3IRConcurrencyTaskRuntimeHelperName(const std::string &name) {
+  const std::string lowered = objc3c::support::LowercaseAscii(name);
+  return lowered == "task_spawn_child" || lowered == "spawn_task" ||
+         lowered == "detached_task_create" ||
+         lowered == "with_task_group_scope" ||
+         lowered == "task_group_add_task" ||
+         lowered == "task_group_cancel_all" ||
+         lowered == "task_runtime_cancelled_value" ||
+         lowered == "task_runtime_on_cancel" ||
+         lowered == "task_group_wait_next" || lowered == "wait_next";
+}
+
 bool TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRConcurrencyRuntimeCallEmissionCallbacks &callbacks,

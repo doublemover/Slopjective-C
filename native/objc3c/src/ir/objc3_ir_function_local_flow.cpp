@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "lower/contracts/concurrency_continuation_runtime_contracts.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 
@@ -9,6 +10,33 @@ namespace {
 
 std::string NewFunctionLocalTemp(FunctionContext &ctx) {
   return "%t" + std::to_string(ctx.temp_counter++);
+}
+
+std::string EmitObjc3IRAsyncReturnContinuationHandoff(
+    const std::string &returned_value, FunctionContext &ctx) {
+  if (!ctx.async_runtime_helper_enabled) {
+    return returned_value;
+  }
+
+  const std::string continuation_handle = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + continuation_handle + " = call i32 @" +
+      std::string(kObjc3RuntimeAllocateAsyncContinuationI32Symbol) +
+      "(i32 " + std::to_string(ctx.async_resume_entry_tag) + ", i32 " +
+      std::to_string(ctx.async_executor_tag) + ")");
+  const std::string handed_off_handle = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + handed_off_handle + " = call i32 @" +
+      std::string(kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol) +
+      "(i32 " + continuation_handle + ", i32 " +
+      std::to_string(ctx.async_executor_tag) + ")");
+  const std::string resumed_value = NewFunctionLocalTemp(ctx);
+  ctx.code_lines.push_back(
+      "  " + resumed_value + " = call i32 @" +
+      std::string(kObjc3RuntimeResumeAsyncContinuationI32Symbol) + "(i32 " +
+      handed_off_handle + ", i32 " + returned_value + ")");
+  ctx.global_proofs_invalidated = true;
+  return resumed_value;
 }
 
 }  // namespace
@@ -125,10 +153,14 @@ void EmitObjc3IRFunctionLocalTypedReturn(
     returned_value = autoreleased_value;
   }
   if (ctx.return_type == ValueType::Bool) {
+    returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
+                                                              ctx);
     const std::string bool_i1 = CoerceObjc3IRI32ToBoolI1(returned_value, ctx);
     ctx.code_lines.push_back("  ret i1 " + bool_i1);
     return;
   }
+  returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
+                                                            ctx);
   ctx.code_lines.push_back("  ret i32 " + returned_value);
 }
 

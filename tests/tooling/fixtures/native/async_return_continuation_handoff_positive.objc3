@@ -1,0 +1,19 @@
+module AsyncReturnContinuationHandoff;
+
+async fn directValue() -> i32 __attribute__((objc_executor(named("com.example.return")))) {
+  return 11;
+}
+
+@interface AsyncReturnLoader
+- (i32)loadValue async __attribute__((objc_executor(main)));
+@end
+
+@implementation AsyncReturnLoader
+- (i32)loadValue async __attribute__((objc_executor(main))) {
+  return 13;
+}
+@end
+
+fn main() -> i32 {
+  return directValue();
+}

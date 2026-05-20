@@ -11,5 +11,7 @@ int HandoffRuntimeAsyncContinuationToExecutor(
 int ResumeRuntimeAsyncContinuation(RuntimeContinuationState &state,
                                    int continuation_handle,
                                    int result_value);
+int CancelRuntimeAsyncContinuation(RuntimeContinuationState &state,
+                                   int continuation_handle);
 
 }  // namespace objc3c::runtime

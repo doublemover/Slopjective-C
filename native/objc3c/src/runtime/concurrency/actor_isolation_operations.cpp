@@ -10,8 +10,11 @@ int EnterRuntimeActorIsolationThunk(RuntimeActorState &state,
   ++state.isolation_thunk_call_count;
   state.last_isolation_executor_tag = executor_tag;
   if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
+  RecordRuntimeActorSuccess(state);
   return executor_tag;
 }
 
@@ -22,8 +25,11 @@ int EnterRuntimeActorNonisolated(RuntimeActorState &state,
   state.last_nonisolated_value = value;
   state.last_nonisolated_executor_tag = executor_tag;
   if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
+  RecordRuntimeActorSuccess(state);
   return value;
 }
 
@@ -35,9 +41,12 @@ int HopRuntimeActorToExecutor(RuntimeActorState &state,
   state.last_hop_executor_tag = executor_tag;
   if (!RuntimeExecutorTagIsValid(executor_tag)) {
     state.last_hop_result = 0;
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
   state.last_hop_result = value;
+  RecordRuntimeActorSuccess(state);
   return value;
 }
 

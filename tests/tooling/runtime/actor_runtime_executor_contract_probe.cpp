@@ -25,6 +25,7 @@ int main() {
   std::cout << "isolation_thunk_call_count=" << snapshot.isolation_thunk_call_count << "\n";
   std::cout << "nonisolated_entry_call_count=" << snapshot.nonisolated_entry_call_count << "\n";
   std::cout << "hop_to_executor_call_count=" << snapshot.hop_to_executor_call_count << "\n";
+  std::cout << "failed_operation_count=" << snapshot.failed_operation_count << "\n";
   std::cout << "last_replay_proof_executor_tag=" << snapshot.last_replay_proof_executor_tag << "\n";
   std::cout << "last_race_guard_executor_tag=" << snapshot.last_race_guard_executor_tag << "\n";
   std::cout << "last_isolation_executor_tag=" << snapshot.last_isolation_executor_tag << "\n";
@@ -33,6 +34,8 @@ int main() {
   std::cout << "last_hop_value=" << snapshot.last_hop_value << "\n";
   std::cout << "last_hop_executor_tag=" << snapshot.last_hop_executor_tag << "\n";
   std::cout << "last_hop_result=" << snapshot.last_hop_result << "\n";
+  std::cout << "last_operation_succeeded=" << snapshot.last_operation_succeeded << "\n";
+  std::cout << "last_failure_code=" << snapshot.last_failure_code << "\n";
 
   return (copy_status == 0 && replay == 1 && guard == 1 && isolation == 1 &&
           nonisolated == 5 && hopped == 17 &&
@@ -41,6 +44,7 @@ int main() {
           snapshot.isolation_thunk_call_count == 1 &&
           snapshot.nonisolated_entry_call_count == 1 &&
           snapshot.hop_to_executor_call_count == 1 &&
+          snapshot.failed_operation_count == 0 &&
           snapshot.last_replay_proof_executor_tag == 1 &&
           snapshot.last_race_guard_executor_tag == 1 &&
           snapshot.last_isolation_executor_tag == 1 &&
@@ -48,7 +52,9 @@ int main() {
           snapshot.last_nonisolated_executor_tag == 0 &&
           snapshot.last_hop_value == 17 &&
           snapshot.last_hop_executor_tag == 1 &&
-          snapshot.last_hop_result == 17)
+          snapshot.last_hop_result == 17 &&
+          snapshot.last_operation_succeeded == 1 &&
+          snapshot.last_failure_code == OBJC3_RUNTIME_ACTOR_FAILURE_NONE)
              ? 0
              : 1;
 }

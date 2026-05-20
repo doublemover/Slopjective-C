@@ -10,8 +10,11 @@ int RecordRuntimeActorReplayProof(RuntimeActorState &state,
   ++state.replay_proof_call_count;
   state.last_replay_proof_executor_tag = executor_tag;
   if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
+  RecordRuntimeActorSuccess(state);
   return executor_tag;
 }
 
@@ -20,8 +23,11 @@ int RecordRuntimeActorRaceGuard(RuntimeActorState &state,
   ++state.race_guard_call_count;
   state.last_race_guard_executor_tag = executor_tag;
   if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    RecordRuntimeActorFailure(state,
+                              OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR);
     return 0;
   }
+  RecordRuntimeActorSuccess(state);
   return executor_tag;
 }
 

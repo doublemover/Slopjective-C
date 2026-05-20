@@ -60,6 +60,7 @@ PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_allocate_async_continuation_i32",
     "objc3_runtime_handoff_async_continuation_to_executor_i32",
     "objc3_runtime_resume_async_continuation_i32",
+    "objc3_runtime_cancel_async_continuation_i32",
     "objc3_runtime_spawn_task_i32",
     "objc3_runtime_enter_task_group_scope_i32",
     "objc3_runtime_add_task_group_task_i32",
@@ -91,7 +92,7 @@ UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL = (
     "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL = (
-    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL = (
     "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-concurrency-runtime-abi-widening"

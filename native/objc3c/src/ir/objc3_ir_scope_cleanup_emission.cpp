@@ -271,6 +271,9 @@ void EmitObjc3IRTerminalCleanupToDepth(
     std::size_t pending_block_dispose_depth,
     std::size_t ownership_cleanup_depth, std::size_t arc_cleanup_depth,
     const Objc3IRScopeCleanupEmissionCallbacks &callbacks) {
+  // Keep all terminal exits on the same source-construct cleanup order:
+  // deferred statements first, then explicit ownership cleanup, block dispose,
+  // ARC-owned storage release, and finally autoreleasepool draining.
   EmitObjc3IRDeferredCleanupTerminalToDepth(ctx, scope_depth, callbacks);
   EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
       ctx, ownership_cleanup_depth, ctx.code_lines, ctx.temp_counter);

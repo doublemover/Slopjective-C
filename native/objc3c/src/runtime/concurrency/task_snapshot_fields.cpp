@@ -27,6 +27,18 @@ void ResetRuntimeTaskRuntimeStateSnapshot(
   snapshot.last_wait_next_result = 0;
   snapshot.last_cancel_all_result = 0;
   snapshot.last_cancellation_poll_result = 0;
+  snapshot.last_failure_reason = kRuntimeTaskFailureNone;
+  snapshot.lifecycle_state = kRuntimeTaskLifecycleIdle;
+  snapshot.selected_executor_tag = 0;
+  snapshot.active_group_executor_tag = -1;
+  snapshot.active_group_task_count = 0;
+  snapshot.pending_group_task_count = 0;
+  snapshot.completed_group_task_count = 0;
+  snapshot.group_cancelled = 0;
+  snapshot.cancellation_generation = 0;
+  snapshot.observed_cancellation_generation = 0;
+  snapshot.last_queue_depth = 0;
+  snapshot.last_queue_drain_result = 0;
 }
 
 void PopulateRuntimeTaskRuntimeStateSnapshot(
@@ -56,6 +68,19 @@ void PopulateRuntimeTaskRuntimeStateSnapshot(
   snapshot.last_cancel_all_result = state.last_cancel_all_result;
   snapshot.last_cancellation_poll_result =
       state.last_cancellation_poll_result;
+  snapshot.last_failure_reason = state.last_failure_reason;
+  snapshot.lifecycle_state = state.lifecycle_state;
+  snapshot.selected_executor_tag = state.selected_executor_tag;
+  snapshot.active_group_executor_tag = state.active_group_executor_tag;
+  snapshot.active_group_task_count = state.active_group_task_count;
+  snapshot.pending_group_task_count = state.pending_group_task_count;
+  snapshot.completed_group_task_count = state.completed_group_task_count;
+  snapshot.group_cancelled = state.group_cancelled;
+  snapshot.cancellation_generation = state.cancellation_generation;
+  snapshot.observed_cancellation_generation =
+      state.observed_cancellation_generation;
+  snapshot.last_queue_depth = state.last_queue_depth;
+  snapshot.last_queue_drain_result = state.last_queue_drain_result;
 }
 
 }  // namespace objc3c::runtime

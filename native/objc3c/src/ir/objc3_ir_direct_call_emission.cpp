@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_concurrency_runtime_call_emission.h"
 #include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/concurrency_continuation_runtime_contracts.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
@@ -33,6 +34,18 @@ std::string EmitObjc3IRDirectFunctionCall(
     const Objc3IRDirectCallEmissionCallbacks &callbacks,
     const std::string &throws_error_slot_ptr, bool *bridge_failed_out,
     std::string *bridge_error_value_out) {
+  if (expr != nullptr && expr->await_expression_enabled &&
+      !ctx.async_runtime_helper_enabled) {
+    return callbacks.emit_unsupported_i32_value(
+        "await lowering requires async objc_executor affinity for continuation handoff");
+  }
+  if (expr != nullptr &&
+      IsObjc3IRConcurrencyTaskRuntimeHelperName(expr->ident) &&
+      !ctx.async_runtime_helper_enabled) {
+    return callbacks.emit_unsupported_i32_value(
+        "concurrency task runtime helper lowering requires async objc_executor affinity");
+  }
+
   std::vector<std::string> args;
   std::vector<std::string> post_call_release_values;
   args.reserve(expr->args.size() +

@@ -1,0 +1,31 @@
+module m8036_arc_cleanup_source_construct_order_positive;
+
+extern fn cleanup_scope_close_fd(value: i32) -> void;
+extern fn cleanup_release_temp(value: i32) -> void;
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), cf_returns_not_retained));
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn returnAwaitCleanup(owner: id) -> i32
+    __attribute__((objc_executor(named("com.example.cleanup")))) {
+  @cleanup(cleanup_release_temp) let temp = 1;
+  @resource(cleanup_scope_close_fd, invalid: -1) let fd = 4;
+  @autoreleasepool {
+    defer {
+      fetchValue();
+    }
+    let retained = CFRetain(owner);
+    let pooled = CFAutorelease(retained);
+    let closure = ^() { return pooled + retained + fd + temp; };
+    return await fetchValue();
+  }
+}
+
+fn main() -> i32 {
+  return returnAwaitCleanup(9);
+}

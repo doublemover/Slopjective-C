@@ -43,6 +43,21 @@ inline PassResult RunPass(const TaskRuntimeHardeningScenario &scenario) {
   return result;
 }
 
+inline InvalidHandleResult RunInvalidHandlePass() {
+  InvalidHandleResult result{};
+  ResetTaskRuntimeFixture();
+  result.invalid_spawn_kind = objc3_runtime_spawn_task_i32(99, 2);
+  result.invalid_spawn_executor = objc3_runtime_spawn_task_i32(1, -1);
+  result.missing_group_add = objc3_runtime_add_task_group_task_i32(2);
+  result.missing_group_wait = objc3_runtime_wait_task_group_next_i32(2);
+  result.missing_group_cancel = objc3_runtime_cancel_task_group_i32(2);
+  result.scope = objc3_runtime_enter_task_group_scope_i32(4);
+  result.executor_mismatch_add = objc3_runtime_add_task_group_task_i32(5);
+  result.copy_task_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.task);
+  return result;
+}
+
 } // namespace task_runtime_hardening_probe
 } // namespace tooling
 } // namespace objc3c
