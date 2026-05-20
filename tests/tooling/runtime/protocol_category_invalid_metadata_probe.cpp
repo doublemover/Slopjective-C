@@ -25,6 +25,16 @@ constexpr const char *kMetaclassOwner = "metaclass-object:BrokenProtocolRef";
 constexpr const char *kMissingCategoryModuleName =
     "protocol-category-missing-target-probe";
 constexpr const char *kMissingCategoryClassName = "MissingOwner";
+constexpr const char *kConflictingCategoryModuleName =
+    "protocol-category-conflicting-owner-probe";
+constexpr const char *kConflictingCategoryClassName = "ConflictOwner";
+constexpr const char *kConflictingCategoryBundleOwner =
+    "interface:ConflictOwner";
+constexpr const char *kConflictingCategoryClassOwner = "class:ConflictOwner";
+constexpr const char *kConflictingCategoryMetaclassBundleOwner =
+    "metaclass:ConflictOwner";
+constexpr const char *kConflictingCategoryMetaclassOwner =
+    "metaclass-object:ConflictOwner";
 
 const PointerAggregateStorage<1> kEmptyRootStorage = {0, {nullptr}};
 const objc3_runtime_pointer_aggregate *kEmptyRoot =
@@ -102,6 +112,68 @@ struct MissingCategoryTargetImage {
       nullptr, &image_local_init_state};
 };
 
+struct ConflictingCategoryOwnerImage {
+  objc3_runtime_image_descriptor image{kConflictingCategoryModuleName,
+                                       kTranslationUnit, 1, 1, 0, 2, 0, 0};
+  objc3c::runtime::EmittedClassBundle class_bundle{
+      {kConflictingCategoryClassName, kConflictingCategoryBundleOwner,
+       kConflictingCategoryClassOwner, "", nullptr, nullptr, kEmptyRoot, false,
+       false},
+      {kConflictingCategoryClassName, kConflictingCategoryMetaclassBundleOwner,
+       kConflictingCategoryMetaclassOwner, "", nullptr, nullptr, kEmptyRoot,
+       false, false}};
+  objc3c::runtime::EmittedCategoryRecord first_category_record{
+      kConflictingCategoryClassName,
+      "Tracing",
+      "implementation",
+      "implementation:ConflictOwner(Tracing)::first",
+      kConflictingCategoryClassOwner,
+      "category:ConflictOwner(Tracing)::first",
+      nullptr,
+      kEmptyRoot,
+      nullptr,
+      nullptr,
+      0,
+      0,
+      0};
+  objc3c::runtime::EmittedCategoryRecord second_category_record{
+      kConflictingCategoryClassName,
+      "Tracing",
+      "implementation",
+      "implementation:ConflictOwner(Tracing)::second",
+      kConflictingCategoryClassOwner,
+      "category:ConflictOwner(Tracing)::second",
+      nullptr,
+      kEmptyRoot,
+      nullptr,
+      nullptr,
+      0,
+      0,
+      0};
+  PointerAggregateStorage<1> class_root_storage{1, {&class_bundle}};
+  PointerAggregateStorage<2> category_root_storage{
+      2, {&first_category_record, &second_category_record}};
+  PointerAggregateStorage<6> discovery_root_storage{
+      6,
+      {&class_root_storage, &kEmptyRootStorage, &category_root_storage,
+       &kEmptyRootStorage, &kEmptyRootStorage, &kEmptyRootStorage}};
+  const objc3_runtime_pointer_aggregate *class_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &class_root_storage);
+  const objc3_runtime_pointer_aggregate *category_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &category_root_storage);
+  const objc3_runtime_pointer_aggregate *discovery_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &discovery_root_storage);
+  const void *discovery_root_anchor = discovery_root;
+  unsigned char image_local_init_state = 0;
+  objc3_runtime_registration_table registration_table{
+      2, 12, &image, discovery_root, &discovery_root_anchor, class_root,
+      kEmptyRoot, category_root, kEmptyRoot, kEmptyRoot, nullptr, nullptr,
+      nullptr, &image_local_init_state};
+};
+
 struct ProbeResult {
   int registration_status = 0;
   objc3_runtime_registration_state_snapshot registration_state{};
@@ -113,6 +185,7 @@ struct ProbeResult {
 struct ProbeRun {
   ProbeResult invalid_protocol_reference;
   ProbeResult missing_category_target;
+  ProbeResult conflicting_category_owner;
 };
 
 ProbeResult CaptureInvalidRegistration(
@@ -139,6 +212,7 @@ ProbeResult CaptureInvalidRegistration(
 ProbeRun RunProbe() {
   InvalidProtocolReferenceImage invalid_protocol_fixture;
   MissingCategoryTargetImage missing_category_fixture;
+  ConflictingCategoryOwnerImage conflicting_category_fixture;
   ProbeRun run;
   run.invalid_protocol_reference = CaptureInvalidRegistration(
       &invalid_protocol_fixture.image,
@@ -146,6 +220,10 @@ ProbeRun RunProbe() {
   run.missing_category_target = CaptureInvalidRegistration(
       &missing_category_fixture.image,
       &missing_category_fixture.registration_table, kMissingCategoryClassName);
+  run.conflicting_category_owner = CaptureInvalidRegistration(
+      &conflicting_category_fixture.image,
+      &conflicting_category_fixture.registration_table,
+      kConflictingCategoryClassName);
   return run;
 }
 
@@ -201,6 +279,9 @@ void PrintProbeResult(const ProbeRun &run) {
   separator.BeforeField(std::cout);
   WriteJsonFieldName(std::cout, "missing_category_target");
   WriteProbeResultObject(std::cout, run.missing_category_target);
+  separator.BeforeField(std::cout);
+  WriteJsonFieldName(std::cout, "conflicting_category_owner");
+  WriteProbeResultObject(std::cout, run.conflicting_category_owner);
   std::cout << "}";
 }
 

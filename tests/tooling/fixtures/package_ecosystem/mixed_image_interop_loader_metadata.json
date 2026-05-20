@@ -1,0 +1,138 @@
+{
+  "contract_id": "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1",
+  "surface_kind": "package-ecosystem-mixed-image-interop-loader-metadata",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "package_authoring_workflow": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+  "registry_mirror_reproducibility": "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+  "packages": [
+    {
+      "package_id": "showcase:patchKit",
+      "metadata_id": "objc3c.package_loader.interop.patchkit.mixed_image.v1",
+      "source_fixtures": [
+        "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+        "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3"
+      ],
+      "header_imports": [
+        "Bridge.hpp",
+        "BridgeConsumer.h",
+        "ParserKit/ForeignEntry.h"
+      ],
+      "header_exports": [
+        "ParserKit/ParserKit.h",
+        "PatchKit/PatchKit.h"
+      ],
+      "abi_alignment": [
+        {
+          "symbol": "foreignEntry",
+          "bytes": 16,
+          "source_range": "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3:32:1-32:260",
+          "owning_attribute": "objc_abi_align"
+        }
+      ],
+      "foreign_types": [
+        {
+          "type": "ParserKit.ForeignEntry",
+          "diagnostic_code": "O3PKG8052",
+          "source_range": "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3:32:1-32:260"
+        }
+      ],
+      "mixed_images": [
+        {
+          "image_id": "ParserKitCore",
+          "loader_role": "primary",
+          "abi_manifest": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+          "metadata_section": "__objc3c_interop"
+        },
+        {
+          "image_id": "PatchKitApp",
+          "loader_role": "consumer",
+          "abi_manifest": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+          "metadata_section": "__objc3c_package"
+        }
+      ],
+      "package_execution": {
+        "entry_fixture": "showcase/patchKit/main.objc3",
+        "public_action": "package-runnable-toolchain",
+        "execution_surface": "mixed-image-package-loader"
+      },
+      "negative_fixtures": [
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_power_of_two.objc3",
+          "diagnostic_code": "O3PKG8052",
+          "source_range": "4:80-4:111"
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
+          "diagnostic_code": "O3PKG8052",
+          "source_range": "4:80-4:116"
+        }
+      ],
+      "tamper_rejection": {
+        "diagnostic_code": "O3PKG8054",
+        "source_range": "package_id:showcase:patchKit",
+        "message": "offline mirror metadata digest mismatch for mixed-image interop package"
+      }
+    },
+    {
+      "package_id": "stdlib:objc3.system",
+      "metadata_id": "objc3c.package_loader.interop.objc3_system.c_header.v1",
+      "source_fixtures": [
+        "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+        "tests/tooling/fixtures/native/interop_semantic_model_positive.objc3"
+      ],
+      "header_imports": [
+        "BridgeProvider.h",
+        "BridgeProviderExtras.h"
+      ],
+      "header_exports": [
+        "objc3/system.h"
+      ],
+      "abi_alignment": [
+        {
+          "symbol": "ffiHeaderBridge",
+          "bytes": 8,
+          "source_range": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3:4:1-4:180",
+          "owning_attribute": "objc_header_name"
+        }
+      ],
+      "foreign_types": [
+        {
+          "type": "BridgeProviderGate",
+          "diagnostic_code": "O3PKG8052",
+          "source_range": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3:3:1-3:220"
+        }
+      ],
+      "mixed_images": [
+        {
+          "image_id": "objc3.system.bridge",
+          "loader_role": "stdlib-provider",
+          "abi_manifest": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+          "metadata_section": "__objc3c_header"
+        }
+      ],
+      "package_execution": {
+        "entry_fixture": "stdlib/modules/objc3.system/module.objc3",
+        "public_action": "validate-stdlib-program",
+        "execution_surface": "stdlib-header-provider"
+      },
+      "negative_fixtures": [
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_number.objc3",
+          "diagnostic_code": "O3PKG8052",
+          "source_range": "4:80-4:108"
+        }
+      ],
+      "tamper_rejection": {
+        "diagnostic_code": "O3PKG8054",
+        "source_range": "package_id:stdlib:objc3.system",
+        "message": "offline mirror metadata digest mismatch for header import package"
+      }
+    }
+  ],
+  "unsupported_surfaces": [
+    "network-resolved interop metadata",
+    "hosted registry mixed-image restore",
+    "unchecked ABI alignment fallback"
+  ]
+}

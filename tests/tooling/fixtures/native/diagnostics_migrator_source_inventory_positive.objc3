@@ -48,7 +48,7 @@ extern fn CFAutorelease(value: id) -> id
 extern fn NSMakeThing() -> id
     __attribute__((ns_returns_retained));
 
-pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming")), objc_macro_provenance(named("sha256:abc123")))) {
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming")), objc_macro_provenance(named("sha256:abc123")), objc_macro_cache_key(named("Trace:v1:diagnostics-migrator-source-inventory")), objc_macro_sandbox(named("deterministic")))) {
   return 7;
 }
 

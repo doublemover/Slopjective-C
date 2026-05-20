@@ -41,16 +41,17 @@
   ],
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
-    "capability_query_encoding": "0-means-missing-nonzero-means-present",
-    "option_unwrap_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default",
-    "string_view_length": "returns the provided unit count unchanged",
-    "string_view_prefix_units": "returns requested units clamped to the provided unit count and zero floor",
-    "byte_span_length": "returns the provided byte count unchanged",
-    "byte_span_prefix_length": "returns requested units clamped to the provided byte count and zero floor",
-    "array_count": "returns the provided element count unchanged",
-    "array_prefix_count": "returns requested elements clamped to the provided element count and zero floor",
+    "runtime_core_abi": "objc3.core helpers route through objc3_runtime_stdlib_core_* entrypoints and publish runtime-owned call evidence through objc3_runtime_copy_stdlib_core_state_for_testing",
+    "capability_query_encoding": "positive capability ids mean present; zero and negative ids fail closed as missing",
+    "option_unwrap_or": "routes through objc3_runtime_stdlib_core_option_unwrap_or_i32 and returns value when presence flag is nonzero, otherwise the caller-supplied default",
+    "string_view_length": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative unit counts",
+    "string_view_prefix_units": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested units to a zero floor",
+    "byte_span_length": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative byte counts",
+    "byte_span_prefix_length": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested units to a zero floor",
+    "array_count": "routes through objc3_runtime_stdlib_core_count_i32 and applies a zero floor to negative element counts",
+    "array_prefix_count": "routes through objc3_runtime_stdlib_core_prefix_count_i32 and clamps both count and requested elements to a zero floor",
     "map_entry_present": "0-means-absent-nonzero-means-present",
-    "map_entry_value_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default"
+    "map_entry_value_or": "routes through objc3_runtime_stdlib_core_map_entry_value_or_i32 and returns value when presence flag is nonzero, otherwise the caller-supplied default"
   },
   "error_semantics": {
     "result_ok_tag": 1,

@@ -8,6 +8,11 @@ from check_stdlib_surface_model import CanonicalModuleSurface
 from objc3c_tooling.json_io import load_json_any as load_json
 
 
+def _live_path_exists(root: Path, raw_path: str) -> bool:
+    path_text = raw_path.split("#", 1)[0]
+    return (root / path_text).exists()
+
+
 @dataclass(frozen=True)
 class ArchitectureValidation:
     api_families: dict[str, Any]
@@ -29,8 +34,7 @@ def validate_architecture_surfaces(
     for raw_path in architecture_live_paths:
         if not isinstance(raw_path, str) or not raw_path:
             return "core architecture live_paths entry malformed", None
-        path = root / raw_path
-        if not path.exists():
+        if not _live_path_exists(root, raw_path):
             return f"core architecture live path missing: {raw_path}", None
 
     advanced_live_paths = advanced_architecture.get("live_paths")
@@ -39,8 +43,7 @@ def validate_architecture_surfaces(
     for raw_path in advanced_live_paths:
         if not isinstance(raw_path, str) or not raw_path:
             return "advanced architecture live_paths entry malformed", None
-        path = root / raw_path
-        if not path.exists():
+        if not _live_path_exists(root, raw_path):
             return f"advanced architecture live path missing: {raw_path}", None
 
     architecture_api_families = core_architecture.get("api_families")

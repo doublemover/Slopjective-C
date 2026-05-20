@@ -8,17 +8,22 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 from objc3c_tooling.subprocesses import python_script_command
 from package_ecosystem_contracts import (
+    PACKAGE_LOADER_INTEROP_TAMPER_CODE,
     require_package_ecosystem_blocker_metadata,
     require_package_ecosystem_owner_policy,
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "registry_mirror_reproducibility_contract.json"
 LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
 MIRROR_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "mirrors" / "offline-mirror-index.json"
@@ -42,13 +47,76 @@ def package_ids(payload: dict[str, Any]) -> list[str]:
     return sorted(str(package.get("package_id")) for package in packages if isinstance(package, dict))
 
 
+def package_interop_metadata(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    packages = payload.get("packages", [])
+    if not isinstance(packages, list):
+        return {}
+    metadata_by_package: dict[str, dict[str, Any]] = {}
+    for package in packages:
+        if not isinstance(package, dict):
+            continue
+        interop_metadata = package.get("interop_loader_metadata")
+        if isinstance(interop_metadata, dict):
+            metadata_by_package[str(package.get("package_id"))] = interop_metadata
+    return dict(sorted(metadata_by_package.items()))
+
+
+def collect_interop_loader_metadata_failures(
+    lock: dict[str, Any],
+    mirror: dict[str, Any],
+    registry: dict[str, Any],
+    publication: dict[str, Any],
+) -> list[str]:
+    lock_metadata = package_interop_metadata(lock)
+    if not lock_metadata:
+        return []
+
+    failures: list[str] = []
+    mirror_metadata = package_interop_metadata(mirror)
+    registry_metadata = package_interop_metadata(registry)
+    lock_ids = set(lock_metadata)
+    if set(mirror_metadata) != lock_ids:
+        failures.append(
+            f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata package ids drifted from lock"
+        )
+    if set(registry_metadata) != lock_ids:
+        failures.append(
+            f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: registry interop metadata package ids drifted from lock"
+        )
+
+    for package_id in sorted(lock_ids):
+        expected_digest = lock_metadata[package_id].get("digest")
+        mirror_digest = mirror_metadata.get(package_id, {}).get("digest")
+        registry_digest = registry_metadata.get(package_id, {}).get("digest")
+        if mirror_digest != expected_digest:
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata digest mismatch for {package_id}"
+            )
+        if registry_digest != expected_digest:
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: registry interop metadata digest mismatch for {package_id}"
+            )
+
+    mirror_policy = mirror.get("integrity_policy", {})
+    if not isinstance(mirror_policy, dict) or mirror_policy.get("tamper_rejection_diagnostic") != PACKAGE_LOADER_INTEROP_TAMPER_CODE:
+        failures.append(f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror integrity policy diagnostic drifted")
+    if publication.get("tamper_rejection_diagnostic") != PACKAGE_LOADER_INTEROP_TAMPER_CODE:
+        failures.append(f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: publication tamper diagnostic drifted")
+    if publication.get("interop_loader_support") != "local-mixed-image-metadata-digest-checked":
+        failures.append(f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: publication interop loader support claim drifted")
+    return failures
+
+
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
     owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem registry mirror reproducibility")
     blocker_metadata = require_package_ecosystem_blocker_metadata(
         contract,
         surface_name="package ecosystem registry mirror reproducibility",
-        required_blockers=("hosted registry claim did not fail closed",),
+        required_blockers=(
+            "hosted registry claim did not fail closed",
+            "offline mirror metadata digest mismatch did not fail closed",
+        ),
     )
     package = load_json(ROOT / "package.json")
     package_scripts = package.get("scripts", {})
@@ -94,6 +162,8 @@ def main() -> int:
     expect(mirror_summary.get("package_count") == len(lock_ids), "mirror summary package count drifted", failures)
     expect(package_bridge_exists, f"registry/mirror workflow missing package bridge {package_bridge}", failures)
     expect(not missing_actions, "registry/mirror workflow missing required actions", failures)
+    interop_failures = collect_interop_loader_metadata_failures(lock, mirror, registry, publication)
+    failures.extend(interop_failures)
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.registry_mirror_reproducibility.summary.v1",
@@ -105,14 +175,18 @@ def main() -> int:
         "publication_metadata": repo_rel(PUBLICATION_PATH),
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
         "package_count": len(lock_ids),
+        "interop_loader_metadata_package_count": len(package_interop_metadata(lock)),
         "network_policy": mirror.get("network_policy"),
         "hosted_registry_support": publication.get("hosted_registry_support"),
+        "interop_loader_support": publication.get("interop_loader_support"),
+        "tamper_rejection_diagnostic": publication.get("tamper_rejection_diagnostic"),
         "owner_policy": owner_policy,
         "blocker_metadata": blocker_metadata,
         "package_bridge": package_bridge,
         "package_bridge_count": 1 if package_bridge_exists else 0,
         "required_actions": required_actions,
         "missing_actions": missing_actions,
+        "interop_integrity_failures": interop_failures,
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

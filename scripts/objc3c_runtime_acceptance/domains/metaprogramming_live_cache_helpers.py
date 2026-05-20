@@ -40,7 +40,9 @@ def build_metaprogramming_cache_seed_macros(
             f"pure fn cacheSeed{materialization_attempt}_{index}() -> i32 "
             '__attribute__((objc_macro(named("Trace")), '
             f'objc_macro_package(named("std.metaprogramming.trace.{materialization_attempt}")), '
-            f'objc_macro_provenance(named("sha256:{unique_suffix}{index:02d}")))) {{\n'
+            f'objc_macro_provenance(named("sha256:{unique_suffix}{index:02d}")), '
+            f'objc_macro_cache_key(named("Trace:v1:{unique_suffix}:{materialization_attempt}:{index}")), '
+            'objc_macro_sandbox(named("deterministic")))) {\n'
             f"  return {17 + index};\n"
             "}\n"
             for index in range(materialization_attempt)

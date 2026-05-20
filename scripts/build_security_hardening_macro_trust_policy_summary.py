@@ -10,9 +10,22 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "macro_package_provenance_trust_policy.json"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_security_hardening.md"
-SEMA_PATH = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
-PROCESS_PATH = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_process.cpp"
-RUNTIME_ACCEPTANCE_PATH = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
+SEMA_PATHS = [
+    ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract_metaprogramming_surfaces.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes_integration_surface_function_builder_metadata_publication.inc",
+]
+PROCESS_PATHS = [
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_metaprogramming_macro_host_cache_artifact.cpp",
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_process_metaprogramming_contracts.h",
+]
+RUNTIME_ACCEPTANCE_PATHS = [
+    ROOT / "scripts" / "check_objc3c_runtime_acceptance.py",
+    ROOT / "scripts" / "objc3c_runtime_acceptance" / "domains" / "metaprogramming_macro_safety_assertions.py",
+    ROOT / "scripts" / "objc3c_runtime_acceptance" / "domains" / "metaprogramming_macro_safety_negative_cases.py",
+    ROOT / "scripts" / "objc3c_runtime_acceptance" / "domains" / "metaprogramming_semantic_surfaces.py",
+]
 OUT_DIR = ROOT / "tmp" / "reports" / "security-hardening" / "macro-trust-policy"
 JSON_OUT = OUT_DIR / "macro_trust_policy_summary.json"
 MD_OUT = OUT_DIR / "macro_trust_policy_summary.md"
@@ -32,9 +45,9 @@ def read_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    sema_text = SEMA_PATH.read_text(encoding="utf-8")
-    process_text = PROCESS_PATH.read_text(encoding="utf-8")
-    runtime_acceptance_text = RUNTIME_ACCEPTANCE_PATH.read_text(encoding="utf-8")
+    sema_text = "\n".join(path.read_text(encoding="utf-8") for path in SEMA_PATHS)
+    process_text = "\n".join(path.read_text(encoding="utf-8") for path in PROCESS_PATHS)
+    runtime_acceptance_text = "\n".join(path.read_text(encoding="utf-8") for path in RUNTIME_ACCEPTANCE_PATHS)
 
     checks = {
         "all_authoritative_code_paths_exist": all((ROOT / path).exists() for path in contract["authoritative_code_paths"]),
@@ -43,8 +56,10 @@ def main() -> int:
         "sema_mentions_required_attributes": all(attribute in sema_text for attribute in contract["required_attributes"]),
         "sema_mentions_required_enforcement": all(flag in sema_text for flag in contract["required_enforcement_flags"]),
         "process_mentions_host_process_cache_inputs": "metaprogramming macro host process/cache" in process_text,
-        "runtime_acceptance_mentions_macro_package_provenance_surface": "runtime_metaprogramming_package_provenance_source_surface" in runtime_acceptance_text,
-        "runtime_acceptance_mentions_macro_safety_surface": "macro_safety_surface" in runtime_acceptance_text,
+        "runtime_acceptance_mentions_macro_package_provenance_surface": "runtime_metaprogramming_package_provenance_source_surface" in runtime_acceptance_text
+        or "macro_package_provenance_positive.objc3" in runtime_acceptance_text,
+        "runtime_acceptance_mentions_macro_safety_surface": "macro_safety_surface" in runtime_acceptance_text
+        or "expect_macro_safety_surface" in runtime_acceptance_text,
         "runbook_mentions_macro_trust_semantics": "Current macro/package/provenance trust semantics:" in runbook_text,
         "runbook_mentions_non_claims": "remote package trust" in runbook_text or "remote provenance verification" in runbook_text,
     }

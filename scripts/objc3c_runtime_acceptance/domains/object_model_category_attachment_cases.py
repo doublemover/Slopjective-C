@@ -200,6 +200,7 @@ def _assert_protocol_category_compile_artifacts(manifest: dict[str, Any]) -> Non
 
 def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
     missing_category = payload.get("missing_category_target", {})
+    conflicting_category = payload.get("conflicting_category_owner", {})
     expect(
         payload.get("registration_status") == -4
         and payload.get("last_registration_status") == -4,
@@ -239,6 +240,27 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
         missing_category.get("last_malformed_class_graph_reason")
         == "category attachment target class is missing for MissingOwner(Tracing)",
         "expected stable fail-closed diagnostic reason for category target availability",
+    )
+    expect(
+        conflicting_category.get("registration_status") == -4
+        and conflicting_category.get("last_registration_status") == -4,
+        "expected conflicting category owner metadata to fail image registration",
+    )
+    expect(
+        conflicting_category.get("registered_image_count") == 0
+        and conflicting_category.get("realized_class_count") == 0
+        and conflicting_category.get("class_found") == 0,
+        "expected conflicting category owner metadata to publish no image or class graph",
+    )
+    expect(
+        conflicting_category.get("malformed_class_metadata_rejection_count", 0)
+        >= 1,
+        "expected conflicting category owner metadata to increment malformed metadata rejection count",
+    )
+    expect(
+        conflicting_category.get("last_malformed_class_graph_reason")
+        == "conflicting category implementation owner for ConflictOwner(Tracing)",
+        "expected stable fail-closed diagnostic reason for category owner conflicts",
     )
 
 
@@ -487,6 +509,12 @@ def check_runtime_object_foundation_protocol_category_case(
             ]["registration_status"],
             "missing_category_target_reason": invalid_metadata_payload[
                 "missing_category_target"
+            ]["last_malformed_class_graph_reason"],
+            "conflicting_category_owner_registration_status": invalid_metadata_payload[
+                "conflicting_category_owner"
+            ]["registration_status"],
+            "conflicting_category_owner_reason": invalid_metadata_payload[
+                "conflicting_category_owner"
             ]["last_malformed_class_graph_reason"],
         },
     )

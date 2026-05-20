@@ -276,6 +276,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_local_reset.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
+  stdlib/core_runtime.cpp
+  stdlib/core_runtime_contract.h
 )
 add_subdirectory(classes)
 add_subdirectory(reflection)

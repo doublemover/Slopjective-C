@@ -282,6 +282,94 @@ std::string RuntimeCategoryQualifiedName(const EmittedCategoryRecord &record) {
          RuntimeProtocolCString(record.category_name) + ")";
 }
 
+bool RuntimeCategoryRecordKindIsSupported(const char *record_kind) {
+  if (!RuntimeNonEmptyCString(record_kind)) {
+    return false;
+  }
+  const std::string kind = record_kind;
+  return kind == "interface" || kind == "implementation";
+}
+
+bool RuntimeCategoryRecordIdentityIsSupported(
+    const EmittedCategoryRecord &record,
+    std::string &diagnostic_reason) {
+  if (!RuntimeNonEmptyCString(record.class_name) ||
+      !RuntimeNonEmptyCString(record.category_name) ||
+      !RuntimeNonEmptyCString(record.record_kind) ||
+      !RuntimeNonEmptyCString(record.owner_identity) ||
+      !RuntimeNonEmptyCString(record.class_owner_identity) ||
+      !RuntimeNonEmptyCString(record.category_owner_identity)) {
+    diagnostic_reason = "category descriptor is missing identity";
+    return false;
+  }
+  if (!RuntimeCategoryRecordKindIsSupported(record.record_kind)) {
+    diagnostic_reason = "unknown category record kind " +
+                        std::string(record.record_kind) + " for " +
+                        RuntimeCategoryQualifiedName(record);
+    return false;
+  }
+  return true;
+}
+
+bool AddRuntimeCategoryRecordConflictEntries(
+    const objc3_runtime_pointer_aggregate *category_descriptor_root,
+    std::uint64_t category_descriptor_count,
+    std::unordered_map<std::string, std::string> &category_owner_by_key,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0; index < category_descriptor_count; ++index) {
+    const auto *record = static_cast<const EmittedCategoryRecord *>(
+        RuntimeAggregateEntry(category_descriptor_root, index));
+    if (record == nullptr) {
+      diagnostic_reason = "category descriptor root contains a null category";
+      return false;
+    }
+    if (!RuntimeCategoryRecordIdentityIsSupported(*record,
+                                                  diagnostic_reason)) {
+      return false;
+    }
+    const std::string category_key =
+        std::string(record->class_name) + "\n" +
+        std::string(record->category_name) + "\n" +
+        std::string(record->record_kind);
+    const auto inserted =
+        category_owner_by_key.emplace(category_key, record->owner_identity);
+    if (!inserted.second &&
+        inserted.first->second != std::string(record->owner_identity)) {
+      diagnostic_reason = "conflicting category " +
+                          std::string(record->record_kind) +
+                          " owner for " +
+                          RuntimeCategoryQualifiedName(*record);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool RuntimeCategoryRecordConflictsAreSupported(
+    const RuntimeState &state,
+    const objc3_runtime_registration_table *registration_table,
+    std::string &diagnostic_reason) {
+  std::unordered_map<std::string, std::string> category_owner_by_key;
+  category_owner_by_key.reserve(
+      static_cast<std::size_t>(
+          registration_table->image_descriptor->category_descriptor_count) +
+      state.registered_image_metadata_by_identity_key.size());
+  for (const RegisteredImageMetadata *record : OrderedProtocolImages(state)) {
+    if (record == nullptr) {
+      continue;
+    }
+    if (!AddRuntimeCategoryRecordConflictEntries(
+            record->category_descriptor_root, record->category_descriptor_count,
+            category_owner_by_key, diagnostic_reason)) {
+      return false;
+    }
+  }
+  return AddRuntimeCategoryRecordConflictEntries(
+      registration_table->category_descriptor_root,
+      registration_table->image_descriptor->category_descriptor_count,
+      category_owner_by_key, diagnostic_reason);
+}
+
 bool RuntimeCategoryTargetsAreSupported(
     const RuntimeState &state,
     const objc3_runtime_registration_table *registration_table,
@@ -598,6 +686,8 @@ bool RuntimeProtocolCategoryMetadataTableIsSupported(
 
   return RuntimeRegisteredProtocolMetadataIsSupported(
              registration_table, known_protocol_records, diagnostic_reason) &&
+         RuntimeCategoryRecordConflictsAreSupported(
+             state, registration_table, diagnostic_reason) &&
          RuntimeCategoryTargetsAreSupported(state, registration_table,
                                             diagnostic_reason) &&
          RuntimeClassProtocolReferencesAreSupported(

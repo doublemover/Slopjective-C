@@ -8,13 +8,18 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
-from objc3c_tooling.subprocesses import command_text, python_script_command
+from objc3c_tooling.subprocesses import python_script_command
+from package_ecosystem_contracts import PACKAGE_LOADER_INTEROP_TAMPER_CODE
 
 
-ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "package_authoring_workflow_contract.json"
 LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
 LOCK_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
@@ -59,9 +64,8 @@ def main() -> int:
     provenance = lock.get("provenance", [])
     digest_inputs = lock.get("digest_inputs", [])
     replay = lock.get("replay", {})
-    authoring_check_command = command_text(
-        python_script_command("scripts/check_objc3c_package_authoring_workflow.py")
-    )
+    interop_loader_metadata = lock.get("interop_loader_metadata", {})
+    authoring_check_command = "npm run objc3c -- validate-package-authoring"
     package_bridge = str(contract["package_bridge"])
     package_bridge_exists = package_bridge in package_scripts
     required_actions = [str(name) for name in contract["required_actions"]]
@@ -75,6 +79,18 @@ def main() -> int:
     expect(isinstance(packages, list) and packages == sorted(packages, key=lambda entry: entry["package_id"]), "lock packages are not sorted", failures)
     expect(isinstance(dependencies, list) and dependencies == sorted(dependencies, key=lambda entry: (entry["from"], entry["to"])), "lock dependencies are not sorted", failures)
     expect(isinstance(replay, dict) and authoring_check_command in replay.get("commands", []), "lock replay commands missing authoring check", failures)
+    expect(
+        isinstance(interop_loader_metadata, dict)
+        and interop_loader_metadata.get("package_count") == lock_summary.get("interop_loader_metadata_package_count"),
+        "lock interop loader metadata count drifted",
+        failures,
+    )
+    expect(
+        isinstance(interop_loader_metadata, dict)
+        and interop_loader_metadata.get("tamper_rejection_diagnostic") == PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        "lock interop loader tamper diagnostic drifted",
+        failures,
+    )
     expect(package_bridge_exists, f"package authoring workflow missing package bridge {package_bridge}", failures)
     expect(not missing_actions, "package authoring workflow missing required actions", failures)
 
@@ -87,6 +103,14 @@ def main() -> int:
         "package_count": len(packages) if isinstance(packages, list) else 0,
         "dependency_count": len(dependencies) if isinstance(dependencies, list) else 0,
         "provenance_count": len(provenance) if isinstance(provenance, list) else 0,
+        "interop_loader_metadata_package_count": (
+            interop_loader_metadata.get("package_count") if isinstance(interop_loader_metadata, dict) else 0
+        ),
+        "tamper_rejection_diagnostic": (
+            interop_loader_metadata.get("tamper_rejection_diagnostic")
+            if isinstance(interop_loader_metadata, dict)
+            else None
+        ),
         "digest_input_count": len(digest_inputs) if isinstance(digest_inputs, list) else 0,
         "package_bridge": package_bridge,
         "package_bridge_count": 1 if package_bridge_exists else 0,

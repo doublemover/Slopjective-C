@@ -17,6 +17,8 @@ def expect_macro_safety_surface(surface: dict[str, Any]) -> None:
         surface.get("macro_marker_sites") == 1
         and surface.get("macro_package_sites") == 1
         and surface.get("macro_provenance_sites") == 1
+        and surface.get("macro_cache_key_sites") == 1
+        and surface.get("macro_sandbox_policy_sites") == 1
         and surface.get("expansion_visible_macro_sites") == 1,
         "expected macro host process provider fixture to preserve macro metadata counts",
     )
@@ -26,6 +28,10 @@ def expect_macro_safety_surface(surface: dict[str, Any]) -> None:
         and surface.get("orphan_macro_metadata_sites") == 0
         and surface.get("invalid_package_sites") == 0
         and surface.get("invalid_provenance_sites") == 0
+        and surface.get("missing_cache_key_sites") == 0
+        and surface.get("invalid_cache_key_sites") == 0
+        and surface.get("missing_sandbox_policy_sites") == 0
+        and surface.get("invalid_sandbox_policy_sites") == 0
         and surface.get("nondeterministic_callable_sites") == 0
         and surface.get("unsupported_callable_topology_sites") == 0,
         "expected macro host process provider fixture to preserve fail-closed macro safety counts",
@@ -34,6 +40,8 @@ def expect_macro_safety_surface(surface: dict[str, Any]) -> None:
         surface.get("metadata_completeness_enforced") is True
         and surface.get("sandbox_namespace_enforced") is True
         and surface.get("provenance_determinism_enforced") is True
+        and surface.get("cache_key_invalidation_enforced") is True
+        and surface.get("sandbox_policy_deny_by_default_enforced") is True
         and surface.get("callable_determinism_enforced") is True
         and surface.get("deterministic") is True
         and surface.get("ready_for_lowering_and_runtime") is True,
@@ -65,6 +73,11 @@ def expect_macro_host_cache_surface(surface: dict[str, Any]) -> None:
         and isinstance(surface.get("cache_hit"), bool),
         "expected macro host process provider fixture to preserve deterministic host-cache readiness",
     )
+    expect(
+        surface.get("cache_model")
+        == "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-explicit-macro-cache-keys-and-policy-version-and-reused-on-subsequent-runs",
+        "expected macro host process provider fixture to publish the explicit cache key model",
+    )
 
 
 def expect_macro_runtime_import_surface(surface: dict[str, Any]) -> None:
@@ -78,4 +91,13 @@ def expect_macro_runtime_import_surface(surface: dict[str, Any]) -> None:
         and surface.get("separate_compilation_ready") is True
         and surface.get("deterministic") is True,
         "expected runtime import surface to preserve host-cache compatibility readiness",
+    )
+    expect(
+        surface.get("invalidation_model")
+        == "metaprogramming-replay-key-explicit-macro-cache-key-or-sandbox-policy-drift-invalidates-the-entry-while-corrupt-or-incomplete-cache-artifacts-fail-closed"
+        and surface.get("sandbox_policy_model")
+        == "macro-host-materialization-is-deny-by-default-and-only-admits-pure-free-functions-with-objc_macro_sandbox-named-deterministic"
+        and surface.get("diagnostics_model")
+        == "stable-O3S331-and-O3S332-diagnostics-gate-missing-or-invalid-macro-cache-key-and-sandbox-policy-metadata",
+        "expected runtime import surface to preserve cache invalidation, sandbox, and diagnostic models",
     )

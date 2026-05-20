@@ -6,15 +6,21 @@
   "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+    "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_integration_surface_function_builder_metadata_publication.inc",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
-    "native/objc3c/src/io/objc3_process.cpp",
+    "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+    "native/objc3c/src/io/objc3_process_metaprogramming_contracts.h",
     "scripts/check_objc3c_runtime_acceptance.py"
   ],
   "required_attributes": [
     "objc_macro",
     "objc_macro_package",
-    "objc_macro_provenance"
+    "objc_macro_provenance",
+    "objc_macro_cache_key",
+    "objc_macro_sandbox"
   ],
   "provenance_owner_contract": {
     "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
@@ -31,6 +37,8 @@
     "metadata_completeness_enforced",
     "sandbox_namespace_enforced",
     "provenance_determinism_enforced",
+    "cache_key_invalidation_enforced",
+    "sandbox_policy_deny_by_default_enforced",
     "callable_determinism_enforced",
     "ready_for_lowering_and_runtime"
   ],
@@ -46,6 +54,8 @@
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3"
   ],
   "non_claims": [

@@ -69,4 +69,16 @@ def validate_module_artifacts(
         for export_name in manifest_exports:
             if export_name not in source_text:
                 return f"module source missing exported symbol spelling {export_name} for {module_surface.module}"
+        runtime_abi = manifest_payload.get("runtime_abi", [])
+        if runtime_abi:
+            if not isinstance(runtime_abi, list) or not all(
+                isinstance(value, str) and value for value in runtime_abi
+            ):
+                return f"module manifest runtime_abi malformed for {module_surface.module}"
+            for runtime_symbol in runtime_abi:
+                if f"extern fn {runtime_symbol}" not in source_text:
+                    return (
+                        f"module source missing runtime ABI extern {runtime_symbol} "
+                        f"for {module_surface.module}"
+                    )
     return None

@@ -9,7 +9,13 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import command_text, python_script_command
+from package_ecosystem_contracts import (
+    load_package_loader_interop_metadata,
+    normalize_package_loader_interop_metadata,
+    package_loader_metadata_by_package,
+    package_loader_metadata_digest_inputs,
+    package_loader_metadata_summary,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,12 +41,14 @@ def provenance_id(package_id: str) -> str:
     return "prov-" + package_id.replace(":", "-").replace(".", "-")
 
 
+def public_workflow_command(action: str) -> str:
+    return f"npm run objc3c -- {action}"
+
+
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
-    build_lock_command = command_text(python_script_command("scripts/build_objc3c_package_lock.py"))
-    authoring_check_command = command_text(
-        python_script_command("scripts/check_objc3c_package_authoring_workflow.py")
-    )
+    build_lock_command = public_workflow_command("build-package-lock")
+    authoring_check_command = public_workflow_command("validate-package-authoring")
     sources = contract["package_sources"]
     module_inventory = load_json(ROOT / str(sources["stdlib_module_inventory"]))
     package_surface = load_json(ROOT / str(sources["stdlib_package_surface"]))
@@ -51,7 +59,8 @@ def main() -> int:
     if not isinstance(modules, list) or not isinstance(examples, list):
         raise RuntimeError("package source inventories drifted from list shapes")
 
-    packages: list[dict[str, str]] = []
+    interop_metadata = load_package_loader_interop_metadata(ROOT)
+    packages: list[dict[str, Any]] = []
     dependencies: list[dict[str, str]] = []
     provenance: list[dict[str, str]] = []
     digest_inputs: list[str] = [
@@ -110,6 +119,18 @@ def main() -> int:
                 }
             )
 
+    interop_by_package = package_loader_metadata_by_package(
+        interop_metadata,
+        root=ROOT,
+        package_ids=(entry["package_id"] for entry in packages),
+    )
+    for package in packages:
+        metadata_entry = interop_by_package.get(str(package["package_id"]))
+        if metadata_entry is None:
+            continue
+        package["interop_loader_metadata"] = normalize_package_loader_interop_metadata(metadata_entry)
+        digest_inputs.extend(package_loader_metadata_digest_inputs(metadata_entry))
+
     packages = sorted(packages, key=lambda entry: entry["package_id"])
     dependencies = sorted(dependencies, key=lambda entry: (entry["from"], entry["to"]))
     provenance = sorted(provenance, key=lambda entry: entry["provenance_id"])
@@ -124,6 +145,7 @@ def main() -> int:
         "packages": packages,
         "dependencies": dependencies,
         "provenance": provenance,
+        "interop_loader_metadata": package_loader_metadata_summary(interop_metadata, interop_by_package),
         "digest_inputs": digest_inputs,
         "replay": {
             "commands": [
@@ -144,6 +166,9 @@ def main() -> int:
         "package_count": len(packages),
         "dependency_count": len(dependencies),
         "provenance_count": len(provenance),
+        "interop_loader_metadata_package_count": len(interop_by_package),
+        "interop_loader_metadata_source": lock["interop_loader_metadata"]["source"],
+        "tamper_rejection_diagnostic": lock["interop_loader_metadata"]["tamper_rejection_diagnostic"],
         "digest_input_count": len(digest_inputs),
         "source_package_surface_contract_id": package_surface.get("contract_id"),
         "showcase_portfolio_contract_id": showcase_portfolio.get("contract_id"),

@@ -19,6 +19,8 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     const bool has_macro_marker = fn.objc_macro_declared;
     const bool has_macro_package = fn.objc_macro_package_declared;
     const bool has_macro_provenance = fn.objc_macro_provenance_declared;
+    const bool has_macro_cache_key = fn.objc_macro_cache_key_declared;
+    const bool has_macro_sandbox_policy = fn.objc_macro_sandbox_declared;
     if (has_macro_marker) {
       ++summary.macro_marker_sites;
     }
@@ -28,14 +30,25 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     if (has_macro_provenance) {
       ++summary.macro_provenance_sites;
     }
-    if (has_macro_marker && has_macro_package && has_macro_provenance) {
+    if (has_macro_cache_key) {
+      ++summary.macro_cache_key_sites;
+    }
+    if (has_macro_sandbox_policy) {
+      ++summary.macro_sandbox_policy_sites;
+    }
+    if (has_macro_marker && has_macro_package && has_macro_provenance &&
+        has_macro_cache_key && has_macro_sandbox_policy) {
       ++summary.expansion_visible_macro_sites;
     }
 
-    if (!has_macro_marker && !(has_macro_package || has_macro_provenance)) {
+    if (!has_macro_marker &&
+        !(has_macro_package || has_macro_provenance || has_macro_cache_key ||
+          has_macro_sandbox_policy)) {
       return;
     }
-    if (!has_macro_marker && (has_macro_package || has_macro_provenance)) {
+    if (!has_macro_marker &&
+        (has_macro_package || has_macro_provenance || has_macro_cache_key ||
+         has_macro_sandbox_policy)) {
       ++summary.orphan_macro_metadata_sites;
       return;
     }
@@ -49,6 +62,22 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     }
     if (!IsSupportedMetaprogrammingMacroProvenanceToken(fn.objc_macro_provenance_name)) {
       ++summary.invalid_provenance_sites;
+      return;
+    }
+    if (!has_macro_cache_key) {
+      ++summary.missing_cache_key_sites;
+      return;
+    }
+    if (!IsSupportedMetaprogrammingMacroCacheKeyToken(fn.objc_macro_cache_key_name)) {
+      ++summary.invalid_cache_key_sites;
+      return;
+    }
+    if (!has_macro_sandbox_policy) {
+      ++summary.missing_sandbox_policy_sites;
+      return;
+    }
+    if (!IsSupportedMetaprogrammingMacroSandboxPolicy(fn.objc_macro_sandbox_name)) {
+      ++summary.invalid_sandbox_policy_sites;
       return;
     }
     if (!fn.is_pure || fn.is_prototype || fn.async_declared ||
@@ -69,12 +98,22 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     if (method.objc_macro_provenance_declared) {
       ++summary.macro_provenance_sites;
     }
+    if (method.objc_macro_cache_key_declared) {
+      ++summary.macro_cache_key_sites;
+    }
+    if (method.objc_macro_sandbox_declared) {
+      ++summary.macro_sandbox_policy_sites;
+    }
     if (method.objc_macro_declared && method.objc_macro_package_declared &&
-        method.objc_macro_provenance_declared) {
+        method.objc_macro_provenance_declared &&
+        method.objc_macro_cache_key_declared &&
+        method.objc_macro_sandbox_declared) {
       ++summary.expansion_visible_macro_sites;
     }
     if (method.objc_macro_declared || method.objc_macro_package_declared ||
-        method.objc_macro_provenance_declared) {
+        method.objc_macro_provenance_declared ||
+        method.objc_macro_cache_key_declared ||
+        method.objc_macro_sandbox_declared) {
       ++summary.unsupported_callable_topology_sites;
     }
   };
@@ -104,13 +143,20 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
       summary.incomplete_macro_metadata_sites ==
           count_diagnostic("O3S320", "requires both objc_macro_package and objc_macro_provenance") &&
       summary.orphan_macro_metadata_sites ==
-          count_diagnostic("O3S321", "macro package/provenance markers require objc_macro");
+          count_diagnostic("O3S321", "macro package/provenance/cache/sandbox markers require objc_macro");
   summary.sandbox_namespace_enforced =
       summary.invalid_package_sites ==
       count_diagnostic("O3S322", "macro sandbox rejected package");
   summary.provenance_determinism_enforced =
       summary.invalid_provenance_sites ==
       count_diagnostic("O3S323", "macro provenance must be a lowercase sha256 digest");
+  summary.cache_key_invalidation_enforced =
+      summary.missing_cache_key_sites + summary.invalid_cache_key_sites ==
+      count_diagnostic("O3S331", "objc_macro_cache_key");
+  summary.sandbox_policy_deny_by_default_enforced =
+      summary.missing_sandbox_policy_sites +
+              summary.invalid_sandbox_policy_sites ==
+      count_diagnostic("O3S332", "objc_macro_sandbox");
   summary.callable_determinism_enforced =
       summary.nondeterministic_callable_sites ==
           count_diagnostic("O3S324", "must be pure, body-backed, non-async, and non-throws") &&
@@ -122,6 +168,8 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
       summary.metadata_completeness_enforced &&
       summary.sandbox_namespace_enforced &&
       summary.provenance_determinism_enforced &&
+      summary.cache_key_invalidation_enforced &&
+      summary.sandbox_policy_deny_by_default_enforced &&
       summary.callable_determinism_enforced &&
       summary.safe_macro_callable_sites <= summary.expansion_visible_macro_sites;
   summary.ready_for_lowering_and_runtime = summary.deterministic;
@@ -135,12 +183,18 @@ BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
       << ";dependency=" << dependency_summary.contract_id
       << ";macro-sites=" << summary.macro_marker_sites << ":"
       << summary.macro_package_sites << ":" << summary.macro_provenance_sites
-      << ":" << summary.expansion_visible_macro_sites
+      << ":" << summary.macro_cache_key_sites << ":"
+      << summary.macro_sandbox_policy_sites << ":"
+      << summary.expansion_visible_macro_sites
       << ";safe=" << summary.safe_macro_callable_sites
       << ";incomplete=" << summary.incomplete_macro_metadata_sites
       << ";orphan=" << summary.orphan_macro_metadata_sites
       << ";invalid-package=" << summary.invalid_package_sites
       << ";invalid-provenance=" << summary.invalid_provenance_sites
+      << ";missing-cache-key=" << summary.missing_cache_key_sites
+      << ";invalid-cache-key=" << summary.invalid_cache_key_sites
+      << ";missing-sandbox-policy=" << summary.missing_sandbox_policy_sites
+      << ";invalid-sandbox-policy=" << summary.invalid_sandbox_policy_sites
       << ";nondeterministic=" << summary.nondeterministic_callable_sites
       << ";unsupported-topology=" << summary.unsupported_callable_topology_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");

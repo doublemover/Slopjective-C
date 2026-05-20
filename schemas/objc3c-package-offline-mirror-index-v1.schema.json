@@ -33,6 +33,29 @@
     "network_policy": {
       "const": "no-network-during-validation"
     },
+    "interop_loader_metadata": {
+      "$ref": "#/$defs/interopLoaderSummary"
+    },
+    "integrity_policy": {
+      "type": "object",
+      "required": [
+        "metadata_digest_required",
+        "tamper_rejection_diagnostic",
+        "offline_restore_failure_mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "metadata_digest_required": {
+          "const": true
+        },
+        "tamper_rejection_diagnostic": {
+          "const": "O3PKG8054"
+        },
+        "offline_restore_failure_mode": {
+          "const": "reject-package-metadata-digest-mismatch"
+        }
+      }
+    },
     "replay": {
       "type": "object",
       "required": [
@@ -72,6 +95,149 @@
         "cache_path": {
           "type": "string",
           "minLength": 1
+        },
+        "interop_loader_metadata": {
+          "$ref": "#/$defs/interopLoaderPackageMetadata"
+        }
+      }
+    },
+    "interopLoaderSummary": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source",
+        "package_count",
+        "package_ids",
+        "tamper_rejection_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "package_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "tamper_rejection_diagnostic": {
+          "const": "O3PKG8054"
+        }
+      }
+    },
+    "interopLoaderPackageMetadata": {
+      "type": "object",
+      "required": [
+        "metadata_id",
+        "source",
+        "contract_id",
+        "digest",
+        "header_imports",
+        "header_exports",
+        "abi_alignment",
+        "foreign_types",
+        "mixed_images",
+        "package_execution",
+        "positive_fixtures",
+        "negative_diagnostics",
+        "tamper_rejection"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "metadata_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "header_imports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "header_exports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "abi_alignment": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "foreign_types": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "mixed_images": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "package_execution": {
+          "type": "object"
+        },
+        "positive_fixtures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "negative_diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "tamper_rejection": {
+          "type": "object",
+          "required": [
+            "diagnostic_code",
+            "source_range",
+            "message"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "diagnostic_code": {
+              "const": "O3PKG8054"
+            },
+            "source_range": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     }

@@ -3,6 +3,7 @@
   "surface_kind": "package-ecosystem-package-authoring-workflow",
   "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
   "artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+  "mixed_image_interop_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
   "lock_schema": "schemas/objc3c-package-lock-v1.schema.json",
   "package_sources": {
     "stdlib_module_inventory": "stdlib/module_inventory.json",
@@ -28,8 +29,9 @@
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
       "package source lacks provenance entry",
-      "authoring lock graph missing package edge",
-      "public workflow replay failure"
+    "authoring lock graph missing package edge",
+    "mixed-image interop metadata references an unlocked package id",
+    "public workflow replay failure"
     ]
   },
   "required_actions": [
@@ -44,6 +46,7 @@
     "showcase examples become local app package ids with explicit stdlib dependencies",
     "dependencies are sorted deterministically by package edge",
     "each package references a provenance entry with source path and replay command",
+    "packages with checked-in C/ObjC interop loader metadata carry stable metadata digests in the generated lock",
     "generated locks are replayable through objc3c workflow actions"
   ]
 }

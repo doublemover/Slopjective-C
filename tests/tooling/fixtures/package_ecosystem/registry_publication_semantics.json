@@ -5,6 +5,7 @@
   "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
   "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
   "local_workspace_mirror_semantics": "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+  "mixed_image_interop_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
   "publication_inputs": [
     "schemas/objc3c-release-manifest-v1.schema.json",
     "schemas/objc3c-update-manifest-v1.schema.json",
@@ -25,7 +26,7 @@
     {
       "layer_id": "offline-mirror",
       "support_state": "supported-generated-artifact",
-      "source_of_truth": "lock-derived mirror index",
+      "source_of_truth": "lock-derived mirror index with digest-checked interop loader metadata",
       "publication_path": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
       "claim_boundary": "air-gapped local package restore evidence only"
     },
@@ -47,6 +48,7 @@
   "publication_rules": [
     "registry metadata must be generated from the lock and mirror evidence",
     "publication metadata may not introduce package identities absent from the lock graph",
+    "interop loader metadata must fail closed when the mirror digest differs from the generated lock",
     "hosted-registry behavior must fail closed when claimed without checked-in source authority",
     "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
     "offline mirror publication must remain usable without network access"
@@ -89,6 +91,7 @@
     "blocking_conditions": [
       "hosted registry claimed as supported",
       "publication metadata contains an unlocked package identity",
+      "offline mirror metadata digest mismatch did not fail closed",
       "offline mirror validation requires network access",
       "registry index is hand-authored instead of generated",
       "release/update metadata drifts from package ecosystem evidence",
@@ -107,6 +110,7 @@
   "release_blocking_conditions": [
     "hosted registry claimed as supported",
     "publication metadata contains an unlocked package identity",
+    "offline mirror metadata digest mismatch did not fail closed",
     "offline mirror validation requires network access",
     "registry index is hand-authored instead of generated",
     "release/update metadata drifts from package ecosystem evidence"

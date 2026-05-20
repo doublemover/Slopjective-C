@@ -64,6 +64,12 @@ struct Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
       kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel;
   std::string cache_model =
       kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel;
+  std::string invalidation_model =
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationInvalidationModel;
+  std::string sandbox_policy_model =
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSandboxPolicyModel;
+  std::string diagnostics_model =
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationDiagnosticsModel;
   std::string fail_closed_model =
       kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel;
   std::string replay_key;

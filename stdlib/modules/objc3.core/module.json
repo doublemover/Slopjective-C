@@ -22,6 +22,17 @@
     "array-slice",
     "map-entry"
   ],
+  "runtime_abi": [
+    "objc3_runtime_stdlib_core_language_revision_i32",
+    "objc3_runtime_stdlib_core_profile_revision_i32",
+    "objc3_runtime_stdlib_core_has_capability_i32",
+    "objc3_runtime_stdlib_core_option_has_value_i32",
+    "objc3_runtime_stdlib_core_option_unwrap_or_i32",
+    "objc3_runtime_stdlib_core_count_i32",
+    "objc3_runtime_stdlib_core_prefix_count_i32",
+    "objc3_runtime_stdlib_core_map_entry_present_i32",
+    "objc3_runtime_stdlib_core_map_entry_value_or_i32"
+  ],
   "exports": [
     "Objc3CoreLanguageRevision",
     "Objc3CoreProfileRevision",

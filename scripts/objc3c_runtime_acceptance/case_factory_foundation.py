@@ -7,6 +7,9 @@ from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
 from objc3c_runtime_acceptance.domains.probe_helpers import (
     check_runtime_probe_helper_support_case,
 )
+from objc3c_runtime_acceptance.domains.stdlib_runtime_cases import (
+    check_stdlib_core_runtime_probe_case,
+)
 
 
 def build_core_case_factories(context: CaseFactoryContext) -> LabeledCaseFactories:
@@ -42,6 +45,10 @@ def build_core_case_factories(context: CaseFactoryContext) -> LabeledCaseFactori
         (
             "runtime-probe-helper-support",
             lambda: check_runtime_probe_helper_support_case(clangxx, run_dir),
+        ),
+        (
+            "stdlib-core-runtime-probe",
+            lambda: check_stdlib_core_runtime_probe_case(clangxx, run_dir),
         ),
         (
             "compile-backend-parity",
