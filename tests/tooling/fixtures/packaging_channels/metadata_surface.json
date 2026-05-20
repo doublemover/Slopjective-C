@@ -19,7 +19,7 @@
     "contract_id",
     "install_root",
     "install_home",
-    "bootstrap_script",
+    "bootstrap_entrypoint",
     "installed_at_utc"
   ]
 }

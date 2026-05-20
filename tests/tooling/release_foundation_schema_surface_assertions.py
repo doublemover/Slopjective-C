@@ -32,6 +32,23 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
         "https://objc3c.dev/schemas/objc3c-release-sbom-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-release-attestation-v1.schema.json",
     ]
+    assert summary["abi_manifest_schemas"] == {
+        "objc3-abi-2025Q4": "schemas/objc3-abi-2025Q4.schema.json",
+        "objc3-runtime-2025Q4-manifest": (
+            "schemas/objc3-runtime-2025Q4.manifest.schema.json"
+        ),
+    }
+    assert summary["package_attestation_schemas"] == {
+        "objc3c-package-channels-manifest-v1": (
+            "schemas/objc3c-package-channels-manifest-v1.schema.json"
+        ),
+        "objc3c-package-install-receipt-v1": (
+            "schemas/objc3c-package-install-receipt-v1.schema.json"
+        ),
+        "objc3c-update-manifest-v1": (
+            "schemas/objc3c-update-manifest-v1.schema.json"
+        ),
+    }
 
 
 def assert_fail_closed_without_summary(checker: ModuleType) -> None:
