@@ -1,0 +1,11 @@
+module m267_throwing_call_requires_try_negative;
+
+extern fn risky(value: i32) throws -> i32;
+
+fn recover() throws -> i32 {
+  return risky(1);
+}
+
+fn main() -> i32 {
+  return 0;
+}

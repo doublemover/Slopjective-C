@@ -33,6 +33,18 @@ static bool StatementReturnsOrFallsThroughToNextCase(const Stmt *stmt, const Sta
       if (stmt->block_stmt == nullptr) {
         return false;
       }
+      if (stmt->block_stmt->is_do_catch_scope) {
+        if (!BlockReturnsOrFallsThroughToNextCase(stmt->block_stmt->body,
+                                                  bindings)) {
+          return false;
+        }
+        for (const auto &clause : stmt->block_stmt->catch_clauses) {
+          if (!BlockReturnsOrFallsThroughToNextCase(clause.body, bindings)) {
+            return false;
+          }
+        }
+        return true;
+      }
       return BlockReturnsOrFallsThroughToNextCase(stmt->block_stmt->body, bindings);
     case Stmt::Kind::Defer:
       return true;
@@ -153,6 +165,17 @@ bool StatementAlwaysReturns(const Stmt *stmt, const StaticScalarBindings *bindin
     return true;
   }
   if (stmt->kind == Stmt::Kind::Block && stmt->block_stmt != nullptr) {
+    if (stmt->block_stmt->is_do_catch_scope) {
+      if (!BlockAlwaysReturns(stmt->block_stmt->body, bindings)) {
+        return false;
+      }
+      for (const auto &clause : stmt->block_stmt->catch_clauses) {
+        if (!BlockAlwaysReturns(clause.body, bindings)) {
+          return false;
+        }
+      }
+      return true;
+    }
     return BlockAlwaysReturns(stmt->block_stmt->body, bindings);
   }
   if (stmt->kind == Stmt::Kind::Defer) {

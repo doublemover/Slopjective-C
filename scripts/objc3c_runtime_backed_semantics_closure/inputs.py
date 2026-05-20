@@ -28,6 +28,14 @@ NEGATIVE_FIXTURES = {
         "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "throw_requires_throws_or_catch_negative.objc3",
         "codes": ["O3S274"],
     },
+    "rethrow_without_throws_or_local_handler": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "rethrow_requires_throws_or_local_handler_negative.objc3",
+        "codes": ["O3S284"],
+    },
+    "throwing_call_without_try": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "throwing_call_requires_try_negative.objc3",
+        "codes": ["O3S341"],
+    },
     "task_group_without_scope": {
         "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "task_group_without_scope_rejected.objc3",
         "codes": ["O3S228"],

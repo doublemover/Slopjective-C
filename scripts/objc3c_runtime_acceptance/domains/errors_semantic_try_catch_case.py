@@ -25,9 +25,10 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         / "native"
         / "try_do_catch_semantics_positive.objc3"
     )
-    _, _, manifest_path = compile_live_error_runtime_fixture_outputs(
+    _, try_ll_path, manifest_path = compile_live_error_runtime_fixture_outputs(
         positive_fixture, case_dir / "positive"
     )
+    try_ll_text = try_ll_path.read_text(encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     surface = (
         manifest.get("frontend", {})
@@ -69,10 +70,48 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         and surface.get("throwing_callable_try_sites") == 2
         and surface.get("bridged_callable_try_sites") == 1
         and surface.get("caller_propagation_sites") == 1
-        and surface.get("local_handler_sites") == 0
+        and surface.get("local_handler_sites") == 1
         and surface.get("rethrow_sites") == 0
         and surface.get("contract_violation_sites") == 0,
         "expected executable try/do/catch semantics to preserve the positive semantic counts",
+    )
+    expect(
+        "objc3_runtime_load_thrown_error_i32(ptr %try.error.addr" in try_ll_text,
+        "expected direct try failure checks to use the runtime thrown-error load helper",
+    )
+
+    local_handler_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "throw_local_handler_positive.objc3"
+    )
+    _, _, local_handler_manifest_path = compile_live_error_runtime_fixture_outputs(
+        local_handler_fixture, case_dir / "local-handler-positive"
+    )
+    local_handler_manifest = json.loads(
+        local_handler_manifest_path.read_text(encoding="utf-8")
+    )
+    local_handler_surface = (
+        local_handler_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_error_handling_try_do_catch_semantics", {})
+    )
+    expect(
+        isinstance(local_handler_surface, dict),
+        "expected local throw handler fixture to publish objc_error_handling_try_do_catch_semantics",
+    )
+    expect(
+        local_handler_surface.get("throw_statement_sites") == 1
+        and local_handler_surface.get("do_catch_sites") == 1
+        and local_handler_surface.get("catch_all_sites") == 1
+        and local_handler_surface.get("local_handler_sites") == 1
+        and local_handler_surface.get("rethrow_sites") == 0
+        and local_handler_surface.get("contract_violation_sites") == 0,
+        "expected local throw handler fixture to accept do/catch-contained throws in non-throws callables",
     )
 
     negatives = [
@@ -87,9 +126,24 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
             ["O3S271"],
         ),
         (
+            "throwing_call_requires_try_negative.objc3",
+            ["throwing function 'risky' must be called with try, try?, or try!"],
+            ["O3S341"],
+        ),
+        (
             "throw_requires_throws_or_catch_negative.objc3",
-            ["throw statements require a throws function or a catch body"],
+            ["throw statements require a throws function or an enclosing do/catch handler"],
             ["O3S274"],
+        ),
+        (
+            "rethrow_requires_throws_or_local_handler_negative.objc3",
+            ["rethrow from catch requires a throws function or an enclosing do/catch handler"],
+            ["O3S284"],
+        ),
+        (
+            "catch_body_return_type_negative.objc3",
+            ["undefined identifier 'missingCatchValue'"],
+            ["O3S202"],
         ),
         (
             "catch_after_catch_all_negative.objc3",
@@ -159,6 +213,15 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
             "try_expression_sites": surface.get("try_expression_sites"),
             "catch_clause_sites": surface.get("catch_clause_sites"),
             "bridged_callable_try_sites": surface.get("bridged_callable_try_sites"),
+            "direct_try_uses_runtime_error_load": True,
+            "local_handler_fixture": {
+                "fixture": str(local_handler_fixture.relative_to(ROOT)).replace(
+                    "\\", "/"
+                ),
+                "local_handler_sites": local_handler_surface.get(
+                    "local_handler_sites"
+                ),
+            },
             "native_fail_closed_fixture": {
                 "fixture": str(native_fail_closed_fixture.relative_to(ROOT)).replace(
                     "\\", "/"

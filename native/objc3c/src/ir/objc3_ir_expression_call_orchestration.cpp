@@ -7,6 +7,7 @@
 #include "ir/objc3_ir_direct_call_emission.h"
 #include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
+#include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_message_send_emission.h"
 
 namespace {
@@ -165,6 +166,7 @@ std::string EmitObjc3IRExpressionCallImpl(
                 bridge_failed_out, bridge_error_value_out, options);
           },
           BuildObjc3IRThrowsErrorSlotAlloca,
+          EmitObjc3IRLoadThrownError,
           [&options](const std::string &error_value,
                      FunctionContext &callback_ctx) {
             EmitObjc3IRPropagateThrownError(

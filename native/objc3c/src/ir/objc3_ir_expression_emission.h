@@ -37,6 +37,8 @@ struct Objc3IRExpressionEmissionCallbacks {
       emit_direct_function_call;
   std::function<std::string(FunctionContext &ctx, const std::string &prefix)>
       build_throws_error_slot_alloca;
+  std::function<std::string(const std::string &slot, FunctionContext &ctx)>
+      emit_load_thrown_error;
   std::function<void(const std::string &error_value, FunctionContext &ctx)>
       emit_propagate_thrown_error;
   std::function<std::string(const Expr *expr, FunctionContext &ctx)>

@@ -246,5 +246,6 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.objc_dynamic_declared = method.objc_dynamic_declared;
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
+  info.throws_declared = method.throws_declared;
   return info;
 }

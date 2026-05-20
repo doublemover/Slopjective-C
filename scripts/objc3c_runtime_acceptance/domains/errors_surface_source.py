@@ -85,9 +85,13 @@ def build_runtime_catch_filter_finalization_source_surface(
         ),
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+            "tests/tooling/fixtures/native/throw_local_handler_positive.objc3",
             "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
             "tests/tooling/fixtures/native/try_requires_throwing_context_negative.objc3",
             "tests/tooling/fixtures/native/throw_requires_throws_or_catch_negative.objc3",
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+            "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3",
+            "tests/tooling/fixtures/native/catch_body_return_type_negative.objc3",
             "tests/tooling/fixtures/native/catch_after_catch_all_negative.objc3",
             "tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3",
         ],

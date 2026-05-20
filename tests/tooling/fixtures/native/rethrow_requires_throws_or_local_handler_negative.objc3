@@ -1,0 +1,14 @@
+module m267_rethrow_requires_throws_or_local_handler_negative;
+
+fn recover() -> i32 {
+  do {
+    return 1;
+  } catch {
+    throw 2;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return recover();
+}

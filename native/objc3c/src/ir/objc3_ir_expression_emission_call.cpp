@@ -59,11 +59,9 @@ std::string EmitObjc3IRCallExpression(
       actual_result = result.substr(0, marker);
       failure_cond = result.substr(marker + 1);
     } else if (operand_signature->throws_declared) {
-      const std::string loaded_error = callbacks.new_temp(ctx);
       const std::string has_error = callbacks.new_temp(ctx);
-      ctx.code_lines.push_back("  " + loaded_error +
-                               " = load i32, ptr " + error_slot +
-                               ", align 4");
+      const std::string loaded_error =
+          callbacks.emit_load_thrown_error(error_slot, ctx);
       ctx.code_lines.push_back("  " + has_error + " = icmp ne i32 " +
                                loaded_error + ", 0");
       failure_cond = has_error;
