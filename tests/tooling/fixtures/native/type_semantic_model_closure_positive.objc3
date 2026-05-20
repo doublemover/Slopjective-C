@@ -26,7 +26,7 @@ fn consumeBox(box: SemanticBox *?) -> id? {
   return [box? title];
 }
 
-fn main(maybeValue: id?, retired route: id, box: id<SemanticValue>*?) -> i32 {
+fn main(maybeValue: id?, retiredRoute: id, box: id<SemanticValue>*?) -> i32 {
   if let chosen = maybeValue {
     let local = chosen;
   } else {
@@ -37,9 +37,9 @@ fn main(maybeValue: id?, retired route: id, box: id<SemanticValue>*?) -> i32 {
     return 2;
   }
 
-  let resolved = maybeValue ?? retired route;
+  let resolved = maybeValue ?? retiredRoute;
   let sent = [maybeValue? description];
   let path = @keypath(SemanticBox, title);
-  let selected = choose(true, box, retired route);
+  let selected = choose(true, box, retiredRoute);
   return 0;
 }

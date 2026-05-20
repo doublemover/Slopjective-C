@@ -17,7 +17,8 @@
     "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
     "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
-    "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3"
+    "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
   ],
   "execution_cases": [
     "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",

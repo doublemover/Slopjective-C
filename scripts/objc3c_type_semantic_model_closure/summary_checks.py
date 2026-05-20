@@ -13,6 +13,7 @@ from objc3c_type_semantic_model_closure.paths import ROOT
 from objc3c_type_semantic_model_closure.positive import compile_generic_variance_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_nested_generic_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_positive_summary
+from objc3c_type_semantic_model_closure.positive import compile_protocol_category_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_protocol_generic_positive_summary
 from objc3c_type_semantic_model_closure.static_presence import compile_static_presence
 
@@ -32,16 +33,19 @@ def compile_summary_checks(
     nested_generic_positive_run = runs["nested_generic_positive_run"]
     generic_variance_positive_run = runs["generic_variance_positive_run"]
     protocol_generic_positive_run = runs["protocol_generic_positive_run"]
+    protocol_category_positive_run = runs["protocol_category_positive_run"]
     cross_module_generic_consumer_run = runs["cross_module_generic_consumer_run"]
     cross_module_generic_drift_run = runs["cross_module_generic_drift_run"]
     cross_module_nullability_consumer_run = runs["cross_module_nullability_consumer_run"]
     cross_module_nullability_drift_run = runs["cross_module_nullability_drift_run"]
+    cross_module_protocol_consumer_run = runs["cross_module_protocol_consumer_run"]
     cross_module_protocol_drift_run = runs["cross_module_protocol_drift_run"]
 
     model, positive_checks = compile_positive_summary(positive_run)
     nested_generic_positive_checks = compile_nested_generic_positive_summary(nested_generic_positive_run)
     generic_variance_positive_checks = compile_generic_variance_positive_summary(generic_variance_positive_run)
     protocol_generic_positive_checks = compile_protocol_generic_positive_summary(protocol_generic_positive_run)
+    protocol_category_positive_checks = compile_protocol_category_positive_summary(protocol_category_positive_run)
     cross_module_generic_checks = compile_cross_module_generic_contract_summary(
         ROOT,
         protocol_generic_positive_run,
@@ -55,7 +59,7 @@ def compile_summary_checks(
     cross_module_protocol_checks = compile_cross_module_protocol_contract_summary(
         ROOT,
         positive_run,
-        cross_module_nullability_consumer_run,
+        cross_module_protocol_consumer_run,
     )
     negative_checks = compile_negative_summary(
         negative_run=runs["negative_run"],
@@ -79,6 +83,7 @@ def compile_summary_checks(
         **nested_generic_positive_checks,
         **generic_variance_positive_checks,
         **protocol_generic_positive_checks,
+        **protocol_category_positive_checks,
         **cross_module_generic_checks,
         "cross_module_generic_contract_drift_fails_closed": cross_module_generic_drift_run["exit_code"] != 0,
         "cross_module_generic_contract_drift_reports_variance_loss": "type-system generic contract preservation dropped variance annotations"

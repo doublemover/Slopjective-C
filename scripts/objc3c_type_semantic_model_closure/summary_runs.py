@@ -16,6 +16,7 @@ from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_CONSTRAINT_V
 from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_CATEGORY_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
@@ -57,6 +58,12 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         PROTOCOL_GENERIC_POSITIVE_FIXTURE,
         TMP_ROOT / "positive-protocol-generic",
     )
+    protocol_category_positive_run = run_compiler(
+        ROOT,
+        COMPILER,
+        PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
+        TMP_ROOT / "positive-protocol-category",
+    )
 
     cross_module_nullability_drift_surface = write_drifted_nullability_contract_surface(
         ROOT,
@@ -79,6 +86,7 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         "nested_generic_positive_run": nested_generic_positive_run,
         "generic_variance_positive_run": generic_variance_positive_run,
         "protocol_generic_positive_run": protocol_generic_positive_run,
+        "protocol_category_positive_run": protocol_category_positive_run,
         "cross_module_nullability_consumer_run": run_compiler(
             ROOT,
             COMPILER,
@@ -96,9 +104,16 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         "cross_module_protocol_drift_run": run_compiler(
             ROOT,
             COMPILER,
-            GENERIC_VARIANCE_POSITIVE_FIXTURE,
+            PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
             TMP_ROOT / "negative-cross-module-protocol-drift",
             _runtime_import_args(cross_module_protocol_drift_surface),
+        ),
+        "cross_module_protocol_consumer_run": run_compiler(
+            ROOT,
+            COMPILER,
+            PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
+            TMP_ROOT / "positive-cross-module-protocol-consumer",
+            _runtime_import_args(TMP_ROOT / "positive" / "module.runtime-import-surface.json"),
         ),
         "cross_module_generic_consumer_run": run_compiler(
             ROOT,

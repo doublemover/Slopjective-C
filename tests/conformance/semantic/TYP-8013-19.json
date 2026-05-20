@@ -7,7 +7,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_optional_required_conflict.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S218.\nmodule NegativeTypeSemanticProtocolOptionalRequiredConflict;\n\n@protocol RequiredWorker\n@required\n- (id!) value;\n@end\n\n@protocol OptionalWorker\n@optional\n- (id?) value;\n@end\n\n@protocol ConflictingWorker <RequiredWorker, OptionalWorker>\n@end\n\nfn consume(worker: id<ConflictingWorker>*?) -> i32 {\n  let value = [worker? value];\n  return 0;\n}\n",
   "expect": {

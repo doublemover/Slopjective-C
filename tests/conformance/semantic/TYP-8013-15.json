@@ -7,7 +7,7 @@
   "issue": 8013,
   "references": [
     "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "module TypeSemanticProtocolGenericPositive;\n\n@protocol Persistable\n@end\n\n@interface SemanticBox <Persistable>\n@end\n\n@implementation SemanticBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable>>\n- (T)peek;\n@end\n\n@implementation SemanticVault\n@end\n\nfn acceptProtocolVault(vault: SemanticVault<id<Persistable>> *?) -> i32 {\n  return 0;\n}\n\nfn consumeConcreteVault(vault: SemanticVault<SemanticBox *> *?) -> i32 {\n  return acceptProtocolVault(vault);\n}",
   "expect": {

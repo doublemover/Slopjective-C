@@ -14,6 +14,7 @@ from objc3c_type_semantic_model_closure.paths import CONFORMANCE_NULLABILITY_NEG
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_POSITIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_GENERIC_POSITIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE
+from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_CATEGORY_POSITIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE
 from objc3c_type_semantic_model_closure.paths import CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE
@@ -31,6 +32,7 @@ from objc3c_type_semantic_model_closure.paths import NULLABILITY_NEGATIVE_FIXTUR
 from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_CATEGORY_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
@@ -54,6 +56,7 @@ def compile_conformance_checks() -> dict[str, bool]:
     conformance_nested_generic_positive = load_json(CONFORMANCE_NESTED_GENERIC_POSITIVE)
     conformance_generic_variance_positive = load_json(CONFORMANCE_GENERIC_VARIANCE_POSITIVE)
     conformance_protocol_generic_positive = load_json(CONFORMANCE_PROTOCOL_GENERIC_POSITIVE)
+    conformance_protocol_category_positive = load_json(CONFORMANCE_PROTOCOL_CATEGORY_POSITIVE)
     conformance_cross_module_generic_positive = load_json(CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE)
     conformance_cross_module_protocol_positive = load_json(CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE)
     conformance_negative = load_json(CONFORMANCE_NEGATIVE)
@@ -89,11 +92,13 @@ def compile_conformance_checks() -> dict[str, bool]:
         "semantic_manifest_indexes_typ_8013_17": "TYP-8013-17.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_18": "TYP-8013-18.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_19": "TYP-8013-19.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_20": "TYP-8013-20.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_protocol_category_positive_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
@@ -110,11 +115,12 @@ def compile_conformance_checks() -> dict[str, bool]:
         "nested_generic_positive_conformance_references_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in conformance_nested_generic_positive.get("references", []),
         "generic_variance_positive_conformance_references_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_generic_variance_positive.get("references", []),
         "protocol_generic_positive_conformance_references_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in conformance_protocol_generic_positive.get("references", []),
+        "protocol_category_positive_conformance_references_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE) in conformance_protocol_category_positive.get("references", []),
         "cross_module_generic_positive_conformance_references_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
         "cross_module_generic_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
         "cross_module_generic_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_generic_positive.get("references", []),
         "cross_module_protocol_positive_conformance_references_provider_fixture": rel(POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
-        "cross_module_protocol_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
+        "cross_module_protocol_positive_conformance_references_consumer_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
         "cross_module_protocol_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_protocol_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
@@ -146,5 +152,6 @@ def compile_conformance_checks() -> dict[str, bool]:
         "stress_manifest_compiles_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
         "stress_manifest_compiles_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in stress_manifest_text,
         "stress_manifest_compiles_protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
+        "stress_manifest_compiles_protocol_category_positive_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": all(not rel(path).startswith("tmp/") for path in SOURCE_TRUTH_PATHS),
     }

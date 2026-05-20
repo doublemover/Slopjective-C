@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
-    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
   ],
   "source": "// Expected diagnostic code(s): O3S216.\nmodule NegativeTypeSemanticProtocolQualifiedUnknownMessage;\n\n@protocol Worker\n@required\n@property (readonly) id token;\n- (id) requiredValue;\n@optional\n@property (readonly) id optionalToken;\n- (id) optionalValue;\n@end\n\nfn consume(worker: id<Worker>*?) -> i32 {\n  let token = [worker? token];\n  let optionalToken = [worker? optionalToken];\n  let required = [worker? requiredValue];\n  let optional = [worker? optionalValue];\n  let missing = [worker? missingValue];\n  return 0;\n}\n",
   "expect": {

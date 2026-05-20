@@ -26,4 +26,4 @@
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
     existing.return_canonical_type =
-        BuildCanonicalSemanticTypeFromFunctionReturn(fn);
+        BuildCanonicalSemanticTypeFromFunctionReturn(fn, &generic_interface_names);

@@ -15,6 +15,7 @@ from objc3c_type_semantic_model_closure.paths import NULLABILITY_NEGATIVE_FIXTUR
 from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_CATEGORY_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_OPTIONAL_REQUIRED_CONFLICT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
@@ -52,10 +53,11 @@ def build_summary_payload(
         "nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE),
         "generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
         "protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
+        "protocol_category_positive_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE),
         "cross_module_generic_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
         "cross_module_generic_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
         "cross_module_protocol_provider_fixture": rel(POSITIVE_FIXTURE),
-        "cross_module_protocol_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
+        "cross_module_protocol_consumer_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
@@ -73,11 +75,12 @@ def build_summary_payload(
         "nested_generic_positive_compile": _without_manifest(runs["nested_generic_positive_run"]),
         "generic_variance_positive_compile": _without_manifest(runs["generic_variance_positive_run"]),
         "protocol_generic_positive_compile": _without_manifest(runs["protocol_generic_positive_run"]),
+        "protocol_category_positive_compile": _without_manifest(runs["protocol_category_positive_run"]),
         "cross_module_generic_consumer_compile": _without_manifest(runs["cross_module_generic_consumer_run"]),
         "cross_module_generic_drift_compile": _without_manifest(runs["cross_module_generic_drift_run"]),
         "cross_module_nullability_consumer_compile": _without_manifest(runs["cross_module_nullability_consumer_run"]),
         "cross_module_nullability_drift_compile": _without_manifest(runs["cross_module_nullability_drift_run"]),
-        "cross_module_protocol_consumer_compile": _without_manifest(runs["cross_module_nullability_consumer_run"]),
+        "cross_module_protocol_consumer_compile": _without_manifest(runs["cross_module_protocol_consumer_run"]),
         "cross_module_protocol_drift_compile": _without_manifest(runs["cross_module_protocol_drift_run"]),
         "negative_compile": _without_manifest(runs["negative_run"]),
         "nullability_negative_compile": _without_manifest(runs["nullability_negative_run"]),

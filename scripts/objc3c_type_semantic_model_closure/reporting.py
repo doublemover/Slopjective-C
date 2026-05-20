@@ -58,6 +58,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Nested generic positive fixture: `{summary['nested_generic_positive_fixture']}`",
         f"- Generic variance positive fixture: `{summary['generic_variance_positive_fixture']}`",
         f"- Protocol generic positive fixture: `{summary['protocol_generic_positive_fixture']}`",
+        f"- Protocol/category positive fixture: `{summary['protocol_category_positive_fixture']}`",
         f"- Cross-module generic provider fixture: `{summary['cross_module_generic_provider_fixture']}`",
         f"- Cross-module generic consumer fixture: `{summary['cross_module_generic_consumer_fixture']}`",
         f"- Cross-module protocol provider fixture: `{summary['cross_module_protocol_provider_fixture']}`",

@@ -36,7 +36,8 @@
             BuildProtocolCompositionInfoFromParam(param,
                                                  &generic_interface_names);
         info.param_types.push_back(param.type);
-        info.param_canonical_types.push_back(BuildCanonicalSemanticTypeFromParam(param));
+        info.param_canonical_types.push_back(
+            BuildCanonicalSemanticTypeFromParam(param, &generic_interface_names));
         info.param_is_vector.push_back(param.vector_spelling);
         info.param_vector_base_spelling.push_back(param.vector_base_spelling);
         info.param_vector_lane_count.push_back(param.vector_lane_count);
@@ -123,7 +124,8 @@
       info.return_ownership_arc_diagnostic_profile = fn.return_ownership_arc_diagnostic_profile;
       info.return_ownership_arc_fixit_hint = fn.return_ownership_arc_fixit_hint;
       info.return_type = fn.return_type;
-      info.return_canonical_type = BuildCanonicalSemanticTypeFromFunctionReturn(fn);
+      info.return_canonical_type =
+          BuildCanonicalSemanticTypeFromFunctionReturn(fn, &generic_interface_names);
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
       info.return_vector_lane_count = fn.return_vector_lane_count;

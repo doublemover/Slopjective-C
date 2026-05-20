@@ -250,9 +250,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
-    const FuncParam &param) {
+    const FuncParam &param,
+    const std::unordered_set<std::string> *generic_interface_names) {
   const ProtocolCompositionInfo protocol_composition =
-      BuildProtocolCompositionInfoFromParam(param);
+      BuildProtocolCompositionInfoFromParam(param, generic_interface_names);
   return BuildCanonicalSemanticType(
       param.type, param.vector_spelling, param.vector_base_spelling,
       param.vector_lane_count, param.id_spelling, param.class_spelling,
@@ -270,7 +271,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
-    const FunctionDecl &fn) {
+    const FunctionDecl &fn,
+    const std::unordered_set<std::string> *generic_interface_names) {
+  const ProtocolCompositionInfo protocol_composition =
+      BuildProtocolCompositionInfoFromFunctionReturn(fn, generic_interface_names);
   return BuildCanonicalSemanticType(
       fn.return_type, fn.return_vector_spelling, fn.return_vector_base_spelling,
       fn.return_vector_lane_count, fn.return_id_spelling, fn.return_class_spelling,
@@ -283,8 +287,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
       fn.return_ownership_is_unowned_reference, false, false, false, false,
       false, false, false, false, HasInvalidGenericReturnTypeSuffix(fn),
       HasInvalidNullabilityReturnTypeSuffix(fn),
-      BuildProtocolCompositionInfoFromFunctionReturn(fn)
-          .has_invalid_protocol_composition,
+      protocol_composition.has_invalid_protocol_composition,
       HasInvalidGenericReturnTypeSuffix(fn) ||
           HasInvalidPointerReturnTypeDeclarator(fn) ||
           HasInvalidNullabilityReturnTypeSuffix(fn) ||
@@ -292,7 +295,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
-    const Objc3MethodDecl &method) {
+    const Objc3MethodDecl &method,
+    const std::unordered_set<std::string> *generic_interface_names) {
+  const ProtocolCompositionInfo protocol_composition =
+      BuildProtocolCompositionInfoFromMethodReturn(method, generic_interface_names);
   return BuildCanonicalSemanticType(
       method.return_type, method.return_vector_spelling,
       method.return_vector_base_spelling, method.return_vector_lane_count,
@@ -309,8 +315,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
       method.return_ownership_is_unowned_reference, false, false, false, false,
       false, false, false, false, HasInvalidGenericReturnTypeSuffix(method),
       HasInvalidNullabilityReturnTypeSuffix(method),
-      BuildProtocolCompositionInfoFromMethodReturn(method)
-          .has_invalid_protocol_composition,
+      protocol_composition.has_invalid_protocol_composition,
       HasInvalidGenericReturnTypeSuffix(method) ||
           HasInvalidPointerReturnTypeDeclarator(method) ||
           HasInvalidNullabilityReturnTypeSuffix(method) ||

@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-20",
+  "title": "Preserve category protocol adoption in typed semantic closure",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8013,
+  "references": [
+    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "module categoryAttachmentProtocolRuntimeLibrary;\n\n@protocol Worker\n@required\n- (i32) inheritedValue;\n+ (i32) classValue;\n@end\n\n@protocol Tracer <Worker>\n@required\n- (i32) tracedValue;\n@optional\n- (bool) tracedReady;\n- (i32) ignoredValue;\n@end\n\n@interface Base\n- (i32) inheritedValue;\n@end\n\n@implementation Base\n- (i32) inheritedValue {\n  return 7;\n}\n@end\n\n@interface Widget : Base <Worker>\n+ (i32) classValue;\n- (i32) tracedValue;\n@end\n\n@implementation Widget\n+ (i32) classValue {\n  return 11;\n}\n- (i32) tracedValue {\n  return 5;\n}\n@end\n\n@interface Widget (Auxiliary)\n- (i32) auxiliaryValue;\n@end\n\n@implementation Widget (Auxiliary)\n- (i32) auxiliaryValue {\n  return 29;\n}\n@end\n\n@interface Widget (Tracing) <Tracer>\n- (i32) tracedValue;\n- (bool) tracedReady;\n@end\n\n@implementation Widget (Tracing)\n- (i32) tracedValue {\n  return 13;\n}\n- (bool) tracedReady {\n  return true;\n}\n@end\n\n@interface Derived : Base <Tracer>\n+ (i32) classValue;\n- (i32) tracedValue;\n- (bool) tracedReady;\n@end\n\n@implementation Derived\n+ (i32) classValue {\n  return 17;\n}\n- (i32) tracedValue {\n  return 19;\n}\n- (bool) tracedReady {\n  return true;\n}\n@end\n\n@interface Leaf : Derived\n@end\n\n@implementation Leaf\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "manifest_surface": [
+      "categories[Widget(Tracing)].adopted_protocols",
+      "interfaces[Widget].adopted_protocols",
+      "interfaces[Derived].adopted_protocols"
+    ]
+  }
+}
