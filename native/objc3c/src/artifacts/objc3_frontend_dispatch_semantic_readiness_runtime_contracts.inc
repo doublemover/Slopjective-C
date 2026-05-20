@@ -43,6 +43,8 @@ Objc3SuperDispatchMethodFamilyContract BuildSuperDispatchMethodFamilyContract(
   contract.super_dispatch_requires_class_context_sites =
       sema_parity_surface
           .super_dispatch_method_family_requires_class_context_sites_total;
+  contract.method_family_alloc_sites =
+      sema_parity_surface.super_dispatch_method_family_alloc_sites_total;
   contract.method_family_init_sites =
       sema_parity_surface.super_dispatch_method_family_init_sites_total;
   contract.method_family_copy_sites =

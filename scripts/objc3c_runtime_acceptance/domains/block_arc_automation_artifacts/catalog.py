@@ -54,6 +54,12 @@ ARC_AUTORELEASE_RETURN_FIXTURE = FixtureArtifactSpec(
     output_dir_name="arc-autorelease-return-positive",
     extra_args=(ARC_ARG,),
 )
+ARC_METHOD_FAMILY_FIXTURE = FixtureArtifactSpec(
+    key="arc-method-family-retained-message-cleanup",
+    fixture=NATIVE_FIXTURE_DIR / "arc_method_family_retained_message_cleanup.objc3",
+    output_dir_name="arc-method-family-retained-message-cleanup-positive",
+    extra_args=(ARC_ARG,),
+)
 
 NEGATIVE_EXPECTATIONS = (
     NegativeDiagnosticExpectation(
@@ -80,6 +86,7 @@ __all__ = [
     "ARC_CLEANUP_SCOPE_FIXTURE",
     "ARC_IMPLICIT_CLEANUP_FIXTURE",
     "ARC_INFERENCE_FIXTURE",
+    "ARC_METHOD_FAMILY_FIXTURE",
     "ARC_MODE_FIXTURE",
     "CASE_ID",
     "NATIVE_FIXTURE_DIR",

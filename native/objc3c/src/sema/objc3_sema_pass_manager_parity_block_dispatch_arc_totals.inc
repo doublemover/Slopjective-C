@@ -184,6 +184,8 @@
       result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites;
   result.parity_surface.super_dispatch_method_family_requires_class_context_sites_total =
       result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites;
+  result.parity_surface.super_dispatch_method_family_alloc_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_alloc_sites;
   result.parity_surface.super_dispatch_method_family_init_sites_total =
       result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites;
   result.parity_surface.super_dispatch_method_family_copy_sites_total =

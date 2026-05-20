@@ -16,6 +16,7 @@
     "compile_manifest_surface_keys:runtime_block_arc_runtime_abi_surface",
     "lowering_surface_paths:llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
     "lowering_surface_paths:llvm_ir_summary.arc_block_autorelease_return_lowering",
+    "lowering_surface_paths:llvm_ir_summary.objc3_arc_method_family_retained_result_cleanup",
     "lowering_surface_paths:llvm_ir_summary.executable_block_escape_runtime_hook_lowering",
     "implementation_invariants:promotion-runs-copy-helper-once-for-runtime-byref-probe-storage"
   ],

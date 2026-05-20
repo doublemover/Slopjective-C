@@ -231,6 +231,8 @@ void ApplyObjc3ObjectDispatchMetadataIrApplication(
   ir_frontend_metadata
       .super_dispatch_method_family_requires_class_context_sites =
       super_dispatch.super_dispatch_requires_class_context_sites;
+  ir_frontend_metadata.super_dispatch_method_family_alloc_sites =
+      super_dispatch.method_family_alloc_sites;
   ir_frontend_metadata.super_dispatch_method_family_init_sites =
       super_dispatch.method_family_init_sites;
   ir_frontend_metadata.super_dispatch_method_family_copy_sites =

@@ -177,6 +177,14 @@ void EmitObjc3IRArcOwnedCleanupUnwindToDepth(
     ctx.arc_owned_cleanup_ptrs.pop_back();
     ctx.arc_owned_cleanup_ptr_set.erase(ptr);
     ctx.arc_owned_storage_ptrs.erase(ptr);
+    for (auto it = ctx.arc_method_family_cleanup_ptr_by_value.begin();
+         it != ctx.arc_method_family_cleanup_ptr_by_value.end();) {
+      if (it->second == ptr) {
+        it = ctx.arc_method_family_cleanup_ptr_by_value.erase(it);
+      } else {
+        ++it;
+      }
+    }
     if (ptr.empty()) {
       continue;
     }

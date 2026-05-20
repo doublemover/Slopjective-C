@@ -43,6 +43,7 @@ struct Objc3IRExpressionCallEmissionOptions {
   std::size_t runtime_dispatch_arg_slots = 0;
   std::string runtime_dispatch_symbol;
   Objc3IRRuntimeDispatchCallState &runtime_dispatch_call_state;
+  bool arc_mode_enabled = false;
   const std::unordered_set<std::string> &defined_functions;
   const std::unordered_set<std::string> &declared_pure_functions;
   const std::unordered_set<std::string> &impure_functions;

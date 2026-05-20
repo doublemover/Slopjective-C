@@ -45,12 +45,13 @@
     "frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface",
     "llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
     "llvm_ir_summary.arc_block_autorelease_return_lowering",
+    "llvm_ir_summary.objc3_arc_method_family_retained_result_cleanup",
     "llvm_ir_summary.executable_block_escape_runtime_hook_lowering"
   ],
   "policy_models": [
     {
       "policy_id": "arc-is-real-inserted-ownership-behavior",
-      "summary": "ARC is supported only as emitted retain, release, autorelease, autoreleasepool, weak, and current-property helper traffic on the live runtime path."
+      "summary": "ARC is supported only as emitted retain, release, autorelease, autoreleasepool, weak, current-property helper, and method-family retained-message cleanup traffic on the live runtime path."
     },
     {
       "policy_id": "cleanup-and-autorelease-conventions-stay-coupled",
@@ -98,6 +99,7 @@
     "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
     "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
     "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
     "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
   ],
   "authoritative_probe_paths": [

@@ -59,6 +59,11 @@ bool Objc3IRMethodRequiresArcHelperDeclarations(
 
 bool Objc3IRRequiresArcHelperDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options) {
+  if (options.frontend_metadata.arc_mode_enabled &&
+      options.frontend_metadata
+              .super_dispatch_method_family_returns_retained_result_sites > 0u) {
+    return true;
+  }
   for (const auto &fn : options.program.functions) {
     if (Objc3IRFunctionRequiresArcHelperDeclarations(fn,
                                                      options.frontend_metadata)) {

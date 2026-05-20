@@ -157,6 +157,8 @@ void AppendObjc3FrontendArtifactLoweringHandoffCoreManifestFields(
            << super_dispatch_method_family_contract.super_dispatch_enabled_sites
            << ",\"super_dispatch_method_family_requires_class_context_sites\":"
            << super_dispatch_method_family_contract.super_dispatch_requires_class_context_sites
+           << ",\"super_dispatch_method_family_alloc_sites\":"
+           << super_dispatch_method_family_contract.method_family_alloc_sites
            << ",\"super_dispatch_method_family_init_sites\":"
            << super_dispatch_method_family_contract.method_family_init_sites
            << ",\"super_dispatch_method_family_copy_sites\":"

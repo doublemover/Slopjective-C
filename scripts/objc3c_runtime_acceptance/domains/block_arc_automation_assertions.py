@@ -23,6 +23,7 @@ def assert_block_arc_automation_artifacts(
     _assert_arc_inference_surfaces(artifacts)
     _assert_arc_cleanup_surfaces(artifacts)
     _assert_arc_autorelease_return_surfaces(artifacts)
+    _assert_arc_method_family_surfaces(artifacts)
 
 
 def _assert_owned_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> None:
@@ -207,6 +208,92 @@ def _assert_arc_autorelease_return_surfaces(
         "; arc_block_autorelease_return_lowering = "
         in artifacts.arc_autorelease_return_ll,
         "expected ARC autorelease-return fixture LLVM IR to publish the ARC block/autorelease-return lowering summary",
+    )
+
+
+def _assert_arc_method_family_surfaces(
+    artifacts: BlockArcAutomationArtifacts,
+) -> None:
+    expect(
+        artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_alloc_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_new_sites"
+        )
+        == 3
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_init_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_copy_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_mutable_copy_sites"
+        )
+        == 1
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_none_sites"
+        )
+        == 4,
+        "expected ARC method-family fixture to classify alloc/new/init/copy/mutableCopy and near-miss selectors deterministically",
+    )
+    expect(
+        artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_returns_retained_result_sites"
+        )
+        == 10
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_returns_related_result_sites"
+        )
+        == 2
+        and artifacts.arc_method_family_sema.get(
+            "super_dispatch_method_family_contract_violation_sites"
+        )
+        == 0,
+        "expected ARC method-family fixture to publish retained/related result counts without contract violations",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = alloc"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = new"
+        )
+        == 3
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = init"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = copy"
+        )
+        == 2
+        and artifacts.arc_method_family_ll.count(
+            "objc3_arc_method_family_retained_result_cleanup = mutableCopy"
+        )
+        == 1,
+        "expected ARC method-family fixture LLVM IR to mark exact retained-result cleanup counts for every retained family",
+    )
+    expect(
+        "objc3_arc_method_family_related_result_consumes_receiver_cleanup = init"
+        in artifacts.arc_method_family_ll,
+        "expected ARC method-family init chain to consume the pending owned receiver cleanup",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count(
+            "store i32 0, ptr %objc3.arc.methodfamily.result.addr."
+        )
+        >= 10,
+        "expected ARC method-family cleanup slots to be initialized before branch-local stores",
+    )
+    expect(
+        artifacts.arc_method_family_ll.count("objc3_runtime_release_i32") >= 10,
+        "expected ARC method-family retained message results to lower to release helper traffic",
     )
 
 

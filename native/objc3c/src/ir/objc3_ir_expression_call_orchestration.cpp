@@ -89,7 +89,8 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
           options.direct_dispatch_symbols_by_key,
           options.runtime_dispatch_arg_slots,
           options.runtime_dispatch_symbol,
-          options.runtime_dispatch_call_state},
+          options.runtime_dispatch_call_state,
+          options.arc_mode_enabled},
       Objc3IRMessageSendEmissionCallbacks{
           [&options](const Expr *arg_expr, FunctionContext &callback_ctx) {
             return EmitObjc3IRExpressionCallImpl(arg_expr, callback_ctx,

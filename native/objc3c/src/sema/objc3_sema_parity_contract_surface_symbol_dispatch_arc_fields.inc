@@ -132,6 +132,7 @@
   std::size_t super_dispatch_method_family_receiver_super_identifier_sites_total = 0;
   std::size_t super_dispatch_method_family_enabled_sites_total = 0;
   std::size_t super_dispatch_method_family_requires_class_context_sites_total = 0;
+  std::size_t super_dispatch_method_family_alloc_sites_total = 0;
   std::size_t super_dispatch_method_family_init_sites_total = 0;
   std::size_t super_dispatch_method_family_copy_sites_total = 0;
   std::size_t super_dispatch_method_family_mutable_copy_sites_total = 0;

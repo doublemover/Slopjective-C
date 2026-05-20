@@ -51,6 +51,7 @@ def build_block_arc_automation_artifacts(
     arc_cleanup_scope_manifest: ManifestSurface,
     arc_implicit_cleanup_manifest: ManifestSurface,
     arc_autorelease_return: FixtureArtifactPayload,
+    arc_method_family: FixtureArtifactPayload,
     negative_batch: NegativeBatch,
 ) -> BlockArcAutomationArtifacts:
     return BlockArcAutomationArtifacts(
@@ -85,6 +86,8 @@ def build_block_arc_automation_artifacts(
         arc_implicit_cleanup_sema=sema_surface(arc_implicit_cleanup_manifest),
         arc_autorelease_return_sema=sema_surface(arc_autorelease_return.manifest),
         arc_autorelease_return_ll=arc_autorelease_return.llvm_ir,
+        arc_method_family_sema=sema_surface(arc_method_family.manifest),
+        arc_method_family_ll=arc_method_family.llvm_ir,
         negative_batch=negative_batch,
     )
 

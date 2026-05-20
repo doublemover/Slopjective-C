@@ -30,7 +30,8 @@
   "focus": [
     "escaping-block-promotion-and-invoke-runtime-closure",
     "byref-forwarding-copy-dispose-and-heap-promotion-closure",
-    "arc-lifetime-helper-automation-across-weak-autoreleasepool-and-current-property-surfaces"
+    "arc-lifetime-helper-automation-across-weak-autoreleasepool-and-current-property-surfaces",
+    "arc-method-family-retained-message-cleanup"
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
@@ -85,6 +86,7 @@
     "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
     "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
     "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
     "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
   ],
   "claim_surfaces": [
@@ -129,6 +131,18 @@
       ],
       "successor_issue_codes": [
         "OC3-T09-003"
+      ]
+    },
+    {
+      "gap_id": "issue-8034-method-family-retained-message-cleanup-landed",
+      "summary": "ARC method-family retained-result behavior now flows from selector classification through IR message-send lowering into scope-owned release cleanup, including alloc/new/init/copy/mutableCopy and word-boundary selector variants.",
+      "evidence_references": [
+        "tests/tooling/fixtures/block_arc_closure/issue_8034_arc_method_family_cleanup_evidence.json",
+        "tests/tooling/fixtures/native/arc_method_family_retained_message_cleanup.objc3",
+        "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp"
+      ],
+      "successor_issue_codes": [
+        "OC3-T10-001"
       ]
     },
     {

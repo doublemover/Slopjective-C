@@ -3,6 +3,7 @@
 #include "ir/objc3_ir_emitter_expression_services_callbacks.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 
 Objc3IRExpressionCallEmissionOptions
 BuildObjc3IREmitterExpressionCallEmissionOptions(
@@ -15,6 +16,7 @@ BuildObjc3IREmitterExpressionCallEmissionOptions(
       state.lowering_ir_boundary.runtime_dispatch_arg_slots,
       state.lowering_ir_boundary.runtime_dispatch_symbol,
       state.runtime_dispatch_call_state,
+      state.frontend_metadata.arc_mode_enabled,
       state.defined_functions,
       state.declared_pure_functions,
       state.impure_functions,

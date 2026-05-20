@@ -19,6 +19,9 @@ struct Objc3IRMessageSendLoweringPlan {
   bool emits_runtime_dispatch = false;
   bool elides_to_nil_result = false;
   bool emits_nil_checked_dispatch = false;
+  bool method_family_retained_result_cleanup_required = false;
+  bool method_family_returns_retained_result = false;
+  bool arc_mode_enabled = false;
   bool fail_closed = false;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
@@ -28,7 +31,8 @@ struct Objc3IRMessageSendLoweringPlan {
 Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
     const std::string &selector, const std::string &dispatch_surface_family,
     const std::string &dispatch_symbol, const std::string &direct_call_symbol,
-    const Objc3IRReceiverDispatchFacts &receiver_facts);
+    const Objc3IRReceiverDispatchFacts &receiver_facts,
+    bool method_family_returns_retained_result, bool arc_mode_enabled);
 
 Objc3IRReceiverDispatchPolicy BuildObjc3IROptionalMessageSendReceiverPolicy(
     const Objc3IRReceiverDispatchFacts &receiver_facts);

@@ -167,6 +167,7 @@ Objc3SuperDispatchMethodFamilySnapshot BuildSuperDispatchMethodFamilySnapshot(
       contract.super_dispatch_enabled_sites;
   snapshot.super_dispatch_requires_class_context_sites =
       contract.super_dispatch_requires_class_context_sites;
+  snapshot.method_family_alloc_sites = contract.method_family_alloc_sites;
   snapshot.method_family_init_sites = contract.method_family_init_sites;
   snapshot.method_family_copy_sites = contract.method_family_copy_sites;
   snapshot.method_family_mutable_copy_sites =

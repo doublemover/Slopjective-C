@@ -5,11 +5,17 @@
 Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
     const std::string &selector, const std::string &dispatch_surface_family,
     const std::string &dispatch_symbol, const std::string &direct_call_symbol,
-    const Objc3IRReceiverDispatchFacts &receiver_facts) {
+    const Objc3IRReceiverDispatchFacts &receiver_facts,
+    bool method_family_returns_retained_result, bool arc_mode_enabled) {
   Objc3IRMessageSendLoweringPlan plan;
   plan.selector = selector;
   plan.dispatch_symbol = dispatch_symbol;
   plan.direct_call_symbol = direct_call_symbol;
+  plan.method_family_returns_retained_result =
+      method_family_returns_retained_result;
+  plan.arc_mode_enabled = arc_mode_enabled;
+  plan.method_family_retained_result_cleanup_required =
+      arc_mode_enabled && method_family_returns_retained_result;
   plan.uses_canonical_runtime_entrypoint =
       UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family);
   plan.owns_dispatch_result = Objc3LoweringStrictOwnerModelIsReady(

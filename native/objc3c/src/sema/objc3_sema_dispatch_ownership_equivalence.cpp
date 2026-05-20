@@ -50,6 +50,7 @@ bool IsEquivalentSuperDispatchMethodFamilySummary(
          lhs.receiver_super_identifier_sites == rhs.receiver_super_identifier_sites &&
          lhs.super_dispatch_enabled_sites == rhs.super_dispatch_enabled_sites &&
          lhs.super_dispatch_requires_class_context_sites == rhs.super_dispatch_requires_class_context_sites &&
+         lhs.method_family_alloc_sites == rhs.method_family_alloc_sites &&
          lhs.method_family_init_sites == rhs.method_family_init_sites &&
          lhs.method_family_copy_sites == rhs.method_family_copy_sites &&
          lhs.method_family_mutable_copy_sites == rhs.method_family_mutable_copy_sites &&

@@ -8,6 +8,7 @@
 #include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_receiver_dispatch_policy.h"
 #include "ir/objc3_ir_runtime_dispatch_calls.h"
+#include "ir/objc3_ir_scope_cleanup_emission.h"
 #include "ir/objc3_ir_symbol_model.h"
 #include "lower/contracts/runtime_dispatch_boundary_contracts.h"
 
@@ -22,6 +23,13 @@ std::string EmitObjc3IRRuntimeDispatch(
     const LoweredMessageSend &lowered, FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options,
     const Objc3IRMessageSendEmissionCallbacks &callbacks);
+
+std::string ApplyObjc3IRMethodFamilyArcResultCleanup(
+    const LoweredMessageSend &lowered, const std::string &value,
+    FunctionContext &ctx, const Objc3IRMessageSendEmissionOptions &options);
+
+void DisarmObjc3IRRelatedResultReceiverCleanup(
+    const LoweredMessageSend &lowered, FunctionContext &ctx);
 
 std::string TryResolveObjc3IRDirectDispatchSymbol(
     const Expr *expr, const FunctionContext &ctx,
@@ -71,6 +79,11 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
       callbacks.is_compile_time_known_non_nil_expr(expr->receiver.get(), ctx);
   lowered.receiver = callbacks.emit_expr(expr->receiver.get(), ctx);
   lowered.selector = expr->selector;
+  lowered.method_family_name = expr->method_family_name;
+  lowered.method_family_returns_retained_result =
+      expr->method_family_returns_retained_result;
+  lowered.method_family_returns_related_result =
+      expr->method_family_returns_related_result;
   lowered.dispatch_surface_family = expr->dispatch_surface_family_symbol;
   lowered.dispatch_surface_entrypoint_family =
       expr->dispatch_surface_entrypoint_family_symbol;
@@ -116,7 +129,9 @@ std::string EmitObjc3IRRuntimeDispatch(
       BuildObjc3IRMessageSendLoweringPlan(
           lowered.selector, lowered.dispatch_surface_family,
           lowered.dispatch_symbol, lowered.direct_call_symbol,
-          lowered.receiver_dispatch_facts);
+          lowered.receiver_dispatch_facts,
+          lowered.method_family_returns_retained_result,
+          options.arc_mode_enabled);
   if (plan.emits_direct_dispatch) {
     // dispatch-control lowering anchor: concrete self/known-class
     // sends that target effective objc_direct methods now lower as exact LLVM
@@ -255,6 +270,48 @@ std::string EmitObjc3IRRuntimeDispatch(
   return out;
 }
 
+std::string ApplyObjc3IRMethodFamilyArcResultCleanup(
+    const LoweredMessageSend &lowered, const std::string &value,
+    FunctionContext &ctx, const Objc3IRMessageSendEmissionOptions &options) {
+  if (!options.arc_mode_enabled ||
+      !lowered.method_family_returns_retained_result || value == "0") {
+    return value;
+  }
+  DisarmObjc3IRRelatedResultReceiverCleanup(lowered, ctx);
+  const std::string storage_ptr =
+      "%objc3.arc.methodfamily.result.addr." +
+      std::to_string(ctx.temp_counter++);
+  ctx.entry_lines.push_back("  " + storage_ptr + " = alloca i32, align 4");
+  ctx.entry_lines.push_back("  store i32 0, ptr " + storage_ptr +
+                            ", align 4");
+  ctx.code_lines.push_back(
+      "  ; objc3_arc_method_family_retained_result_cleanup = " +
+      lowered.method_family_name);
+  ctx.code_lines.push_back("  store i32 " + value + ", ptr " + storage_ptr +
+                           ", align 4");
+  RegisterObjc3IRArcOwnedCleanupPtr(storage_ptr, ctx);
+  ctx.arc_method_family_cleanup_ptr_by_value[value] = storage_ptr;
+  return value;
+}
+
+void DisarmObjc3IRRelatedResultReceiverCleanup(
+    const LoweredMessageSend &lowered, FunctionContext &ctx) {
+  if (!lowered.method_family_returns_related_result) {
+    return;
+  }
+  const auto receiver_cleanup =
+      ctx.arc_method_family_cleanup_ptr_by_value.find(lowered.receiver);
+  if (receiver_cleanup == ctx.arc_method_family_cleanup_ptr_by_value.end()) {
+    return;
+  }
+  ctx.code_lines.push_back(
+      "  ; objc3_arc_method_family_related_result_consumes_receiver_cleanup = " +
+      lowered.method_family_name);
+  ctx.code_lines.push_back("  store i32 0, ptr " + receiver_cleanup->second +
+                           ", align 4");
+  ctx.arc_method_family_cleanup_ptr_by_value.erase(receiver_cleanup);
+}
+
 }  // namespace
 
 std::string EmitObjc3IRMessageSendExpr(
@@ -272,7 +329,10 @@ std::string EmitObjc3IRMessageSendExpr(
     }
     if (receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
       MaterializeObjc3IRMessageSendArgs(expr, lowered, ctx, callbacks);
-      return EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks);
+      const std::string dispatch_value =
+          EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks);
+      return ApplyObjc3IRMethodFamilyArcResultCleanup(
+          lowered, dispatch_value, ctx, options);
     }
 
     const std::string is_nil = callbacks.new_temp(ctx);
@@ -297,9 +357,13 @@ std::string EmitObjc3IRMessageSendExpr(
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
         out, "0", nil_label, dispatch_value, dispatch_label));
-    return out;
+    return ApplyObjc3IRMethodFamilyArcResultCleanup(
+        lowered, out, ctx, options);
   }
   const LoweredMessageSend lowered =
       LowerObjc3IRMessageSendExpr(expr, ctx, options, callbacks);
-  return EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks);
+  const std::string dispatch_value =
+      EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks);
+  return ApplyObjc3IRMethodFamilyArcResultCleanup(
+      lowered, dispatch_value, ctx, options);
 }
