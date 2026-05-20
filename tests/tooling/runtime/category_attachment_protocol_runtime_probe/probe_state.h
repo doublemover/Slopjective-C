@@ -12,6 +12,8 @@ struct CategoryAttachmentProtocolValues {
   int class_value = 0;
   int protocol_strict_error = 0;
   int protocol_strict_error_expected = 0;
+  objc3_runtime_dispatch_i32_result protocol_strict_error_i32_result{};
+  objc3_runtime_dispatch_typed_result protocol_strict_error_typed_result{};
 };
 
 struct RealizedGraphStateObservation {

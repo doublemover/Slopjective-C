@@ -31,11 +31,16 @@ inline int DispatchRuntimeValue(const RuntimeDispatch &dispatch) {
                                     0, 0);
 }
 
-inline int DispatchRuntimeValueChecked(const RuntimeDispatch &dispatch) {
-  const objc3_runtime_dispatch_i32_result result =
-      objc3_runtime_dispatch_i32_checked(dispatch.receiver, dispatch.selector,
-                                         0, 0, 0, 0);
-  return result.value;
+inline objc3_runtime_dispatch_i32_result DispatchRuntimeI32Checked(
+    const RuntimeDispatch &dispatch) {
+  return objc3_runtime_dispatch_i32_checked(dispatch.receiver, dispatch.selector,
+                                           0, 0, 0, 0);
+}
+
+inline objc3_runtime_dispatch_typed_result DispatchRuntimeTypedChecked(
+    const RuntimeDispatch &dispatch) {
+  return objc3_runtime_dispatch_typed_checked(dispatch.receiver,
+                                             dispatch.selector, 0, 0, 0, 0);
 }
 
 inline void StabilizeMethodCacheStateObservation(
@@ -79,8 +84,12 @@ inline void CaptureCategoryAttachmentActions(
   run.values.category_cached_value = DispatchRuntimeValue(category_dispatch);
   CaptureMethodCacheState(run.category_second_state);
   run.values.class_value = DispatchRuntimeValue(class_dispatch);
+  run.values.protocol_strict_error_i32_result =
+      DispatchRuntimeI32Checked(strict_error_dispatch);
   run.values.protocol_strict_error =
-      DispatchRuntimeValueChecked(strict_error_dispatch);
+      run.values.protocol_strict_error_i32_result.value;
+  run.values.protocol_strict_error_typed_result =
+      DispatchRuntimeTypedChecked(strict_error_dispatch);
   CaptureMethodCacheState(run.method_state);
   CaptureMethodCacheEntry(category_dispatch, run.category_entry);
   CaptureMethodCacheEntry(strict_error_dispatch, run.strict_error_entry);

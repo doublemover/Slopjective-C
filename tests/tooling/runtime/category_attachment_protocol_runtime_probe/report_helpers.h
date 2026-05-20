@@ -1,11 +1,62 @@
 #pragma once
 
 #include "probe_state.h"
+#include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 
 namespace objc3c::runtime::probe::category_attachment_protocol_runtime {
+
+inline void PrintI32DispatchResult(
+    const objc3_runtime_dispatch_i32_result &result) {
+  using ::objc3c::runtime::probe::PrintIntField;
+  using ::objc3c::runtime::probe::PrintStringField;
+
+  std::printf("{");
+  PrintIntField("abi_version", static_cast<int>(result.abi_version));
+  PrintIntField("result_size", static_cast<int>(result.result_size));
+  PrintIntField("status_code", static_cast<int>(result.status_code));
+  PrintIntField("return_kind", static_cast<int>(result.return_kind));
+  PrintIntField("value", result.value);
+  PrintStringField("diagnostic_code", result.diagnostic_code);
+  PrintStringField("diagnostic_message", result.diagnostic_message);
+  PrintStringField("result_contract", result.result_contract);
+  PrintStringField("diagnostic_owner_model", result.diagnostic_owner_model);
+  PrintStringField("fail_closed_ownership_model",
+                   result.fail_closed_ownership_model);
+  PrintIntField("retired_route_path_allowed",
+                result.retired_route_path_allowed, false);
+  std::printf("}");
+}
+
+inline void PrintTypedDispatchResult(
+    const objc3_runtime_dispatch_typed_result &result) {
+  using ::objc3c::runtime::probe::PrintIntField;
+  using ::objc3c::runtime::probe::PrintStringField;
+
+  std::printf("{");
+  PrintIntField("abi_version", static_cast<int>(result.abi_version));
+  PrintIntField("result_size", static_cast<int>(result.result_size));
+  PrintIntField("status_code", static_cast<int>(result.status_code));
+  PrintIntField("return_kind", static_cast<int>(result.return_kind));
+  PrintStringField("return_kind_name", result.return_kind_name);
+  PrintIntField("i32_value", result.i32_value);
+  PrintIntField("bool_value", result.bool_value);
+  PrintIntField("object_reference", result.object_reference);
+  PrintIntField("class_reference", result.class_reference);
+  PrintIntField("selector_reference", result.selector_reference);
+  PrintIntField("protocol_reference", result.protocol_reference);
+  PrintStringField("diagnostic_code", result.diagnostic_code);
+  PrintStringField("diagnostic_message", result.diagnostic_message);
+  PrintStringField("result_contract", result.result_contract);
+  PrintStringField("diagnostic_owner_model", result.diagnostic_owner_model);
+  PrintStringField("fail_closed_ownership_model",
+                   result.fail_closed_ownership_model);
+  PrintIntField("retired_route_path_allowed",
+                result.retired_route_path_allowed, false);
+  std::printf("}");
+}
 
 inline void PrintCategoryAttachmentProtocolRuntimeReport(
     const CategoryAttachmentProtocolProbeRun &run) {
@@ -20,6 +71,12 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
               values.protocol_strict_error);
   std::printf("\"protocol_strict_error_expected\":%d,",
               values.protocol_strict_error_expected);
+  std::printf("\"protocol_strict_error_i32_result\":");
+  PrintI32DispatchResult(values.protocol_strict_error_i32_result);
+  std::printf(",");
+  std::printf("\"protocol_strict_error_typed_result\":");
+  PrintTypedDispatchResult(values.protocol_strict_error_typed_result);
+  std::printf(",");
   std::printf("\"graph_state\":");
   ::objc3c::runtime::probe::PrintGraphStateProtocolCategory(
       run.graph_state.state);

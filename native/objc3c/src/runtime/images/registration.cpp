@@ -110,7 +110,6 @@ int RegisterImageUnlocked(
   }
   RebuildRealizedClassGraphUnlocked(state);
   ClearRejectedRegistrationUnlocked(state);
-  ClearMethodCacheStateUnlocked(state);
   SeedDispatchIntentFastPathCacheUnlocked(state);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }

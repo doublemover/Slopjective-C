@@ -45,6 +45,7 @@ struct SlowPathProbeRun {
   int strict_error_first = 0;
   int strict_error_second = 0;
   int strict_error_expected = 0;
+  int mutation_registration_status = 0;
 
   MethodCacheStateObservation instance_first_state;
   MethodCacheStateObservation instance_second_state;
@@ -58,6 +59,8 @@ struct SlowPathProbeRun {
   MethodCacheEntryObservation instance_after_stale_entry;
   MethodCacheEntryObservation class_entry;
   MethodCacheEntryObservation strict_error_entry;
+
+  RegistrationObservation registration_after_mutation;
 };
 
 } // namespace method_cache_slow_path_probe

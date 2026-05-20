@@ -5,10 +5,9 @@
 #include "runtime_snapshot_helpers.h"
 #include "selector_class_fixtures.h"
 
-#include "runtime/state/runtime_cache_invalidation.h"
-#include "runtime/state/runtime_state_store.h"
+#include "runtime/public/objc3_runtime_api.h"
 
-#include <mutex>
+#include <cstdint>
 
 namespace objc3c {
 namespace tooling {
@@ -27,15 +26,24 @@ inline void CaptureInstanceDispatches(SlowPathProbeRun &run) {
   CaptureMethodCacheState(run.instance_second_state);
 }
 
-inline void ForceMethodSurfaceGenerationChange() {
-  ::objc3c::runtime::RuntimeState &state =
-      ::objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  ::objc3c::runtime::BumpRuntimeMethodSurfaceGenerationUnlocked(state);
+inline int RegisterEmptyMutationImage(std::uint64_t registration_order_ordinal) {
+  const objc3_runtime_image_descriptor image{
+      "method-cache-slow-path-public-mutation",
+      "method-cache-slow-path::empty-mutation",
+      registration_order_ordinal,
+      0,
+      0,
+      0,
+      0,
+      0,
+  };
+  return objc3_runtime_register_image(&image);
 }
 
 inline void CaptureStaleCacheRevalidation(SlowPathProbeRun &run) {
-  ForceMethodSurfaceGenerationChange();
+  run.mutation_registration_status = RegisterEmptyMutationImage(
+      run.registration.state.next_expected_registration_order_ordinal);
+  CaptureRegistrationState(run.registration_after_mutation);
   run.instance_after_stale = CallWidgetCurrentValue();
   CaptureMethodCacheState(run.instance_after_stale_state);
 }

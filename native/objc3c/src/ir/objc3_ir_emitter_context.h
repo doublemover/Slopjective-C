@@ -28,7 +28,10 @@ struct LoweredMessageSend {
   std::string dispatch_surface_family;
   std::string dispatch_surface_entrypoint_family;
   std::string dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+  ValueType runtime_return_type = ValueType::I32;
   std::string direct_call_symbol;
+  ValueType direct_call_return_type = ValueType::I32;
+  std::vector<ValueType> direct_call_param_types;
 };
 
 struct ControlLabels {

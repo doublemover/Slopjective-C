@@ -20,14 +20,89 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
   Objc3IRMethodDefinitionPlan plan;
   std::unordered_map<std::string, std::string> implementation_superclass_names;
   std::unordered_map<std::string, bool> interface_direct_members_by_name;
+  const auto record_runtime_dispatch_return_type =
+      [&plan](const std::string &owner_name, const std::string &selector,
+              bool is_class_method, ValueType return_type) {
+        const std::string key =
+            BuildDirectDispatchMethodKey(owner_name, selector, is_class_method);
+        const auto existing =
+            plan.runtime_dispatch_return_types_by_key.find(key);
+        if (existing != plan.runtime_dispatch_return_types_by_key.end()) {
+          if (existing->second != return_type) {
+            plan.error =
+                "conflicting runtime dispatch return type for method '" +
+                owner_name + " " + selector + "'";
+            return false;
+          }
+          return true;
+        }
+        plan.runtime_dispatch_return_types_by_key.emplace(key, return_type);
+        return true;
+      };
+  const auto record_method_return_type =
+      [&record_runtime_dispatch_return_type](const std::string &owner_name,
+                                             const Objc3MethodDecl &method) {
+        return record_runtime_dispatch_return_type(
+            owner_name, method.selector, method.is_class_method,
+            method.return_type);
+      };
+  const auto build_method_direct_dispatch_signature =
+      [](const Objc3MethodDecl &method) {
+        Objc3IRDirectDispatchSignature signature;
+        signature.return_type = method.return_type;
+        signature.param_types.reserve(method.params.size());
+        for (const FuncParam &param : method.params) {
+          signature.param_types.push_back(param.type);
+        }
+        return signature;
+      };
+  const auto record_direct_dispatch =
+      [&plan](const std::string &owner_name, const std::string &selector,
+              bool is_class_method, const std::string &symbol,
+              const Objc3IRDirectDispatchSignature &signature) {
+        const std::string key =
+            BuildDirectDispatchMethodKey(owner_name, selector, is_class_method);
+        const auto existing_symbol =
+            plan.direct_dispatch_symbols_by_key.find(key);
+        if (existing_symbol != plan.direct_dispatch_symbols_by_key.end() &&
+            existing_symbol->second != symbol) {
+          plan.error = "conflicting direct dispatch symbol for method '" +
+                       owner_name + " " + selector + "'";
+          return false;
+        }
+        const auto existing_signature =
+            plan.direct_dispatch_signatures_by_key.find(key);
+        if (existing_signature != plan.direct_dispatch_signatures_by_key.end() &&
+            (existing_signature->second.return_type != signature.return_type ||
+             existing_signature->second.param_types != signature.param_types)) {
+          plan.error = "conflicting direct dispatch signature for method '" +
+                       owner_name + " " + selector + "'";
+          return false;
+        }
+        plan.direct_dispatch_symbols_by_key.emplace(key, symbol);
+        plan.direct_dispatch_signatures_by_key.emplace(key, signature);
+        return true;
+      };
   for (const auto &interface_decl : program.interfaces) {
     if (interface_decl.has_category) {
+      for (const auto &method : interface_decl.methods) {
+        if (!record_method_return_type(interface_decl.name, method)) {
+          return plan;
+        }
+      }
       continue;
     }
     implementation_superclass_names.emplace(interface_decl.name,
                                             interface_decl.super_name);
+    plan.runtime_dispatch_superclass_by_name.emplace(interface_decl.name,
+                                                     interface_decl.super_name);
     interface_direct_members_by_name.emplace(
         interface_decl.name, interface_decl.objc_direct_members_declared);
+    for (const auto &method : interface_decl.methods) {
+      if (!record_method_return_type(interface_decl.name, method)) {
+        return plan;
+      }
+    }
   }
 
   std::unordered_map<std::string, std::size_t> method_symbol_counts;
@@ -40,6 +115,9 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
         direct_members_it != interface_direct_members_by_name.end() &&
         direct_members_it->second;
     for (const auto &method : implementation.methods) {
+      if (!record_method_return_type(implementation.name, method)) {
+        return plan;
+      }
       if (!method.has_body) {
         continue;
       }
@@ -71,10 +149,12 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
           (method.objc_direct_declared ||
            (direct_members_declared && !method.objc_dynamic_declared));
       if (effective_direct_dispatch) {
-        plan.direct_dispatch_symbols_by_key.emplace(
-            BuildDirectDispatchMethodKey(implementation.name, method.selector,
-                                         method.is_class_method),
-            "@" + symbol);
+        if (!record_direct_dispatch(
+                implementation.name, method.selector, method.is_class_method,
+                "@" + symbol,
+                build_method_direct_dispatch_signature(method))) {
+          return plan;
+        }
       }
       if (!method.scope_path_symbol.empty()) {
         method_owner_identities.insert(method.scope_path_symbol);
@@ -142,10 +222,25 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
               direct_members_it != interface_direct_members_by_name.end() &&
               direct_members_it->second;
           if (effective_direct_dispatch) {
-            plan.direct_dispatch_symbols_by_key.emplace(
-                BuildDirectDispatchMethodKey(bundle.owner_name, selector,
-                                             false),
-                "@" + symbol);
+            Objc3IRDirectDispatchSignature signature;
+            signature.return_type =
+                kind == Objc3IRSyntheticMethodKind::PropertySetter
+                    ? ValueType::Void
+                    : property_type;
+            if (kind == Objc3IRSyntheticMethodKind::PropertySetter) {
+              signature.param_types.push_back(property_type);
+            }
+            if (!record_direct_dispatch(bundle.owner_name, selector, false,
+                                        "@" + symbol, signature)) {
+              return;
+            }
+          }
+          if (!record_runtime_dispatch_return_type(
+                  bundle.owner_name, selector, false,
+                  kind == Objc3IRSyntheticMethodKind::PropertySetter
+                      ? ValueType::Void
+                      : property_type)) {
+            return;
           }
           ++plan.synthesized_property_accessor_count;
         };

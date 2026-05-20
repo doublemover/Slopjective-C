@@ -36,6 +36,10 @@ struct Objc3IREmitterStateInitialization {
   std::unordered_map<std::string, std::size_t> function_arity;
   std::map<std::string, LoweredFunctionSignature> function_signatures;
   std::unordered_map<std::string, std::string> direct_dispatch_symbols_by_key;
+  std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      direct_dispatch_signatures_by_key;
+  std::unordered_map<std::string, ValueType> runtime_dispatch_return_types_by_key;
+  std::unordered_map<std::string, std::string> runtime_dispatch_superclass_by_name;
   std::map<std::string, std::string> selector_pool_globals;
   std::map<std::string, std::string> runtime_string_pool_globals;
   std::map<std::string, TypedKeyPathArtifact> typed_keypath_artifacts;

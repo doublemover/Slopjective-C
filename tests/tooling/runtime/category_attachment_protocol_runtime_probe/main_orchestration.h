@@ -22,7 +22,7 @@ inline int RunCategoryAttachmentProtocolRuntimeProbe() {
   CategoryAttachmentProtocolProbeRun run{};
   CaptureCategoryAttachmentProtocolRuntimeProbe(run);
   PrintCategoryAttachmentProtocolRuntimeReport(run);
-  return 0;
+  return CategoryAttachmentProtocolRuntimeProbePassed(run) ? 0 : 1;
 }
 
 }  // namespace objc3c::runtime::probe::category_attachment_protocol_runtime

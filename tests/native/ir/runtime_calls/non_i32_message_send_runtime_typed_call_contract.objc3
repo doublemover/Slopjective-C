@@ -1,0 +1,22 @@
+// Canonical IR runtime-call fixture: known non-i32 message sends use typed runtime dispatch.
+module IRRuntimeCallsNonI32MessageSendRuntimeTypedCallContract;
+
+@interface TypedRuntimeWidget
+- (bool) ready;
+- (i32) useReady;
+@end
+
+@implementation TypedRuntimeWidget
+- (bool) ready {
+  return true;
+}
+
+- (i32) useReady {
+  return [self ready];
+}
+@end
+
+fn main() -> i32 {
+  let widget = 7;
+  return [widget useReady];
+}

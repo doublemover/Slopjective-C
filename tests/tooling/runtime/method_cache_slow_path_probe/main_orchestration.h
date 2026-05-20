@@ -35,6 +35,16 @@ inline bool ValidateMethodCacheSlowPathProbe(const SlowPathProbeRun &run) {
     std::fprintf(stderr, "method-cache probe value invariant failed\n");
     return false;
   }
+  if (run.mutation_registration_status != OBJC3_RUNTIME_REGISTRATION_STATUS_OK ||
+      run.registration_after_mutation.state.registered_image_count <=
+          run.registration.state.registered_image_count ||
+      run.registration_after_mutation.state
+              .last_successful_registration_order_ordinal !=
+          run.registration.state.next_expected_registration_order_ordinal) {
+    std::fprintf(stderr,
+                 "method-cache mutation registration invariant failed\n");
+    return false;
+  }
   const auto &first = run.instance_first_state.state;
   const auto &second = run.instance_second_state.state;
   const auto &after_stale = run.instance_after_stale_state.state;

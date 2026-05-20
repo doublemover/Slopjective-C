@@ -41,6 +41,10 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
     method_state = payload.get("method_state", {})
     category_entry = payload.get("category_entry", {})
     strict_error_entry = payload.get("strict_error_entry", {})
+    strict_error_i32_result = payload.get("protocol_strict_error_i32_result", {})
+    strict_error_typed_result = payload.get(
+        "protocol_strict_error_typed_result", {}
+    )
 
     expect(payload.get("category_value") == 13, "expected category dispatch to return 13")
     expect(
@@ -52,6 +56,34 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         payload.get("protocol_strict_error")
         == payload.get("protocol_strict_error_expected"),
         "expected protocol-declared optional selector miss to fail closed",
+    )
+    expect(
+        strict_error_i32_result.get("status_code") == -1
+        and strict_error_i32_result.get("return_kind") == 0
+        and strict_error_i32_result.get("value") == 0
+        and strict_error_i32_result.get("diagnostic_code") == "O3RT001"
+        and strict_error_i32_result.get("diagnostic_message")
+        == "runtime dispatch failed: unknown selector"
+        and strict_error_i32_result.get("result_contract")
+        == "typed-dispatch-strict-error-result",
+        "expected ignoredValue i32 checked dispatch to expose strict-error status, diagnostic, and result contract",
+    )
+    expect(
+        strict_error_typed_result.get("status_code") == -1
+        and strict_error_typed_result.get("return_kind") == 0
+        and strict_error_typed_result.get("return_kind_name") == "unsupported"
+        and strict_error_typed_result.get("i32_value") == 0
+        and strict_error_typed_result.get("bool_value") == 0
+        and strict_error_typed_result.get("object_reference") == 0
+        and strict_error_typed_result.get("class_reference") == 0
+        and strict_error_typed_result.get("selector_reference") == 0
+        and strict_error_typed_result.get("protocol_reference") == 0
+        and strict_error_typed_result.get("diagnostic_code") == "O3RT001"
+        and strict_error_typed_result.get("diagnostic_message")
+        == "runtime dispatch failed: unknown selector"
+        and strict_error_typed_result.get("result_contract")
+        == "typed-dispatch-strict-error-result",
+        "expected ignoredValue typed checked dispatch to expose strict-error status, diagnostic, and result contract",
     )
     expect(
         graph.get("attached_category_count") == 1
@@ -294,6 +326,24 @@ def check_runtime_object_foundation_protocol_category_case(
             "category_value": payload["category_value"],
             "category_cached_value": payload["category_cached_value"],
             "class_value": payload["class_value"],
+            "protocol_strict_error_i32_status": payload[
+                "protocol_strict_error_i32_result"
+            ]["status_code"],
+            "protocol_strict_error_i32_diagnostic": payload[
+                "protocol_strict_error_i32_result"
+            ]["diagnostic_code"],
+            "protocol_strict_error_i32_result_contract": payload[
+                "protocol_strict_error_i32_result"
+            ]["result_contract"],
+            "protocol_strict_error_typed_status": payload[
+                "protocol_strict_error_typed_result"
+            ]["status_code"],
+            "protocol_strict_error_typed_diagnostic": payload[
+                "protocol_strict_error_typed_result"
+            ]["diagnostic_code"],
+            "protocol_strict_error_typed_result_contract": payload[
+                "protocol_strict_error_typed_result"
+            ]["result_contract"],
             "attached_category_count": payload["graph_state"]["attached_category_count"],
             "tracer_visited_protocol_count": payload["tracer_query"][
                 "visited_protocol_count"

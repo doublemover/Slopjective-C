@@ -26,7 +26,12 @@ inline void PrintMethodCacheSlowPathProbeReport(const SlowPathProbeRun &run) {
   std::printf("\"strict_error_first\":%d,", run.strict_error_first);
   std::printf("\"strict_error_second\":%d,", run.strict_error_second);
   std::printf("\"strict_error_expected\":%d,", run.strict_error_expected);
-  std::printf("\"instance_first_state\":");
+  std::printf("\"mutation_registration_status\":%d,",
+              run.mutation_registration_status);
+  std::printf("\"registration_after_mutation_state\":");
+  ::objc3c::runtime::probe::PrintRegistrationStateBasic(
+      run.registration_after_mutation.state);
+  std::printf(",\"instance_first_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateSlowPath(
       run.instance_first_state.state);
   std::printf(",\"instance_second_state\":");

@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "ir/objc3_ir_emitter_context.h"
+#include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 
 struct Expr;
@@ -16,6 +17,12 @@ struct Objc3IRMessageSendEmissionOptions {
   const std::unordered_map<std::string, int> &class_receiver_constants;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;
+  const std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      &direct_dispatch_signatures_by_key;
+  const std::unordered_map<std::string, ValueType>
+      &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, std::string>
+      &runtime_dispatch_superclass_by_name;
   std::size_t runtime_dispatch_arg_slots = 0;
   std::string runtime_dispatch_symbol;
   Objc3IRRuntimeDispatchCallState &runtime_dispatch_call_state;

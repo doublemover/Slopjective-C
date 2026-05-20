@@ -37,6 +37,12 @@ struct Objc3IREmitterServiceContextState {
   const std::map<std::string, LoweredFunctionSignature> &function_signatures;
   const std::unordered_map<std::string, std::string>
       &direct_dispatch_symbols_by_key;
+  const std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
+      &direct_dispatch_signatures_by_key;
+  const std::unordered_map<std::string, ValueType>
+      &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, std::string>
+      &runtime_dispatch_superclass_by_name;
   const std::map<std::string, std::string> &selector_pool_globals;
   const std::map<std::string, std::string> &runtime_string_pool_globals;
   const std::map<std::string, TypedKeyPathArtifact> &typed_keypath_artifacts;

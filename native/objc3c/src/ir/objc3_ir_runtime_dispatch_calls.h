@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ast/objc3_ast_core.h"
 #include "lower/contracts/lowering_ownership_contracts.h"
 
 struct Objc3IRRuntimeDispatchCallRequest {
@@ -14,6 +15,8 @@ struct Objc3IRRuntimeDispatchCallRequest {
   std::string receiver;
   std::string selector_ptr;
   std::vector<std::string> args;
+  int expected_return_kind = 0;
+  bool uses_typed_value_dispatch = false;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
@@ -24,6 +27,8 @@ struct Objc3IRDirectDispatchCallRequest {
   std::string result_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string callee_symbol;
   std::vector<std::string> args;
+  std::vector<ValueType> arg_types;
+  ValueType return_type = ValueType::I32;
   std::size_t explicit_arg_count = 0;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;

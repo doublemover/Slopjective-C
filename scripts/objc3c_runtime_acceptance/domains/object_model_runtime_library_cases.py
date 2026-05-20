@@ -241,6 +241,21 @@ def check_method_cache_slow_path_probe_case(
         payload.get("strict_error_expected"),
         "cached strict-error dispatch must stay zero-valued",
     )
+    expect_equal(
+        payload.get("mutation_registration_status"),
+        0,
+        "public empty-image mutation registration must succeed",
+    )
+    registration_state = expect_required_mapping(
+        payload,
+        "registration_state",
+        "missing startup registration state",
+    )
+    registration_after_mutation_state = expect_required_mapping(
+        payload,
+        "registration_after_mutation_state",
+        "missing mutation registration state",
+    )
     first_state = expect_required_mapping(
         payload,
         "instance_first_state",
@@ -277,6 +292,18 @@ def check_method_cache_slow_path_probe_case(
         "second dispatch must hit cache",
     )
     expect(
+        registration_after_mutation_state.get("registered_image_count", 0)
+        > registration_state.get("registered_image_count", 0),
+        "public empty-image mutation must advance registered image count",
+    )
+    expect_equal(
+        registration_after_mutation_state.get(
+            "last_successful_registration_order_ordinal"
+        ),
+        registration_state.get("next_expected_registration_order_ordinal"),
+        "public empty-image mutation must consume next registration ordinal",
+    )
+    expect(
         stale_state.get("stale_method_cache_entry_count", 0)
         > second_state.get("stale_method_cache_entry_count", 0),
         "stale revalidation must be counted",
@@ -304,6 +331,9 @@ def check_method_cache_slow_path_probe_case(
         passed=True,
         summary={
             "instance_after_stale": payload.get("instance_after_stale"),
+            "mutation_registration_status": payload.get(
+                "mutation_registration_status"
+            ),
             "stale_method_cache_entry_count": stale_state.get(
                 "stale_method_cache_entry_count"
             ),

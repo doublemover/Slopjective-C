@@ -131,9 +131,42 @@ bool I32StatusShapeIsValid(
          std::strcmp(result.result_contract, expected_contract) == 0;
 }
 
+bool I32ValueShapeIsValid(const objc3_runtime_dispatch_i32_result &result,
+                          int expected_value) {
+  return result.abi_version == OBJC3_RUNTIME_DISPATCH_I32_RESULT_ABI_VERSION &&
+         result.result_size == sizeof(objc3_runtime_dispatch_i32_result) &&
+         result.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         result.return_kind == OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32 &&
+         result.value == expected_value &&
+         result.diagnostic_code != nullptr &&
+         result.diagnostic_code[0] == '\0' &&
+         result.diagnostic_message != nullptr &&
+         result.diagnostic_message[0] == '\0' &&
+         result.result_contract != nullptr &&
+         std::strcmp(result.result_contract, "typed-dispatch-value-result") ==
+             0;
+}
+
 bool I32ProjectionIsRejected(const TypedDispatchCase &test_case) {
   if (test_case.return_kind == OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32) {
-    return true;
+    const objc3_runtime_dispatch_i32_result i32_result =
+        objc3_runtime_dispatch_i32_checked(1024, test_case.selector, 0, 0, 0,
+                                           0);
+    const bool i32_valid =
+        I32ValueShapeIsValid(i32_result, test_case.expected_value);
+    if (!i32_valid) {
+      std::fprintf(
+          stderr,
+          "legacy i32 success check failed selector=%s status=%d kind=%d "
+          "value=%d code=%s contract=%s\n",
+          test_case.selector, i32_result.status_code, i32_result.return_kind,
+          i32_result.value,
+          i32_result.diagnostic_code != nullptr ? i32_result.diagnostic_code
+                                                : "<null>",
+          i32_result.result_contract != nullptr ? i32_result.result_contract
+                                                : "<null>");
+    }
+    return i32_valid;
   }
   const objc3_runtime_dispatch_i32_result i32_result =
       objc3_runtime_dispatch_i32_checked(1024, test_case.selector, 0, 0, 0, 0);
@@ -167,18 +200,35 @@ bool RunTypedCase(const TypedDispatchCase &test_case) {
   const objc3_runtime_dispatch_typed_result result =
       objc3_runtime_dispatch_typed_checked(1024, test_case.selector, 0, 0, 0,
                                            0);
+  const objc3_runtime_dispatch_typed_result cached_result =
+      objc3_runtime_dispatch_typed_checked(1024, test_case.selector, 0, 0, 0,
+                                           0);
   if (!CommonTypedResultShapeIsValid(result, test_case) ||
-      !TypedValueFieldsMatch(result, test_case)) {
+      !TypedValueFieldsMatch(result, test_case) ||
+      !CommonTypedResultShapeIsValid(cached_result, test_case) ||
+      !TypedValueFieldsMatch(cached_result, test_case)) {
     std::fprintf(
         stderr,
-        "typed case failed: %s status=%d kind=%d kind_name=%s i32=%d "
-        "bool=%d object=%d class=%d selector_ref=%d protocol=%d contract=%s\n",
-        test_case.selector, result.status_code, result.return_kind,
+        "typed case failed: %s first_status=%d cached_status=%d first_kind=%d "
+        "cached_kind=%d kind_name=%s cached_kind_name=%s i32=%d cached_i32=%d "
+        "bool=%d cached_bool=%d object=%d cached_object=%d class=%d "
+        "cached_class=%d selector_ref=%d cached_selector_ref=%d protocol=%d "
+        "cached_protocol=%d contract=%s cached_contract=%s\n",
+        test_case.selector, result.status_code, cached_result.status_code,
+        result.return_kind, cached_result.return_kind,
         result.return_kind_name != nullptr ? result.return_kind_name : "<null>",
-        result.i32_value, result.bool_value, result.object_reference,
-        result.class_reference, result.selector_reference,
-        result.protocol_reference,
-        result.result_contract != nullptr ? result.result_contract : "<null>");
+        cached_result.return_kind_name != nullptr
+            ? cached_result.return_kind_name
+            : "<null>",
+        result.i32_value, cached_result.i32_value, result.bool_value,
+        cached_result.bool_value, result.object_reference,
+        cached_result.object_reference, result.class_reference,
+        cached_result.class_reference, result.selector_reference,
+        cached_result.selector_reference, result.protocol_reference,
+        cached_result.protocol_reference,
+        result.result_contract != nullptr ? result.result_contract : "<null>",
+        cached_result.result_contract != nullptr ? cached_result.result_contract
+                                                : "<null>");
     return false;
   }
   const bool projection_rejected = I32ProjectionIsRejected(test_case);
@@ -246,11 +296,18 @@ bool RunTypedUnsupportedReturnCase() {
   }
   const objc3_runtime_dispatch_typed_result typed_result =
       objc3_runtime_dispatch_typed_checked(1024, "doubleValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_typed_result cached_typed_result =
+      objc3_runtime_dispatch_typed_checked(1024, "doubleValue", 0, 0, 0, 0);
   const objc3_runtime_dispatch_i32_result i32_result =
       objc3_runtime_dispatch_i32_checked(1024, "doubleValue", 0, 0, 0, 0);
   const bool valid =
       TypedStatusShapeIsValid(
           typed_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT005", "typed-dispatch-strict-error-result") &&
+      TypedStatusShapeIsValid(
+          cached_typed_result,
+          OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE,
           OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
           "O3RT005", "typed-dispatch-strict-error-result") &&
       I32StatusShapeIsValid(
@@ -276,12 +333,20 @@ bool RunTypedUnsupportedArgumentCase() {
   const objc3_runtime_dispatch_typed_result typed_result =
       objc3_runtime_dispatch_typed_checked(
           1024, "tooMany:args:for:i32:path:", 1, 2, 3, 4);
+  const objc3_runtime_dispatch_typed_result cached_typed_result =
+      objc3_runtime_dispatch_typed_checked(
+          1024, "tooMany:args:for:i32:path:", 1, 2, 3, 4);
   const objc3_runtime_dispatch_i32_result i32_result =
       objc3_runtime_dispatch_i32_checked(
           1024, "tooMany:args:for:i32:path:", 1, 2, 3, 4);
   const bool valid =
       TypedStatusShapeIsValid(
           typed_result,
+          OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
+          "O3RT006", "typed-dispatch-strict-error-result") &&
+      TypedStatusShapeIsValid(
+          cached_typed_result,
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
           OBJC3_RUNTIME_DISPATCH_RETURN_KIND_UNSUPPORTED, "unsupported",
           "O3RT006", "typed-dispatch-strict-error-result") &&
