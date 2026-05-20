@@ -55,4 +55,48 @@ def check_stdlib_core_runtime_probe_case(clangxx: str, run_dir: Path) -> CaseRes
     )
 
 
-__all__ = ["check_stdlib_core_runtime_probe_case"]
+def check_stdlib_concurrency_runtime_probe_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "stdlib-concurrency-runtime-probe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "stdlib_concurrency_runtime_probe.cpp"
+    exe_path = case_dir / "stdlib_concurrency_runtime_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_json_output(run_probe(exe_path), "stdlib concurrency runtime probe")
+    expect_equal(payload.get("spawn_call_count"), 3, "stdlib task spawn calls drifted")
+    expect_equal(payload.get("scope_call_count"), 1, "stdlib task group scope calls drifted")
+    expect_equal(payload.get("add_task_call_count"), 2, "stdlib task group add calls drifted")
+    expect_equal(payload.get("wait_next_call_count"), 2, "stdlib task group wait calls drifted")
+    expect_equal(payload.get("cancel_all_call_count"), 1, "stdlib cancellation calls drifted")
+    expect_equal(payload.get("executor_hop_call_count"), 1, "stdlib executor hop calls drifted")
+    expect_equal(payload.get("scheduler_enqueue_count"), 3, "stdlib scheduler enqueue count drifted")
+    expect_equal(payload.get("scheduler_dequeue_count"), 2, "stdlib scheduler dequeue count drifted")
+    expect_equal(payload.get("scheduler_sequence"), 5, "stdlib scheduler sequence drifted")
+    expect_equal(payload.get("last_queue_drain_result"), 26, "stdlib task-group drain order drifted")
+    return CaseResult(
+        case_id="stdlib-concurrency-runtime-probe",
+        probe="tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+        fixture="stdlib/modules/objc3.concurrency/module.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "kind": "stdlib-concurrency-runtime-backed-task-helper-probe",
+            "runtime_abi": [
+                "objc3_runtime_spawn_task_i32",
+                "objc3_runtime_enter_task_group_scope_i32",
+                "objc3_runtime_add_task_group_task_i32",
+                "objc3_runtime_wait_task_group_next_i32",
+                "objc3_runtime_cancel_task_group_i32",
+                "objc3_runtime_task_is_cancelled_i32",
+                "objc3_runtime_task_on_cancel_i32",
+                "objc3_runtime_executor_hop_i32",
+            ],
+            "scheduler_sequence": payload.get("scheduler_sequence"),
+        },
+    )
+
+
+__all__ = [
+    "check_stdlib_core_runtime_probe_case",
+    "check_stdlib_concurrency_runtime_probe_case",
+]

@@ -49,6 +49,7 @@ int EnterRuntimeTaskGroupScope(RuntimeTaskState &state, int executor_tag) {
   state.observed_cancellation_generation = state.cancellation_generation;
   state.last_queue_depth = 0;
   state.last_queue_drain_result = 0;
+  state.active_group_ready_queue.clear();
   state.lifecycle_state = kRuntimeTaskLifecycleGroupActive;
   return 1;
 }
@@ -78,6 +79,7 @@ int AddRuntimeTaskGroupTask(RuntimeTaskState &state, int executor_tag) {
   const int scheduled_result =
       20 + executor_tag + state.active_group_task_count;
   RecordRuntimeTaskSchedulerEnqueue(state, executor_tag, scheduled_result);
+  state.active_group_ready_queue.push_back(scheduled_result);
   state.last_queue_depth = state.pending_group_task_count;
   state.lifecycle_state = kRuntimeTaskLifecycleGroupActive;
   return 1;
@@ -116,8 +118,8 @@ int WaitRuntimeTaskGroupNext(RuntimeTaskState &state, int executor_tag) {
     return RecordTaskGroupFailure(
         state, kRuntimeTaskFailureEmptyTaskGroupQueue);
   }
-  state.last_wait_next_result = DrainRuntimeTaskSchedulerQueue(state,
-                                                               executor_tag);
+  state.last_wait_next_result = DrainRuntimeTaskGroupSchedulerQueue(
+      state, executor_tag);
   if (state.last_wait_next_result <= 0) {
     state.last_wait_next_result =
         -kRuntimeTaskFailureEmptyTaskGroupQueue;

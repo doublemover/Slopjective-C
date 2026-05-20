@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <deque>
 #include <unordered_map>
@@ -70,6 +71,7 @@ struct RuntimeTaskState {
   int scheduler_sequence = 0;
   int deadlock_guard_passed = 1;
   int race_guard_passed = 1;
+  std::deque<int> active_group_ready_queue;
   std::unordered_map<int, std::deque<int>> executor_ready_queues;
 };
 
@@ -130,6 +132,51 @@ inline int DrainRuntimeTaskSchedulerQueue(RuntimeTaskState &state,
   return task_handle;
 }
 
+inline int DrainRuntimeTaskGroupSchedulerQueue(RuntimeTaskState &state,
+                                               int executor_tag) {
+  if (state.active_group_ready_queue.empty()) {
+    state.last_dequeued_task_handle = 0;
+    state.last_dequeued_executor_tag = executor_tag;
+    state.last_executor_queue_depth =
+        RuntimeTaskQueueDepthForExecutor(state, executor_tag);
+    state.deadlock_guard_passed = 0;
+    return 0;
+  }
+
+  const int task_handle = state.active_group_ready_queue.front();
+  auto found = state.executor_ready_queues.find(executor_tag);
+  if (found == state.executor_ready_queues.end()) {
+    state.last_dequeued_task_handle = 0;
+    state.last_dequeued_executor_tag = executor_tag;
+    state.last_executor_queue_depth = 0;
+    state.race_guard_passed = 0;
+    return 0;
+  }
+
+  std::deque<int> &queue = found->second;
+  const auto task_position =
+      std::find(queue.begin(), queue.end(), task_handle);
+  if (task_position == queue.end()) {
+    state.last_dequeued_task_handle = 0;
+    state.last_dequeued_executor_tag = executor_tag;
+    state.last_executor_queue_depth = static_cast<int>(queue.size());
+    state.race_guard_passed = 0;
+    return 0;
+  }
+
+  queue.erase(task_position);
+  state.active_group_ready_queue.pop_front();
+  ++state.scheduler_dequeue_count;
+  ++state.scheduler_sequence;
+  state.last_dequeued_task_handle = task_handle;
+  state.last_dequeued_executor_tag = executor_tag;
+  state.last_executor_queue_depth = static_cast<int>(queue.size());
+  state.deadlock_guard_passed =
+      RuntimeTaskSchedulerCountsAreBalanced(state) ? 1 : 0;
+  state.race_guard_passed = task_handle > 0 && executor_tag >= 0 ? 1 : 0;
+  return task_handle;
+}
+
 inline int CancelPendingRuntimeTaskSchedulerQueue(RuntimeTaskState &state,
                                                   int executor_tag,
                                                   int max_tasks_to_cancel) {
@@ -147,6 +194,46 @@ inline int CancelPendingRuntimeTaskSchedulerQueue(RuntimeTaskState &state,
   while (!queue.empty() && cancelled < max_tasks_to_cancel) {
     const int task_handle = queue.front();
     queue.pop_front();
+    ++cancelled;
+    ++state.scheduler_cancelled_count;
+    ++state.scheduler_sequence;
+    state.last_cancelled_task_handle = task_handle;
+    state.last_cancelled_executor_tag = executor_tag;
+    state.last_executor_queue_depth = static_cast<int>(queue.size());
+    state.race_guard_passed = task_handle > 0 && executor_tag >= 0 ? 1 : 0;
+  }
+  state.deadlock_guard_passed =
+      RuntimeTaskSchedulerCountsAreBalanced(state) ? 1 : 0;
+  return cancelled;
+}
+
+inline int CancelPendingRuntimeTaskGroupSchedulerQueue(
+    RuntimeTaskState &state,
+    int executor_tag,
+    int max_tasks_to_cancel) {
+  auto found = state.executor_ready_queues.find(executor_tag);
+  if (found == state.executor_ready_queues.end() ||
+      max_tasks_to_cancel <= 0) {
+    state.last_executor_queue_depth =
+        RuntimeTaskQueueDepthForExecutor(state, executor_tag);
+    state.deadlock_guard_passed =
+        RuntimeTaskSchedulerCountsAreBalanced(state) ? 1 : 0;
+    return 0;
+  }
+
+  std::deque<int> &queue = found->second;
+  int cancelled = 0;
+  while (!state.active_group_ready_queue.empty() &&
+         cancelled < max_tasks_to_cancel) {
+    const int task_handle = state.active_group_ready_queue.front();
+    const auto task_position =
+        std::find(queue.begin(), queue.end(), task_handle);
+    if (task_position == queue.end()) {
+      state.race_guard_passed = 0;
+      break;
+    }
+    queue.erase(task_position);
+    state.active_group_ready_queue.pop_front();
     ++cancelled;
     ++state.scheduler_cancelled_count;
     ++state.scheduler_sequence;

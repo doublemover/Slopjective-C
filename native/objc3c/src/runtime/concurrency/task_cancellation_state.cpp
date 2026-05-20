@@ -57,7 +57,7 @@ int CancelRuntimeTaskGroup(RuntimeTaskState &state, int executor_tag) {
         state, kRuntimeTaskFailureTaskGroupAlreadyCancelled);
   }
   const int pending_tasks = state.pending_group_task_count;
-  const int cancelled_tasks = CancelPendingRuntimeTaskSchedulerQueue(
+  const int cancelled_tasks = CancelPendingRuntimeTaskGroupSchedulerQueue(
       state, executor_tag, pending_tasks);
   if (cancelled_tasks != pending_tasks) {
     state.race_guard_passed = 0;

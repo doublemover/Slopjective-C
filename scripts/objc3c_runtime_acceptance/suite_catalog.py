@@ -97,7 +97,9 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
         "async-task-actor-normalization-completion",
         "unified-concurrency-lowering-metadata-surface",
         "unified-concurrency-runtime-abi",
+        "async-error-foreign-boundary-runtime-trace",
         "live-unified-concurrency-runtime-implementation",
+        "stdlib-concurrency-runtime-probe",
         "cross-module-concurrency-actor-artifact-preservation",
     ),
 }

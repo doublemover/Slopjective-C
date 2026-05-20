@@ -28,6 +28,7 @@ REQUIRED_CASES = {
     "unified-concurrency-lowering-metadata-surface",
     "unified-concurrency-runtime-abi",
     "live-unified-concurrency-runtime-implementation",
+    "stdlib-concurrency-runtime-probe",
     "cross-module-concurrency-actor-artifact-preservation",
 }
 
@@ -77,6 +78,8 @@ def ensure_case_passed(case_map: dict[str, dict[str, Any]], case_id: str) -> Non
             result = runtime_acceptance.check_unified_concurrency_runtime_abi_case(clangxx, run_dir)
         elif case_id == "live-unified-concurrency-runtime-implementation":
             result = runtime_acceptance.check_live_unified_concurrency_runtime_implementation_case(clangxx, run_dir)
+        elif case_id == "stdlib-concurrency-runtime-probe":
+            result = runtime_acceptance.check_stdlib_concurrency_runtime_probe_case(clangxx, run_dir)
         elif case_id == "cross-module-concurrency-actor-artifact-preservation":
             result = runtime_acceptance.check_cross_module_concurrency_actor_artifact_preservation_case(run_dir)
         else:

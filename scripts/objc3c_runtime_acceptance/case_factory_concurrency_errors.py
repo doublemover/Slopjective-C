@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from objc3c_runtime_acceptance.case_factory_types import CaseFactoryContext
 from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
+from objc3c_runtime_acceptance.domains.stdlib_runtime_cases import (
+    check_stdlib_concurrency_runtime_probe_case,
+)
 
 
 def build_concurrency_case_factories(
@@ -41,6 +44,13 @@ def build_concurrency_case_factories(
         (
             "live-unified-concurrency-runtime-implementation",
             lambda: domains.concurrency.check_live_unified_concurrency_runtime_implementation_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
+            "stdlib-concurrency-runtime-probe",
+            lambda: check_stdlib_concurrency_runtime_probe_case(
                 clangxx,
                 run_dir,
             ),
@@ -113,6 +123,13 @@ def build_error_case_factories(context: CaseFactoryContext) -> LabeledCaseFactor
         (
             "live-error-runtime-integration",
             lambda: domains.errors.check_live_error_runtime_integration_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
+        (
+            "async-error-foreign-boundary-runtime-trace",
+            lambda: domains.errors.check_async_error_foreign_boundary_runtime_trace_case(
                 clangxx,
                 run_dir,
             ),
