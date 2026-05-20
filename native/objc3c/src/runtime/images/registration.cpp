@@ -1,6 +1,7 @@
 #include "runtime/images/registration.h"
 
 #include "runtime/classes/class_graph.h"
+#include "runtime/classes/protocol_conformance.h"
 #include "runtime/dispatch/method_fast_path_seed.h"
 #include "runtime/images/image_descriptor.h"
 #include "runtime/images/registration_snapshots.h"
@@ -130,6 +131,10 @@ struct RuntimeRegistrationMutationCheckpoint {
   std::string last_materialized_keypath_profile;
   std::uint64_t malformed_class_metadata_rejection_count = 0;
   std::string last_malformed_class_graph_reason;
+  std::string last_malformed_class_graph_metadata_surface;
+  std::string last_malformed_class_graph_target_kind;
+  std::string last_malformed_class_graph_visibility_state;
+  std::string last_malformed_class_graph_availability_state;
   std::unordered_map<MethodCacheKey, MethodCacheEntry, MethodCacheKeyHash>
       method_cache;
   std::uint64_t method_cache_hit_count = 0;
@@ -229,6 +234,14 @@ struct RuntimeRegistrationMutationCheckpoint {
             state.malformed_class_metadata_rejection_count),
         last_malformed_class_graph_reason(
             state.last_malformed_class_graph_reason),
+        last_malformed_class_graph_metadata_surface(
+            state.last_malformed_class_graph_metadata_surface),
+        last_malformed_class_graph_target_kind(
+            state.last_malformed_class_graph_target_kind),
+        last_malformed_class_graph_visibility_state(
+            state.last_malformed_class_graph_visibility_state),
+        last_malformed_class_graph_availability_state(
+            state.last_malformed_class_graph_availability_state),
         method_cache(state.method_cache),
         method_cache_hit_count(state.method_cache_hit_count),
         method_cache_miss_count(state.method_cache_miss_count),
@@ -340,6 +353,14 @@ struct RuntimeRegistrationMutationCheckpoint {
     state.malformed_class_metadata_rejection_count =
         malformed_class_metadata_rejection_count;
     state.last_malformed_class_graph_reason = last_malformed_class_graph_reason;
+    state.last_malformed_class_graph_metadata_surface =
+        last_malformed_class_graph_metadata_surface;
+    state.last_malformed_class_graph_target_kind =
+        last_malformed_class_graph_target_kind;
+    state.last_malformed_class_graph_visibility_state =
+        last_malformed_class_graph_visibility_state;
+    state.last_malformed_class_graph_availability_state =
+        last_malformed_class_graph_availability_state;
     state.method_cache = method_cache;
     state.method_cache_hit_count = method_cache_hit_count;
     state.method_cache_miss_count = method_cache_miss_count;
@@ -470,6 +491,8 @@ int RegisterImageUnlocked(
       if (has_malformed_metadata_rejection) {
         ++state.malformed_class_metadata_rejection_count;
         state.last_malformed_class_graph_reason = malformed_reason;
+        RecordRuntimeProtocolCategoryDiagnosticFieldsUnlocked(
+            state, malformed_reason);
       }
       ClearImageWalkSnapshotUnlocked(state);
       MarkRejectedRegistrationUnlocked(
@@ -508,6 +531,7 @@ int RegisterImageUnlocked(
       image->registration_order_ordinal;
   state.last_registration_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   state.last_malformed_class_graph_reason.clear();
+  ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(state);
   state.last_registered_module_name = image->module_name;
   state.last_registered_translation_unit_identity_key =
       image->translation_unit_identity_key;
@@ -531,6 +555,8 @@ int RegisterImageUnlocked(
     mutation_checkpoint.Restore(state);
     ++state.malformed_class_metadata_rejection_count;
     state.last_malformed_class_graph_reason = malformed_reason;
+    RecordRuntimeProtocolCategoryDiagnosticFieldsUnlocked(state,
+                                                          malformed_reason);
     MarkRejectedRegistrationUnlocked(
         state, image,
         OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS);

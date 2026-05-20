@@ -32,6 +32,10 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
     std::string &failure_reason);
 bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
                                                     const char *protocol_name);
+void ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(RuntimeState &state);
+void RecordRuntimeProtocolCategoryDiagnosticFieldsUnlocked(
+    RuntimeState &state,
+    const std::string &diagnostic_reason);
 bool RuntimeProtocolCategoryMetadataTableIsSupported(
     const RuntimeState &state,
     const objc3_runtime_registration_table *registration_table,

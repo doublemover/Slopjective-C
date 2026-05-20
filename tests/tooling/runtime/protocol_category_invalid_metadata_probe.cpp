@@ -76,6 +76,8 @@ constexpr const char *kAdoptedConflictMetaclassOwner =
     "metaclass-object:RequirementConflictAdopter";
 constexpr const char *kForwardInheritedModuleName =
     "protocol-forward-inherited-reference-runtime-probe";
+constexpr const char *kDuplicateProtocolDescriptorModuleName =
+    "protocol-duplicate-descriptor-runtime-probe";
 
 const PointerAggregateStorage<1> kEmptyRootStorage = {0, {nullptr}};
 const objc3_runtime_pointer_aggregate *kEmptyRoot =
@@ -166,7 +168,7 @@ constexpr InvalidMetadataCaseDescriptor
         "protocol:MixedReadable",
         "available",
         "inherited-requirement-conflict",
-        "conflicting protocol instance method requirement readValue in protocol "
+        "conflicting inherited protocol instance method requirement readValue in protocol "
         "MixedReadable"};
 
 constexpr InvalidMetadataCaseDescriptor kAdoptedProtocolRequirementConflictCase{
@@ -179,7 +181,7 @@ constexpr InvalidMetadataCaseDescriptor kAdoptedProtocolRequirementConflictCase{
     kAdoptedConflictClassOwner,
     "available",
     "adopted-requirement-conflict",
-    "conflicting protocol instance method requirement readValue in class "
+    "conflicting adopted protocol instance method requirement readValue in class "
     "RequirementConflictAdopter"};
 
 constexpr InvalidMetadataCaseDescriptor kForwardInheritedProtocolReferenceCase{
@@ -193,6 +195,18 @@ constexpr InvalidMetadataCaseDescriptor kForwardInheritedProtocolReferenceCase{
     "forward-declaration",
     "unavailable-for-inheritance",
     "forward protocol reference in protocol ConcreteChild"};
+
+constexpr InvalidMetadataCaseDescriptor kDuplicateProtocolDescriptorCase{
+    "duplicate-protocol-descriptor",
+    kTranslationUnit,
+    "protocol.descriptor_root",
+    "protocol",
+    "Worker",
+    "",
+    "protocol:Worker",
+    "duplicate-protocol",
+    "duplicate-descriptor",
+    "duplicate protocol descriptor for Worker"};
 
 struct InvalidProtocolReferenceImage {
   objc3_runtime_image_descriptor image{kModuleName, kTranslationUnit, 1, 1, 0,
@@ -539,6 +553,35 @@ struct ForwardInheritedProtocolReferenceImage {
       nullptr, &image_local_init_state};
 };
 
+struct DuplicateProtocolDescriptorImage {
+  objc3_runtime_image_descriptor image{kDuplicateProtocolDescriptorModuleName,
+                                       kTranslationUnit, 1, 0, 2, 0, 0, 0};
+  objc3c::runtime::EmittedProtocolRecord first_worker_protocol{
+      "Worker", "protocol:Worker", kEmptyRoot, nullptr, nullptr, 0, 0, 0, 0,
+      false};
+  objc3c::runtime::EmittedProtocolRecord second_worker_protocol{
+      "Worker", "protocol:Worker", kEmptyRoot, nullptr, nullptr, 0, 0, 0, 0,
+      false};
+  PointerAggregateStorage<2> protocol_root_storage{
+      2, {&first_worker_protocol, &second_worker_protocol}};
+  PointerAggregateStorage<6> discovery_root_storage{
+      6,
+      {&kEmptyRootStorage, &protocol_root_storage, &kEmptyRootStorage,
+       &kEmptyRootStorage, &kEmptyRootStorage, &kEmptyRootStorage}};
+  const objc3_runtime_pointer_aggregate *protocol_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &protocol_root_storage);
+  const objc3_runtime_pointer_aggregate *discovery_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &discovery_root_storage);
+  const void *discovery_root_anchor = discovery_root;
+  unsigned char image_local_init_state = 0;
+  objc3_runtime_registration_table registration_table{
+      2, 12, &image, discovery_root, &discovery_root_anchor, kEmptyRoot,
+      protocol_root, kEmptyRoot, kEmptyRoot, kEmptyRoot, nullptr, nullptr,
+      nullptr, &image_local_init_state};
+};
+
 struct ProbeResult {
   const InvalidMetadataCaseDescriptor *descriptor = nullptr;
   int registration_status = 0;
@@ -546,6 +589,10 @@ struct ProbeResult {
   objc3_runtime_realized_class_graph_state_snapshot graph_state{};
   objc3_runtime_realized_class_entry_snapshot class_entry{};
   std::string malformed_reason;
+  std::string snapshot_metadata_surface;
+  std::string snapshot_target_kind;
+  std::string snapshot_visibility_state;
+  std::string snapshot_availability_state;
 };
 
 struct ProbeRun {
@@ -557,6 +604,7 @@ struct ProbeRun {
   ProbeResult inherited_protocol_requirement_conflict;
   ProbeResult adopted_protocol_requirement_conflict;
   ProbeResult forward_inherited_protocol_reference;
+  ProbeResult duplicate_protocol_descriptor;
 };
 
 ProbeResult CaptureInvalidRegistration(
@@ -579,6 +627,22 @@ ProbeResult CaptureInvalidRegistration(
       result.graph_state.last_malformed_class_graph_reason != nullptr
           ? result.graph_state.last_malformed_class_graph_reason
           : "";
+  result.snapshot_metadata_surface =
+      result.graph_state.last_malformed_class_graph_metadata_surface != nullptr
+          ? result.graph_state.last_malformed_class_graph_metadata_surface
+          : "";
+  result.snapshot_target_kind =
+      result.graph_state.last_malformed_class_graph_target_kind != nullptr
+          ? result.graph_state.last_malformed_class_graph_target_kind
+          : "";
+  result.snapshot_visibility_state =
+      result.graph_state.last_malformed_class_graph_visibility_state != nullptr
+          ? result.graph_state.last_malformed_class_graph_visibility_state
+          : "";
+  result.snapshot_availability_state =
+      result.graph_state.last_malformed_class_graph_availability_state != nullptr
+          ? result.graph_state.last_malformed_class_graph_availability_state
+          : "";
   return result;
 }
 
@@ -591,6 +655,7 @@ ProbeRun RunProbe() {
   InheritedProtocolRequirementConflictImage inherited_conflict_fixture;
   AdoptedProtocolRequirementConflictImage adopted_conflict_fixture;
   ForwardInheritedProtocolReferenceImage forward_inherited_fixture;
+  DuplicateProtocolDescriptorImage duplicate_descriptor_fixture;
   ProbeRun run;
   run.invalid_protocol_reference = CaptureInvalidRegistration(
       kInvalidProtocolReferenceCase,
@@ -627,6 +692,9 @@ ProbeRun RunProbe() {
       kForwardInheritedProtocolReferenceCase,
       &forward_inherited_fixture.image,
       &forward_inherited_fixture.registration_table, "");
+  run.duplicate_protocol_descriptor = CaptureInvalidRegistration(
+      kDuplicateProtocolDescriptorCase, &duplicate_descriptor_fixture.image,
+      &duplicate_descriptor_fixture.registration_table, "");
   return run;
 }
 
@@ -685,6 +753,18 @@ void WriteProbeResultFields(
   WriteJsonStringField(
       out, separator, "snapshot_diagnostic_class",
       result.graph_state.last_malformed_class_graph_diagnostic_class);
+  WriteJsonStringField(
+      out, separator, "snapshot_metadata_surface",
+      result.snapshot_metadata_surface.c_str());
+  WriteJsonStringField(
+      out, separator, "snapshot_target_kind",
+      result.snapshot_target_kind.c_str());
+  WriteJsonStringField(
+      out, separator, "snapshot_visibility_state",
+      result.snapshot_visibility_state.c_str());
+  WriteJsonStringField(
+      out, separator, "snapshot_availability_state",
+      result.snapshot_availability_state.c_str());
   WriteJsonIntField(out, separator, "last_registration_status",
                     result.registration_state.last_registration_status);
   WriteJsonUInt64Field(
@@ -754,6 +834,9 @@ void PrintProbeResult(const ProbeRun &run) {
   separator.BeforeField(std::cout);
   WriteJsonFieldName(std::cout, "forward_inherited_protocol_reference");
   WriteProbeResultObject(std::cout, run.forward_inherited_protocol_reference);
+  separator.BeforeField(std::cout);
+  WriteJsonFieldName(std::cout, "duplicate_protocol_descriptor");
+  WriteProbeResultObject(std::cout, run.duplicate_protocol_descriptor);
   std::cout << "}";
 }
 

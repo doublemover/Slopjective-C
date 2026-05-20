@@ -73,7 +73,18 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
   std::printf("\"class_value\":%d,", values.class_value);
   std::printf("\"super_inherited_value\":%d,",
               values.super_inherited_value);
+  std::printf("\"super_cached_inherited_value\":%d,",
+              values.super_cached_inherited_value);
+  std::printf("\"super_inherited_i32_result\":");
+  PrintI32DispatchResult(values.super_inherited_i32_result);
+  std::printf(",");
   std::printf("\"nil_receiver_value\":%d,", values.nil_receiver_value);
+  std::printf("\"nil_receiver_i32_result\":");
+  PrintI32DispatchResult(values.nil_receiver_i32_result);
+  std::printf(",");
+  std::printf("\"nil_receiver_typed_result\":");
+  PrintTypedDispatchResult(values.nil_receiver_typed_result);
+  std::printf(",");
   std::printf("\"protocol_strict_error\":%d,",
               values.protocol_strict_error);
   std::printf("\"protocol_strict_error_expected\":%d,",
@@ -105,6 +116,9 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
   std::printf(",\"derived_worker_query\":");
   ::objc3c::runtime::probe::PrintConformanceQueryProtocolInheritance(
       run.derived_worker_query.query);
+  std::printf(",\"leaf_worker_query\":");
+  ::objc3c::runtime::probe::PrintConformanceQueryProtocolInheritance(
+      run.leaf_worker_query.query);
   std::printf(",\"missing_protocol_query\":");
   ::objc3c::runtime::probe::PrintConformanceQueryProtocolCategory(
       run.missing_protocol_query.query);
@@ -117,6 +131,12 @@ inline void PrintCategoryAttachmentProtocolRuntimeReport(
   std::printf(",\"category_second_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
       run.category_second_state.state);
+  std::printf(",\"super_first_state\":");
+  ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
+      run.super_first_state.state);
+  std::printf(",\"super_second_state\":");
+  ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
+      run.super_second_state.state);
   std::printf(",\"method_state\":");
   ::objc3c::runtime::probe::PrintMethodCacheStateCategoryAttachment(
       run.method_state.state);

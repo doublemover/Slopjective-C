@@ -42,14 +42,20 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
     tracer = payload.get("tracer_query", {})
     base_worker = payload.get("base_worker_query", {})
     derived_worker = payload.get("derived_worker_query", {})
+    leaf_worker = payload.get("leaf_worker_query", {})
     missing_protocol = payload.get("missing_protocol_query", {})
     missing_class = payload.get("missing_class_query", {})
     category_first_state = payload.get("category_first_state", {})
     category_second_state = payload.get("category_second_state", {})
+    super_first_state = payload.get("super_first_state", {})
+    super_second_state = payload.get("super_second_state", {})
     method_state = payload.get("method_state", {})
     category_entry = payload.get("category_entry", {})
     strict_error_entry = payload.get("strict_error_entry", {})
     category_bool_typed_result = payload.get("category_bool_typed_result", {})
+    super_inherited_i32_result = payload.get("super_inherited_i32_result", {})
+    nil_receiver_i32_result = payload.get("nil_receiver_i32_result", {})
+    nil_receiver_typed_result = payload.get("nil_receiver_typed_result", {})
     strict_error_i32_result = payload.get("protocol_strict_error_i32_result", {})
     strict_error_typed_result = payload.get(
         "protocol_strict_error_typed_result", {}
@@ -88,8 +94,42 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected super lookup start to resolve inherited Base method",
     )
     expect(
-        payload.get("nil_receiver_value") == 0,
-        "expected nil receiver category dispatch to return zero without live lookup",
+        payload.get("super_cached_inherited_value") == 7
+        and super_inherited_i32_result.get("status_code") == 0
+        and super_inherited_i32_result.get("return_kind") == 1
+        and super_inherited_i32_result.get("value") == 7
+        and super_inherited_i32_result.get("result_contract")
+        == "typed-dispatch-value-result",
+        "expected checked super lookup dispatch to publish i32 value-result status",
+    )
+    expect(
+        payload.get("nil_receiver_value") == 0
+        and nil_receiver_i32_result.get("status_code") == 1
+        and nil_receiver_i32_result.get("return_kind") == 0
+        and nil_receiver_i32_result.get("value") == 0
+        and nil_receiver_i32_result.get("diagnostic_code") == "O3RT008"
+        and nil_receiver_i32_result.get("diagnostic_message")
+        == "runtime dispatch failed: nil receiver has no value dispatch result"
+        and nil_receiver_i32_result.get("result_contract")
+        == "typed-dispatch-value-result",
+        "expected nil receiver category dispatch to publish checked zero-result status",
+    )
+    expect(
+        nil_receiver_typed_result.get("status_code") == 1
+        and nil_receiver_typed_result.get("return_kind") == 0
+        and nil_receiver_typed_result.get("return_kind_name") == "unsupported"
+        and nil_receiver_typed_result.get("i32_value") == 0
+        and nil_receiver_typed_result.get("bool_value") == 0
+        and nil_receiver_typed_result.get("object_reference") == 0
+        and nil_receiver_typed_result.get("class_reference") == 0
+        and nil_receiver_typed_result.get("selector_reference") == 0
+        and nil_receiver_typed_result.get("protocol_reference") == 0
+        and nil_receiver_typed_result.get("diagnostic_code") == "O3RT008"
+        and nil_receiver_typed_result.get("diagnostic_message")
+        == "runtime dispatch failed: nil receiver has no value dispatch result"
+        and nil_receiver_typed_result.get("result_contract")
+        == "typed-dispatch-value-result",
+        "expected nil receiver typed dispatch to preserve zeroed value-result envelope",
     )
     expect(
         payload.get("protocol_strict_error")
@@ -182,6 +222,20 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         "expected Derived to conform to Worker through inherited Tracer protocol semantics",
     )
     expect(
+        leaf_worker.get("class_found") == 1
+        and leaf_worker.get("protocol_found") == 1
+        and leaf_worker.get("conforms") == 1
+        and leaf_worker.get("malformed_metadata") == 0
+        and leaf_worker.get("matched_protocol_owner_identity") == "protocol:Worker"
+        and leaf_worker.get("matched_class_name") == "Derived"
+        and leaf_worker.get("matched_class_owner_identity") == "class:Derived"
+        and leaf_worker.get("matched_protocol_depth", 0) >= 1
+        and leaf_worker.get("matched_via_inherited_protocol") == 1
+        and leaf_worker.get("matched_from_superclass") == 1
+        and leaf_worker.get("matched_from_category") == 0,
+        "expected Leaf to inherit Derived's Tracer conformance to Worker through the superclass chain",
+    )
+    expect(
         missing_protocol.get("class_found") == 1
         and missing_protocol.get("protocol_found") == 0
         and missing_protocol.get("conforms") == 0
@@ -217,6 +271,26 @@ def _assert_protocol_category_payload(payload: dict[str, Any]) -> None:
         and category_second_state.get("last_dispatch_resolved_live_method") == 1
         and category_second_state.get("last_category_probe_count", 0) == 1,
         "expected second category dispatch to hit the merged dispatch cache",
+    )
+    expect(
+        super_first_state.get("last_selector") == "inheritedValue"
+        and super_first_state.get("last_dispatch_used_cache") == 0
+        and super_first_state.get("last_dispatch_resolved_live_method") == 1
+        and super_first_state.get("last_category_probe_count", 0) == 0
+        and super_first_state.get("last_resolved_class_name") == "Base"
+        and super_first_state.get("last_resolved_owner_identity")
+        == "implementation:Base::instance_method:inheritedValue",
+        "expected first super-send dispatch to resolve live from Base",
+    )
+    expect(
+        super_second_state.get("last_selector") == "inheritedValue"
+        and super_second_state.get("last_dispatch_used_cache") == 1
+        and super_second_state.get("last_dispatch_resolved_live_method") == 1
+        and super_second_state.get("last_category_probe_count", 0) == 0
+        and super_second_state.get("last_resolved_class_name") == "Base"
+        and super_second_state.get("last_resolved_owner_identity")
+        == "implementation:Base::instance_method:inheritedValue",
+        "expected second super-send dispatch to hit the lookup-start cache",
     )
     expect(
         category_entry.get("found") == 1
@@ -263,11 +337,17 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
     )
     adopted_requirement = payload.get("adopted_protocol_requirement_conflict", {})
     forward_inherited = payload.get("forward_inherited_protocol_reference", {})
+    duplicate_descriptor = payload.get("duplicate_protocol_descriptor", {})
     invalid_cases = {
         "unregistered-protocol-reference": payload,
         "forward-protocol-reference": forward_protocol,
         "missing-category-target": missing_category,
         "conflicting-category-owner": conflicting_category,
+        "duplicate-protocol-requirement": duplicate_requirement,
+        "inherited-protocol-requirement-conflict": inherited_requirement,
+        "adopted-protocol-requirement-conflict": adopted_requirement,
+        "forward-inherited-protocol-reference": forward_inherited,
+        "duplicate-protocol-descriptor": duplicate_descriptor,
     }
     for case_id, case_payload in invalid_cases.items():
         expect(
@@ -295,6 +375,17 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
         expect(
             case_payload.get("reason_matches_expected") is True,
             f"expected {case_id} to publish expected reason match evidence",
+        )
+        expect(
+            case_payload.get("snapshot_metadata_surface")
+            == case_payload.get("metadata_surface")
+            and case_payload.get("snapshot_target_kind")
+            == case_payload.get("target_kind")
+            and case_payload.get("snapshot_visibility_state")
+            == case_payload.get("visibility_state")
+            and case_payload.get("snapshot_availability_state")
+            == case_payload.get("availability_state"),
+            f"expected {case_id} runtime snapshot to publish structured visibility and availability diagnostic fields",
         )
     expect(
         payload.get("registration_status") == -4
@@ -423,7 +514,7 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
     expect(
         inherited_requirement.get("last_malformed_class_graph_reason")
         == (
-            "conflicting protocol instance method requirement readValue in protocol "
+            "conflicting inherited protocol instance method requirement readValue in protocol "
             "MixedReadable"
         ),
         "expected stable fail-closed diagnostic reason for inherited protocol requirement conflicts",
@@ -442,7 +533,7 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
     expect(
         adopted_requirement.get("last_malformed_class_graph_reason")
         == (
-            "conflicting protocol instance method requirement readValue in class "
+            "conflicting adopted protocol instance method requirement readValue in class "
             "RequirementConflictAdopter"
         ),
         "expected stable fail-closed diagnostic reason for adopted protocol requirement conflicts",
@@ -461,6 +552,21 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
         forward_inherited.get("last_malformed_class_graph_reason")
         == "forward protocol reference in protocol ConcreteChild",
         "expected stable fail-closed diagnostic reason for inherited forward protocol refs",
+    )
+    expect(
+        duplicate_descriptor.get("registration_status") == -4
+        and duplicate_descriptor.get("last_registration_status") == -4,
+        "expected duplicate protocol descriptors to fail image registration",
+    )
+    expect(
+        duplicate_descriptor.get("registered_image_count") == 0
+        and duplicate_descriptor.get("realized_class_count") == 0,
+        "expected duplicate protocol descriptors to publish no image or class graph",
+    )
+    expect(
+        duplicate_descriptor.get("last_malformed_class_graph_reason")
+        == "duplicate protocol descriptor for Worker",
+        "expected stable fail-closed diagnostic reason for duplicate protocol descriptors",
     )
     expect(
         conflicting_category.get("target_kind") == "category"
@@ -674,7 +780,28 @@ def check_runtime_object_foundation_protocol_category_case(
             ],
             "class_value": payload["class_value"],
             "super_inherited_value": payload["super_inherited_value"],
+            "super_cached_inherited_value": payload[
+                "super_cached_inherited_value"
+            ],
+            "super_inherited_i32_status": payload["super_inherited_i32_result"][
+                "status_code"
+            ],
+            "super_second_dispatch_used_cache": payload["super_second_state"][
+                "last_dispatch_used_cache"
+            ],
             "nil_receiver_value": payload["nil_receiver_value"],
+            "nil_receiver_i32_status": payload["nil_receiver_i32_result"][
+                "status_code"
+            ],
+            "nil_receiver_i32_result_contract": payload["nil_receiver_i32_result"][
+                "result_contract"
+            ],
+            "nil_receiver_typed_status": payload["nil_receiver_typed_result"][
+                "status_code"
+            ],
+            "nil_receiver_typed_result_contract": payload[
+                "nil_receiver_typed_result"
+            ]["result_contract"],
             "protocol_strict_error_i32_status": payload[
                 "protocol_strict_error_i32_result"
             ]["status_code"],
@@ -699,6 +826,9 @@ def check_runtime_object_foundation_protocol_category_case(
             ],
             "derived_worker_protocol_depth": payload["derived_worker_query"][
                 "matched_protocol_depth"
+            ],
+            "leaf_worker_matched_from_superclass": payload["leaf_worker_query"][
+                "matched_from_superclass"
             ],
             "missing_protocol_query_protocol_found": payload[
                 "missing_protocol_query"
@@ -753,6 +883,9 @@ def check_runtime_object_foundation_protocol_category_case(
             ]["last_malformed_class_graph_reason"],
             "forward_inherited_protocol_reference_reason": invalid_metadata_payload[
                 "forward_inherited_protocol_reference"
+            ]["last_malformed_class_graph_reason"],
+            "duplicate_protocol_descriptor_reason": invalid_metadata_payload[
+                "duplicate_protocol_descriptor"
             ]["last_malformed_class_graph_reason"],
         },
     )

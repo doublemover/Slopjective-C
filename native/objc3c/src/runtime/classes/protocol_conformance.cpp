@@ -36,8 +36,31 @@ bool RuntimeNonEmptyCString(const char *value) {
   return value != nullptr && value[0] != '\0';
 }
 
+bool RuntimeDiagnosticStartsWith(const std::string &value,
+                                 const char *prefix) {
+  return prefix != nullptr && value.rfind(prefix, 0) == 0;
+}
+
+bool RuntimeDiagnosticContains(const std::string &value,
+                               const char *fragment) {
+  return fragment != nullptr && value.find(fragment) != std::string::npos;
+}
+
 const char *RuntimeProtocolCString(const char *value) {
   return value != nullptr ? value : "";
+}
+
+std::string RuntimeProtocolReferenceConflictQualifier(
+    const std::string &context) {
+  if (RuntimeDiagnosticStartsWith(context, "protocol ")) {
+    return "inherited ";
+  }
+  if (RuntimeDiagnosticStartsWith(context, "class ") ||
+      RuntimeDiagnosticStartsWith(context, "metaclass ") ||
+      RuntimeDiagnosticStartsWith(context, "category ")) {
+    return "adopted ";
+  }
+  return "";
 }
 
 struct RuntimeProtocolRequirementSignature {
@@ -67,6 +90,7 @@ bool AddRuntimeProtocolRequirementSignature(
     const char *return_type_name,
     std::uint64_t parameter_count,
     const std::string &context,
+    const std::string &conflict_qualifier,
     RuntimeProtocolRequirementMap &requirements_by_key,
     bool duplicate_same_signature_is_error,
     std::string &diagnostic_reason) {
@@ -91,7 +115,8 @@ bool AddRuntimeProtocolRequirementSignature(
     return true;
   }
   diagnostic_reason =
-      "conflicting protocol " + std::string(family_name) +
+      "conflicting " + conflict_qualifier + "protocol " +
+      std::string(family_name) +
       " method requirement " + RuntimeProtocolCString(selector) + " in " +
       context;
   return false;
@@ -138,7 +163,7 @@ bool ValidateRuntimeProtocolMethodList(
             family_name, entry.selector, entry.return_type_name,
             entry.parameter_count,
             "protocol " + std::string(RuntimeProtocolCString(protocol_name)),
-            requirements_by_key, true, diagnostic_reason)) {
+            "", requirements_by_key, true, diagnostic_reason)) {
       return false;
     }
   }
@@ -182,8 +207,9 @@ bool AddRuntimeProtocolMethodListRequirements(
     }
     if (!AddRuntimeProtocolRequirementSignature(
             family_name, entry.selector, entry.return_type_name,
-            entry.parameter_count, context, requirements_by_key, false,
-            diagnostic_reason)) {
+            entry.parameter_count, context,
+            RuntimeProtocolReferenceConflictQualifier(context),
+            requirements_by_key, false, diagnostic_reason)) {
       return false;
     }
   }
@@ -213,6 +239,9 @@ bool AddKnownProtocolRecords(
     std::unordered_map<std::string, std::string>
         &concrete_protocol_owner_by_name,
     std::string &diagnostic_reason) {
+  std::unordered_set<std::string> concrete_protocol_names_in_root;
+  concrete_protocol_names_in_root.reserve(
+      static_cast<std::size_t>(protocol_descriptor_count));
   for (std::uint64_t index = 0; index < protocol_descriptor_count; ++index) {
     const auto *record = static_cast<const EmittedProtocolRecord *>(
         RuntimeAggregateEntry(protocol_descriptor_root, index));
@@ -243,6 +272,12 @@ bool AddKnownProtocolRecords(
     known_protocol_records.insert(record);
     if (record->is_forward_declaration) {
       continue;
+    }
+    if (!concrete_protocol_names_in_root.insert(record->protocol_name).second) {
+      diagnostic_reason =
+          "duplicate protocol descriptor for " +
+          std::string(record->protocol_name);
+      return false;
     }
     const auto inserted = concrete_protocol_owner_by_name.emplace(
         record->protocol_name, record->owner_identity);
@@ -890,6 +925,149 @@ bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
                                                     const char *protocol_name) {
   return class_name != nullptr && class_name[0] != '\0' &&
          protocol_name != nullptr && protocol_name[0] != '\0';
+}
+
+void ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(RuntimeState &state) {
+  state.last_malformed_class_graph_metadata_surface.clear();
+  state.last_malformed_class_graph_target_kind.clear();
+  state.last_malformed_class_graph_visibility_state.clear();
+  state.last_malformed_class_graph_availability_state.clear();
+}
+
+void RecordRuntimeProtocolCategoryDiagnosticFieldsUnlocked(
+    RuntimeState &state,
+    const std::string &diagnostic_reason) {
+  ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(state);
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "unknown protocol reference in ")) {
+    if (RuntimeDiagnosticContains(diagnostic_reason, " in protocol ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "protocol.inherited_protocol_refs";
+      state.last_malformed_class_graph_availability_state =
+          "unavailable-for-inheritance";
+    } else if (RuntimeDiagnosticContains(diagnostic_reason, " in metaclass ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "metaclass.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state = "unavailable";
+    } else if (RuntimeDiagnosticContains(diagnostic_reason, " in category ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "category.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state = "unavailable";
+    } else {
+      state.last_malformed_class_graph_metadata_surface =
+          "class.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state = "unavailable";
+    }
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_visibility_state = "unregistered";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "forward protocol reference in ")) {
+    if (RuntimeDiagnosticContains(diagnostic_reason, " in protocol ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "protocol.inherited_protocol_refs";
+      state.last_malformed_class_graph_availability_state =
+          "unavailable-for-inheritance";
+    } else if (RuntimeDiagnosticContains(diagnostic_reason, " in metaclass ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "metaclass.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state =
+          "unavailable-for-conformance";
+    } else if (RuntimeDiagnosticContains(diagnostic_reason, " in category ")) {
+      state.last_malformed_class_graph_metadata_surface =
+          "category.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state =
+          "unavailable-for-conformance";
+    } else {
+      state.last_malformed_class_graph_metadata_surface =
+          "class.adopted_protocol_refs";
+      state.last_malformed_class_graph_availability_state =
+          "unavailable-for-conformance";
+    }
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_visibility_state = "forward-declaration";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(
+          diagnostic_reason,
+          "category attachment target class is missing for ")) {
+    state.last_malformed_class_graph_metadata_surface = "category.target_class";
+    state.last_malformed_class_graph_target_kind = "class";
+    state.last_malformed_class_graph_visibility_state = "absent";
+    state.last_malformed_class_graph_availability_state = "missing-target";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "conflicting category ")) {
+    state.last_malformed_class_graph_metadata_surface =
+        "category.owner_identity";
+    state.last_malformed_class_graph_target_kind = "category";
+    state.last_malformed_class_graph_visibility_state = "duplicate-category";
+    state.last_malformed_class_graph_availability_state = "conflicting-owner";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "duplicate protocol descriptor for ")) {
+    state.last_malformed_class_graph_metadata_surface =
+        "protocol.descriptor_root";
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_visibility_state = "duplicate-protocol";
+    state.last_malformed_class_graph_availability_state =
+        "duplicate-descriptor";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(
+          diagnostic_reason,
+          "duplicate protocol instance method requirement ")) {
+    state.last_malformed_class_graph_metadata_surface =
+        "protocol.instance_method_list";
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_visibility_state = "available";
+    state.last_malformed_class_graph_availability_state =
+        "duplicate-requirement";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "conflicting adopted protocol ")) {
+    if (RuntimeDiagnosticContains(diagnostic_reason, " in metaclass ")) {
+      state.last_malformed_class_graph_target_kind = "metaclass";
+      state.last_malformed_class_graph_metadata_surface =
+          "metaclass.adopted_protocol_refs";
+    } else if (RuntimeDiagnosticContains(diagnostic_reason, " in category ")) {
+      state.last_malformed_class_graph_target_kind = "category";
+      state.last_malformed_class_graph_metadata_surface =
+          "category.adopted_protocol_refs";
+    } else {
+      state.last_malformed_class_graph_target_kind = "class";
+      state.last_malformed_class_graph_metadata_surface =
+          "class.adopted_protocol_refs";
+    }
+    state.last_malformed_class_graph_visibility_state = "available";
+    state.last_malformed_class_graph_availability_state =
+        "adopted-requirement-conflict";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(diagnostic_reason,
+                                  "conflicting inherited protocol ")) {
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_metadata_surface =
+        "protocol.inherited_protocol_refs";
+    state.last_malformed_class_graph_visibility_state = "available";
+    state.last_malformed_class_graph_availability_state =
+        "inherited-requirement-conflict";
+    return;
+  }
+  if (RuntimeDiagnosticStartsWith(
+          diagnostic_reason,
+          "conflicting protocol instance method requirement ")) {
+    state.last_malformed_class_graph_target_kind = "protocol";
+    state.last_malformed_class_graph_metadata_surface =
+        "protocol.instance_method_list";
+    state.last_malformed_class_graph_visibility_state = "available";
+    state.last_malformed_class_graph_availability_state =
+        "duplicate-requirement";
+  }
 }
 
 bool RuntimeProtocolCategoryMetadataTableIsSupported(

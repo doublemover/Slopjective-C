@@ -10,6 +10,7 @@ struct RuntimeDispatch {
 inline constexpr const char *kWidgetClassName = "Widget";
 inline constexpr const char *kBaseClassName = "Base";
 inline constexpr const char *kDerivedClassName = "Derived";
+inline constexpr const char *kLeafClassName = "Leaf";
 inline constexpr const char *kMissingClassName = "MissingConformanceClass";
 inline constexpr const char *kWorkerProtocolName = "Worker";
 inline constexpr const char *kTracerProtocolName = "Tracer";

@@ -37,6 +37,10 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t last_initialized_receiver_identity;
   uint64_t last_initialized_initialization_ordinal;
   const char *last_instance_lifecycle_failure_reason;
+  const char *last_malformed_class_graph_metadata_surface;
+  const char *last_malformed_class_graph_target_kind;
+  const char *last_malformed_class_graph_visibility_state;
+  const char *last_malformed_class_graph_availability_state;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {

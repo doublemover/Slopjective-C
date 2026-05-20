@@ -42,6 +42,13 @@ inline int DispatchRuntimeValueFromClass(const RuntimeDispatch &dispatch,
       0);
 }
 
+inline objc3_runtime_dispatch_i32_result DispatchRuntimeI32FromClassChecked(
+    const RuntimeDispatch &dispatch, const char *lookup_start_class_name) {
+  return objc3_runtime_dispatch_i32_from_class_checked(
+      dispatch.receiver, lookup_start_class_name, dispatch.selector, 0, 0, 0,
+      0);
+}
+
 inline int DispatchRuntimeTypedValue(
     objc3_runtime_dispatch_return_kind_code expected_return_kind,
     const RuntimeDispatch &dispatch) {
@@ -116,9 +123,19 @@ inline void CaptureCategoryAttachmentActions(
   run.values.category_bool_typed_result =
       DispatchRuntimeTypedChecked(category_bool_dispatch);
   run.values.class_value = DispatchRuntimeValue(class_dispatch);
+  run.values.super_inherited_i32_result =
+      DispatchRuntimeI32FromClassChecked(super_dispatch, kBaseClassName);
   run.values.super_inherited_value =
+      run.values.super_inherited_i32_result.value;
+  CaptureMethodCacheState(run.super_first_state);
+  run.values.super_cached_inherited_value =
       DispatchRuntimeValueFromClass(super_dispatch, kBaseClassName);
-  run.values.nil_receiver_value = DispatchRuntimeValue(nil_receiver_dispatch);
+  CaptureMethodCacheState(run.super_second_state);
+  run.values.nil_receiver_i32_result =
+      DispatchRuntimeI32Checked(nil_receiver_dispatch);
+  run.values.nil_receiver_value = run.values.nil_receiver_i32_result.value;
+  run.values.nil_receiver_typed_result =
+      DispatchRuntimeTypedChecked(nil_receiver_dispatch);
   run.values.protocol_strict_error_i32_result =
       DispatchRuntimeI32Checked(strict_error_dispatch);
   run.values.protocol_strict_error =

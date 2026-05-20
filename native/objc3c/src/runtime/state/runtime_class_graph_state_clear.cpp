@@ -23,6 +23,10 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_realized_metaclass_owner_identity.clear();
   state.last_attached_category_owner_identity.clear();
   state.last_attached_category_name.clear();
+  state.last_malformed_class_graph_metadata_surface.clear();
+  state.last_malformed_class_graph_target_kind.clear();
+  state.last_malformed_class_graph_visibility_state.clear();
+  state.last_malformed_class_graph_availability_state.clear();
   state.last_queried_class_name.clear();
   state.last_resolved_class_query_name.clear();
   state.last_resolved_class_query_owner_identity.clear();

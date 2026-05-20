@@ -81,6 +81,10 @@ struct RuntimeState {
   std::string last_resolved_keypath_profile;
   std::uint64_t malformed_class_metadata_rejection_count = 0;
   std::string last_malformed_class_graph_reason;
+  std::string last_malformed_class_graph_metadata_surface;
+  std::string last_malformed_class_graph_target_kind;
+  std::string last_malformed_class_graph_visibility_state;
+  std::string last_malformed_class_graph_availability_state;
   std::unordered_map<MethodCacheKey, MethodCacheEntry, MethodCacheKeyHash>
       method_cache;
   std::uint64_t method_cache_hit_count = 0;

@@ -134,6 +134,10 @@ bool AttachRealizedPropertyLayoutRecordsInSuperclassOrderUnlocked(
 void MarkMalformedRealizedClassGraphUnlocked(RuntimeState &state,
                                              std::string reason) {
   ClearRealizedClassGraphUnlocked(state);
+  state.last_malformed_class_graph_metadata_surface.clear();
+  state.last_malformed_class_graph_target_kind.clear();
+  state.last_malformed_class_graph_visibility_state.clear();
+  state.last_malformed_class_graph_availability_state.clear();
   ++state.malformed_class_metadata_rejection_count;
   state.last_malformed_class_graph_reason = std::move(reason);
   BumpRuntimeClassGraphGenerationUnlocked(state);

@@ -123,6 +123,7 @@ bool TryWalkRegistrationTableUnlocked(
   if (!RuntimeClassMetadataTableIsSupported(state, registration_table,
                                             class_metadata_diagnostic_reason)) {
     ++state.malformed_class_metadata_rejection_count;
+    ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(state);
     state.last_malformed_class_graph_reason =
         std::move(class_metadata_diagnostic_reason);
     return false;
@@ -131,6 +132,8 @@ bool TryWalkRegistrationTableUnlocked(
   if (!RuntimeProtocolCategoryMetadataTableIsSupported(
           state, registration_table, protocol_metadata_diagnostic_reason)) {
     ++state.malformed_class_metadata_rejection_count;
+    RecordRuntimeProtocolCategoryDiagnosticFieldsUnlocked(
+        state, protocol_metadata_diagnostic_reason);
     state.last_malformed_class_graph_reason =
         std::move(protocol_metadata_diagnostic_reason);
     return false;

@@ -79,3 +79,9 @@ module categoryAttachmentProtocolRuntimeLibrary;
   return true;
 }
 @end
+
+@interface Leaf : Derived
+@end
+
+@implementation Leaf
+@end

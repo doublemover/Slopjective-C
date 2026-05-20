@@ -71,6 +71,8 @@ inline void CaptureCategoryAttachmentProtocolRuntimeSnapshots(
                                   run.base_worker_query);
   CaptureProtocolConformanceQuery(kDerivedClassName, kWorkerProtocolName,
                                   run.derived_worker_query);
+  CaptureProtocolConformanceQuery(kLeafClassName, kWorkerProtocolName,
+                                  run.leaf_worker_query);
   CaptureProtocolConformanceQuery(kWidgetClassName, kMissingProtocolName,
                                   run.missing_protocol_query);
   CaptureProtocolConformanceQuery(kMissingClassName, kWorkerProtocolName,
