@@ -1,0 +1,54 @@
+{
+  "id": "OBJFND-8058-01",
+  "title": "Accept runtime object-foundation protocol/category executable conformance",
+  "feature": "runtime object-foundation protocol/category executable conformance",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "issue": 8058,
+  "references": [
+    "scripts/objc3c_runtime_acceptance/case_factory_object_model.py",
+    "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+    "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+  ],
+  "implementation_anchor": "python scripts/check_objc3c_runtime_acceptance.py --case runtime-object-foundation-protocol-category",
+  "source": "// IMPLEMENTATION-ANCHOR: python scripts/check_objc3c_runtime_acceptance.py --case runtime-object-foundation-protocol-category\n// Runtime object-foundation fixture: tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3\n// Runtime probes: tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp and tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp\n",
+  "expect": {
+    "parse": "accept",
+    "runtime_acceptance": {
+      "case_id": "runtime-object-foundation-protocol-category",
+      "claim_class": "linked-runtime-probe",
+      "fixture": "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+      "probes": [
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+      ],
+      "required_positive_observations": [
+        "category dispatch returns 13 and cached category dispatch returns 13",
+        "auxiliary category dispatch returns 29",
+        "typed bool category dispatch returns status_code 0 and return_kind_name bool",
+        "nil receiver category dispatch returns zero without live lookup",
+        "realized graph exposes two attached categories and at least two protocol conformance edges",
+        "Widget exposes one direct protocol and one category-attached protocol",
+        "Widget conforms directly to Worker",
+        "Widget conforms to inherited Tracer through category attachment",
+        "Derived conforms to Worker through inherited protocol semantics"
+      ],
+      "required_strict_error_observations": [
+        "protocol-declared optional selector miss fails closed",
+        "ignoredValue checked dispatch exposes O3RT001 and typed-dispatch-strict-error-result",
+        "missing protocol conformance query reports protocol_found 0 without malformed metadata",
+        "missing class conformance query reports class_found 0 without malformed metadata"
+      ],
+      "compile_manifest_requirements": [
+        "runtime_category_attachment_merged_dispatch_surface.contract_id is objc3c.runtime.category.attachment.merged.dispatch.surface.v1",
+        "runtime_class_metaclass_protocol_realization_surface.contract_id is objc3c.runtime.class.metaclass.protocol.realization.v1"
+      ]
+    },
+    "source_truth_requirements": [
+      "All cited fixtures, probes, and acceptance case definitions are committed repository paths",
+      "tmp artifacts may be compiler scratch output only and are not a source of truth for this conformance row"
+    ]
+  }
+}

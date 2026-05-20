@@ -337,7 +337,8 @@
           "selectors": [
             "*runtime*_positive.objc3",
             "*library.objc3",
-            "*contract_positive.objc3"
+            "*contract_positive.objc3",
+            "category_attachment_protocol_runtime_library.objc3"
           ],
           "disposition": "runtime-backed behavior evidence only after canonical runtime ownership is indexed"
         },

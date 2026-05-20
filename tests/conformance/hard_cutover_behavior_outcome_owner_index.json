@@ -167,10 +167,12 @@
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
         "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
         "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
       ],
-      "support_boundary": "runtime probes anchor storage, reflection, and public ABI ownership; they do not make rejected dispatch, retired adapter, alternate acceptance path, or retired-source lane behavior positive"
+      "support_boundary": "runtime probes anchor storage, reflection, object-model protocol/category, and public ABI ownership; they do not make rejected dispatch, retired adapter, alternate acceptance path, or retired-source lane behavior positive"
     },
     {
       "outcome": "negative_execution",

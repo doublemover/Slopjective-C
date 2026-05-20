@@ -44,14 +44,17 @@
       "support_boundary": "category attachment and merged dispatch remain runtime/e2e support only for canonical fixtures; unresolved dispatch retired route remains strict-error evidence",
       "required_case_ids": [
         "canonical-dispatch",
-        "canonical-sample-set"
+        "canonical-sample-set",
+        "runtime-object-foundation-protocol-category"
       ],
       "fixtures": [
         "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-        "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3"
+        "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
       ],
       "probes": [
         "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
         "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
         "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp"
       ]
@@ -68,15 +71,18 @@
       "support_boundary": "protocol conformance and aggregate query coherence are semantic/runtime claims; universal selector success and unresolved dispatch miss retired route are canonical rejection or strict-error evidence",
       "required_case_ids": [
         "realization-lookup-reflection-runtime",
-        "dispatch-fast-path"
+        "runtime-object-foundation-protocol-category",
+        "live-dispatch-fast-path"
       ],
       "fixtures": [
         "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
         "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
       ],
       "probes": [
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
         "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
         "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp"
       ]
     }

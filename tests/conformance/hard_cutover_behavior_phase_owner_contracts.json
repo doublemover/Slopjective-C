@@ -157,6 +157,14 @@
         "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
         "tests/native/runtime/concurrency/actor_executor_contract.objc3"
       ],
+      "runtime_acceptance_evidence": [
+        "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+        "tests/conformance/lowering_abi/OBJFND-8059-01.json",
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py"
+      ],
       "retired_surface_evidence": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",

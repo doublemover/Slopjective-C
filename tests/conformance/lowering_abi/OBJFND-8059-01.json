@@ -1,0 +1,72 @@
+{
+  "id": "OBJFND-8059-01",
+  "title": "Trace runtime object-foundation protocol/category negative and malformed metadata outcomes",
+  "feature": "runtime object-foundation protocol/category traceability",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "issue": 8059,
+  "references": [
+    "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+    "tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_method.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_property.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_merge_missing_pair.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_unknown_class_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_unavailable_class_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/protocol_requirement_duplicate_conflict_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/protocol_requirement_inherited_conflict_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/protocol_dispatch_intent_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_method_dispatch_intent_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/category_container_dispatch_intent_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/duplicate_protocol_runtime_export.objc3",
+    "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+  ],
+  "implementation_anchor": "python scripts/check_objc3c_runtime_acceptance.py --case runtime-object-foundation-protocol-category",
+  "source": "// IMPLEMENTATION-ANCHOR: python scripts/check_objc3c_runtime_acceptance.py --case runtime-object-foundation-protocol-category\n// Negative protocol/category fixture matrix and malformed metadata probe are checked-in repository evidence, not tmp report truth.\n",
+  "expect": {
+    "parse": "accept",
+    "runtime_acceptance": {
+      "case_id": "runtime-object-foundation-protocol-category",
+      "negative_diagnostic_batch_contract": "objc3c.runtime.acceptance.negative.diagnostics.batch.v1",
+      "negative_fixture_count": 12,
+      "required_negative_keys": [
+        "category-attachment-collision",
+        "category-merge-conflicting-method",
+        "category-merge-conflicting-property",
+        "category-merge-missing-pair",
+        "category-unknown-class-rejected",
+        "category-unavailable-class-rejected",
+        "protocol-requirement-duplicate-conflict",
+        "protocol-requirement-inherited-conflict",
+        "protocol-dispatch-intent-rejected",
+        "category-method-dispatch-intent-rejected",
+        "category-container-dispatch-intent-rejected",
+        "duplicate-protocol-runtime-export"
+      ],
+      "required_diagnostic_codes": [
+        "O3S200",
+        "O3S218",
+        "O3S219",
+        "O3S314",
+        "O3S315",
+        "O3S316"
+      ],
+      "required_malformed_metadata_observations": [
+        "unregistered protocol reference rejects registration with O3RT004",
+        "forward protocol reference rejects registration with O3RT004",
+        "missing category target rejects registration with O3RT004",
+        "conflicting category owner rejects registration with O3RT004",
+        "duplicate protocol requirement rejects registration with O3RT004",
+        "inherited protocol requirement conflict rejects registration with O3RT004",
+        "adopted protocol requirement conflict rejects registration with O3RT004",
+        "inherited forward protocol reference rejects registration with O3RT004"
+      ]
+    },
+    "traceability_requirements": [
+      "Each negative diagnostic result carries a durable .meta.json sidecar path",
+      "Each expected diagnostic code must appear in the sidecar required diagnostic tokens",
+      "Each diagnostic result must preserve source-stable line and column fields",
+      "No tmp path is cited as source truth for the protocol/category conformance mapping"
+    ]
+  }
+}

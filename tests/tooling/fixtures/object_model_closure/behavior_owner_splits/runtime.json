@@ -18,6 +18,11 @@
     "authoritative_runtime_symbols:objc3_runtime_replay_registered_images_for_testing",
     "authoritative_probe_paths:tests/tooling/runtime/class_realization_runtime_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+    "runtime_acceptance_case:runtime-object-foundation-protocol-category",
+    "conformance_row:tests/conformance/lowering_abi/OBJFND-8058-01.json",
+    "conformance_row:tests/conformance/lowering_abi/OBJFND-8059-01.json",
     "authoritative_probe_paths:tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/live_dispatch_fast_path_probe.cpp"
   ],
