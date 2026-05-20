@@ -1,0 +1,67 @@
+{
+  "contract_id": "objc3c.runtime.performance.executable.fixture.manifest.v1",
+  "schema_version": 1,
+  "manifest_kind": "runtime-performance-positive-and-negative-executable-fixtures",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "positive_cases": [
+    {
+      "case_id": "dispatch-cache-positive-live-fast-path",
+      "workload_id": "dispatch-cache",
+      "acceptance_case_id": "dispatch-fast-path",
+      "source_path": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "probe_path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "storage-ownership-reflection-positive",
+      "workload_id": "storage-ownership-reflection",
+      "acceptance_case_id": "storage-ownership-reflection",
+      "source_path": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+      "probe_path": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "unsupported-throws-feature-claim",
+      "workload_id": "dispatch-cache",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_throws.objc3",
+      "metadata_path": "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_throws.meta.json",
+      "public_workflow_action": "compile-objc3c",
+      "expected_stage": "compile",
+      "stable_diagnostic": {
+        "code": "O3S221",
+        "source_range": {
+          "start_line": 3,
+          "start_column": 12,
+          "end_line": 3,
+          "end_column": 17
+        }
+      }
+    },
+    {
+      "case_id": "runtime-dispatch-link-rejection",
+      "workload_id": "dispatch-cache",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.objc3",
+      "metadata_path": "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.meta.json",
+      "public_workflow_action": "compile-objc3c",
+      "expected_stage": "link",
+      "stable_diagnostic": {
+        "code": "link.unresolved_symbol",
+        "source_range": {
+          "start_line": 1,
+          "start_column": 1,
+          "end_line": 1,
+          "end_column": 1
+        }
+      }
+    }
+  ],
+  "fixture_rules": [
+    "positive runtime-performance fixtures must execute through the public objc3c workflow and live runtime acceptance probes",
+    "negative runtime-performance fixtures must publish stable diagnostic codes and checked-in source ranges",
+    "runtime timing packets under tmp are generated evidence only and cannot replace this checked-in fixture manifest"
+  ]
+}

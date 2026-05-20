@@ -64,6 +64,7 @@ EXPECTED_CHECKED_IN_SOURCES = (
     "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
     "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
     "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
 )
 
 EXPECTED_BUILD_SCRIPTS = (
@@ -92,6 +93,7 @@ EXPECTED_OWNER_SPLIT = {
     "runtime_performance": [
         "tests/tooling/fixtures/runtime_performance/source_surface.json",
         "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+        "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
         "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
         "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
     ],

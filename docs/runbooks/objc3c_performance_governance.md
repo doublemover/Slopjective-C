@@ -121,6 +121,15 @@ Every breach diagnosis must resolve back to:
 
 The report is not allowed to emit an unclassified regression.
 
+## Release Regression Gate
+
+The dashboard summary publishes `regression_gate` as the release-facing gate for
+performance and stability regressions. It is derived from the checked-in budget
+model, upstream benchmark summaries, breach taxonomy, lab policy, and waiver
+registry. A blocking compile-throughput or runtime-hot-path breach sets
+`release_status` to `blocked`, `claim_ready` to `false`, and records the budget,
+breach id, and child report path in the gate payload.
+
 ## Stable Lab And Noise-Control Policy
 
 The authoritative lab policy is checked in at

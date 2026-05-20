@@ -10,6 +10,7 @@
     "retired_surface_rule": "artifact rows that mention retired route, gate, compatibility, old-mode, unsupported, unresolved dispatch, strict dispatch, alternate acceptance, generated-only, evidence-log, migration-only, timing-only, cache-only, runner-only, package-only, or counter-only semantics map to canonical_rejection or runtime_performance_provenance"
   },
   "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+  "executable_fixture_manifest": "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
   "report_root": "tmp/reports/runtime-performance",
   "artifact_root": "tmp/artifacts/runtime-performance",
   "summary_reports": [

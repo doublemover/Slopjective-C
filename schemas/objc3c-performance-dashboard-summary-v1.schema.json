@@ -20,6 +20,7 @@
     "upstream_reports",
     "release_status",
     "claim_ready",
+    "regression_gate",
     "owner_split",
     "workflow_actions",
     "budget_family_summaries",
@@ -94,6 +95,65 @@
     },
     "claim_ready": {
       "type": "boolean"
+    },
+    "regression_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "passed",
+        "release_status",
+        "blocking_breach_count",
+        "warning_breach_count",
+        "budget_ids",
+        "blocking_breach_ids",
+        "child_report_paths"
+      ],
+      "properties": {
+        "gate_id": {
+          "type": "string",
+          "const": "objc3c.performance.release.regression-gate.v1"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "release_status": {
+          "type": "string",
+          "enum": [
+            "release-ready",
+            "caution",
+            "blocked"
+          ]
+        },
+        "blocking_breach_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warning_breach_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "budget_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "blocking_breach_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "child_report_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        }
+      }
     },
     "owner_split": {
       "type": "object",
