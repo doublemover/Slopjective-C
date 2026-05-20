@@ -6,6 +6,7 @@ function Get-ManifestProvenancePerformanceFixtureFiles {
     "tests/tooling/fixtures/performance/measurement_policy.json",
     "tests/tooling/fixtures/performance/benchmark_parameters.json",
     "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
     "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
     "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
     "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",

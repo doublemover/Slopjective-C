@@ -13,6 +13,7 @@
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace objc3c::runtime {
 
@@ -58,6 +59,60 @@ bool RejectRealizedPropertyLayoutUnlocked(RuntimeState &state,
   state.last_malformed_class_graph_reason += node.class_name;
   state.last_malformed_class_graph_reason += ":";
   state.last_malformed_class_graph_reason += reason != nullptr ? reason : "";
+  return false;
+}
+
+bool RuntimeCStringEquals(const char *lhs, const char *rhs) {
+  const std::string lhs_text = lhs != nullptr ? lhs : "";
+  const std::string rhs_text = rhs != nullptr ? rhs : "";
+  return lhs_text == rhs_text;
+}
+
+bool RuntimeCStringIsPresent(const char *value) {
+  return value != nullptr && value[0] != '\0';
+}
+
+bool RuntimePropertyDescriptorOwnerAppliesToNode(
+    const EmittedPropertyDescriptor &descriptor,
+    const std::unordered_set<std::string> &descriptor_owner_identities) {
+  return descriptor.declaration_owner_identity != nullptr &&
+         descriptor_owner_identities.find(
+             descriptor.declaration_owner_identity) !=
+             descriptor_owner_identities.end();
+}
+
+bool RuntimePropertyDescriptorHasExplicitIvarBinding(
+    const EmittedPropertyDescriptor &descriptor) {
+  return RuntimeCStringIsPresent(descriptor.ivar_binding_symbol);
+}
+
+bool RealizedAccessorBacksSynthesizedDescriptor(
+    const RealizedPropertyAccessor &accessor,
+    const EmittedPropertyDescriptor &descriptor) {
+  if (accessor.property_descriptor == nullptr) {
+    return false;
+  }
+  const EmittedPropertyDescriptor &realized = *accessor.property_descriptor;
+  if (RuntimeCStringIsPresent(descriptor.synthesized_binding_symbol) &&
+      RuntimeCStringEquals(realized.synthesized_binding_symbol,
+                           descriptor.synthesized_binding_symbol)) {
+    return true;
+  }
+  return RuntimeCStringEquals(realized.property_name, descriptor.property_name) &&
+         RuntimeCStringEquals(realized.ivar_layout_symbol,
+                              descriptor.ivar_layout_symbol) &&
+         RuntimeCStringEquals(realized.ivar_layout_replay_key,
+                              descriptor.ivar_layout_replay_key);
+}
+
+bool NonStorageSynthesizedDescriptorHasRealizedBacking(
+    const std::vector<RealizedPropertyAccessor> &accessors,
+    const EmittedPropertyDescriptor &descriptor) {
+  for (const RealizedPropertyAccessor &accessor : accessors) {
+    if (RealizedAccessorBacksSynthesizedDescriptor(accessor, descriptor)) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -112,23 +167,29 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
       std::max(RuntimePropertyIvarLayoutInstanceSize(ivar_layout_index),
                inherited_size_bytes);
 
+  std::vector<const EmittedPropertyDescriptor *> non_storage_synthesized_descriptors;
   for (std::uint64_t index = 0; index < node.image->property_descriptor_count;
        ++index) {
     const auto *descriptor = static_cast<const EmittedPropertyDescriptor *>(
         RuntimeAggregateEntry(node.image->property_descriptor_root, index));
-    if (descriptor == nullptr ||
-        !RuntimePropertyDescriptorHasRealizableAccessorShape(*descriptor)) {
+    if (descriptor == nullptr) {
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "property-descriptor-missing");
+    }
+    if (!RuntimePropertyDescriptorOwnerAppliesToNode(
+            *descriptor, descriptor_owner_identities)) {
+      continue;
+    }
+    if (!RuntimePropertyDescriptorHasRealizableAccessorShape(*descriptor)) {
       return RejectRealizedPropertyLayoutUnlocked(
           state, node, "property-accessor-shape-invalid");
     }
-    if (descriptor->declaration_owner_identity == nullptr ||
-        descriptor_owner_identities.find(
-            descriptor->declaration_owner_identity) ==
-            descriptor_owner_identities.end()) {
-      continue;
-    }
     if (!RuntimePropertyDescriptorDeclaresSynthesizedStorageBinding(
             *descriptor)) {
+      continue;
+    }
+    if (!RuntimePropertyDescriptorHasExplicitIvarBinding(*descriptor)) {
+      non_storage_synthesized_descriptors.push_back(descriptor);
       continue;
     }
     const EmittedIvarDescriptor *ivar_descriptor =
@@ -145,6 +206,18 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
           state, node, "property-accessor-record-invalid");
     }
     node.runtime_property_accessors.push_back(std::move(accessor));
+  }
+
+  for (const EmittedPropertyDescriptor *descriptor :
+       non_storage_synthesized_descriptors) {
+    if (descriptor == nullptr) {
+      continue;
+    }
+    if (!NonStorageSynthesizedDescriptorHasRealizedBacking(
+            node.runtime_property_accessors, *descriptor)) {
+      return RejectRealizedPropertyLayoutUnlocked(
+          state, node, "synthesized-accessor-storage-backing-missing");
+    }
   }
 
   std::sort(node.runtime_property_accessors.begin(),

@@ -11,13 +11,17 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file as write_json
 from objc3c_performance_benchmark.profile import machine_profile, tool_versions
 from objc3c_performance_reproducibility import build_runtime_workload_reproducibility_evidence
 
 
-ROOT = Path(__file__).resolve().parents[1]
 WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
 PERFORMANCE_BUDGET_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "budget_model.json"

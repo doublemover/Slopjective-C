@@ -134,6 +134,34 @@ function Get-RepoRelativeWorkflowPythonFiles {
     -Filter "*.py")
 }
 
+function Get-RepoRelativePerformanceBenchmarkFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $performanceRoots = @(
+    "scripts/objc3c_performance_benchmark",
+    "scripts/objc3c_comparative_baselines"
+  )
+
+  return @(
+    "scripts/benchmark_objc3c_performance.py",
+    "scripts/benchmark_objc3c_runtime_performance.py",
+    "scripts/check_objc3c_performance_integration.py",
+    "scripts/check_objc3c_runtime_performance_integration.py",
+    "scripts/check_objc3c_runnable_performance_end_to_end.py",
+    "scripts/check_objc3c_runnable_runtime_performance_end_to_end.py",
+    "scripts/run_objc3c_comparative_baselines.py",
+    "scripts/objc3c_performance_reproducibility.py"
+    foreach ($performanceRoot in $performanceRoots) {
+      $absoluteRoot = Join-Path $RepoRoot $performanceRoot
+      Get-RepoRelativeFilesUnderRoot `
+        -RepoRoot $RepoRoot `
+        -RelativeRoot $performanceRoot `
+        -MissingRootMessage "runnable toolchain package FAIL: missing performance benchmark Python root $absoluteRoot" `
+        -Filter "*.py"
+    }
+  )
+}
+
 function Get-RepoRelativeRuntimeAcceptanceFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -223,6 +251,7 @@ Export-ModuleMember -Function @(
   "Get-RepoRelativeNativeDocsFiles",
   "Get-RepoRelativeNativeExecutionSupportFiles",
   "Get-RepoRelativeNativeRuntimeSourceFiles",
+  "Get-RepoRelativePerformanceBenchmarkFiles",
   "Get-RepoRelativePythonSharedFiles",
   "Get-RepoRelativePythonToolingFiles",
   "Get-RepoRelativeRecoveryPositiveFiles",

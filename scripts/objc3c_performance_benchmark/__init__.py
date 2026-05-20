@@ -6,7 +6,6 @@ from objc3c_performance_benchmark.catalog import BenchmarkCatalog, load_benchmar
 from objc3c_performance_benchmark.cli import parse_args
 from objc3c_performance_benchmark.comparison import summarize_durations
 from objc3c_performance_benchmark.execution import run_timed_step, sha256_digest
-from objc3c_performance_benchmark.facade import main, run_benchmark
 from objc3c_performance_benchmark.paths import (
     BENCHMARK_PARAMETERS_PATH,
     MEASUREMENT_POLICY_PATH,
@@ -22,6 +21,19 @@ from objc3c_performance_benchmark.results import (
     benchmark_runtime_workload,
     expect,
 )
+
+
+def run_benchmark(*args, **kwargs):
+    from objc3c_performance_benchmark.facade import run_benchmark as _run_benchmark
+
+    return _run_benchmark(*args, **kwargs)
+
+
+def main(*args, **kwargs):
+    from objc3c_performance_benchmark.facade import main as _main
+
+    return _main(*args, **kwargs)
+
 
 __all__ = [
     "BENCHMARK_PARAMETERS_PATH",

@@ -10,6 +10,7 @@ function Get-RunnableToolchainPackageHelperExportedFunctionNames {
     "Get-RepoRelativeNativeDocsFiles",
     "Get-RepoRelativeNativeExecutionSupportFiles",
     "Get-RepoRelativeNativeRuntimeSourceFiles",
+    "Get-RepoRelativePerformanceBenchmarkFiles",
     "Get-RepoRelativePathCompat",
     "Get-RepoRelativePythonSharedFiles",
     "Get-RepoRelativePythonToolingFiles",

@@ -7,6 +7,10 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import write_json_file as write_json
 from objc3c_tooling.subprocesses import run_capture
@@ -26,7 +30,6 @@ from objc3c_performance_benchmark.results import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_portfolio.json"
 MEASUREMENT_POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "measurement_policy.json"
 BENCHMARK_PARAMETERS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_parameters.json"
