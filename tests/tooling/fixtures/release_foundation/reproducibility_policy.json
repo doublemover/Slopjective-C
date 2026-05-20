@@ -29,6 +29,7 @@
     "git_commit",
     "package_manifest_sha256",
     "repo_superclean_surface_sha256",
-    "release_evidence_index_sha256"
+    "release_evidence_index_sha256",
+    "abi_api_drift_summary_sha256"
   ]
 }

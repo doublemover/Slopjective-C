@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_REPORT = ROOT / 'tmp' / 'reports' / 'objc3c-public-workflow' / 'validate-release-foundation.json'
 WORKFLOW_SURFACE = ROOT / 'tests' / 'tooling' / 'fixtures' / 'release_foundation' / 'workflow_surface.json'
 MANIFEST_SUMMARY = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'release-manifest-summary.json'
+ABI_API_DRIFT_SUMMARY = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'abi-api-drift-summary.json'
 PUBLICATION_SUMMARY = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'publication-summary.json'
 SUMMARY_PATH = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'integration-summary.json'
 MANIFEST_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'manifest' / 'objc3c-release-manifest.json'
@@ -27,6 +28,7 @@ INTEGRATION_SUMMARY_CONTRACT_ID = 'objc3c.release.foundation.integration.summary
 REQUIRED_STEPS = list(RELEASE_FOUNDATION_VALIDATE_CHILD_ACTIONS)
 
 REQUIRED_REPORT_CONTRACTS = {
+    'abi_api_drift_summary': 'objc3c.release.foundation.abi_api_drift.summary.v1',
     'manifest_summary': 'objc3c.release.foundation.manifest.summary.v1',
     'publication_summary': 'objc3c.release.foundation.publication.summary.v1',
 }
@@ -65,12 +67,13 @@ def require_artifact_digest(
 
 
 def main() -> int:
-    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, MANIFEST_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, ABI_API_DRIFT_SUMMARY, MANIFEST_SUMMARY, PUBLICATION_SUMMARY):
         if not path.is_file():
             return fail(f"missing required artifact {repo_rel(path)}")
 
     workflow_report = load_json(WORKFLOW_REPORT)
     workflow_surface = load_json(WORKFLOW_SURFACE)
+    abi_api_drift_summary = load_json(ABI_API_DRIFT_SUMMARY)
     manifest_summary = load_json(MANIFEST_SUMMARY)
     publication_summary = load_json(PUBLICATION_SUMMARY)
 
@@ -88,14 +91,21 @@ def main() -> int:
         return fail('workflow surface ordered_child_actions drifted')
     if workflow_surface.get('report_contracts') != REQUIRED_REPORT_CONTRACTS:
         return fail('workflow surface report_contracts drifted')
+    if abi_api_drift_summary.get('status') != 'PASS':
+        return fail('ABI/API drift summary did not pass')
     if manifest_summary.get('status') != 'PASS':
         return fail('release manifest summary did not pass')
     if publication_summary.get('status') != 'PASS':
         return fail('release publication summary did not pass')
+    if require_contract(abi_api_drift_summary, 'abi_api_drift_summary') is not None:
+        return 1
     if require_contract(manifest_summary, 'manifest_summary') is not None:
         return 1
     if require_contract(publication_summary, 'publication_summary') is not None:
         return 1
+    current_abi_api_drift_summary_sha256 = sha256_file(ABI_API_DRIFT_SUMMARY)
+    if manifest_summary.get('abi_api_drift_summary_sha256') != current_abi_api_drift_summary_sha256:
+        return fail('abi_api_drift_summary_sha256 drifted from current ABI/API drift summary')
     for path_field, digest_field, expected_path in (
         ('release_manifest_path', 'release_manifest_sha256', MANIFEST_PATH),
         ('sbom_path', 'sbom_sha256', SBOM_PATH),
@@ -115,6 +125,8 @@ def main() -> int:
         'status': 'PASS',
         'workflow_report': repo_rel(WORKFLOW_REPORT),
         'validated_steps': REQUIRED_STEPS,
+        'abi_api_drift_summary_path': repo_rel(ABI_API_DRIFT_SUMMARY),
+        'abi_api_drift_summary_sha256': current_abi_api_drift_summary_sha256,
         'release_manifest_path': manifest_summary.get('release_manifest_path'),
         'release_manifest_sha256': publication_summary.get('release_manifest_sha256'),
         'published_sbom': publication_summary.get('sbom_path'),

@@ -12,6 +12,8 @@ from .commands import git_output, run
 from .model import build_release_manifest_payload
 from .package import package_once
 from .paths import (
+    ABI_API_DRIFT_PY,
+    ABI_API_DRIFT_SUMMARY_PATH,
     EVIDENCE_INDEX_PATH,
     PACKAGE_MANIFEST_RELATIVE_PATH,
     PACKAGE_STAGE_ROOT,
@@ -30,6 +32,7 @@ def main() -> int:
     payload_policy = load_json(PAYLOAD_POLICY)
     reproducibility_policy = load_json(REPRO_POLICY)
 
+    run(python_script_command(ABI_API_DRIFT_PY))
     run(python_script_command(RELEASE_EVIDENCE_PY))
     if not EVIDENCE_INDEX_PATH.is_file():
         raise RuntimeError(f"missing release evidence index {repo_rel(EVIDENCE_INDEX_PATH)}")
@@ -54,6 +57,7 @@ def main() -> int:
         first=first,
         second=second,
         payload_policy=payload_policy,
+        abi_api_drift_summary_path=ABI_API_DRIFT_SUMMARY_PATH,
     )
 
     git_commit = git_output("rev-parse", "HEAD")

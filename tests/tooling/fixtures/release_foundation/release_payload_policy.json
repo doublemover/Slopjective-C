@@ -31,7 +31,8 @@
     "sbom digest",
     "runnable package manifest digest",
     "repo superclean surface digest",
-    "release evidence index digest"
+    "release evidence index digest",
+    "ABI/API drift gate digest"
   ],
   "payload_exclusions": [
     "tmp/reports/** except published release-foundation summaries",

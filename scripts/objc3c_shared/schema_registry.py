@@ -26,6 +26,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-artifact-authenticity-v1": ROOT
     / "schemas"
     / "objc3c-artifact-authenticity-v1.schema.json",
+    "objc3c-abi-api-governance-v1": ROOT
+    / "schemas"
+    / "objc3c-abi-api-governance-v1.schema.json",
     "source-hygiene-hard-cutover-report-v1": ROOT
     / "schemas"
     / "source-hygiene-hard-cutover-report-v1.schema.json",

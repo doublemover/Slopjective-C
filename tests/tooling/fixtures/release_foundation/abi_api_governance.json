@@ -1,0 +1,256 @@
+{
+  "contract_id": "objc3c.release.foundation.abi_api_governance.v1",
+  "schema_version": 1,
+  "release_blocker_issue_refs": [
+    "#8099",
+    "#8100"
+  ],
+  "gate_action": "check-release-abi-api-drift",
+  "schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
+  "source_manifests": {
+    "stdlib_module_inventory": "stdlib/module_inventory.json",
+    "stdlib_stability_policy": "stdlib/stability_policy.json",
+    "stdlib_semantic_policy": "stdlib/semantic_policy.json",
+    "stdlib_advanced_helper_package_surface": "stdlib/advanced_helper_package_surface.json",
+    "frontend_c_api_helper_contract": "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json",
+    "frontend_c_api_runner_contract": "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "release_operations_versioning_model": "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "long_horizon_deprecation_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json"
+  },
+  "module_policies": {
+    "objc3.core": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_core_"
+      ],
+      "allowed_runtime_prefixes": [
+        "objc3_runtime_stdlib_core_"
+      ],
+      "allowed_public_symbols": [
+        "Objc3CoreLanguageRevision",
+        "Objc3CoreProfileRevision"
+      ]
+    },
+    "objc3.errors": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_errors_"
+      ],
+      "allowed_runtime_prefixes": [],
+      "allowed_public_symbols": [
+        "Objc3ErrorsResultErrTag",
+        "Objc3ErrorsResultOkTag"
+      ]
+    },
+    "objc3.concurrency": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_concurrency_"
+      ],
+      "allowed_runtime_prefixes": [],
+      "allowed_public_symbols": []
+    },
+    "objc3.keypath": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_keypath_"
+      ],
+      "allowed_runtime_prefixes": [],
+      "allowed_public_symbols": []
+    },
+    "objc3.system": {
+      "required_profile": "Strict System",
+      "allowed_public_prefixes": [
+        "objc3_system_"
+      ],
+      "allowed_runtime_prefixes": [],
+      "allowed_public_symbols": []
+    }
+  },
+  "stdlib_public_api": [
+    {
+      "module": "objc3.core",
+      "manifest": "stdlib/modules/objc3.core/module.json",
+      "source": "stdlib/modules/objc3.core/module.objc3",
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "Objc3CoreLanguageRevision": "let Objc3CoreLanguageRevision = 1",
+        "Objc3CoreProfileRevision": "let Objc3CoreProfileRevision = 1",
+        "objc3_core_array_count": "fn objc3_core_array_count(count: i32)",
+        "objc3_core_array_prefix_count": "fn objc3_core_array_prefix_count(count: i32, requested: i32)",
+        "objc3_core_bytes_span_length": "fn objc3_core_bytes_span_length(count: i32)",
+        "objc3_core_bytes_span_prefix_length": "fn objc3_core_bytes_span_prefix_length(count: i32, requested: i32)",
+        "objc3_core_has_capability": "fn objc3_core_has_capability(capability: i32)",
+        "objc3_core_language_revision": "fn objc3_core_language_revision()",
+        "objc3_core_map_entry_present": "fn objc3_core_map_entry_present(flag: i32)",
+        "objc3_core_map_entry_value_or": "fn objc3_core_map_entry_value_or(flag: i32, value: i32, default_value: i32)",
+        "objc3_core_option_has_value": "fn objc3_core_option_has_value(flag: i32)",
+        "objc3_core_option_unwrap_or": "fn objc3_core_option_unwrap_or(flag: i32, value: i32, default_value: i32)",
+        "objc3_core_profile_revision": "fn objc3_core_profile_revision()",
+        "objc3_core_string_view_length": "fn objc3_core_string_view_length(count: i32)",
+        "objc3_core_string_view_prefix_units": "fn objc3_core_string_view_prefix_units(count: i32, requested: i32)"
+      }
+    },
+    {
+      "module": "objc3.errors",
+      "manifest": "stdlib/modules/objc3.errors/module.json",
+      "source": "stdlib/modules/objc3.errors/module.objc3",
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "Objc3ErrorsResultErrTag": "let Objc3ErrorsResultErrTag = 2",
+        "Objc3ErrorsResultOkTag": "let Objc3ErrorsResultOkTag = 1",
+        "objc3_errors_ok_or_code": "fn objc3_errors_ok_or_code(value: i32, default_value: i32)",
+        "objc3_errors_option_result_shape_diagnostic": "fn objc3_errors_option_result_shape_diagnostic(flag: i32, tag: i32)",
+        "objc3_errors_option_to_result_tag": "fn objc3_errors_option_to_result_tag(flag: i32)",
+        "objc3_errors_or_throw_code": "fn objc3_errors_or_throw_code(value: i32, default_value: i32)",
+        "objc3_errors_result_err_tag": "fn objc3_errors_result_err_tag()",
+        "objc3_errors_result_error_or": "fn objc3_errors_result_error_or(tag: i32, code: i32, default_value: i32)",
+        "objc3_errors_result_is_ok": "fn objc3_errors_result_is_ok(tag: i32)",
+        "objc3_errors_result_ok_tag": "fn objc3_errors_result_ok_tag()",
+        "objc3_errors_result_unwrap_or": "fn objc3_errors_result_unwrap_or(tag: i32, value: i32, default_value: i32)",
+        "objc3_errors_text_data_shape_diagnostic": "fn objc3_errors_text_data_shape_diagnostic(unit_count: i32, byte_count: i32)",
+        "objc3_errors_text_data_shape_score": "fn objc3_errors_text_data_shape_score(unit_count: i32, byte_count: i32)"
+      }
+    },
+    {
+      "module": "objc3.concurrency",
+      "manifest": "stdlib/modules/objc3.concurrency/module.json",
+      "source": "stdlib/modules/objc3.concurrency/module.objc3",
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "objc3_concurrency_actor_mailbox_token": "fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, pending_messages: i32)",
+        "objc3_concurrency_cancellation_checkpoint": "fn objc3_concurrency_cancellation_checkpoint(flag: i32)",
+        "objc3_concurrency_cancellation_query": "fn objc3_concurrency_cancellation_query(flag: i32)",
+        "objc3_concurrency_child_spawn_token": "fn objc3_concurrency_child_spawn_token(seed: i32)",
+        "objc3_concurrency_detached_spawn_token": "fn objc3_concurrency_detached_spawn_token(seed: i32)",
+        "objc3_concurrency_executor_hop_token": "fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32)",
+        "objc3_concurrency_join_status": "fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32)",
+        "objc3_concurrency_spawn_token": "fn objc3_concurrency_spawn_token(seed: i32)",
+        "objc3_concurrency_task_group_scope_depth": "fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32)"
+      }
+    },
+    {
+      "module": "objc3.keypath",
+      "manifest": "stdlib/modules/objc3.keypath/module.json",
+      "source": "stdlib/modules/objc3.keypath/module.objc3",
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "objc3_keypath_apply_index": "fn objc3_keypath_apply_index(root: i32, offset: i32)",
+        "objc3_keypath_component_count": "fn objc3_keypath_component_count(root: i32, offset: i32)",
+        "objc3_keypath_metadata_token": "fn objc3_keypath_metadata_token(root: i32, component_count: i32)",
+        "objc3_keypath_reflection_interop_token": "fn objc3_keypath_reflection_interop_token(component_count: i32, reflected_components: i32)",
+        "objc3_keypath_runtime_composition_token": "fn objc3_keypath_runtime_composition_token(component_count: i32, imported_components: i32)",
+        "objc3_keypath_text_shape_diagnostic": "fn objc3_keypath_text_shape_diagnostic(component_count: i32, text_units: i32)",
+        "objc3_keypath_text_shape_score": "fn objc3_keypath_text_shape_score(component_count: i32, text_units: i32)"
+      }
+    },
+    {
+      "module": "objc3.system",
+      "manifest": "stdlib/modules/objc3.system/module.json",
+      "source": "stdlib/modules/objc3.system/module.objc3",
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "objc3_system_cleanup_token": "fn objc3_system_cleanup_token(seed: i32, cleanup_count: i32)",
+        "objc3_system_diagnostics_gate_token": "fn objc3_system_diagnostics_gate_token(required_profile: i32, observed_profile: i32)",
+        "objc3_system_lifetime_borrow_token": "fn objc3_system_lifetime_borrow_token(seed: i32, borrow_depth: i32)",
+        "objc3_system_resource_token": "fn objc3_system_resource_token(seed: i32)",
+        "objc3_system_runtime_composition_token": "fn objc3_system_runtime_composition_token(seed: i32, helper_token: i32)"
+      }
+    }
+  ],
+  "stdlib_runtime_abi": [
+    {
+      "module": "objc3.core",
+      "manifest": "stdlib/modules/objc3.core/module.json",
+      "source": "stdlib/modules/objc3.core/module.objc3",
+      "symbol_set_field": "runtime_abi",
+      "signature_field": "runtime_abi_signatures",
+      "symbols": {
+        "objc3_runtime_stdlib_core_count_i32": "extern fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32",
+        "objc3_runtime_stdlib_core_has_capability_i32": "extern fn objc3_runtime_stdlib_core_has_capability_i32(capability: i32) -> i32",
+        "objc3_runtime_stdlib_core_language_revision_i32": "extern fn objc3_runtime_stdlib_core_language_revision_i32() -> i32",
+        "objc3_runtime_stdlib_core_map_entry_present_i32": "extern fn objc3_runtime_stdlib_core_map_entry_present_i32(flag: i32) -> i32",
+        "objc3_runtime_stdlib_core_map_entry_value_or_i32": "extern fn objc3_runtime_stdlib_core_map_entry_value_or_i32(flag: i32, value: i32, default_value: i32) -> i32",
+        "objc3_runtime_stdlib_core_option_has_value_i32": "extern fn objc3_runtime_stdlib_core_option_has_value_i32(flag: i32) -> i32",
+        "objc3_runtime_stdlib_core_option_unwrap_or_i32": "extern fn objc3_runtime_stdlib_core_option_unwrap_or_i32(flag: i32, value: i32, default_value: i32) -> i32",
+        "objc3_runtime_stdlib_core_prefix_count_i32": "extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32",
+        "objc3_runtime_stdlib_core_profile_revision_i32": "extern fn objc3_runtime_stdlib_core_profile_revision_i32() -> i32"
+      }
+    }
+  ],
+  "frontend_c_api": {
+    "helper_contract": "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json",
+    "runner_contract": "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "public_private_partition_owner": "frontend-c-api-public-private-partition",
+    "required_helpers": [
+      "objc3c_frontend_c_compile_file_owned",
+      "objc3c_frontend_c_compile_source_owned",
+      "objc3c_frontend_c_owned_result_artifact_path",
+      "objc3c_frontend_c_owned_result_artifact_path_view",
+      "objc3c_frontend_c_owned_result_destroy",
+      "objc3c_frontend_c_owned_result_error_message",
+      "objc3c_frontend_c_owned_result_error_message_view",
+      "objc3c_frontend_c_owned_result_has_artifact",
+      "objc3c_frontend_c_owned_result_process_exit_code",
+      "objc3c_frontend_c_owned_result_semantic_skipped",
+      "objc3c_frontend_c_owned_result_stage_summary",
+      "objc3c_frontend_c_owned_result_status",
+      "objc3c_frontend_c_owned_result_success",
+      "objc3c_frontend_c_result_artifact_path",
+      "objc3c_frontend_c_result_artifact_path_view",
+      "objc3c_frontend_c_result_destroy",
+      "objc3c_frontend_c_result_error_message",
+      "objc3c_frontend_c_result_error_message_view",
+      "objc3c_frontend_c_result_has_artifact",
+      "objc3c_frontend_c_stage_summary_has_diagnostics",
+      "objc3c_frontend_c_stage_summary_has_errors",
+      "objc3c_frontend_c_stage_summary_is_well_formed",
+      "objc3c_frontend_c_string_release",
+      "objc3c_frontend_c_string_view"
+    ],
+    "required_type_aliases": [
+      "objc3c_frontend_c_artifact_kind_t",
+      "objc3c_frontend_c_compile_options_t",
+      "objc3c_frontend_c_compile_result_t",
+      "objc3c_frontend_c_context_t",
+      "objc3c_frontend_c_result_t",
+      "objc3c_frontend_c_stage_summary_t",
+      "objc3c_frontend_c_string_t",
+      "objc3c_frontend_c_string_view_t",
+      "objc3c_frontend_c_version_t"
+    ]
+  },
+  "compatibility_window_policy": {
+    "versioning_model": "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "deprecation_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "expected_supported_major_line": 1,
+    "expected_current_minor_line": 0,
+    "expected_channel_statuses": {
+      "candidate": "supported-for-release-drills",
+      "preview": "blocked-until-generated-conversion-replay-evidence",
+      "stable": "supported"
+    },
+    "expected_forbidden_claims": [
+      "cross-major forward compatibility",
+      "hosted auto-update service",
+      "indefinite support window"
+    ],
+    "claim_blocking_deprecation_states": [
+      "hard-deprecated",
+      "removed"
+    ]
+  },
+  "private_helper_graduation_records": [],
+  "change_policy": {
+    "unreviewed_symbol_additions": "block-publication",
+    "unreviewed_symbol_removals": "block-publication",
+    "signature_drift": "block-publication",
+    "private_helper_graduation_without_policy": "block-publication",
+    "compatibility_window_violations": "block-publication"
+  }
+}

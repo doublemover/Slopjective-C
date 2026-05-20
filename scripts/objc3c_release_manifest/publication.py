@@ -113,6 +113,7 @@ def build_attestation(
         "sbom_sha256": sbom_sha256,
         "repo_superclean_surface_sha256": manifest["repo_superclean_surface_sha256"],
         "release_evidence_index_sha256": manifest["release_evidence_index_sha256"],
+        "abi_api_drift_summary_sha256": manifest["abi_api_drift_summary_sha256"],
     }
     missing_bindings = sorted(
         set(provenance_policy["required_attestation_bindings"]) - set(attested_digests)

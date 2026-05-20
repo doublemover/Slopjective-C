@@ -5,6 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+    "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
     "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
     "tests/tooling/fixtures/release_foundation/schema_surface.json",
     "tests/tooling/fixtures/release_foundation/workflow_surface.json"
@@ -27,6 +28,11 @@
     "strict_error:tmp-output-promoted-as-source-truth",
     "strict_error:evidence-log-publication",
     "strict_error:release-evidence-wider-than-selected-payload",
+    "strict_error:unreviewed-abi-api-symbol-addition",
+    "strict_error:unreviewed-abi-api-symbol-removal",
+    "strict_error:abi-api-signature-drift",
+    "strict_error:private-helper-graduation-without-policy",
+    "strict_error:compatibility-window-violation",
     "required_manifest_field:contract_id",
     "required_manifest_field:package_root",
     "required_manifest_field:manifest_artifact",
@@ -51,6 +57,7 @@
     "required_source_stamp:package_manifest_sha256",
     "required_source_stamp:repo_superclean_surface_sha256",
     "required_source_stamp:release_evidence_index_sha256",
+    "required_source_stamp:abi_api_drift_summary_sha256",
     "*retired-route-as-positive*",
     "*gate-as-positive*",
     "*old-mode-as-positive*",

@@ -19,6 +19,22 @@ SUMMARY_CONTRACT_ID = "objc3c.release.foundation.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
 EXPECTED_SCHEMAS = {
+    "abi_api_governance_schema": (
+        "objc3c-abi-api-governance-v1",
+        "https://objc3c.dev/schemas/objc3c-abi-api-governance-v1.schema.json",
+        "objc3c.release.foundation.abi_api_governance.v1",
+        (
+            "release_blocker_issue_refs",
+            "gate_action",
+            "source_manifests",
+            "module_policies",
+            "stdlib_public_api",
+            "stdlib_runtime_abi",
+            "frontend_c_api",
+            "compatibility_window_policy",
+            "change_policy",
+        ),
+    ),
     "release_manifest_schema": (
         "objc3c-release-manifest-v1",
         "https://objc3c.dev/schemas/objc3c-release-manifest-v1.schema.json",
@@ -32,6 +48,8 @@ EXPECTED_SCHEMAS = {
             "repo_superclean_surface_sha256",
             "release_evidence_index_path",
             "release_evidence_index_sha256",
+            "abi_api_drift_summary_path",
+            "abi_api_drift_summary_sha256",
             "release_payload_entries",
             "release_payload_digest_sha256",
             "source_stamps",
@@ -334,6 +352,7 @@ def main() -> int:
         "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
+        "abi_api_governance_schema": schema_refs["abi_api_governance_schema"],
         "release_manifest_schema": schema_refs["release_manifest_schema"],
         "release_sbom_schema": schema_refs["release_sbom_schema"],
         "release_attestation_schema": schema_refs["release_attestation_schema"],

@@ -43,6 +43,7 @@ class PackageAssembly:
 @dataclass(frozen=True)
 class ReleaseValidation:
     repo_superclean_path: Path
+    abi_api_drift_summary_path: Path
     reproducibility_match: bool
 
 
@@ -109,6 +110,8 @@ def build_release_manifest_payload(
         "repo_superclean_surface_sha256": sha256_file(validation.repo_superclean_path),
         "release_evidence_index_path": repo_rel(evidence_index_path),
         "release_evidence_index_sha256": sha256_file(evidence_index_path),
+        "abi_api_drift_summary_path": repo_rel(validation.abi_api_drift_summary_path),
+        "abi_api_drift_summary_sha256": sha256_file(validation.abi_api_drift_summary_path),
         "release_payload_entries": first.entries_json(),
         "release_payload_digest_sha256": first.payload_digest,
         "source_stamps": {
@@ -140,6 +143,8 @@ def build_release_manifest_summary(
         "release_payload_digest_sha256": payload["release_payload_digest_sha256"],
         "release_evidence_index_path": payload["release_evidence_index_path"],
         "release_evidence_index_sha256": payload["release_evidence_index_sha256"],
+        "abi_api_drift_summary_path": payload["abi_api_drift_summary_path"],
+        "abi_api_drift_summary_sha256": payload["abi_api_drift_summary_sha256"],
         "repo_superclean_surface_path": payload["repo_superclean_surface_path"],
         "repo_superclean_surface_sha256": payload["repo_superclean_surface_sha256"],
     }

@@ -29,8 +29,15 @@ from objc3c_tooling import json_io as tooling_json_io
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts" / "validate_capability_docs.py"
 ROUTING_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_llvm_capability_routing.cpp"
+CAPABILITY_SUMMARY_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_llvm_capability_summary.cpp"
 PARSER_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_parser.cpp"
+PARSER_COMPLETION_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_parser_completion.cpp"
+PARSER_OBJECT_MEMBER_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_parser_object_container_member.cpp"
+PARSER_NUMBER_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_parser_number_mantissa_integer_zero_token.cpp"
+PARSER_STRING_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_parser_string_token_character.cpp"
 WRITER_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_writer.cpp"
+WRITER_VALUE_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_value_writer.cpp"
+WRITER_CONTAINER_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "json" / "json_value_container_writer.cpp"
 
 
 def _load_validator():
@@ -159,6 +166,7 @@ def test_schema_registry_includes_conformance_evidence_schemas() -> None:
 
 def test_schema_registry_includes_release_adoption_schemas() -> None:
     release_adoption_schemas = {
+        "objc3c-abi-api-governance-v1": "schemas/objc3c-abi-api-governance-v1.schema.json",
         "objc3c-adoption-legibility-evidence-v1": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
         "objc3c-long-horizon-operations-evidence-v1": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json",
         "objc3c-upgrade-support-report-v1": "schemas/objc3c-upgrade-support-report-v1.schema.json",
@@ -194,26 +202,37 @@ def test_capability_docs_validate_against_schema_and_evidence() -> None:
 
 def test_native_capability_routing_uses_strict_json_parser() -> None:
     source = ROUTING_SOURCE.read_text(encoding="utf-8")
+    summary_source = CAPABILITY_SUMMARY_SOURCE.read_text(encoding="utf-8")
 
-    assert "io/json/json_parser.h" in source
-    assert "ParseJson(text)" in source
-    assert "llvm capability summary parse failure: " in source
-    assert "ExtractObjectSegment" not in source
-    assert "ExtractBoolField" not in source
-    assert "ExtractStringField" not in source
+    assert "TryLoadObjc3LLVMCapabilitySummary" in source
+    assert "io/json/json_parser.h" in summary_source
+    assert "ParseJson(text)" in summary_source
+    assert "llvm capability summary parse failure: " in summary_source
+    assert "ExtractObjectSegment" not in summary_source
+    assert "ExtractBoolField" not in summary_source
+    assert "ExtractStringField" not in summary_source
 
 
 def test_native_json_parser_rejects_malformed_internal_reports() -> None:
     source = PARSER_SOURCE.read_text(encoding="utf-8")
+    completion_source = PARSER_COMPLETION_SOURCE.read_text(encoding="utf-8")
+    object_member_source = PARSER_OBJECT_MEMBER_SOURCE.read_text(encoding="utf-8")
+    number_source = PARSER_NUMBER_SOURCE.read_text(encoding="utf-8")
+    string_source = PARSER_STRING_SOURCE.read_text(encoding="utf-8")
 
-    assert "unexpected trailing JSON content" in source
-    assert "duplicate JSON object key" in source
-    assert "unescaped control character in JSON string" in source
-    assert "JSON number has leading zero" in source
+    assert "ParseJsonDocument(text)" in source
+    assert "unexpected trailing JSON content" in completion_source
+    assert "duplicate JSON object key" in object_member_source
+    assert "unescaped control character in JSON string" in string_source
+    assert "JSON number has leading zero" in number_source
 
 
 def test_native_json_writer_uses_ordered_object_iteration() -> None:
     source = WRITER_SOURCE.read_text(encoding="utf-8")
+    value_source = WRITER_VALUE_SOURCE.read_text(encoding="utf-8")
+    container_source = WRITER_CONTAINER_SOURCE.read_text(encoding="utf-8")
 
-    assert "for (const auto &[key, item] : value.AsObject())" in source
-    assert "WriteJsonString(out, key)" in source
+    assert "WriteJsonValue(out, value)" in source
+    assert "WriteJsonObjectValue(out, value.AsObject())" in value_source
+    assert "for (const auto &[key, item] : object)" in container_source
+    assert "WriteJsonString(out, key)" in container_source

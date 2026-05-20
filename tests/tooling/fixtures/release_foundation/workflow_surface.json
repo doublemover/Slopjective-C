@@ -6,6 +6,7 @@
     "validate-release-foundation",
     "check-release-foundation-surface",
     "check-release-foundation-schema-surface",
+    "check-release-abi-api-drift",
     "build-release-manifest",
     "publish-release-provenance"
   ],
@@ -17,6 +18,7 @@
     "owned_actions": [
       "check-release-foundation-surface",
       "check-release-foundation-schema-surface",
+      "check-release-abi-api-drift",
       "build-release-manifest",
       "publish-release-provenance",
       "validate-release-foundation"
@@ -32,6 +34,7 @@
       "check-release-evidence",
       "check-release-foundation-surface",
       "check-release-foundation-schema-surface",
+      "check-release-abi-api-drift",
       "build-release-manifest",
       "publish-release-provenance"
     ]
@@ -42,12 +45,14 @@
     "check-release-evidence",
     "check-release-foundation-surface",
     "check-release-foundation-schema-surface",
+    "check-release-abi-api-drift",
     "build-release-manifest",
     "publish-release-provenance"
   ],
   "release_evidence_paths": [
     "tmp/reports/release-foundation/source-surface-summary.json",
     "tmp/reports/release-foundation/schema-surface-summary.json",
+    "tmp/reports/release-foundation/abi-api-drift-summary.json",
     "tmp/reports/release-foundation/release-manifest-summary.json",
     "tmp/reports/release-foundation/publication-summary.json",
     "tmp/reports/release-foundation/integration-summary.json",
@@ -63,6 +68,7 @@
     "check-release-evidence"
   ],
   "report_contracts": {
+    "abi_api_drift_summary": "objc3c.release.foundation.abi_api_drift.summary.v1",
     "manifest_summary": "objc3c.release.foundation.manifest.summary.v1",
     "publication_summary": "objc3c.release.foundation.publication.summary.v1"
   },

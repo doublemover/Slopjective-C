@@ -5,7 +5,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 
 - Package bridge count: `1`
 - Operator action count: `128`
-- Maintainer action count: `63`
+- Maintainer action count: `65`
 - Runner path: `package.json scripts.objc3c -> scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
@@ -164,6 +164,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check-distribution-credibility-schema-surface` | `check` | `repo` | `distribution dashboard and trust-report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_schema_surface.py` |
 | `check-distribution-credibility-surface` | `check` | `repo` | `distribution credibility only publishes from the checked-in trust-signal, install-doc, operator, drill, workflow, and artifact contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_source_surface.py` |
 | `check-documentation-surface` | `check` | `docs` | `reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
+| `check-external-support-claim-gate` | `check` | `repo` | `support and adoption claims fail closed when external validation evidence is missing stale non-reproducible or local-only` | `fixed-shape` | `python:scripts/check_objc3c_external_support_claim_gate.py` |
 | `check-external-validation-surface` | `check` | `repo` | `external validation stays rooted in checked-in trust, intake, quarantine, and artifact contracts` | `fixed-shape` | `python:scripts/check_external_validation_source_surface.py` |
 | `check-hosted-llvm-capabilities` | `check` | `ci` | `hosted Windows CI publishes capability truth only from clang plus llc object-emission probe evidence` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json` |
 | `check-llvm-capabilities` | `check` | `repo` | `llvm capability probe output stays tied to the live toolchain environment` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json` |
@@ -179,6 +180,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check-public-command-surface` | `check` | `docs` | `operator-facing machine appendix stays in sync with the live workflow runner and package scripts` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
 | `check-public-conformance-reporting-surface` | `check` | `repo` | `public conformance source truth stays rooted in checked-in corpus, external-validation, schema, and stability-policy owner models` | `fixed-shape` | `python:scripts/check_public_conformance_reporting_source_surface.py` |
 | `check-public-conformance-schema-surface` | `check` | `repo` | `public conformance payloads stay bound to registered checked-in schema identities before they can be published` | `fixed-shape` | `python:scripts/check_public_conformance_schema_surface.py` |
+| `check-release-abi-api-drift` | `check` | `repo` | `release-foundation-source -> release-foundation-gate -> release-foundation-blockers: public ABI/API additions, removals, signature drift, helper graduation, and compatibility-window drift block release publication` | `fixed-shape` | `python:scripts/check_objc3c_release_abi_api_drift.py` |
 | `check-release-evidence` | `check` | `repo` | `release evidence indexes stay coherent and replayable from the checked-in release evidence contract, schemas, and generated tmp index` | `fixed-shape` | `python:scripts/check_release_evidence.py` |
 | `check-release-foundation-schema-surface` | `check` | `repo` | `release-foundation-source -> release-foundation-gate -> release-foundation-blockers: release manifest, sbom, and attestation artifacts stay on checked-in schemas` | `fixed-shape` | `python:scripts/check_release_foundation_schema_surface.py` |
 | `check-release-foundation-surface` | `check` | `repo` | `release-foundation-source -> release-foundation-gate -> release-foundation-blockers: release foundation publishes only from checked-in taxonomy, trust, payload, and provenance contracts` | `fixed-shape` | `runner-internal + check-repo-superclean-surface + python:scripts/check_release_foundation_source_surface.py` |

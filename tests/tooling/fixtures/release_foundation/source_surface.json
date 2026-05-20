@@ -8,12 +8,14 @@
   "reproducibility_policy": "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
   "release_payload_policy": "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
   "provenance_policy": "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+  "abi_api_governance": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
   "workflow_surface": "tests/tooling/fixtures/release_foundation/workflow_surface.json",
   "schema_surface": "tests/tooling/fixtures/release_foundation/schema_surface.json",
   "package_bridge": "objc3c",
   "public_actions": [
     "check-release-foundation-surface",
     "check-release-foundation-schema-surface",
+    "check-release-abi-api-drift",
     "build-release-manifest",
     "publish-release-provenance",
     "validate-release-foundation"
@@ -26,6 +28,7 @@
     "owned_actions": [
       "check-release-foundation-surface",
       "check-release-foundation-schema-surface",
+      "check-release-abi-api-drift",
       "build-release-manifest",
       "publish-release-provenance",
       "validate-release-foundation"
@@ -46,6 +49,7 @@
   "build_scripts": [
     "scripts/check_release_foundation_source_surface.py",
     "scripts/check_release_foundation_schema_surface.py",
+    "scripts/check_objc3c_release_abi_api_drift.py",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",
     "scripts/check_objc3c_release_foundation_integration.py"
