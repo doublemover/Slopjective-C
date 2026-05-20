@@ -35,6 +35,7 @@ class PackageChannelInputs:
     supported_platforms: dict[str, Any]
     metadata_surface: dict[str, Any]
     platform_support_matrix: dict[str, Any]
+    interop_loader_metadata: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,7 @@ def package_channels_manifest_payload(
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
         "implemented_channels": IMPLEMENTED_CHANNELS,
+        "interop_loader_metadata": inputs.interop_loader_metadata,
         "release_foundation_artifacts": {
             "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
             "sbom": repo_rel(RELEASE_FOUNDATION_SBOM),
@@ -123,4 +125,5 @@ def package_channels_report_payload(
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
         "implemented_channels": manifest_payload["implemented_channels"],
+        "interop_loader_metadata": manifest_payload["interop_loader_metadata"],
     }

@@ -14,6 +14,7 @@
     "supported_platform_ids",
     "support_tiers",
     "implemented_channels",
+    "interop_loader_metadata",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -42,6 +43,9 @@
       },
       "minItems": 3
     },
+    "interop_loader_metadata": {
+      "$ref": "#/$defs/interopLoaderMetadata"
+    },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
     "offline_archive": { "type": "string" }
@@ -57,6 +61,82 @@
         "platform_ids": {
           "type": "array",
           "items": { "type": "string" }
+        }
+      }
+    },
+    "interopLoaderMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "source",
+        "support",
+        "package_count",
+        "package_ids",
+        "header_import_count",
+        "header_export_count",
+        "abi_alignment_count",
+        "foreign_type_count",
+        "mixed_image_count",
+        "positive_fixture_count",
+        "negative_fixture_count",
+        "tamper_rejection_diagnostic",
+        "unsupported_surfaces"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1"
+        },
+        "source": {
+          "const": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+        },
+        "support": {
+          "const": "local-mixed-image-metadata-digest-checked"
+        },
+        "package_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "package_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "header_import_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "header_export_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "abi_alignment_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "foreign_type_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mixed_image_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "positive_fixture_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "negative_fixture_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tamper_rejection_diagnostic": {
+          "const": "O3PKG8054"
+        },
+        "unsupported_surfaces": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
         }
       }
     }

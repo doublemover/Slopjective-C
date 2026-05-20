@@ -11,6 +11,7 @@
     "supported_platform_ids",
     "support_tiers",
     "implemented_channels",
+    "interop_loader_metadata",
     "portable_archive",
     "installer_archive",
     "offline_archive"

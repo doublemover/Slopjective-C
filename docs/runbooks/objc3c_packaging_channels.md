@@ -116,3 +116,10 @@ Current public platform-support entrypoints layered onto this surface:
 
 The package-channel manifest and summary must publish the same support-tier
 boundary as the machine-owned platform support matrix.
+
+The package-channel manifest also publishes the package-ecosystem interop loader
+summary from `tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json`.
+That keeps C and Objective-C header import/export support tied to the same
+fixture-backed header import/export counts, ABI alignment counts, foreign type
+counts, mixed-image package ids, negative diagnostics, and fail-closed tamper
+diagnostic used by the lock and mirror workflows.

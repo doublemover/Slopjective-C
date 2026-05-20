@@ -189,6 +189,21 @@ The mirror generator consumes the generated lock, writes an offline mirror index
 local registry index, and publication metadata under the package-ecosystem
 output root, and refuses to claim hosted registry support.
 
+## C And Objective-C Header Interop Metadata
+
+The checked-in source of truth for C and Objective-C header import/export
+semantics is:
+
+- `tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json`
+
+That contract ties positive fixtures, negative fixtures, stable `O3PKG8052`
+diagnostics, ABI alignment records, foreign type records, mixed-image loader
+records, and package execution entries to package ids already present in the
+generated lock. The lock, mirror, local registry, publication metadata, and
+packaging-channel manifest all consume that same contract. Unsupported hosted
+registry restore, network-resolved interop metadata, and unchecked ABI alignment
+remain fail-closed.
+
 ## Public Workflow Integration
 
 The repo-scope package ecosystem workflow is:

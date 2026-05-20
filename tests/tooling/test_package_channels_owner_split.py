@@ -51,6 +51,26 @@ def sample_inputs() -> PackageChannelInputs:
             "claim_boundary": {"supported_platform_ids": ["windows-x64"]},
             "tiers": [{"platform_id": "windows-x64", "tier": "release"}],
         },
+        interop_loader_metadata={
+            "contract_id": "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1",
+            "source": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+            "support": "local-mixed-image-metadata-digest-checked",
+            "package_count": 2,
+            "package_ids": ["showcase:patchKit", "stdlib:objc3.system"],
+            "header_import_count": 5,
+            "header_export_count": 3,
+            "abi_alignment_count": 2,
+            "foreign_type_count": 2,
+            "mixed_image_count": 3,
+            "positive_fixture_count": 5,
+            "negative_fixture_count": 3,
+            "tamper_rejection_diagnostic": "O3PKG8054",
+            "unsupported_surfaces": [
+                "hosted registry mixed-image restore",
+                "network-resolved interop metadata",
+                "unchecked ABI alignment fallback",
+            ],
+        },
     )
 
 
@@ -77,16 +97,25 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     assert manifest["contract_id"] == "objc3c.packaging.channels.summary.v1"
     assert manifest["platform_id"] == "windows-x64"
     assert manifest["implemented_channels"] == IMPLEMENTED_CHANNELS
+    assert manifest["interop_loader_metadata"]["support"] == "local-mixed-image-metadata-digest-checked"
+    assert manifest["interop_loader_metadata"]["header_import_count"] == 5
     assert manifest["portable_archive"].endswith("objc3c-windows-x64-portable.zip")
     assert report["manifest_path"].endswith("objc3c-package-channels-manifest.json")
     assert report["implemented_channels"] == IMPLEMENTED_CHANNELS
+    assert report["interop_loader_metadata"]["tamper_rejection_diagnostic"] == "O3PKG8054"
 
 
 def test_package_channel_validation_fails_closed_on_required_manifest_drift() -> None:
     inputs = sample_inputs()
+    manifest = package_channels_manifest_payload(
+        inputs=inputs,
+        paths=package_channel_paths("unit-run"),
+    )
+    del manifest["offline_archive"]
+
     with pytest.raises(RuntimeError, match="offline_archive"):
         validate_manifest_required_fields(
-            manifest_payload={"contract_id": "objc3c.packaging.channels.summary.v1"},
+            manifest_payload=manifest,
             metadata_surface=inputs.metadata_surface,
         )
 

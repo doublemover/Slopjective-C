@@ -25,6 +25,7 @@ PACKAGE_LOADER_INTEROP_METADATA_REL = (
 PACKAGE_LOADER_INTEROP_CONTRACT_ID = (
     "objc3c.package_ecosystem.mixed_image_interop_loader_metadata.v1"
 )
+PACKAGE_LOADER_INTEROP_CHANNEL_SUPPORT = "local-mixed-image-metadata-digest-checked"
 PACKAGE_LOADER_INTEROP_TAMPER_CODE = "O3PKG8054"
 
 
@@ -254,10 +255,39 @@ def package_loader_metadata_summary(payload: dict[str, Any], metadata_by_package
     }
 
 
+def package_loader_metadata_channel_summary(
+    payload: dict[str, Any],
+    metadata_by_package: dict[str, dict[str, Any]],
+) -> dict[str, object]:
+    unsupported_surfaces = _require_string_list(
+        payload,
+        "unsupported_surfaces",
+        surface_name="package loader interop metadata",
+    )
+    entries = list(metadata_by_package.values())
+    return {
+        "contract_id": payload.get("contract_id"),
+        "source": PACKAGE_LOADER_INTEROP_METADATA_REL,
+        "support": PACKAGE_LOADER_INTEROP_CHANNEL_SUPPORT,
+        "package_count": len(metadata_by_package),
+        "package_ids": sorted(metadata_by_package),
+        "header_import_count": sum(len(entry.get("header_imports", [])) for entry in entries),
+        "header_export_count": sum(len(entry.get("header_exports", [])) for entry in entries),
+        "abi_alignment_count": sum(len(entry.get("abi_alignment", [])) for entry in entries),
+        "foreign_type_count": sum(len(entry.get("foreign_types", [])) for entry in entries),
+        "mixed_image_count": sum(len(entry.get("mixed_images", [])) for entry in entries),
+        "positive_fixture_count": sum(len(entry.get("source_fixtures", [])) for entry in entries),
+        "negative_fixture_count": sum(len(entry.get("negative_fixtures", [])) for entry in entries),
+        "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        "unsupported_surfaces": unsupported_surfaces,
+    }
+
+
 __all__ = [
     "PACKAGE_ECOSYSTEM_OWNER_FIELDS",
     "PACKAGE_ECOSYSTEM_OWNER_POLICY",
     "PACKAGE_LOADER_INTEROP_CONTRACT_ID",
+    "PACKAGE_LOADER_INTEROP_CHANNEL_SUPPORT",
     "PACKAGE_LOADER_INTEROP_METADATA_REL",
     "PACKAGE_LOADER_INTEROP_TAMPER_CODE",
     "load_package_loader_interop_metadata",
@@ -265,6 +295,7 @@ __all__ = [
     "package_ecosystem_owner_payload",
     "package_loader_interop_metadata_path",
     "package_loader_metadata_by_package",
+    "package_loader_metadata_channel_summary",
     "package_loader_metadata_digest_inputs",
     "package_loader_metadata_summary",
     "require_package_ecosystem_blocker_metadata",

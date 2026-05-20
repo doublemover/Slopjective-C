@@ -17,6 +17,7 @@ from package_ecosystem_contracts import (  # noqa: E402
     load_package_loader_interop_metadata,
     normalize_package_loader_interop_metadata,
     package_loader_metadata_by_package,
+    package_loader_metadata_channel_summary,
 )
 
 
@@ -49,6 +50,29 @@ def test_package_loader_interop_fixture_covers_headers_abi_and_mixed_images() ->
     system = metadata["stdlib:objc3.system"]
     assert "BridgeProvider.h" in system["header_imports"]
     assert system["negative_diagnostics"][0]["diagnostic_code"] == "O3PKG8052"
+
+
+def test_package_loader_interop_channel_summary_is_distribution_ready() -> None:
+    payload = load_package_loader_interop_metadata(ROOT)
+    by_package = package_loader_metadata_by_package(
+        payload,
+        root=ROOT,
+        package_ids={"showcase:patchKit", "stdlib:objc3.system"},
+    )
+
+    summary = package_loader_metadata_channel_summary(payload, by_package)
+
+    assert summary["support"] == "local-mixed-image-metadata-digest-checked"
+    assert summary["package_ids"] == ["showcase:patchKit", "stdlib:objc3.system"]
+    assert summary["header_import_count"] == 5
+    assert summary["header_export_count"] == 3
+    assert summary["abi_alignment_count"] == 2
+    assert summary["foreign_type_count"] == 2
+    assert summary["mixed_image_count"] == 3
+    assert summary["positive_fixture_count"] == 5
+    assert summary["negative_fixture_count"] == 3
+    assert summary["tamper_rejection_diagnostic"] == PACKAGE_LOADER_INTEROP_TAMPER_CODE
+    assert "network-resolved interop metadata" in summary["unsupported_surfaces"]
 
 
 def test_package_loader_interop_tamper_mismatch_reports_stable_code() -> None:
