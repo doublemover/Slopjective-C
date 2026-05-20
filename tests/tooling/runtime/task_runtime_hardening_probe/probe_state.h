@@ -55,6 +55,16 @@ struct CancelDrainResult {
   objc3_runtime_task_runtime_state_snapshot task{};
 };
 
+struct ExecutorHopRaceGuardResult {
+  int scope = 0;
+  int add_task = 0;
+  int wait_next = 0;
+  int stale_value_hop = 0;
+  int wrong_executor_hop = 0;
+  int copy_task_status = 0;
+  objc3_runtime_task_runtime_state_snapshot task{};
+};
+
 struct ProbeRun {
   PassResult pass1;
   PassResult pass2;
@@ -62,6 +72,8 @@ struct ProbeRun {
   InvalidHandleResult invalid2;
   CancelDrainResult cancel_drain1;
   CancelDrainResult cancel_drain2;
+  ExecutorHopRaceGuardResult hop_race1;
+  ExecutorHopRaceGuardResult hop_race2;
 };
 
 } // namespace task_runtime_hardening_probe

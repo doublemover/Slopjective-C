@@ -302,6 +302,64 @@ inline bool Equivalent(const CancelDrainResult &lhs,
          lhs.task.race_guard_passed == rhs.task.race_guard_passed;
 }
 
+inline bool Equivalent(const ExecutorHopRaceGuardResult &lhs,
+                       const ExecutorHopRaceGuardResult &rhs) {
+  return lhs.scope == rhs.scope && lhs.add_task == rhs.add_task &&
+         lhs.wait_next == rhs.wait_next &&
+         lhs.stale_value_hop == rhs.stale_value_hop &&
+         lhs.wrong_executor_hop == rhs.wrong_executor_hop &&
+         lhs.copy_task_status == rhs.copy_task_status &&
+         lhs.task.scope_call_count == rhs.task.scope_call_count &&
+         lhs.task.add_task_call_count == rhs.task.add_task_call_count &&
+         lhs.task.wait_next_call_count == rhs.task.wait_next_call_count &&
+         lhs.task.executor_hop_call_count ==
+             rhs.task.executor_hop_call_count &&
+         lhs.task.last_failure_reason == rhs.task.last_failure_reason &&
+         lhs.task.lifecycle_state == rhs.task.lifecycle_state &&
+         lhs.task.selected_executor_tag == rhs.task.selected_executor_tag &&
+         lhs.task.active_group_executor_tag ==
+             rhs.task.active_group_executor_tag &&
+         lhs.task.active_group_task_count ==
+             rhs.task.active_group_task_count &&
+         lhs.task.pending_group_task_count ==
+             rhs.task.pending_group_task_count &&
+         lhs.task.completed_group_task_count ==
+             rhs.task.completed_group_task_count &&
+         lhs.task.cancelled_group_task_count ==
+             rhs.task.cancelled_group_task_count &&
+         lhs.task.group_cancelled == rhs.task.group_cancelled &&
+         lhs.task.last_wait_next_result == rhs.task.last_wait_next_result &&
+         lhs.task.last_executor_hop_executor_tag ==
+             rhs.task.last_executor_hop_executor_tag &&
+         lhs.task.last_executor_hop_value ==
+             rhs.task.last_executor_hop_value &&
+         lhs.task.last_queue_depth == rhs.task.last_queue_depth &&
+         lhs.task.last_queue_drain_result ==
+             rhs.task.last_queue_drain_result &&
+         lhs.task.scheduler_enqueue_count ==
+             rhs.task.scheduler_enqueue_count &&
+         lhs.task.scheduler_dequeue_count ==
+             rhs.task.scheduler_dequeue_count &&
+         lhs.task.scheduler_cancelled_count ==
+             rhs.task.scheduler_cancelled_count &&
+         lhs.task.last_scheduled_task_handle ==
+             rhs.task.last_scheduled_task_handle &&
+         lhs.task.last_scheduled_executor_tag ==
+             rhs.task.last_scheduled_executor_tag &&
+         lhs.task.last_dequeued_task_handle ==
+             rhs.task.last_dequeued_task_handle &&
+         lhs.task.last_dequeued_executor_tag ==
+             rhs.task.last_dequeued_executor_tag &&
+         lhs.task.last_executor_queue_depth ==
+             rhs.task.last_executor_queue_depth &&
+         lhs.task.max_executor_queue_depth ==
+             rhs.task.max_executor_queue_depth &&
+         lhs.task.scheduler_sequence == rhs.task.scheduler_sequence &&
+         lhs.task.deadlock_guard_passed ==
+             rhs.task.deadlock_guard_passed &&
+         lhs.task.race_guard_passed == rhs.task.race_guard_passed;
+}
+
 inline bool SnapshotCopiesSucceeded(const PassResult &pass) {
   return pass.after_add_copy_status == 0 &&
          pass.after_second_add_copy_status == 0 &&
@@ -509,12 +567,56 @@ inline bool CancelDrainAssertionsPassed(const CancelDrainResult &pass) {
          pass.task.race_guard_passed == 1;
 }
 
+inline bool ExecutorHopRaceGuardAssertionsPassed(
+    const ExecutorHopRaceGuardResult &pass) {
+  return pass.copy_task_status == 0 && pass.scope == 1 &&
+         pass.add_task == 1 && pass.wait_next == 28 &&
+         pass.stale_value_hop ==
+             -OBJC3_RUNTIME_TASK_FAILURE_SCHEDULER_QUEUE_DRIFT &&
+         pass.wrong_executor_hop ==
+             -OBJC3_RUNTIME_TASK_FAILURE_SCHEDULER_QUEUE_DRIFT &&
+         pass.task.scope_call_count == 1 &&
+         pass.task.add_task_call_count == 1 &&
+         pass.task.wait_next_call_count == 1 &&
+         pass.task.executor_hop_call_count == 2 &&
+         pass.task.last_failure_reason ==
+             OBJC3_RUNTIME_TASK_FAILURE_SCHEDULER_QUEUE_DRIFT &&
+         pass.task.lifecycle_state ==
+             OBJC3_RUNTIME_TASK_LIFECYCLE_GROUP_DRAINED &&
+         pass.task.selected_executor_tag == 7 &&
+         pass.task.active_group_executor_tag == 7 &&
+         pass.task.active_group_task_count == 1 &&
+         pass.task.pending_group_task_count == 0 &&
+         pass.task.completed_group_task_count == 1 &&
+         pass.task.cancelled_group_task_count == 0 &&
+         pass.task.group_cancelled == 0 &&
+         pass.task.last_wait_next_result == 28 &&
+         pass.task.last_executor_hop_executor_tag == 8 &&
+         pass.task.last_executor_hop_value == 28 &&
+         pass.task.last_queue_depth == 0 &&
+         pass.task.last_queue_drain_result == 28 &&
+         pass.task.scheduler_enqueue_count == 1 &&
+         pass.task.scheduler_dequeue_count == 1 &&
+         pass.task.scheduler_cancelled_count == 0 &&
+         pass.task.last_scheduled_task_handle == 28 &&
+         pass.task.last_scheduled_executor_tag == 7 &&
+         pass.task.last_dequeued_task_handle == 28 &&
+         pass.task.last_dequeued_executor_tag == 7 &&
+         pass.task.last_executor_queue_depth == 0 &&
+         pass.task.max_executor_queue_depth == 1 &&
+         pass.task.scheduler_sequence == 2 &&
+         pass.task.deadlock_guard_passed == 1 &&
+         pass.task.race_guard_passed == 0;
+}
+
 inline bool ProbeAssertionsPassed(const ProbeRun &run) {
   return PassAssertionsPassed(run.pass1) && Equivalent(run.pass1, run.pass2) &&
          InvalidHandleAssertionsPassed(run.invalid1) &&
          Equivalent(run.invalid1, run.invalid2) &&
          CancelDrainAssertionsPassed(run.cancel_drain1) &&
-         Equivalent(run.cancel_drain1, run.cancel_drain2);
+         Equivalent(run.cancel_drain1, run.cancel_drain2) &&
+         ExecutorHopRaceGuardAssertionsPassed(run.hop_race1) &&
+         Equivalent(run.hop_race1, run.hop_race2);
 }
 
 } // namespace task_runtime_hardening_probe

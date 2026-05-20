@@ -236,6 +236,27 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
       << run.invalid1.task.deadlock_guard_passed << "\n";
   out << "invalid1_race_guard_passed="
       << run.invalid1.task.race_guard_passed << "\n";
+  out << "hop_race_scope=" << run.hop_race1.scope << "\n";
+  out << "hop_race_add_task=" << run.hop_race1.add_task << "\n";
+  out << "hop_race_wait_next=" << run.hop_race1.wait_next << "\n";
+  out << "hop_race_stale_value_hop="
+      << run.hop_race1.stale_value_hop << "\n";
+  out << "hop_race_wrong_executor_hop="
+      << run.hop_race1.wrong_executor_hop << "\n";
+  out << "hop_race_copy_task_status="
+      << run.hop_race1.copy_task_status << "\n";
+  out << "hop_race_executor_hop_call_count="
+      << run.hop_race1.task.executor_hop_call_count << "\n";
+  out << "hop_race_last_failure_reason="
+      << run.hop_race1.task.last_failure_reason << "\n";
+  out << "hop_race_last_executor_hop_executor_tag="
+      << run.hop_race1.task.last_executor_hop_executor_tag << "\n";
+  out << "hop_race_last_executor_hop_value="
+      << run.hop_race1.task.last_executor_hop_value << "\n";
+  out << "hop_race_deadlock_guard_passed="
+      << run.hop_race1.task.deadlock_guard_passed << "\n";
+  out << "hop_race_race_guard_passed="
+      << run.hop_race1.task.race_guard_passed << "\n";
   out << "cancel_drain_scope=" << run.cancel_drain1.scope << "\n";
   out << "cancel_drain_add_task=" << run.cancel_drain1.add_task << "\n";
   out << "cancel_drain_add_second_task="
@@ -304,6 +325,8 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
       << "\n";
   out << "invalid_replay_equal="
       << (Equivalent(run.invalid1, run.invalid2) ? 1 : 0) << "\n";
+  out << "hop_race_replay_equal="
+      << (Equivalent(run.hop_race1, run.hop_race2) ? 1 : 0) << "\n";
   out << "replay_equal=" << (Equivalent(run.pass1, run.pass2) ? 1 : 0)
       << "\n";
 }

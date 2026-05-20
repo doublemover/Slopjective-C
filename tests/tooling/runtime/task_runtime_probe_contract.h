@@ -26,12 +26,12 @@ inline int RunTaskRuntimeProbeContract() {
   objc3_runtime_task_runtime_state_snapshot after_wait_snapshot{};
   const int after_wait_copy_status =
       objc3_runtime_copy_task_runtime_state_for_testing(&after_wait_snapshot);
+  const int hop = objc3_runtime_executor_hop_i32(wait_next, 2);
   const int wait_second_next = objc3_runtime_wait_task_group_next_i32(2);
   objc3_runtime_task_runtime_state_snapshot after_second_wait_snapshot{};
   const int after_second_wait_copy_status =
       objc3_runtime_copy_task_runtime_state_for_testing(
           &after_second_wait_snapshot);
-  const int hop = objc3_runtime_executor_hop_i32(wait_next, 2);
   const int cancel_all = objc3_runtime_cancel_task_group_i32(2);
   const int on_cancel = objc3_runtime_task_on_cancel_i32(2);
   const int spawn_detached = objc3_runtime_spawn_task_i32(2, 3);

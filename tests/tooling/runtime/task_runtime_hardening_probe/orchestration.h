@@ -11,7 +11,9 @@ namespace task_runtime_hardening_probe {
 inline ProbeRun RunTaskRuntimeHardeningScenarios() {
   return ProbeRun{RunPass(kReplayScenario), RunPass(kReplayScenario),
                   RunInvalidHandlePass(), RunInvalidHandlePass(),
-                  RunCancelDrainPass(), RunCancelDrainPass()};
+                  RunCancelDrainPass(), RunCancelDrainPass(),
+                  RunExecutorHopRaceGuardPass(),
+                  RunExecutorHopRaceGuardPass()};
 }
 
 } // namespace task_runtime_hardening_probe

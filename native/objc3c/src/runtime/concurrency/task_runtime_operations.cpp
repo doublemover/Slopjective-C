@@ -57,11 +57,13 @@ int HopRuntimeTaskExecutor(RuntimeTaskState &state,
     return RecordRuntimeTaskFailure(
         state, kRuntimeTaskFailureEmptyTaskGroupQueue);
   }
-  state.race_guard_passed =
-      value == state.last_dequeued_task_handle &&
-              executor_tag == state.last_dequeued_executor_tag
-          ? 1
-          : 0;
+  if (value != state.last_dequeued_task_handle ||
+      executor_tag != state.last_dequeued_executor_tag) {
+    state.race_guard_passed = 0;
+    return RecordRuntimeTaskFailure(
+        state, kRuntimeTaskFailureSchedulerQueueDrift);
+  }
+  state.race_guard_passed = 1;
   RecordRuntimeTaskSuccess(state, executor_tag);
   return value;
 }
