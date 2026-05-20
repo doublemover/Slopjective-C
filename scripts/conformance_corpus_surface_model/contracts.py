@@ -26,9 +26,18 @@ EXPECTED_WORKFLOW_SURFACE = {
     "report_root": "tmp/reports/conformance",
     "artifact_root": "tmp/artifacts/conformance",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-    "surface_check_script": "scripts/check_conformance_corpus_surface.py",
-    "coverage_index_script": "scripts/generate_conformance_corpus_index.py",
-    "legacy_suite_gate_script": "scripts/check_conformance_suite.ps1",
+    "package_bridge": "objc3c",
+    "surface_check_action": "validate-conformance-corpus",
+    "surface_check_command": "npm run objc3c -- validate-conformance-corpus",
+    "runnable_surface_check_action": "validate-runnable-conformance-corpus",
+    "runnable_surface_check_command": (
+        "npm run objc3c -- validate-runnable-conformance-corpus"
+    ),
+    "implementation_anchors": [
+        "scripts/check_conformance_corpus_surface.py",
+        "scripts/generate_conformance_corpus_index.py",
+        "scripts/check_conformance_suite.ps1",
+    ],
     "coverage_map": "tests/conformance/COVERAGE_MAP.md",
     "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json",
 }

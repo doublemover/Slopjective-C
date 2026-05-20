@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 from typing import Any, Mapping
 
 from objc3c_tooling.paths import repo_rel
@@ -47,7 +48,7 @@ class ConformanceCorpusSurfaceModel:
         workflow_surface = self.validate_artifact_and_workflow_surface(surface)
         retained_suite_summary = self.validate_longitudinal_suites(
             surface,
-            required_manifest_keys,
+            manifest_inventory,
         )
         return ConformanceCorpusSurfaceSummary(
             self.paths,
@@ -161,7 +162,7 @@ class ConformanceCorpusSurfaceModel:
     def validate_longitudinal_suites(
         self,
         surface: Mapping[str, Any],
-        required_manifest_keys: list[str],
+        manifest_inventory: Mapping[str, Any],
     ) -> tuple[RetainedSuiteSummary, ...]:
         longitudinal_policy = surface.get("longitudinal_policy")
         if not isinstance(longitudinal_policy, dict):
@@ -182,7 +183,7 @@ class ConformanceCorpusSurfaceModel:
             raise SurfaceValidationError("longitudinal_suites retained_suites is missing")
 
         retained_summary: list[RetainedSuiteSummary] = []
-        known_buckets = set(required_manifest_keys)
+        known_buckets = set(manifest_inventory.keys())
         known_suite_classes = set(longitudinal_policy.get("retained_suite_classes", []))
         for entry in retained_suites:
             if not isinstance(entry, dict):
@@ -211,9 +212,21 @@ class ConformanceCorpusSurfaceModel:
                 raise SurfaceValidationError(
                     f"longitudinal_suites entry {suite_id} is missing traceability_targets"
                 )
-            self.paths.require_path(
+            if manifest != manifest_inventory[bucket]:
+                raise SurfaceValidationError(
+                    f"longitudinal_suites entry {suite_id} manifest drifted from "
+                    f"taxonomy.manifest_inventory for {bucket}"
+                )
+            manifest_path = self.paths.require_path(
                 manifest,
                 kind=f"longitudinal manifest reference for {suite_id}",
+            )
+            manifest_payload = load_manifest_payload(manifest_path)
+            known_targets = self.manifest_traceability_targets(manifest_payload)
+            resolved_targets = self.validate_traceability_targets(
+                suite_id,
+                traceability_targets,
+                known_targets,
             )
             retained_summary.append(
                 RetainedSuiteSummary(
@@ -221,11 +234,87 @@ class ConformanceCorpusSurfaceModel:
                     suite_class=suite_class,
                     bucket=bucket,
                     manifest=manifest,
-                    traceability_targets=tuple(traceability_targets),
+                    traceability_targets=resolved_targets,
                 )
             )
 
         return tuple(retained_summary)
+
+    def manifest_traceability_targets(self, manifest: Mapping[str, Any]) -> set[str]:
+        groups = manifest.get("groups")
+        if not isinstance(groups, list) or not groups:
+            raise SurfaceValidationError(
+                "longitudinal_suites manifest reference is missing non-empty groups"
+            )
+
+        targets: set[str] = set()
+        for group in groups:
+            if not isinstance(group, dict):
+                raise SurfaceValidationError(
+                    "longitudinal_suites manifest reference contains a non-object group"
+                )
+
+            name = group.get("name")
+            if isinstance(name, str) and name:
+                targets.add(name)
+
+            issue = group.get("issue")
+            if isinstance(issue, int):
+                targets.add(str(issue))
+                targets.add(f"#{issue}")
+
+            issues = group.get("issues")
+            if isinstance(issues, list):
+                for value in issues:
+                    if isinstance(value, int):
+                        targets.add(str(value))
+                        targets.add(f"#{value}")
+
+            files = group.get("files")
+            if isinstance(files, list):
+                for file_name in files:
+                    if isinstance(file_name, str) and file_name:
+                        targets.add(PurePosixPath(file_name).stem)
+
+        return targets
+
+    def validate_traceability_targets(
+        self,
+        suite_id: str,
+        traceability_targets: list[Any],
+        known_targets: set[str],
+    ) -> tuple[str, ...]:
+        resolved_targets: list[str] = []
+        duplicate_targets: set[str] = set()
+        seen_targets: set[str] = set()
+        for target in traceability_targets:
+            if not isinstance(target, str) or not target:
+                raise SurfaceValidationError(
+                    f"longitudinal_suites entry {suite_id} has a non-string traceability target"
+                )
+            if target in seen_targets:
+                duplicate_targets.add(target)
+            seen_targets.add(target)
+            resolved_targets.append(target)
+
+        if duplicate_targets:
+            duplicate_list = ", ".join(sorted(duplicate_targets))
+            raise SurfaceValidationError(
+                f"longitudinal_suites entry {suite_id} has duplicate traceability targets: "
+                f"{duplicate_list}"
+            )
+
+        missing_targets = [
+            target for target in resolved_targets if target not in known_targets
+        ]
+        if missing_targets:
+            missing_list = ", ".join(missing_targets)
+            raise SurfaceValidationError(
+                f"longitudinal_suites entry {suite_id} traceability_targets lack "
+                f"manifest evidence: {missing_list}"
+            )
+
+        return tuple(resolved_targets)
 
 
 __all__ = ("ConformanceCorpusSurfaceModel",)
