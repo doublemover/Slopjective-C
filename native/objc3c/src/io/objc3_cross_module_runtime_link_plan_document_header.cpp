@@ -124,6 +124,16 @@ void EmitObjc3CrossModuleRuntimeLinkPlanDocumentHeader(
       "expected_block_ownership_runtime_support_library_link_wiring_contract_id",
       inputs
           .expected_block_ownership_runtime_support_library_link_wiring_contract_id);
+  EmitStringField(
+      out,
+      "expected_block_ownership_retain_release_operation_lowering_contract_id",
+      inputs
+          .expected_block_ownership_retain_release_operation_lowering_contract_id);
+  EmitStringField(
+      out,
+      "expected_block_ownership_autoreleasepool_scope_lowering_contract_id",
+      inputs
+          .expected_block_ownership_autoreleasepool_scope_lowering_contract_id);
   EmitObjc3CrossModuleRuntimeLinkPlanHeaderModuleSections(out, sections);
   EmitObjc3CrossModuleRuntimeLinkPlanHeaderRuntimeSurfaces(out, inputs);
 }

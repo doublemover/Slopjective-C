@@ -112,10 +112,7 @@
       BuildResultLikeLoweringSummaryFromProgramAst(ast);
   surface.error_diagnostics_recovery_summary =
       BuildErrorDiagnosticsRecoverySummaryFromProgramAst(ast);
-  surface.unwind_cleanup_summary =
-      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
-          surface.throws_propagation_summary,
-          surface.result_like_lowering_summary);
+  surface.unwind_cleanup_summary = BuildUnwindCleanupSummaryFromProgramAst(ast);
   surface.ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromIntegrationSurface(surface);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);

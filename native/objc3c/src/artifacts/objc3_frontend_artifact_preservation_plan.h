@@ -39,6 +39,12 @@ BuildObjc3FrontendArtifactPreservationPlan(
         &block_storage_escape_lowering_contract,
     const Objc3BlockCopyDisposeLoweringContract
         &block_copy_dispose_lowering_contract,
+    const Objc3RetainReleaseOperationLoweringContract
+        &retain_release_operation_lowering_contract,
+    const std::string &retain_release_operation_lowering_replay_key,
+    const Objc3AutoreleasePoolScopeLoweringContract
+        &autoreleasepool_scope_lowering_contract,
+    const std::string &autoreleasepool_scope_lowering_replay_key,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
     const Objc3MetaprogrammingExpansionLoweringContract

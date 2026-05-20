@@ -9,6 +9,7 @@
 #include "ast/objc3_ast_expr_block_contract_members.h"
 #include "lower/contracts/block_abi_lowering_contract_records.h"
 #include "lower/contracts/executable_property_layout_contracts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
 #include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
 #include "pipeline/results/runtime_import_evidence_record.h"
 #include "runtime/metadata/runtime_metadata_model.h"
@@ -168,6 +169,10 @@ struct Objc3RuntimeBlockOwnershipArtifactPreservationSummary {
       Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId;
   std::string runtime_support_library_link_wiring_contract_id =
       kObjc3RuntimeSupportLibraryLinkWiringContractId;
+  std::string retain_release_operation_lowering_contract_id =
+      kObjc3RetainReleaseOperationLoweringLaneContract;
+  std::string autoreleasepool_scope_lowering_contract_id =
+      kObjc3AutoreleasePoolScopeLoweringLaneContract;
   std::string surface_path =
       kObjc3RuntimeBlockOwnershipArtifactPreservationSurfacePath;
   std::string import_artifact_member_name =
@@ -186,10 +191,24 @@ struct Objc3RuntimeBlockOwnershipArtifactPreservationSummary {
   std::size_t local_dispose_helper_symbolized_sites = 0;
   std::size_t local_escape_to_heap_sites = 0;
   std::size_t local_byref_layout_symbolized_sites = 0;
+  std::size_t local_arc_ownership_qualified_sites = 0;
+  std::size_t local_arc_retain_insertion_sites = 0;
+  std::size_t local_arc_release_insertion_sites = 0;
+  std::size_t local_arc_autorelease_insertion_sites = 0;
+  std::size_t local_arc_contract_violation_sites = 0;
+  std::size_t local_autoreleasepool_scope_sites = 0;
+  std::size_t local_autoreleasepool_scope_symbolized_sites = 0;
+  unsigned local_autoreleasepool_max_scope_depth = 0;
+  std::size_t local_autoreleasepool_scope_entry_transition_sites = 0;
+  std::size_t local_autoreleasepool_scope_exit_transition_sites = 0;
+  std::size_t local_autoreleasepool_contract_violation_sites = 0;
   bool runtime_import_artifact_ready = false;
   bool separate_compilation_preservation_ready = false;
   bool runtime_support_library_link_wiring_ready = false;
+  bool arc_cleanup_preservation_ready = false;
   bool deterministic = false;
+  std::string retain_release_operation_lowering_replay_key;
+  std::string autoreleasepool_scope_lowering_replay_key;
   std::string replay_key;
 };
 
@@ -201,6 +220,12 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
         &block_storage_escape_lowering_contract,
     const Objc3BlockCopyDisposeLoweringContract
         &block_copy_dispose_lowering_contract,
+    const Objc3RetainReleaseOperationLoweringContract
+        &retain_release_operation_lowering_contract,
+    const std::string &retain_release_operation_lowering_replay_key,
+    const Objc3AutoreleasePoolScopeLoweringContract
+        &autoreleasepool_scope_lowering_contract,
+    const std::string &autoreleasepool_scope_lowering_replay_key,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring) {
   Objc3RuntimeBlockOwnershipArtifactPreservationSummary summary;
@@ -221,13 +246,41 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
       block_storage_escape_lowering_contract.escape_to_heap_sites;
   summary.local_byref_layout_symbolized_sites =
       block_storage_escape_lowering_contract.byref_layout_symbolized_sites;
+  summary.local_arc_ownership_qualified_sites =
+      retain_release_operation_lowering_contract.ownership_qualified_sites;
+  summary.local_arc_retain_insertion_sites =
+      retain_release_operation_lowering_contract.retain_insertion_sites;
+  summary.local_arc_release_insertion_sites =
+      retain_release_operation_lowering_contract.release_insertion_sites;
+  summary.local_arc_autorelease_insertion_sites =
+      retain_release_operation_lowering_contract.autorelease_insertion_sites;
+  summary.local_arc_contract_violation_sites =
+      retain_release_operation_lowering_contract.contract_violation_sites;
+  summary.local_autoreleasepool_scope_sites =
+      autoreleasepool_scope_lowering_contract.scope_sites;
+  summary.local_autoreleasepool_scope_symbolized_sites =
+      autoreleasepool_scope_lowering_contract.scope_symbolized_sites;
+  summary.local_autoreleasepool_max_scope_depth =
+      autoreleasepool_scope_lowering_contract.max_scope_depth;
+  summary.local_autoreleasepool_scope_entry_transition_sites =
+      autoreleasepool_scope_lowering_contract.scope_entry_transition_sites;
+  summary.local_autoreleasepool_scope_exit_transition_sites =
+      autoreleasepool_scope_lowering_contract.scope_exit_transition_sites;
+  summary.local_autoreleasepool_contract_violation_sites =
+      autoreleasepool_scope_lowering_contract.contract_violation_sites;
+  summary.retain_release_operation_lowering_replay_key =
+      retain_release_operation_lowering_replay_key;
+  summary.autoreleasepool_scope_lowering_replay_key =
+      autoreleasepool_scope_lowering_replay_key;
   summary.runtime_support_library_link_wiring_ready =
       IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
           runtime_support_library_link_wiring);
   summary.deterministic =
       block_abi_invoke_trampoline_lowering_contract.deterministic &&
       block_storage_escape_lowering_contract.deterministic &&
-      block_copy_dispose_lowering_contract.deterministic;
+      block_copy_dispose_lowering_contract.deterministic &&
+      retain_release_operation_lowering_contract.deterministic &&
+      autoreleasepool_scope_lowering_contract.deterministic;
 
   const bool invoke_sites_complete =
       summary.local_invoke_trampoline_symbolized_sites <=
@@ -243,6 +296,19 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
   const bool escape_sites_complete =
       summary.local_escape_to_heap_sites <=
       block_storage_escape_lowering_contract.block_literal_sites;
+  const bool retain_release_sites_complete =
+      IsValidObjc3RetainReleaseOperationLoweringContract(
+          retain_release_operation_lowering_contract) &&
+      !summary.retain_release_operation_lowering_replay_key.empty();
+  const bool autoreleasepool_sites_complete =
+      IsValidObjc3AutoreleasePoolScopeLoweringContract(
+          autoreleasepool_scope_lowering_contract) &&
+      !summary.autoreleasepool_scope_lowering_replay_key.empty();
+  summary.arc_cleanup_preservation_ready =
+      summary.deterministic &&
+      !summary.retain_release_operation_lowering_contract_id.empty() &&
+      !summary.autoreleasepool_scope_lowering_contract_id.empty() &&
+      retain_release_sites_complete && autoreleasepool_sites_complete;
   summary.runtime_import_artifact_ready =
       summary.deterministic && !summary.contract_id.empty() &&
       !summary.source_contract_id.empty() &&
@@ -255,6 +321,7 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
       !summary.source_model.empty() && !summary.preservation_model.empty() &&
       !summary.fail_closed_model.empty() &&
       summary.runtime_support_library_link_wiring_ready &&
+      summary.arc_cleanup_preservation_ready &&
       invoke_sites_complete && helper_sites_complete && byref_sites_complete &&
       escape_sites_complete;
   summary.separate_compilation_preservation_ready =
@@ -273,7 +340,13 @@ BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
              << summary.local_dispose_helper_symbolized_sites
              << "|escape=" << summary.local_escape_to_heap_sites
              << "|byref_layout="
-             << summary.local_byref_layout_symbolized_sites;
+             << summary.local_byref_layout_symbolized_sites
+             << "|arc_retain=" << summary.local_arc_retain_insertion_sites
+             << "|arc_release=" << summary.local_arc_release_insertion_sites
+             << "|arc_autorelease="
+             << summary.local_arc_autorelease_insertion_sites
+             << "|autoreleasepool="
+             << summary.local_autoreleasepool_scope_sites;
   summary.replay_key = replay_key.str();
   return summary;
 }

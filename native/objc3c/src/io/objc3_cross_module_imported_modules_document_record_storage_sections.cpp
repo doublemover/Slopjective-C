@@ -59,8 +59,28 @@ void EmitObjc3CrossModuleImportedModuleRecordStorageSectionsJson(
              imported_input
                  .block_ownership_runtime_support_library_link_wiring_contract_id)
       << "\",\n"
+      << "      \"block_ownership_retain_release_operation_lowering_contract_id\": \""
+      << EscapeJsonString(
+             imported_input
+                 .block_ownership_retain_release_operation_lowering_contract_id)
+      << "\",\n"
+      << "      \"block_ownership_autoreleasepool_scope_lowering_contract_id\": \""
+      << EscapeJsonString(
+             imported_input
+                 .block_ownership_autoreleasepool_scope_lowering_contract_id)
+      << "\",\n"
       << "      \"block_ownership_replay_key\": \""
       << EscapeJsonString(imported_input.block_ownership_replay_key)
+      << "\",\n"
+      << "      \"block_ownership_retain_release_operation_lowering_replay_key\": \""
+      << EscapeJsonString(
+             imported_input
+                 .block_ownership_retain_release_operation_lowering_replay_key)
+      << "\",\n"
+      << "      \"block_ownership_autoreleasepool_scope_lowering_replay_key\": \""
+      << EscapeJsonString(
+             imported_input
+                 .block_ownership_autoreleasepool_scope_lowering_replay_key)
       << "\",\n"
       << "      \"block_ownership_local_block_literal_sites\": "
       << imported_input.block_ownership_local_block_literal_sites << ",\n"
@@ -83,6 +103,48 @@ void EmitObjc3CrossModuleImportedModuleRecordStorageSectionsJson(
       << imported_input.block_ownership_local_escape_to_heap_sites << ",\n"
       << "      \"block_ownership_local_byref_layout_symbolized_sites\": "
       << imported_input.block_ownership_local_byref_layout_symbolized_sites
+      << ",\n"
+      << "      \"block_ownership_arc_cleanup_preservation_ready\": "
+      << (imported_input.block_ownership_arc_cleanup_preservation_ready
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"block_ownership_local_arc_ownership_qualified_sites\": "
+      << imported_input.block_ownership_local_arc_ownership_qualified_sites
+      << ",\n"
+      << "      \"block_ownership_local_arc_retain_insertion_sites\": "
+      << imported_input.block_ownership_local_arc_retain_insertion_sites
+      << ",\n"
+      << "      \"block_ownership_local_arc_release_insertion_sites\": "
+      << imported_input.block_ownership_local_arc_release_insertion_sites
+      << ",\n"
+      << "      \"block_ownership_local_arc_autorelease_insertion_sites\": "
+      << imported_input.block_ownership_local_arc_autorelease_insertion_sites
+      << ",\n"
+      << "      \"block_ownership_local_arc_contract_violation_sites\": "
+      << imported_input.block_ownership_local_arc_contract_violation_sites
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_scope_sites\": "
+      << imported_input.block_ownership_local_autoreleasepool_scope_sites
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_scope_symbolized_sites\": "
+      << imported_input
+             .block_ownership_local_autoreleasepool_scope_symbolized_sites
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_max_scope_depth\": "
+      << imported_input.block_ownership_local_autoreleasepool_max_scope_depth
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_scope_entry_transition_sites\": "
+      << imported_input
+             .block_ownership_local_autoreleasepool_scope_entry_transition_sites
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_scope_exit_transition_sites\": "
+      << imported_input
+             .block_ownership_local_autoreleasepool_scope_exit_transition_sites
+      << ",\n"
+      << "      \"block_ownership_local_autoreleasepool_contract_violation_sites\": "
+      << imported_input
+             .block_ownership_local_autoreleasepool_contract_violation_sites
       << ",\n"
       << "      \"storage_reflection_artifact_preservation_present\": "
       << (imported_input.storage_reflection_artifact_preservation_present

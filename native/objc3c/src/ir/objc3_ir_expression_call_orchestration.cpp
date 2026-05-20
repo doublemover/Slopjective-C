@@ -74,6 +74,11 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
                 call_expr, callback_ctx, options, result_out);
           },
           options.services.invalidate_global_proof_state,
+          [&options](FunctionContext &callback_ctx) {
+            EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
+                callback_ctx, 0u, 0u, 0u, 0u, 0u,
+                options.services.build_function_local_flow_context());
+          },
           options.services.lookup_function_signature},
       throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
 }

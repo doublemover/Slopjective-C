@@ -64,9 +64,7 @@
       error_diagnostics_recovery_summary =
           handoff.error_diagnostics_recovery_summary;
   const Objc3UnwindCleanupSummary unwind_cleanup_summary =
-      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
-          handoff.throws_propagation_summary,
-          handoff.result_like_lowering_summary);
+      handoff.unwind_cleanup_summary;
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   // property-ivar executable-source-closure anchor:

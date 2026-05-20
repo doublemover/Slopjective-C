@@ -92,6 +92,11 @@ std::string BuildRuntimeBlockOwnershipArtifactPreservationSummaryJson(
       << "\",\"runtime_support_library_link_wiring_contract_id\":\""
       << EscapeJsonString(
              summary.runtime_support_library_link_wiring_contract_id)
+      << "\",\"retain_release_operation_lowering_contract_id\":\""
+      << EscapeJsonString(
+             summary.retain_release_operation_lowering_contract_id)
+      << "\",\"autoreleasepool_scope_lowering_contract_id\":\""
+      << EscapeJsonString(summary.autoreleasepool_scope_lowering_contract_id)
       << "\",\"surface_path\":\""
       << EscapeJsonString(summary.surface_path)
       << "\",\"import_artifact_member_name\":\""
@@ -117,6 +122,28 @@ std::string BuildRuntimeBlockOwnershipArtifactPreservationSummaryJson(
       << summary.local_escape_to_heap_sites
       << ",\"local_byref_layout_symbolized_sites\":"
       << summary.local_byref_layout_symbolized_sites
+      << ",\"local_arc_ownership_qualified_sites\":"
+      << summary.local_arc_ownership_qualified_sites
+      << ",\"local_arc_retain_insertion_sites\":"
+      << summary.local_arc_retain_insertion_sites
+      << ",\"local_arc_release_insertion_sites\":"
+      << summary.local_arc_release_insertion_sites
+      << ",\"local_arc_autorelease_insertion_sites\":"
+      << summary.local_arc_autorelease_insertion_sites
+      << ",\"local_arc_contract_violation_sites\":"
+      << summary.local_arc_contract_violation_sites
+      << ",\"local_autoreleasepool_scope_sites\":"
+      << summary.local_autoreleasepool_scope_sites
+      << ",\"local_autoreleasepool_scope_symbolized_sites\":"
+      << summary.local_autoreleasepool_scope_symbolized_sites
+      << ",\"local_autoreleasepool_max_scope_depth\":"
+      << summary.local_autoreleasepool_max_scope_depth
+      << ",\"local_autoreleasepool_scope_entry_transition_sites\":"
+      << summary.local_autoreleasepool_scope_entry_transition_sites
+      << ",\"local_autoreleasepool_scope_exit_transition_sites\":"
+      << summary.local_autoreleasepool_scope_exit_transition_sites
+      << ",\"local_autoreleasepool_contract_violation_sites\":"
+      << summary.local_autoreleasepool_contract_violation_sites
       << ",\"runtime_import_artifact_ready\":"
       << (summary.runtime_import_artifact_ready ? "true" : "false")
       << ",\"separate_compilation_preservation_ready\":"
@@ -124,9 +151,15 @@ std::string BuildRuntimeBlockOwnershipArtifactPreservationSummaryJson(
       << ",\"runtime_support_library_link_wiring_ready\":"
       << (summary.runtime_support_library_link_wiring_ready ? "true"
                                                             : "false")
+      << ",\"arc_cleanup_preservation_ready\":"
+      << (summary.arc_cleanup_preservation_ready ? "true" : "false")
       << ",\"deterministic\":"
       << (summary.deterministic ? "true" : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << ",\"retain_release_operation_lowering_replay_key\":\""
+      << EscapeJsonString(summary.retain_release_operation_lowering_replay_key)
+      << "\",\"autoreleasepool_scope_lowering_replay_key\":\""
+      << EscapeJsonString(summary.autoreleasepool_scope_lowering_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\"}";
   return out.str();
 }

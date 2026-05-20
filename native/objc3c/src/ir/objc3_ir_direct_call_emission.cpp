@@ -196,6 +196,12 @@ std::string EmitObjc3IRDirectFunctionCall(
         std::string(kObjc3RuntimeAllocateAsyncContinuationI32Symbol) +
         "(i32 " + std::to_string(ctx.async_resume_entry_tag) + ", i32 " +
         std::to_string(ctx.async_executor_tag) + ")");
+    if (ctx.return_await_cleanup_before_handoff_enabled &&
+        !ctx.return_await_cleanup_before_handoff_emitted &&
+        callbacks.emit_return_await_cleanup_before_handoff) {
+      callbacks.emit_return_await_cleanup_before_handoff(ctx);
+      ctx.return_await_cleanup_before_handoff_emitted = true;
+    }
     const std::string handed_off_handle = callbacks.new_temp(ctx);
     ctx.code_lines.push_back(
         "  " + handed_off_handle + " = call i32 @" +

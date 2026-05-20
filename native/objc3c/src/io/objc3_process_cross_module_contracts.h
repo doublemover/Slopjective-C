@@ -100,7 +100,11 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string block_ownership_byref_helper_lowering_contract_id;
   std::string block_ownership_escape_runtime_hook_lowering_contract_id;
   std::string block_ownership_runtime_support_library_link_wiring_contract_id;
+  std::string block_ownership_retain_release_operation_lowering_contract_id;
+  std::string block_ownership_autoreleasepool_scope_lowering_contract_id;
   std::string block_ownership_replay_key;
+  std::string block_ownership_retain_release_operation_lowering_replay_key;
+  std::string block_ownership_autoreleasepool_scope_lowering_replay_key;
   std::size_t block_ownership_local_block_literal_sites = 0;
   std::size_t block_ownership_local_invoke_trampoline_symbolized_sites = 0;
   std::size_t block_ownership_local_copy_helper_required_sites = 0;
@@ -109,6 +113,21 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::size_t block_ownership_local_dispose_helper_symbolized_sites = 0;
   std::size_t block_ownership_local_escape_to_heap_sites = 0;
   std::size_t block_ownership_local_byref_layout_symbolized_sites = 0;
+  std::size_t block_ownership_local_arc_ownership_qualified_sites = 0;
+  std::size_t block_ownership_local_arc_retain_insertion_sites = 0;
+  std::size_t block_ownership_local_arc_release_insertion_sites = 0;
+  std::size_t block_ownership_local_arc_autorelease_insertion_sites = 0;
+  std::size_t block_ownership_local_arc_contract_violation_sites = 0;
+  std::size_t block_ownership_local_autoreleasepool_scope_sites = 0;
+  std::size_t block_ownership_local_autoreleasepool_scope_symbolized_sites = 0;
+  unsigned block_ownership_local_autoreleasepool_max_scope_depth = 0;
+  std::size_t
+      block_ownership_local_autoreleasepool_scope_entry_transition_sites = 0;
+  std::size_t
+      block_ownership_local_autoreleasepool_scope_exit_transition_sites = 0;
+  std::size_t block_ownership_local_autoreleasepool_contract_violation_sites =
+      0;
+  bool block_ownership_arc_cleanup_preservation_ready = false;
   bool storage_reflection_artifact_preservation_present = false;
   bool storage_reflection_runtime_import_artifact_ready = false;
   bool storage_reflection_separate_compilation_preservation_ready = false;
@@ -210,6 +229,8 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::string expected_block_ownership_byref_helper_lowering_contract_id;
   std::string expected_block_ownership_escape_runtime_hook_lowering_contract_id;
   std::string expected_block_ownership_runtime_support_library_link_wiring_contract_id;
+  std::string expected_block_ownership_retain_release_operation_lowering_contract_id;
+  std::string expected_block_ownership_autoreleasepool_scope_lowering_contract_id;
   std::string expected_storage_reflection_contract_id;
   std::string expected_storage_reflection_source_contract_id;
   std::string

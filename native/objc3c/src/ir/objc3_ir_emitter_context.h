@@ -127,4 +127,6 @@ struct FunctionContext {
   bool global_proofs_invalidated = false;
   bool arc_return_insert_retain = false;
   bool arc_return_insert_autorelease = false;
+  bool return_await_cleanup_before_handoff_enabled = false;
+  bool return_await_cleanup_before_handoff_emitted = false;
 };

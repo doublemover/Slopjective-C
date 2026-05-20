@@ -80,16 +80,20 @@ void EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
 void EmitObjc3IRFunctionLocalTypedReturn(
     const std::string &i32_value, FunctionContext &ctx,
     const Objc3IRFunctionLocalFlowContext &flow_context) {
+  const bool cleanup_already_emitted =
+      ctx.return_await_cleanup_before_handoff_emitted;
   if (ctx.return_type == ValueType::Void) {
-    EmitObjc3IRDeferredCleanupTerminalToDepth(
-        ctx, 0u, flow_context.scope_cleanup_callbacks);
-    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
-    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines);
-    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
-    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+    if (!cleanup_already_emitted) {
+      EmitObjc3IRDeferredCleanupTerminalToDepth(
+          ctx, 0u, flow_context.scope_cleanup_callbacks);
+      EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines, ctx.temp_counter);
+      EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines);
+      EmitObjc3IRArcOwnedTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines, ctx.temp_counter);
+      EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+    }
     ctx.code_lines.push_back("  ret void");
     return;
   }
@@ -102,15 +106,17 @@ void EmitObjc3IRFunctionLocalTypedReturn(
                              "(i32 " + returned_value + ")");
     returned_value = retained_value;
   }
-  EmitObjc3IRDeferredCleanupTerminalToDepth(
-      ctx, 0u, flow_context.scope_cleanup_callbacks);
-  EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines, ctx.temp_counter);
-  EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines);
-  EmitObjc3IRArcOwnedTerminalCleanupToDepth(
-      ctx, 0u, ctx.code_lines, ctx.temp_counter);
-  EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+  if (!cleanup_already_emitted) {
+    EmitObjc3IRDeferredCleanupTerminalToDepth(
+        ctx, 0u, flow_context.scope_cleanup_callbacks);
+    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines);
+    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, 0u);
+  }
   if (ctx.arc_return_insert_autorelease) {
     const std::string autoreleased_value = NewFunctionLocalTemp(ctx);
     ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +

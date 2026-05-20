@@ -150,6 +150,12 @@ Objc3FrontendArtifactAssemblyContext BuildObjc3FrontendArtifactAssemblyContext(
           block_lowering_plan.block_abi_invoke_trampoline_lowering_contract,
           block_lowering_plan.block_storage_escape_lowering_contract,
           block_lowering_plan.block_copy_dispose_lowering_contract,
+          ownership_aware_lowering_plan
+              .retain_release_operation_lowering_contract,
+          ownership_aware_lowering_plan
+              .retain_release_operation_lowering_replay_key,
+          ownership_aware_lowering_plan.autoreleasepool_scope_lowering_contract,
+          ownership_aware_lowering_plan.autoreleasepool_scope_lowering_replay_key,
           runtime_registration_plan.runtime_support_library_link_wiring,
           semantic_lowering_plan.metaprogramming_expansion_lowering_contract,
           semantic_lowering_plan.metaprogramming_expansion_lowering_replay_key,

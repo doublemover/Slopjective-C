@@ -60,6 +60,12 @@ bool TryValidateObjc3CrossModuleRuntimeLinkPlanArtifactInputs(
       inputs
           .expected_block_ownership_runtime_support_library_link_wiring_contract_id
           .empty() ||
+      inputs
+          .expected_block_ownership_retain_release_operation_lowering_contract_id
+          .empty() ||
+      inputs
+          .expected_block_ownership_autoreleasepool_scope_lowering_contract_id
+          .empty() ||
       inputs.expected_storage_reflection_contract_id.empty() ||
       inputs.expected_storage_reflection_source_contract_id.empty() ||
       inputs
