@@ -107,6 +107,14 @@ def _assert_startup_payload(
         payload.get("startup_realized_class_count") == 2,
         "expected startup to realize two classes",
     )
+    for generation_key in (
+        "startup_class_graph_generation",
+        "startup_method_surface_generation",
+    ):
+        expect(
+            payload.get(generation_key, 0) > 0,
+            f"expected {generation_key} to be initialized by startup",
+        )
     expect(
         payload.get("startup_retained_bootstrap_image_count") == 2,
         "expected startup to retain two bootstrap images",
@@ -181,6 +189,7 @@ def _assert_first_replay_payload(
         payload.get("first_replay_realized_class_count") == 2,
         "expected first replay to restore two realized classes",
     )
+    _assert_replayed_object_model_generations_match_startup(payload, "first")
     expect(
         payload.get("first_replay_last_replayed_image_count") == 2,
         "expected first replay to publish two replayed images",
@@ -279,6 +288,7 @@ def _assert_second_replay_payload(
         payload.get("second_replay_realized_class_count") == 2,
         "expected second replay to restore two realized classes",
     )
+    _assert_replayed_object_model_generations_match_startup(payload, "second")
     expect(
         payload.get("second_replay_last_replayed_image_count") == 2,
         "expected second replay to publish two replayed images",
@@ -313,6 +323,29 @@ def _assert_second_replay_payload(
         payload.get("second_replay_consumer_identity") == identities.consumer,
         "expected second replay consumer identity to survive reset",
     )
+
+
+def _assert_replayed_object_model_generations_match_startup(
+    payload: JsonObject,
+    prefix: str,
+) -> None:
+    generation_fields = (
+        "class_graph_generation",
+        "category_attachment_generation",
+        "protocol_declaration_generation",
+        "storage_surface_generation",
+        "method_surface_generation",
+    )
+    for field in generation_fields:
+        replay_key = f"{prefix}_replay_{field}"
+        startup_key = f"startup_{field}"
+        expect(
+            payload.get(replay_key) == payload.get(startup_key),
+            (
+                f"expected {replay_key} to match {startup_key} after "
+                "deterministic reset/replay"
+            ),
+        )
 
 
 __all__ = [

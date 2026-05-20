@@ -33,6 +33,18 @@ inline void PrintStartupFields(const RuntimeImageLifecycleState &startup) {
                    startup.walk.snapshot.walked_image_count);
   PrintUint64Field("startup_realized_class_count",
                    startup.graph.snapshot.realized_class_count);
+  PrintUint64Field("startup_class_graph_generation",
+                   startup.graph.snapshot.class_graph_generation);
+  PrintUint64Field(
+      "startup_category_attachment_generation",
+      startup.graph.snapshot.category_attachment_generation);
+  PrintUint64Field(
+      "startup_protocol_declaration_generation",
+      startup.graph.snapshot.protocol_declaration_generation);
+  PrintUint64Field("startup_storage_surface_generation",
+                   startup.graph.snapshot.storage_surface_generation);
+  PrintUint64Field("startup_method_surface_generation",
+                   startup.graph.snapshot.method_surface_generation);
   PrintUint64Field(
       "startup_retained_bootstrap_image_count",
       startup.replay.snapshot.retained_bootstrap_image_count);
@@ -120,6 +132,16 @@ inline void PrintReplayFields(const char *prefix,
   walked_image_count_field += "_replay_walked_image_count";
   std::string realized_class_count_field(prefix);
   realized_class_count_field += "_replay_realized_class_count";
+  std::string class_graph_generation_field(prefix);
+  class_graph_generation_field += "_replay_class_graph_generation";
+  std::string category_generation_field(prefix);
+  category_generation_field += "_replay_category_attachment_generation";
+  std::string protocol_generation_field(prefix);
+  protocol_generation_field += "_replay_protocol_declaration_generation";
+  std::string storage_generation_field(prefix);
+  storage_generation_field += "_replay_storage_surface_generation";
+  std::string method_generation_field(prefix);
+  method_generation_field += "_replay_method_surface_generation";
   std::string last_replayed_image_count_field(prefix);
   last_replayed_image_count_field += "_replay_last_replayed_image_count";
   std::string generation_field(prefix);
@@ -156,6 +178,16 @@ inline void PrintReplayFields(const char *prefix,
                    replayed.walk.snapshot.walked_image_count);
   PrintUint64Field(realized_class_count_field.c_str(),
                    replayed.graph.snapshot.realized_class_count);
+  PrintUint64Field(class_graph_generation_field.c_str(),
+                   replayed.graph.snapshot.class_graph_generation);
+  PrintUint64Field(category_generation_field.c_str(),
+                   replayed.graph.snapshot.category_attachment_generation);
+  PrintUint64Field(protocol_generation_field.c_str(),
+                   replayed.graph.snapshot.protocol_declaration_generation);
+  PrintUint64Field(storage_generation_field.c_str(),
+                   replayed.graph.snapshot.storage_surface_generation);
+  PrintUint64Field(method_generation_field.c_str(),
+                   replayed.graph.snapshot.method_surface_generation);
   PrintUint64Field(last_replayed_image_count_field.c_str(),
                    replayed.replay.snapshot.last_replayed_image_count);
   PrintUint64Field(generation_field.c_str(),
