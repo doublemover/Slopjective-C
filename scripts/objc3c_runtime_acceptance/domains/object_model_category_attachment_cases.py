@@ -199,6 +199,7 @@ def _assert_protocol_category_compile_artifacts(manifest: dict[str, Any]) -> Non
 
 
 def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
+    forward_protocol = payload.get("forward_protocol_reference", {})
     missing_category = payload.get("missing_category_target", {})
     conflicting_category = payload.get("conflicting_category_owner", {})
     expect(
@@ -220,6 +221,26 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
         payload.get("last_malformed_class_graph_reason")
         == "unknown protocol reference in class BrokenProtocolRef",
         "expected stable fail-closed diagnostic reason for unregistered protocol refs",
+    )
+    expect(
+        forward_protocol.get("registration_status") == -4
+        and forward_protocol.get("last_registration_status") == -4,
+        "expected forward protocol conformance metadata to fail image registration",
+    )
+    expect(
+        forward_protocol.get("registered_image_count") == 0
+        and forward_protocol.get("realized_class_count") == 0
+        and forward_protocol.get("class_found") == 0,
+        "expected forward protocol conformance metadata to publish no image or class graph",
+    )
+    expect(
+        forward_protocol.get("malformed_class_metadata_rejection_count", 0) >= 1,
+        "expected forward protocol conformance metadata to increment malformed metadata rejection count",
+    )
+    expect(
+        forward_protocol.get("last_malformed_class_graph_reason")
+        == "forward protocol reference in class ForwardProtocolRef",
+        "expected stable fail-closed diagnostic reason for forward protocol refs",
     )
     expect(
         missing_category.get("registration_status") == -4
@@ -504,6 +525,12 @@ def check_runtime_object_foundation_protocol_category_case(
             "invalid_protocol_metadata_reason": invalid_metadata_payload[
                 "last_malformed_class_graph_reason"
             ],
+            "forward_protocol_reference_registration_status": invalid_metadata_payload[
+                "forward_protocol_reference"
+            ]["registration_status"],
+            "forward_protocol_reference_reason": invalid_metadata_payload[
+                "forward_protocol_reference"
+            ]["last_malformed_class_graph_reason"],
             "missing_category_target_registration_status": invalid_metadata_payload[
                 "missing_category_target"
             ]["registration_status"],

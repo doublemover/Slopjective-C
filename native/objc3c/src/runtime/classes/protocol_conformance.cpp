@@ -140,6 +140,10 @@ bool RuntimeProtocolReferenceAggregateIsSupported(
       diagnostic_reason = "unknown protocol reference in " + context;
       return false;
     }
+    if (record->is_forward_declaration) {
+      diagnostic_reason = "forward protocol reference in " + context;
+      return false;
+    }
   }
   return true;
 }

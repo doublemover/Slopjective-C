@@ -22,6 +22,17 @@ constexpr const char *kClassBundleOwner = "interface:BrokenProtocolRef";
 constexpr const char *kClassOwner = "class:BrokenProtocolRef";
 constexpr const char *kMetaclassBundleOwner = "metaclass:BrokenProtocolRef";
 constexpr const char *kMetaclassOwner = "metaclass-object:BrokenProtocolRef";
+constexpr const char *kForwardProtocolModuleName =
+    "protocol-category-forward-protocol-reference-probe";
+constexpr const char *kForwardProtocolClassName = "ForwardProtocolRef";
+constexpr const char *kForwardProtocolBundleOwner =
+    "interface:ForwardProtocolRef";
+constexpr const char *kForwardProtocolClassOwner =
+    "class:ForwardProtocolRef";
+constexpr const char *kForwardProtocolMetaclassBundleOwner =
+    "metaclass:ForwardProtocolRef";
+constexpr const char *kForwardProtocolMetaclassOwner =
+    "metaclass-object:ForwardProtocolRef";
 constexpr const char *kMissingCategoryModuleName =
     "protocol-category-missing-target-probe";
 constexpr const char *kMissingCategoryClassName = "MissingOwner";
@@ -73,6 +84,46 @@ struct InvalidProtocolReferenceImage {
   objc3_runtime_registration_table registration_table{
       2, 12, &image, discovery_root, &discovery_root_anchor, class_root,
       kEmptyRoot, kEmptyRoot, kEmptyRoot, kEmptyRoot, nullptr, nullptr,
+      nullptr, &image_local_init_state};
+};
+
+struct ForwardProtocolReferenceImage {
+  objc3_runtime_image_descriptor image{kForwardProtocolModuleName,
+                                       kTranslationUnit, 1, 1, 1, 0, 0, 0};
+  objc3c::runtime::EmittedProtocolRecord forward_protocol{
+      "ForwardOnly", "protocol:ForwardOnly", kEmptyRoot, nullptr, nullptr, 0,
+      0, 0, 0, true};
+  PointerAggregateStorage<1> adopted_protocol_refs{1, {&forward_protocol}};
+  const objc3_runtime_pointer_aggregate *adopted_protocol_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &adopted_protocol_refs);
+  objc3c::runtime::EmittedClassBundle class_bundle{
+      {kForwardProtocolClassName, kForwardProtocolBundleOwner,
+       kForwardProtocolClassOwner, "", nullptr, nullptr,
+       adopted_protocol_root, false, false},
+      {kForwardProtocolClassName, kForwardProtocolMetaclassBundleOwner,
+       kForwardProtocolMetaclassOwner, "", nullptr, nullptr, kEmptyRoot,
+       false, false}};
+  PointerAggregateStorage<1> class_root_storage{1, {&class_bundle}};
+  PointerAggregateStorage<1> protocol_root_storage{1, {&forward_protocol}};
+  PointerAggregateStorage<6> discovery_root_storage{
+      6,
+      {&class_root_storage, &protocol_root_storage, &kEmptyRootStorage,
+       &kEmptyRootStorage, &kEmptyRootStorage, &kEmptyRootStorage}};
+  const objc3_runtime_pointer_aggregate *class_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &class_root_storage);
+  const objc3_runtime_pointer_aggregate *protocol_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &protocol_root_storage);
+  const objc3_runtime_pointer_aggregate *discovery_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &discovery_root_storage);
+  const void *discovery_root_anchor = discovery_root;
+  unsigned char image_local_init_state = 0;
+  objc3_runtime_registration_table registration_table{
+      2, 12, &image, discovery_root, &discovery_root_anchor, class_root,
+      protocol_root, kEmptyRoot, kEmptyRoot, kEmptyRoot, nullptr, nullptr,
       nullptr, &image_local_init_state};
 };
 
@@ -184,6 +235,7 @@ struct ProbeResult {
 
 struct ProbeRun {
   ProbeResult invalid_protocol_reference;
+  ProbeResult forward_protocol_reference;
   ProbeResult missing_category_target;
   ProbeResult conflicting_category_owner;
 };
@@ -211,12 +263,17 @@ ProbeResult CaptureInvalidRegistration(
 
 ProbeRun RunProbe() {
   InvalidProtocolReferenceImage invalid_protocol_fixture;
+  ForwardProtocolReferenceImage forward_protocol_fixture;
   MissingCategoryTargetImage missing_category_fixture;
   ConflictingCategoryOwnerImage conflicting_category_fixture;
   ProbeRun run;
   run.invalid_protocol_reference = CaptureInvalidRegistration(
       &invalid_protocol_fixture.image,
       &invalid_protocol_fixture.registration_table, kClassName);
+  run.forward_protocol_reference = CaptureInvalidRegistration(
+      &forward_protocol_fixture.image,
+      &forward_protocol_fixture.registration_table,
+      kForwardProtocolClassName);
   run.missing_category_target = CaptureInvalidRegistration(
       &missing_category_fixture.image,
       &missing_category_fixture.registration_table, kMissingCategoryClassName);
@@ -276,6 +333,9 @@ void PrintProbeResult(const ProbeRun &run) {
   std::cout << "{";
   WriteProbeResultFields(std::cout, separator,
                          run.invalid_protocol_reference);
+  separator.BeforeField(std::cout);
+  WriteJsonFieldName(std::cout, "forward_protocol_reference");
+  WriteProbeResultObject(std::cout, run.forward_protocol_reference);
   separator.BeforeField(std::cout);
   WriteJsonFieldName(std::cout, "missing_category_target");
   WriteProbeResultObject(std::cout, run.missing_category_target);
