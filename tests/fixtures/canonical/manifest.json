@@ -78,6 +78,12 @@
       "executable_command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "claim_id": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
       "claim_id": "objc3c.behavior.errors.try-catch-semantics",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",

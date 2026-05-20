@@ -46,11 +46,22 @@ struct InvalidHandleResult {
   objc3_runtime_task_runtime_state_snapshot task{};
 };
 
+struct CancelDrainResult {
+  int scope = 0;
+  int add_task = 0;
+  int add_second_task = 0;
+  int cancel_all = 0;
+  int copy_task_status = 0;
+  objc3_runtime_task_runtime_state_snapshot task{};
+};
+
 struct ProbeRun {
   PassResult pass1;
   PassResult pass2;
   InvalidHandleResult invalid1;
   InvalidHandleResult invalid2;
+  CancelDrainResult cancel_drain1;
+  CancelDrainResult cancel_drain2;
 };
 
 } // namespace task_runtime_hardening_probe

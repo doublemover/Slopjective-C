@@ -68,10 +68,13 @@ def build_runtime_unified_concurrency_runtime_abi_surface(
         "required_task_scheduler_snapshot_fields": [
             "scheduler_enqueue_count",
             "scheduler_dequeue_count",
+            "scheduler_cancelled_count",
             "last_scheduled_task_handle",
             "last_scheduled_executor_tag",
             "last_dequeued_task_handle",
             "last_dequeued_executor_tag",
+            "last_cancelled_task_handle",
+            "last_cancelled_executor_tag",
             "last_executor_queue_depth",
             "max_executor_queue_depth",
             "scheduler_sequence",

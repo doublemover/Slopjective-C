@@ -42,6 +42,7 @@ enum {
   OBJC3_RUNTIME_TASK_FAILURE_EXECUTOR_MISMATCH = 5,
   OBJC3_RUNTIME_TASK_FAILURE_EMPTY_TASK_GROUP_QUEUE = 6,
   OBJC3_RUNTIME_TASK_FAILURE_TASK_GROUP_ALREADY_CANCELLED = 7,
+  OBJC3_RUNTIME_TASK_FAILURE_SCHEDULER_QUEUE_DRIFT = 8,
 };
 
 enum {
@@ -81,6 +82,7 @@ typedef struct objc3_runtime_task_runtime_state_snapshot {
   int active_group_task_count;
   int pending_group_task_count;
   int completed_group_task_count;
+  int cancelled_group_task_count;
   int group_cancelled;
   int cancellation_generation;
   int observed_cancellation_generation;
@@ -88,10 +90,13 @@ typedef struct objc3_runtime_task_runtime_state_snapshot {
   int last_queue_drain_result;
   uint64_t scheduler_enqueue_count;
   uint64_t scheduler_dequeue_count;
+  uint64_t scheduler_cancelled_count;
   int last_scheduled_task_handle;
   int last_scheduled_executor_tag;
   int last_dequeued_task_handle;
   int last_dequeued_executor_tag;
+  int last_cancelled_task_handle;
+  int last_cancelled_executor_tag;
   int last_executor_queue_depth;
   int max_executor_queue_depth;
   int scheduler_sequence;

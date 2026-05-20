@@ -50,7 +50,7 @@ inline constexpr const char
         "private-async-task-and-actor-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
 inline constexpr const char
     *kObjc3RuntimeUnifiedConcurrencyContinuationRuntimeModel =
-        "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";
+        "continuation-allocation-handoff-resume-cancel-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";
 inline constexpr const char
     *kObjc3RuntimeUnifiedConcurrencyTaskRuntimeModel =
         "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";

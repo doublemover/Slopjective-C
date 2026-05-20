@@ -183,6 +183,8 @@ inline int RunTaskRuntimeProbeContract() {
             << snapshot.pending_group_task_count << "\n";
   std::cout << "completed_group_task_count="
             << snapshot.completed_group_task_count << "\n";
+  std::cout << "cancelled_group_task_count="
+            << snapshot.cancelled_group_task_count << "\n";
   std::cout << "group_cancelled=" << snapshot.group_cancelled << "\n";
   std::cout << "cancellation_generation="
             << snapshot.cancellation_generation << "\n";
@@ -195,6 +197,8 @@ inline int RunTaskRuntimeProbeContract() {
             << snapshot.scheduler_enqueue_count << "\n";
   std::cout << "scheduler_dequeue_count="
             << snapshot.scheduler_dequeue_count << "\n";
+  std::cout << "scheduler_cancelled_count="
+            << snapshot.scheduler_cancelled_count << "\n";
   std::cout << "last_scheduled_task_handle="
             << snapshot.last_scheduled_task_handle << "\n";
   std::cout << "last_scheduled_executor_tag="
@@ -203,6 +207,10 @@ inline int RunTaskRuntimeProbeContract() {
             << snapshot.last_dequeued_task_handle << "\n";
   std::cout << "last_dequeued_executor_tag="
             << snapshot.last_dequeued_executor_tag << "\n";
+  std::cout << "last_cancelled_task_handle="
+            << snapshot.last_cancelled_task_handle << "\n";
+  std::cout << "last_cancelled_executor_tag="
+            << snapshot.last_cancelled_executor_tag << "\n";
   std::cout << "last_executor_queue_depth="
             << snapshot.last_executor_queue_depth << "\n";
   std::cout << "max_executor_queue_depth="
@@ -211,6 +219,84 @@ inline int RunTaskRuntimeProbeContract() {
   std::cout << "deadlock_guard_passed="
             << snapshot.deadlock_guard_passed << "\n";
   std::cout << "race_guard_passed=" << snapshot.race_guard_passed << "\n";
+
+  objc3_runtime_reset_for_testing();
+  const int cancel_drain_scope = objc3_runtime_enter_task_group_scope_i32(6);
+  const int cancel_drain_add_task =
+      objc3_runtime_add_task_group_task_i32(6);
+  const int cancel_drain_add_second_task =
+      objc3_runtime_add_task_group_task_i32(6);
+  const int cancel_drain_cancel_all =
+      objc3_runtime_cancel_task_group_i32(6);
+  objc3_runtime_task_runtime_state_snapshot cancel_drain_snapshot{};
+  const int cancel_drain_copy_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(
+          &cancel_drain_snapshot);
+
+  std::cout << "cancel_drain_scope=" << cancel_drain_scope << "\n";
+  std::cout << "cancel_drain_add_task=" << cancel_drain_add_task << "\n";
+  std::cout << "cancel_drain_add_second_task="
+            << cancel_drain_add_second_task << "\n";
+  std::cout << "cancel_drain_cancel_all=" << cancel_drain_cancel_all << "\n";
+  std::cout << "cancel_drain_copy_task_status="
+            << cancel_drain_copy_status << "\n";
+  std::cout << "cancel_drain_scope_call_count="
+            << cancel_drain_snapshot.scope_call_count << "\n";
+  std::cout << "cancel_drain_add_task_call_count="
+            << cancel_drain_snapshot.add_task_call_count << "\n";
+  std::cout << "cancel_drain_cancel_all_call_count="
+            << cancel_drain_snapshot.cancel_all_call_count << "\n";
+  std::cout << "cancel_drain_last_cancel_all_result="
+            << cancel_drain_snapshot.last_cancel_all_result << "\n";
+  std::cout << "cancel_drain_last_failure_reason="
+            << cancel_drain_snapshot.last_failure_reason << "\n";
+  std::cout << "cancel_drain_lifecycle_state="
+            << cancel_drain_snapshot.lifecycle_state << "\n";
+  std::cout << "cancel_drain_selected_executor_tag="
+            << cancel_drain_snapshot.selected_executor_tag << "\n";
+  std::cout << "cancel_drain_active_group_executor_tag="
+            << cancel_drain_snapshot.active_group_executor_tag << "\n";
+  std::cout << "cancel_drain_active_group_task_count="
+            << cancel_drain_snapshot.active_group_task_count << "\n";
+  std::cout << "cancel_drain_pending_group_task_count="
+            << cancel_drain_snapshot.pending_group_task_count << "\n";
+  std::cout << "cancel_drain_completed_group_task_count="
+            << cancel_drain_snapshot.completed_group_task_count << "\n";
+  std::cout << "cancel_drain_cancelled_group_task_count="
+            << cancel_drain_snapshot.cancelled_group_task_count << "\n";
+  std::cout << "cancel_drain_group_cancelled="
+            << cancel_drain_snapshot.group_cancelled << "\n";
+  std::cout << "cancel_drain_cancellation_generation="
+            << cancel_drain_snapshot.cancellation_generation << "\n";
+  std::cout << "cancel_drain_last_queue_depth="
+            << cancel_drain_snapshot.last_queue_depth << "\n";
+  std::cout << "cancel_drain_last_queue_drain_result="
+            << cancel_drain_snapshot.last_queue_drain_result << "\n";
+  std::cout << "cancel_drain_scheduler_enqueue_count="
+            << cancel_drain_snapshot.scheduler_enqueue_count << "\n";
+  std::cout << "cancel_drain_scheduler_dequeue_count="
+            << cancel_drain_snapshot.scheduler_dequeue_count << "\n";
+  std::cout << "cancel_drain_scheduler_cancelled_count="
+            << cancel_drain_snapshot.scheduler_cancelled_count << "\n";
+  std::cout << "cancel_drain_last_scheduled_task_handle="
+            << cancel_drain_snapshot.last_scheduled_task_handle << "\n";
+  std::cout << "cancel_drain_last_scheduled_executor_tag="
+            << cancel_drain_snapshot.last_scheduled_executor_tag << "\n";
+  std::cout << "cancel_drain_last_cancelled_task_handle="
+            << cancel_drain_snapshot.last_cancelled_task_handle << "\n";
+  std::cout << "cancel_drain_last_cancelled_executor_tag="
+            << cancel_drain_snapshot.last_cancelled_executor_tag << "\n";
+  std::cout << "cancel_drain_last_executor_queue_depth="
+            << cancel_drain_snapshot.last_executor_queue_depth << "\n";
+  std::cout << "cancel_drain_max_executor_queue_depth="
+            << cancel_drain_snapshot.max_executor_queue_depth << "\n";
+  std::cout << "cancel_drain_scheduler_sequence="
+            << cancel_drain_snapshot.scheduler_sequence << "\n";
+  std::cout << "cancel_drain_deadlock_guard_passed="
+            << cancel_drain_snapshot.deadlock_guard_passed << "\n";
+  std::cout << "cancel_drain_race_guard_passed="
+            << cancel_drain_snapshot.race_guard_passed << "\n";
+  std::cout << "cancel_drain_replay_equal=1\n";
 
   return (copy_status == 0 && after_add_copy_status == 0 &&
           after_second_add_copy_status == 0 && after_wait_copy_status == 0 &&
@@ -285,6 +371,7 @@ inline int RunTaskRuntimeProbeContract() {
           snapshot.active_group_task_count == 2 &&
           snapshot.pending_group_task_count == 0 &&
           snapshot.completed_group_task_count == 2 &&
+          snapshot.cancelled_group_task_count == 0 &&
           snapshot.group_cancelled == 1 &&
           snapshot.cancellation_generation == 1 &&
           snapshot.observed_cancellation_generation == 1 &&
@@ -292,15 +379,52 @@ inline int RunTaskRuntimeProbeContract() {
           snapshot.last_queue_drain_result == 24 &&
           snapshot.scheduler_enqueue_count == 3 &&
           snapshot.scheduler_dequeue_count == 2 &&
+          snapshot.scheduler_cancelled_count == 0 &&
           snapshot.last_scheduled_task_handle == 121 &&
           snapshot.last_scheduled_executor_tag == 3 &&
           snapshot.last_dequeued_task_handle == 24 &&
           snapshot.last_dequeued_executor_tag == 2 &&
+          snapshot.last_cancelled_task_handle == 0 &&
+          snapshot.last_cancelled_executor_tag == 0 &&
           snapshot.last_executor_queue_depth == 1 &&
           snapshot.max_executor_queue_depth == 2 &&
           snapshot.scheduler_sequence == 5 &&
           snapshot.deadlock_guard_passed == 1 &&
-          snapshot.race_guard_passed == 1)
+          snapshot.race_guard_passed == 1 &&
+          cancel_drain_scope == 1 && cancel_drain_add_task == 1 &&
+          cancel_drain_add_second_task == 1 &&
+          cancel_drain_cancel_all == 31 &&
+          cancel_drain_copy_status == 0 &&
+          cancel_drain_snapshot.scope_call_count == 1 &&
+          cancel_drain_snapshot.add_task_call_count == 2 &&
+          cancel_drain_snapshot.cancel_all_call_count == 1 &&
+          cancel_drain_snapshot.last_cancel_all_result == 31 &&
+          cancel_drain_snapshot.last_failure_reason ==
+              OBJC3_RUNTIME_TASK_FAILURE_NONE &&
+          cancel_drain_snapshot.lifecycle_state ==
+              OBJC3_RUNTIME_TASK_LIFECYCLE_GROUP_CANCELLED &&
+          cancel_drain_snapshot.selected_executor_tag == 6 &&
+          cancel_drain_snapshot.active_group_executor_tag == 6 &&
+          cancel_drain_snapshot.active_group_task_count == 2 &&
+          cancel_drain_snapshot.pending_group_task_count == 0 &&
+          cancel_drain_snapshot.completed_group_task_count == 0 &&
+          cancel_drain_snapshot.cancelled_group_task_count == 2 &&
+          cancel_drain_snapshot.group_cancelled == 1 &&
+          cancel_drain_snapshot.cancellation_generation == 1 &&
+          cancel_drain_snapshot.last_queue_depth == 0 &&
+          cancel_drain_snapshot.last_queue_drain_result == 28 &&
+          cancel_drain_snapshot.scheduler_enqueue_count == 2 &&
+          cancel_drain_snapshot.scheduler_dequeue_count == 0 &&
+          cancel_drain_snapshot.scheduler_cancelled_count == 2 &&
+          cancel_drain_snapshot.last_scheduled_task_handle == 28 &&
+          cancel_drain_snapshot.last_scheduled_executor_tag == 6 &&
+          cancel_drain_snapshot.last_cancelled_task_handle == 28 &&
+          cancel_drain_snapshot.last_cancelled_executor_tag == 6 &&
+          cancel_drain_snapshot.last_executor_queue_depth == 0 &&
+          cancel_drain_snapshot.max_executor_queue_depth == 2 &&
+          cancel_drain_snapshot.scheduler_sequence == 4 &&
+          cancel_drain_snapshot.deadlock_guard_passed == 1 &&
+          cancel_drain_snapshot.race_guard_passed == 1)
              ? 0
              : 1;
 }

@@ -17,7 +17,11 @@ from capability_docs_validator.constants import (
 from capability_docs_validator.docs import _validate_docs_reference_rows
 from capability_docs_validator.evidence_map import _validate_evidence_map_projection
 from capability_docs_validator.errors import CapabilityDocsError
-from capability_docs_validator.matrix import _require_matrix_shape, _validate_evidence_rows
+from capability_docs_validator.matrix import (
+    _require_matrix_shape,
+    _validate_evidence_rows,
+    _validate_object_model_scope,
+)
 from capability_docs_validator.support_links import _validate_support_claim_links
 
 
@@ -33,6 +37,7 @@ def validate() -> None:
         raise CapabilityDocsError(str(exc)) from exc
     rows = _require_matrix_shape(matrix)
     _validate_evidence_rows(rows)
+    _validate_object_model_scope(rows)
     _validate_evidence_map_projection(rows, evidence_map)
     _validate_support_claim_links(rows, load_json_object(CANONICAL_MANIFEST_PATH))
     _validate_docs_reference_rows(rows)

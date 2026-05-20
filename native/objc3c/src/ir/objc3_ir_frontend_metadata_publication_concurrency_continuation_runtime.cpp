@@ -24,6 +24,8 @@ void EmitObjc3IRConcurrencyContinuationRuntimeMetadataNodes(
       << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
       << "\", !\""
+      << EscapeCStringLiteral(kObjc3RuntimeCancelAsyncContinuationI32Symbol)
+      << "\", !\""
       << EscapeCStringLiteral(
              kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel)
       << "\"}\n";
@@ -46,6 +48,8 @@ void EmitObjc3IRConcurrencyContinuationRuntimeMetadataNodes(
              kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol)
       << "\", !\""
       << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
+      << "\", !\""
+      << EscapeCStringLiteral(kObjc3RuntimeCancelAsyncContinuationI32Symbol)
       << "\", !\""
       << EscapeCStringLiteral(
              kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel)

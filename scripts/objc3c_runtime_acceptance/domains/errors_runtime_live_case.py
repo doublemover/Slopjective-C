@@ -50,7 +50,7 @@ def check_live_error_runtime_integration_case(
     expected_integer_fields = {
         "rc": 54,
         "store_call_count": 1,
-        "load_call_count": 1,
+        "load_call_count": 2,
         "status_bridge_call_count": 1,
         "nserror_bridge_call_count": 0,
         "catch_match_call_count": 1,

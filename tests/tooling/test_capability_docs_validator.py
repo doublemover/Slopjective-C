@@ -170,3 +170,57 @@ def test_runtime_concurrency_claim_is_implemented_and_probe_backed() -> None:
         "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
         "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
     } <= evidence_paths
+
+
+def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["runtime.object-model.interface-method-table"]
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-interface-method-table"
+    ]
+    evidence_paths = {evidence["path"] for evidence in row["evidence"]}
+    assert {
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/category_attachment.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+    } <= evidence_paths
+    assert rows["runtime.object-model.full-realization"]["state"] == "reserved"
+
+
+def test_object_model_implemented_rows_reject_broad_realization_language() -> None:
+    validator = _load_validator()
+    row = {
+        "id": "runtime.object-model.interface-method-table",
+        "title": "Full object-model runtime realization",
+        "state": "implemented",
+        "summary": "Broad object-model behavior over every runtime surface.",
+        "support_claims": [
+            "objc3c.behavior.runtime.object-model-interface-method-table"
+        ],
+        "owner_modules": ["native/objc3c/src/runtime/classes/class_graph.cpp"],
+        "evidence": [
+            {
+                "kind": "test",
+                "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+                "command": "npm run objc3c -- test-behavior-matrix",
+            },
+            {
+                "kind": "source",
+                "path": "native/objc3c/src/runtime/classes/class_graph.cpp",
+            },
+        ],
+    }
+
+    with pytest.raises(validator.CapabilityDocsError, match="must stay narrow"):
+        validator._validate_object_model_scope([row])

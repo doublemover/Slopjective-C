@@ -56,13 +56,26 @@ int CancelRuntimeTaskGroup(RuntimeTaskState &state, int executor_tag) {
     return RecordTaskCancellationFailure(
         state, kRuntimeTaskFailureTaskGroupAlreadyCancelled);
   }
+  const int pending_tasks = state.pending_group_task_count;
+  const int cancelled_tasks = CancelPendingRuntimeTaskSchedulerQueue(
+      state, executor_tag, pending_tasks);
+  if (cancelled_tasks != pending_tasks) {
+    state.race_guard_passed = 0;
+    state.last_cancel_all_result =
+        -kRuntimeTaskFailureSchedulerQueueDrift;
+    return RecordTaskCancellationFailure(
+        state, kRuntimeTaskFailureSchedulerQueueDrift);
+  }
   RecordTaskCancellationSuccess(state, executor_tag);
   state.group_cancelled = 1;
   ++state.cancellation_generation;
+  state.cancelled_group_task_count += cancelled_tasks;
   state.pending_group_task_count = 0;
-  state.executor_ready_queues[executor_tag].clear();
   state.last_queue_depth = 0;
   state.last_executor_queue_depth = 0;
+  if (cancelled_tasks > 0) {
+    state.last_queue_drain_result = state.last_cancelled_task_handle;
+  }
   state.lifecycle_state = kRuntimeTaskLifecycleGroupCancelled;
   state.last_cancel_all_result = 31;
   return state.last_cancel_all_result;

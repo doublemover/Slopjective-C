@@ -123,6 +123,8 @@ REQUIRED_IR_TOKENS = [
     "runtime_backed_semantics_closure = contract=objc3c.runtime.backed.semantics.closure.v1",
     "runtime_block_byref_forwarding_heap_promotion_ownership_interop",
     "runtime_block_allocation_copy_dispose_invoke_support",
+    "__objc3_block_copy_helper_",
+    "__objc3_block_dispose_helper_",
     "runnable_block_execution_matrix",
     "arc_automatic_insertions",
     "arc_cleanup_weak_lifetime_hooks",

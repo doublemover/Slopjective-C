@@ -14,6 +14,7 @@ from objc3c_effects_ownership_semantic_model.contracts import SEMANTIC_PASS_TOKE
 from objc3c_effects_ownership_semantic_model.contracts import SOURCE_REPLAY_SEGMENTS
 from objc3c_effects_ownership_semantic_model.contracts import SUMMARY_FIELDS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
+from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_HELPER_SYMBOLS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
 from objc3c_effects_ownership_semantic_model.paths import MISSING_REQUIRED_SLICES_FIXTURE
 from objc3c_effects_ownership_semantic_model.paths import NEGATIVE_FIXTURE
@@ -51,6 +52,7 @@ def load_semantic_inputs() -> dict[str, Any]:
         "stress_manifest_text": read(STRESS_MANIFEST),
         "conformance_positive": load_json(CONFORMANCE_POSITIVE),
         "conformance_negative": load_json(CONFORMANCE_NEGATIVE),
+        "conformance_helper_symbols": load_json(CONFORMANCE_HELPER_SYMBOLS),
     }
 
 
@@ -90,6 +92,7 @@ def source_truth_paths() -> list[Path]:
         NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
         CONFORMANCE_NEGATIVE,
+        CONFORMANCE_HELPER_SYMBOLS,
         SEMANTIC_MANIFEST,
         SEMANTIC_README,
         STRESS_MANIFEST,

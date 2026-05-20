@@ -100,7 +100,7 @@ def main() -> int:
         ),
         "conformance_runtime_abi_surface_preserves_runtime_models": (
             isinstance(abi_surface, dict)
-            and abi_surface.get("continuation_runtime_model") == "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+            and abi_surface.get("continuation_runtime_model") == "continuation-allocation-handoff-resume-cancel-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
             and abi_surface.get("task_runtime_model") == "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
             and abi_surface.get("actor_runtime_model") == "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-executor-binding-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
         ),

@@ -34,6 +34,7 @@ void WriteRuntimeUnifiedConcurrencyRuntimeAbiSurface(
            << kObjc3RuntimeAllocateAsyncContinuationI32Symbol << "\",\""
            << kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol << "\",\""
            << kObjc3RuntimeResumeAsyncContinuationI32Symbol << "\",\""
+           << kObjc3RuntimeCancelAsyncContinuationI32Symbol << "\",\""
            << kObjc3RuntimeSpawnTaskI32Symbol << "\",\""
            << kObjc3RuntimeEnterTaskGroupScopeI32Symbol << "\",\""
            << kObjc3RuntimeAddTaskGroupTaskI32Symbol << "\",\""

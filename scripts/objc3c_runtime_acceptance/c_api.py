@@ -86,7 +86,7 @@ UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-async-task-and-actor-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
 UNIFIED_CONCURRENCY_CONTINUATION_RUNTIME_MODEL = (
-    "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+    "continuation-allocation-handoff-resume-cancel-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL = (
     "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"

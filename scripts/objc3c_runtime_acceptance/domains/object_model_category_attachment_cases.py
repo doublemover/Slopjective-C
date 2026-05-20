@@ -199,6 +199,7 @@ def _assert_protocol_category_compile_artifacts(manifest: dict[str, Any]) -> Non
 
 
 def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
+    missing_category = payload.get("missing_category_target", {})
     expect(
         payload.get("registration_status") == -4
         and payload.get("last_registration_status") == -4,
@@ -218,6 +219,26 @@ def _assert_invalid_protocol_metadata_payload(payload: dict[str, Any]) -> None:
         payload.get("last_malformed_class_graph_reason")
         == "unknown protocol reference in class BrokenProtocolRef",
         "expected stable fail-closed diagnostic reason for unregistered protocol refs",
+    )
+    expect(
+        missing_category.get("registration_status") == -4
+        and missing_category.get("last_registration_status") == -4,
+        "expected category metadata targeting an absent class to fail image registration",
+    )
+    expect(
+        missing_category.get("registered_image_count") == 0
+        and missing_category.get("realized_class_count") == 0
+        and missing_category.get("class_found") == 0,
+        "expected missing category target metadata to publish no image or class graph",
+    )
+    expect(
+        missing_category.get("malformed_class_metadata_rejection_count", 0) >= 1,
+        "expected missing category target metadata to increment malformed metadata rejection count",
+    )
+    expect(
+        missing_category.get("last_malformed_class_graph_reason")
+        == "category attachment target class is missing for MissingOwner(Tracing)",
+        "expected stable fail-closed diagnostic reason for category target availability",
     )
 
 
@@ -461,6 +482,12 @@ def check_runtime_object_foundation_protocol_category_case(
             "invalid_protocol_metadata_reason": invalid_metadata_payload[
                 "last_malformed_class_graph_reason"
             ],
+            "missing_category_target_registration_status": invalid_metadata_payload[
+                "missing_category_target"
+            ]["registration_status"],
+            "missing_category_target_reason": invalid_metadata_payload[
+                "missing_category_target"
+            ]["last_malformed_class_graph_reason"],
         },
     )
 

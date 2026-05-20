@@ -32,6 +32,7 @@ SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "EFF-8014-01.json"
 CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "EFF-8014-02.json"
+CONFORMANCE_HELPER_SYMBOLS = ROOT / "tests" / "conformance" / "semantic" / "EFF-8014-03.json"
 STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"

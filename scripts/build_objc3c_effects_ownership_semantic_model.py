@@ -22,6 +22,7 @@ from objc3c_effects_ownership_semantic_model.inputs import load_semantic_inputs
 from objc3c_effects_ownership_semantic_model.inputs import source_truth_paths
 from objc3c_effects_ownership_semantic_model.paths import COMPILER
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_NEGATIVE
+from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_HELPER_SYMBOLS
 from objc3c_effects_ownership_semantic_model.paths import CONFORMANCE_POSITIVE
 from objc3c_effects_ownership_semantic_model.paths import FRONTEND_ARTIFACTS
 from objc3c_effects_ownership_semantic_model.paths import FRONTEND_PIPELINE
@@ -54,6 +55,7 @@ from objc3c_effects_ownership_semantic_model.validation import diagnostic_matche
 __all__ = [
     "COMPILER",
     "CONFORMANCE_NEGATIVE",
+    "CONFORMANCE_HELPER_SYMBOLS",
     "CONFORMANCE_POSITIVE",
     "CONTRACT_ID",
     "CONTRACT_TOKENS",

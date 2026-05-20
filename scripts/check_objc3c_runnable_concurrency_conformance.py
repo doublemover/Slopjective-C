@@ -46,6 +46,11 @@ REQUIRED_SURFACE_CONTRACTS = {
     ),
 }
 
+REQUIRED_PRIVATE_CONCURRENCY_RUNTIME_SYMBOLS = (
+    "objc3_runtime_cancel_async_continuation_i32",
+    "objc3_runtime_executor_hop_i32",
+)
+
 
 def expect(condition: bool, message: str) -> None:
     if not condition:
@@ -145,9 +150,22 @@ def main() -> int:
         raise RuntimeError(
             "unified concurrency runtime ABI surface did not publish authoritative case ids"
         )
+    source_private_boundary = source_surface.get("private_concurrency_runtime_boundary", [])
+    abi_private_boundary = abi_surface.get(
+        "private_unified_concurrency_runtime_abi_boundary", []
+    )
+    for symbol in REQUIRED_PRIVATE_CONCURRENCY_RUNTIME_SYMBOLS:
+        expect(
+            symbol in source_private_boundary,
+            f"unified concurrency source surface dropped private runtime symbol {symbol}",
+        )
+        expect(
+            symbol in abi_private_boundary,
+            f"unified concurrency runtime ABI surface dropped private runtime symbol {symbol}",
+        )
     expect(
         "objc3_runtime_copy_actor_runtime_state_for_testing"
-        in source_surface.get("private_concurrency_runtime_boundary", []),
+        in source_private_boundary,
         "unified concurrency source surface drifted from the private runtime boundary",
     )
     expect(

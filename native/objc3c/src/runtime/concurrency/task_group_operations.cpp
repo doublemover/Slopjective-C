@@ -44,6 +44,7 @@ int EnterRuntimeTaskGroupScope(RuntimeTaskState &state, int executor_tag) {
   state.active_group_task_count = 0;
   state.pending_group_task_count = 0;
   state.completed_group_task_count = 0;
+  state.cancelled_group_task_count = 0;
   state.group_cancelled = 0;
   state.observed_cancellation_generation = state.cancellation_generation;
   state.last_queue_depth = 0;

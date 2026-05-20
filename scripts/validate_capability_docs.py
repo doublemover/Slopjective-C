@@ -32,7 +32,11 @@ from capability_docs_validator.evidence_map import (
     build_evidence_map_projection,
 )
 from capability_docs_validator.manifest import _manifest_support_claims
-from capability_docs_validator.matrix import _require_matrix_shape, _validate_evidence_rows
+from capability_docs_validator.matrix import (
+    _require_matrix_shape,
+    _validate_evidence_rows,
+    _validate_object_model_scope,
+)
 from capability_docs_validator.support_links import (
     _row_support_claims,
     _validate_support_claim_links,

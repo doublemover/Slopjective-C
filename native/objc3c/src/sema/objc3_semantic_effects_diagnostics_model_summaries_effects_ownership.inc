@@ -91,10 +91,15 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       summary.retain_insertion_sites > 0 || summary.release_insertion_sites > 0 ||
       summary.autorelease_insertion_sites > 0 ||
       summary.weak_zeroing_sites > 0 || summary.autoreleasepool_scope_sites > 0;
+  const bool copy_dispose_helpers_symbolized =
+      summary.copy_helper_symbolized_sites >= summary.copy_helper_required_sites &&
+      summary.dispose_helper_symbolized_sites >=
+          summary.dispose_helper_required_sites;
   summary.block_escape_semantics_landed =
       summary.block_literal_sites > 0 &&
       summary.copy_helper_required_sites <= summary.block_literal_sites &&
-      summary.dispose_helper_required_sites <= summary.block_literal_sites;
+      summary.dispose_helper_required_sites <= summary.block_literal_sites &&
+      copy_dispose_helpers_symbolized;
   summary.throws_cleanup_semantics_landed =
       summary.throws_propagation_sites > 0 || summary.unwind_cleanup_sites > 0 ||
       summary.bridged_error_sites > 0;
@@ -118,6 +123,7 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       interop_summary.deterministic &&
       summary.copy_helper_required_sites <= summary.block_literal_sites &&
       summary.dispose_helper_required_sites <= summary.block_literal_sites &&
+      copy_dispose_helpers_symbolized &&
       summary.stack_to_heap_promotion_sites <= summary.block_literal_sites &&
       summary.weak_unowned_conflict_sites <=
           weak_unowned.ownership_candidate_sites &&
@@ -129,7 +135,10 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       summary.foreign_boundary_semantics_landed;
   summary.ready_for_lowering_and_runtime =
       summary.deterministic && all_required_effect_slices_landed;
-  if (!all_required_effect_slices_landed) {
+  if (!copy_dispose_helpers_symbolized) {
+    summary.failure_reason =
+        "effects/ownership block helper lowering is missing required copy/dispose helper symbols";
+  } else if (!all_required_effect_slices_landed) {
     summary.failure_reason =
         "effects/ownership semantic model is missing required ARC, block, "
         "throws, async/task, actor, or foreign-boundary slices";
@@ -152,6 +161,8 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
       << summary.byref_forwarding_cell_sites << ":"
       << summary.copy_helper_required_sites << ":"
       << summary.dispose_helper_required_sites
+      << ";block-helper-symbols=" << summary.copy_helper_symbolized_sites << ":"
+      << summary.dispose_helper_symbolized_sites
       << ";throws=" << summary.throws_propagation_sites << ":"
       << summary.unwind_cleanup_sites << ":" << summary.bridged_error_sites
       << ":" << summary.nested_cleanup_sites

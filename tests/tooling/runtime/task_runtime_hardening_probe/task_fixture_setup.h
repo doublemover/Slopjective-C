@@ -72,6 +72,18 @@ inline InvalidHandleResult RunInvalidHandlePass() {
   return result;
 }
 
+inline CancelDrainResult RunCancelDrainPass() {
+  CancelDrainResult result{};
+  ResetTaskRuntimeFixture();
+  result.scope = objc3_runtime_enter_task_group_scope_i32(6);
+  result.add_task = objc3_runtime_add_task_group_task_i32(6);
+  result.add_second_task = objc3_runtime_add_task_group_task_i32(6);
+  result.cancel_all = objc3_runtime_cancel_task_group_i32(6);
+  result.copy_task_status =
+      objc3_runtime_copy_task_runtime_state_for_testing(&result.task);
+  return result;
+}
+
 } // namespace task_runtime_hardening_probe
 } // namespace tooling
 } // namespace objc3c

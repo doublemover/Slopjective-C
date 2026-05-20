@@ -10,7 +10,8 @@ namespace task_runtime_hardening_probe {
 
 inline ProbeRun RunTaskRuntimeHardeningScenarios() {
   return ProbeRun{RunPass(kReplayScenario), RunPass(kReplayScenario),
-                  RunInvalidHandlePass(), RunInvalidHandlePass()};
+                  RunInvalidHandlePass(), RunInvalidHandlePass(),
+                  RunCancelDrainPass(), RunCancelDrainPass()};
 }
 
 } // namespace task_runtime_hardening_probe

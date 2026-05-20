@@ -306,6 +306,56 @@
       "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
     },
     {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+    },
+    {
       "capability_id": "runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/support/hard_cutover_capability_truth.md"

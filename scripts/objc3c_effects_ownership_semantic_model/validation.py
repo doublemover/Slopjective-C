@@ -40,6 +40,7 @@ def build_checks(
     stress_manifest_text = semantic_inputs["stress_manifest_text"]
     conformance_positive = semantic_inputs["conformance_positive"]
     conformance_negative = semantic_inputs["conformance_negative"]
+    conformance_helper_symbols = semantic_inputs["conformance_helper_symbols"]
 
     return {
         "positive_fixture_compiles": positive_run["exit_code"] == 0,
@@ -51,6 +52,11 @@ def build_checks(
         and all(int(model.get(field, -1)) >= minimum for field, minimum in POSITIVE_MIN_COUNTS.items()),
         "positive_landed_flags_true": bool(model) and all(bool(model.get(flag)) for flag in LANDED_FLAGS),
         "positive_contract_violations_zero": bool(model) and int(model.get("contract_violation_sites", -1)) == 0,
+        "positive_copy_dispose_helper_symbols_cover_required": bool(model)
+        and int(model.get("copy_helper_symbolized_sites", -1))
+        >= int(model.get("copy_helper_required_sites", -1))
+        and int(model.get("dispose_helper_symbolized_sites", -1))
+        >= int(model.get("dispose_helper_required_sites", -1)),
         "positive_ready_and_deterministic": bool(model)
         and bool(model.get("deterministic"))
         and bool(model.get("ready_for_lowering_and_runtime")),
@@ -68,11 +74,22 @@ def build_checks(
         "negative_async_throws_diagnostic_observed": diagnostic_matches(negative_run["diagnostics"], "O3S226", 4, 10),
         "semantic_manifest_indexes_eff_8014_01": "EFF-8014-01.json" in manifest_text,
         "semantic_manifest_indexes_eff_8014_02": "EFF-8014-02.json" in manifest_text,
+        "semantic_manifest_indexes_eff_8014_03": "EFF-8014-03.json" in manifest_text,
         "semantic_readme_mentions_issue_8014": "#8014" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
+        "helper_symbol_conformance_references_summary": "tmp/reports/claimability/effects-ownership-semantic-model/effects_ownership_semantic_model_summary.json"
+        in conformance_helper_symbols.get("references", []),
+        "helper_symbol_conformance_requires_symbolized_counts": conformance_helper_symbols.get("expect", {})
+        .get("manifest_surface_requirements", {})
+        .get("copy_helper_symbolized_sites")
+        == ">= copy_helper_required_sites"
+        and conformance_helper_symbols.get("expect", {})
+        .get("manifest_surface_requirements", {})
+        .get("dispose_helper_symbolized_sites")
+        == ">= dispose_helper_required_sites",
         "negative_conformance_expects_o3s226_location": conformance_negative.get("expect", {}).get("diagnostics")
         == [{"code": "O3S226", "line": 4, "column": 10}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,

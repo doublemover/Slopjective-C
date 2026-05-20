@@ -33,6 +33,7 @@
           "abi_requirements": [
             "Objc3RuntimeBackedSemanticsClosureSummary emits contract objc3c.runtime.backed.semantics.closure.v1 with block, ARC, error, continuation, task, and actor runtime-backed model strings",
             "Objc3IREmitter publishes a runtime_backed_semantics_closure IR comment in the same native lowering stream as runnable_block_execution_matrix, runnable_arc_closeout, error_handling_live_error_runtime_integration, concurrency_live_task_runtime_integration, and actor metadata contracts",
+            "Aggregate IR evidence includes concrete __objc3_block_copy_helper_ and __objc3_block_dispose_helper_ definitions or call sites for source constructs that require block copy/dispose lowering",
             "The closure report compiles seven representative positive native fixtures and aggregates IR token evidence from block promotion/copy-dispose, ARC retain/release/autorelease/weak/autoreleasepool, error runtime bridge, continuation runtime, task runtime, and actor mailbox/replay surfaces",
             "The private helper boundary contains exactly 36 helper symbols and no public runtime ABI widening is claimed by this fixture"
           ],

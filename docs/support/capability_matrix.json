@@ -484,6 +484,57 @@
       ]
     },
     {
+      "id": "runtime.object-model.interface-method-table",
+      "title": "Object-model interface method table",
+      "state": "implemented",
+      "summary": "The canonical runtime object-model fixture proves interface method table publication, while runtime acceptance surfaces cover private class graph, category attachment, and protocol conformance queries. The broader realization claim and any public reflection surface remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-interface-method-table"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/category_attachment.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+        }
+      ]
+    },
+    {
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",

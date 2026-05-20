@@ -20,6 +20,9 @@
 
 namespace objc3c::runtime {
 
+std::vector<const RegisteredImageMetadata *> OrderedProtocolImages(
+    const RuntimeState &state);
+
 namespace {
 
 void RecordProtocolQueryFailure(std::string &failure_reason,
@@ -218,6 +221,121 @@ bool RuntimeCategoryProtocolReferencesAreSupported(
             "category " + std::string(record->class_name) + "(" +
                 std::string(record->category_name) + ")",
             diagnostic_reason)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+struct RuntimeCategoryTargetClassRecord {
+  std::string class_owner_identity;
+  bool found = false;
+  bool implementation_backed = false;
+};
+
+bool RuntimeCategoryTargetClassBundleHasImplementationBacking(
+    const EmittedClassBundle &bundle) {
+  return (bundle.class_record.method_list_ref != nullptr &&
+          RuntimeNonEmptyCString(
+              bundle.class_record.method_list_ref->owner_identity) &&
+          std::string(bundle.class_record.method_list_ref->owner_identity)
+                  .rfind("implementation:", 0) == 0) ||
+         (bundle.metaclass_record.method_list_ref != nullptr &&
+          RuntimeNonEmptyCString(
+              bundle.metaclass_record.method_list_ref->owner_identity) &&
+          std::string(bundle.metaclass_record.method_list_ref->owner_identity)
+                  .rfind("implementation:", 0) == 0);
+}
+
+bool AddRuntimeCategoryTargetClassRecords(
+    const objc3_runtime_pointer_aggregate *class_descriptor_root,
+    std::uint64_t class_descriptor_count,
+    std::unordered_map<std::string, RuntimeCategoryTargetClassRecord>
+        &target_classes,
+    std::string &diagnostic_reason) {
+  for (std::uint64_t index = 0; index < class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        RuntimeAggregateEntry(class_descriptor_root, index));
+    if (bundle == nullptr ||
+        !RuntimeNonEmptyCString(bundle->class_record.class_name) ||
+        !RuntimeNonEmptyCString(bundle->class_record.object_owner_identity)) {
+      diagnostic_reason =
+          "class descriptor root contains malformed category targets";
+      return false;
+    }
+    RuntimeCategoryTargetClassRecord &target =
+        target_classes[bundle->class_record.class_name];
+    const bool implementation_backed =
+        RuntimeCategoryTargetClassBundleHasImplementationBacking(*bundle);
+    if (!target.found ||
+        (!target.implementation_backed && implementation_backed)) {
+      target.class_owner_identity = bundle->class_record.object_owner_identity;
+      target.found = true;
+      target.implementation_backed = implementation_backed;
+    }
+  }
+  return true;
+}
+
+std::string RuntimeCategoryQualifiedName(const EmittedCategoryRecord &record) {
+  return std::string(RuntimeProtocolCString(record.class_name)) + "(" +
+         RuntimeProtocolCString(record.category_name) + ")";
+}
+
+bool RuntimeCategoryTargetsAreSupported(
+    const RuntimeState &state,
+    const objc3_runtime_registration_table *registration_table,
+    std::string &diagnostic_reason) {
+  std::unordered_map<std::string, RuntimeCategoryTargetClassRecord>
+      target_classes;
+  target_classes.reserve(
+      static_cast<std::size_t>(
+          registration_table->image_descriptor->class_descriptor_count) +
+      state.registered_image_metadata_by_identity_key.size());
+  if (!AddRuntimeCategoryTargetClassRecords(
+          registration_table->class_descriptor_root,
+          registration_table->image_descriptor->class_descriptor_count,
+          target_classes, diagnostic_reason)) {
+    return false;
+  }
+  for (const RegisteredImageMetadata *record : OrderedProtocolImages(state)) {
+    if (record == nullptr) {
+      continue;
+    }
+    if (!AddRuntimeCategoryTargetClassRecords(
+            record->class_descriptor_root, record->class_descriptor_count,
+            target_classes, diagnostic_reason)) {
+      return false;
+    }
+  }
+
+  for (std::uint64_t index = 0;
+       index < registration_table->image_descriptor->category_descriptor_count;
+       ++index) {
+    const auto *record = static_cast<const EmittedCategoryRecord *>(
+        RuntimeAggregateEntry(registration_table->category_descriptor_root,
+                              index));
+    if (record == nullptr || !RuntimeNonEmptyCString(record->class_name) ||
+        !RuntimeNonEmptyCString(record->category_name)) {
+      diagnostic_reason =
+          "category descriptor root contains malformed category targets";
+      return false;
+    }
+    const std::string category_name = RuntimeCategoryQualifiedName(*record);
+    const auto found = target_classes.find(record->class_name);
+    if (found == target_classes.end() || !found->second.found) {
+      diagnostic_reason =
+          "category attachment target class is missing for " + category_name;
+      return false;
+    }
+    if (!RuntimeNonEmptyCString(record->class_owner_identity)) {
+      diagnostic_reason =
+          "category attachment class owner is missing for " + category_name;
+      return false;
+    }
+    if (found->second.class_owner_identity != record->class_owner_identity) {
+      diagnostic_reason =
+          "category attachment class owner mismatch for " + category_name;
       return false;
     }
   }
@@ -480,6 +598,8 @@ bool RuntimeProtocolCategoryMetadataTableIsSupported(
 
   return RuntimeRegisteredProtocolMetadataIsSupported(
              registration_table, known_protocol_records, diagnostic_reason) &&
+         RuntimeCategoryTargetsAreSupported(state, registration_table,
+                                            diagnostic_reason) &&
          RuntimeClassProtocolReferencesAreSupported(
              registration_table, known_protocol_records, diagnostic_reason) &&
          RuntimeCategoryProtocolReferencesAreSupported(

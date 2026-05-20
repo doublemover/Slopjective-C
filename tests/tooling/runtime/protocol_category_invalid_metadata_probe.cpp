@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 
 namespace {
 
@@ -21,6 +22,9 @@ constexpr const char *kClassBundleOwner = "interface:BrokenProtocolRef";
 constexpr const char *kClassOwner = "class:BrokenProtocolRef";
 constexpr const char *kMetaclassBundleOwner = "metaclass:BrokenProtocolRef";
 constexpr const char *kMetaclassOwner = "metaclass-object:BrokenProtocolRef";
+constexpr const char *kMissingCategoryModuleName =
+    "protocol-category-missing-target-probe";
+constexpr const char *kMissingCategoryClassName = "MissingOwner";
 
 const PointerAggregateStorage<1> kEmptyRootStorage = {0, {nullptr}};
 const objc3_runtime_pointer_aggregate *kEmptyRoot =
@@ -62,57 +66,141 @@ struct InvalidProtocolReferenceImage {
       nullptr, &image_local_init_state};
 };
 
+struct MissingCategoryTargetImage {
+  objc3_runtime_image_descriptor image{kMissingCategoryModuleName,
+                                       kTranslationUnit, 1, 0, 0, 1, 0, 0};
+  objc3c::runtime::EmittedCategoryRecord category_record{
+      kMissingCategoryClassName,
+      "Tracing",
+      "implementation",
+      "implementation:MissingOwner(Tracing)",
+      "class:MissingOwner",
+      "category:MissingOwner(Tracing)",
+      nullptr,
+      kEmptyRoot,
+      nullptr,
+      nullptr,
+      0,
+      0,
+      0};
+  PointerAggregateStorage<1> category_root_storage{1, {&category_record}};
+  PointerAggregateStorage<6> discovery_root_storage{
+      6,
+      {&kEmptyRootStorage, &kEmptyRootStorage, &category_root_storage,
+       &kEmptyRootStorage, &kEmptyRootStorage, &kEmptyRootStorage}};
+  const objc3_runtime_pointer_aggregate *category_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &category_root_storage);
+  const objc3_runtime_pointer_aggregate *discovery_root =
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &discovery_root_storage);
+  const void *discovery_root_anchor = discovery_root;
+  unsigned char image_local_init_state = 0;
+  objc3_runtime_registration_table registration_table{
+      2, 12, &image, discovery_root, &discovery_root_anchor, kEmptyRoot,
+      kEmptyRoot, category_root, kEmptyRoot, kEmptyRoot, nullptr, nullptr,
+      nullptr, &image_local_init_state};
+};
+
 struct ProbeResult {
   int registration_status = 0;
   objc3_runtime_registration_state_snapshot registration_state{};
   objc3_runtime_realized_class_graph_state_snapshot graph_state{};
   objc3_runtime_realized_class_entry_snapshot class_entry{};
+  std::string malformed_reason;
 };
 
-ProbeResult RunProbe() {
-  InvalidProtocolReferenceImage fixture;
+struct ProbeRun {
+  ProbeResult invalid_protocol_reference;
+  ProbeResult missing_category_target;
+};
+
+ProbeResult CaptureInvalidRegistration(
+    const objc3_runtime_image_descriptor *image,
+    const objc3_runtime_registration_table *registration_table,
+    const char *class_name) {
   ProbeResult result;
   objc3_runtime_reset_for_testing();
-  objc3_runtime_stage_registration_table_for_bootstrap(
-      &fixture.registration_table);
-  result.registration_status = objc3_runtime_register_image(&fixture.image);
+  objc3_runtime_stage_registration_table_for_bootstrap(registration_table);
+  result.registration_status = objc3_runtime_register_image(image);
   (void)objc3_runtime_copy_registration_state_for_testing(
       &result.registration_state);
   (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
       &result.graph_state);
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
-      kClassName, &result.class_entry);
+      class_name, &result.class_entry);
+  result.malformed_reason =
+      result.graph_state.last_malformed_class_graph_reason != nullptr
+          ? result.graph_state.last_malformed_class_graph_reason
+          : "";
   return result;
 }
 
-void PrintProbeResult(const ProbeResult &result) {
-  using objc3c::runtime::probe::JsonFieldSeparator;
+ProbeRun RunProbe() {
+  InvalidProtocolReferenceImage invalid_protocol_fixture;
+  MissingCategoryTargetImage missing_category_fixture;
+  ProbeRun run;
+  run.invalid_protocol_reference = CaptureInvalidRegistration(
+      &invalid_protocol_fixture.image,
+      &invalid_protocol_fixture.registration_table, kClassName);
+  run.missing_category_target = CaptureInvalidRegistration(
+      &missing_category_fixture.image,
+      &missing_category_fixture.registration_table, kMissingCategoryClassName);
+  return run;
+}
+
+void WriteProbeResultFields(
+    std::ostream &out,
+    objc3c::runtime::probe::JsonFieldSeparator &separator,
+    const ProbeResult &result) {
   using objc3c::runtime::probe::WriteJsonIntField;
   using objc3c::runtime::probe::WriteJsonStringField;
   using objc3c::runtime::probe::WriteJsonUInt64Field;
 
-  JsonFieldSeparator separator;
-  std::cout << "{";
-  WriteJsonIntField(std::cout, separator, "registration_status",
+  WriteJsonIntField(out, separator, "registration_status",
                     result.registration_status);
-  WriteJsonIntField(std::cout, separator, "last_registration_status",
+  WriteJsonIntField(out, separator, "last_registration_status",
                     result.registration_state.last_registration_status);
   WriteJsonUInt64Field(
-      std::cout, separator, "registered_image_count",
+      out, separator, "registered_image_count",
       static_cast<unsigned long long>(
           result.registration_state.registered_image_count));
   WriteJsonUInt64Field(
-      std::cout, separator, "realized_class_count",
+      out, separator, "realized_class_count",
       static_cast<unsigned long long>(result.graph_state.realized_class_count));
   WriteJsonUInt64Field(
-      std::cout, separator, "malformed_class_metadata_rejection_count",
+      out, separator, "malformed_class_metadata_rejection_count",
       static_cast<unsigned long long>(
           result.graph_state.malformed_class_metadata_rejection_count));
-  WriteJsonIntField(std::cout, separator, "class_found",
+  WriteJsonIntField(out, separator, "class_found",
                     result.class_entry.found);
-  WriteJsonStringField(std::cout, separator,
+  const char *malformed_reason =
+      result.malformed_reason.empty()
+          ? result.graph_state.last_malformed_class_graph_reason
+          : result.malformed_reason.c_str();
+  WriteJsonStringField(out, separator,
                        "last_malformed_class_graph_reason",
-                       result.graph_state.last_malformed_class_graph_reason);
+                       malformed_reason);
+}
+
+void WriteProbeResultObject(std::ostream &out, const ProbeResult &result) {
+  objc3c::runtime::probe::JsonFieldSeparator separator;
+  out << "{";
+  WriteProbeResultFields(out, separator, result);
+  out << "}";
+}
+
+void PrintProbeResult(const ProbeRun &run) {
+  using objc3c::runtime::probe::JsonFieldSeparator;
+  using objc3c::runtime::probe::WriteJsonFieldName;
+
+  JsonFieldSeparator separator;
+  std::cout << "{";
+  WriteProbeResultFields(std::cout, separator,
+                         run.invalid_protocol_reference);
+  separator.BeforeField(std::cout);
+  WriteJsonFieldName(std::cout, "missing_category_target");
+  WriteProbeResultObject(std::cout, run.missing_category_target);
   std::cout << "}";
 }
 
