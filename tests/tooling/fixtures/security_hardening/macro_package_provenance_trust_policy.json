@@ -4,6 +4,7 @@
   "milestone": "M327",
   "issue": "M327-B002",
   "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "macro_supply_chain_trust_registry": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
@@ -42,6 +43,16 @@
     "callable_determinism_enforced",
     "ready_for_lowering_and_runtime"
   ],
+  "required_trust_checks": [
+    "deny_unknown_packages",
+    "deny_revoked_provenance",
+    "deny_untrusted_signers",
+    "require_signature_for_provenance",
+    "require_replay_metadata",
+    "require_cache_key_binding",
+    "require_deny_by_default_sandbox",
+    "require_deterministic_replay"
+  ],
   "positive_fixture_paths": [
     "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
     "tests/tooling/fixtures/native/macro_package_provenance_positive.objc3",
@@ -59,7 +70,7 @@
     "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3"
   ],
   "non_claims": [
-    "no remote package-signing verification claim",
+    "no remote key-server package-signing verification claim",
     "no general hostile-macro execution claim",
     "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces",
     "no evidence-log macro provenance proof",

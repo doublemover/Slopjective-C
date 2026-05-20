@@ -54,6 +54,7 @@
     "schemas/objc3c-security-advisory-index-v1.schema.json",
     "scripts/check_security_hardening_source_surface.py",
     "scripts/check_security_hardening_schema_surface.py",
+    "scripts/build_security_hardening_macro_trust_policy_summary.py",
     "scripts/build_objc3c_security_posture.py",
     "scripts/publish_objc3c_security_advisories.py",
     "scripts/check_security_hardening_response_drill.py",
@@ -61,6 +62,8 @@
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py",
     "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
     "scripts/objc3c_workflow",
     "scripts/objc3c_workflow/actions/release_governance_security_targets.py",
     "package.json"
