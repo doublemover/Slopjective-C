@@ -61,6 +61,16 @@ function Get-RepoRelativeExecutionFixtureFiles {
     -MissingRootMessage "runnable toolchain package FAIL: missing execution fixture root $fixtureRoot")
 }
 
+function Get-RepoRelativeNativeFixtureFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $fixtureRoot = Join-Path $RepoRoot "tests/tooling/fixtures/native"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "tests/tooling/fixtures/native" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing native fixture root $fixtureRoot")
+}
+
 function Get-RepoRelativeStdlibFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -273,6 +283,7 @@ Export-ModuleMember -Function @(
   "Get-RepoRelativeNativeCompileSupportFiles",
   "Get-RepoRelativeNativeDocsFiles",
   "Get-RepoRelativeNativeExecutionSupportFiles",
+  "Get-RepoRelativeNativeFixtureFiles",
   "Get-RepoRelativeNativeRuntimeSourceFiles",
   "Get-RepoRelativePackagedPythonScriptFiles",
   "Get-RepoRelativePerformanceBenchmarkFiles",

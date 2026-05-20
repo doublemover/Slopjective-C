@@ -19,6 +19,7 @@ function Get-ManifestProvenancePerformanceFixtureFiles {
     "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
     "tests/tooling/fixtures/runtime_performance/source_surface.json",
     "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
     "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
     "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
     "tests/tooling/fixtures/runtime_performance/README.md",

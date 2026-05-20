@@ -137,6 +137,7 @@ function Get-RunnableToolchainPackageInputFiles {
     @(Get-RequiredRunnableToolchainPackageFiles) +
     @(Get-RepoRelativeNativeCompileSupportFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeNativeExecutionSupportFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeNativeFixtureFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeNativeDocsFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeNativeRuntimeSourceFiles -RepoRoot $RepoRoot) +
@@ -151,7 +152,7 @@ function Get-RunnableToolchainPackageInputFiles {
     @(Get-RepoRelativeStdlibFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeConformanceFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativePackagedPythonScriptFiles -RepoRoot $RepoRoot)
-  )
+  ) | Sort-Object -Unique
 }
 
 function Copy-RunnableToolchainPackageInputs {
