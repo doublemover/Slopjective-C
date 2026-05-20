@@ -50,7 +50,8 @@ registry, not separate current-facing commands.
 - detached-task helper entrypoints
 - join, wait, and task-group helper shapes
 - cancellation query and checkpoint helpers
-- executor hop and actor-adjacent helper hooks
+- executor hop helpers
+- actor mailbox binding, enqueue, and drain helpers
 
 `objc3.keypath` owns:
 
@@ -77,6 +78,7 @@ The checked-in architecture contract requires these families to stay visible:
   - `task-group-scope`
   - `cancellation-observation`
   - `executor-hop`
+  - `actor-mailbox`
 - `objc3.keypath`
   - `typed-keypath-application`
   - `typed-keypath-text-shape`
@@ -135,27 +137,29 @@ the checked-in architecture contract.
 
 ## Semantic guarantees
 
-- `objc3_concurrency_spawn_token` returns `seed + 1` as the current
-  deterministic child-spawn token placeholder
-- `objc3_concurrency_child_spawn_token` returns `seed + 1` for structured
-  child spawns while `objc3_concurrency_detached_spawn_token` returns
-  `seed + 2` for detached work
-- `objc3_concurrency_join_status` returns the provided result code unless the
-  cancellation flag is set, in which case it returns the stable cancellation
-  status code `2`
-- `objc3_concurrency_task_group_scope_depth` preserves the parent depth when
-  asked to add a negative child count and otherwise returns
-  `parent_depth + child_tasks`
-- `objc3_concurrency_cancellation_query` and
-  `objc3_concurrency_cancellation_checkpoint` both return `1` only when the
-  provided cancellation flag is nonzero
-- `objc3_concurrency_executor_hop_token` returns the target executor when one
-  is provided and otherwise preserves the current executor token
-- `objc3_concurrency_actor_mailbox_token` returns `actor_seed +
-pending_messages` for nonnegative message counts and otherwise preserves the
-  actor seed
-- `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
-  provided cancellation flag is nonzero
+- `objc3_concurrency_spawn_token` and
+  `objc3_concurrency_child_spawn_token` route structured work through
+  `objc3_runtime_spawn_task_i32` with task kind `1`
+- `objc3_concurrency_detached_spawn_token` routes detached work through
+  `objc3_runtime_spawn_task_i32` with task kind `2`
+- `objc3_concurrency_join_status` routes cancellation through
+  `objc3_runtime_task_on_cancel_i32` on the supplied executor and routes
+  successful completion through `objc3_runtime_executor_hop_i32` with distinct
+  result and executor operands
+- `objc3_concurrency_task_group_scope_depth` enters a runtime task-group scope,
+  enqueues one task per requested child count, drains the same count in FIFO
+  order, and fails closed through `objc3_runtime_cancel_task_group_i32` for
+  negative child counts
+- `objc3_concurrency_cancellation_query` observes cancellation through
+  `objc3_runtime_task_is_cancelled_i32`
+- `objc3_concurrency_cancellation_checkpoint` routes cancellation checkpoints
+  through `objc3_runtime_cancel_task_group_i32` when flagged and otherwise
+  observes cancellation through `objc3_runtime_task_is_cancelled_i32`
+- `objc3_concurrency_executor_hop_token` routes executor hops through
+  `objc3_runtime_executor_hop_i32` with distinct value and executor operands
+- `objc3_concurrency_actor_mailbox_token` binds a distinct actor handle to an
+  executor tag, then enqueues and drains through the runtime actor mailbox
+  helpers using the bound executor
 - key-path helpers preserve caller-visible component counts and shape
   diagnostics instead of inventing reflection-owned storage
 - `objc3_keypath_metadata_token` returns `root + component_count`, while

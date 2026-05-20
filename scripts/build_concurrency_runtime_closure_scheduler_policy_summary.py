@@ -102,7 +102,7 @@ def main() -> int:
             isinstance(abi_surface, dict)
             and abi_surface.get("continuation_runtime_model") == "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
             and abi_surface.get("task_runtime_model") == "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
-            and abi_surface.get("actor_runtime_model") == "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+            and abi_surface.get("actor_runtime_model") == "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-executor-binding-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
         ),
         "task_probe_payload_preserves_scheduler_counts": all(
             task_payload.get(key) == value for key, value in required_task_payload.items()

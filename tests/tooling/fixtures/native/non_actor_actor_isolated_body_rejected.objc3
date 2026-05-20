@@ -1,0 +1,15 @@
+// Expected diagnostic code(s): O3S344.
+module M270B002NonActorActorIsolatedBody;
+
+fn actor_isolated_step() -> i32 { return 1; }
+
+@interface M270PlainBox
+- (i32)run;
+@end
+
+@implementation M270PlainBox
+- (i32)run {
+  actor_isolated_step();
+  return 0;
+}
+@end

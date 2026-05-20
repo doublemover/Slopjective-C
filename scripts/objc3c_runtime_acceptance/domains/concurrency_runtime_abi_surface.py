@@ -78,6 +78,12 @@ def build_runtime_unified_concurrency_runtime_abi_surface(
             "deadlock_guard_passed",
             "race_guard_passed",
         ],
+        "required_actor_mailbox_binding_snapshot_fields": [
+            "actor_executor_binding_count",
+            "last_expected_executor_tag",
+            "mailbox_identity_guard_passed",
+            "executor_binding_guard_passed",
+        ],
         "requires_pre_drain_scheduler_snapshot": True,
         "requires_post_drain_scheduler_snapshot": True,
         "authoritative_case_ids": authoritative_case_ids(

@@ -19,7 +19,8 @@
     "join-and-wait",
     "task-group-scope",
     "cancellation-observation",
-    "executor-hop"
+    "executor-hop",
+    "actor-mailbox"
   ],
   "exports": [
     "objc3_concurrency_spawn_token",

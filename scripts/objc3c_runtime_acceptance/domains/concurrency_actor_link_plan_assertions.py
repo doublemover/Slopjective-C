@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import deepcopy
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 
@@ -212,7 +213,51 @@ def expect_actor_cross_module_link_plan(
     return imported_module, local_module
 
 
+def expect_actor_cross_module_link_plan_rejects_metadata_count_drift(
+    link_plan: Mapping[str, object],
+    provider_import_payload: Mapping[str, object],
+    provider_registration_manifest: Mapping[str, object],
+    consumer_registration_manifest: Mapping[str, object],
+) -> str:
+    drifted_provider_import_payload = deepcopy(provider_import_payload)
+    provider_actor_surface = drifted_provider_import_payload.get(
+        "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface", {}
+    )
+    expect(
+        isinstance(provider_actor_surface, dict),
+        "expected drift probe to find actor mailbox preservation packet",
+    )
+    drifted_provider_field = "actor_method_sites"
+    original_count = provider_actor_surface.get(drifted_provider_field)
+    expect(
+        isinstance(original_count, int),
+        "expected drift probe to find integer actor method metadata count",
+    )
+    provider_actor_surface[drifted_provider_field] = original_count + 1
+
+    try:
+        expect_actor_cross_module_link_plan(
+            link_plan,
+            drifted_provider_import_payload,
+            provider_registration_manifest,
+            consumer_registration_manifest,
+        )
+    except RuntimeError as exc:
+        rejected_link_plan_field = ACTOR_LINK_PLAN_COUNT_FIELDS[drifted_provider_field]
+        expect(
+            f"expected imported actor module to preserve {rejected_link_plan_field}"
+            in str(exc),
+            "expected actor metadata count drift probe to fail closed on the imported module count assertion",
+        )
+        return rejected_link_plan_field
+
+    raise RuntimeError(
+        "expected actor metadata count drift between provider import surface and consumer link plan to fail closed"
+    )
+
+
 __all__ = [
     "expect_actor_cross_module_link_plan",
+    "expect_actor_cross_module_link_plan_rejects_metadata_count_drift",
     "expect_provider_actor_import_surface",
 ]

@@ -1,0 +1,15 @@
+// Expected diagnostic code(s): O3S343.
+module M270B002NonActorNonSendable;
+
+fn cross_actor_non_sendable() -> i32 { return 1; }
+
+@interface M270PlainBox
+- (i32)run;
+@end
+
+@implementation M270PlainBox
+- (i32)run {
+  cross_actor_non_sendable();
+  return 0;
+}
+@end

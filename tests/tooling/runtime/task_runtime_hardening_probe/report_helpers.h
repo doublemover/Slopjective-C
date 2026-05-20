@@ -16,18 +16,46 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
   out << "pass1_copy_task_status=" << pass1.copy_task_status << "\n";
   out << "pass1_after_add_copy_status="
       << pass1.after_add_copy_status << "\n";
+  out << "pass1_after_second_add_copy_status="
+      << pass1.after_second_add_copy_status << "\n";
   out << "pass1_after_wait_copy_status="
       << pass1.after_wait_copy_status << "\n";
+  out << "pass1_after_second_wait_copy_status="
+      << pass1.after_second_wait_copy_status << "\n";
   out << "pass1_copy_memory_status=" << pass1.copy_memory_status << "\n";
   out << "pass1_copy_arc_status=" << pass1.copy_arc_status << "\n";
   out << "pass1_spawn_group=" << pass1.spawn_group << "\n";
+  out << "pass1_scope=" << pass1.scope << "\n";
+  out << "pass1_add_task=" << pass1.add_task << "\n";
+  out << "pass1_add_second_task=" << pass1.add_second_task << "\n";
+  out << "pass1_cancelled=" << pass1.cancelled << "\n";
   out << "pass1_wait_next=" << pass1.wait_next << "\n";
+  out << "pass1_wait_second_next=" << pass1.wait_second_next << "\n";
+  out << "pass1_hop=" << pass1.hop << "\n";
   out << "pass1_cancel_all=" << pass1.cancel_all << "\n";
+  out << "pass1_on_cancel=" << pass1.on_cancel << "\n";
+  out << "pass1_spawn_detached=" << pass1.spawn_detached << "\n";
   out << "pass1_spawn_call_count=" << pass1.task.spawn_call_count << "\n";
+  out << "pass1_scope_call_count=" << pass1.task.scope_call_count << "\n";
+  out << "pass1_add_task_call_count="
+      << pass1.task.add_task_call_count << "\n";
+  out << "pass1_wait_next_call_count="
+      << pass1.task.wait_next_call_count << "\n";
   out << "pass1_cancel_all_call_count="
       << pass1.task.cancel_all_call_count << "\n";
+  out << "pass1_cancellation_poll_call_count="
+      << pass1.task.cancellation_poll_call_count << "\n";
+  out << "pass1_on_cancel_call_count="
+      << pass1.task.on_cancel_call_count << "\n";
   out << "pass1_executor_hop_call_count="
       << pass1.task.executor_hop_call_count << "\n";
+  out << "pass1_last_spawn_kind=" << pass1.task.last_spawn_kind << "\n";
+  out << "pass1_last_spawn_executor_tag="
+      << pass1.task.last_spawn_executor_tag << "\n";
+  out << "pass1_last_wait_next_result="
+      << pass1.task.last_wait_next_result << "\n";
+  out << "pass1_last_executor_hop_executor_tag="
+      << pass1.task.last_executor_hop_executor_tag << "\n";
   out << "pass1_last_executor_hop_value="
       << pass1.task.last_executor_hop_value << "\n";
   out << "pass1_after_add_last_queue_depth="
@@ -42,22 +70,86 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
       << pass1.after_add_task.last_scheduled_executor_tag << "\n";
   out << "pass1_after_add_last_executor_queue_depth="
       << pass1.after_add_task.last_executor_queue_depth << "\n";
+  out << "pass1_after_add_max_executor_queue_depth="
+      << pass1.after_add_task.max_executor_queue_depth << "\n";
+  out << "pass1_after_add_scheduler_sequence="
+      << pass1.after_add_task.scheduler_sequence << "\n";
+  out << "pass1_after_add_deadlock_guard_passed="
+      << pass1.after_add_task.deadlock_guard_passed << "\n";
+  out << "pass1_after_add_race_guard_passed="
+      << pass1.after_add_task.race_guard_passed << "\n";
+  out << "pass1_after_second_add_last_queue_depth="
+      << pass1.after_second_add_task.last_queue_depth << "\n";
+  out << "pass1_after_second_add_scheduler_enqueue_count="
+      << pass1.after_second_add_task.scheduler_enqueue_count << "\n";
+  out << "pass1_after_second_add_scheduler_dequeue_count="
+      << pass1.after_second_add_task.scheduler_dequeue_count << "\n";
+  out << "pass1_after_second_add_last_scheduled_task_handle="
+      << pass1.after_second_add_task.last_scheduled_task_handle << "\n";
+  out << "pass1_after_second_add_last_scheduled_executor_tag="
+      << pass1.after_second_add_task.last_scheduled_executor_tag << "\n";
+  out << "pass1_after_second_add_last_executor_queue_depth="
+      << pass1.after_second_add_task.last_executor_queue_depth << "\n";
+  out << "pass1_after_second_add_max_executor_queue_depth="
+      << pass1.after_second_add_task.max_executor_queue_depth << "\n";
+  out << "pass1_after_second_add_scheduler_sequence="
+      << pass1.after_second_add_task.scheduler_sequence << "\n";
+  out << "pass1_after_second_add_deadlock_guard_passed="
+      << pass1.after_second_add_task.deadlock_guard_passed << "\n";
+  out << "pass1_after_second_add_race_guard_passed="
+      << pass1.after_second_add_task.race_guard_passed << "\n";
   out << "pass1_after_wait_last_queue_depth="
       << pass1.after_wait_next.last_queue_depth << "\n";
   out << "pass1_after_wait_last_queue_drain_result="
       << pass1.after_wait_next.last_queue_drain_result << "\n";
+  out << "pass1_after_wait_scheduler_enqueue_count="
+      << pass1.after_wait_next.scheduler_enqueue_count << "\n";
   out << "pass1_after_wait_scheduler_dequeue_count="
       << pass1.after_wait_next.scheduler_dequeue_count << "\n";
+  out << "pass1_after_wait_last_scheduled_task_handle="
+      << pass1.after_wait_next.last_scheduled_task_handle << "\n";
   out << "pass1_after_wait_last_dequeued_task_handle="
       << pass1.after_wait_next.last_dequeued_task_handle << "\n";
   out << "pass1_after_wait_last_scheduled_executor_tag="
       << pass1.after_wait_next.last_scheduled_executor_tag << "\n";
   out << "pass1_after_wait_last_dequeued_executor_tag="
       << pass1.after_wait_next.last_dequeued_executor_tag << "\n";
+  out << "pass1_after_wait_last_executor_queue_depth="
+      << pass1.after_wait_next.last_executor_queue_depth << "\n";
+  out << "pass1_after_wait_max_executor_queue_depth="
+      << pass1.after_wait_next.max_executor_queue_depth << "\n";
+  out << "pass1_after_wait_scheduler_sequence="
+      << pass1.after_wait_next.scheduler_sequence << "\n";
   out << "pass1_after_wait_deadlock_guard_passed="
       << pass1.after_wait_next.deadlock_guard_passed << "\n";
   out << "pass1_after_wait_race_guard_passed="
       << pass1.after_wait_next.race_guard_passed << "\n";
+  out << "pass1_after_second_wait_last_queue_depth="
+      << pass1.after_second_wait_next.last_queue_depth << "\n";
+  out << "pass1_after_second_wait_last_queue_drain_result="
+      << pass1.after_second_wait_next.last_queue_drain_result << "\n";
+  out << "pass1_after_second_wait_scheduler_enqueue_count="
+      << pass1.after_second_wait_next.scheduler_enqueue_count << "\n";
+  out << "pass1_after_second_wait_scheduler_dequeue_count="
+      << pass1.after_second_wait_next.scheduler_dequeue_count << "\n";
+  out << "pass1_after_second_wait_last_scheduled_task_handle="
+      << pass1.after_second_wait_next.last_scheduled_task_handle << "\n";
+  out << "pass1_after_second_wait_last_scheduled_executor_tag="
+      << pass1.after_second_wait_next.last_scheduled_executor_tag << "\n";
+  out << "pass1_after_second_wait_last_dequeued_task_handle="
+      << pass1.after_second_wait_next.last_dequeued_task_handle << "\n";
+  out << "pass1_after_second_wait_last_dequeued_executor_tag="
+      << pass1.after_second_wait_next.last_dequeued_executor_tag << "\n";
+  out << "pass1_after_second_wait_last_executor_queue_depth="
+      << pass1.after_second_wait_next.last_executor_queue_depth << "\n";
+  out << "pass1_after_second_wait_max_executor_queue_depth="
+      << pass1.after_second_wait_next.max_executor_queue_depth << "\n";
+  out << "pass1_after_second_wait_scheduler_sequence="
+      << pass1.after_second_wait_next.scheduler_sequence << "\n";
+  out << "pass1_after_second_wait_deadlock_guard_passed="
+      << pass1.after_second_wait_next.deadlock_guard_passed << "\n";
+  out << "pass1_after_second_wait_race_guard_passed="
+      << pass1.after_second_wait_next.race_guard_passed << "\n";
   out << "pass1_last_failure_reason="
       << pass1.task.last_failure_reason << "\n";
   out << "pass1_lifecycle_state=" << pass1.task.lifecycle_state << "\n";
@@ -65,6 +157,8 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
       << pass1.task.selected_executor_tag << "\n";
   out << "pass1_active_group_executor_tag="
       << pass1.task.active_group_executor_tag << "\n";
+  out << "pass1_active_group_task_count="
+      << pass1.task.active_group_task_count << "\n";
   out << "pass1_pending_group_task_count="
       << pass1.task.pending_group_task_count << "\n";
   out << "pass1_completed_group_task_count="
@@ -72,6 +166,10 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
   out << "pass1_group_cancelled=" << pass1.task.group_cancelled << "\n";
   out << "pass1_cancellation_generation="
       << pass1.task.cancellation_generation << "\n";
+  out << "pass1_observed_cancellation_generation="
+      << pass1.task.observed_cancellation_generation << "\n";
+  out << "pass1_last_queue_depth="
+      << pass1.task.last_queue_depth << "\n";
   out << "pass1_last_queue_drain_result="
       << pass1.task.last_queue_drain_result << "\n";
   out << "pass1_scheduler_enqueue_count="

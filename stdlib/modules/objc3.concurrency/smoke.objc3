@@ -24,22 +24,27 @@ fn objc3_concurrency_detached_spawn_token(seed: i32) {
   return objc3_runtime_spawn_task_i32(2, seed);
 }
 
-fn objc3_concurrency_join_status(result_code: i32, cancelled: i32) {
+fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32) {
   if (cancelled) {
-    return objc3_runtime_task_on_cancel_i32(result_code);
+    return objc3_runtime_task_on_cancel_i32(executor_tag);
   } else {
-    return objc3_runtime_executor_hop_i32(result_code, cancelled);
+    return objc3_runtime_executor_hop_i32(result_code, executor_tag);
   }
 }
 
 fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) {
   if (child_tasks < 0) {
-    return objc3_runtime_enter_task_group_scope_i32(parent_depth);
+    return objc3_runtime_cancel_task_group_i32(parent_depth);
   } else {
     let scope = objc3_runtime_enter_task_group_scope_i32(parent_depth);
-    let added = objc3_runtime_add_task_group_task_i32(parent_depth);
-    let waited = objc3_runtime_wait_task_group_next_i32(parent_depth);
-    return scope + added + waited + child_tasks;
+    let last = scope;
+    for (let child = 0; child < child_tasks; child = child + 1) {
+      objc3_runtime_add_task_group_task_i32(parent_depth);
+    }
+    for (let child = 0; child < child_tasks; child = child + 1) {
+      last = objc3_runtime_wait_task_group_next_i32(parent_depth);
+    }
+    return last;
   }
 }
 
@@ -55,32 +60,28 @@ fn objc3_concurrency_cancellation_checkpoint(flag: i32) {
   }
 }
 
-fn objc3_concurrency_executor_hop_token(current_executor: i32, target_executor: i32) {
-  if (target_executor) {
-    return objc3_runtime_executor_hop_i32(current_executor, target_executor);
-  } else {
-    return objc3_runtime_executor_hop_i32(current_executor, current_executor);
-  }
+fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32) {
+  return objc3_runtime_executor_hop_i32(value, executor_tag);
 }
 
-fn objc3_concurrency_actor_mailbox_token(actor_seed: i32, pending_messages: i32) {
+fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, pending_messages: i32) {
   if (pending_messages < 0) {
-    return objc3_runtime_actor_bind_executor_i32(actor_seed, actor_seed);
+    return objc3_runtime_actor_bind_executor_i32(actor_handle, executor_tag);
   } else {
-    objc3_runtime_actor_bind_executor_i32(actor_seed, actor_seed);
-    objc3_runtime_actor_mailbox_enqueue_i32(actor_seed, pending_messages, actor_seed);
-    return objc3_runtime_actor_mailbox_drain_next_i32(actor_seed, actor_seed);
+    objc3_runtime_actor_bind_executor_i32(actor_handle, executor_tag);
+    objc3_runtime_actor_mailbox_enqueue_i32(actor_handle, pending_messages, executor_tag);
+    return objc3_runtime_actor_mailbox_drain_next_i32(actor_handle, executor_tag);
   }
 }
 
 fn main() {
-  return objc3_concurrency_spawn_token(2)
-    + objc3_concurrency_child_spawn_token(4)
-    + objc3_concurrency_detached_spawn_token(5)
-    + objc3_concurrency_join_status(7, 0)
-    + objc3_concurrency_task_group_scope_depth(4, 1)
-    + objc3_concurrency_cancellation_query(4)
-    + objc3_concurrency_cancellation_checkpoint(4)
-    + objc3_concurrency_executor_hop_token(4, 9)
-    + objc3_concurrency_actor_mailbox_token(6, 3);
+  objc3_concurrency_spawn_token(2);
+  objc3_concurrency_child_spawn_token(4);
+  objc3_concurrency_detached_spawn_token(5);
+  objc3_concurrency_join_status(7, 4, 0);
+  objc3_concurrency_task_group_scope_depth(4, 2);
+  objc3_concurrency_cancellation_query(4);
+  objc3_concurrency_cancellation_checkpoint(4);
+  objc3_concurrency_executor_hop_token(23, 4);
+  return objc3_concurrency_actor_mailbox_token(41, 4, 3);
 }

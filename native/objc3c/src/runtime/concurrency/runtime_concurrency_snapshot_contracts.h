@@ -109,6 +109,7 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   uint64_t mailbox_enqueue_call_count;
   uint64_t mailbox_drain_call_count;
   uint64_t failed_operation_count;
+  uint64_t actor_executor_binding_count;
   int last_isolation_executor_tag;
   int last_nonisolated_value;
   int last_nonisolated_executor_tag;
@@ -124,6 +125,9 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   int last_mailbox_executor_tag;
   int last_mailbox_depth;
   int last_mailbox_drained_value;
+  int last_expected_executor_tag;
+  int mailbox_identity_guard_passed;
+  int executor_binding_guard_passed;
   int last_operation_succeeded;
   int last_failure_code;
 } objc3_runtime_actor_runtime_state_snapshot;
@@ -133,6 +137,8 @@ enum {
   OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_EXECUTOR = 1,
   OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE = 2,
   OBJC3_RUNTIME_ACTOR_FAILURE_EMPTY_MAILBOX = 3,
+  OBJC3_RUNTIME_ACTOR_FAILURE_UNBOUND_ACTOR = 4,
+  OBJC3_RUNTIME_ACTOR_FAILURE_EXECUTOR_MISMATCH = 5,
 };
 
 // actor lowering/runtime anchor: actor thunk, nonisolated entry,

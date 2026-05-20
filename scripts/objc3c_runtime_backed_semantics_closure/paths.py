@@ -13,7 +13,7 @@ COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 SCRATCH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "runtime-backed-semantics-closure"
 
 LOWERING_CONTRACT_H = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.h"
-LOWERING_CONTRACT_CPP = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.cpp"
+LOWERING_CONTRACT_CPP = ROOT / "native" / "objc3c" / "src" / "lower" / "contracts" / "block_runtime_lowering_semantics_closure_summary.inc"
 IR_EMITTER = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.cpp"
 SEMA_PASS_MANAGER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.cpp"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"

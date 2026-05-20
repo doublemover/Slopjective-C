@@ -18,6 +18,7 @@ struct RuntimeActorState {
   std::uint64_t mailbox_enqueue_call_count = 0;
   std::uint64_t mailbox_drain_call_count = 0;
   std::uint64_t failed_operation_count = 0;
+  std::uint64_t actor_executor_binding_count = 0;
   int last_isolation_executor_tag = 0;
   int last_nonisolated_value = 0;
   int last_nonisolated_executor_tag = 0;
@@ -33,8 +34,12 @@ struct RuntimeActorState {
   int last_mailbox_executor_tag = 0;
   int last_mailbox_depth = 0;
   int last_mailbox_drained_value = 0;
+  int last_expected_executor_tag = 0;
+  int mailbox_identity_guard_passed = 1;
+  int executor_binding_guard_passed = 1;
   int last_operation_succeeded = 1;
   int last_failure_code = OBJC3_RUNTIME_ACTOR_FAILURE_NONE;
+  std::unordered_map<int, int> actor_executor_bindings;
   std::unordered_map<int, std::deque<int>> mailboxes;
 };
 

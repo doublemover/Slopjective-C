@@ -15,6 +15,7 @@ void ResetRuntimeActorRuntimeStateSnapshot(
   snapshot.mailbox_enqueue_call_count = 0;
   snapshot.mailbox_drain_call_count = 0;
   snapshot.failed_operation_count = 0;
+  snapshot.actor_executor_binding_count = 0;
   snapshot.last_isolation_executor_tag = 0;
   snapshot.last_nonisolated_value = 0;
   snapshot.last_nonisolated_executor_tag = 0;
@@ -30,6 +31,9 @@ void ResetRuntimeActorRuntimeStateSnapshot(
   snapshot.last_mailbox_executor_tag = 0;
   snapshot.last_mailbox_depth = 0;
   snapshot.last_mailbox_drained_value = 0;
+  snapshot.last_expected_executor_tag = 0;
+  snapshot.mailbox_identity_guard_passed = 1;
+  snapshot.executor_binding_guard_passed = 1;
   snapshot.last_operation_succeeded = 1;
   snapshot.last_failure_code = OBJC3_RUNTIME_ACTOR_FAILURE_NONE;
 }
@@ -47,6 +51,8 @@ void PopulateRuntimeActorRuntimeStateSnapshot(
   snapshot.mailbox_enqueue_call_count = state.mailbox_enqueue_call_count;
   snapshot.mailbox_drain_call_count = state.mailbox_drain_call_count;
   snapshot.failed_operation_count = state.failed_operation_count;
+  snapshot.actor_executor_binding_count =
+      state.actor_executor_binding_count;
   snapshot.last_isolation_executor_tag = state.last_isolation_executor_tag;
   snapshot.last_nonisolated_value = state.last_nonisolated_value;
   snapshot.last_nonisolated_executor_tag =
@@ -64,6 +70,11 @@ void PopulateRuntimeActorRuntimeStateSnapshot(
   snapshot.last_mailbox_executor_tag = state.last_mailbox_executor_tag;
   snapshot.last_mailbox_depth = state.last_mailbox_depth;
   snapshot.last_mailbox_drained_value = state.last_mailbox_drained_value;
+  snapshot.last_expected_executor_tag = state.last_expected_executor_tag;
+  snapshot.mailbox_identity_guard_passed =
+      state.mailbox_identity_guard_passed;
+  snapshot.executor_binding_guard_passed =
+      state.executor_binding_guard_passed;
   snapshot.last_operation_succeeded = state.last_operation_succeeded;
   snapshot.last_failure_code = state.last_failure_code;
 }

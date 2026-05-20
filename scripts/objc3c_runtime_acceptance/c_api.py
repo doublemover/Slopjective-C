@@ -92,7 +92,7 @@ UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL = (
     "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL = (
-    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-executor-binding-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
 )
 UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL = (
     "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-concurrency-runtime-abi-widening"

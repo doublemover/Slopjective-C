@@ -55,7 +55,7 @@ def main() -> int:
         "abi_surface_preserves_actor_snapshot_symbol": (
             isinstance(abi_surface, dict)
             and abi_surface.get("actor_runtime_state_snapshot_symbol") == "objc3_runtime_copy_actor_runtime_state_for_testing"
-            and abi_surface.get("actor_runtime_model") == "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+            and abi_surface.get("actor_runtime_model") == "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-executor-binding-failure-codes-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
         ),
         "actor_payload_matches_actor_contract": all(
             actor_payload.get(key) == value for key, value in actor_contract["required_actor_probe_payload"].items()

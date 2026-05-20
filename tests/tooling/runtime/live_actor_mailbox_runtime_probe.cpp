@@ -18,6 +18,10 @@ int main() {
       objc3_runtime_actor_hop_to_executor_i32(29, -1);
   const int invalid_actor =
       objc3_runtime_actor_mailbox_enqueue_i32(0, 13, bound);
+  const int unbound_actor =
+      objc3_runtime_actor_mailbox_enqueue_i32(77, 31, bound);
+  const int executor_mismatch =
+      objc3_runtime_actor_mailbox_enqueue_i32(41, 37, bound + 1);
   const int empty_drain =
       objc3_runtime_actor_mailbox_drain_next_i32(41, bound);
   objc3_runtime_actor_runtime_state_snapshot failure_snapshot{};
@@ -38,6 +42,7 @@ int main() {
   std::cout << "mailbox_enqueue_call_count=" << snapshot.mailbox_enqueue_call_count << "\n";
   std::cout << "mailbox_drain_call_count=" << snapshot.mailbox_drain_call_count << "\n";
   std::cout << "failed_operation_count=" << snapshot.failed_operation_count << "\n";
+  std::cout << "actor_executor_binding_count=" << snapshot.actor_executor_binding_count << "\n";
   std::cout << "last_replay_proof_executor_tag=" << snapshot.last_replay_proof_executor_tag << "\n";
   std::cout << "last_race_guard_executor_tag=" << snapshot.last_race_guard_executor_tag << "\n";
   std::cout << "last_isolation_executor_tag=" << snapshot.last_isolation_executor_tag << "\n";
@@ -48,11 +53,16 @@ int main() {
   std::cout << "last_mailbox_executor_tag=" << snapshot.last_mailbox_executor_tag << "\n";
   std::cout << "last_mailbox_depth=" << snapshot.last_mailbox_depth << "\n";
   std::cout << "last_mailbox_drained_value=" << snapshot.last_mailbox_drained_value << "\n";
+  std::cout << "last_expected_executor_tag=" << snapshot.last_expected_executor_tag << "\n";
+  std::cout << "mailbox_identity_guard_passed=" << snapshot.mailbox_identity_guard_passed << "\n";
+  std::cout << "executor_binding_guard_passed=" << snapshot.executor_binding_guard_passed << "\n";
   std::cout << "last_operation_succeeded=" << snapshot.last_operation_succeeded << "\n";
   std::cout << "last_failure_code=" << snapshot.last_failure_code << "\n";
   std::cout << "failure_copy_status=" << failure_copy_status << "\n";
   std::cout << "invalid_executor=" << invalid_executor << "\n";
   std::cout << "invalid_actor=" << invalid_actor << "\n";
+  std::cout << "unbound_actor=" << unbound_actor << "\n";
+  std::cout << "executor_mismatch=" << executor_mismatch << "\n";
   std::cout << "empty_drain=" << empty_drain << "\n";
   std::cout << "failure_failed_operation_count="
             << failure_snapshot.failed_operation_count << "\n";
@@ -60,6 +70,14 @@ int main() {
             << failure_snapshot.last_operation_succeeded << "\n";
   std::cout << "failure_last_failure_code="
             << failure_snapshot.last_failure_code << "\n";
+  std::cout << "failure_actor_executor_binding_count="
+            << failure_snapshot.actor_executor_binding_count << "\n";
+  std::cout << "failure_last_expected_executor_tag="
+            << failure_snapshot.last_expected_executor_tag << "\n";
+  std::cout << "failure_mailbox_identity_guard_passed="
+            << failure_snapshot.mailbox_identity_guard_passed << "\n";
+  std::cout << "failure_executor_binding_guard_passed="
+            << failure_snapshot.executor_binding_guard_passed << "\n";
 
   return (copy_status == 0 && replay == 1 && guard == 1 && isolation == 1 &&
           bound == 1 && enqueued == 23 && drained == 23 &&
@@ -70,6 +88,7 @@ int main() {
           snapshot.mailbox_enqueue_call_count == 1 &&
           snapshot.mailbox_drain_call_count == 1 &&
           snapshot.failed_operation_count == 0 &&
+          snapshot.actor_executor_binding_count == 1 &&
           snapshot.last_replay_proof_executor_tag == 1 &&
           snapshot.last_race_guard_executor_tag == 1 &&
           snapshot.last_isolation_executor_tag == 1 &&
@@ -80,12 +99,20 @@ int main() {
           snapshot.last_mailbox_executor_tag == 1 &&
           snapshot.last_mailbox_depth == 0 &&
           snapshot.last_mailbox_drained_value == 23 &&
+          snapshot.last_expected_executor_tag == 1 &&
+          snapshot.mailbox_identity_guard_passed == 1 &&
+          snapshot.executor_binding_guard_passed == 1 &&
           snapshot.last_operation_succeeded == 1 &&
           snapshot.last_failure_code == OBJC3_RUNTIME_ACTOR_FAILURE_NONE &&
           failure_copy_status == 0 && invalid_executor == 0 &&
-          invalid_actor == 0 && empty_drain == 0 &&
-          failure_snapshot.failed_operation_count == 3 &&
+          invalid_actor == 0 && unbound_actor == 0 &&
+          executor_mismatch == 0 && empty_drain == 0 &&
+          failure_snapshot.failed_operation_count == 5 &&
           failure_snapshot.last_operation_succeeded == 0 &&
+          failure_snapshot.actor_executor_binding_count == 1 &&
+          failure_snapshot.last_expected_executor_tag == 1 &&
+          failure_snapshot.mailbox_identity_guard_passed == 1 &&
+          failure_snapshot.executor_binding_guard_passed == 1 &&
           failure_snapshot.last_failure_code ==
               OBJC3_RUNTIME_ACTOR_FAILURE_EMPTY_MAILBOX)
              ? 0

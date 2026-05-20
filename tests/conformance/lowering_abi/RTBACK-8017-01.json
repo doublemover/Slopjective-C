@@ -5,7 +5,7 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3RuntimeBackedSemanticsClosureSummary",
+    "native/objc3c/src/lower/contracts/block_runtime_lowering_semantics_closure_summary.inc::Objc3RuntimeBackedSemanticsClosureSummary",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp::Objc3IREmitter",
     "native/objc3c/src/sema/objc3_sema_pass_manager.cpp::SemaPassManager::Run",
     "native/objc3c/src/runtime/blocks/block_runtime_api.cpp::objc3_runtime_promote_block_i32",
@@ -47,7 +47,7 @@
       "abi_field_stability": [
         {
           "field_id": "runtime_backed_semantics.contract_id",
-          "contract_anchor": "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3RuntimeBackedSemanticsClosureSummary",
+          "contract_anchor": "native/objc3c/src/lower/contracts/block_runtime_lowering_semantics_closure_summary.inc::Objc3RuntimeBackedSemanticsClosureSummary",
           "stability_property": "The emitted runtime_backed_semantics_closure contract id must remain objc3c.runtime.backed.semantics.closure.v1 until an intentional version bump",
           "must_match_modes": [
             "native-runtime-backed-semantics"

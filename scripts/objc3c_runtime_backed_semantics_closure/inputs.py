@@ -44,6 +44,22 @@ NEGATIVE_FIXTURES = {
         "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "actor_hop_without_async_rejected.objc3",
         "codes": ["O3S289"],
     },
+    "non_actor_actor_hop": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "non_actor_actor_hop_rejected.objc3",
+        "codes": ["O3S342"],
+    },
+    "non_actor_non_sendable_crossing": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "non_actor_non_sendable_crossing_rejected.objc3",
+        "codes": ["O3S343"],
+    },
+    "non_actor_actor_isolated_body": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "non_actor_actor_isolated_body_rejected.objc3",
+        "codes": ["O3S344"],
+    },
+    "nonisolated_actor_isolated_body": {
+        "path": ROOT / "tests" / "tooling" / "fixtures" / "native" / "nonisolated_actor_isolated_body_rejected.objc3",
+        "codes": ["O3S345"],
+    },
 }
 
 DURABLE_REPLAY_DIRS = [

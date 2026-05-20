@@ -1,0 +1,15 @@
+// Expected diagnostic code(s): O3S345.
+module M270B002NonisolatedActorIsolatedBody;
+
+fn actor_isolated_step() -> i32 { return 1; }
+
+actor class M270Mailbox
+- (i32)token __attribute__((objc_nonisolated));
+@end
+
+@implementation M270Mailbox
+- (i32)token __attribute__((objc_nonisolated)) {
+  actor_isolated_step();
+  return 0;
+}
+@end

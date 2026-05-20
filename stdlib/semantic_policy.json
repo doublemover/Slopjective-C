@@ -81,13 +81,13 @@
     "spawn_token": "routes structured spawn through objc3_runtime_spawn_task_i32 with task kind 1 and the caller-provided executor tag",
     "child_spawn_token": "routes structured child spawn through objc3_runtime_spawn_task_i32 with task kind 1 and the caller-provided executor tag",
     "detached_spawn_token": "routes detached spawn through objc3_runtime_spawn_task_i32 with task kind 2 and the caller-provided executor tag",
-    "join_status": "routes cancellation through objc3_runtime_task_on_cancel_i32 and non-cancelled completion through objc3_runtime_executor_hop_i32",
-    "task_group_scope_depth": "routes scope entry, task addition, and next-task waiting through the runtime task-group helper cluster",
+    "join_status": "routes cancellation through objc3_runtime_task_on_cancel_i32 on the supplied executor and non-cancelled completion through objc3_runtime_executor_hop_i32 with the supplied result value and executor tag",
+    "task_group_scope_depth": "routes scope entry, one FIFO task addition and wait per requested child task through the runtime task-group helper cluster; invalid child counts fail closed through objc3_runtime_cancel_task_group_i32",
     "cancellation_query": "routes cancellation observation through objc3_runtime_task_is_cancelled_i32",
     "cancellation_checkpoint": "routes cancellation checkpoints through objc3_runtime_cancel_task_group_i32 when flagged and objc3_runtime_task_is_cancelled_i32 otherwise",
-    "executor_hop_token": "routes executor hops through objc3_runtime_executor_hop_i32",
-    "actor_mailbox_token": "routes actor mailbox binding, enqueue, and drain behavior through the runtime actor mailbox helper cluster",
-    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency",
+    "executor_hop_token": "routes executor hops through objc3_runtime_executor_hop_i32 with distinct value and executor-tag operands",
+    "actor_mailbox_token": "routes actor mailbox binding, enqueue, and drain behavior through the runtime actor mailbox helper cluster with distinct actor-handle and executor-tag operands",
+    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop and actor-mailbox helpers may grow additively inside objc3.concurrency",
     "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
   },
   "system_semantics": {
