@@ -37,9 +37,9 @@ REQUIRED_COVERAGE_TERMS = {
     "protocol": ("protocol",),
     "marshalling": ("marshall", "coerc"),
     "cache_invalidation": ("cache", "proof state"),
-    "strict_fallback": ("fail", "reject", "fallback"),
+    "strict_rejection": ("fail", "reject", "fallback"),
 }
-FORBIDDEN_POLICY_TERMS = ("compatibility shim", "old-mode fallback", "fail open")
+FORBIDDEN_POLICY_TERMS = ("retired adapter route", "old-mode route", "fail open")
 
 
 @dataclass(frozen=True)
@@ -139,17 +139,17 @@ def validate_policy(policy_path: Path = POLICY_PATH) -> PolicyValidationResult:
             if not (ROOT / fixture).is_file():
                 failures.append(f"matrix fixture missing for {row_id}: {fixture}")
 
-    fallback = policy.get("strict_fallback_boundaries", {})
-    if fallback.get("compatibility_shims_allowed") is not False:
-        failures.append("compatibility shims must remain disallowed")
-    if fallback.get("fail_open_allowed") is not False:
+    rejection_boundary = policy.get("strict_rejection_boundaries", {})
+    if rejection_boundary.get("retired_adapter_routes_allowed") is not False:
+        failures.append("retired adapter routes must remain disallowed")
+    if rejection_boundary.get("fail_open_allowed") is not False:
         failures.append("fail-open behavior must remain disallowed")
-    if _as_list(fallback.get("fallback_routes")):
-        failures.append("fallback routes must remain empty")
+    if _as_list(rejection_boundary.get("retired_routes")):
+        failures.append("retired routes must remain empty")
 
     policy_text = str(policy).lower()
     for forbidden in FORBIDDEN_POLICY_TERMS:
-        if forbidden in policy_text and forbidden not in str(fallback.get("rejection_rules", [])).lower():
+        if forbidden in policy_text and forbidden not in str(rejection_boundary.get("rejection_rules", [])).lower():
             failures.append(f"forbidden policy term appears outside rejection rules: {forbidden}")
 
     payload: dict[str, Any] = {

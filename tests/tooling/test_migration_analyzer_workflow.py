@@ -40,7 +40,7 @@ def test_migration_analyzer_contract_covers_required_surfaces_and_actions() -> N
         "rewrite-migration-source",
         "validate-migration-workflow",
     ]
-    assert "report-only output as support" in contract["support_boundary"]
+    assert "standalone report output as a capability basis" in contract["support_boundary"]
 
 
 def test_migration_analyzer_passes_positive_and_fails_closed_negative() -> None:

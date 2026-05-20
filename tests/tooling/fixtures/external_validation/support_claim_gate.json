@@ -5,7 +5,7 @@
   "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
   "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
   "adoption_claim_policy": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
-  "summary_path": "tmp/reports/external-validation/support-claim-gate-summary.json",
+  "summary_path": "tmp/reports/external-validation/claim-gate-summary.json",
   "negative_fixture_root": "tests/tooling/fixtures/external_validation/claim_gate_negative",
   "claim_bindings": [
     {

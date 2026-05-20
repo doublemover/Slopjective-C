@@ -72,11 +72,11 @@ def rewrite_summary_path(source_text: str) -> Path:
     return REWRITE_REPORT_ROOT / rewrite_slugify(source_display) / "source-rewrite-summary.json"
 
 
-def captured_or_materialized_path(captured_text: str, fallback_path: Path) -> str:
+def captured_or_materialized_path(captured_text: str, materialized_path: Path) -> str:
     if captured_text:
         return captured_text
-    if fallback_path.is_file():
-        return fallback_path.relative_to(ROOT).as_posix()
+    if materialized_path.is_file():
+        return materialized_path.relative_to(ROOT).as_posix()
     return ""
 
 

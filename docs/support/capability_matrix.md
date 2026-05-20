@@ -7,6 +7,7 @@ conformance manifests. Markdown projections explain the machine-readable
 truth, but they do not create support claims.
 
 Authoritative inputs:
+
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 - `tests/fixtures/canonical/manifest.json`
@@ -28,22 +29,22 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 ## Support Claim Authority
 
-| Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
-| --- | --- | --- | --- | --- |
-| `objc3c.behavior.arc-cleanup.integration` | `runtime` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration` |
-| `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
-| `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
-| `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
-| `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
-| `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
-| `objc3c.behavior.parser.canonical-syntax` | `parser` | `tests/native/parser/positive/canonical_module_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.parser.core-declarations` |
-| `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
-| `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
-| `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime` | `tests/native/runtime/object_model/interface_method_table_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.interface-method-table` |
-| `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
-| `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
-| `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
-| `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
+| Support claim                                                 | Owner phase | Behavior fixture                                                                     | Command                                                             | Matrix capability                             |
+| ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------------------- |
+| `objc3c.behavior.arc-cleanup.integration`                     | `runtime`   | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3`    | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration`            |
+| `objc3c.behavior.e2e.runnable-smoke`                          | `e2e`       | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                 | `npm run objc3c -- test-behavior-matrix`                            | `compiler.e2e.runnable-smoke`                 |
+| `objc3c.behavior.errors.try-catch-semantics`                  | `sema`      | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`                | `npm run objc3c -- test-runtime-acceptance-fast`                    | `language.errors.try-catch-semantics`         |
+| `objc3c.behavior.ir.module-emission`                          | `ir`        | `tests/native/ir/module/basic_i32_return_main.objc3`                                 | `npm run objc3c -- test-behavior-matrix`                            | `compiler.ir.module-emission`                 |
+| `objc3c.behavior.lowering.error-unwind-cleanup`               | `ir`        | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`              | `npm run objc3c -- test-runtime-acceptance-fast`                    | `compiler.lowering.error-unwind-cleanup`      |
+| `objc3c.behavior.lowering.strict-runtime-dispatch`            | `lowering`  | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`     | `npm run objc3c -- test-behavior-matrix`                            | `compiler.lowering.strict-runtime-dispatch`   |
+| `objc3c.behavior.parser.canonical-syntax`                     | `parser`    | `tests/native/parser/positive/canonical_module_main.objc3`                           | `npm run objc3c -- test-behavior-matrix`                            | `compiler.parser.core-declarations`           |
+| `objc3c.behavior.runtime.concurrency-async-actors`            | `runtime`   | `tests/native/runtime/concurrency/actor_executor_contract.objc3`                     | `npm run objc3c -- test-behavior-matrix`                            | `runtime.concurrency.async-actors`            |
+| `objc3c.behavior.runtime.error-nserror-status-bridge`         | `runtime`   | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`           | `npm run objc3c -- test-runtime-acceptance-fast`                    | `runtime.errors.nserror-status-bridge`        |
+| `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime`   | `tests/native/runtime/object_model/interface_method_table_contract.objc3`            | `npm run objc3c -- test-behavior-matrix`                            | `runtime.object-model.interface-method-table` |
+| `objc3c.behavior.runtime.strict-dispatch-error`               | `runtime`   | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3`     | `npm run objc3c -- test-behavior-matrix`                            | `runtime.dispatch.strict-error`               |
+| `objc3c.behavior.sema.effects-ownership-model`                | `sema`      | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3`      | `npm run objc3c -- test-lowering-runtime-stress`                    | `compiler.sema.effects-ownership-model`       |
+| `objc3c.behavior.sema.typed-flow`                             | `sema`      | `tests/native/sema/types/typed_i32_bool_flow.objc3`                                  | `npm run objc3c -- test-behavior-matrix`                            | `compiler.sema.typed-flow`                    |
+| `objc3c.behavior.stdlib.core-runtime-v1`                      | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke`                            | `stdlib.core.runtime-backed-v1`               |
 
 ## Phase Owner Contract
 

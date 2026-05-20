@@ -53,7 +53,7 @@ def test_release_operations_publication_publishes_rollback_diagnostics() -> None
             "current_version": "3.1.0",
             "default_channel": "stable",
             "default_platform_id": "windows-x64",
-            "platform_support_matrix": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+            "platform_support_matrix": "tmp/artifacts/platform-hardening/objc3c-platform-matrix.json",
             "supported_platform_ids": ["windows-x64"],
             "support_tiers": [{"tier_id": "tier-1", "status": "supported"}],
             "channels": [
@@ -78,7 +78,7 @@ def test_release_operations_publication_publishes_rollback_diagnostics() -> None
             "tests/tooling/fixtures/release_operations/metadata_surface.json"
         ),
         update_manifest_path="tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-        upgrade_support_report_path="tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+        upgrade_support_report_path="tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json",
         channel_catalog_path="tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json",
     )
 

@@ -111,7 +111,7 @@ def _compatibility_gates() -> dict[str, Any]:
             ],
         },
         "unsupported_surfaces": [
-            "stdlib major-version compatibility shims",
+            "stdlib major-version retired adapter routes",
             "alternate stdlib import lanes",
             "runtime helper signature aliases",
             "strict-system capability widening into core profile",

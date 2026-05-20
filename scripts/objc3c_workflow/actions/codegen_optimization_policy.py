@@ -16,7 +16,7 @@ CODEGEN_OPTIMIZATION_POLICY_BACKEND = (
 CODEGEN_OPTIMIZATION_POLICY_VALIDATION_TIER = "policy"
 CODEGEN_OPTIMIZATION_POLICY_GUARANTEE_OWNER = (
     "codegen optimization passes and direct-dispatch lowering stay semantic-preserving, "
-    "matrix-backed, and fail-closed without compatibility shims"
+    "matrix-backed, and fail-closed without retired adapter routes"
 )
 CODEGEN_OPTIMIZATION_POLICY_COMMAND = (
     sys.executable,

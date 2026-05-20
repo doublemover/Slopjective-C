@@ -9,7 +9,7 @@
     "source_truth",
     "optimizer_policy",
     "direct_dispatch_matrix",
-    "strict_fallback_boundaries"
+    "strict_rejection_boundaries"
   ],
   "properties": {
     "contract_id": {
@@ -119,13 +119,13 @@
         }
       }
     },
-    "strict_fallback_boundaries": {
+    "strict_rejection_boundaries": {
       "type": "object",
-      "required": ["compatibility_shims_allowed", "fail_open_allowed", "fallback_routes"],
+      "required": ["retired_adapter_routes_allowed", "fail_open_allowed", "retired_routes"],
       "properties": {
-        "compatibility_shims_allowed": { "const": false },
+        "retired_adapter_routes_allowed": { "const": false },
         "fail_open_allowed": { "const": false },
-        "fallback_routes": {
+        "retired_routes": {
           "type": "array",
           "items": { "type": "string" },
           "maxItems": 0

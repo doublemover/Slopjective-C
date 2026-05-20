@@ -230,10 +230,10 @@
       ]
     }
   ],
-  "strict_fallback_boundaries": {
-    "compatibility_shims_allowed": false,
+  "strict_rejection_boundaries": {
+    "retired_adapter_routes_allowed": false,
     "fail_open_allowed": false,
-    "fallback_routes": [],
+    "retired_routes": [],
     "rejection_rules": [
       "no compatibility dispatch shim",
       "no old-mode route",

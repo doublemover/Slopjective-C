@@ -160,7 +160,7 @@ class ConformanceCorpusSurfaceModel:
             raise SurfaceValidationError("artifact_surface.coverage_index drifted")
         if (
             artifact_surface.get("support_claim_traceability_summary")
-            != "tmp/reports/conformance/support-claim-runnable-evidence-summary.json"
+            != "tmp/reports/conformance/runnable-claim-trace-summary.json"
         ):
             raise SurfaceValidationError("artifact_surface.support_claim_traceability_summary drifted")
 

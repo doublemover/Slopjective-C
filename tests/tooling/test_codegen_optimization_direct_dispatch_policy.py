@@ -58,7 +58,7 @@ def test_direct_dispatch_policy_covers_required_boundaries() -> None:
         "marshalling",
         "nil_receiver",
         "protocol",
-        "strict_fallback",
+        "strict_rejection",
         "super",
     }
 
@@ -81,5 +81,5 @@ def test_policy_schema_and_contract_id_are_stable() -> None:
     text = schema.read_text(encoding="utf-8")
 
     assert CONTRACT_ID == "objc3c.codegen.optimization.direct.dispatch.policy.v1"
-    assert '"compatibility_shims_allowed": { "const": false }' in text
+    assert '"retired_adapter_routes_allowed": { "const": false }' in text
     assert '"fail_open_allowed": { "const": false }' in text

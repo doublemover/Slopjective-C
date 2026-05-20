@@ -8,7 +8,7 @@
   "source_surface_summary": "tmp/reports/external-validation/source-surface-summary.json",
   "intake_replay_summary": "tmp/reports/external-validation/intake-replay-summary.json",
   "publication_summary": "tmp/reports/external-validation/publication-summary.json",
-  "support_claim_gate_summary": "tmp/reports/external-validation/support-claim-gate-summary.json",
+  "support_claim_gate_summary": "tmp/reports/external-validation/claim-gate-summary.json",
   "drill_summary": "tmp/reports/external-validation/drill-summary.json",
   "integration_summary": "tmp/reports/external-validation/integration-summary.json",
   "end_to_end_summary": "tmp/reports/external-validation/end-to-end-summary.json",

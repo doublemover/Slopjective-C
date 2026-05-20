@@ -225,8 +225,8 @@ The checked-in schema and contract surfaces for that artifact are:
 
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
-- generated artifact: `tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`
-- generated summary: `tmp/reports/platform-hardening/platform-support-matrix-summary.json`
+- generated artifact: `tmp/artifacts/platform-hardening/objc3c-platform-matrix.json`
+- generated summary: `tmp/reports/platform-hardening/platform-matrix-summary.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The generated summary family for platform hardening is selected by the

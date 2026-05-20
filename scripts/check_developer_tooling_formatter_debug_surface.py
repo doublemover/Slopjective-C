@@ -44,11 +44,11 @@ def editor_dump_path(source_text: str) -> Path:
     return editor_paths_for_source(resolve_editor_source(source_text)).editor_surface
 
 
-def captured_or_materialized_path(captured_text: str, fallback_path: Path) -> str:
+def captured_or_materialized_path(captured_text: str, materialized_path: Path) -> str:
     if captured_text:
         return captured_text
-    if fallback_path.is_file():
-        return repo_rel(fallback_path)
+    if materialized_path.is_file():
+        return repo_rel(materialized_path)
     return ""
 
 

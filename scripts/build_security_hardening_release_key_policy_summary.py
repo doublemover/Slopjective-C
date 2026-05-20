@@ -21,7 +21,7 @@ UPSTREAM_OUTPUT_PRODUCERS = {
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json": ("validate-release-foundation",),
     "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json": ("validate-release-foundation",),
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json": ("validate-release-operations",),
-    "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json": ("validate-release-operations",),
+    "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json": ("validate-release-operations",),
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json": ("validate-release-operations",),
     "tmp/reports/release-foundation/publication-summary.json": ("validate-release-foundation",),
     "tmp/reports/release-operations/publication-summary.json": ("validate-release-operations",),

@@ -64,7 +64,7 @@ EXTERNAL_VALIDATION_TARGETS: dict[str, ExternalValidationTarget] = {
         "check-external-support-claim-gate",
         EXTERNAL_VALIDATION_CLAIM_GATE_PY,
         EXTERNAL_VALIDATION_OWNER_CONTRACT_ID,
-        "tmp/reports/external-validation/support-claim-gate-summary.json",
+        "tmp/reports/external-validation/claim-gate-summary.json",
         "support and adoption claim gate over accepted external evidence",
     ),
 }

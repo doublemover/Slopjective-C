@@ -174,7 +174,7 @@ def _runtime_object_model_runnable_catalog() -> dict[str, Any]:
         "schema_version": 1,
         "policy": {
             "tmp_source_truth_allowed": False,
-            "generated_report_boundary": "tmp/reports/conformance/support-claim-runnable-evidence-summary.json",
+            "generated_report_boundary": "tmp/reports/conformance/runnable-claim-trace-summary.json",
         },
         "rows": [
             {

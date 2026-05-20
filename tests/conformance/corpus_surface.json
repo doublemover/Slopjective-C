@@ -173,7 +173,7 @@
   "artifact_surface": {
     "surface_summary": "tmp/reports/conformance/corpus-surface-summary.json",
     "coverage_index": "tmp/reports/conformance/corpus-index.json",
-    "support_claim_traceability_summary": "tmp/reports/conformance/support-claim-runnable-evidence-summary.json",
+    "support_claim_traceability_summary": "tmp/reports/conformance/runnable-claim-trace-summary.json",
     "integration_summary": "tmp/reports/conformance/corpus-integration-summary.json",
     "runnable_end_to_end_summary": "tmp/reports/conformance/corpus-runnable-end-to-end-summary.json",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",

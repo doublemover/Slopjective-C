@@ -15,7 +15,7 @@ TEMP_REPORT_ROOT = ROOT / "tmp" / "reports"
 TEMP_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts"
 RELEASE_EVIDENCE_INDEX = TEMP_REPORT_ROOT / "release_evidence" / "evidence-index.json"
 UPDATE_MANIFEST = TEMP_ARTIFACT_ROOT / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
-UPGRADE_SUPPORT_REPORT = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+UPGRADE_SUPPORT_REPORT = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 CHANNEL_CATALOG = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
 TRUST_REPORT = TEMP_ARTIFACT_ROOT / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 

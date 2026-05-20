@@ -78,7 +78,7 @@
       "claim_boundary": "manual planning surface; no ABI parity claim"
     }
   ],
-  "support_boundary": "The analyzer parses checked-in migration input JSON and source text to produce diagnostics and rewrite plans. It does not accept retired Objective-C 2 source as compiler input, does not claim Swift or C++ ABI parity, and does not treat report-only output as support.",
+  "support_boundary": "The analyzer parses checked-in migration input JSON and source text to produce diagnostics and rewrite plans. It does not accept retired Objective-C 2 source as compiler input, does not claim Swift or C++ ABI parity, and does not treat standalone report output as a capability basis.",
   "fail_closed_conditions": [
     "input contract_id is missing or unsupported",
     "required migration surfaces are absent",

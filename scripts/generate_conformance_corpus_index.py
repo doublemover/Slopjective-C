@@ -21,7 +21,7 @@ SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG_PATH = (
 )
 INDEX_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-index.json"
 SUPPORT_CLAIM_TRACEABILITY_SUMMARY_PATH = (
-    ROOT / "tmp" / "reports" / "conformance" / "support-claim-runnable-evidence-summary.json"
+    ROOT / "tmp" / "reports" / "conformance" / "runnable-claim-trace-summary.json"
 )
 INDEX_CONTRACT_ID = "objc3c.conformance.corpus.index.v1"
 SUPPORT_CLAIM_TRACEABILITY_CONTRACT_ID = (

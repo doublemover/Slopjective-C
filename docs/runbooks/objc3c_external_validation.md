@@ -113,7 +113,7 @@ Stable machine-owned summaries:
 - `tmp/reports/external-validation/source-surface-summary.json`
 - `tmp/reports/external-validation/intake-replay-summary.json`
 - `tmp/reports/external-validation/publication-summary.json`
-- `tmp/reports/external-validation/support-claim-gate-summary.json`
+- `tmp/reports/external-validation/claim-gate-summary.json`
 - `tmp/reports/external-validation/drill-summary.json`
 - `tmp/reports/external-validation/integration-summary.json`
 - `tmp/reports/external-validation/end-to-end-summary.json`

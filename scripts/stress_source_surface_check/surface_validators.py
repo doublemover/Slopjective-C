@@ -130,11 +130,11 @@ def validate_claim_gate(
         require(isinstance(fail_closed_by, list) and bool(fail_closed_by), f"stress claim gate claim {claim_id} missing fail_closed_by")
 
         for report_path in evidence_reports:
-            require(isinstance(report_path, str) and report_path.startswith("tmp/reports/stress/"), f"stress claim gate claim {claim_id} has invalid evidence report")
-            require(report_path in known_report_contracts, f"stress claim gate claim {claim_id} evidence report is not workflow-required")
+            require(isinstance(report_path, str) and report_path.startswith("tmp/reports/stress/"), f"stress claim gate claim {claim_id} has invalid generated report")
+            require(report_path in known_report_contracts, f"stress claim gate claim {claim_id} generated report is not workflow-required")
         for durable_input in durable_inputs:
             require(isinstance(durable_input, str) and bool(durable_input), f"stress claim gate claim {claim_id} has invalid durable input")
-            require(not durable_input.startswith("tmp/"), f"stress claim gate claim {claim_id} uses tmp as source of truth")
+            require(not durable_input.startswith("tmp/"), f"stress claim gate claim {claim_id} uses tmp as durable input")
             require_path(durable_input, kind=f"{claim_id} durable input")
         for guard_path in fail_closed_by:
             require(isinstance(guard_path, str) and bool(guard_path), f"stress claim gate claim {claim_id} has invalid fail-closed guard")

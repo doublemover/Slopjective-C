@@ -29,7 +29,7 @@
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
     "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+    "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   ],
   "required_reports": [

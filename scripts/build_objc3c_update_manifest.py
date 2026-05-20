@@ -18,9 +18,9 @@ REPORT_PATH = ROOT / "tmp" / "reports" / "release-operations" / "update-manifest
 MANIFEST_PATH = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 PACKAGE_CHANNELS_SUMMARY = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 RELEASE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
-PLATFORM_SUPPORT_MATRIX = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
-PLATFORM_SUPPORT_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-support-matrix-summary.json"
-UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+PLATFORM_SUPPORT_MATRIX = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-matrix.json"
+PLATFORM_SUPPORT_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-matrix-summary.json"
+UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 
 
 def require_file(path: Path, owner_action: str) -> None:

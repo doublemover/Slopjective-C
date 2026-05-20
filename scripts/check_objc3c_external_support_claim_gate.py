@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "external_validation"
 REPRO_CORPUS = FIXTURE_ROOT / "repro_corpus.json"
 CLAIM_GATE = FIXTURE_ROOT / "support_claim_gate.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "external-validation" / "support-claim-gate-summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "external-validation" / "claim-gate-summary.json"
 
 CORPUS_CONTRACT_ID = "objc3c.external_validation.repro_corpus.v1"
 GATE_CONTRACT_ID = "objc3c.external_validation.support_claim_gate.v1"

@@ -33,7 +33,7 @@
     "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
     "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
     "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1",
-    "tmp/reports/external-validation/support-claim-gate-summary.json": "objc3c.external_validation.support_claim_gate.summary.v1",
+    "tmp/reports/external-validation/claim-gate-summary.json": "objc3c.external_validation.support_claim_gate.summary.v1",
     "tmp/reports/external-validation/integration-summary.json": "objc3c.external_validation.integration.summary.v1"
   },
   "hard_cutover_guardrails": {

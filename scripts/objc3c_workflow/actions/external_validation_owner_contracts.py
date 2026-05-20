@@ -105,7 +105,7 @@ EXTERNAL_VALIDATION_OWNER_CONTRACT = ExternalValidationOwnerContract(
             "objc3c.external_validation.publication.summary.v1",
         ),
         (
-            "tmp/reports/external-validation/support-claim-gate-summary.json",
+            "tmp/reports/external-validation/claim-gate-summary.json",
             "objc3c.external_validation.support_claim_gate.summary.v1",
         ),
         (

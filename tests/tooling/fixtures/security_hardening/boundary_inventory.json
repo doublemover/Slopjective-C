@@ -185,7 +185,7 @@
     "tmp/reports/distribution-credibility/publication-summary.json",
     "tmp/reports/distribution-credibility/end-to-end-summary.json",
     "tmp/reports/platform-hardening/integration-summary.json",
-    "tmp/reports/release_evidence/evidence-index.json"
+    "tmp/reports/release_proof/index.json"
   ],
   "gap_claims": [
     "no hosted advisory service claim",

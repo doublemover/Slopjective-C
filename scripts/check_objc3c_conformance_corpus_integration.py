@@ -20,7 +20,7 @@ SUITE_GATE_PS1 = ROOT / "scripts" / "check_conformance_suite.ps1"
 SURFACE_SUMMARY = ROOT / "tmp" / "reports" / "conformance" / "corpus-surface-summary.json"
 INDEX_SUMMARY = ROOT / "tmp" / "reports" / "conformance" / "corpus-index.json"
 SUPPORT_CLAIM_TRACEABILITY_SUMMARY = (
-    ROOT / "tmp" / "reports" / "conformance" / "support-claim-runnable-evidence-summary.json"
+    ROOT / "tmp" / "reports" / "conformance" / "runnable-claim-trace-summary.json"
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.conformance.corpus.integration.summary.v1"

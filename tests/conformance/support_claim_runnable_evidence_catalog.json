@@ -7,7 +7,7 @@
   ],
   "policy": {
     "source_truth": "checked-in conformance rows, native fixtures, runtime probes, and canonical support manifests",
-    "generated_report_boundary": "tmp/reports/conformance/support-claim-runnable-evidence-summary.json",
+    "generated_report_boundary": "tmp/reports/conformance/runnable-claim-trace-summary.json",
     "tmp_source_truth_allowed": false,
     "required_public_command_prefix": "npm run objc3c -- ",
     "positive_negative_rule": "claim rows must carry at least one durable positive executable evidence path and at least one durable negative or strict-error evidence path"

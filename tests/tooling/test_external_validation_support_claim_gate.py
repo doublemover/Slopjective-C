@@ -63,7 +63,7 @@ def test_external_support_claim_gate_writes_summary(tmp_path: Path) -> None:
         / "tests"
         / "external-support-claim-gate"
         / tmp_path.name
-        / "support-claim-gate-summary.json"
+        / "claim-gate-summary.json"
     )
 
     assert gate.main(["--summary", str(summary_path)]) == 0
