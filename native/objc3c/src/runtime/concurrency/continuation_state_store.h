@@ -24,6 +24,8 @@ enum RuntimeContinuationFailureCode {
   kRuntimeContinuationFailureInvalidExecutor = 8,
   kRuntimeContinuationFailureAlreadyFailed = 9,
   kRuntimeContinuationFailureSlotExhausted = 10,
+  kRuntimeContinuationFailureNotHandedOff = 11,
+  kRuntimeContinuationFailureExecutorMismatch = 12,
 };
 
 enum class RuntimeContinuationLifecycleState {

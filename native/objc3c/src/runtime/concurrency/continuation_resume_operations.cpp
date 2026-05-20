@@ -1,6 +1,7 @@
 #include "runtime/concurrency/continuation_resume_operations.h"
 
 #include "runtime/concurrency/continuation_state_store.h"
+#include "runtime/concurrency/executor.h"
 
 namespace objc3c::runtime {
 
@@ -32,7 +33,8 @@ RuntimeContinuationRecord *FindContinuationRecord(
 
   const auto found = state.continuation_slots.find(slot);
   if (found == state.continuation_slots.end()) {
-    state.last_operation_failure_code = kRuntimeContinuationFailureUnknownHandle;
+    state.last_operation_failure_code =
+        kRuntimeContinuationFailureUnknownHandle;
     return nullptr;
   }
 
@@ -54,7 +56,8 @@ RuntimeContinuationRecord *FindContinuationRecord(
     return nullptr;
   }
   if (record.lifecycle_state == RuntimeContinuationLifecycleState::kFailed) {
-    state.last_operation_failure_code = kRuntimeContinuationFailureAlreadyFailed;
+    state.last_operation_failure_code =
+        kRuntimeContinuationFailureAlreadyFailed;
     return nullptr;
   }
 
@@ -91,6 +94,16 @@ int HandoffRuntimeAsyncContinuationToExecutor(
         kRuntimeContinuationFailureInvalidExecutor;
     return RejectContinuationOperation(state);
   }
+  if (!RuntimeExecutorTagIsValid(executor_tag)) {
+    state.last_operation_failure_code =
+        kRuntimeContinuationFailureInvalidExecutor;
+    return RejectContinuationOperation(state);
+  }
+  if (record->executor_tag != executor_tag) {
+    state.last_operation_failure_code =
+        kRuntimeContinuationFailureExecutorMismatch;
+    return RejectContinuationOperation(state);
+  }
   record->handoff_executor_tag = executor_tag;
   record->lifecycle_state = RuntimeContinuationLifecycleState::kHandedOff;
   return continuation_handle;
@@ -106,6 +119,12 @@ int ResumeRuntimeAsyncContinuation(RuntimeContinuationState &state,
       FindContinuationRecord(state, continuation_handle);
   if (record == nullptr) {
     state.last_resume_return_value = 0;
+    return RejectContinuationOperation(state);
+  }
+  if (record->lifecycle_state !=
+      RuntimeContinuationLifecycleState::kHandedOff) {
+    state.last_resume_return_value = 0;
+    state.last_operation_failure_code = kRuntimeContinuationFailureNotHandedOff;
     return RejectContinuationOperation(state);
   }
   if (result_value == 0) {
