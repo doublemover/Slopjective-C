@@ -6,6 +6,7 @@ function Get-ManifestProvenanceCoreToolchainFiles {
     "artifacts/bin/objc3c-native.exe",
     "artifacts/bin/objc3c-frontend-c-api-runner.exe",
     "artifacts/lib/objc3_runtime.lib",
+    "scripts/__init__.py",
     "scripts/build_objc3c_native.ps1",
     "scripts/objc3c_native_compile.ps1",
     "scripts/objc3c_shared/__init__.py",

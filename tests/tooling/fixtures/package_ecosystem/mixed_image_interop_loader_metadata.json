@@ -51,6 +51,24 @@
           "metadata_section": "__objc3c_package"
         }
       ],
+      "bridge_surfaces": [
+        {
+          "bridge_kind": "objcxx",
+          "source_fixture": "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3",
+          "symbol": "cppBridge",
+          "metadata_name": "CppBridge",
+          "header": "Bridge.hpp",
+          "source_range": "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3:6:1-6:121"
+        },
+        {
+          "bridge_kind": "swift",
+          "source_fixture": "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3",
+          "symbol": "swiftBridge",
+          "metadata_name": "SwiftBridge",
+          "swift_visibility": "private",
+          "source_range": "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3:12:1-12:80"
+        }
+      ],
       "package_execution": {
         "entry_fixture": "showcase/patchKit/main.objc3",
         "public_action": "package-runnable-toolchain",
@@ -60,12 +78,20 @@
         {
           "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_power_of_two.objc3",
           "diagnostic_code": "O3PKG8052",
-          "source_range": "4:80-4:111"
+          "source_range": "4:80-4:111",
+          "rejection_kind": "unsupported"
         },
         {
           "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
           "diagnostic_code": "O3PKG8052",
-          "source_range": "4:80-4:116"
+          "source_range": "4:80-4:116",
+          "rejection_kind": "malformed"
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3",
+          "diagnostic_code": "O3PKG8053",
+          "source_range": "4:73-4:151",
+          "rejection_kind": "unsafe"
         }
       ],
       "tamper_rejection": {
@@ -111,6 +137,24 @@
           "metadata_section": "__objc3c_header"
         }
       ],
+      "bridge_surfaces": [
+        {
+          "bridge_kind": "objcxx",
+          "source_fixture": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+          "symbol": "ffiHeaderBridge",
+          "metadata_name": "BridgeProviderExtrasGate",
+          "header": "BridgeProviderExtras.h",
+          "source_range": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3:4:1-4:149"
+        },
+        {
+          "bridge_kind": "swift",
+          "source_fixture": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+          "symbol": "ffiInbound",
+          "metadata_name": "BridgeProvider.forward",
+          "swift_visibility": "public",
+          "source_range": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3:3:1-3:220"
+        }
+      ],
       "package_execution": {
         "entry_fixture": "stdlib/modules/objc3.system/module.objc3",
         "public_action": "validate-stdlib-program",
@@ -118,9 +162,10 @@
       },
       "negative_fixtures": [
         {
-          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_number.objc3",
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
           "diagnostic_code": "O3PKG8052",
-          "source_range": "4:80-4:108"
+          "source_range": "4:73-4:154",
+          "rejection_kind": "conflicting"
         }
       ],
       "tamper_rejection": {

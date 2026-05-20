@@ -9,6 +9,7 @@ from ..case_result import CaseResult
 from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
+    INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE,
 )
 from ..paths import ROOT
 from ..probes import compile_probe, parse_key_value_output, run_probe
@@ -67,9 +68,33 @@ def check_runtime_package_loader_bridge_abi_case(
         "expected runtime bridge-generation ABI probe to preserve the bridge artifact paths",
     )
 
+    fail_closed_probe = ROOT / Path(INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE)
+    fail_closed_exe = case_dir / "package_loader_fail_closed_diagnostics_probe.exe"
+    compile_probe(clangxx, fail_closed_probe, fail_closed_exe, [])
+    fail_closed_payload = parse_key_value_output(
+        run_probe(fail_closed_exe),
+        "runtime package-loader fail-closed ABI diagnostics probe",
+    )
+    for field_name in (
+        "fail_closed_statuses",
+        "diagnostics_present",
+        "no_public_fallback_claim",
+    ):
+        expect(
+            fail_closed_payload.get(field_name) == 1,
+            f"expected runtime package-loader fail-closed ABI probe to preserve {field_name}",
+        )
+    expect(
+        fail_closed_payload.get("packaging_null_status")
+        == fail_closed_payload.get("invalid_descriptor_status")
+        and fail_closed_payload.get("bridge_null_status")
+        == fail_closed_payload.get("invalid_descriptor_status"),
+        "expected runtime package-loader null descriptors to fail closed with the stable invalid-descriptor status",
+    )
+
     return CaseResult(
         case_id="runtime-package-loader-bridge-abi",
-        probe="linked-runtime-abi-probes",
+        probe="linked-runtime-abi-and-fail-closed-diagnostics-probes",
         fixture=None,
         claim_class="runtime-linked-execution",
         passed=True,
@@ -80,6 +105,12 @@ def check_runtime_package_loader_bridge_abi_case(
             "bridge_generation_ready": bridge_payload.get("bridge_generation_ready"),
             "header_artifact_relative_path": bridge_payload.get(
                 "header_artifact_relative_path"
+            ),
+            "fail_closed_status": fail_closed_payload.get(
+                "invalid_descriptor_status"
+            ),
+            "fail_closed_diagnostics_present": fail_closed_payload.get(
+                "diagnostics_present"
             ),
         },
     )

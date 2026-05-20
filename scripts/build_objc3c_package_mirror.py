@@ -147,6 +147,21 @@ def main() -> int:
         "network_policy": mirror["network_policy"],
         "hosted_registry_support": publication["hosted_registry_support"],
         "interop_loader_support": publication["interop_loader_support"],
+        "interop_loader_metadata_bridge_surface_count": (
+            interop_loader_metadata.get("bridge_surface_count")
+            if isinstance(interop_loader_metadata, dict)
+            else 0
+        ),
+        "interop_loader_metadata_objcxx_bridge_surface_count": (
+            interop_loader_metadata.get("objcxx_bridge_surface_count")
+            if isinstance(interop_loader_metadata, dict)
+            else 0
+        ),
+        "interop_loader_metadata_swift_bridge_surface_count": (
+            interop_loader_metadata.get("swift_bridge_surface_count")
+            if isinstance(interop_loader_metadata, dict)
+            else 0
+        ),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, summary)

@@ -108,6 +108,9 @@
         "source",
         "package_count",
         "package_ids",
+        "bridge_surface_count",
+        "objcxx_bridge_surface_count",
+        "swift_bridge_surface_count",
         "tamper_rejection_diagnostic"
       ],
       "additionalProperties": false,
@@ -130,6 +133,18 @@
             "minLength": 1
           }
         },
+        "bridge_surface_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objcxx_bridge_surface_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "swift_bridge_surface_count": {
+          "type": "integer",
+          "minimum": 1
+        },
         "tamper_rejection_diagnostic": {
           "const": "O3PKG8054"
         }
@@ -147,6 +162,7 @@
         "abi_alignment",
         "foreign_types",
         "mixed_images",
+        "bridge_surfaces",
         "package_execution",
         "positive_fixtures",
         "negative_diagnostics",
@@ -200,6 +216,13 @@
           "items": {
             "type": "object"
           }
+        },
+        "bridge_surfaces": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "minItems": 1
         },
         "package_execution": {
           "type": "object"

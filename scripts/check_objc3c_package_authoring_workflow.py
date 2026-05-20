@@ -91,6 +91,13 @@ def main() -> int:
         "lock interop loader tamper diagnostic drifted",
         failures,
     )
+    expect(
+        isinstance(interop_loader_metadata, dict)
+        and interop_loader_metadata.get("objcxx_bridge_surface_count", 0) > 0
+        and interop_loader_metadata.get("swift_bridge_surface_count", 0) > 0,
+        "lock interop loader ObjC++/Swift bridge surface counts drifted",
+        failures,
+    )
     expect(package_bridge_exists, f"package authoring workflow missing package bridge {package_bridge}", failures)
     expect(not missing_actions, "package authoring workflow missing required actions", failures)
 
@@ -105,6 +112,19 @@ def main() -> int:
         "provenance_count": len(provenance) if isinstance(provenance, list) else 0,
         "interop_loader_metadata_package_count": (
             interop_loader_metadata.get("package_count") if isinstance(interop_loader_metadata, dict) else 0
+        ),
+        "interop_loader_metadata_bridge_surface_count": (
+            interop_loader_metadata.get("bridge_surface_count") if isinstance(interop_loader_metadata, dict) else 0
+        ),
+        "interop_loader_metadata_objcxx_bridge_surface_count": (
+            interop_loader_metadata.get("objcxx_bridge_surface_count")
+            if isinstance(interop_loader_metadata, dict)
+            else 0
+        ),
+        "interop_loader_metadata_swift_bridge_surface_count": (
+            interop_loader_metadata.get("swift_bridge_surface_count")
+            if isinstance(interop_loader_metadata, dict)
+            else 0
         ),
         "tamper_rejection_diagnostic": (
             interop_loader_metadata.get("tamper_rejection_diagnostic")

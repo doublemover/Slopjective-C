@@ -45,11 +45,33 @@ def test_package_loader_interop_fixture_covers_headers_abi_and_mixed_images() ->
         "__objc3c_interop",
         "__objc3c_package",
     }
+    assert {surface["bridge_kind"] for surface in patchkit["bridge_surfaces"]} == {
+        "objcxx",
+        "swift",
+    }
+    assert any(
+        surface["bridge_kind"] == "objcxx"
+        and surface["metadata_name"] == "CppBridge"
+        and surface["header"] == "Bridge.hpp"
+        for surface in patchkit["bridge_surfaces"]
+    )
+    assert any(
+        surface["bridge_kind"] == "swift"
+        and surface["metadata_name"] == "SwiftBridge"
+        and surface["swift_visibility"] == "private"
+        for surface in patchkit["bridge_surfaces"]
+    )
     assert patchkit["tamper_rejection"]["diagnostic_code"] == PACKAGE_LOADER_INTEROP_TAMPER_CODE
 
     system = metadata["stdlib:objc3.system"]
     assert "BridgeProvider.h" in system["header_imports"]
     assert system["negative_diagnostics"][0]["diagnostic_code"] == "O3PKG8052"
+    assert {diagnostic["rejection_kind"] for package in metadata.values() for diagnostic in package["negative_diagnostics"]} == {
+        "conflicting",
+        "malformed",
+        "unsafe",
+        "unsupported",
+    }
 
 
 def test_package_loader_interop_channel_summary_is_distribution_ready() -> None:
@@ -69,10 +91,26 @@ def test_package_loader_interop_channel_summary_is_distribution_ready() -> None:
     assert summary["abi_alignment_count"] == 2
     assert summary["foreign_type_count"] == 2
     assert summary["mixed_image_count"] == 3
+    assert summary["bridge_surface_count"] == 4
+    assert summary["objcxx_bridge_surface_count"] == 2
+    assert summary["swift_bridge_surface_count"] == 2
     assert summary["positive_fixture_count"] == 5
-    assert summary["negative_fixture_count"] == 3
+    assert summary["negative_fixture_count"] == 4
     assert summary["tamper_rejection_diagnostic"] == PACKAGE_LOADER_INTEROP_TAMPER_CODE
     assert "network-resolved interop metadata" in summary["unsupported_surfaces"]
+
+
+def test_package_loader_interop_metadata_digest_is_replay_stable() -> None:
+    first = normalized_interop_metadata()
+    second = normalized_interop_metadata()
+
+    assert {
+        package_id: metadata["digest"]
+        for package_id, metadata in first.items()
+    } == {
+        package_id: metadata["digest"]
+        for package_id, metadata in second.items()
+    }
 
 
 def test_package_loader_interop_tamper_mismatch_reports_stable_code() -> None:

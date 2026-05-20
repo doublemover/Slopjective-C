@@ -62,8 +62,11 @@ def sample_inputs() -> PackageChannelInputs:
             "abi_alignment_count": 2,
             "foreign_type_count": 2,
             "mixed_image_count": 3,
+            "bridge_surface_count": 4,
+            "objcxx_bridge_surface_count": 2,
+            "swift_bridge_surface_count": 2,
             "positive_fixture_count": 5,
-            "negative_fixture_count": 3,
+            "negative_fixture_count": 4,
             "tamper_rejection_diagnostic": "O3PKG8054",
             "unsupported_surfaces": [
                 "hosted registry mixed-image restore",
@@ -99,6 +102,8 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     assert manifest["implemented_channels"] == IMPLEMENTED_CHANNELS
     assert manifest["interop_loader_metadata"]["support"] == "local-mixed-image-metadata-digest-checked"
     assert manifest["interop_loader_metadata"]["header_import_count"] == 5
+    assert manifest["interop_loader_metadata"]["objcxx_bridge_surface_count"] == 2
+    assert manifest["interop_loader_metadata"]["swift_bridge_surface_count"] == 2
     assert manifest["portable_archive"].endswith("objc3c-windows-x64-portable.zip")
     assert report["manifest_path"].endswith("objc3c-package-channels-manifest.json")
     assert report["implemented_channels"] == IMPLEMENTED_CHANNELS

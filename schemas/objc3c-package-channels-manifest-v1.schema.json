@@ -78,6 +78,9 @@
         "abi_alignment_count",
         "foreign_type_count",
         "mixed_image_count",
+        "bridge_surface_count",
+        "objcxx_bridge_surface_count",
+        "swift_bridge_surface_count",
         "positive_fixture_count",
         "negative_fixture_count",
         "tamper_rejection_diagnostic",
@@ -119,6 +122,18 @@
           "minimum": 1
         },
         "mixed_image_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bridge_surface_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objcxx_bridge_surface_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "swift_bridge_surface_count": {
           "type": "integer",
           "minimum": 1
         },

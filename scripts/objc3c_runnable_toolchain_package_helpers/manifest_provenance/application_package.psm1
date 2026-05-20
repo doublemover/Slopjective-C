@@ -23,7 +23,28 @@ function Get-ManifestProvenanceApplicationPackageFiles {
     "scripts/build_objc3c_package_mirror.py",
     "scripts/check_objc3c_package_registry_mirror_reproducibility.py",
     "scripts/check_objc3c_package_ecosystem_integration.py",
-    "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py"
+    "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
+    "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+    "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3",
+    "tests/tooling/fixtures/native/interop_semantic_model_positive.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_number.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_power_of_two.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_foreign_type_non_string.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3"
   )
 }
 

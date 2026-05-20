@@ -13,9 +13,24 @@ from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
 )
+from ..fixture_compile_runner import run_fixture_compile
 from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 from ..probes import compile_probe, parse_key_value_output, run_probe
+
+
+def _write_tampered_runtime_library_import_surface(
+    source_path: Path,
+    target_path: Path,
+) -> None:
+    payload = json.loads(source_path.read_text(encoding="utf-8"))
+    payload["runtime_support_library_archive_relative_path"] = (
+        "artifacts/lib/tampered_objc3_runtime.lib"
+    )
+    target_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
 
 
 def check_live_package_loading_interop_runtime_implementation_case(
@@ -100,6 +115,34 @@ def check_live_package_loading_interop_runtime_implementation_case(
         "expected compile artifacts and runtime snapshots to agree on package-loading readiness",
     )
 
+    tampered_surface = (
+        case_dir / "provider.tampered-runtime-library.runtime-import-surface.json"
+    )
+    _write_tampered_runtime_library_import_surface(
+        provider_compile_dir / "module.runtime-import-surface.json",
+        tampered_surface,
+    )
+    tampered_result, _ = run_fixture_compile(
+        consumer_fixture,
+        case_dir / "consumer-tampered-runtime-library",
+        extra_args=[
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(tampered_surface),
+        ],
+        write_provenance=False,
+    )
+    tampered_diagnostics = (
+        case_dir / "consumer-tampered-runtime-library" / "module.diagnostics.txt"
+    )
+    tampered_output = f"{tampered_result.stderr}\n{tampered_result.stdout}"
+    if tampered_diagnostics.is_file():
+        tampered_output += "\n" + tampered_diagnostics.read_text(encoding="utf-8")
+    expect(
+        tampered_result.returncode != 0,
+        "expected live package-loading interop compile to fail closed on runtime library import-surface drift",
+    )
     return CaseResult(
         case_id="live-package-loading-interop-runtime-implementation",
         probe="compile-artifact-plus-linked-runtime-snapshot-integration",
@@ -114,6 +157,7 @@ def check_live_package_loading_interop_runtime_implementation_case(
                 "header_artifact_relative_path"
             ),
             "link_plan_ready": link_plan.get("ready"),
+            "tampered_runtime_library_rejected": tampered_result.returncode != 0,
         },
     )
 

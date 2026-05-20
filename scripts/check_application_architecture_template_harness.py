@@ -8,7 +8,9 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_application_materialization.copy_materialization import project_template_paths
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.paths import display_path
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
@@ -17,6 +19,8 @@ from objc3c_tooling.subprocesses import run_timed
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "project_template_workspace_semantics.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "template-harness-summary.json"
+TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
+TEMPLATE_REPORT_ROOT = ROOT / "tmp" / "reports" / "project-template"
 DEFAULT_EXAMPLE = "auroraBoard"
 
 
@@ -48,6 +52,11 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    paths = project_template_paths(
+        artifact_root=TEMPLATE_ARTIFACT_ROOT,
+        report_root=TEMPLATE_REPORT_ROOT,
+        example_id=DEFAULT_EXAMPLE,
+    )
     step = run_step(
         "materialize-project-template",
         public_workflow_command(
@@ -61,6 +70,10 @@ def main() -> int:
     expect(step["exit_code"] == 0, "materialize-project-template failed", failures)
     template_path_text = extract_output_line(str(step["stdout"]), "template_path:")
     harness_path_text = extract_output_line(str(step["stdout"]), "harness_path:")
+    if not template_path_text and paths.template_manifest.is_file():
+        template_path_text = display_path(paths.template_manifest, root=ROOT)
+    if not harness_path_text and paths.harness_path.is_file():
+        harness_path_text = display_path(paths.harness_path, root=ROOT)
     expect(bool(template_path_text), "materialize-project-template did not publish template_path", failures)
     expect(bool(harness_path_text), "materialize-project-template did not publish harness_path", failures)
 

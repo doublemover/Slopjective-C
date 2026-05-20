@@ -64,6 +64,9 @@ INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE = (
 INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE = (
     "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
 )
+INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE = (
+    "tests/tooling/runtime/package_loader_fail_closed_diagnostics_probe.cpp"
+)
 
 
 __all__ = [name for name in globals() if name.isupper()]

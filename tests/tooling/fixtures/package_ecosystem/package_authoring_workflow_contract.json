@@ -46,7 +46,7 @@
     "showcase examples become local app package ids with explicit stdlib dependencies",
     "dependencies are sorted deterministically by package edge",
     "each package references a provenance entry with source path and replay command",
-    "packages with checked-in C/ObjC interop loader metadata carry stable metadata digests in the generated lock",
+    "packages with checked-in C/ObjC/ObjC++/Swift interop loader metadata carry stable metadata digests and bridge-surface counts in the generated lock",
     "generated locks are replayable through objc3c workflow actions"
   ]
 }

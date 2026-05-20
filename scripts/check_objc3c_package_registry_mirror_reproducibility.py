@@ -172,6 +172,12 @@ def main() -> int:
     expect(publication.get("network_resolution_support") == "unsupported", "network resolution support claim drifted", failures)
     expect(mirror_summary.get("status") == "PASS", "mirror summary did not report PASS", failures)
     expect(mirror_summary.get("package_count") == len(lock_ids), "mirror summary package count drifted", failures)
+    expect(
+        mirror_summary.get("interop_loader_metadata_objcxx_bridge_surface_count", 0) > 0
+        and mirror_summary.get("interop_loader_metadata_swift_bridge_surface_count", 0) > 0,
+        "mirror summary ObjC++/Swift interop bridge surface counts drifted",
+        failures,
+    )
     expect(package_bridge_exists, f"registry/mirror workflow missing package bridge {package_bridge}", failures)
     expect(not missing_actions, "registry/mirror workflow missing required actions", failures)
     interop_failures = collect_interop_loader_metadata_failures(lock, mirror, registry, publication)
@@ -188,6 +194,13 @@ def main() -> int:
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
         "package_count": len(lock_ids),
         "interop_loader_metadata_package_count": len(package_interop_metadata(lock)),
+        "interop_loader_metadata_bridge_surface_count": mirror_summary.get("interop_loader_metadata_bridge_surface_count"),
+        "interop_loader_metadata_objcxx_bridge_surface_count": mirror_summary.get(
+            "interop_loader_metadata_objcxx_bridge_surface_count"
+        ),
+        "interop_loader_metadata_swift_bridge_surface_count": mirror_summary.get(
+            "interop_loader_metadata_swift_bridge_surface_count"
+        ),
         "network_policy": mirror.get("network_policy"),
         "hosted_registry_support": publication.get("hosted_registry_support"),
         "interop_loader_support": publication.get("interop_loader_support"),

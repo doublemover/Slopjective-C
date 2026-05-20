@@ -157,6 +157,7 @@ def main() -> int:
 
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(LOCK_PATH, lock)
+    interop_summary = lock["interop_loader_metadata"]
     summary = {
         "contract_id": "objc3c.package_ecosystem.package_lock.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -167,8 +168,11 @@ def main() -> int:
         "dependency_count": len(dependencies),
         "provenance_count": len(provenance),
         "interop_loader_metadata_package_count": len(interop_by_package),
-        "interop_loader_metadata_source": lock["interop_loader_metadata"]["source"],
-        "tamper_rejection_diagnostic": lock["interop_loader_metadata"]["tamper_rejection_diagnostic"],
+        "interop_loader_metadata_source": interop_summary["source"],
+        "interop_loader_metadata_bridge_surface_count": interop_summary["bridge_surface_count"],
+        "interop_loader_metadata_objcxx_bridge_surface_count": interop_summary["objcxx_bridge_surface_count"],
+        "interop_loader_metadata_swift_bridge_surface_count": interop_summary["swift_bridge_surface_count"],
+        "tamper_rejection_diagnostic": interop_summary["tamper_rejection_diagnostic"],
         "digest_input_count": len(digest_inputs),
         "source_package_surface_contract_id": package_surface.get("contract_id"),
         "showcase_portfolio_contract_id": showcase_portfolio.get("contract_id"),

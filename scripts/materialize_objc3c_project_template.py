@@ -123,11 +123,14 @@ def main() -> int:
             display_path(paths.template_source, root=ROOT),
         ),
     )
+    benchmark_report_path = paths.report_root / "runtime-inspector-benchmark.json"
     benchmark_step = run_step(
         "benchmark-runtime-inspector",
         public_workflow_command(
             "benchmark-runtime-inspector",
             display_path(paths.template_source, root=ROOT),
+            "--summary-out",
+            display_path(benchmark_report_path, root=ROOT),
         ),
     )
 
@@ -138,6 +141,8 @@ def main() -> int:
     integration_report = extract_line_value(str(integration_step["stdout"]), "summary_path:")
     playground_workspace = extract_line_value(str(playground_step["stdout"]), "workspace_path:")
     benchmark_report = extract_line_value(str(benchmark_step["stdout"]), "summary_path:")
+    if not benchmark_report and benchmark_report_path.is_file():
+        benchmark_report = display_path(benchmark_report_path, root=ROOT)
 
     expect(integration_report != "", "inspect-bonus-tool-integration did not publish summary_path", failures)
     expect(playground_workspace != "", "materialize-playground-workspace did not publish workspace_path", failures)

@@ -41,7 +41,11 @@ def main() -> int:
     compile_steps = [
         step
         for step in steps
-        if isinstance(step, dict) and str(step.get("public_entrypoint")) == "compile:objc3c"
+        if isinstance(step, dict)
+        and (
+            str(step.get("workflow_action")) == "compile-objc3c"
+            or str(step.get("public_entrypoint")) == "compile:objc3c"
+        )
     ]
     example_ids = [str(step.get("example_id")) for step in compile_steps]
     expect(

@@ -48,7 +48,7 @@
     "local registry package ids must match the generated lock package ids",
     "publication metadata must fail closed for hosted registry support claims",
     "mixed-image interop loader metadata digests must match between lock, mirror, and local registry packages",
-    "mixed-image interop loader metadata payloads must match between lock, mirror, and local registry packages when digests are preserved",
+    "mixed-image interop loader metadata payloads, including ObjC++ and Swift bridge-surface rows, must match between lock, mirror, and local registry packages when digests are preserved",
     "mirror validation must declare no-network-during-validation",
     "all generated paths remain under tmp/artifacts/package-ecosystem"
   ]
