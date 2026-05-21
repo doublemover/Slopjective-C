@@ -98,7 +98,12 @@ npm run objc3c -- validate-getting-started
 ```
 
 The generated template and reports stay under `tmp/`; the checked-in tutorial,
-showcase source, and developer-experience contract remain the source truth.
+showcase source, showcase workspace manifest, and developer-experience contract
+remain the source truth. The materialized template includes both
+`tmp/artifacts/project-template/auroraBoard/src/main.objc3` and
+`tmp/artifacts/project-template/auroraBoard/workspace.json` so the generated
+directory is usable as a clean-room starter workspace, not just a loose copied
+source file.
 
 ## Step 4 Choose The Next Learning Path
 

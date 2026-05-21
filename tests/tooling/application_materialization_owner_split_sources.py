@@ -76,7 +76,10 @@ def project_template_manifest_for_tmp(tmp_path: Path) -> dict[str, Any]:
     return project_template_manifest_payload(
         root=tmp_path,
         example_id="auroraBoard",
-        example_record={"source": "showcase/auroraBoard/main.objc3"},
+        example_record={
+            "source": "showcase/auroraBoard/main.objc3",
+            "workspace_manifest": "showcase/auroraBoard/workspace.json",
+        },
         paths=paths,
         application_architecture_contracts={
             "first_party_testing": tmp_path / "contracts" / "first.json",

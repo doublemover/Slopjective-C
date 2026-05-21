@@ -58,6 +58,7 @@ class ProjectTemplatePaths:
     template_root: Path
     report_root: Path
     template_source: Path
+    template_workspace_manifest: Path
     template_readme: Path
     template_manifest: Path
     compile_artifact_root: Path

@@ -59,6 +59,48 @@
     ],
     "minimum_machine_applicable_fixit_count": 2
   },
+  "clean_room_project_usability": {
+    "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+    "source_truth_paths": [
+      "showcase/auroraBoard/main.objc3",
+      "showcase/auroraBoard/workspace.json",
+      "showcase/portfolio.json",
+      "docs/tutorials/getting_started.md",
+      "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json"
+    ],
+    "generated_output_paths": [
+      "tmp/artifacts/project-template/auroraBoard",
+      "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+      "tmp/artifacts/project-template/auroraBoard/workspace.json",
+      "tmp/artifacts/project-template/auroraBoard/build",
+      "tmp/reports/project-template/auroraBoard/demo-harness.json"
+    ],
+    "template_workspace_manifest": "tmp/artifacts/project-template/auroraBoard/workspace.json",
+    "required_template_manifest_fields": [
+      "template_source",
+      "template_workspace_manifest",
+      "template_compile_contract",
+      "clean_room_usability"
+    ],
+    "required_public_commands": [
+      {
+        "stage": "materialize",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- materialize-project-template --example auroraBoard"
+      },
+      {
+        "stage": "compile",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module"
+      },
+      {
+        "stage": "inspect",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3"
+      }
+    ],
+    "generated_output_policy": "Generated project-template paths under tmp are reproducible outputs, not authoritative source truth."
+  },
   "onboarding_command_map": {
     "support_claim": "objc3c.behavior.tooling.first-run-product-path",
     "doc_surface": "docs/tutorials/getting_started.md",

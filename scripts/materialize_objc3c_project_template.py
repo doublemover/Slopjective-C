@@ -84,6 +84,13 @@ def main() -> int:
     if not example_source.is_file():
         print(f"missing showcase source: {display_path(example_source)}", file=sys.stderr)
         return 1
+    example_workspace_manifest = ROOT / str(example_record.get("workspace_manifest", ""))
+    if not example_workspace_manifest.is_file():
+        print(
+            f"missing showcase workspace manifest: {display_path(example_workspace_manifest)}",
+            file=sys.stderr,
+        )
+        return 1
 
     paths = project_template_paths(
         artifact_root=TEMPLATE_ARTIFACT_ROOT,
@@ -92,13 +99,18 @@ def main() -> int:
     )
     application_architecture_contracts = application_architecture_contract_paths(ROOT)
 
-    materialize_project_template_source(example_source=example_source, paths=paths)
+    materialize_project_template_source(
+        example_source=example_source,
+        example_workspace_manifest=example_workspace_manifest,
+        paths=paths,
+    )
     write_lines(
         paths.template_readme,
         project_template_readme_lines(
             example_id=args.example,
             source_origin=example_record["source"],
             template_source=paths.template_source,
+            template_workspace_manifest=paths.template_workspace_manifest,
             compile_artifact_root=paths.compile_artifact_root,
             root=ROOT,
         ),

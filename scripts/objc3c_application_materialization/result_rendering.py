@@ -32,27 +32,43 @@ def project_template_readme_lines(
     example_id: str,
     source_origin: object,
     template_source: Path,
+    template_workspace_manifest: Path,
     compile_artifact_root: Path,
     root: Path,
 ) -> list[str]:
     from objc3c_tooling.paths import display_path
 
+    template_source_path = display_path(template_source, root=root)
+    template_workspace_path = display_path(template_workspace_manifest, root=root)
+    compile_root_path = display_path(compile_artifact_root, root=root)
     return [
         f"# {example_id} Template",
         "",
-        "This machine-owned template is derived from the checked-in showcase portfolio.",
+        "This generated starter workspace is derived from checked-in showcase sources.",
+        "Treat this directory as a reproducible output; the checked-in showcase source, workspace manifest, and tutorial contract remain the source truth.",
         "",
         f"- source example: `{source_origin}`",
-        f"- generated source: `{display_path(template_source, root=root)}`",
-        "- live commands:",
+        f"- generated source: `{template_source_path}`",
+        f"- generated workspace manifest: `{template_workspace_path}`",
+        f"- generated compile outputs: `{compile_root_path}`",
+        "",
+        "Normal developer loop:",
         f"  - `npm run objc3c -- materialize-project-template --example {example_id}`",
         (
             "  - `npm run objc3c -- compile-objc3c "
-            f"{display_path(template_source, root=root)} --out-dir "
-            f"{display_path(compile_artifact_root, root=root)} --emit-prefix module`"
+            f"{template_source_path} --out-dir "
+            f"{compile_root_path} --emit-prefix module`"
         ),
-        f"  - `npm run objc3c -- materialize-playground-workspace {display_path(template_source, root=root)}`",
-        f"  - `npm run objc3c -- benchmark-runtime-inspector {display_path(template_source, root=root)}`",
+        f"  - `npm run objc3c -- inspect-compile-observability {template_source_path}`",
+        "  - `npm run objc3c -- validate-getting-started`",
+        "",
+        "If compilation fails:",
+        f"  - open `{compile_root_path}/module.diagnostics.json`",
+        f"  - rerun `npm run objc3c -- inspect-compile-observability {template_source_path}`",
+        "",
+        "Additional public tooling checks:",
+        f"  - `npm run objc3c -- materialize-playground-workspace {template_source_path}`",
+        f"  - `npm run objc3c -- benchmark-runtime-inspector {template_source_path}`",
         "  - `npm run objc3c -- inspect-bonus-tool-integration`",
     ]
 

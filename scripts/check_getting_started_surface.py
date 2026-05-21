@@ -583,6 +583,104 @@ def _validate_diagnostic_fixit_metadata(diagnostic_metadata: Any, *, root: Path)
     }
 
 
+def _validate_clean_room_project_usability(
+    clean_room: Any,
+    *,
+    public_command_records: Sequence[PublicCommandRecord],
+    registered_actions: set[str],
+    root: Path,
+) -> dict[str, Any]:
+    expect(isinstance(clean_room, dict), "clean_room_project_usability must be an object")
+    expect(
+        clean_room.get("support_claim") == "objc3c.behavior.tooling.first-run-product-path",
+        "clean-room project usability support claim drifted",
+    )
+    source_truth_paths = _require_string_list(
+        clean_room.get("source_truth_paths"),
+        "clean_room_project_usability.source_truth_paths",
+    )
+    generated_output_paths = _require_string_list(
+        clean_room.get("generated_output_paths"),
+        "clean_room_project_usability.generated_output_paths",
+    )
+    source_truth_set = set(source_truth_paths)
+    generated_output_set = set(generated_output_paths)
+    expect(
+        source_truth_set.isdisjoint(generated_output_set),
+        "clean-room source truth must not overlap generated outputs",
+    )
+    for path_text in source_truth_paths:
+        expect(
+            not path_text.startswith("tmp/"),
+            f"clean-room source truth must not depend on tmp output: {path_text}",
+        )
+        _repo_file(path_text, root=root, label="clean-room source truth")
+    for path_text in generated_output_paths:
+        expect(
+            path_text.startswith("tmp/"),
+            f"clean-room generated output path must stay under tmp/: {path_text}",
+        )
+
+    template_workspace = str(clean_room.get("template_workspace_manifest", ""))
+    expect(
+        template_workspace in generated_output_set,
+        "clean-room template workspace manifest must be a generated output",
+    )
+    expect(
+        template_workspace.endswith("/workspace.json"),
+        "clean-room template workspace manifest path must end in workspace.json",
+    )
+
+    required_manifest_fields = _require_string_list(
+        clean_room.get("required_template_manifest_fields"),
+        "clean_room_project_usability.required_template_manifest_fields",
+    )
+    expect(
+        {"template_source", "template_workspace_manifest", "clean_room_usability"}.issubset(
+            set(required_manifest_fields)
+        ),
+        "clean-room required template manifest fields no longer prove source, workspace, and policy",
+    )
+
+    command_specs = clean_room.get("required_public_commands")
+    expect(isinstance(command_specs, list), "clean_room_project_usability.required_public_commands must be a list")
+    observed_actions: list[str] = []
+    record_lookup = _record_lookup(public_command_records)
+    for index, entry in enumerate(command_specs):
+        expect(isinstance(entry, dict), f"clean-room public command {index} must be an object")
+        command = str(entry.get("command", ""))
+        action, tokens = _parse_public_command_with_context(
+            command,
+            f"clean-room public command {index}",
+        )
+        expect(action in registered_actions, f"clean-room command action is not public: {action}")
+        observed_actions.append(action)
+        doc_surface = entry.get("source_path")
+        if isinstance(doc_surface, str) and doc_surface:
+            expect(
+                (doc_surface, command) in record_lookup,
+                f"clean-room required command is missing from docs: {command}",
+            )
+        if action == "compile-objc3c":
+            expect("--out-dir" in tokens and "--emit-prefix" in tokens, "clean-room compile command is incomplete")
+
+    policy = str(clean_room.get("generated_output_policy", ""))
+    expect("tmp" in policy and "authoritative" in policy, "clean-room generated output policy must reject tmp as authority")
+    expect(
+        {"materialize-project-template", "compile-objc3c", "inspect-compile-observability"}.issubset(
+            set(observed_actions)
+        ),
+        "clean-room project usability must cover materialize, compile, and inspect actions",
+    )
+    return {
+        "support_claim": clean_room["support_claim"],
+        "source_truth_paths": source_truth_paths,
+        "generated_output_paths": generated_output_paths,
+        "template_workspace_manifest": template_workspace,
+        "actions": observed_actions,
+    }
+
+
 def _validate_onboarding_command_map(
     onboarding_map: Any,
     *,
@@ -711,6 +809,12 @@ def validate_developer_experience_completion_contract(
         ),
         "diagnostic_fixit_metadata": _validate_diagnostic_fixit_metadata(
             contract.get("diagnostic_fixit_metadata"),
+            root=root,
+        ),
+        "clean_room_project_usability": _validate_clean_room_project_usability(
+            contract.get("clean_room_project_usability"),
+            public_command_records=public_command_records,
+            registered_actions=registered_actions,
             root=root,
         ),
         "onboarding_command_map": _validate_onboarding_command_map(

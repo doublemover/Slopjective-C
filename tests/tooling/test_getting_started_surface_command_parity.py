@@ -270,6 +270,15 @@ def test_developer_experience_completion_contract_validates_examples_and_diagnos
     assert payload["template_compile_contract"]["compile_action"] == "compile-objc3c"
     assert payload["migration_examples"]["automatic_edit_count"] >= 6
     assert payload["diagnostic_fixit_metadata"]["machine_applicable_fixit_count"] >= 2
+    assert payload["clean_room_project_usability"]["template_workspace_manifest"] == (
+        "tmp/artifacts/project-template/auroraBoard/workspace.json"
+    )
+    assert "showcase/auroraBoard/workspace.json" in payload["clean_room_project_usability"]["source_truth_paths"]
+    assert {
+        "materialize-project-template",
+        "compile-objc3c",
+        "inspect-compile-observability",
+    }.issubset(set(payload["clean_room_project_usability"]["actions"]))
     assert payload["onboarding_command_map"]["stage_ids"] == contract["onboarding_command_map"]["required_stage_ids"]
     assert "inspect-compile-observability" in payload["onboarding_command_map"]["actions"]
 
@@ -365,6 +374,77 @@ def test_onboarding_command_map_rejects_non_tmp_outputs(tmp_path: Path) -> None:
                 "inspect-compile-observability",
                 "materialize-project-template",
                 "validate-getting-started",
+            },
+            root=tmp_path,
+        )
+
+
+def test_clean_room_project_usability_rejects_tmp_source_truth(tmp_path: Path) -> None:
+    doc = tmp_path / "docs" / "tutorials" / "getting_started.md"
+    doc.parent.mkdir(parents=True)
+    source = tmp_path / "showcase" / "auroraBoard" / "main.objc3"
+    workspace = tmp_path / "showcase" / "auroraBoard" / "workspace.json"
+    source.parent.mkdir(parents=True)
+    source.write_text("module AuroraBoard;\n", encoding="utf-8")
+    workspace.write_text("{}\n", encoding="utf-8")
+    doc.write_text(
+        "```sh\n"
+        "npm run objc3c -- materialize-project-template --example auroraBoard\n"
+        "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module\n"
+        "npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    commands = [
+        "npm run objc3c -- materialize-project-template --example auroraBoard",
+        "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module",
+        "npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3",
+    ]
+    records = [
+        checker.PublicCommandRecord(
+            source_path="docs/tutorials/getting_started.md",
+            line=index + 2,
+            command=command,
+            action=checker._parse_public_command(command)[0],
+            source_kind="fenced-doc-command",
+        )
+        for index, command in enumerate(commands)
+    ]
+    contract = {
+        "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+        "source_truth_paths": [
+            "showcase/auroraBoard/main.objc3",
+            "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+        ],
+        "generated_output_paths": [
+            "tmp/artifacts/project-template/auroraBoard",
+            "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+            "tmp/artifacts/project-template/auroraBoard/workspace.json",
+            "tmp/artifacts/project-template/auroraBoard/build",
+        ],
+        "template_workspace_manifest": "tmp/artifacts/project-template/auroraBoard/workspace.json",
+        "required_template_manifest_fields": [
+            "template_source",
+            "template_workspace_manifest",
+            "clean_room_usability",
+        ],
+        "required_public_commands": [
+            {
+                "source_path": "docs/tutorials/getting_started.md",
+                "command": "npm run objc3c -- materialize-project-template --example auroraBoard",
+            }
+        ],
+        "generated_output_policy": "tmp outputs are not authoritative source truth",
+    }
+
+    with pytest.raises(RuntimeError, match="source truth must not overlap generated outputs"):
+        checker._validate_clean_room_project_usability(
+            contract,
+            public_command_records=records,
+            registered_actions={
+                "materialize-project-template",
+                "compile-objc3c",
+                "inspect-compile-observability",
             },
             root=tmp_path,
         )

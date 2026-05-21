@@ -21,6 +21,8 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
     showcase_source = root / "showcase" / "auroraBoard" / "main.objc3"
     showcase_source.parent.mkdir(parents=True, exist_ok=True)
     showcase_source.write_text("module AuroraBoard;\n", encoding="utf-8")
+    showcase_workspace = root / "showcase" / "auroraBoard" / "workspace.json"
+    showcase_workspace.write_text('{"name":"auroraBoard"}\n', encoding="utf-8")
     portfolio_path.write_text(
         json.dumps(
             {
@@ -28,6 +30,7 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
                     {
                         "id": "auroraBoard",
                         "source": "showcase/auroraBoard/main.objc3",
+                        "workspace_manifest": "showcase/auroraBoard/workspace.json",
                     }
                 ]
             },
@@ -109,6 +112,13 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
     template_payload = json.loads(template_path.read_text(encoding="utf-8"))
     harness_payload = json.loads(harness_path.read_text(encoding="utf-8"))
     assert template_payload["contract_id"] == "objc3c.project.template.surface.v1"
+    assert template_payload["workspace_origin"] == "showcase/auroraBoard/workspace.json"
+    assert template_payload["template_workspace_manifest"] == (
+        "tmp/artifacts/project-template/auroraBoard/workspace.json"
+    )
+    assert (
+        root / "tmp" / "artifacts" / "project-template" / "auroraBoard" / "workspace.json"
+    ).is_file()
     assert template_payload["application_architecture_testing_contracts"] == {
         "first_party_testing": "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json",
         "project_template_workspace": "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
@@ -139,7 +149,22 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
         "validate-stdlib-program",
         "validate-runnable-stdlib-program",
     ]
+    clean_room = template_payload["clean_room_usability"]
+    assert clean_room["support_claim"] == "objc3c.behavior.tooling.first-run-product-path"
+    assert "showcase/auroraBoard/workspace.json" in clean_room["source_truth_paths"]
+    assert all(
+        path.startswith("tmp/") for path in clean_room["generated_output_paths"]
+    )
+    assert any(
+        step["stage"] == "inspect"
+        and step["command"]
+        == "npm run objc3c -- inspect-compile-observability tmp/artifacts/project-template/auroraBoard/src/main.objc3"
+        for step in clean_room["normal_developer_loop"]
+    )
     assert harness_payload["contract_id"] == "objc3c.project.template.demo.harness.v1"
     assert harness_payload["ok"] is True
+    assert harness_payload["template_workspace_manifest"] == (
+        "tmp/artifacts/project-template/auroraBoard/workspace.json"
+    )
     assert harness_payload["compile_step"]["name"] == "compile-template-source"
     assert harness_payload["compile_step"]["exit_code"] == 0

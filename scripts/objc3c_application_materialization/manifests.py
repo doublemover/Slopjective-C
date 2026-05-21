@@ -82,26 +82,35 @@ def project_template_manifest_payload(
     paths: ProjectTemplatePaths,
     application_architecture_contracts: dict[str, Path],
 ) -> dict[str, object]:
+    template_source = display_path(paths.template_source, root=root)
+    template_workspace_manifest = display_path(paths.template_workspace_manifest, root=root)
+    compile_artifact_root = display_path(paths.compile_artifact_root, root=root)
+    public_compile_command = (
+        "npm run objc3c -- compile-objc3c "
+        f"{template_source} "
+        "--out-dir "
+        f"{compile_artifact_root} "
+        "--emit-prefix module"
+    )
+    public_inspect_command = f"npm run objc3c -- inspect-compile-observability {template_source}"
+    source_origin = str(example_record["source"])
+    workspace_origin = str(example_record["workspace_manifest"])
     return {
         "contract_id": PROJECT_TEMPLATE_CONTRACT_ID,
         "schema_version": 1,
         "example_id": example_id,
-        "source_origin": str(example_record["source"]),
+        "source_origin": source_origin,
+        "workspace_origin": workspace_origin,
         "template_root": display_path(paths.template_root, root=root),
-        "template_source": display_path(paths.template_source, root=root),
+        "template_source": template_source,
+        "template_workspace_manifest": template_workspace_manifest,
         "template_readme": display_path(paths.template_readme, root=root),
         "template_compile_contract": {
             "compile_action": "compile-objc3c",
-            "source": display_path(paths.template_source, root=root),
-            "artifact_root": display_path(paths.compile_artifact_root, root=root),
+            "source": template_source,
+            "artifact_root": compile_artifact_root,
             "emit_prefix": "module",
-            "public_command": (
-                "npm run objc3c -- compile-objc3c "
-                f"{display_path(paths.template_source, root=root)} "
-                "--out-dir "
-                f"{display_path(paths.compile_artifact_root, root=root)} "
-                "--emit-prefix module"
-            ),
+            "public_command": public_compile_command,
             "expected_artifacts": [
                 "module.obj",
                 "module.ll",
@@ -135,6 +144,50 @@ def project_template_manifest_payload(
             "benchmark-runtime-inspector",
             "inspect-bonus-tool-integration",
         ],
+        "clean_room_usability": {
+            "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+            "source_truth_paths": [
+                source_origin,
+                workspace_origin,
+                "showcase/portfolio.json",
+                "docs/tutorials/getting_started.md",
+                "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
+            ],
+            "generated_output_paths": [
+                display_path(paths.template_root, root=root),
+                template_source,
+                template_workspace_manifest,
+                compile_artifact_root,
+                display_path(paths.harness_path, root=root),
+            ],
+            "generated_output_policy": "Generated project-template paths are reproducible tmp outputs; checked-in source and contract files remain authoritative.",
+            "normal_developer_loop": [
+                {
+                    "stage": "materialize",
+                    "command": f"npm run objc3c -- materialize-project-template --example {example_id}",
+                },
+                {
+                    "stage": "compile",
+                    "command": public_compile_command,
+                },
+                {
+                    "stage": "inspect",
+                    "command": public_inspect_command,
+                },
+                {
+                    "stage": "validate",
+                    "command": "npm run objc3c -- validate-getting-started",
+                },
+            ],
+            "actionable_diagnostic_routes": [
+                {
+                    "failure": "compile-template-source",
+                    "diagnostic_artifact": f"{compile_artifact_root}/module.diagnostics.json",
+                    "next_step_command": public_inspect_command,
+                    "next_step": "Read the structured diagnostic artifact, then inspect the same source through the public compile-observability action.",
+                }
+            ],
+        },
         "recommended_validation_actions": [
             "validate-showcase",
             "validate-runnable-showcase",
@@ -161,6 +214,7 @@ def project_harness_payload(
         "failures": failures,
         "template_contract": display_path(paths.template_manifest, root=root),
         "template_source": display_path(paths.template_source, root=root),
+        "template_workspace_manifest": display_path(paths.template_workspace_manifest, root=root),
         "compile_artifact_root": display_path(paths.compile_artifact_root, root=root),
         "compile_step": {
             "name": compile_step.get("name"),
