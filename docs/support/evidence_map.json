@@ -679,6 +679,16 @@
       "path": "docs/runbooks/objc3c_object_model_closure.md"
     },
     {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_runtime_capability_public_split.py"
+    },
+    {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "test",
@@ -2116,6 +2126,16 @@
       "capability_id": "language.advanced-runtime-closure",
       "evidence_kind": "doc",
       "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_runtime_capability_public_split.py"
     },
     {
       "capability_id": "compiler.architecture.module-decomposition",

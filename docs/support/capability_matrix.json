@@ -884,6 +884,14 @@
         {
           "kind": "doc",
           "path": "docs/runbooks/objc3c_object_model_closure.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_capability_public_split.py"
         }
       ]
     },
@@ -2439,6 +2447,14 @@
         {
           "kind": "doc",
           "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_capability_public_split.py"
         }
       ]
     },

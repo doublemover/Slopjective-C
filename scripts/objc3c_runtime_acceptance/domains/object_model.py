@@ -14,6 +14,9 @@ from objc3c_runtime_acceptance.domains.object_model_cases import (
     check_runtime_library_case,
     check_typed_dispatch_abi_probe_case,
 )
+from objc3c_runtime_acceptance.domains.object_model_capability_split import (
+    build_object_model_capability_split_contract,
+)
 from objc3c_runtime_acceptance.domains.object_model_surface_cases import (
     build_runtime_category_attachment_merged_dispatch_surface,
     build_runtime_class_metaclass_protocol_realization_surface,
@@ -57,4 +60,8 @@ def exported_case_names() -> list[str]:
     return sorted(_EXPORTED_CASE_NAMES)
 
 
-__all__ = [*_EXPORTED_CASE_NAMES, "exported_case_names"]
+__all__ = [
+    *_EXPORTED_CASE_NAMES,
+    "build_object_model_capability_split_contract",
+    "exported_case_names",
+]
