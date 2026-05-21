@@ -10,6 +10,7 @@
     "pass_order_contract",
     "pass_registry",
     "semantic_preservation_contracts",
+    "proof_model",
     "verification_gates",
     "performance_governance",
     "unsupported_policy"
@@ -170,6 +171,114 @@
         }
       },
       "minItems": 1
+    },
+    "proof_model": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "issue_ref",
+        "required_public_actions",
+        "proof_definitions",
+        "candidate_input_fields",
+        "result_payload_fields",
+        "required_verdict_fields",
+        "verifier_passes",
+        "pass_proof_contracts",
+        "proof_case_fixture_path"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.optimization.semantic.proof_model.v1"
+        },
+        "issue_ref": { "const": "#8191" },
+        "required_public_actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "validate-optimization-proof-model" }
+        },
+        "proof_definitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["proof_id", "source", "fail_closed_if_missing"],
+            "properties": {
+              "proof_id": { "type": "string" },
+              "source": { "type": "string" },
+              "fail_closed_if_missing": { "const": true }
+            }
+          },
+          "minItems": 1
+        },
+        "candidate_input_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "source_graph_node_ids" }
+        },
+        "result_payload_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "success_claim" }
+        },
+        "required_verdict_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "semantic_equivalence_verdict" }
+        },
+        "verifier_passes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["verifier_id", "verifies"],
+            "properties": {
+              "verifier_id": { "type": "string" },
+              "verifies": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "pass_proof_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "pass_id",
+              "ordinal",
+              "required_proof_ids",
+              "invalidation_contract",
+              "semantic_equivalence_verdict",
+              "runtime_abi_safety_verdict",
+              "source_map_debug_impact_verdict",
+              "ownership_arc_safety_verdict",
+              "package_import_abi_identity_verdict",
+              "unsupported_skip_behavior",
+              "success_claim_on_skip",
+              "fail_closed_diagnostic"
+            ],
+            "properties": {
+              "pass_id": { "type": "string" },
+              "ordinal": { "type": "integer" },
+              "required_proof_ids": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "invalidation_contract": { "type": "string" },
+              "semantic_equivalence_verdict": { "const": "required" },
+              "runtime_abi_safety_verdict": { "const": "required" },
+              "source_map_debug_impact_verdict": { "const": "required" },
+              "ownership_arc_safety_verdict": { "const": "required" },
+              "package_import_abi_identity_verdict": { "const": "required" },
+              "unsupported_skip_behavior": {
+                "const": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM"
+              },
+              "success_claim_on_skip": { "const": false },
+              "fail_closed_diagnostic": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "proof_case_fixture_path": { "type": "string" }
+      }
     },
     "verification_gates": {
       "type": "array",

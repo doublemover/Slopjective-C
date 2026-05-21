@@ -17,11 +17,14 @@ from objc3c_tooling.paths import ROOT, repo_rel
 
 
 CONTRACT_ID = "objc3c.optimization.semantic.pipeline.v1"
+PROOF_MODEL_CONTRACT_ID = "objc3c.optimization.semantic.proof_model.v1"
+PROOF_CASES_CONTRACT_ID = "objc3c.optimization.semantic.proof_cases.v1"
 PIPELINE_PATH = (
     ROOT / "tests" / "tooling" / "fixtures" / "semantic_optimization_pipeline" / "pipeline.json"
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "semantic-optimization-pipeline.json"
-REQUIRED_ISSUES = {8175}
+PROOF_MODEL_REPORT_PATH = ROOT / "tmp" / "reports" / "optimization-proof-model.json"
+REQUIRED_ISSUES = {8175, 8191}
 REQUIRED_SUPPORT_CLAIM = "objc3c.behavior.semantic_optimization_pipeline"
 REQUIRED_PASS_ORDER = [
     "semantic-precondition-gate",
@@ -63,6 +66,8 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
     "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
     "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
+    "objc3c.evidence.semantic_optimization_pipeline.proof_model",
+    "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
 }
 RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
 REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
@@ -100,6 +105,119 @@ REQUIRED_RUNTIME_EQUIVALENCE_CHECKED_IN_PATHS = {
     "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
 }
 FORBIDDEN_PERFORMANCE_SOURCE_ROOTS = ("tmp/", "checked_outputs/")
+REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS = {
+    "validate-semantic-optimization-pipeline",
+    "validate-codegen-optimization-policy",
+    "validate-optimization-proof-model",
+}
+REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS = {
+    "source_graph_node_ids",
+    "type_graph_ids",
+    "semantic_type_summaries",
+    "runtime_metadata_ids",
+    "abi_identity",
+    "package_import_identity",
+    "source_map_ids",
+    "line_table_status",
+    "ownership_summaries",
+    "side_effect_summaries",
+    "class_category_protocol_generation_assumptions",
+    "benchmark_workload_digest",
+}
+REQUIRED_PROOF_RESULT_FIELDS = {
+    "decision",
+    "reason",
+    "missing_proofs",
+    "failed_proofs",
+    "ir_digest_before",
+    "ir_digest_after",
+    "source_map_impact",
+    "runtime_metadata_impact",
+    "invalidated_proof_state",
+    "debug_safety_verdict",
+    "ownership_safety_verdict",
+    "runtime_abi_safety_verdict",
+    "package_import_abi_identity_verdict",
+    "success_claim",
+}
+REQUIRED_PROOF_VERDICT_FIELDS = {
+    "semantic_equivalence_verdict",
+    "runtime_abi_safety_verdict",
+    "source_map_debug_impact_verdict",
+    "ownership_arc_safety_verdict",
+    "package_import_abi_identity_verdict",
+}
+REQUIRED_PROOF_IDS = {
+    "source_graph_node_identity",
+    "type_graph_identity",
+    "semantic_type_summary",
+    "runtime_metadata_identity",
+    "runtime_abi_safety",
+    "package_import_abi_identity",
+    "source_map_debug_identity",
+    "line_table_debug_status",
+    "ownership_arc_safety",
+    "side_effect_summary",
+    "generation_assumption_validity",
+    "semantic_equivalence",
+    "invalidation_completeness",
+}
+REQUIRED_VERIFIER_PASSES = {
+    "source-map-preservation-verifier",
+    "ownership-preservation-verifier",
+    "dispatch-semantic-preservation-verifier",
+    "package-import-abi-safety-verifier",
+    "runtime-metadata-consistency-verifier",
+    "unsupported-skip-claimlessness-verifier",
+    "invalidation-completeness-verifier",
+}
+REQUIRED_PROOF_CASE_IDS = {
+    "direct-dispatch-full-proof-record",
+    "direct-dispatch-missing-source-graph-proof",
+    "nil-receiver-missing-source-map-proof",
+    "direct-dispatch-runtime-abi-drift",
+    "arc-retained-result-ownership-unsafe",
+    "direct-dispatch-stale-package-identity",
+    "method-inlining-reserved-skip-no-success",
+}
+SAFE_PROOF_VERDICTS = {
+    "semantic_equivalence_verdict": {
+        "PRESERVED",
+        "VERIFIER_ONLY",
+        "SKIPPED_UNSUPPORTED_NO_CLAIM",
+    },
+    "runtime_abi_safety_verdict": {
+        "SAFE",
+        "NO_RUNTIME_ABI_IMPACT",
+        "VERIFIER_ONLY",
+        "SKIPPED_UNSUPPORTED_NO_CLAIM",
+    },
+    "source_map_debug_impact_verdict": {
+        "PRESERVED",
+        "NO_DEBUG_IMPACT",
+        "VERIFIER_ONLY",
+        "SKIPPED_UNSUPPORTED_NO_CLAIM",
+    },
+    "ownership_arc_safety_verdict": {
+        "SAFE",
+        "NO_OWNERSHIP_IMPACT",
+        "VERIFIER_ONLY",
+        "SKIPPED_UNSUPPORTED_NO_CLAIM",
+    },
+    "package_import_abi_identity_verdict": {
+        "IDENTICAL",
+        "NO_PACKAGE_ABI_IMPACT",
+        "VERIFIER_ONLY",
+        "SKIPPED_UNSUPPORTED_NO_CLAIM",
+    },
+}
+VERDICT_PROOF_IDS = {
+    "semantic_equivalence_verdict": "semantic_equivalence",
+    "runtime_abi_safety_verdict": "runtime_abi_safety",
+    "source_map_debug_impact_verdict": "source_map_debug_identity",
+    "ownership_arc_safety_verdict": "ownership_arc_safety",
+    "package_import_abi_identity_verdict": "package_import_abi_identity",
+}
 
 
 @dataclass(frozen=True)
@@ -169,6 +287,172 @@ def _walk_string_values(value: object) -> list[str]:
             values.extend(_walk_string_values(item))
         return values
     return []
+
+
+def _unique_ordered(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
+
+
+def _default_missing_proof_action(pass_id: str) -> str:
+    pipeline = require_json_object(PIPELINE_PATH)
+    for row in _as_list(pipeline.get("semantic_preservation_contracts")):
+        if isinstance(row, dict) and row.get("pass_id") == pass_id:
+            return str(row.get("missing_proof_action", "REJECT_FAIL_CLOSED"))
+    return "REJECT_FAIL_CLOSED"
+
+
+def _default_pass_contract(pass_id: str) -> dict[str, Any]:
+    pipeline = require_json_object(PIPELINE_PATH)
+    for row in _as_list(_as_dict(pipeline.get("proof_model")).get("pass_proof_contracts")):
+        if isinstance(row, dict) and row.get("pass_id") == pass_id:
+            return row
+    return {}
+
+
+def _default_pass_row(pass_id: str) -> dict[str, Any]:
+    pipeline = require_json_object(PIPELINE_PATH)
+    for row in _as_list(pipeline.get("pass_registry")):
+        if isinstance(row, dict) and row.get("pass_id") == pass_id:
+            return row
+    return {}
+
+
+def _proof_records_by_id(case: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for row in _as_list(case.get("proof_records")):
+        if isinstance(row, dict) and isinstance(row.get("proof_id"), str):
+            records[str(row["proof_id"])] = row
+    return records
+
+
+def _proof_decision_for_action(action: str) -> str:
+    if action == "SKIP_FAIL_CLOSED":
+        return "SKIPPED_FAIL_CLOSED"
+    return "REJECTED_FAIL_CLOSED"
+
+
+def _proof_result_diagnostic(
+    diagnostic: str,
+    missing_proofs: list[str],
+    failed_proofs: list[str],
+) -> str:
+    if not missing_proofs and not failed_proofs:
+        return diagnostic
+    details: list[str] = []
+    if missing_proofs:
+        details.append("missing proofs: " + ", ".join(missing_proofs))
+    if failed_proofs:
+        details.append("failed proofs: " + ", ".join(failed_proofs))
+    return diagnostic + "; " + "; ".join(details)
+
+
+def evaluate_optimization_proof_case(
+    case: dict[str, Any],
+    *,
+    pass_contract: dict[str, Any] | None = None,
+    pass_row: dict[str, Any] | None = None,
+    preservation_contract: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Evaluate a single optimization proof case without applying a transform."""
+
+    pass_id = str(case.get("pass_id", ""))
+    contract = pass_contract or _default_pass_contract(pass_id)
+    pass_record = pass_row or _default_pass_row(pass_id)
+    preservation = preservation_contract or {
+        "missing_proof_action": _default_missing_proof_action(pass_id)
+    }
+    required_proofs = [str(proof) for proof in _as_list(contract.get("required_proof_ids"))]
+    records = _proof_records_by_id(case)
+    missing_proofs: list[str] = []
+    failed_proofs: list[str] = []
+
+    for proof_id in required_proofs:
+        record = records.get(proof_id)
+        if record is None or record.get("status") == "MISSING":
+            missing_proofs.append(proof_id)
+        elif record.get("status") != "PRESENT":
+            failed_proofs.append(proof_id)
+
+    verdicts = _as_dict(case.get("verdicts"))
+    for verdict_field, proof_id in VERDICT_PROOF_IDS.items():
+        verdict = str(verdicts.get(verdict_field, "MISSING"))
+        if verdict not in SAFE_PROOF_VERDICTS[verdict_field]:
+            failed_proofs.append(proof_id)
+
+    invalidation = _as_dict(case.get("invalidation"))
+    if pass_record.get("rewrites_ir") is True:
+        if invalidation.get("declares_invalidated_proof_state") is not True:
+            failed_proofs.append("invalidation_completeness")
+        if not _as_list(invalidation.get("invalidated_proofs")):
+            failed_proofs.append("invalidation_completeness")
+
+    missing_proofs = _unique_ordered(missing_proofs)
+    failed_proofs = _unique_ordered(failed_proofs)
+    diagnostics = _as_list(pass_record.get("fail_closed_diagnostics"))
+    diagnostic = str(
+        contract.get("fail_closed_diagnostic")
+        or (diagnostics[0] if diagnostics else "")
+        or "semantic optimization proof model failed closed"
+    )
+
+    if pass_record.get("mode") == "reserved":
+        decision = "SKIPPED_FAIL_CLOSED"
+        success_claim = False
+        reason = "reserved optimization pass skipped without success claim"
+        missing_proofs = required_proofs
+        failed_proofs = []
+        diagnostic = _proof_result_diagnostic(diagnostic, missing_proofs, [])
+    elif missing_proofs or failed_proofs:
+        decision = _proof_decision_for_action(
+            str(preservation.get("missing_proof_action", "REJECT_FAIL_CLOSED"))
+        )
+        success_claim = False
+        reason = "optimization proof model failed closed"
+        diagnostic = _proof_result_diagnostic(diagnostic, missing_proofs, failed_proofs)
+    elif pass_record.get("mode") == "verifier-only":
+        decision = "VERIFIED"
+        success_claim = False
+        reason = "verifier-only proof record accepted"
+        diagnostic = ""
+    else:
+        decision = "APPLIED"
+        success_claim = True
+        reason = "all required optimization proofs and verdicts are present"
+        diagnostic = ""
+
+    candidate = _as_dict(case.get("candidate"))
+    return {
+        "case_id": str(case.get("case_id", "")),
+        "pass_id": pass_id,
+        "decision": decision,
+        "reason": reason,
+        "missing_proofs": missing_proofs,
+        "failed_proofs": failed_proofs,
+        "ir_digest_before": str(candidate.get("ir_digest_before", "")),
+        "ir_digest_after": str(candidate.get("ir_digest_after", "")),
+        "source_map_impact": str(verdicts.get("source_map_debug_impact_verdict", "")),
+        "runtime_metadata_impact": str(
+            _as_dict(case.get("runtime_metadata_impact")).get("verdict", "UNCHANGED")
+        ),
+        "invalidated_proof_state": [
+            str(proof) for proof in _as_list(invalidation.get("invalidated_proofs"))
+        ],
+        "debug_safety_verdict": str(verdicts.get("source_map_debug_impact_verdict", "")),
+        "ownership_safety_verdict": str(verdicts.get("ownership_arc_safety_verdict", "")),
+        "runtime_abi_safety_verdict": str(verdicts.get("runtime_abi_safety_verdict", "")),
+        "package_import_abi_identity_verdict": str(
+            verdicts.get("package_import_abi_identity_verdict", "")
+        ),
+        "success_claim": success_claim,
+        "diagnostic": diagnostic,
+    }
 
 
 def _manifest_workload_ids(manifest: dict[str, Any]) -> set[str]:
@@ -708,6 +992,254 @@ def _validate_reserved_skip_fixtures(
     return fixture_count
 
 
+def _validate_proof_case_fixture(
+    proof_case_path: str,
+    *,
+    proof_model: dict[str, Any],
+    pass_by_id: dict[str, dict[str, Any]],
+    preservation_contracts: dict[str, dict[str, Any]],
+    proof_contracts_by_pass: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> dict[str, Any]:
+    path = ROOT / proof_case_path
+    if not path.is_file():
+        failures.append(f"optimization proof case fixture missing: {proof_case_path}")
+        return {
+            "proof_case_count": 0,
+            "proof_case_decisions": {},
+            "proof_case_path": proof_case_path,
+        }
+
+    payload = require_json_object(path)
+    if payload.get("contract_id") != PROOF_CASES_CONTRACT_ID:
+        failures.append("optimization proof case fixture contract_id drifted")
+    if payload.get("proof_model_contract_id") != proof_model.get("contract_id"):
+        failures.append("optimization proof case fixture is not bound to proof model")
+
+    seen_case_ids: set[str] = set()
+    decisions: dict[str, str] = {}
+    for row in _as_list(payload.get("cases")):
+        if not isinstance(row, dict):
+            failures.append("optimization proof case row is not an object")
+            continue
+        case_id = str(row.get("case_id", ""))
+        pass_id = str(row.get("pass_id", ""))
+        if not case_id:
+            failures.append("optimization proof case missing case_id")
+            continue
+        if case_id in seen_case_ids:
+            failures.append(f"duplicate optimization proof case id: {case_id}")
+            continue
+        seen_case_ids.add(case_id)
+        if pass_id not in pass_by_id:
+            failures.append(f"optimization proof case pass is not registered: {case_id}")
+            continue
+
+        candidate = _as_dict(row.get("candidate"))
+        missing_candidate_fields = sorted(
+            REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS.difference(candidate)
+        )
+        if missing_candidate_fields:
+            failures.append(
+                f"optimization proof case candidate fields missing for {case_id}: "
+                + ", ".join(missing_candidate_fields)
+            )
+        for field in (
+            "source_graph_node_ids",
+            "type_graph_ids",
+            "runtime_metadata_ids",
+            "source_map_ids",
+        ):
+            if not _as_list(candidate.get(field)):
+                failures.append(
+                    f"optimization proof case candidate lacks {field}: {case_id}"
+                )
+        if not str(candidate.get("abi_identity", "")):
+            failures.append(f"optimization proof case candidate lacks abi_identity: {case_id}")
+        if not str(candidate.get("package_import_identity", "")):
+            failures.append(
+                f"optimization proof case candidate lacks package_import_identity: {case_id}"
+            )
+
+        result = evaluate_optimization_proof_case(
+            row,
+            pass_contract=proof_contracts_by_pass.get(pass_id, {}),
+            pass_row=pass_by_id.get(pass_id, {}),
+            preservation_contract=preservation_contracts.get(pass_id, {}),
+        )
+        decisions[case_id] = str(result["decision"])
+        expected = _as_dict(row.get("expected_result"))
+        for field in (
+            "decision",
+            "success_claim",
+            "missing_proofs",
+            "failed_proofs",
+        ):
+            if result.get(field) != expected.get(field):
+                failures.append(
+                    f"optimization proof case expected {field} drifted for {case_id}"
+                )
+        diagnostic_contains = str(expected.get("diagnostic_contains", ""))
+        if diagnostic_contains and diagnostic_contains not in str(result.get("diagnostic", "")):
+            failures.append(
+                f"optimization proof case diagnostic missing expected text for {case_id}"
+            )
+
+    missing_cases = sorted(REQUIRED_PROOF_CASE_IDS.difference(seen_case_ids))
+    if missing_cases:
+        failures.append(
+            "optimization proof case fixture missing cases: " + ", ".join(missing_cases)
+        )
+
+    return {
+        "proof_case_count": len(seen_case_ids),
+        "proof_case_decisions": decisions,
+        "proof_case_path": proof_case_path,
+    }
+
+
+def _validate_proof_model(
+    proof_model: dict[str, Any],
+    *,
+    pass_by_id: dict[str, dict[str, Any]],
+    preservation_contracts: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> dict[str, Any]:
+    if proof_model.get("contract_id") != PROOF_MODEL_CONTRACT_ID:
+        failures.append("optimization proof model contract_id drifted")
+    if proof_model.get("issue_ref") != "#8191":
+        failures.append("optimization proof model must bind issue #8191")
+
+    public_actions = {
+        str(action) for action in _as_list(proof_model.get("required_public_actions"))
+    }
+    if not REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS.issubset(public_actions):
+        failures.append("optimization proof model public actions incomplete")
+
+    proof_ids = {
+        str(row.get("proof_id"))
+        for row in _as_list(proof_model.get("proof_definitions"))
+        if isinstance(row, dict) and row.get("proof_id")
+    }
+    if not REQUIRED_PROOF_IDS.issubset(proof_ids):
+        failures.append("optimization proof model required proof ids incomplete")
+
+    candidate_fields = {
+        str(field) for field in _as_list(proof_model.get("candidate_input_fields"))
+    }
+    if not REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS.issubset(candidate_fields):
+        failures.append("optimization proof model candidate input fields incomplete")
+
+    result_fields = {
+        str(field) for field in _as_list(proof_model.get("result_payload_fields"))
+    }
+    if not REQUIRED_PROOF_RESULT_FIELDS.issubset(result_fields):
+        failures.append("optimization proof model result payload fields incomplete")
+
+    verdict_fields = {
+        str(field) for field in _as_list(proof_model.get("required_verdict_fields"))
+    }
+    if not REQUIRED_PROOF_VERDICT_FIELDS.issubset(verdict_fields):
+        failures.append("optimization proof model verdict fields incomplete")
+
+    verifier_passes = {
+        str(row.get("verifier_id"))
+        for row in _as_list(proof_model.get("verifier_passes"))
+        if isinstance(row, dict) and row.get("verifier_id")
+    }
+    if not REQUIRED_VERIFIER_PASSES.issubset(verifier_passes):
+        failures.append("optimization proof model verifier passes incomplete")
+
+    proof_contracts_by_pass: dict[str, dict[str, Any]] = {}
+    actual_order: list[str] = []
+    for row in _as_list(proof_model.get("pass_proof_contracts")):
+        if not isinstance(row, dict):
+            failures.append("optimization proof pass contract row is not an object")
+            continue
+        pass_id = str(row.get("pass_id", ""))
+        if not pass_id:
+            failures.append("optimization proof pass contract missing pass_id")
+            continue
+        if pass_id in proof_contracts_by_pass:
+            failures.append(f"duplicate optimization proof pass contract: {pass_id}")
+            continue
+        proof_contracts_by_pass[pass_id] = row
+        actual_order.append(pass_id)
+
+        pass_row = pass_by_id.get(pass_id)
+        if pass_row is None:
+            failures.append(f"optimization proof pass contract has no pass registry row: {pass_id}")
+            continue
+        if row.get("ordinal") != pass_row.get("ordinal"):
+            failures.append(f"optimization proof pass ordinal drifted: {pass_id}")
+        for field in REQUIRED_PROOF_VERDICT_FIELDS:
+            if row.get(field) != "required":
+                failures.append(
+                    f"optimization proof pass contract does not require {field}: {pass_id}"
+                )
+        if row.get("success_claim_on_skip") is not False:
+            failures.append(f"optimization proof pass allows skip success claim: {pass_id}")
+        if row.get("unsupported_skip_behavior") != "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM":
+            failures.append(f"optimization proof pass skip behavior drifted: {pass_id}")
+        if not str(row.get("invalidation_contract", "")):
+            failures.append(f"optimization proof pass missing invalidation contract: {pass_id}")
+        if not str(row.get("fail_closed_diagnostic", "")):
+            failures.append(f"optimization proof pass missing diagnostic: {pass_id}")
+        elif row.get("fail_closed_diagnostic") not in _as_list(
+            pass_row.get("fail_closed_diagnostics")
+        ):
+            failures.append(
+                f"optimization proof pass diagnostic is not registered: {pass_id}"
+            )
+
+        required_proofs = [str(proof) for proof in _as_list(row.get("required_proof_ids"))]
+        if not required_proofs:
+            failures.append(f"optimization proof pass missing required proofs: {pass_id}")
+        missing_required = sorted(REQUIRED_PROOF_IDS.difference(required_proofs))
+        if missing_required:
+            failures.append(
+                f"optimization proof pass required proofs incomplete for {pass_id}: "
+                + ", ".join(missing_required)
+            )
+        unknown_proofs = sorted(set(required_proofs).difference(proof_ids))
+        if unknown_proofs:
+            failures.append(
+                f"optimization proof pass references unknown proofs for {pass_id}: "
+                + ", ".join(unknown_proofs)
+            )
+
+    missing_passes = [pass_id for pass_id in REQUIRED_PASS_ORDER if pass_id not in proof_contracts_by_pass]
+    if missing_passes:
+        failures.append(
+            "optimization proof model pass contracts missing passes: "
+            + ", ".join(missing_passes)
+        )
+    if actual_order != REQUIRED_PASS_ORDER:
+        failures.append(
+            "optimization proof model pass contract order drifted: "
+            + ", ".join(actual_order)
+        )
+
+    proof_case_counts = _validate_proof_case_fixture(
+        str(proof_model.get("proof_case_fixture_path", "")),
+        proof_model=proof_model,
+        pass_by_id=pass_by_id,
+        preservation_contracts=preservation_contracts,
+        proof_contracts_by_pass=proof_contracts_by_pass,
+        failures=failures,
+    )
+    return {
+        "proof_model_contract": proof_model.get("contract_id", ""),
+        "proof_model_public_actions": sorted(public_actions),
+        "proof_definition_count": len(proof_ids),
+        "proof_pass_contract_count": len(proof_contracts_by_pass),
+        "proof_candidate_field_count": len(candidate_fields),
+        "proof_result_field_count": len(result_fields),
+        "proof_verifier_pass_count": len(verifier_passes),
+        **proof_case_counts,
+    }
+
+
 def validate_pipeline(
     pipeline_path: Path = PIPELINE_PATH,
 ) -> SemanticOptimizationPipelineValidationResult:
@@ -720,7 +1252,7 @@ def validate_pipeline(
     issue_mapping = _as_dict(pipeline.get("issue_mapping"))
     issues = set(int(issue) for issue in _as_list(issue_mapping.get("primary_issues")))
     if not REQUIRED_ISSUES.issubset(issues):
-        failures.append("semantic optimization pipeline must map to issue #8175")
+        failures.append("semantic optimization pipeline must map to issues #8175 and #8191")
     support_claims = {str(claim) for claim in _as_list(issue_mapping.get("support_claims"))}
     if REQUIRED_SUPPORT_CLAIM not in support_claims:
         failures.append("semantic optimization pipeline support claim is missing")
@@ -763,6 +1295,12 @@ def validate_pipeline(
         _as_list(pipeline.get("semantic_preservation_contracts")),
         pass_by_id,
         failures,
+    )
+    proof_model_counts = _validate_proof_model(
+        _as_dict(pipeline.get("proof_model")),
+        pass_by_id=pass_by_id,
+        preservation_contracts=preservation_contracts,
+        failures=failures,
     )
 
     gates = _as_list(pipeline.get("verification_gates"))
@@ -809,6 +1347,16 @@ def validate_pipeline(
         "explicit_pass_order": explicit_pass_order,
         "pass_count": len(pass_by_id),
         "semantic_preservation_contract_count": len(preservation_contracts),
+        "proof_model_contract": proof_model_counts["proof_model_contract"],
+        "proof_definition_count": proof_model_counts["proof_definition_count"],
+        "proof_pass_contract_count": proof_model_counts["proof_pass_contract_count"],
+        "proof_candidate_field_count": proof_model_counts["proof_candidate_field_count"],
+        "proof_result_field_count": proof_model_counts["proof_result_field_count"],
+        "proof_verifier_pass_count": proof_model_counts["proof_verifier_pass_count"],
+        "proof_case_count": proof_model_counts["proof_case_count"],
+        "proof_case_path": proof_model_counts["proof_case_path"],
+        "proof_case_decisions": proof_model_counts["proof_case_decisions"],
+        "proof_model_public_actions": proof_model_counts["proof_model_public_actions"],
         "enabled_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "enabled"),
         "reserved_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "reserved"),
         "reserved_skip_fixture_count": reserved_skip_fixture_count,
@@ -852,9 +1400,18 @@ def validate_pipeline(
     return SemanticOptimizationPipelineValidationResult(payload=payload, failures=failures)
 
 
+def validate_optimization_proof_model(
+    pipeline_path: Path = PIPELINE_PATH,
+) -> SemanticOptimizationPipelineValidationResult:
+    return validate_pipeline(pipeline_path)
+
+
 __all__ = [
     "CONTRACT_ID",
     "PIPELINE_PATH",
+    "PROOF_CASES_CONTRACT_ID",
+    "PROOF_MODEL_CONTRACT_ID",
+    "PROOF_MODEL_REPORT_PATH",
     "PERFORMANCE_GOVERNANCE_CONTRACT_ID",
     "RUNTIME_EQUIVALENCE_CONTRACT_ID",
     "REPORT_PATH",
@@ -864,7 +1421,15 @@ __all__ = [
     "REQUIRED_EVIDENCE_IDS",
     "REQUIRED_CAPABILITY_ROWS",
     "REQUIRED_PASS_ORDER",
+    "REQUIRED_PROOF_CASE_IDS",
+    "REQUIRED_PROOF_IDS",
+    "REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS",
+    "REQUIRED_PROOF_RESULT_FIELDS",
+    "REQUIRED_PROOF_VERDICT_FIELDS",
     "REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE",
+    "SAFE_PROOF_VERDICTS",
     "SemanticOptimizationPipelineValidationResult",
+    "evaluate_optimization_proof_case",
+    "validate_optimization_proof_model",
     "validate_pipeline",
 ]

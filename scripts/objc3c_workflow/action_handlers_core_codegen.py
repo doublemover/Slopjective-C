@@ -8,13 +8,16 @@ from scripts.objc3c_workflow.actions.codegen_optimization_policy import (
     action_validate_codegen_optimization_policy,
 )
 from scripts.objc3c_workflow.actions.semantic_optimization_pipeline import (
+    OPTIMIZATION_PROOF_MODEL_ACTION,
     SEMANTIC_OPTIMIZATION_PIPELINE_ACTION,
+    action_validate_optimization_proof_model,
     action_validate_semantic_optimization_pipeline,
 )
 
 CORE_CODEGEN_ACTION_HANDLERS: dict[str, ActionHandler] = {
     CODEGEN_OPTIMIZATION_POLICY_ACTION: action_validate_codegen_optimization_policy,
     SEMANTIC_OPTIMIZATION_PIPELINE_ACTION: action_validate_semantic_optimization_pipeline,
+    OPTIMIZATION_PROOF_MODEL_ACTION: action_validate_optimization_proof_model,
 }
 
 __all__ = ["CORE_CODEGEN_ACTION_HANDLERS"]

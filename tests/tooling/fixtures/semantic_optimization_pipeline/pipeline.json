@@ -1,7 +1,7 @@
 {
   "contract_id": "objc3c.optimization.semantic.pipeline.v1",
   "issue_mapping": {
-    "primary_issues": [8159, 8175],
+    "primary_issues": [8159, 8175, 8191],
     "support_claims": ["objc3c.behavior.semantic_optimization_pipeline"],
     "capability_rows_required": [
       "objc3c.behavior.semantic_optimization_pipeline",
@@ -16,7 +16,9 @@
       "objc3c.evidence.semantic_optimization_pipeline.native_surface",
       "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
       "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
-      "objc3c.evidence.semantic_optimization_pipeline.performance_governance"
+      "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
+      "objc3c.evidence.semantic_optimization_pipeline.proof_model",
+      "objc3c.evidence.semantic_optimization_pipeline.proof_cases"
     ]
   },
   "source_truth": {
@@ -80,6 +82,14 @@
           "IsObjc3IRSemanticOptimizationProofContractFailClosed",
           "REJECT_FAIL_CLOSED",
           "SKIP_FAIL_CLOSED"
+        ]
+      },
+      {
+        "path": "scripts/objc3c_semantic_optimization_pipeline.py",
+        "tokens": [
+          "PROOF_MODEL_CONTRACT_ID",
+          "evaluate_optimization_proof_case",
+          "_validate_proof_model"
         ]
       }
     ]
@@ -421,6 +431,405 @@
       "semantic_equivalence": "post-pass trace carries a semantic equivalence verdict"
     }
   ],
+  "proof_model": {
+    "contract_id": "objc3c.optimization.semantic.proof_model.v1",
+    "issue_ref": "#8191",
+    "required_public_actions": [
+      "validate-semantic-optimization-pipeline",
+      "validate-codegen-optimization-policy",
+      "validate-optimization-proof-model"
+    ],
+    "proof_definitions": [
+      {
+        "proof_id": "source_graph_node_identity",
+        "source": "OC3-NEXT-006 stable source graph node ids and reference provenance",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "type_graph_identity",
+        "source": "OC3-NEXT-006 type graph ids",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "semantic_type_summary",
+        "source": "typed semantic summaries at the lowering boundary",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_metadata_identity",
+        "source": "runtime metadata ids consumed by dispatch and reflection lowering",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_abi_safety",
+        "source": "runtime ABI surface identity for emitted helper symbols",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "package_import_abi_identity",
+        "source": "package and import ABI identity from module/package metadata",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "source_map_debug_identity",
+        "source": "OC3-NEXT-008 source-map and debug-map ids",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "line_table_debug_status",
+        "source": "line-table preservation status",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "ownership_arc_safety",
+        "source": "ownership and ARC transfer summaries",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "side_effect_summary",
+        "source": "side-effect summaries for expressions and call candidates",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "generation_assumption_validity",
+        "source": "class/category/protocol generation assumptions",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "semantic_equivalence",
+        "source": "semantic equivalence verdict for the optimized result",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "invalidation_completeness",
+        "source": "declared and consumed proof-state invalidation records",
+        "fail_closed_if_missing": true
+      }
+    ],
+    "candidate_input_fields": [
+      "source_graph_node_ids",
+      "type_graph_ids",
+      "semantic_type_summaries",
+      "runtime_metadata_ids",
+      "abi_identity",
+      "package_import_identity",
+      "source_map_ids",
+      "line_table_status",
+      "ownership_summaries",
+      "side_effect_summaries",
+      "class_category_protocol_generation_assumptions",
+      "benchmark_workload_digest"
+    ],
+    "result_payload_fields": [
+      "decision",
+      "reason",
+      "missing_proofs",
+      "failed_proofs",
+      "ir_digest_before",
+      "ir_digest_after",
+      "source_map_impact",
+      "runtime_metadata_impact",
+      "invalidated_proof_state",
+      "debug_safety_verdict",
+      "ownership_safety_verdict",
+      "runtime_abi_safety_verdict",
+      "package_import_abi_identity_verdict",
+      "success_claim",
+      "diagnostic"
+    ],
+    "required_verdict_fields": [
+      "semantic_equivalence_verdict",
+      "runtime_abi_safety_verdict",
+      "source_map_debug_impact_verdict",
+      "ownership_arc_safety_verdict",
+      "package_import_abi_identity_verdict"
+    ],
+    "verifier_passes": [
+      {
+        "verifier_id": "source-map-preservation-verifier",
+        "verifies": "source-map and line-table preservation verdicts"
+      },
+      {
+        "verifier_id": "ownership-preservation-verifier",
+        "verifies": "ownership and ARC transfer safety verdicts"
+      },
+      {
+        "verifier_id": "dispatch-semantic-preservation-verifier",
+        "verifies": "message dispatch semantic equivalence verdicts"
+      },
+      {
+        "verifier_id": "package-import-abi-safety-verifier",
+        "verifies": "package/import ABI identity verdicts"
+      },
+      {
+        "verifier_id": "runtime-metadata-consistency-verifier",
+        "verifies": "runtime metadata identity and ABI verdicts"
+      },
+      {
+        "verifier_id": "unsupported-skip-claimlessness-verifier",
+        "verifies": "unsupported passes skip fail-closed without success claims"
+      },
+      {
+        "verifier_id": "invalidation-completeness-verifier",
+        "verifies": "mutating passes declare and consume invalidated proof state"
+      }
+    ],
+    "pass_proof_contracts": [
+      {
+        "pass_id": "semantic-precondition-gate",
+        "ordinal": 10,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "verifier-only gate publishes immutable precondition state and invalidates nothing",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "semantic optimization precondition gate failed"
+      },
+      {
+        "pass_id": "nil-receiver-folding",
+        "ordinal": 20,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "folded nil sends create no runtime or direct dispatch proof and preserve source-map identity",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "nil receiver folding requires compile-time nil receiver proof"
+      },
+      {
+        "pass_id": "direct-dispatch-exact-call",
+        "ordinal": 30,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "exact direct call emission invalidates receiver, selector, callee, runtime metadata, and package/import proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "direct dispatch lowering requires exact symbol, signature, and result ownership"
+      },
+      {
+        "pass_id": "arc-retained-result-cleanup",
+        "ordinal": 40,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "local ARC cleanup proof state is rewritten while global runtime and package ABI proof state stays identical",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "ARC retained-result cleanup requires method-family ownership proof"
+      },
+      {
+        "pass_id": "runtime-dispatch-preservation",
+        "ordinal": 50,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "verifier-only runtime dispatch preservation consumes the proof trace and invalidates nothing",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "runtime dispatch preservation rejected non-canonical dispatch emission"
+      },
+      {
+        "pass_id": "devirtualization",
+        "ordinal": 60,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "reserved pass would invalidate receiver, selector, callee, runtime metadata, and package/import proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "devirtualization is reserved until closed-world finality proofs exist"
+      },
+      {
+        "pass_id": "method-inlining",
+        "ordinal": 70,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "reserved pass would invalidate local values, ownership transfer, source-map, and diagnostic proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "method inlining is reserved until ownership and source-map proofs exist"
+      },
+      {
+        "pass_id": "cache-aware-dispatch",
+        "ordinal": 80,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "reserved runtime-owned pass leaves cache invalidation behind runtime entrypoints and materializes no IR helper",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "cache-aware dispatch is reserved behind the runtime cache contract"
+      },
+      {
+        "pass_id": "ir-cleanup-verifier",
+        "ordinal": 90,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "post-pass verifier consumes invalidation records and emits no mutation",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "post optimization IR cleanup verifier failed semantic equivalence"
+      }
+    ],
+    "proof_case_fixture_path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
+  },
   "verification_gates": [
     {
       "gate_id": "deterministic-pass-order",
@@ -495,7 +904,7 @@
       {
         "trace_id": "direct-dispatch-exact-call-after-ir",
         "source_path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
-        "source_sha256": "38bd165e05d088e3fca6e5eb8ea62eb4c74d15fa5e47d09ac938faf15a4c440d",
+        "source_sha256": "7abc9ab02b0d3c9efcd6ca1b1394af35f4e04dd6dabbc25133d1614b32ad3888",
         "claim_boundary": "semantic-preservation trace only; benchmark reports cannot replace this checked IR truth"
       }
     ],
