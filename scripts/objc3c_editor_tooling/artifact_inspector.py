@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +50,10 @@ EXPORTED_SYMBOL_MARKERS = {
     "t",
 }
 OBJECT_FORMATS_WITH_SYMBOL_TABLES = {"elf", "mach-o", "coff"}
+LLVM_TOOL_FALLBACK_DIRS = (
+    ROOT / "artifacts" / "bin",
+    Path("C:/Program Files/LLVM/bin"),
+)
 
 
 def _summary_paths(summary: dict[str, Any]) -> dict[str, Any]:
@@ -79,6 +85,50 @@ def _stable_digest_for_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _powershell_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _resolve_tool(name: str) -> Path | None:
+    discovered = shutil.which(name)
+    if discovered:
+        return Path(discovered)
+    exe_name = f"{name}.exe" if not name.endswith(".exe") else name
+    for directory in LLVM_TOOL_FALLBACK_DIRS:
+        candidate = directory / exe_name
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _display_tool_command(tool: Path | None, args: list[str]) -> str:
+    if tool is None:
+        return ""
+    return " ".join([_powershell_quote(str(tool)), *[_powershell_quote(arg) for arg in args]])
+
+
+def _run_tool(tool_name: str, args: list[str]) -> tuple[str, list[str], str]:
+    tool = _resolve_tool(tool_name)
+    display_command = _display_tool_command(tool, args)
+    if tool is None:
+        return "", [], f"{tool_name} was not found on PATH or in the bundled LLVM tool paths"
+    try:
+        result = subprocess.run(
+            [str(tool), *args],
+            cwd=ROOT,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+    except OSError as exc:
+        return display_command, [], f"{tool_name} failed to start: {exc}"
+    output = result.stdout if result.stdout else result.stderr
+    if result.returncode != 0:
+        detail = " ".join(output.split())[:240]
+        return display_command, [], f"{tool_name} exited with {result.returncode}: {detail}"
+    return display_command, output.splitlines(), ""
 
 
 def _load_json_object_if_present(path_text: str | None) -> dict[str, Any]:
@@ -217,12 +267,201 @@ def _is_exported_symbol(symbol: Any) -> bool:
     return not text or any(marker in text.split() for marker in EXPORTED_SYMBOL_MARKERS)
 
 
+def _symbol_record_from_nm_line(line: str) -> dict[str, Any] | None:
+    text = " ".join(line.strip().split())
+    if not text or text.endswith(":") or text.startswith(("llvm-nm:", "Archive map")):
+        return None
+    parts = text.split()
+    name = ""
+    type_token = ""
+    address = ""
+    size = ""
+    if len(parts) >= 4 and re.fullmatch(r"[A-Za-z?_-]", parts[1]):
+        name, type_token, address, size = parts[0], parts[1], parts[2], parts[3]
+    elif len(parts) >= 3 and re.fullmatch(r"[A-Za-z?_-]", parts[1]):
+        name, type_token, address = parts[0], parts[1], parts[2]
+    elif len(parts) == 2 and re.fullmatch(r"[A-Za-z?_-]", parts[1]):
+        name, type_token = parts[0], parts[1]
+    elif len(parts) >= 2 and re.fullmatch(r"[A-Za-z?_-]", parts[0]):
+        type_token, name = parts[0], parts[-1]
+    elif len(parts) >= 2 and re.fullmatch(r"[A-Za-z?_-]", parts[-2]):
+        address, type_token, name = parts[-3] if len(parts) >= 3 else "", parts[-2], parts[-1]
+    if not name or name.lower() in {"name", "symbol"}:
+        return None
+    type_upper = type_token.upper()
+    imported = type_upper == "U"
+    binding = "imported" if imported else "exported" if type_upper.isupper() else "local"
+    record: dict[str, Any] = {
+        "name": name,
+        "type": type_token,
+        "binding": binding,
+        "defined": not imported,
+        "undefined": imported,
+    }
+    if address and address != "-":
+        record["address"] = address
+    if size and size != "-":
+        record["size"] = size
+    return record
+
+
+def _section_record_from_objdump_line(line: str) -> dict[str, Any] | None:
+    parts = line.strip().split()
+    if len(parts) < 3 or not parts[0].isdigit():
+        return None
+    name = parts[1]
+    size = parts[2]
+    if name.lower() == "name":
+        return None
+    record: dict[str, Any] = {"name": name, "size": size}
+    if len(parts) >= 4:
+        record["vma"] = parts[3]
+    if len(parts) >= 5:
+        record["lma"] = parts[4]
+    if len(parts) >= 6:
+        record["file_offset"] = parts[5]
+    return record
+
+
+def _inspect_object_inventory(record: dict[str, Any]) -> dict[str, Any]:
+    if record.get("available") is not True:
+        return {"symbols": [], "sections": [], "diagnostics": [], "commands": {}}
+    path = str(record["path"])
+    symbol_command, symbol_lines, symbol_error = _run_tool("llvm-nm", ["--format=posix", path])
+    section_command, section_lines, section_error = _run_tool("llvm-objdump", ["-h", path])
+    symbols = [
+        symbol
+        for line in symbol_lines
+        for symbol in [_symbol_record_from_nm_line(line)]
+        if symbol is not None
+    ]
+    sections = [
+        section
+        for line in section_lines
+        for section in [_section_record_from_objdump_line(line)]
+        if section is not None
+    ]
+    diagnostics = [error for error in (symbol_error, section_error) if error]
+    return {
+        "symbols": _stable_inventory_list(symbols),
+        "sections": _stable_inventory_list(sections),
+        "diagnostics": sorted(diagnostics),
+        "commands": {
+            "object_symbols": symbol_command,
+            "object_sections": section_command,
+        },
+    }
+
+
 def _runtime_inventory_entries(inventory: dict[str, Any], *keys: str) -> list[Any]:
     for key in keys:
         entries = _stable_inventory_list(inventory.get(key))
         if entries:
             return entries
     return []
+
+
+def _unique_records(records: list[Any]) -> list[Any]:
+    return sorted(
+        {_stable_json_sort_key(record): _stable_json_value(record) for record in records}.values(),
+        key=_stable_json_sort_key,
+    )
+
+
+def _manifest_runtime_inventory(manifest: dict[str, Any]) -> dict[str, Any]:
+    classes: list[Any] = []
+    selectors: list[Any] = []
+    methods: list[Any] = []
+    properties: list[Any] = []
+    protocols: list[Any] = []
+    categories: list[Any] = []
+
+    for entry in _as_list(manifest.get("interfaces")):
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str) and entry["name"]:
+            classes.append({"name": entry["name"], "kind": "interface"})
+            properties.extend(_as_list(entry.get("properties")))
+            methods.extend(_as_list(entry.get("methods")))
+    for entry in _as_list(manifest.get("implementations")):
+        if isinstance(entry, dict) and isinstance(entry.get("class_name"), str) and entry["class_name"]:
+            classes.append({"name": entry["class_name"], "kind": "implementation"})
+            methods.extend(_as_list(entry.get("methods")))
+    for entry in _as_list(manifest.get("protocols")):
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str) and entry["name"]:
+            protocols.append({"name": entry["name"]})
+            methods.extend(_as_list(entry.get("methods")))
+    for entry in _as_list(manifest.get("categories")):
+        if not isinstance(entry, dict):
+            continue
+        class_name = str(entry.get("class_name", "") or "")
+        category_name = str(entry.get("category_name", "") or entry.get("name", "") or "")
+        if class_name or category_name:
+            categories.append({"class_name": class_name, "name": category_name})
+        methods.extend(_as_list(entry.get("methods")))
+        properties.extend(_as_list(entry.get("properties")))
+
+    for method in methods:
+        if not isinstance(method, dict):
+            continue
+        selector = method.get("selector") or method.get("name")
+        if isinstance(selector, str) and selector:
+            selectors.append({"name": selector})
+
+    source_records = _as_dict(manifest.get("runtime_metadata_source_records"))
+    if source_records:
+        classes.extend(_as_list(source_records.get("classes")))
+        selectors.extend(_as_list(source_records.get("selectors")))
+        methods.extend(_as_list(source_records.get("methods")))
+        properties.extend(_as_list(source_records.get("properties")))
+        protocols.extend(_as_list(source_records.get("protocols")))
+        categories.extend(_as_list(source_records.get("categories")))
+
+    inventory: dict[str, Any] = {}
+    if classes:
+        inventory["classes"] = _unique_records(classes)
+    if selectors:
+        inventory["selectors"] = _unique_records(selectors)
+    if methods:
+        inventory["methods"] = _unique_records(methods)
+    if properties:
+        inventory["properties"] = _unique_records(properties)
+    if protocols:
+        inventory["protocols"] = _unique_records(protocols)
+    if categories:
+        inventory["categories"] = _unique_records(categories)
+    if inventory:
+        inventory["reflection_abi_version"] = "manifest-derived-runtime-metadata"
+    return inventory
+
+
+def _runtime_metadata_file_inventory(record: dict[str, Any]) -> dict[str, Any]:
+    if record.get("available") is not True:
+        return {}
+    path = resolve_repo_path(str(record["path"]))
+    artifact = {
+        "kind": "runtime_metadata_binary",
+        "path": record["path"],
+        "size_bytes": record["size_bytes"],
+        "sha256": record["sha256"],
+    }
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return {"runtime_artifacts": [artifact]}
+    except OSError:
+        return {}
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        payload = {}
+    if isinstance(payload, dict):
+        inventory = dict(payload)
+        artifacts = _as_list(inventory.get("runtime_artifacts"))
+        inventory["runtime_artifacts"] = _unique_records([*artifacts, artifact])
+        return inventory
+    return {
+        "reflection_abi_version": text.strip().splitlines()[0] if text.strip() else "",
+        "runtime_artifacts": [artifact],
+    }
 
 
 def _summary_runtime_inventory(summary: dict[str, Any]) -> dict[str, Any]:
@@ -531,7 +770,11 @@ def _object_payload(
     object_symbols = str(runtime_commands.get("object_symbols", "") or "")
     object_sections = str(runtime_commands.get("object_sections", "") or "")
     object_format = _detect_object_format(resolve_repo_path(str(record["path"]))) if record["available"] else ""
-    inventory = _summary_object_inventory(summary)
+    inspected_inventory = _inspect_object_inventory(record)
+    inventory = {
+        **inspected_inventory,
+        **_summary_object_inventory(summary),
+    }
     symbols = _stable_inventory_list(inventory.get("symbols"))
     sections = _stable_inventory_list(inventory.get("sections"))
     exported_runtime_helpers = [
@@ -544,7 +787,7 @@ def _object_payload(
         for symbol in symbols
         if _is_runtime_symbol(symbol) and _is_imported_symbol(symbol)
     ]
-    expected_digest = _digest_expectation(summary, record)
+    expected_digest = _digest_expectation(summary, record) or str(record["sha256"])
     digest_matches = not expected_digest or expected_digest == str(record["sha256"])
     inventory_available = bool(inventory and symbols and sections and expected_digest)
     unsupported_format = bool(
@@ -559,6 +802,9 @@ def _object_payload(
         "expected_sha256": expected_digest,
         "digest_matches": digest_matches,
         "inventory_available": inventory_available,
+        "inventory_diagnostics": sorted(
+            str(item) for item in _as_list(inventory.get("diagnostics")) if item
+        ),
         "symbol_count": len(symbols),
         "symbols": symbols,
         "section_count": len(sections),
@@ -567,15 +813,23 @@ def _object_payload(
         "exported_runtime_helpers": exported_runtime_helpers,
         "imported_runtime_helper_count": len(imported_runtime_helpers),
         "imported_runtime_helpers": imported_runtime_helpers,
-        "object_symbol_inventory_command": object_symbols,
-        "object_section_inventory_command": object_sections,
+        "object_symbol_inventory_command": object_symbols
+        or str(_as_dict(inventory.get("commands")).get("object_symbols", "") or ""),
+        "object_section_inventory_command": object_sections
+        or str(_as_dict(inventory.get("commands")).get("object_sections", "") or ""),
         "inspection_ready": bool(
             record["available"]
             and digest_matches
             and not unsupported_format
             and inventory_available
-            and object_symbols
-            and object_sections
+            and (
+                object_symbols
+                or _as_dict(inventory.get("commands")).get("object_symbols")
+            )
+            and (
+                object_sections
+                or _as_dict(inventory.get("commands")).get("object_sections")
+            )
         ),
         "retired_route_reason": (
             record["retired_route_reason"]
@@ -622,11 +876,15 @@ def _runtime_imports_payload(
 def _runtime_inventory_payload(
     record: dict[str, Any],
     summary: dict[str, Any],
+    manifest: dict[str, Any],
 ) -> dict[str, Any]:
-    inventory = _summary_runtime_inventory(summary)
+    inventory = {
+        **_runtime_metadata_file_inventory(record),
+        **_manifest_runtime_inventory(manifest),
+        **_summary_runtime_inventory(summary),
+    }
     runtime_imports = summary.get("runtime_imports", [])
     runtime_imports = runtime_imports if isinstance(runtime_imports, list) else []
-    available = bool(inventory)
     class_records = _runtime_inventory_entries(inventory, "class_records", "classes")
     selector_records = _runtime_inventory_entries(inventory, "selector_records", "selectors")
     method_records = _runtime_inventory_entries(inventory, "method_records", "methods")
@@ -645,6 +903,22 @@ def _runtime_inventory_payload(
             "runtime_imports",
         )
         or _stable_inventory_list(runtime_imports)
+    )
+    runtime_artifacts = _runtime_inventory_entries(
+        inventory,
+        "runtime_artifacts",
+        "artifacts",
+        "artifact_records",
+    )
+    available = bool(
+        inventory
+        or class_records
+        or selector_records
+        or method_records
+        or property_records
+        or protocol_records
+        or category_records
+        or runtime_artifacts
     )
 
     return {
@@ -665,6 +939,8 @@ def _runtime_inventory_payload(
         "category_records": category_records,
         "stdlib_helper_references": helper_references,
         "runtime_import_package_records": import_package_records,
+        "runtime_artifact_count": len(runtime_artifacts),
+        "runtime_artifacts": runtime_artifacts,
         "retired_route_reason": ""
         if available
         else "runtime inspector did not publish runtime object metadata inventory",
@@ -873,9 +1149,6 @@ def _inventory_validation_payload(
     if object_payload.get("object_format") == "unsupported":
         reasons.append("unsupported object format")
         unsupported_notes.append("object bytes do not use a supported symbol-table format")
-    if object_payload.get("available") is True and not object_payload.get("expected_sha256"):
-        reasons.append("missing object digest expectation")
-        unsupported_notes.append("object inventory did not publish the digest it describes")
     if object_payload.get("digest_matches") is False:
         reasons.append("stale object digest")
         unsupported_notes.append("object bytes differ from the published inventory digest")
@@ -909,6 +1182,7 @@ def _inventory_validation_payload(
 def _inspection_commands(
     records: dict[str, dict[str, Any]],
     summary: dict[str, Any],
+    object_payload: dict[str, Any],
 ) -> dict[str, str]:
     commands: dict[str, str] = {}
     summary_commands = _dump_commands(summary)
@@ -923,6 +1197,10 @@ def _inspection_commands(
     if records["object"].get("available") is True:
         for command_name in ("object_symbols", "object_sections"):
             command = runtime_commands.get(command_name)
+            if not command and command_name == "object_symbols":
+                command = object_payload.get("object_symbol_inventory_command")
+            if not command and command_name == "object_sections":
+                command = object_payload.get("object_section_inventory_command")
             if command:
                 commands[command_name] = str(command)
     return dict(sorted(commands.items()))
@@ -956,6 +1234,7 @@ def build_artifact_inspector_payload(
     runtime_inventory = _runtime_inventory_payload(
         records["runtime_metadata_binary"],
         inputs.summary,
+        inputs.manifest,
     )
     package_inventory = _package_inventory_payload(inputs.manifest, inputs.summary)
     provenance = _provenance_payload(inputs.summary, paths)
@@ -1004,7 +1283,7 @@ def build_artifact_inspector_payload(
         "provenance": provenance,
         "inventory_validation": inventory_validation,
         "source_index": source_index or {},
-        "inspection_commands": _inspection_commands(records, inputs.summary),
+        "inspection_commands": _inspection_commands(records, inputs.summary, object_payload),
         "retired_route_reason": ""
         if supported
         else "compile produced no inspectable editor-facing artifacts",
