@@ -11,6 +11,8 @@
     "diagnostics",
     "language_server",
     "navigation",
+    "source_index",
+    "workspace_index",
     "artifact_inspector",
     "formatter",
     "debug"
@@ -45,6 +47,12 @@
     },
     "navigation": {
       "$ref": "#/$defs/navigationIndex"
+    },
+    "source_index": {
+      "$ref": "#/$defs/sourceIndex"
+    },
+    "workspace_index": {
+      "$ref": "#/$defs/workspaceIndex"
     },
     "artifact_inspector": {
       "$ref": "#/$defs/artifactInspector"
@@ -337,6 +345,112 @@
       },
       "additionalProperties": false
     },
+    "sourceIndex": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "module_name",
+        "available",
+        "source_truth_model",
+        "manifest_path",
+        "declaration_count",
+        "reference_count",
+        "import_count",
+        "diagnostic_anchor_count",
+        "emitted_artifact_count",
+        "declarations",
+        "references",
+        "imports",
+        "diagnostic_anchors",
+        "emitted_artifacts",
+        "source_index_digest",
+        "deterministic_ordering",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.source.index.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "source_truth_model": {
+          "const": "source-text-plus-compile-manifest-diagnostics-and-summary-paths"
+        },
+        "manifest_path": {
+          "type": "string"
+        },
+        "declaration_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "import_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostic_anchor_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitted_artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "diagnostic_anchors": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "emitted_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "source_index_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "deterministic_ordering": {
+          "const": "source-location-then-kind-then-symbol"
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "lspDiagnosticTransport": {
       "type": "object",
       "required": [
@@ -446,6 +560,8 @@
         "manifest_backed_navigation",
         "workspace_index_backed_navigation",
         "diagnostic_transport",
+        "source_index_backed_hover",
+        "source_index_digest",
         "capability_evidence_roots",
         "publication_boundary",
         "supported_capability_ids",
@@ -464,6 +580,12 @@
         },
         "workspace_index_backed_navigation": {
           "type": "boolean"
+        },
+        "source_index_backed_hover": {
+          "type": "boolean"
+        },
+        "source_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
         },
         "diagnostic_transport": {
           "$ref": "#/$defs/lspDiagnosticTransport"
@@ -600,6 +722,10 @@
         "packages",
         "cross_package_edges",
         "package_symbols",
+        "source_index",
+        "source_declaration_count",
+        "source_reference_count",
+        "source_import_count",
         "guardrails",
         "workspace_index_digest",
         "deterministic_ordering",
@@ -655,6 +781,21 @@
             "$ref": "#/$defs/symbolRecord"
           }
         },
+        "source_index": {
+          "$ref": "#/$defs/sourceIndex"
+        },
+        "source_declaration_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_reference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_import_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "guardrails": {
           "$ref": "#/$defs/workspaceGuardrails"
         },
@@ -683,6 +824,8 @@
         "document_symbols",
         "workspace_symbols",
         "definition_targets",
+        "hover_targets",
+        "source_index",
         "workspace_index",
         "retired_route_reason"
       ],
@@ -762,6 +905,48 @@
             "additionalProperties": false
           }
         },
+        "hover_targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "kind",
+              "contents",
+              "target_uri",
+              "target_range",
+              "target_compiler_range"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contents": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_uri": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_range": {
+                "$ref": "#/$defs/lspRange"
+              },
+              "target_compiler_range": {
+                "$ref": "#/$defs/compilerRange"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "source_index": {
+          "$ref": "#/$defs/sourceIndex"
+        },
         "workspace_index": {
           "$ref": "#/$defs/workspaceIndex"
         },
@@ -832,6 +1017,7 @@
         "object",
         "runtime_imports",
         "source_graph",
+        "source_index",
         "inspection_commands",
         "retired_route_reason"
       ],
@@ -1074,6 +1260,9 @@
             "declaration_node_count",
             "workspace_package_count",
             "workspace_index_digest",
+            "source_declaration_count",
+            "source_reference_count",
+            "source_index_digest",
             "source_graph_digest",
             "retired_route_reason"
           ],
@@ -1095,6 +1284,17 @@
             "workspace_index_digest": {
               "$ref": "#/$defs/optionalSha256"
             },
+            "source_declaration_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "source_reference_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "source_index_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
             "source_graph_digest": {
               "$ref": "#/$defs/optionalSha256"
             },
@@ -1103,6 +1303,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "source_index": {
+          "$ref": "#/$defs/sourceIndex"
         },
         "inspection_commands": {
           "$ref": "#/$defs/stringMap"

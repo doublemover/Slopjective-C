@@ -81,6 +81,7 @@ def symbol_record(
 
 
 def workspace_index(contract: dict[str, Any]) -> dict[str, Any]:
+    source = source_index()
     return {
         "contract_id": "objc3c.developer.tooling.workspace.semantic.index.v1",
         "available": True,
@@ -129,6 +130,10 @@ def workspace_index(contract: dict[str, Any]) -> dict[str, Any]:
                 origin="stdlib/module_inventory.json",
             )
         ],
+        "source_index": source,
+        "source_declaration_count": source["declaration_count"],
+        "source_reference_count": source["reference_count"],
+        "source_import_count": source["import_count"],
         "guardrails": {
             "contract_id": "objc3c.developer.tooling.workspace.package.guardrails.v1",
             "source_contracts": contract["expected_workspace_source_truth_inputs"][3:],
@@ -148,12 +153,68 @@ def workspace_index(contract: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def source_index() -> dict[str, Any]:
+    source_path = "tests/tooling/fixtures/native/hello.objc3"
+    return {
+        "contract_id": "objc3c.developer.tooling.source.index.v1",
+        "source_path": source_path,
+        "module_name": "Demo",
+        "available": True,
+        "source_truth_model": "source-text-plus-compile-manifest-diagnostics-and-summary-paths",
+        "manifest_path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.manifest.json",
+        "declaration_count": 1,
+        "reference_count": 1,
+        "import_count": 0,
+        "diagnostic_anchor_count": 0,
+        "emitted_artifact_count": 1,
+        "declarations": [
+            {
+                "symbol": "main",
+                "kind": "function",
+                "module": "Demo",
+                "location": location(source_path),
+                "definition": definition(source_path),
+                "hover": {
+                    "contents": "function main",
+                    "module": "Demo",
+                    "source": "compile-manifest-declaration-coordinate",
+                },
+                "origin": "compile-manifest",
+            }
+        ],
+        "references": [
+            {
+                "symbol": "main",
+                "module": "Demo",
+                "location": location(source_path),
+                "reference_kind": "definition",
+                "definition_reference": True,
+                "origin": "source-lexical-index",
+            }
+        ],
+        "imports": [],
+        "diagnostic_anchors": [],
+        "emitted_artifacts": [
+            {
+                "kind": "manifest",
+                "path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.manifest.json",
+                "origin": "compile-summary-paths",
+            }
+        ],
+        "source_index_digest": "e" * 64,
+        "deterministic_ordering": "source-location-then-kind-then-symbol",
+        "retired_route_reason": "",
+    }
+
+
 def language_server() -> dict[str, Any]:
     return {
         "contract_id": "objc3c.developer.tooling.language.server.capability.surface.v1",
         "summary_status_name": "ok",
         "manifest_backed_navigation": True,
         "workspace_index_backed_navigation": True,
+        "source_index_backed_hover": True,
+        "source_index_digest": "e" * 64,
         "diagnostic_transport": {
             "contract_id": "objc3c.developer.tooling.lsp.diagnostic.transport.v1",
             "source_path": "tests/tooling/fixtures/native/hello.objc3",
@@ -176,14 +237,19 @@ def language_server() -> dict[str, Any]:
                 "workspace-semantic-index-guardrails",
             ],
             "definition": ["compile-manifest-declaration-coordinates"],
+            "hover": [
+                "compile-manifest-declaration-coordinates",
+                "source-derived-editor-index",
+            ],
             "codeAction": ["diagnostics-json-fixits"],
         },
-        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
+        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, source-index hover, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
         "supported_capability_ids": [
             "publishDiagnostics",
             "documentSymbol",
             "workspaceSymbol",
             "definition",
+            "hover",
         ],
         "unpublished_capability_ids": [
             "references",
@@ -221,6 +287,16 @@ def language_server() -> dict[str, Any]:
                 "supported": True,
                 "support_class": "manifest-backed",
                 "evidence_ids": ["compile-manifest-declaration-coordinates"],
+                "fail_closed": False,
+                "unpublished_reason": "",
+            },
+            "hover": {
+                "supported": True,
+                "support_class": "source-index-backed",
+                "evidence_ids": [
+                    "compile-manifest-declaration-coordinates",
+                    "source-derived-editor-index",
+                ],
                 "fail_closed": False,
                 "unpublished_reason": "",
             },
@@ -265,6 +341,7 @@ def language_server() -> dict[str, Any]:
 
 
 def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
+    source = source_index()
     records = [
         {
             "kind": kind,
@@ -338,13 +415,21 @@ def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
         },
         "source_graph": {
             "available": True,
-            "graph_inputs": ["manifest-declarations", "workspace-index-packages"],
+            "graph_inputs": [
+                "manifest-declarations",
+                "workspace-index-packages",
+                "source-derived-editor-index",
+            ],
             "declaration_node_count": 1,
             "workspace_package_count": 2,
             "workspace_index_digest": "a" * 64,
+            "source_declaration_count": 1,
+            "source_reference_count": 1,
+            "source_index_digest": "e" * 64,
             "source_graph_digest": "d" * 64,
             "retired_route_reason": "",
         },
+        "source_index": source,
         "inspection_commands": {
             key: f"inspect {key}" for key in contract["expected_inspection_command_keys"]
         },
@@ -395,6 +480,7 @@ def debug_surface(contract: dict[str, Any]) -> dict[str, Any]:
 
 def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
     workspace = workspace_index(contract)
+    source = source_index()
     document_symbol = symbol_record()
     navigation = {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
@@ -424,6 +510,17 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
                 "target_compiler_range": location("tests/tooling/fixtures/native/hello.objc3")["compiler_range"],
             }
         ],
+        "hover_targets": [
+            {
+                "name": "main",
+                "kind": "function",
+                "contents": "function main",
+                "target_uri": "tests/tooling/fixtures/native/hello.objc3",
+                "target_range": location("tests/tooling/fixtures/native/hello.objc3")["range"],
+                "target_compiler_range": location("tests/tooling/fixtures/native/hello.objc3")["compiler_range"],
+            }
+        ],
+        "source_index": source,
         "workspace_index": workspace,
         "retired_route_reason": "",
     }
@@ -436,6 +533,8 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
         "diagnostics": {"status_name": "ok", "total": 0, "entries": []},
         "language_server": language_server(),
         "navigation": navigation,
+        "source_index": source,
+        "workspace_index": workspace,
         "artifact_inspector": artifact_inspector(contract),
         "formatter": {
             "contract_id": "objc3c.developer.tooling.formatter.surface.v1",

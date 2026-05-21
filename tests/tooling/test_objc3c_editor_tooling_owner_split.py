@@ -23,6 +23,7 @@ OWNER_MODULES = (
     "objc3c_editor_tooling.paths",
     "objc3c_editor_tooling.input_loading",
     "objc3c_editor_tooling.model",
+    "objc3c_editor_tooling.source_index",
     "objc3c_editor_tooling.validation",
     "objc3c_editor_tooling.workspace_index",
     "objc3c_editor_tooling.rendering",

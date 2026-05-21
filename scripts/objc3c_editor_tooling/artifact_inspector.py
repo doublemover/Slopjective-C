@@ -188,18 +188,24 @@ def _source_graph_payload(
     manifest_payload: dict[str, Any],
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     workspace_available = workspace_index.get("available") is True
+    source_index = source_index or {}
+    source_index_available = source_index.get("available") is True
     available = manifest_payload["available"] and (
         bool(symbols)
         or int(manifest_payload.get("source_graph_field_count", 0) or 0) > 0
         or workspace_available
+        or source_index_available
     )
     graph_inputs = ["manifest-declarations"] if symbols else []
     if int(manifest_payload.get("source_graph_field_count", 0) or 0) > 0:
         graph_inputs.append("manifest-source-graph-fields")
     if workspace_available:
         graph_inputs.append("workspace-index-packages")
+    if source_index_available:
+        graph_inputs.append("source-derived-editor-index")
     digest_input = {
         "symbols": [
             {
@@ -211,6 +217,7 @@ def _source_graph_payload(
             for symbol in symbols
         ],
         "workspace_index_digest": workspace_index.get("workspace_index_digest", ""),
+        "source_index_digest": source_index.get("source_index_digest", ""),
         "source_graph_fields": manifest_payload.get("source_graph_fields", []),
     }
     digest = hashlib.sha256(
@@ -222,6 +229,9 @@ def _source_graph_payload(
         "declaration_node_count": len(symbols),
         "workspace_package_count": int(workspace_index.get("package_count", 0) or 0),
         "workspace_index_digest": str(workspace_index.get("workspace_index_digest", "") or ""),
+        "source_declaration_count": int(source_index.get("declaration_count", 0) or 0),
+        "source_reference_count": int(source_index.get("reference_count", 0) or 0),
+        "source_index_digest": str(source_index.get("source_index_digest", "") or ""),
         "source_graph_digest": digest,
         "retired_route_reason": ""
         if available
@@ -304,6 +314,7 @@ def build_artifact_inspector_payload(
     inputs: EditorToolingInputs,
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary_paths = _summary_paths(inputs.summary)
     records = {
@@ -338,7 +349,13 @@ def build_artifact_inspector_payload(
             records["runtime_metadata_binary"],
             inputs.summary,
         ),
-        "source_graph": _source_graph_payload(manifest, symbols, workspace_index),
+        "source_graph": _source_graph_payload(
+            manifest,
+            symbols,
+            workspace_index,
+            source_index,
+        ),
+        "source_index": source_index or {},
         "inspection_commands": _inspection_commands(records, inputs.summary),
         "retired_route_reason": ""
         if supported

@@ -10,6 +10,7 @@ from objc3c_editor_tooling.artifact_inspector import build_artifact_inspector_pa
 from objc3c_editor_tooling.diagnostic_bridge import build_lsp_diagnostic_transport
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
+from objc3c_editor_tooling.source_index import build_source_index
 from objc3c_editor_tooling.validation import diagnostics_entries
 from objc3c_editor_tooling.workspace_index import (
     build_workspace_index,
@@ -26,6 +27,7 @@ class EditorToolingModel:
     formatter: dict[str, Any]
     formatted_source_text: str
     debug: dict[str, Any]
+    source_index: dict[str, Any]
     symbols: list[dict[str, Any]]
 
 
@@ -80,6 +82,7 @@ def build_language_server_payload(
     *,
     source_path: str = "",
     diagnostic_entries: list[Any] | None = None,
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest_available = bool(manifest_path_text)
     workspace_index_available = (
@@ -92,6 +95,8 @@ def build_language_server_payload(
         diagnostic_entries or [],
     )
     code_action_available = int(diagnostic_transport["code_action_count"]) > 0
+    source_index_available = bool(source_index) and source_index.get("available") is True
+    hover_available = source_index_available and int(source_index.get("declaration_count", 0) or 0) > 0
     capability_evidence = {
         "publishDiagnostics": ["diagnostics-json"],
         "documentSymbol": ["compile-manifest-declaration-coordinates"],
@@ -100,6 +105,10 @@ def build_language_server_payload(
             "workspace-semantic-index-guardrails",
         ],
         "definition": ["compile-manifest-declaration-coordinates"],
+        "hover": [
+            "compile-manifest-declaration-coordinates",
+            "source-derived-editor-index",
+        ],
         "codeAction": ["diagnostics-json-fixits"],
     }
     capability_statuses = {
@@ -137,12 +146,21 @@ def build_language_server_payload(
             "fail_closed": not (manifest_available and bool(symbols)),
             "unpublished_reason": "" if manifest_available and symbols else "disabled until compile emits declaration coordinates",
         },
+        "hover": {
+            "supported": hover_available,
+            "support_class": "source-index-backed" if hover_available else "fail-closed",
+            "evidence_ids": capability_evidence["hover"] if hover_available else [],
+            "fail_closed": not hover_available,
+            "unpublished_reason": ""
+            if hover_available
+            else "disabled until the source index has manifest-backed declarations",
+        },
         "references": {
             "supported": False,
             "support_class": "fail-closed-unpublished",
             "evidence_ids": [],
             "fail_closed": True,
-            "unpublished_reason": "not published; use documentSymbol/workspaceSymbol and definition on compile-owned declarations",
+            "unpublished_reason": "not published; lexical source references are indexed but no cross-module reference contract is published",
         },
         "rename": {
             "supported": False,
@@ -194,8 +212,12 @@ def build_language_server_payload(
         "manifest_backed_navigation": manifest_available,
         "workspace_index_backed_navigation": workspace_index_available,
         "diagnostic_transport": diagnostic_transport,
+        "source_index_backed_hover": hover_available,
+        "source_index_digest": str(source_index.get("source_index_digest", "") or "")
+        if isinstance(source_index, dict)
+        else "",
         "capability_evidence_roots": capability_evidence,
-        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
+        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, source-index hover, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
@@ -208,6 +230,7 @@ def build_navigation_payload(
     manifest_path_text: str | None,
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     document_symbols = document_symbol_records(source_display, module_name, symbols)
     workspace_symbols = [
@@ -224,6 +247,19 @@ def build_navigation_payload(
         }
         for record in document_symbols
     ]
+    source_index = source_index or {}
+    hover_targets = [
+        {
+            "name": declaration["symbol"],
+            "kind": declaration["kind"],
+            "contents": declaration["hover"]["contents"],
+            "target_uri": declaration["definition"]["target_uri"],
+            "target_range": declaration["definition"]["target_range"],
+            "target_compiler_range": declaration["definition"]["target_compiler_range"],
+        }
+        for declaration in source_index.get("declarations", [])
+        if isinstance(declaration, dict)
+    ]
     return {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
         "source_path": source_display,
@@ -235,6 +271,8 @@ def build_navigation_payload(
         "document_symbols": document_symbols,
         "workspace_symbols": workspace_symbols,
         "definition_targets": definition_targets,
+        "hover_targets": hover_targets,
+        "source_index": source_index,
         "workspace_index": workspace_index,
         "retired_route_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
     }
@@ -306,11 +344,22 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
     symbols = extract_symbols(inputs.manifest)
     diagnostic_entries = diagnostics_entries(inputs.diagnostics)
     module_name = str(inputs.manifest.get("module") or paths.source.path.stem)
+    summary_paths = inputs.summary.get("paths", {})
+    source_index = build_source_index(
+        source_path=paths.source.display_path,
+        module_name=module_name,
+        source_text=inputs.source_text,
+        manifest_path=inputs.manifest_path_text,
+        symbols=symbols,
+        diagnostics=diagnostic_entries,
+        artifact_paths=summary_paths if isinstance(summary_paths, dict) else {},
+    )
     workspace_index = build_workspace_index(
         paths.source.display_path,
         module_name,
         inputs.manifest_path_text,
         symbols,
+        source_index,
     )
     formatted_text, formatter = build_format_summary_for_source(
         paths.source.display_path,
@@ -325,6 +374,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             workspace_index,
             source_path=paths.source.display_path,
             diagnostic_entries=diagnostic_entries,
+            source_index=source_index,
         ),
         navigation=build_navigation_payload(
             paths.source.display_path,
@@ -332,6 +382,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             inputs.manifest_path_text,
             symbols,
             workspace_index,
+            source_index,
         ),
         workspace_index=workspace_index,
         artifact_inspector=build_artifact_inspector_payload(
@@ -339,10 +390,12 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             inputs,
             symbols,
             workspace_index,
+            source_index,
         ),
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(inputs.summary, inputs.object_path_text, symbols),
+        source_index=source_index,
         symbols=symbols,
     )
 

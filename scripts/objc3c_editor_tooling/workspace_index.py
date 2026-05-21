@@ -328,6 +328,7 @@ def build_workspace_index(
     module_name: str,
     manifest_path: str | None,
     symbols: list[dict[str, Any]],
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     packages = [
         local_source_package(source_path, module_name, manifest_path, symbols),
@@ -343,6 +344,9 @@ def build_workspace_index(
         "source_paths": [package["source_path"] for package in packages],
         "edges": edges,
         "guardrail_checks": guardrails["checks"],
+        "source_index_digest": source_index.get("source_index_digest", "")
+        if isinstance(source_index, dict)
+        else "",
     }
     evidence_roots = list(dict.fromkeys([
         "stdlib/module_inventory.json",
@@ -370,6 +374,16 @@ def build_workspace_index(
         "packages": packages,
         "cross_package_edges": edges,
         "package_symbols": package_symbols,
+        "source_index": source_index or {},
+        "source_declaration_count": int(source_index.get("declaration_count", 0) or 0)
+        if isinstance(source_index, dict)
+        else 0,
+        "source_reference_count": int(source_index.get("reference_count", 0) or 0)
+        if isinstance(source_index, dict)
+        else 0,
+        "source_import_count": int(source_index.get("import_count", 0) or 0)
+        if isinstance(source_index, dict)
+        else 0,
         "guardrails": guardrails,
         "workspace_index_digest": stable_digest(digest_inputs),
         "deterministic_ordering": "package-id-then-source-path",
