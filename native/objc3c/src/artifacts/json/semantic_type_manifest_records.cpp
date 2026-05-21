@@ -81,6 +81,22 @@ void WriteSemanticFunctionTypeManifestRecord(
     const Objc3SemanticFunctionTypeMetadata &metadata) {
   JsonObjectWriter object(out);
   object.StringField("name", metadata.name);
+  object.StringArrayField("generic_parameter_names_source_order",
+                          metadata.generic_parameter_names_source_order);
+  object.StringArrayField("generic_parameter_variance_source_order",
+                          metadata.generic_parameter_variance_source_order);
+  object.RawJsonField(
+      "generic_parameter_constraints_lexicographic",
+      RenderArtifactRecordArray(
+          metadata.generic_parameter_constraints_lexicographic,
+          [](std::ostream &constraints_out,
+             const std::vector<std::string> &constraints) {
+            objc3::io::json::JsonArrayWriter array(constraints_out);
+            for (const std::string &constraint : constraints) {
+              array.StringValue(constraint);
+            }
+            array.End();
+          }));
   object.RawJsonField("return_canonical_type",
                       RenderSemanticCanonicalType(
                           metadata.return_canonical_type));

@@ -16,6 +16,7 @@ NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "nat
 GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"
 PROTOCOL_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_protocol_generic_positive.objc3"
 GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_method_substitution_positive.objc3"
+GENERIC_FUNCTION_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_function_positive.objc3"
 PROTOCOL_CATEGORY_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "category_attachment_protocol_runtime_library.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
@@ -27,6 +28,8 @@ PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling"
 TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_typed_object_receiver_unknown_message.objc3"
 GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_constraint_violation.objc3"
 GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_substitution_unknown_message.objc3"
+GENERIC_FUNCTION_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_function_constraint_violation.objc3"
+GENERIC_FUNCTION_UNRESOLVED_RETURN_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_function_unresolved_return.objc3"
 NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nested_generic_constraint_violation.objc3"
 GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_invariant_assignment.objc3"
 PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_generic_unknown_protocol.objc3"
@@ -75,6 +78,7 @@ SOURCE_TRUTH_PATHS = [
     GENERIC_VARIANCE_POSITIVE_FIXTURE,
     PROTOCOL_GENERIC_POSITIVE_FIXTURE,
     GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE,
+    GENERIC_FUNCTION_POSITIVE_FIXTURE,
     PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
     NEGATIVE_FIXTURE,
     NULLABILITY_NEGATIVE_FIXTURE,
@@ -86,6 +90,8 @@ SOURCE_TRUTH_PATHS = [
     TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
     GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
     GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
+    GENERIC_FUNCTION_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
+    GENERIC_FUNCTION_UNRESOLVED_RETURN_NEGATIVE_FIXTURE,
     NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
     GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE,
     PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE,

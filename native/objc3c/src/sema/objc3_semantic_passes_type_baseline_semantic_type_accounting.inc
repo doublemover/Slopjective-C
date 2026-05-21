@@ -78,6 +78,10 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo
   SemanticTypeInfo info = MakeScalarSemanticType(fn.param_types[index]);
   if (index < fn.param_canonical_types.size()) {
     info.canonical_type = fn.param_canonical_types[index];
+    if (!info.canonical_type.object_pointer_type_name.empty()) {
+      info.object_pointer_type_name =
+          info.canonical_type.object_pointer_type_name;
+    }
   }
   if (IsObjCReferenceAliasValueType(fn.param_types[index])) {
     if (index < fn.param_ownership_is_weak_reference.size() &&
@@ -102,6 +106,10 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInf
   }
   SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
   info.canonical_type = fn.return_canonical_type;
+  if (!info.canonical_type.object_pointer_type_name.empty()) {
+    info.object_pointer_type_name =
+        info.canonical_type.object_pointer_type_name;
+  }
   if (IsObjCReferenceAliasValueType(fn.return_type)) {
     if (fn.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;

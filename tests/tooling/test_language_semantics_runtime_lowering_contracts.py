@@ -56,6 +56,14 @@ GENERIC_METHOD_SUBSTITUTION_FIXTURE = (
     / "native"
     / "type_semantic_generic_method_substitution_positive.objc3"
 )
+GENERIC_FUNCTION_FIXTURE = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "native"
+    / "type_semantic_generic_function_positive.objc3"
+)
 AWAIT_OUTSIDE_ASYNC_NEGATIVE = (
     ROOT
     / "tests"
@@ -190,6 +198,19 @@ def test_language_semantics_generic_method_fixture_exercises_receiver_substituti
         "- (T)peek;",
         "fn consumeGenericMethod(vault: SemanticVault<SemanticBox *> *?)",
         "let record = [vault? peek];",
+        "let title = [record? title];",
+    ):
+        assert token in fixture
+
+
+def test_language_semantics_generic_function_fixture_exercises_public_callable_generics() -> None:
+    fixture = _read(GENERIC_FUNCTION_FIXTURE)
+
+    for token in (
+        "fn genericIdentity<T : id<Persistable>>(value: T) -> T",
+        "return value;",
+        "fn consumeGenericFunction(box: SemanticBox *?)",
+        "let record = genericIdentity(box);",
         "let title = [record? title];",
     ):
         assert token in fixture

@@ -4,6 +4,9 @@ from typing import Any
 
 from objc3c_type_semantic_model_closure.paths import CONTRACT_ID
 from objc3c_type_semantic_model_closure.paths import GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_FUNCTION_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_FUNCTION_POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_FUNCTION_UNRESOLVED_RETURN_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_VARIANCE_POSITIVE_FIXTURE
@@ -53,6 +56,7 @@ def build_summary_payload(
         "nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE),
         "generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
         "protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
+        "generic_function_positive_fixture": rel(GENERIC_FUNCTION_POSITIVE_FIXTURE),
         "protocol_category_positive_fixture": rel(PROTOCOL_CATEGORY_POSITIVE_FIXTURE),
         "cross_module_generic_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
         "cross_module_generic_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
@@ -68,6 +72,8 @@ def build_summary_payload(
         "typed_object_receiver_unknown_message_negative_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
         "generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
+        "generic_function_constraint_violation_negative_fixture": rel(GENERIC_FUNCTION_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
+        "generic_function_unresolved_return_negative_fixture": rel(GENERIC_FUNCTION_UNRESOLVED_RETURN_NEGATIVE_FIXTURE),
         "nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "generic_invariant_assignment_negative_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE),
         "protocol_generic_unknown_protocol_negative_fixture": rel(PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE),
@@ -75,6 +81,7 @@ def build_summary_payload(
         "nested_generic_positive_compile": _without_manifest(runs["nested_generic_positive_run"]),
         "generic_variance_positive_compile": _without_manifest(runs["generic_variance_positive_run"]),
         "protocol_generic_positive_compile": _without_manifest(runs["protocol_generic_positive_run"]),
+        "generic_function_positive_compile": _without_manifest(runs["generic_function_positive_run"]),
         "protocol_category_positive_compile": _without_manifest(runs["protocol_category_positive_run"]),
         "cross_module_generic_consumer_compile": _without_manifest(runs["cross_module_generic_consumer_run"]),
         "cross_module_generic_drift_compile": _without_manifest(runs["cross_module_generic_drift_run"]),
@@ -92,6 +99,8 @@ def build_summary_payload(
         "typed_object_receiver_unknown_message_negative_compile": _without_manifest(runs["typed_object_receiver_unknown_message_negative_run"]),
         "generic_constraint_violation_negative_compile": _without_manifest(runs["generic_constraint_violation_negative_run"]),
         "generic_substitution_unknown_message_negative_compile": _without_manifest(runs["generic_substitution_unknown_message_negative_run"]),
+        "generic_function_constraint_violation_negative_compile": _without_manifest(runs["generic_function_constraint_violation_negative_run"]),
+        "generic_function_unresolved_return_negative_compile": _without_manifest(runs["generic_function_unresolved_return_negative_run"]),
         "nested_generic_constraint_violation_negative_compile": _without_manifest(runs["nested_generic_constraint_violation_negative_run"]),
         "generic_invariant_assignment_negative_compile": _without_manifest(runs["generic_invariant_assignment_negative_run"]),
         "protocol_generic_unknown_protocol_negative_compile": _without_manifest(runs["protocol_generic_unknown_protocol_negative_run"]),

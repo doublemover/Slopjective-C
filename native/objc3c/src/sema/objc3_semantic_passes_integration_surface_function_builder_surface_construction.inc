@@ -1,5 +1,58 @@
       FunctionInfo info;
       info.arity = fn.params.size();
+      std::unordered_set<std::string> seen_function_generic_parameters;
+      for (const auto &generic_param : fn.generic_params) {
+        if (!seen_function_generic_parameters.insert(generic_param.name).second) {
+          diagnostics.push_back(MakeDiag(
+              generic_param.line, generic_param.column, "O3S200",
+              "duplicate generic parameter '" + generic_param.name +
+                  "' in function '" + fn.name + "'"));
+          continue;
+        }
+        info.generic_parameter_names_source_order.push_back(generic_param.name);
+        info.generic_parameter_variance_source_order.push_back(
+            generic_param.variance_spelling);
+        std::vector<std::string> constraints;
+        if (generic_param.has_constraint) {
+          if (generic_param.constraint_type_name != "id" ||
+              !generic_param.has_constraint_generic_suffix) {
+            diagnostics.push_back(MakeDiag(
+                generic_param.constraint_line, generic_param.constraint_column,
+                "O3S206",
+                "type mismatch: generic parameter '" + generic_param.name +
+                    "' in function '" + fn.name +
+                    "' requires an id<Protocol> constraint"));
+          } else {
+            const ProtocolCompositionParseResult parsed =
+                ParseProtocolCompositionSuffixText(
+                    generic_param.constraint_generic_suffix_text);
+            if (!parsed.IsValid()) {
+              diagnostics.push_back(MakeDiag(
+                  generic_param.constraint_line,
+                  generic_param.constraint_column, "O3S206",
+                  "type mismatch: generic parameter '" + generic_param.name +
+                      "' in function '" + fn.name +
+                      "' has an invalid protocol constraint"));
+            } else {
+              constraints = parsed.names_lexicographic;
+              for (const auto &protocol_name : constraints) {
+                if (protocol_definitions.find(protocol_name) ==
+                    protocol_definitions.end()) {
+                  diagnostics.push_back(MakeDiag(
+                      generic_param.constraint_line,
+                      generic_param.constraint_column, "O3S206",
+                      "type mismatch: generic parameter '" +
+                          generic_param.name + "' in function '" + fn.name +
+                          "' references unknown constraint protocol '" +
+                          protocol_name + "'"));
+                }
+              }
+            }
+          }
+        }
+        info.generic_parameter_constraints_lexicographic.push_back(
+            std::move(constraints));
+      }
       info.param_types.reserve(fn.params.size());
       info.param_canonical_types.reserve(fn.params.size());
       info.param_is_vector.reserve(fn.params.size());

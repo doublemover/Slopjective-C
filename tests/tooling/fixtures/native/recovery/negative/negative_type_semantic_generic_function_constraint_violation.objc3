@@ -1,0 +1,26 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericFunctionConstraintViolation;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface PlainBox
+@end
+
+@implementation PlainBox
+@end
+
+fn genericIdentity<T : id<Persistable>>(value: T) -> T {
+  return value;
+}
+
+fn consumeBadGenericFunction(box: PlainBox *?) -> i32 {
+  let record = genericIdentity(box);
+  return 0;
+}

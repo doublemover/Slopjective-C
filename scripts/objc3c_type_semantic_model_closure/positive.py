@@ -238,6 +238,45 @@ def compile_generic_method_substitution_positive_summary(run: dict[str, Any]) ->
     }
 
 
+def compile_generic_function_positive_summary(run: dict[str, Any]) -> dict[str, bool]:
+    manifest = run.get("manifest")
+    model = nested_semantic_model(manifest)
+    canonical_metadata = manifest.get("semantic_canonical_type_metadata") if isinstance(manifest, dict) else None
+    canonical_functions = canonical_metadata.get("functions", []) if isinstance(canonical_metadata, dict) else []
+    canonical_interfaces = canonical_metadata.get("interfaces", []) if isinstance(canonical_metadata, dict) else []
+    generic_identity = next(
+        (entry for entry in canonical_functions if entry.get("name") == "genericIdentity"),
+        None,
+    )
+    consume_generic = next(
+        (entry for entry in canonical_functions if entry.get("name") == "consumeGenericFunction"),
+        None,
+    )
+    semantic_box = next((entry for entry in canonical_interfaces if entry.get("name") == "SemanticBox"), None)
+    identity_params = generic_identity.get("param_canonical_types", []) if isinstance(generic_identity, dict) else []
+    identity_return = generic_identity.get("return_canonical_type", {}) if isinstance(generic_identity, dict) else {}
+    consume_params = consume_generic.get("param_canonical_types", []) if isinstance(consume_generic, dict) else []
+    return {
+        "generic_function_positive_fixture_compiles": run["exit_code"] == 0,
+        "generic_function_positive_manifest_emitted": run["manifest_path"] is not None,
+        "generic_function_positive_llvm_ir_emitted": run["llvm_ir_path"] is not None,
+        "generic_function_positive_has_no_diagnostics": run["diagnostics"] == [],
+        "generic_function_positive_manifest_ready": bool(
+            model and model.get("ready_for_lowering_and_runtime")
+        ),
+        "generic_function_metadata_preserves_type_parameter": isinstance(generic_identity, dict)
+        and generic_identity.get("generic_parameter_names_source_order") == ["T"]
+        and generic_identity.get("generic_parameter_constraints_lexicographic") == [["Persistable"]],
+        "generic_function_param_and_return_keep_type_parameter": len(identity_params) == 1
+        and (identity_params[0] or {}).get("canonical_spelling") == "T"
+        and identity_return.get("canonical_spelling") == "T",
+        "generic_function_call_argument_preserves_concrete_type": len(consume_params) == 1
+        and (consume_params[0] or {}).get("object_pointer_type_name") == "SemanticBox",
+        "generic_function_target_property_metadata_available": isinstance(semantic_box, dict)
+        and any(property_entry.get("name") == "title" for property_entry in semantic_box.get("properties", [])),
+    }
+
+
 def compile_protocol_category_positive_summary(run: dict[str, Any]) -> dict[str, bool]:
     manifest = run.get("manifest")
     model = nested_semantic_model(manifest)

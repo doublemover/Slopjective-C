@@ -9,6 +9,10 @@
 struct Objc3SemanticFunctionTypeMetadata {
   std::string name;
   std::size_t arity = 0;
+  std::vector<std::string> generic_parameter_names_source_order;
+  std::vector<std::string> generic_parameter_variance_source_order;
+  std::vector<std::vector<std::string>>
+      generic_parameter_constraints_lexicographic;
   std::vector<ValueType> param_types;
   std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;
