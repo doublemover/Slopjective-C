@@ -1,0 +1,339 @@
+{
+  "contract_id": "objc3c.release.channel.operations.policy.v1",
+  "schema_version": 1,
+  "issue_ref": "#8179",
+  "source_authority": "checked-in-release-channel-operations-policy",
+  "generated_artifact_role": "generated outputs are replayable evidence summaries only; checked policy and manifests remain source truth",
+  "required_channels": [
+    "stable",
+    "nightly"
+  ],
+  "channel_order": [
+    "stable",
+    "nightly"
+  ],
+  "policy_surfaces": {
+    "source_policy": "tests/tooling/fixtures/release_channel_operations_policy.json",
+    "schema": "schemas/objc3c-release-channel-operations-policy-v1.schema.json",
+    "validator": "scripts/check_objc3c_release_channel_operations_policy.py",
+    "runbook": "docs/runbooks/objc3c_release_channel_operations.md",
+    "upstream_checked_manifests": [
+      "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+      "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+      "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
+      "schemas/objc3c-update-manifest-v1.schema.json",
+      "schemas/objc3c-release-channel-operations-v1.schema.json",
+      "schemas/objc3c-upgrade-support-report-v1.schema.json"
+    ]
+  },
+  "release_evidence_policy": {
+    "source_truth_roots": [
+      "schemas/",
+      "tests/tooling/fixtures/",
+      "docs/runbooks/"
+    ],
+    "generated_output_role": "tmp artifacts and reports prove replayability but do not create support claims",
+    "evidence_state_values": [
+      "policy-defined",
+      "verified"
+    ],
+    "releasable_state_values": [
+      "blocked-until-verified-evidence",
+      "releasable"
+    ],
+    "required_for_releasable": [
+      {
+        "class_id": "release-foundation",
+        "evidence_kind": "generated-artifact",
+        "required_paths": [
+          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json"
+        ],
+        "required_commands": [
+          "npm run objc3c -- validate-release-foundation"
+        ]
+      },
+      {
+        "class_id": "update-manifest",
+        "evidence_kind": "generated-artifact",
+        "required_paths": [
+          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json"
+        ],
+        "required_commands": [
+          "npm run objc3c -- validate-release-operations"
+        ]
+      },
+      {
+        "class_id": "rollback-proof",
+        "evidence_kind": "generated-artifact",
+        "required_paths": [
+          "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json"
+        ],
+        "required_commands": [
+          "npm run objc3c -- validate-packaging-channels-end-to-end"
+        ]
+      },
+      {
+        "class_id": "signed-artifacts",
+        "evidence_kind": "generated-artifact",
+        "required_paths": [
+          "tmp/reports/package-channels/package-channels-summary.json"
+        ],
+        "required_commands": [
+          "npm run objc3c -- validate-packaging-channels"
+        ]
+      }
+    ]
+  },
+  "update_policy": {
+    "missing_channel_behavior": "fail-closed",
+    "manifest_contract": "objc3c.release.operations.update-manifest.v1",
+    "manifest_path": "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+    "allowed_update_mechanics": [
+      "channel-selected update manifest lookup",
+      "source-derived warning class publication",
+      "same-major upgrade path validation"
+    ],
+    "blocked_update_mechanics": [
+      "hosted background updater",
+      "package registry upgrade semantics",
+      "silent cross-major upgrade",
+      "warning-free nightly promotion"
+    ]
+  },
+  "rollback_policy": {
+    "missing_rollback_behavior": "fail-closed",
+    "required_primitives": [
+      "local-installer",
+      "offline-bundle"
+    ],
+    "rollback_drill_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+    "proof_required": [
+      "installer or offline-bundle receipt",
+      "rollback removal proof",
+      "same-major revert guidance",
+      "blocking diagnostic when proof is absent"
+    ],
+    "metadata_required": [
+      "rollback_channel",
+      "operator_command",
+      "evidence",
+      "blocks_publication_on_failure"
+    ]
+  },
+  "channels": [
+    {
+      "channel_id": "stable",
+      "operation_class": "stable",
+      "support_claim_scope": "public-stable-after-evidence",
+      "publication_mechanics": {
+        "gate_actions": [
+          "validate-release-foundation",
+          "validate-release-candidate-conformance",
+          "validate-packaging-channels",
+          "validate-release-operations-end-to-end",
+          "validate-distribution-credibility-end-to-end"
+        ],
+        "notes_source_mode": "source-derived",
+        "signed_artifact_policy": "installer and archive digests must come from package-channel evidence",
+        "release_notes_sources": [
+          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tests/tooling/fixtures/release_channel_operations_policy.json"
+        ]
+      },
+      "update_mechanics": {
+        "update_manifest_channel": "stable",
+        "permitted_targets": [
+          "stable"
+        ],
+        "warnings": [
+          "deprecated-channel",
+          "support-window-expired"
+        ],
+        "missing_manifest_behavior": "fail-closed"
+      },
+      "rollback_mechanics": {
+        "primitive": "local-installer",
+        "command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "proof_required": [
+          "local installer receipt",
+          "rollback removal proof"
+        ],
+        "blocks_publication_on_failure": true
+      },
+      "evidence": {
+        "evidence_state": "policy-defined",
+        "source_truth": [
+          "tests/tooling/fixtures/release_channel_operations_policy.json",
+          "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+          "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+        ],
+        "generated_evidence_artifacts": [
+          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tmp/artifacts/release-operations/channel-manifest/objc3c-release-channel-manifest.json",
+          "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json",
+          "tmp/reports/package-channels/package-channels-summary.json"
+        ],
+        "replayable_public_commands": [
+          "npm run objc3c -- validate-release-foundation",
+          "npm run objc3c -- validate-release-candidate-conformance",
+          "npm run objc3c -- validate-packaging-channels",
+          "npm run objc3c -- validate-release-operations-end-to-end",
+          "npm run objc3c -- validate-distribution-credibility-end-to-end"
+        ],
+        "required_evidence_classes": [
+          "release-foundation",
+          "update-manifest",
+          "rollback-proof",
+          "signed-artifacts"
+        ],
+        "verified_evidence": []
+      },
+      "releasability": {
+        "state": "blocked-until-verified-evidence",
+        "may_call_releasable": false,
+        "missing_evidence_behavior": "fail-closed"
+      },
+      "claim_boundaries": {
+        "unproven_distribution_claims_not_made": true,
+        "stable_support_claim_allowed": true,
+        "forbidden_claims": [
+          "hosted update service",
+          "background auto-update service",
+          "package registry launch",
+          "production release before verified gate evidence"
+        ]
+      }
+    },
+    {
+      "channel_id": "nightly",
+      "operation_class": "nightly",
+      "support_claim_scope": "nightly-evidence-only",
+      "publication_mechanics": {
+        "gate_actions": [
+          "test-nightly",
+          "validate-release-foundation",
+          "validate-packaging-channels",
+          "validate-release-operations"
+        ],
+        "notes_source_mode": "source-derived",
+        "signed_artifact_policy": "installer and archive digests must come from package-channel evidence",
+        "release_notes_sources": [
+          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tests/tooling/fixtures/release_channel_operations_policy.json"
+        ]
+      },
+      "update_mechanics": {
+        "update_manifest_channel": "nightly",
+        "permitted_targets": [
+          "nightly",
+          "stable"
+        ],
+        "warnings": [
+          "nightly-channel",
+          "nightly-rollback-required",
+          "downgrade-available"
+        ],
+        "missing_manifest_behavior": "fail-closed"
+      },
+      "rollback_mechanics": {
+        "primitive": "offline-bundle",
+        "command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "proof_required": [
+          "offline-bundle receipt",
+          "rollback removal proof"
+        ],
+        "blocks_publication_on_failure": true
+      },
+      "evidence": {
+        "evidence_state": "policy-defined",
+        "source_truth": [
+          "tests/tooling/fixtures/release_channel_operations_policy.json",
+          "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+          "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+        ],
+        "generated_evidence_artifacts": [
+          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tmp/artifacts/release-operations/channel-manifest/objc3c-release-channel-manifest.json",
+          "tmp/artifacts/release-operations/publication/objc3c-upgrade-report.json",
+          "tmp/reports/package-channels/package-channels-summary.json"
+        ],
+        "replayable_public_commands": [
+          "npm run objc3c -- test-nightly",
+          "npm run objc3c -- validate-release-foundation",
+          "npm run objc3c -- validate-packaging-channels",
+          "npm run objc3c -- validate-release-operations"
+        ],
+        "required_evidence_classes": [
+          "release-foundation",
+          "update-manifest",
+          "rollback-proof",
+          "signed-artifacts"
+        ],
+        "verified_evidence": []
+      },
+      "releasability": {
+        "state": "blocked-until-verified-evidence",
+        "may_call_releasable": false,
+        "missing_evidence_behavior": "fail-closed"
+      },
+      "claim_boundaries": {
+        "unproven_distribution_claims_not_made": true,
+        "stable_support_claim_allowed": false,
+        "forbidden_claims": [
+          "stable support",
+          "hosted update service",
+          "background auto-update service",
+          "package registry launch",
+          "warning-free nightly promotion"
+        ]
+      }
+    }
+  ],
+  "forbidden_distribution_claims": [
+    "hosted update service",
+    "background auto-update service",
+    "package registry launch",
+    "public production release without gate evidence"
+  ],
+  "fail_closed_rules": [
+    {
+      "rule_id": "missing-required-channel",
+      "diagnostic_id": "release-channel-required-channel-missing",
+      "trigger": "stable or nightly channel is absent from the source policy",
+      "required_action": "block release-channel publication until the checked policy declares both channels",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "missing-update-policy",
+      "diagnostic_id": "release-channel-update-policy-missing",
+      "trigger": "channel update mechanics omit the generated manifest contract or fail-closed missing-channel behavior",
+      "required_action": "block release-channel publication until update mechanics are source-defined",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "missing-rollback-policy",
+      "diagnostic_id": "release-channel-rollback-policy-missing",
+      "trigger": "rollback primitive, drill command, proof metadata, or blocking behavior is absent",
+      "required_action": "block release-channel publication until rollback proof is source-defined",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "releasable-without-verified-evidence",
+      "diagnostic_id": "release-channel-releasable-evidence-missing",
+      "trigger": "a channel is marked releasable before required generated evidence is verified",
+      "required_action": "block release-channel publication and run the required release, update, rollback, and artifact validation commands",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "nightly-stable-claim",
+      "diagnostic_id": "release-channel-nightly-stable-claim",
+      "trigger": "nightly policy attempts to claim stable support or warning-free promotion",
+      "required_action": "block release-channel publication and keep nightly evidence-only",
+      "blocks_publication": true
+    }
+  ]
+}
