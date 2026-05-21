@@ -38,8 +38,11 @@ def _runtime_workload_rows(payload: dict[str, object]) -> dict[str, dict[str, ob
 def _write_temp_runtime_contracts(root: Path) -> None:
     runtime_root = root / "tests" / "tooling" / "fixtures" / "runtime_performance"
     malformed_metadata = runtime_root / "malformed_metadata" / "truncated_dispatch.meta.json"
+    probe_script = root / "scripts" / "probe_objc3c_runtime_scale_evidence.py"
     malformed_metadata.parent.mkdir(parents=True, exist_ok=True)
     malformed_metadata.write_text('{"schema_version": 1, "stable_diagnostic":', encoding="utf-8")
+    probe_script.parent.mkdir(parents=True, exist_ok=True)
+    probe_script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
     _write_json(
         runtime_root / "workload_replay_contract.json",
         {
@@ -108,6 +111,11 @@ def _write_temp_runtime_contracts(root: Path) -> None:
         {
             "contract_id": "objc3c.runtime.performance.stress.sanitizer.contract.v1",
             "schema_version": 1,
+            "scale_evidence_probe": {
+                "probe_script": "scripts/probe_objc3c_runtime_scale_evidence.py",
+                "summary_report": "tmp/reports/runtime-performance/scale-evidence-summary.json",
+                "support_authority": False,
+            },
             "sanitizer_contracts": [
                 {
                     "sanitizer_id": "dispatch-asan",
@@ -169,6 +177,9 @@ def test_runtime_performance_contract_surfaces_validate_checked_in_contracts() -
     assert summary["metadata_resilience"]["fuzz_contract_count"] == 1
     assert summary["stress_sanitizer"]["sanitizer_contract_count"] == 4
     assert summary["stress_sanitizer"]["stress_scale_contract_count"] == 8
+    assert summary["stress_sanitizer"]["scale_evidence_probe"]["summary_report"] == (
+        "tmp/reports/runtime-performance/scale-evidence-summary.json"
+    )
     assert {row["path"] for row in summary["contract_files"]} == {
         "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
         "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",

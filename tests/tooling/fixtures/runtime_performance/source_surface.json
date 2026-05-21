@@ -73,6 +73,7 @@
   "runtime_acceptance_paths": [
     "scripts/build_objc3c_native.ps1",
     "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/probe_objc3c_runtime_scale_evidence.py",
     "scripts.objc3c_workflow",
     "scripts/package_objc3c_runnable_toolchain.ps1"
   ],

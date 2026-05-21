@@ -21,7 +21,8 @@
   "summary_reports": [
     "tmp/reports/runtime-performance/benchmark-summary.json",
     "tmp/reports/runtime-performance/integration-summary.json",
-    "tmp/reports/runtime-performance/runnable-end-to-end-summary.json"
+    "tmp/reports/runtime-performance/runnable-end-to-end-summary.json",
+    "tmp/reports/runtime-performance/scale-evidence-summary.json"
   ],
   "packet_roots": [
     "tmp/reports/runtime-performance/startup-installation",
@@ -50,6 +51,7 @@
   "exact_live_paths_for_downstream_work": [
     "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
     "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+    "scripts/probe_objc3c_runtime_scale_evidence.py",
     "tmp/reports/runtime-performance"
   ]
 }

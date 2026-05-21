@@ -393,6 +393,26 @@ def validate_stress_sanitizer_contract(
         "stress_scale_contracts",
         "runtime performance stress/sanitizer contract",
     )
+    scale_evidence_probe = _require_mapping(
+        payload,
+        "scale_evidence_probe",
+        "runtime performance stress/sanitizer contract",
+    )
+    probe_script = _require_string(
+        scale_evidence_probe.get("probe_script"),
+        "probe_script",
+        "runtime performance scale evidence probe",
+    )
+    _require_repo_file(Path(probe_script), field_name="probe_script", case_id="scale_evidence_probe")
+    summary_report = _require_string(
+        scale_evidence_probe.get("summary_report"),
+        "summary_report",
+        "runtime performance scale evidence probe",
+    )
+    if not summary_report.startswith("tmp/reports/runtime-performance/"):
+        raise RuntimeError("runtime performance scale evidence probe summary must stay under tmp reports")
+    if scale_evidence_probe.get("support_authority") is not False:
+        raise RuntimeError("runtime performance scale evidence probe must be provenance-only")
     for row in sanitizer_contracts:
         if not isinstance(row, dict):
             raise RuntimeError("runtime performance sanitizer contract contains a non-object row")
@@ -426,6 +446,11 @@ def validate_stress_sanitizer_contract(
             raise RuntimeError(f"runtime performance stress row {stress_id} must be provenance-only")
     return {
         "contract_id": str(payload["contract_id"]),
+        "scale_evidence_probe": {
+            "probe_script": probe_script,
+            "summary_report": summary_report,
+            "support_authority": False,
+        },
         "sanitizer_contract_count": len(sanitizer_contracts),
         "stress_scale_contract_count": len(stress_scale_contracts),
     }
