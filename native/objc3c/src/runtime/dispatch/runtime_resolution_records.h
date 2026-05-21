@@ -40,6 +40,7 @@ struct PropertyLookupCacheEntry {
 };
 
 struct MethodCacheEntry {
+  std::uint32_t cache_abi_version = 1;
   bool resolved = false;
   bool dispatch_family_is_class = false;
   bool fast_path_seeded = false;
@@ -53,6 +54,7 @@ struct MethodCacheEntry {
   std::uint64_t lookup_start_base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
+  std::uint64_t cache_entry_generation = 0;
   std::uint64_t parameter_count = 0;
   RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
@@ -69,6 +71,8 @@ struct MethodCacheEntry {
   std::uint64_t cache_method_surface_generation = 0;
   objc3_runtime_dispatch_status_code strict_error_status =
       OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+  objc3_runtime_dispatch_status_code miss_status =
+      OBJC3_RUNTIME_DISPATCH_STATUS_OK;
   const void *implementation = nullptr;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
   const RealizedPropertyAccessor *runtime_property_accessor = nullptr;

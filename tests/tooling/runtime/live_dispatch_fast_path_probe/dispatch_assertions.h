@@ -44,6 +44,46 @@ inline bool SeededEntriesMatch(const ProbeRun &run) {
          run.explicit_entry.fast_path_reason == "direct";
 }
 
+inline bool RuntimeCacheAbiFieldsMatch(const ProbeRun &run) {
+  const auto &baseline = run.baseline.state;
+  const auto &direct = run.direct.state;
+  const auto &strict_first = run.strict_error_first.state;
+  const auto &dynamic_entry = run.dynamic_entry.entry;
+  const auto &explicit_entry = run.explicit_entry.entry;
+  const auto &strict_entry = run.strict_error_entry.entry;
+
+  const bool baseline_invalidation_is_initial_or_reset =
+      baseline.last_invalidation_reason ==
+          OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE ||
+      baseline.last_invalidation_reason ==
+          OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_RESET;
+  const bool strict_invalidation_is_initial_or_reset =
+      strict_first.last_invalidation_reason ==
+          baseline.last_invalidation_reason;
+
+  return baseline.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         direct.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         strict_first.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         dynamic_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         explicit_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         strict_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         baseline.next_cache_entry_generation ==
+             baseline.cache_entry_count + 1 &&
+         direct.next_cache_entry_generation ==
+             baseline.next_cache_entry_generation &&
+         strict_first.next_cache_entry_generation ==
+             strict_first.cache_entry_count + 1 &&
+         baseline_invalidation_is_initial_or_reset &&
+         strict_invalidation_is_initial_or_reset &&
+         dynamic_entry.cache_entry_generation != 0 &&
+         explicit_entry.cache_entry_generation != 0 &&
+         strict_entry.cache_entry_generation != 0 &&
+         dynamic_entry.miss_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         explicit_entry.miss_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         strict_entry.miss_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+}
+
 inline bool DirectCallsLeaveRuntimeCountersUnchanged(const ProbeRun &run) {
   const auto &baseline = run.baseline.state;
   const auto &direct = run.direct.state;
@@ -165,6 +205,7 @@ inline bool StrictErrorCacheEntryMatches(const ProbeRun &run) {
 inline bool ProbeAssertionsPassed(const ProbeRun &run) {
   return RuntimeSnapshotCopiesSucceeded(run) && FixtureReturnValuesMatch(run) &&
          SeededEntriesMatch(run) &&
+         RuntimeCacheAbiFieldsMatch(run) &&
          DirectCallsLeaveRuntimeCountersUnchanged(run) &&
          FirstMixedDispatchHitsClassFinalFastPath(run) &&
          SecondMixedDispatchReusesClassFinalFastPath(run) &&

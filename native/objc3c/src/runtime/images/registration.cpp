@@ -83,6 +83,8 @@ void RebindRestoredMethodCacheAccessorsUnlocked(RuntimeState &state) {
         FindRestoredRuntimePropertyAccessorUnlocked(state, entry);
     if (accessor == nullptr) {
       cache_it = state.method_cache.erase(cache_it);
+      state.last_method_cache_invalidation_reason =
+          OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_PROPERTY_ACCESSOR_REBIND;
       continue;
     }
     entry.runtime_property_accessor = accessor;
@@ -141,6 +143,9 @@ struct RuntimeRegistrationMutationCheckpoint {
   std::uint64_t method_cache_miss_count = 0;
   std::uint64_t slow_path_lookup_count = 0;
   std::uint64_t stale_method_cache_entry_count = 0;
+  std::uint64_t next_method_cache_entry_generation = 1;
+  int last_method_cache_invalidation_reason =
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE;
   std::uint64_t fast_path_seed_count = 0;
   std::uint64_t fast_path_hit_count = 0;
   std::uint64_t class_graph_generation = 0;
@@ -247,6 +252,10 @@ struct RuntimeRegistrationMutationCheckpoint {
         method_cache_miss_count(state.method_cache_miss_count),
         slow_path_lookup_count(state.slow_path_lookup_count),
         stale_method_cache_entry_count(state.stale_method_cache_entry_count),
+        next_method_cache_entry_generation(
+            state.next_method_cache_entry_generation),
+        last_method_cache_invalidation_reason(
+            state.last_method_cache_invalidation_reason),
         fast_path_seed_count(state.fast_path_seed_count),
         fast_path_hit_count(state.fast_path_hit_count),
         class_graph_generation(state.class_graph_generation),
@@ -366,6 +375,10 @@ struct RuntimeRegistrationMutationCheckpoint {
     state.method_cache_miss_count = method_cache_miss_count;
     state.slow_path_lookup_count = slow_path_lookup_count;
     state.stale_method_cache_entry_count = stale_method_cache_entry_count;
+    state.next_method_cache_entry_generation =
+        next_method_cache_entry_generation;
+    state.last_method_cache_invalidation_reason =
+        last_method_cache_invalidation_reason;
     state.fast_path_seed_count = fast_path_seed_count;
     state.fast_path_hit_count = fast_path_hit_count;
     state.class_graph_generation = class_graph_generation;

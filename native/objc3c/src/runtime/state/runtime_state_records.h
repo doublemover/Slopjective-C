@@ -1,5 +1,6 @@
 #pragma once
 
+#include "runtime/dispatch/dispatch_snapshot_contracts.h"
 #include "runtime/dispatch/method_cache.h"
 #include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
@@ -91,6 +92,9 @@ struct RuntimeState {
   std::uint64_t method_cache_miss_count = 0;
   std::uint64_t slow_path_lookup_count = 0;
   std::uint64_t stale_method_cache_entry_count = 0;
+  std::uint64_t next_method_cache_entry_generation = 1;
+  int last_method_cache_invalidation_reason =
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE;
   std::uint64_t live_dispatch_count = 0;
   std::uint64_t strict_dispatch_error_count = 0;
   std::uint64_t fast_path_seed_count = 0;

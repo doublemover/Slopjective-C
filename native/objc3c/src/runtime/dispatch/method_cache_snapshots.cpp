@@ -2,6 +2,7 @@
 
 #include "runtime/classes/receiver_identity.h"
 #include "runtime/dispatch/dispatch_family.h"
+#include "runtime/dispatch/dispatch_snapshot_contracts.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "runtime/state/runtime_state_records.h"
@@ -19,6 +20,7 @@ extern "C" int objc3_runtime_copy_method_cache_state_for_testing(
 
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->abi_version = OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION;
   snapshot->cache_entry_count =
       static_cast<std::uint64_t>(state.method_cache.size());
   snapshot->cache_hit_count = state.method_cache_hit_count;
@@ -26,6 +28,8 @@ extern "C" int objc3_runtime_copy_method_cache_state_for_testing(
   snapshot->slow_path_lookup_count = state.slow_path_lookup_count;
   snapshot->stale_method_cache_entry_count =
       state.stale_method_cache_entry_count;
+  snapshot->next_cache_entry_generation =
+      state.next_method_cache_entry_generation;
   snapshot->live_dispatch_count = state.live_dispatch_count;
   snapshot->strict_dispatch_error_count = state.strict_dispatch_error_count;
   snapshot->fast_path_seed_count = state.fast_path_seed_count;
@@ -42,6 +46,8 @@ extern "C" int objc3_runtime_copy_method_cache_state_for_testing(
       state.last_dispatch_normalized_receiver_identity;
   snapshot->last_category_probe_count = state.last_category_probe_count;
   snapshot->last_protocol_probe_count = state.last_protocol_probe_count;
+  snapshot->last_invalidation_reason =
+      state.last_method_cache_invalidation_reason;
   snapshot->last_dispatch_used_cache = state.last_dispatch_used_cache ? 1 : 0;
   snapshot->last_dispatch_used_fast_path =
       state.last_dispatch_used_fast_path ? 1 : 0;
@@ -68,13 +74,16 @@ extern "C" int objc3_runtime_copy_method_cache_entry_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
+  snapshot->abi_version = OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION;
   snapshot->found = 0;
   snapshot->resolved = 0;
   snapshot->dispatch_family_is_class = 0;
+  snapshot->cache_entry_generation = 0;
   snapshot->lookup_start_base_identity = 0;
   snapshot->normalized_receiver_identity = 0;
   snapshot->selector_stable_id = 0;
   snapshot->parameter_count = 0;
+  snapshot->miss_status = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
   snapshot->category_probe_count = 0;
   snapshot->protocol_probe_count = 0;
   snapshot->cache_class_graph_generation = 0;
@@ -122,10 +131,12 @@ extern "C" int objc3_runtime_copy_method_cache_entry_for_testing(
   snapshot->resolved = entry.resolved ? 1 : 0;
   snapshot->dispatch_family_is_class =
       entry.dispatch_family_is_class ? 1 : 0;
+  snapshot->cache_entry_generation = entry.cache_entry_generation;
   snapshot->lookup_start_base_identity = entry.lookup_start_base_identity;
   snapshot->normalized_receiver_identity = entry.normalized_receiver_identity;
   snapshot->selector_stable_id = entry.selector_stable_id;
   snapshot->parameter_count = entry.parameter_count;
+  snapshot->miss_status = entry.miss_status;
   snapshot->category_probe_count = entry.category_probe_count;
   snapshot->protocol_probe_count = entry.protocol_probe_count;
   snapshot->cache_class_graph_generation =

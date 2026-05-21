@@ -6,6 +6,17 @@
 extern "C" {
 #endif
 
+enum objc3_runtime_method_cache_invalidation_reason {
+  OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE = 0,
+  OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_STALE_GENERATION = 1,
+  OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_RESET = 2,
+  OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_PROPERTY_ACCESSOR_REBIND = 3
+};
+
+enum {
+  OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION = 1
+};
+
 // runtime-fast-path-integration anchor: Part 9 freezes the
 // existing private method-cache snapshot and entry-query helpers as the
 // truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
@@ -43,6 +54,9 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   const char *last_fast_path_reason;
   const char *last_resolved_class_name;
   const char *last_resolved_owner_identity;
+  uint32_t abi_version;
+  uint64_t next_cache_entry_generation;
+  int last_invalidation_reason;
 } objc3_runtime_method_cache_state_snapshot;
 
 typedef struct objc3_runtime_method_cache_entry_snapshot {
@@ -68,6 +82,9 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   const char *fast_path_reason;
   const char *resolved_class_name;
   const char *resolved_owner_identity;
+  uint32_t abi_version;
+  uint64_t cache_entry_generation;
+  int miss_status;
 } objc3_runtime_method_cache_entry_snapshot;
 
 // realized-dispatch-runtime anchor: lane-D now widens the same

@@ -1,6 +1,7 @@
 #include "runtime/dispatch/method_cache_resolution.h"
 
 #include "runtime/dispatch/dispatch_resolution_state.h"
+#include "runtime/dispatch/dispatch_snapshot_contracts.h"
 #include "runtime/dispatch/dispatch_result_state.h"
 #include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
@@ -47,8 +48,9 @@ MethodCacheEntry BuildMethodCacheEntry(
     std::uint64_t lookup_start_base_identity,
     std::uint64_t normalized_receiver_identity,
     std::uint64_t selector_stable_id,
-    const RuntimeState &state) {
+    RuntimeState &state) {
   MethodCacheEntry cache_entry;
+  cache_entry.cache_abi_version = OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION;
   cache_entry.resolved = resolution.resolved;
   cache_entry.dispatch_family_is_class = resolution.dispatch_family_is_class;
   cache_entry.effective_direct_dispatch =
@@ -62,6 +64,8 @@ MethodCacheEntry BuildMethodCacheEntry(
   cache_entry.lookup_start_base_identity = lookup_start_base_identity;
   cache_entry.normalized_receiver_identity = normalized_receiver_identity;
   cache_entry.selector_stable_id = selector_stable_id;
+  cache_entry.cache_entry_generation =
+      state.next_method_cache_entry_generation++;
   cache_entry.parameter_count = resolution.parameter_count;
   cache_entry.return_kind = resolution.return_kind;
   cache_entry.category_probe_count = resolution.category_probe_count;
@@ -77,6 +81,9 @@ MethodCacheEntry BuildMethodCacheEntry(
   cache_entry.strict_error_status =
       RuntimeStrictDispatchStatus(resolution.resolved, resolution.ambiguous,
                                   resolution.strict_error_status);
+  cache_entry.miss_status =
+      resolution.resolved ? OBJC3_RUNTIME_DISPATCH_STATUS_OK
+                          : cache_entry.strict_error_status;
   cache_entry.implementation = resolution.implementation;
   cache_entry.builtin_kind = resolution.builtin_kind;
   cache_entry.runtime_property_accessor =
@@ -140,6 +147,8 @@ RuntimeDispatchTarget ResolveMethodCacheHitUnlocked(
     const bool dispatch_family_is_class = entry.dispatch_family_is_class;
     state.method_cache.erase(cache_key);
     ++state.stale_method_cache_entry_count;
+    state.last_method_cache_invalidation_reason =
+        OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_STALE_GENERATION;
     const DispatchFamily revalidation_family =
         dispatch_family_is_class ? DispatchFamily::Class
                                  : DispatchFamily::Instance;

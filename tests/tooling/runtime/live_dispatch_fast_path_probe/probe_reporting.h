@@ -15,8 +15,12 @@ inline void WriteEntry(const char *label,
                        std::ostream &out) {
   const auto &snapshot = observation.entry;
 
+  out << label << "_abi_version=" << snapshot.abi_version << "\n";
   out << label << "_found=" << snapshot.found << "\n";
   out << label << "_resolved=" << snapshot.resolved << "\n";
+  out << label << "_cache_entry_generation="
+      << snapshot.cache_entry_generation << "\n";
+  out << label << "_miss_status=" << snapshot.miss_status << "\n";
   out << label << "_fast_path_seeded=" << snapshot.fast_path_seeded << "\n";
   out << label << "_effective_direct_dispatch="
       << snapshot.effective_direct_dispatch << "\n";

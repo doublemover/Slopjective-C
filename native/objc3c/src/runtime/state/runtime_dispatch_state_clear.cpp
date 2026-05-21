@@ -14,6 +14,9 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.method_cache_miss_count = 0;
   state.slow_path_lookup_count = 0;
   state.stale_method_cache_entry_count = 0;
+  state.next_method_cache_entry_generation = 1;
+  state.last_method_cache_invalidation_reason =
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_RESET;
   state.live_dispatch_count = 0;
   state.strict_dispatch_error_count = 0;
   state.fast_path_seed_count = 0;
