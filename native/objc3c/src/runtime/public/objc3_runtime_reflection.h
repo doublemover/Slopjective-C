@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 2u
+#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u
 
 typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_OK = 0,
@@ -241,8 +241,13 @@ int objc3_runtime_copy_reflection_state(
     objc3_runtime_reflection_state_snapshot *snapshot);
 int objc3_runtime_copy_reflection_class(
     const char *class_name, objc3_runtime_reflection_class_snapshot *snapshot);
+int objc3_runtime_copy_reflection_class_at(
+    uint64_t index, objc3_runtime_reflection_class_snapshot *snapshot);
 int objc3_runtime_copy_reflection_property(
     const char *class_name, const char *property_name,
+    objc3_runtime_reflection_property_snapshot *snapshot);
+int objc3_runtime_copy_reflection_property_at(
+    const char *class_name, uint64_t index,
     objc3_runtime_reflection_property_snapshot *snapshot);
 int objc3_runtime_copy_reflection_method(
     const char *class_name, const char *selector, int family,
@@ -256,8 +261,13 @@ int objc3_runtime_copy_reflection_protocol_conformance(
 int objc3_runtime_copy_reflection_category(
     const char *class_name, const char *category_name,
     objc3_runtime_reflection_category_snapshot *snapshot);
+int objc3_runtime_copy_reflection_category_at(
+    const char *class_name, uint64_t index,
+    objc3_runtime_reflection_category_snapshot *snapshot);
 int objc3_runtime_copy_reflection_selector(
     const char *selector, objc3_runtime_reflection_selector_snapshot *snapshot);
+int objc3_runtime_copy_reflection_selector_at(
+    uint64_t index, objc3_runtime_reflection_selector_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

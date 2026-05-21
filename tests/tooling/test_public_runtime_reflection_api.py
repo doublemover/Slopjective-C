@@ -72,6 +72,11 @@ def test_public_runtime_reflection_contract_fixture_matches_sources() -> None:
     for forbidden_symbol in contract["forbidden_public_symbols"]:
         assert forbidden_symbol not in header
 
+    deterministic_enumeration = contract["deterministic_enumeration"]
+    assert isinstance(deterministic_enumeration, list)
+    assert len(deterministic_enumeration) == 4
+    assert "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u" in header
+
 
 def test_public_runtime_reflection_uses_realized_state_and_fail_closed_statuses() -> None:
     implementation = _read(IMPLEMENTATION_PATH)
@@ -79,7 +84,22 @@ def test_public_runtime_reflection_uses_realized_state_and_fail_closed_statuses(
     assert "ProcessRuntimeState()" in implementation
     assert "std::lock_guard<std::mutex> lock(state.mutex)" in implementation
     assert "state.realized_class_nodes" in implementation
+    assert (
+        "state.realized_class_nodes[static_cast<std::size_t>(index)]"
+        in implementation
+    )
+    assert (
+        "node->runtime_property_accessors[static_cast<std::size_t>(index)]"
+        in implementation
+    )
     assert "node.attached_category_records" in implementation
+    assert (
+        "node->attached_category_records[static_cast<std::size_t>(index)]"
+        in implementation
+    )
+    assert (
+        "state.selector_slots[static_cast<std::size_t>(index)]" in implementation
+    )
     assert "FindRuntimePropertyAccessorByNameUnlocked" in implementation
     assert "ProtocolExistsByNameUnlocked" in implementation
     assert "QueryRealizedClassProtocolConformanceUnlocked" in implementation
@@ -103,14 +123,20 @@ def test_public_runtime_reflection_probe_uses_public_surface() -> None:
 
     assert '#include "runtime/public/objc3_runtime_api.h"' in probe
     assert "objc3_runtime_copy_reflection_class" in probe
+    assert "objc3_runtime_copy_reflection_class_at" in probe
     assert "objc3_runtime_copy_reflection_property" in probe
+    assert "objc3_runtime_copy_reflection_property_at" in probe
     assert "objc3_runtime_copy_reflection_method" in probe
     assert "objc3_runtime_copy_reflection_protocol_conformance" in probe
     assert "objc3_runtime_copy_reflection_selector" in probe
+    assert "objc3_runtime_copy_reflection_selector_at" in probe
     assert "objc3_runtime_copy_reflection_surface_by_kind" in probe
+    assert "objc3_runtime_copy_reflection_category_at" in probe
     assert "surface.creates_dynamic_runtime_state" in probe
     assert "surface.exposes_private_testing_snapshot" in probe
     assert "value_property.property_behavior_name" in probe
+    assert "indexed_property.property_name" in probe
+    assert "indexed_selector.canonical_selector" in probe
     assert "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT" in probe
     for private_snapshot_entrypoint in (
         "objc3_runtime_copy_realized_class_entry_for_testing",
@@ -153,13 +179,17 @@ def test_public_runtime_reflection_header_compiles_from_c_when_available(
                 "      OBJC3_RUNTIME_REFLECTION_SURFACE_PROPERTY, &surface);",
                 "  (void)objc3_runtime_copy_reflection_state(&state);",
                 '  (void)objc3_runtime_copy_reflection_class("Widget", &cls);',
+                "  (void)objc3_runtime_copy_reflection_class_at(0u, &cls);",
                 '  (void)objc3_runtime_copy_reflection_property("Widget", "count", &property);',
+                '  (void)objc3_runtime_copy_reflection_property_at("Widget", 0u, &property);',
                 "  (void)objc3_runtime_copy_reflection_method(",
                 '      "Widget", "count", OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE, &method);',
                 '  (void)objc3_runtime_copy_reflection_protocol("Tracer", &protocol);',
                 '  (void)objc3_runtime_copy_reflection_protocol_conformance("Widget", "Tracer", &conf);',
                 '  (void)objc3_runtime_copy_reflection_category("Widget", "Tracing", &category);',
+                '  (void)objc3_runtime_copy_reflection_category_at("Widget", 0u, &category);',
                 '  (void)objc3_runtime_copy_reflection_selector("count", &selector);',
+                "  (void)objc3_runtime_copy_reflection_selector_at(0u, &selector);",
                 "  return state.status + cls.status + property.status + method.status +",
                 "         protocol.status + conf.status + category.status + selector.status;",
                 "}",

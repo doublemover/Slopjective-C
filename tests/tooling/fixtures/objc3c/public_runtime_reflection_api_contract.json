@@ -14,12 +14,16 @@
     "objc3_runtime_copy_reflection_surface_by_kind",
     "objc3_runtime_copy_reflection_state",
     "objc3_runtime_copy_reflection_class",
+    "objc3_runtime_copy_reflection_class_at",
     "objc3_runtime_copy_reflection_property",
+    "objc3_runtime_copy_reflection_property_at",
     "objc3_runtime_copy_reflection_method",
     "objc3_runtime_copy_reflection_protocol",
     "objc3_runtime_copy_reflection_protocol_conformance",
     "objc3_runtime_copy_reflection_category",
-    "objc3_runtime_copy_reflection_selector"
+    "objc3_runtime_copy_reflection_category_at",
+    "objc3_runtime_copy_reflection_selector",
+    "objc3_runtime_copy_reflection_selector_at"
   ],
   "snapshot_types": [
     "objc3_runtime_reflection_surface_snapshot",
@@ -45,6 +49,12 @@
     "O3RT004"
   ],
   "lifetime_model": "caller-owned snapshots with runtime-owned borrowed strings",
+  "deterministic_enumeration": [
+    "objc3_runtime_copy_reflection_class_at enumerates realized classes in runtime registration order",
+    "objc3_runtime_copy_reflection_property_at enumerates direct realized property accessors in class-local layout order",
+    "objc3_runtime_copy_reflection_category_at enumerates attached categories in runtime attachment order",
+    "objc3_runtime_copy_reflection_selector_at enumerates registered selectors in selector table insertion order"
+  ],
   "unsupported_metadata_policy": "unsupported and internal metadata returns status without private fields",
   "forbidden_public_symbols": [
     "objc3_runtime_copy_realized_class_entry_for_testing",

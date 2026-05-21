@@ -53,12 +53,14 @@ constexpr PublicRuntimeReflectionSurfaceRecord kPublicReflectionSurfaces[] = {
     {OBJC3_RUNTIME_REFLECTION_SURFACE_CLASS, "class",
      "objc3_runtime_copy_reflection_class",
      "objc3_runtime_reflection_class_snapshot",
-     "RuntimeState::realized_class_nodes", "unique realized class name"},
+     "RuntimeState::realized_class_nodes",
+     "unique realized class name or deterministic realized-class index"},
     {OBJC3_RUNTIME_REFLECTION_SURFACE_PROPERTY, "property",
      "objc3_runtime_copy_reflection_property",
      "objc3_runtime_reflection_property_snapshot",
      "FindRuntimePropertyAccessorByNameUnlocked",
-     "realized property accessor by class and property name"},
+     "realized property accessor by class/name or deterministic class-local "
+     "index"},
     {OBJC3_RUNTIME_REFLECTION_SURFACE_METHOD, "method",
      "objc3_runtime_copy_reflection_method",
      "objc3_runtime_reflection_method_snapshot",
@@ -78,12 +80,12 @@ constexpr PublicRuntimeReflectionSurfaceRecord kPublicReflectionSurfaces[] = {
      "objc3_runtime_copy_reflection_category",
      "objc3_runtime_reflection_category_snapshot",
      "RealizedClassNode::attached_category_records",
-     "attached category by class and category name"},
+     "attached category by class/name or deterministic class-local index"},
     {OBJC3_RUNTIME_REFLECTION_SURFACE_SELECTOR, "selector",
      "objc3_runtime_copy_reflection_selector",
      "objc3_runtime_reflection_selector_snapshot",
      "FindSelectorSlotByCanonicalSpellingUnlocked",
-     "registered selector by canonical spelling"},
+     "registered selector by canonical spelling or deterministic table index"},
 };
 
 constexpr std::uint64_t PublicReflectionSurfaceCount() {
@@ -240,10 +242,6 @@ const char *NullableRuntimeCString(const char *value) {
 
 std::uint64_t AggregateCount(const objc3_runtime_pointer_aggregate *aggregate) {
   return aggregate != nullptr ? aggregate->count : 0;
-}
-
-std::uint64_t MethodListCount(const EmittedMethodListRef *method_list_ref) {
-  return method_list_ref != nullptr ? method_list_ref->count : 0;
 }
 
 std::uint64_t
@@ -688,6 +686,21 @@ void PopulateReflectionCategorySnapshot(
   snapshot.record_kind = NullableRuntimeCString(record.record_kind);
 }
 
+void PopulateReflectionSelectorSnapshot(
+    const SelectorSlot &slot,
+    objc3_runtime_reflection_selector_snapshot &snapshot) {
+  snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+  snapshot.found = 1;
+  snapshot.metadata_backed = slot.metadata_backed ? 1 : 0;
+  snapshot.stable_id = slot.handle.stable_id;
+  snapshot.metadata_provider_count = slot.metadata_provider_count;
+  snapshot.first_registration_order_ordinal =
+      slot.first_registration_order_ordinal;
+  snapshot.last_registration_order_ordinal =
+      slot.last_registration_order_ordinal;
+  snapshot.canonical_selector = slot.handle.selector;
+}
+
 } // namespace
 } // namespace objc3c::runtime
 
@@ -790,6 +803,25 @@ extern "C" int objc3_runtime_copy_reflection_class(
   return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
 }
 
+extern "C" int objc3_runtime_copy_reflection_class_at(
+    uint64_t index, objc3_runtime_reflection_class_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionClassSnapshot(*snapshot);
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  if (index >= state.realized_class_nodes.size()) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionClassSnapshot(
+      state, state.realized_class_nodes[static_cast<std::size_t>(index)],
+      *snapshot);
+  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+}
+
 extern "C" int objc3_runtime_copy_reflection_property(
     const char *class_name, const char *property_name,
     objc3_runtime_reflection_property_snapshot *snapshot) {
@@ -828,6 +860,43 @@ extern "C" int objc3_runtime_copy_reflection_property(
   objc3c::runtime::PopulateReflectionPropertySnapshot(
       *start_node, *resolved_node, *accessor, inherited, *snapshot);
   (void)used_cache;
+  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+}
+
+extern "C" int objc3_runtime_copy_reflection_property_at(
+    const char *class_name, uint64_t index,
+    objc3_runtime_reflection_property_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionPropertySnapshot(*snapshot);
+  if (!objc3c::runtime::RuntimeReflectionCStringPresent(class_name)) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY, &snapshot->status);
+  }
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  const objc3c::runtime::RealizedClassNode *node =
+      objc3c::runtime::FindUniqueRealizedClassNodeUnlocked(state, class_name,
+                                                           status);
+  if (node == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(status, &snapshot->status);
+  }
+  if (index >= node->runtime_property_accessors.size()) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
+  }
+  const objc3c::runtime::RealizedPropertyAccessor &accessor =
+      node->runtime_property_accessors[static_cast<std::size_t>(index)];
+  if (accessor.property_descriptor == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA,
+        &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionPropertySnapshot(*node, *node, accessor,
+                                                      false, *snapshot);
   return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
 }
 
@@ -1007,6 +1076,42 @@ extern "C" int objc3_runtime_copy_reflection_category(
       OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
 }
 
+extern "C" int objc3_runtime_copy_reflection_category_at(
+    const char *class_name, uint64_t index,
+    objc3_runtime_reflection_category_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionCategorySnapshot(*snapshot);
+  if (!objc3c::runtime::RuntimeReflectionCStringPresent(class_name)) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY, &snapshot->status);
+  }
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  const objc3c::runtime::RealizedClassNode *node =
+      objc3c::runtime::FindUniqueRealizedClassNodeUnlocked(state, class_name,
+                                                           status);
+  if (node == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(status, &snapshot->status);
+  }
+  if (index >= node->attached_category_records.size()) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
+  }
+  const objc3c::runtime::EmittedCategoryRecord *record =
+      node->attached_category_records[static_cast<std::size_t>(index)];
+  if (record == nullptr || record->category_name == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA,
+        &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionCategorySnapshot(*record, *snapshot);
+  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+}
+
 extern "C" int objc3_runtime_copy_reflection_selector(
     const char *selector,
     objc3_runtime_reflection_selector_snapshot *snapshot) {
@@ -1034,15 +1139,24 @@ extern "C" int objc3_runtime_copy_reflection_selector(
     return objc3c::runtime::PublishReflectionStatus(
         OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
   }
-  snapshot->status = OBJC3_RUNTIME_REFLECTION_STATUS_OK;
-  snapshot->found = 1;
-  snapshot->metadata_backed = slot->metadata_backed ? 1 : 0;
-  snapshot->stable_id = slot->handle.stable_id;
-  snapshot->metadata_provider_count = slot->metadata_provider_count;
-  snapshot->first_registration_order_ordinal =
-      slot->first_registration_order_ordinal;
-  snapshot->last_registration_order_ordinal =
-      slot->last_registration_order_ordinal;
-  snapshot->canonical_selector = slot->handle.selector;
+  objc3c::runtime::PopulateReflectionSelectorSnapshot(*slot, *snapshot);
+  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+}
+
+extern "C" int objc3_runtime_copy_reflection_selector_at(
+    uint64_t index, objc3_runtime_reflection_selector_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionSelectorSnapshot(*snapshot);
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  if (index >= state.selector_slots.size()) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionSelectorSnapshot(
+      state.selector_slots[static_cast<std::size_t>(index)], *snapshot);
   return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
 }

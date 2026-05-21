@@ -225,17 +225,22 @@ int main() {
 
   objc3_runtime_reflection_state_snapshot state{};
   objc3_runtime_reflection_class_snapshot widget_class{};
+  objc3_runtime_reflection_class_snapshot indexed_class{};
   objc3_runtime_reflection_property_snapshot count_property{};
   objc3_runtime_reflection_property_snapshot value_property{};
+  objc3_runtime_reflection_property_snapshot indexed_property{};
   objc3_runtime_reflection_method_snapshot count_method{};
   objc3_runtime_reflection_protocol_snapshot tracer_protocol{};
   objc3_runtime_reflection_protocol_conformance_snapshot tracer_conformance{};
   objc3_runtime_reflection_category_snapshot category{};
+  objc3_runtime_reflection_category_snapshot indexed_category{};
   objc3_runtime_reflection_selector_snapshot selector{};
+  objc3_runtime_reflection_selector_snapshot indexed_selector{};
   objc3_runtime_reflection_surface_snapshot indexed_surface{};
   objc3_runtime_reflection_surface_snapshot surface{};
   objc3_runtime_reflection_surface_snapshot invalid_surface{};
   objc3_runtime_reflection_property_snapshot invalid_property{};
+  objc3_runtime_reflection_property_snapshot missing_indexed_property{};
 
   const std::uint64_t surface_count = objc3_runtime_reflection_surface_count();
   const int indexed_surface_status =
@@ -248,10 +253,17 @@ int main() {
   const int state_status = objc3_runtime_copy_reflection_state(&state);
   const int class_status =
       objc3_runtime_copy_reflection_class(kWidgetClassName, &widget_class);
+  const int indexed_class_status =
+      objc3_runtime_copy_reflection_class_at(0u, &indexed_class);
   const int property_status = objc3_runtime_copy_reflection_property(
       kWidgetClassName, kValuePropertyName, &count_property);
   const int value_property_status = objc3_runtime_copy_reflection_property(
       kWidgetClassName, kValuePropertyName, &value_property);
+  const int indexed_property_status = objc3_runtime_copy_reflection_property_at(
+      kWidgetClassName, 0u, &indexed_property);
+  const int missing_indexed_property_status =
+      objc3_runtime_copy_reflection_property_at(kWidgetClassName, 99u,
+                                                &missing_indexed_property);
   const int method_status = objc3_runtime_copy_reflection_method(
       kWidgetClassName, kValuePropertyName,
       OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE, &count_method);
@@ -262,8 +274,12 @@ int main() {
           kWidgetClassName, kTracerProtocolName, &tracer_conformance);
   const int category_status = objc3_runtime_copy_reflection_category(
       kWidgetClassName, kTracingCategoryName, &category);
+  const int indexed_category_status = objc3_runtime_copy_reflection_category_at(
+      kWidgetClassName, 0u, &indexed_category);
   const int selector_status =
       objc3_runtime_copy_reflection_selector(kValuePropertyName, &selector);
+  const int indexed_selector_status =
+      objc3_runtime_copy_reflection_selector_at(0u, &indexed_selector);
   const int invalid_status = objc3_runtime_copy_reflection_property(
       nullptr, kValuePropertyName, &invalid_property);
   const int invalid_output_status =
@@ -287,11 +303,21 @@ int main() {
   if (class_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection class status drifted");
   }
+  if (indexed_class_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed class status drifted");
+  }
   if (property_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection count property status drifted");
   }
   if (value_property_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection value property status drifted");
+  }
+  if (indexed_property_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed property status drifted");
+  }
+  if (missing_indexed_property_status !=
+      OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND) {
+    return Fail("public reflection indexed missing property status drifted");
   }
   if (method_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection method status drifted");
@@ -305,8 +331,14 @@ int main() {
   if (category_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection category status drifted");
   }
+  if (indexed_category_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed category status drifted");
+  }
   if (selector_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection selector status drifted");
+  }
+  if (indexed_selector_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed selector status drifted");
   }
   if (invalid_status != OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY) {
     return Fail("public reflection invalid-query status drifted");
@@ -314,11 +346,22 @@ int main() {
   if (invalid_output_status != OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT) {
     return Fail("public reflection invalid-output status drifted");
   }
-  if (widget_class.found != 1 || count_property.found != 1 ||
-      value_property.found != 1 || count_method.found != 1 ||
+  if (widget_class.found != 1 || indexed_class.found != 1 ||
+      count_property.found != 1 || value_property.found != 1 ||
+      indexed_property.found != 1 || count_method.found != 1 ||
       tracer_protocol.found != 1 || tracer_conformance.conforms != 1 ||
-      category.found != 1 || selector.found != 1) {
+      category.found != 1 || indexed_category.found != 1 ||
+      selector.found != 1 || indexed_selector.found != 1) {
     return Fail("public reflection realized-state lookup drifted");
+  }
+  if (indexed_property.property_name == nullptr ||
+      std::strcmp(indexed_property.property_name, kValuePropertyName) != 0 ||
+      indexed_category.category_name == nullptr ||
+      std::strcmp(indexed_category.category_name, kTracingCategoryName) != 0 ||
+      indexed_selector.canonical_selector == nullptr ||
+      std::strcmp(indexed_selector.canonical_selector, kValuePropertyName) !=
+          0) {
+    return Fail("public reflection deterministic indexed snapshots drifted");
   }
   if (value_property.property_behavior_name == nullptr ||
       std::strcmp(value_property.property_behavior_name, "Observed") != 0) {
@@ -349,23 +392,33 @@ int main() {
   std::printf("\"surface_issue_ref\":%d,", surface.issue_ref);
   std::printf("\"state_status\":%d,", state_status);
   std::printf("\"class_status\":%d,", class_status);
+  std::printf("\"indexed_class_status\":%d,", indexed_class_status);
   std::printf("\"property_status\":%d,", property_status);
   std::printf("\"value_property_status\":%d,", value_property_status);
+  std::printf("\"indexed_property_status\":%d,", indexed_property_status);
+  std::printf("\"missing_indexed_property_status\":%d,",
+              missing_indexed_property_status);
   std::printf("\"method_status\":%d,", method_status);
   std::printf("\"protocol_status\":%d,", protocol_status);
   std::printf("\"conformance_status\":%d,", conformance_status);
   std::printf("\"category_status\":%d,", category_status);
+  std::printf("\"indexed_category_status\":%d,", indexed_category_status);
   std::printf("\"selector_status\":%d,", selector_status);
+  std::printf("\"indexed_selector_status\":%d,", indexed_selector_status);
   std::printf("\"invalid_status\":%d,", invalid_status);
   std::printf("\"invalid_output_status\":%d,", invalid_output_status);
   std::printf("\"class_found\":%d,", widget_class.found);
+  std::printf("\"indexed_class_found\":%d,", indexed_class.found);
   std::printf("\"property_found\":%d,", count_property.found);
   std::printf("\"value_property_found\":%d,", value_property.found);
+  std::printf("\"indexed_property_found\":%d,", indexed_property.found);
   std::printf("\"method_found\":%d,", count_method.found);
   std::printf("\"protocol_found\":%d,", tracer_protocol.found);
   std::printf("\"conforms\":%d,", tracer_conformance.conforms);
   std::printf("\"category_found\":%d,", category.found);
+  std::printf("\"indexed_category_found\":%d,", indexed_category.found);
   std::printf("\"selector_found\":%d,", selector.found);
+  std::printf("\"indexed_selector_found\":%d,", indexed_selector.found);
   std::printf("\"realized_class_count\":%llu,",
               static_cast<unsigned long long>(state.realized_class_count));
   std::printf("\"value_property_behavior\":\"%s\",",

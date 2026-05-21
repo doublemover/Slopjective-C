@@ -141,6 +141,21 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
             status,
         )
 
+    deterministic_enumeration = contract.get("deterministic_enumeration", [])
+    if (
+        not isinstance(deterministic_enumeration, list)
+        or len(deterministic_enumeration) != 4
+    ):
+        failures.append(
+            "public runtime reflection deterministic enumeration contract drifted"
+        )
+    _require_contains(
+        failures,
+        repo_rel(HEADER_PATH),
+        header,
+        "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u",
+    )
+
     for raw_symbol in contract.get("forbidden_public_symbols", []):
         _require_absent(
             failures,
@@ -153,7 +168,11 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
         "ProcessRuntimeState()",
         "std::lock_guard<std::mutex> lock(state.mutex)",
         "state.realized_class_nodes",
+        "state.realized_class_nodes[static_cast<std::size_t>(index)]",
+        "node->runtime_property_accessors[static_cast<std::size_t>(index)]",
         "node.attached_category_records",
+        "node->attached_category_records[static_cast<std::size_t>(index)]",
+        "state.selector_slots[static_cast<std::size_t>(index)]",
         "FindRuntimePropertyAccessorByNameUnlocked",
         "ProtocolExistsByNameUnlocked",
         "QueryRealizedClassProtocolConformanceUnlocked",
