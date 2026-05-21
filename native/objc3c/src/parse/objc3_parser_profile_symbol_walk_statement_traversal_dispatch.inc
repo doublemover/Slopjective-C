@@ -23,6 +23,13 @@ void WalkObjc3ProfileSymbolsInStmt(
   case Stmt::Kind::For:
     WalkObjc3ProfileSymbolsInForStmt(stmt, walker);
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      WalkObjc3ProfileSymbolsInExpr(stmt->for_in_stmt->collection.get(),
+                                    walker);
+      WalkObjc3ProfileSymbolsInStmtBody(stmt->for_in_stmt->body, walker);
+    }
+    return;
   case Stmt::Kind::Switch:
     WalkObjc3ProfileSymbolsInSwitchStmt(stmt, walker);
     return;
@@ -35,6 +42,14 @@ void WalkObjc3ProfileSymbolsInStmt(
     return;
   case Stmt::Kind::Expr:
     WalkObjc3ProfileSymbolsInExprStmt(stmt, walker);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      WalkObjc3ProfileSymbolsInExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), walker);
+      WalkObjc3ProfileSymbolsInExpr(
+          stmt->collection_mutation_stmt->value.get(), walker);
+    }
     return;
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:

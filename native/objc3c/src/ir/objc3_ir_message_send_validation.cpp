@@ -21,6 +21,25 @@ bool ValidateObjc3IRMessageSendArityExpr(const Expr *expr,
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
       return true;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        if (!ValidateObjc3IRMessageSendArityExpr(
+                key.get(), runtime_dispatch_arg_slots, error)) {
+          return false;
+        }
+      }
+      for (const auto &value : expr->collection_values) {
+        if (!ValidateObjc3IRMessageSendArityExpr(
+                value.get(), runtime_dispatch_arg_slots, error)) {
+          return false;
+        }
+      }
+      return true;
+    case Expr::Kind::IndexAccess:
+      return ValidateObjc3IRMessageSendArityExpr(
+                 expr->left.get(), runtime_dispatch_arg_slots, error) &&
+             ValidateObjc3IRMessageSendArityExpr(
+                 expr->right.get(), runtime_dispatch_arg_slots, error);
     case Expr::Kind::Binary:
       return ValidateObjc3IRMessageSendArityExpr(
                  expr->left.get(), runtime_dispatch_arg_slots, error) &&
@@ -99,6 +118,14 @@ bool ValidateObjc3IRMessageSendArityStmt(const Stmt *stmt,
              ValidateObjc3IRMessageSendArityExpr(
                  stmt->assign_stmt->value.get(), runtime_dispatch_arg_slots,
                  error);
+    case Stmt::Kind::CollectionMutation:
+      return stmt->collection_mutation_stmt == nullptr ||
+             (ValidateObjc3IRMessageSendArityExpr(
+                  stmt->collection_mutation_stmt->key_or_index.get(),
+                  runtime_dispatch_arg_slots, error) &&
+              ValidateObjc3IRMessageSendArityExpr(
+                  stmt->collection_mutation_stmt->value.get(),
+                  runtime_dispatch_arg_slots, error));
     case Stmt::Kind::Return:
       return stmt->return_stmt == nullptr ||
              ValidateObjc3IRMessageSendArityExpr(
@@ -158,6 +185,22 @@ bool ValidateObjc3IRMessageSendArityStmt(const Stmt *stmt,
         return false;
       }
       for (const auto &loop_stmt : stmt->for_stmt->body) {
+        if (!ValidateObjc3IRMessageSendArityStmt(
+                loop_stmt.get(), runtime_dispatch_arg_slots, error)) {
+          return false;
+        }
+      }
+      return true;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return true;
+      }
+      if (!ValidateObjc3IRMessageSendArityExpr(
+              stmt->for_in_stmt->collection.get(), runtime_dispatch_arg_slots,
+              error)) {
+        return false;
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
         if (!ValidateObjc3IRMessageSendArityStmt(
                 loop_stmt.get(), runtime_dispatch_arg_slots, error)) {
           return false;

@@ -42,8 +42,11 @@ def test_string_text_model_runtime_owns_and_validates_utf8_storage(
     assert payload["equality_call_count"] == 2
     assert payload["compare_call_count"] == 4
     assert payload["format_call_count"] == 1
-    assert payload["text_record_count"] == 7
+    assert payload["text_record_count"] == 8
     assert payload["owned_storage_record_count"] == 5
     assert payload["owned_storage_byte_count"] == 40
+    assert payload["literal_record_count"] == 1
+    assert payload["builder_record_count"] == 1
+    assert payload["scalar_iterator_record_count"] == 1
     assert payload["last_malformed_offset"] == 0
     assert payload["last_status"] == 30646

@@ -63,6 +63,16 @@ static void CollectOwnershipCaptureListRetainableFamilyStmtSites(
         }
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
+            stmt->for_in_stmt->collection.get(), profile);
+        for (const auto &body_stmt : stmt->for_in_stmt->body) {
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         CollectOwnershipCaptureListRetainableFamilyExprSites(
@@ -100,6 +110,14 @@ static void CollectOwnershipCaptureListRetainableFamilyStmtSites(
             stmt->expr_stmt->value.get(), profile);
       }
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
+            stmt->collection_mutation_stmt->key_or_index.get(), profile);
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
+            stmt->collection_mutation_stmt->value.get(), profile);
+      }
+      return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
@@ -129,6 +147,12 @@ static void CollectOwnershipCaptureListRetainableFamilyExprSites(
   CollectOwnershipCaptureListRetainableFamilyExprSites(expr->left.get(), profile);
   CollectOwnershipCaptureListRetainableFamilyExprSites(expr->right.get(), profile);
   CollectOwnershipCaptureListRetainableFamilyExprSites(expr->third.get(), profile);
+  for (const auto &key : expr->collection_keys) {
+    CollectOwnershipCaptureListRetainableFamilyExprSites(key.get(), profile);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectOwnershipCaptureListRetainableFamilyExprSites(value.get(), profile);
+  }
   for (const auto &arg : expr->args) {
     CollectOwnershipCaptureListRetainableFamilyExprSites(arg.get(), profile);
   }

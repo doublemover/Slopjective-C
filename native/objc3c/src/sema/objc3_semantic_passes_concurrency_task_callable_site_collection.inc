@@ -33,6 +33,12 @@ static void CollectConcurrencyTaskCallableLegalityExprSites(
   CollectConcurrencyTaskCallableLegalityExprSites(expr->left.get(), profile);
   CollectConcurrencyTaskCallableLegalityExprSites(expr->right.get(), profile);
   CollectConcurrencyTaskCallableLegalityExprSites(expr->third.get(), profile);
+  for (const auto &key : expr->collection_keys) {
+    CollectConcurrencyTaskCallableLegalityExprSites(key.get(), profile);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectConcurrencyTaskCallableLegalityExprSites(value.get(), profile);
+  }
   for (const auto &arg : expr->args) {
     CollectConcurrencyTaskCallableLegalityExprSites(arg.get(), profile);
   }
@@ -96,6 +102,14 @@ static void CollectConcurrencyTaskCallableLegalityStmtSites(
       }
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->for_in_stmt->collection.get(), profile);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
+        CollectConcurrencyTaskCallableLegalityStmtSites(body_stmt.get(), profile);
+      }
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
       CollectConcurrencyTaskCallableLegalityExprSites(
@@ -128,6 +142,12 @@ static void CollectConcurrencyTaskCallableLegalityStmtSites(
     if (stmt->expr_stmt != nullptr) {
       CollectConcurrencyTaskCallableLegalityExprSites(stmt->expr_stmt->value.get(),
                                                 profile);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->collection_mutation_stmt->key_or_index.get(), profile);
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->collection_mutation_stmt->value.get(), profile);
     }
     return;
   case Stmt::Kind::Break:

@@ -20,9 +20,16 @@
         }
         return MakeScalarSemanticType(ValueType::Void);
       }
-      const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
-      if (!IsUnknownSemanticType(local_type)) {
-        if (!IsCallableSemanticType(local_type)) {
+      if (const SemanticTypeInfo *local_type =
+              ScopeLookupTypeOrNull(scopes, expr->ident)) {
+        if (IsUnknownSemanticType(*local_type)) {
+          for (const auto &arg : expr->args) {
+            (void)ValidateExpr(arg.get(), scopes, globals, functions, diagnostics,
+                               max_message_send_args, message_send_context);
+          }
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        if (!IsCallableSemanticType(*local_type)) {
           diagnostics.push_back(
               MakeDiag(expr->line,
                        expr->column,
@@ -34,7 +41,7 @@
           }
           return MakeScalarSemanticType(ValueType::Unknown);
         }
-        if (local_type.callable_param_types.size() != expr->args.size()) {
+        if (local_type->callable_param_types.size() != expr->args.size()) {
           diagnostics.push_back(
               MakeDiag(expr->line,
                        expr->column,
@@ -45,9 +52,9 @@
           const SemanticTypeInfo arg_type = ValidateExpr(
               expr->args[i].get(), scopes, globals, functions, diagnostics,
               max_message_send_args, message_send_context);
-          if (i < local_type.callable_param_types.size()) {
+          if (i < local_type->callable_param_types.size()) {
             const SemanticTypeInfo expected =
-                MakeScalarSemanticType(local_type.callable_param_types[i]);
+                MakeScalarSemanticType(local_type->callable_param_types[i]);
             const bool bool_coercion =
                 !expected.is_vector && expected.type == ValueType::Bool &&
                 !arg_type.is_vector && arg_type.type == ValueType::I32;
@@ -111,7 +118,7 @@
             }
           }
         }
-        return MakeScalarSemanticType(local_type.callable_return_type);
+        return MakeScalarSemanticType(local_type->callable_return_type);
       }
 
       auto fn_it = functions.find(expr->ident);

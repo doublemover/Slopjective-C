@@ -28,6 +28,9 @@ static void CollectAutoreleasePoolScopeSiteMetadataFromStatement(
     case Stmt::Kind::For:
       CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         CollectAutoreleasePoolScopeSiteMetadataFromStatements(switch_case.body, sites);
@@ -45,6 +48,7 @@ static void CollectAutoreleasePoolScopeSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Let:
     case Stmt::Kind::Assign:
+    case Stmt::Kind::CollectionMutation:
     case Stmt::Kind::Return:
     case Stmt::Kind::Expr:
     case Stmt::Kind::Break:

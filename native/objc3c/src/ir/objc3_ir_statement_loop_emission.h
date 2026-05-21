@@ -4,6 +4,7 @@
 
 struct DoWhileStmt;
 struct ForStmt;
+struct ForInStmt;
 struct WhileStmt;
 
 void EmitObjc3IRWhileStatement(
@@ -16,4 +17,8 @@ void EmitObjc3IRDoWhileStatement(
 
 void EmitObjc3IRForStatement(
     const ForStmt *for_stmt, FunctionContext &ctx,
+    const Objc3IRStatementEmissionCallbacks &callbacks);
+
+void EmitObjc3IRForInStatement(
+    const ForInStmt *for_in_stmt, FunctionContext &ctx,
     const Objc3IRStatementEmissionCallbacks &callbacks);

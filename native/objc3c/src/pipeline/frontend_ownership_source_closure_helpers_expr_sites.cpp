@@ -37,6 +37,24 @@ void CollectOwnershipSystemExtensionExprSites(
     for (const auto &arg : expr->args) {
       CollectOwnershipSystemExtensionExprSites(arg.get(), summary);
     }
+    for (const auto &key : expr->collection_keys) {
+      CollectOwnershipSystemExtensionExprSites(key.get(), summary);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectOwnershipSystemExtensionExprSites(value.get(), summary);
+    }
+    return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectOwnershipSystemExtensionExprSites(key.get(), summary);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectOwnershipSystemExtensionExprSites(value.get(), summary);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectOwnershipSystemExtensionExprSites(expr->left.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->right.get(), summary);
     return;
   case Expr::Kind::Binary:
   case Expr::Kind::Conditional:

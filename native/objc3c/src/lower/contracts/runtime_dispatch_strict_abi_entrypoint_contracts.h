@@ -14,6 +14,11 @@ inline constexpr const char *kObjc3RuntimeTypedDispatchValueSymbol =
     "objc3_runtime_dispatch_typed_value";
 inline constexpr const char *kObjc3RuntimeTypedDispatchValueFromClassSymbol =
     "objc3_runtime_dispatch_typed_value_from_class";
+inline constexpr const char *kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol =
+    "objc3_runtime_cache_aware_dispatch_i32_checked";
+inline constexpr bool kObjc3RuntimeCacheAwareDispatchAbiAvailable = true;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchAbiVersion = 1;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchDebugVisibleFlag = 1 << 2;
 inline constexpr int kObjc3RuntimeDispatchReturnKindUnsupported = 0;
 inline constexpr int kObjc3RuntimeDispatchReturnKindI32 = 1;
 inline constexpr int kObjc3RuntimeDispatchReturnKindBool = 2;

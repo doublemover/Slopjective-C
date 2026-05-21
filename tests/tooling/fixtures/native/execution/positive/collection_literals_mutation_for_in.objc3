@@ -1,0 +1,33 @@
+module CollectionLiteralsMutationForIn;
+
+fn main() -> i32 {
+  var numbers = #array[1, 2, 3, 4];
+  numbers += 5;
+  numbers[1] = 7;
+  delete numbers[0];
+
+  var unique = #set[2, 2, 3, 4];
+  unique += 5;
+  delete unique[4];
+
+  var lookup = #map[1: 10, 2: 20];
+  lookup[2] = 25;
+  delete lookup[1];
+
+  var arraySum = 0;
+  for (item in numbers) {
+    arraySum += item;
+  }
+
+  var setSum = 0;
+  for (item in unique) {
+    setSum += item;
+  }
+
+  var mapSum = 0;
+  for (key, value in lookup) {
+    mapSum += key + value;
+  }
+
+  return numbers[0] + #array[8, 9][1] + arraySum + setSum + mapSum;
+}

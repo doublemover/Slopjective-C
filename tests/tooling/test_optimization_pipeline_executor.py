@@ -68,6 +68,17 @@ def test_optimization_pipeline_applies_only_proven_mutating_passes() -> None:
     assert "method_inline_source_map_debug_preserved=true" in str(inline["metadata_key"])
     assert "method_inline_runtime_abi_safe=true" in str(inline["metadata_key"])
 
+    cache_aware = results[
+        "cache-aware-dispatch:fixture:cache-aware-dispatch:strict-helper"
+    ]
+    assert cache_aware["decision"] == "APPLIED"
+    assert cache_aware["success_claim"] is True
+    assert cache_aware["rewrites_ir"] is True
+    assert cache_aware["invalidates_global_proof_state"] is True
+    assert "cache_aware_strict_status_envelope_checked=true" in str(
+        cache_aware["metadata_key"]
+    )
+
 
 def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> None:
     results = _candidate_results()
@@ -129,6 +140,15 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
     assert missing_invalidation["decision"] == "REJECTED_FAIL_CLOSED"
     assert "method_inline_invalidation_complete" in str(
         missing_invalidation["diagnostic"]
+    )
+
+    missing_cache_status = results[
+        "cache-aware-dispatch:fixture:cache-aware-dispatch:missing-status-envelope"
+    ]
+    assert missing_cache_status["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_cache_status["success_claim"] is False
+    assert "cache_aware_strict_status_envelope_checked" in str(
+        missing_cache_status["diagnostic"]
     )
 
 

@@ -87,11 +87,14 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
     },
     "cache-aware-dispatch": {
         "ordinal": 80,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "cache-aware dispatch is reserved behind the runtime cache contract",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "cache-aware dispatch requires runtime cache ABI, strict status "
+            "handling, semantic replay, and source-map debug preservation"
+        ),
     },
     "ir-cleanup-verifier": {
         "ordinal": 90,
@@ -132,6 +135,16 @@ def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any])
             "method_inline_invalidation_complete",
         )
         for gate in inline_gates:
+            key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
+    if candidate.get("pass_id") == "cache-aware-dispatch":
+        cache_gates = (
+            "runtime_cache_invalidation_semantics_public",
+            "cache_aware_helper_symbol_present",
+            "cache_aware_semantic_replay_preserves_miss_behavior",
+            "cache_aware_strict_status_envelope_checked",
+            "cache_aware_source_map_debug_preserved",
+        )
+        for gate in cache_gates:
             key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
     return key
 
@@ -181,6 +194,21 @@ def _missing(candidate: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
                 "method_inline_recursion_absent",
                 "method_inline_callee_generation_pinned",
                 "method_inline_invalidation_complete",
+            )
+            if not candidate.get(gate)
+        ]
+        if missing_gates:
+            diagnostic = plan["diagnostic"] + "; failed gates: " + ", ".join(missing_gates)
+            return _result(candidate, plan, _missing_proof_decision(plan), diagnostic)
+    if candidate.get("pass_id") == "cache-aware-dispatch":
+        missing_gates = [
+            gate
+            for gate in (
+                "runtime_cache_invalidation_semantics_public",
+                "cache_aware_helper_symbol_present",
+                "cache_aware_semantic_replay_preserves_miss_behavior",
+                "cache_aware_strict_status_envelope_checked",
+                "cache_aware_source_map_debug_preserved",
             )
             if not candidate.get(gate)
         ]
@@ -289,6 +317,17 @@ def evaluate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
             and candidate.get("method_inline_recursion_absent")
             and candidate.get("method_inline_callee_generation_pinned")
             and candidate.get("method_inline_invalidation_complete")
+        ):
+            return _result(candidate, plan, "APPLIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "cache-aware-dispatch":
+        if (
+            candidate.get("runtime_cache_invalidation_semantics_public")
+            and candidate.get("cache_aware_helper_symbol_present")
+            and candidate.get("cache_aware_semantic_replay_preserves_miss_behavior")
+            and candidate.get("cache_aware_strict_status_envelope_checked")
+            and candidate.get("cache_aware_source_map_debug_preserved")
         ):
             return _result(candidate, plan, "APPLIED")
         return _missing(candidate, plan)

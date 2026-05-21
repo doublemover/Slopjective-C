@@ -28,6 +28,12 @@ static void CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(
   CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(expr->left.get(), sites);
   CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(expr->right.get(), sites);
   CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(expr->third.get(), sites);
+  for (const auto &key : expr->collection_keys) {
+    CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(key.get(), sites);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(value.get(), sites);
+  }
   for (const auto &arg : expr->args) {
     CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(arg.get(), sites);
   }
@@ -75,6 +81,10 @@ static void CollectBlockDeterminismPerfBaselineSiteMetadataFromStatement(
       CollectBlockDeterminismPerfBaselineSiteMetadataFromForClause(stmt->for_stmt->step, sites);
       CollectBlockDeterminismPerfBaselineSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectBlockDeterminismPerfBaselineSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
@@ -91,6 +101,10 @@ static void CollectBlockDeterminismPerfBaselineSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Expr:
       CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectBlockDeterminismPerfBaselineSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

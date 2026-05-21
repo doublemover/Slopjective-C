@@ -21,6 +21,12 @@ void CollectConcurrencyAsyncSourceClosureExprSites(
   for (const auto &arg : expr->args) {
     CollectConcurrencyAsyncSourceClosureExprSites(arg.get(), summary);
   }
+  for (const auto &key : expr->collection_keys) {
+    CollectConcurrencyAsyncSourceClosureExprSites(key.get(), summary);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectConcurrencyAsyncSourceClosureExprSites(value.get(), summary);
+  }
 }
 
 void CollectConcurrencyAsyncSourceClosureStmtSites(
@@ -40,6 +46,14 @@ void CollectConcurrencyAsyncSourceClosureStmtSites(
     if (stmt->assign_stmt != nullptr) {
       CollectConcurrencyAsyncSourceClosureExprSites(
           stmt->assign_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectConcurrencyAsyncSourceClosureExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(
+          stmt->collection_mutation_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Return:
@@ -78,6 +92,15 @@ void CollectConcurrencyAsyncSourceClosureStmtSites(
       CollectConcurrencyAsyncSourceClosureExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectConcurrencyAsyncSourceClosureExprSites(
+          stmt->for_in_stmt->collection.get(), summary);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
         CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
       }
     }

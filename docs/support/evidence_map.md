@@ -134,6 +134,9 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
 | `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
+| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` |  |
+| `runtime.object-model.full-realization` |  | `test` | `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3` |  |
+| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_object_model_full_realization_readiness.py` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3` |  |
@@ -233,6 +236,42 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
 | `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
 | `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `test` | `tests/tooling/runtime/string_text_model_runtime_probe.cpp` | `npm run objc3c -- validate-string-text-model-runtime` |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.unicode-scalar-iteration` | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `test` | `tests/tooling/runtime/string_text_model_runtime_probe.cpp` | `npm run objc3c -- validate-string-text-model-runtime` |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.basic-formatting` | `objc3c.behavior.stdlib.text.basic-formatting` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `test` | `tests/tooling/runtime/string_text_model_runtime_probe.cpp` | `npm run objc3c -- validate-string-text-model-runtime` |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/runtime/string_text_model_runtime_probe.cpp` | `npm run objc3c -- validate-string-text-model-runtime` |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
 | `language.text.source-string-literal-text-shape-handle` | `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `test` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` |
 | `language.text.source-string-literal-text-shape-handle` | `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `test` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt` |  |
 | `language.text.source-string-literal-text-shape-handle` | `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3` |  |
@@ -286,6 +325,25 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
 | `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
 | `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt` |  |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc` |  |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp` |  |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission.cpp` |  |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.meta.json` |  |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc` |  |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/ir/objc3_ir_statement_emission.cpp` |  |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3` |  |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc` |  |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp` |  |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
@@ -626,11 +684,15 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp` |  |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `scripts/objc3c_semantic_optimization_pipeline.py` |  |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
-| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` |  |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json` |  |
 | `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
-| `runtime.optimization.cache-aware-dispatch` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json` |  |
-| `runtime.optimization.cache-aware-dispatch` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `schema` | `schemas/objc3c-runtime-debug-trace-v1.schema.json` |  |
@@ -638,16 +700,10 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/validation.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `test` | `tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json` | `npm run objc3c -- validate-debugger-integration` |
-| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `test` | `tests/tooling/test_debugger_integration.py` | `npm run objc3c -- validate-debugger-integration` |
-| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `source` | `scripts/check_objc3c_debugger_integration.py` |  |
-| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `source` | `scripts/objc3c_debugger_integration/model.py` |  |
-| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `test` | `tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json` | `npm run objc3c -- validate-debugger-integration` |
-| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `test` | `tests/tooling/test_debugger_integration.py` | `npm run objc3c -- validate-debugger-integration` |
-| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `source` | `scripts/check_objc3c_debugger_integration.py` |  |
-| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `source` | `scripts/objc3c_debugger_integration/model.py` |  |
-| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.lldb-plugin` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
+| `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |
+| `runtime.debug-trace.statement-stepping` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h` |  |
@@ -703,3 +759,21 @@ diagnostic, documentation, or boundary evidence only.
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `test` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `test` | `tests/tooling/test_generic_collection_type_model.py` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/model/generic_collection_type_model.h` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_type_factory.cpp` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_type_relations.cpp` |  |
+| `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/test_generic_collection_type_model.py` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc` |  |
+| `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `test` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `test` | `tests/tooling/test_generic_collection_type_model.py` |  |
+| `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp` |  |
+| `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `source` | `native/objc3c/src/sema/objc3_semantic_type_relations.cpp` |  |
+| `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `source` | `native/objc3c/src/sema/objc3_semantic_type_factory.cpp` |  |

@@ -16,6 +16,18 @@ void CollectResultLikeExprProfile(const Expr *expr,
     CollectResultLikeExprProfile(expr->right.get(), profile);
     CollectResultLikeExprProfile(expr->third.get(), profile);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectResultLikeExprProfile(key.get(), profile);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectResultLikeExprProfile(value.get(), profile);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectResultLikeExprProfile(expr->left.get(), profile);
+    CollectResultLikeExprProfile(expr->right.get(), profile);
+    return;
   case Expr::Kind::Call:
   case Expr::Kind::Try:
   case Expr::Kind::Throw:

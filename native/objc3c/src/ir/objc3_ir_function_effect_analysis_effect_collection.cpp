@@ -48,6 +48,18 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
     case Expr::Kind::StringLiteral:
       info.called_functions.insert(kObjc3RuntimeStdlibTextUtf8LiteralI32);
       return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        CollectFunctionEffectExpr(key.get(), scopes, info);
+      }
+      for (const auto &value : expr->collection_values) {
+        CollectFunctionEffectExpr(value.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      CollectFunctionEffectExpr(expr->left.get(), scopes, info);
+      CollectFunctionEffectExpr(expr->right.get(), scopes, info);
+      return;
     case Expr::Kind::Binary:
       CollectFunctionEffectExpr(expr->left.get(), scopes, info);
       CollectFunctionEffectExpr(expr->right.get(), scopes, info);
@@ -129,6 +141,20 @@ void CollectFunctionEffectStmt(
       }
       CollectFunctionEffectExpr(stmt->assign_stmt->value.get(), scopes, info);
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt == nullptr) {
+        return;
+      }
+      if (IsGlobalSymbolWriteTarget(
+              stmt->collection_mutation_stmt->collection_name, scopes,
+              global_symbols)) {
+        info.has_global_write = true;
+      }
+      CollectFunctionEffectExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), scopes, info);
+      CollectFunctionEffectExpr(
+          stmt->collection_mutation_stmt->value.get(), scopes, info);
+      return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
         CollectFunctionEffectExpr(stmt->return_stmt->value.get(), scopes, info);
@@ -187,6 +213,26 @@ void CollectFunctionEffectStmt(
       scopes.pop_back();
       CollectFunctionEffectForClause(
           stmt->for_stmt->step, scopes, info, global_symbols);
+      scopes.pop_back();
+      return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return;
+      }
+      CollectFunctionEffectExpr(
+          stmt->for_in_stmt->collection.get(), scopes, info);
+      scopes.push_back({});
+      if (!stmt->for_in_stmt->value_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->value_name);
+      }
+      if (stmt->for_in_stmt->has_key_binding &&
+          !stmt->for_in_stmt->key_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->key_name);
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
+        CollectFunctionEffectStmt(
+            loop_stmt.get(), scopes, info, global_symbols);
+      }
       scopes.pop_back();
       return;
     case Stmt::Kind::Switch:

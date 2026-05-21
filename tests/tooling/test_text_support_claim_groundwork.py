@@ -119,7 +119,10 @@ def test_runtime_backed_text_claims_are_dedicated_module_contracts() -> None:
         }
         assert (claim["behavior_fixture"], claim["executable_command"]) in executable_evidence
         if expected.get("runtime_acceptance_case") == "string-text-model-runtime-probe":
-            assert (STRING_TEXT_MODEL_PROBE, "python -m pytest tests/tooling/test_string_text_model_runtime.py") in executable_evidence
+            assert (
+                STRING_TEXT_MODEL_PROBE,
+                "npm run objc3c -- validate-string-text-model-runtime",
+            ) in executable_evidence
         else:
             assert (FOUNDATION_NEXT_PROBE, "npm run objc3c -- test-runtime-acceptance-fast") in executable_evidence
 

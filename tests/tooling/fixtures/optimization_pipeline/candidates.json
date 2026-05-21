@@ -154,6 +154,26 @@
       "method_inline_recursion_absent": true,
       "method_inline_callee_generation_pinned": true,
       "method_inline_invalidation_complete": false
+    },
+    {
+      "pass_id": "cache-aware-dispatch",
+      "source_replay_key": "fixture:cache-aware-dispatch:strict-helper",
+      "benchmark_governance_ready": true,
+      "runtime_cache_invalidation_semantics_public": true,
+      "cache_aware_helper_symbol_present": true,
+      "cache_aware_semantic_replay_preserves_miss_behavior": true,
+      "cache_aware_strict_status_envelope_checked": true,
+      "cache_aware_source_map_debug_preserved": true
+    },
+    {
+      "pass_id": "cache-aware-dispatch",
+      "source_replay_key": "fixture:cache-aware-dispatch:missing-status-envelope",
+      "benchmark_governance_ready": true,
+      "runtime_cache_invalidation_semantics_public": true,
+      "cache_aware_helper_symbol_present": true,
+      "cache_aware_semantic_replay_preserves_miss_behavior": true,
+      "cache_aware_strict_status_envelope_checked": false,
+      "cache_aware_source_map_debug_preserved": true
     }
   ]
 }

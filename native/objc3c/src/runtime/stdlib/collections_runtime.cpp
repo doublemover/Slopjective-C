@@ -356,6 +356,61 @@ extern "C" int objc3_runtime_stdlib_collections_mutable_array_append_i32(
   return lookup.record->count;
 }
 
+extern "C" int objc3_runtime_stdlib_collections_mutable_array_set_i32(
+    int handle,
+    int index,
+    int value) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::CollectionMutableArray});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.array_create_call_count, handle, index, value, 0,
+               status, 0);
+    return 0;
+  }
+  if (index < 0 || index >= static_cast<int>(lookup.record->values.size())) {
+    RecordCall(state, state.array_create_call_count, handle, index, value, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OUT_OF_BOUNDS, 0);
+    return 0;
+  }
+  lookup.record->values[static_cast<std::size_t>(index)] = value;
+  ++state.mutation_generation;
+  lookup.record->header.mutation_generation = state.mutation_generation;
+  RecordCall(state, state.array_create_call_count, handle, index, value, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, value);
+  return value;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_mutable_array_remove_at_i32(
+    int handle,
+    int index) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::CollectionMutableArray});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.array_create_call_count, handle, index, 0, 0,
+               status, 0);
+    return 0;
+  }
+  if (index < 0 || index >= static_cast<int>(lookup.record->values.size())) {
+    RecordCall(state, state.array_create_call_count, handle, index, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OUT_OF_BOUNDS, 0);
+    return 0;
+  }
+  lookup.record->values.erase(lookup.record->values.begin() + index);
+  lookup.record->count = static_cast<int>(lookup.record->values.size());
+  ++state.mutation_generation;
+  lookup.record->header.mutation_generation = state.mutation_generation;
+  RecordCall(state, state.array_create_call_count, handle, index, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
+             lookup.record->count);
+  return lookup.record->count;
+}
+
 extern "C" int objc3_runtime_stdlib_collections_array_count_i32(int handle) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -536,6 +591,22 @@ extern "C" int objc3_runtime_stdlib_collections_map_entry_i32(int key,
   return handle;
 }
 
+extern "C" int objc3_runtime_stdlib_collections_map_empty_i32(void) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  CollectionRecord record;
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionMap, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.map_create_call_count, 0, 0, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.map_create_call_count, handle, 0, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
 extern "C" int objc3_runtime_stdlib_collections_map_count_i32(int handle) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -611,6 +682,37 @@ extern "C" int objc3_runtime_stdlib_collections_map_insert_i32(int handle,
   return result;
 }
 
+extern "C" int objc3_runtime_stdlib_collections_map_delete_i32(int handle,
+                                                               int key) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup =
+      state.records.Lookup(handle, {storage::DescriptorKind::CollectionMap});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.map_mutation_call_count, handle, key, 0, 0,
+               status, 0);
+    return 0;
+  }
+  auto iterator = std::find_if(lookup.record->entries.begin(),
+                               lookup.record->entries.end(),
+                               [key](const MapEntry &entry) {
+                                 return entry.key == key;
+                               });
+  if (iterator == lookup.record->entries.end()) {
+    RecordCall(state, state.map_mutation_call_count, handle, key, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND, 0);
+    return 0;
+  }
+  lookup.record->entries.erase(iterator);
+  ++state.mutation_generation;
+  lookup.record->header.mutation_generation = state.mutation_generation;
+  const int result = static_cast<int>(lookup.record->entries.size());
+  RecordCall(state, state.map_mutation_call_count, handle, key, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, result);
+  return result;
+}
+
 extern "C" int objc3_runtime_stdlib_collections_map_lookup_or_i32(
     int handle,
     int key,
@@ -635,6 +737,74 @@ extern "C" int objc3_runtime_stdlib_collections_map_lookup_or_i32(
   RecordCall(state, state.map_query_call_count, handle, key, default_value, 0,
              OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, entry->value);
   return entry->value;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_map_key_iterator_i32(
+    int handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup =
+      state.records.Lookup(handle, {storage::DescriptorKind::CollectionMap});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.iterator_create_call_count, handle, handle, 0, 0,
+               status, 0);
+    return 0;
+  }
+  CollectionRecord iterator;
+  iterator.values.reserve(lookup.record->entries.size());
+  for (const MapEntry &entry : lookup.record->entries) {
+    iterator.values.push_back(entry.key);
+  }
+  iterator.iterator_source_handle = handle;
+  iterator.iterator_source_kind = storage::DescriptorKind::CollectionMap;
+  iterator.expected_mutation_generation =
+      lookup.record->header.mutation_generation;
+  const int iterator_handle = state.records.Store(
+      storage::DescriptorKind::CollectionIterator, std::move(iterator));
+  if (iterator_handle == 0) {
+    RecordCall(state, state.iterator_create_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
+             0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
+             iterator_handle);
+  return iterator_handle;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_map_value_iterator_i32(
+    int handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup =
+      state.records.Lookup(handle, {storage::DescriptorKind::CollectionMap});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.iterator_create_call_count, handle, handle, 0, 0,
+               status, 0);
+    return 0;
+  }
+  CollectionRecord iterator;
+  iterator.values.reserve(lookup.record->entries.size());
+  for (const MapEntry &entry : lookup.record->entries) {
+    iterator.values.push_back(entry.value);
+  }
+  iterator.iterator_source_handle = handle;
+  iterator.iterator_source_kind = storage::DescriptorKind::CollectionMap;
+  iterator.expected_mutation_generation =
+      lookup.record->header.mutation_generation;
+  const int iterator_handle = state.records.Store(
+      storage::DescriptorKind::CollectionIterator, std::move(iterator));
+  if (iterator_handle == 0) {
+    RecordCall(state, state.iterator_create_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
+             0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
+             iterator_handle);
+  return iterator_handle;
 }
 
 extern "C" int objc3_runtime_stdlib_collections_set3_i32(int first,
@@ -662,6 +832,44 @@ extern "C" int objc3_runtime_stdlib_collections_set3_i32(int first,
     return 0;
   }
   RecordCall(state, state.set_create_call_count, handle, first, second, third,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_set_storage_i32(
+    const int *values,
+    int count) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  if (count < 0) {
+    RecordCall(state, state.set_create_call_count, 0, count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT, 0);
+    return 0;
+  }
+  if (storage::CountExceedsStorageCapacity(count)) {
+    RecordCall(state, state.set_create_call_count, 0, count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  if (values == nullptr && count != 0) {
+    RecordCall(state, state.set_create_call_count, 0, count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR,
+               0);
+    return 0;
+  }
+  CollectionRecord record;
+  for (int index = 0; index < count; ++index) {
+    AppendUniqueValue(record.values, values[index]);
+  }
+  record.count = static_cast<int>(record.values.size());
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionSet, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.set_create_call_count, 0, count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.set_create_call_count, handle, count, 0, 0,
              OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
   return handle;
 }
@@ -731,6 +939,35 @@ extern "C" int objc3_runtime_stdlib_collections_set_insert_i32(int handle,
   RecordCall(state, state.set_mutation_call_count, handle, value, 0, 0,
              OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, result);
   return result;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_set_delete_i32(int handle,
+                                                               int value) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup =
+      state.records.Lookup(handle, {storage::DescriptorKind::CollectionSet});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.set_mutation_call_count, handle, value, 0, 0,
+               status, 0);
+    return 0;
+  }
+  auto iterator = std::find(lookup.record->values.begin(),
+                            lookup.record->values.end(), value);
+  if (iterator == lookup.record->values.end()) {
+    RecordCall(state, state.set_mutation_call_count, handle, value, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND, 0);
+    return 0;
+  }
+  lookup.record->values.erase(iterator);
+  lookup.record->count = static_cast<int>(lookup.record->values.size());
+  ++state.mutation_generation;
+  lookup.record->header.mutation_generation = state.mutation_generation;
+  RecordCall(state, state.set_mutation_call_count, handle, value, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
+             lookup.record->count);
+  return lookup.record->count;
 }
 
 extern "C" int objc3_runtime_stdlib_collections_slice_count_i32(int handle) {

@@ -192,6 +192,8 @@ const char *Objc3LexTokenKindName(Objc3LexTokenKind kind) {
     return "??";
   case Objc3LexTokenKind::Tilde:
     return "~";
+  case Objc3LexTokenKind::Hash:
+    return "#";
   case Objc3LexTokenKind::Plus:
     return "+";
   case Objc3LexTokenKind::Minus:

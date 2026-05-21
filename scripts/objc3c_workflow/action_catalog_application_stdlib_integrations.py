@@ -16,6 +16,10 @@ STDLIB_PROGRAM_GUARANTEE_OWNER = (
     "stdlib publish/adoption docs, capability demos, tutorial routing, and stdlib "
     "smoke integration stay executable on the live public workflow"
 )
+STDLIB_TEXT_MODEL_GUARANTEE_OWNER = (
+    "runtime-backed objc3.text scalar, formatting, equality, and builder "
+    "contracts stay replayable through the public workflow bridge"
+)
 
 APPLICATION_STDLIB_INTEGRATION_ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-stdlib-foundation": ActionSpec(
@@ -39,6 +43,13 @@ APPLICATION_STDLIB_INTEGRATION_ACTION_SPECS: dict[str, ActionSpec] = {
         validation_tier="repo",
         guarantee_owner=STDLIB_PROGRAM_GUARANTEE_OWNER,
     ),
+    "validate-string-text-model-runtime": ActionSpec(
+        "validate-string-text-model-runtime",
+        "run the runtime-backed objc3.text model probe",
+        "python:-m pytest tests/tooling/test_string_text_model_runtime.py",
+        validation_tier="targeted",
+        guarantee_owner=STDLIB_TEXT_MODEL_GUARANTEE_OWNER,
+    ),
 }
 
 
@@ -47,4 +58,5 @@ __all__ = [
     "STDLIB_ADVANCED_GUARANTEE_OWNER",
     "STDLIB_FOUNDATION_GUARANTEE_OWNER",
     "STDLIB_PROGRAM_GUARANTEE_OWNER",
+    "STDLIB_TEXT_MODEL_GUARANTEE_OWNER",
 ]

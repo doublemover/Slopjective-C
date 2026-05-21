@@ -30,6 +30,12 @@ void CollectTypeSystemTypeSourceClosureExprSites(
   for (const auto &arg : expr->args) {
     CollectTypeSystemTypeSourceClosureExprSites(arg.get(), summary);
   }
+  for (const auto &key : expr->collection_keys) {
+    CollectTypeSystemTypeSourceClosureExprSites(key.get(), summary);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectTypeSystemTypeSourceClosureExprSites(value.get(), summary);
+  }
   for (const auto &stmt : expr->block_body) {
     if (stmt != nullptr) {
       const Stmt *nested = stmt.get();
@@ -44,6 +50,14 @@ void CollectTypeSystemTypeSourceClosureExprSites(
         if (nested->assign_stmt != nullptr) {
           CollectTypeSystemTypeSourceClosureExprSites(
               nested->assign_stmt->value.get(), summary);
+        }
+        break;
+      case Stmt::Kind::CollectionMutation:
+        if (nested->collection_mutation_stmt != nullptr) {
+          CollectTypeSystemTypeSourceClosureExprSites(
+              nested->collection_mutation_stmt->key_or_index.get(), summary);
+          CollectTypeSystemTypeSourceClosureExprSites(
+              nested->collection_mutation_stmt->value.get(), summary);
         }
         break;
       case Stmt::Kind::Return:
@@ -61,6 +75,7 @@ void CollectTypeSystemTypeSourceClosureExprSites(
       case Stmt::Kind::If:
       case Stmt::Kind::DoWhile:
       case Stmt::Kind::For:
+      case Stmt::Kind::ForIn:
       case Stmt::Kind::Switch:
       case Stmt::Kind::While:
       case Stmt::Kind::Block:
@@ -90,6 +105,14 @@ void CollectTypeSystemTypeSourceClosureStmtSites(
     if (stmt->assign_stmt != nullptr) {
       CollectTypeSystemTypeSourceClosureExprSites(
           stmt->assign_stmt->value.get(), summary);
+    }
+    break;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectTypeSystemTypeSourceClosureExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(
+          stmt->collection_mutation_stmt->value.get(), summary);
     }
     break;
   case Stmt::Kind::Return:
@@ -134,6 +157,15 @@ void CollectTypeSystemTypeSourceClosureStmtSites(
       CollectTypeSystemTypeSourceClosureExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &child : stmt->for_stmt->body) {
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectTypeSystemTypeSourceClosureExprSites(
+          stmt->for_in_stmt->collection.get(), summary);
+      for (const auto &child : stmt->for_in_stmt->body) {
         CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }

@@ -23,6 +23,14 @@ void CollectResultLikeStmtProfile(const Stmt *stmt,
   case Stmt::Kind::For:
     CollectResultLikeForStmtProfile(stmt, profile);
     return;
+  case Stmt::Kind::ForIn:
+    CountResultLikeBranchMergeSite(profile);
+    if (stmt->for_in_stmt != nullptr) {
+      CollectResultLikeExprProfile(stmt->for_in_stmt->collection.get(),
+                                   profile);
+      CollectResultLikeStatementBodyProfile(stmt->for_in_stmt->body, profile);
+    }
+    return;
   case Stmt::Kind::Switch:
     CollectResultLikeSwitchStmtProfile(stmt, profile);
     return;
@@ -35,6 +43,14 @@ void CollectResultLikeStmtProfile(const Stmt *stmt,
     return;
   case Stmt::Kind::Expr:
     CollectResultLikeExprStmtProfile(stmt, profile);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectResultLikeExprProfile(
+          stmt->collection_mutation_stmt->key_or_index.get(), profile);
+      CollectResultLikeExprProfile(
+          stmt->collection_mutation_stmt->value.get(), profile);
+    }
     return;
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:

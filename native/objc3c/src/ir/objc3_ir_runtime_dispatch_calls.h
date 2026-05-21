@@ -36,11 +36,34 @@ struct Objc3IRDirectDispatchCallRequest {
   bool strict_no_compatibility = true;
 };
 
+struct Objc3IRCacheAwareDispatchCallRequest {
+  std::string result_value;
+  std::string result_envelope_value;
+  std::string status_value;
+  std::string status_ok_value;
+  std::string descriptor_ptr;
+  std::string selector_ptr;
+  std::string receiver;
+  std::vector<std::string> args;
+  unsigned source_line = 1;
+  unsigned source_column = 1;
+  bool strict_no_retired_route = true;
+  bool strict_no_compatibility = true;
+};
+
 bool Objc3IRRuntimeDispatchCallRequestOwnsResult(
     const Objc3IRRuntimeDispatchCallRequest &request);
 bool Objc3IRDirectDispatchCallRequestOwnsResult(
     const Objc3IRDirectDispatchCallRequest &request);
+bool Objc3IRCacheAwareDispatchCallRequestOwnsResult(
+    const Objc3IRCacheAwareDispatchCallRequest &request);
+const char *Objc3IRRuntimeDispatchI32ResultType();
+const char *Objc3IRCacheAwareDispatchDescriptorType();
 std::string BuildObjc3IRRuntimeDispatchCall(
     const Objc3IRRuntimeDispatchCallRequest &request);
 std::string BuildObjc3IRDirectDispatchCall(
     const Objc3IRDirectDispatchCallRequest &request);
+std::vector<std::string> BuildObjc3IRCacheAwareDispatchCall(
+    const Objc3IRCacheAwareDispatchCallRequest &request,
+    const std::string &strict_failure_label,
+    const std::string &value_label);

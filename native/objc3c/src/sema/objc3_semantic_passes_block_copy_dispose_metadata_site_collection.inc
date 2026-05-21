@@ -13,6 +13,12 @@ static void CollectBlockCopyDisposeSiteMetadataFromExpr(
   CollectBlockCopyDisposeSiteMetadataFromExpr(expr->left.get(), sites);
   CollectBlockCopyDisposeSiteMetadataFromExpr(expr->right.get(), sites);
   CollectBlockCopyDisposeSiteMetadataFromExpr(expr->third.get(), sites);
+  for (const auto &key : expr->collection_keys) {
+    CollectBlockCopyDisposeSiteMetadataFromExpr(key.get(), sites);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectBlockCopyDisposeSiteMetadataFromExpr(value.get(), sites);
+  }
   for (const auto &arg : expr->args) {
     CollectBlockCopyDisposeSiteMetadataFromExpr(arg.get(), sites);
   }
@@ -84,6 +90,10 @@ static void CollectBlockCopyDisposeSiteMetadataFromStatement(
           stmt->for_stmt->body,
           sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectBlockCopyDisposeSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectBlockCopyDisposeSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectBlockCopyDisposeSiteMetadataFromExpr(
           stmt->switch_stmt->condition.get(),
@@ -112,6 +122,10 @@ static void CollectBlockCopyDisposeSiteMetadataFromStatement(
       CollectBlockCopyDisposeSiteMetadataFromExpr(
           stmt->expr_stmt->value.get(),
           sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectBlockCopyDisposeSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectBlockCopyDisposeSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

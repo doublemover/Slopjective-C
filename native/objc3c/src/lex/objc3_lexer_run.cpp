@@ -95,6 +95,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
               diagnostics, NamedIdentifierPragmaPlacement::kNonLeading)) {
         continue;
       }
+      Advance();
+      tokens.push_back(Token{TokenKind::Hash, "#", token_line, token_column});
+      continue;
     }
     if (c == '@') {
       Advance();

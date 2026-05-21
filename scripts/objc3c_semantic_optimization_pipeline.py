@@ -24,10 +24,13 @@ PIPELINE_PATH = (
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "semantic-optimization-pipeline.json"
 PROOF_MODEL_REPORT_PATH = ROOT / "tmp" / "reports" / "optimization-proof-model.json"
-REQUIRED_ISSUES = {8175, 8191, 8192, 8193}
+REQUIRED_ISSUES = {8175, 8191, 8192, 8193, 8194}
 REQUIRED_SUPPORT_CLAIM = "objc3c.behavior.semantic_optimization_pipeline"
 REQUIRED_METHOD_INLINING_SUPPORT_CLAIM = (
     "objc3c.behavior.optimization.method-inlining-safe-subset"
+)
+REQUIRED_CACHE_AWARE_SUPPORT_CLAIM = (
+    "objc3c.behavior.runtime.cache-aware-dispatch"
 )
 REQUIRED_PASS_ORDER = [
     "semantic-precondition-gate",
@@ -59,20 +62,21 @@ REQUIRED_CAPABILITY_ROWS = {
     "objc3c.behavior.semantic_optimization_pipeline",
     "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
     "objc3c.behavior.optimization.method-inlining-safe-subset",
+    "objc3c.behavior.runtime.cache-aware-dispatch",
     "objc3c.internal.semantic_optimization_pass_registry",
-    "objc3c.reserved.semantic_optimization.cache_aware_dispatch",
+    "runtime.optimization.cache-aware-dispatch",
 }
 REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.fixture",
     "objc3c.evidence.semantic_optimization_pipeline.validator",
     "objc3c.evidence.semantic_optimization_pipeline.native_surface",
     "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
-    "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
     "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
     "objc3c.evidence.semantic_optimization_pipeline.proof_model",
     "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
     "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
     "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
+    "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir",
 }
 RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
 REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
@@ -1002,6 +1006,21 @@ def _validate_pass_registry(
     cache_pass = pass_by_id.get("cache-aware-dispatch", {})
     if "runtime-owned" not in _pass_text(cache_pass):
         failures.append("cache-aware dispatch pass must remain runtime-owned")
+    if cache_pass.get("mode") != "enabled":
+        failures.append("cache-aware dispatch pass must be enabled when the runtime ABI is present")
+    if cache_pass.get("rewrites_ir") is not True:
+        failures.append("cache-aware dispatch pass must rewrite IR")
+    if cache_pass.get("invalidates_global_proof_state") is not True:
+        failures.append("cache-aware dispatch pass must invalidate global proof state")
+    if (
+        "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll"
+        not in _as_list(cache_pass.get("fixtures"))
+    ):
+        failures.append("cache-aware dispatch enabled pass must cite cache-aware IR fixture")
+    cache_text = _pass_text(cache_pass)
+    for token in ("helper", "strict", "source-map", "semantic replay"):
+        if token not in cache_text:
+            failures.append(f"cache-aware dispatch pass missing proof token: {token}")
 
     devirt_pass = pass_by_id.get("devirtualization", {})
     devirt_text = _pass_text(devirt_pass)
@@ -1588,13 +1607,15 @@ def validate_pipeline(
     issues = set(int(issue) for issue in _as_list(issue_mapping.get("primary_issues")))
     if not REQUIRED_ISSUES.issubset(issues):
         failures.append(
-            "semantic optimization pipeline must map to issues #8175, #8191, #8192, and #8193"
+            "semantic optimization pipeline must map to issues #8175, #8191, #8192, #8193, and #8194"
         )
     support_claims = {str(claim) for claim in _as_list(issue_mapping.get("support_claims"))}
     if REQUIRED_SUPPORT_CLAIM not in support_claims:
         failures.append("semantic optimization pipeline support claim is missing")
     if REQUIRED_METHOD_INLINING_SUPPORT_CLAIM not in support_claims:
         failures.append("method inlining safe-subset support claim is missing")
+    if REQUIRED_CACHE_AWARE_SUPPORT_CLAIM not in support_claims:
+        failures.append("cache-aware dispatch support claim is missing")
     capability_rows = {
         str(row) for row in _as_list(issue_mapping.get("capability_rows_required"))
     }

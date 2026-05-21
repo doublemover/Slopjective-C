@@ -6,30 +6,33 @@
       8175,
       8191,
       8192,
-      8193
+      8193,
+      8194
     ],
     "support_claims": [
       "objc3c.behavior.semantic_optimization_pipeline",
-      "objc3c.behavior.optimization.method-inlining-safe-subset"
+      "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "objc3c.behavior.runtime.cache-aware-dispatch"
     ],
     "capability_rows_required": [
       "objc3c.behavior.semantic_optimization_pipeline",
       "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
       "objc3c.behavior.optimization.method-inlining-safe-subset",
       "objc3c.internal.semantic_optimization_pass_registry",
-      "objc3c.reserved.semantic_optimization.cache_aware_dispatch"
+      "runtime.optimization.cache-aware-dispatch",
+      "objc3c.behavior.runtime.cache-aware-dispatch"
     ],
     "evidence_ids_required": [
       "objc3c.evidence.semantic_optimization_pipeline.fixture",
       "objc3c.evidence.semantic_optimization_pipeline.validator",
       "objc3c.evidence.semantic_optimization_pipeline.native_surface",
       "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
-      "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
       "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
       "objc3c.evidence.semantic_optimization_pipeline.proof_model",
       "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
       "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
-      "objc3c.evidence.semantic_optimization_pipeline.method_inlining"
+      "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
+      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir"
     ]
   },
   "source_truth": {
@@ -74,7 +77,9 @@
         "tokens": [
           "TryResolveObjc3IRDirectDispatch",
           "BuildObjc3IRDirectDispatchCall",
-          "invalidate_global_proof_state"
+          "invalidate_global_proof_state",
+          "Objc3IRMessageSendIsEligibleForCacheAwareDispatch",
+          "BuildObjc3IRCacheAwareDispatchCall"
         ]
       },
       {
@@ -118,6 +123,13 @@
           "REQUIRED_DEVIRTUALIZATION_PROOF_IDS",
           "exact_target_eligibility_verdict",
           "runtime_cache_version_verdict"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+        "tokens": [
+          "kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol",
+          "strict checked status envelope"
         ]
       }
     ]
@@ -342,27 +354,31 @@
     {
       "pass_id": "cache-aware-dispatch",
       "ordinal": 80,
-      "stage": "runtime-owned-dispatch-optimization-reserved",
-      "mode": "reserved",
+      "stage": "runtime-owned-cache-aware-dispatch-helper-lowering",
+      "mode": "enabled",
       "semantic_preserving": true,
-      "rewrites_ir": false,
-      "invalidates_global_proof_state": false,
-      "input_contract": "runtime cache invalidation contract",
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3IRRuntimeDispatchCallRequest",
       "output_contract": "runtime-owned cache-aware dispatch helper",
       "preconditions": [
         "runtime cache invalidation semantics are public",
         "ABI-stable helper symbol exists",
-        "semantic replay preserves dispatch miss behavior"
+        "semantic replay preserves dispatch miss behavior",
+        "strict dispatch status envelope is checked",
+        "source-map and line-table debug preservation is proven"
       ],
-      "invalidation": "cache invalidation remains runtime-owned; no IR helper is materialized",
+      "invalidation": "invalidates runtime_cache_version, selector_resolution, and source_map_debug cache-aware dispatch proof state",
       "post_verify": [
-        "reserved pass emits skip diagnostic without success claim"
+        "strict dispatch status envelope aborts non-value results",
+        "source-map and debug-visible cache-aware site anchors are preserved",
+        "runtime fallback and miss behavior remains owned by the checked helper"
       ],
       "fail_closed_diagnostics": [
-        "cache-aware dispatch is reserved behind the runtime cache contract"
+        "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+        "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll"
       ]
     },
     {
@@ -487,11 +503,13 @@
       "required_proofs": [
         "runtime cache invalidation semantics are public",
         "ABI-stable helper symbol exists",
-        "semantic replay preserves dispatch miss behavior"
+        "semantic replay preserves dispatch miss behavior",
+        "strict dispatch status envelope is checked",
+        "source-map and line-table debug preservation is proven"
       ],
-      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "reserved runtime-owned optimization emits skip diagnostic without IR helper materialization"
+      "semantic_equivalence": "cache-aware dispatch rewrites eligible i32 runtime sends only to the runtime-owned checked helper, aborts non-value strict dispatch statuses, and preserves source-map/debug anchors while runtime miss/fallback behavior remains authoritative"
     },
     {
       "pass_id": "ir-cleanup-verifier",
@@ -994,7 +1012,7 @@
           "semantic_equivalence",
           "invalidation_completeness"
         ],
-        "invalidation_contract": "reserved runtime-owned pass leaves cache invalidation behind runtime entrypoints and materializes no IR helper",
+        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss/fallback semantics",
         "semantic_equivalence_verdict": "required",
         "runtime_abi_safety_verdict": "required",
         "source_map_debug_impact_verdict": "required",
@@ -1002,10 +1020,10 @@
         "package_import_abi_identity_verdict": "required",
         "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
         "success_claim_on_skip": false,
-        "fail_closed_diagnostic": "cache-aware dispatch is reserved behind the runtime cache contract",
+        "fail_closed_diagnostic": "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation",
         "exact_target_eligibility_verdict": "not-applicable",
-        "mutation_invalidation_verdict": "not-applicable",
-        "runtime_cache_version_verdict": "not-applicable"
+        "mutation_invalidation_verdict": "required",
+        "runtime_cache_version_verdict": "required"
       },
       {
         "pass_id": "ir-cleanup-verifier",

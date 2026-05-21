@@ -152,6 +152,22 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
       DiagnoseOwnershipBorrowedEscapeExpr(expr->third.get(), scopes,
                                           callable_contracts, diagnostics);
       return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        DiagnoseOwnershipBorrowedEscapeExpr(key.get(), scopes,
+                                            callable_contracts, diagnostics);
+      }
+      for (const auto &value : expr->collection_values) {
+        DiagnoseOwnershipBorrowedEscapeExpr(value.get(), scopes,
+                                            callable_contracts, diagnostics);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->left.get(), scopes,
+                                          callable_contracts, diagnostics);
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->right.get(), scopes,
+                                          callable_contracts, diagnostics);
+      return;
     case Expr::Kind::Try:
     case Expr::Kind::Throw:
       for (const auto &arg : expr->args) {
@@ -316,6 +332,28 @@ static void DiagnoseOwnershipBorrowedEscapeStatement(
       MergeOwnershipBorrowedState(scopes, loop_scopes);
       return;
     }
+    case Stmt::Kind::ForIn: {
+      const ForInStmt *for_in_stmt = stmt->for_in_stmt.get();
+      if (for_in_stmt == nullptr) {
+        return;
+      }
+      DiagnoseOwnershipBorrowedEscapeExpr(for_in_stmt->collection.get(),
+                                          scopes, callable_contracts,
+                                          diagnostics);
+      auto loop_scopes = scopes;
+      loop_scopes.push_back({});
+      if (!for_in_stmt->value_name.empty()) {
+        loop_scopes.back()[for_in_stmt->value_name] = {};
+      }
+      if (for_in_stmt->has_key_binding && !for_in_stmt->key_name.empty()) {
+        loop_scopes.back()[for_in_stmt->key_name] = {};
+      }
+      DiagnoseOwnershipBorrowedEscapeStatements(for_in_stmt->body, loop_scopes,
+                                                callable_contracts,
+                                                return_contract, diagnostics);
+      MergeOwnershipBorrowedState(scopes, loop_scopes);
+      return;
+    }
     case Stmt::Kind::Switch: {
       const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
       if (switch_stmt == nullptr) {
@@ -367,6 +405,16 @@ static void DiagnoseOwnershipBorrowedEscapeStatement(
                                                   defer_scopes,
                                                   callable_contracts,
                                                   return_contract, diagnostics);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        DiagnoseOwnershipBorrowedEscapeExpr(
+            stmt->collection_mutation_stmt->key_or_index.get(), scopes,
+            callable_contracts, diagnostics);
+        DiagnoseOwnershipBorrowedEscapeExpr(
+            stmt->collection_mutation_stmt->value.get(), scopes,
+            callable_contracts, diagnostics);
       }
       return;
     case Stmt::Kind::Break:

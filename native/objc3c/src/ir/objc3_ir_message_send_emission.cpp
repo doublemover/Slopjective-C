@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_control_flow_ops.h"
@@ -25,6 +26,10 @@ std::string EmitObjc3IRRuntimeDispatch(
     const LoweredMessageSend &lowered, FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options,
     const Objc3IRMessageSendEmissionCallbacks &callbacks);
+
+bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
+    const LoweredMessageSend &lowered,
+    const Objc3IRMessageSendLoweringPlan &plan);
 
 std::string ApplyObjc3IRMethodFamilyArcResultCleanup(
     const LoweredMessageSend &lowered, const std::string &value,
@@ -96,6 +101,19 @@ bool Objc3IRValueTypeUsesTypedDispatch(ValueType type) {
       return false;
   }
   return false;
+}
+
+bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
+    const LoweredMessageSend &lowered,
+    const Objc3IRMessageSendLoweringPlan &plan) {
+  return plan.emits_cache_aware_dispatch &&
+         !lowered.uses_from_class_dispatch &&
+         !Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type) &&
+         lowered.dispatch_symbol ==
+             kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol &&
+         lowered.args.size() == kObjc3RuntimeDispatchDefaultArgs &&
+         lowered.explicit_arg_count <= kObjc3RuntimeDispatchDefaultArgs &&
+         lowered.runtime_return_type == ValueType::I32;
 }
 
 int Objc3IRRuntimeDispatchReturnKindForValueType(ValueType type) {
@@ -224,6 +242,8 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
     lowered.receiver = callbacks.emit_expr(expr->receiver.get(), ctx);
   }
   lowered.selector = expr->selector;
+  lowered.source_line = expr->line;
+  lowered.source_column = expr->column;
   lowered.method_family_name = expr->method_family_name;
   lowered.method_family_returns_retained_result =
       expr->method_family_returns_retained_result;
@@ -430,6 +450,39 @@ std::string EmitObjc3IRRuntimeDispatch(
             lowered.runtime_return_type);
     request.strict_no_retired_route = plan.strict_no_retired_route;
     request.strict_no_compatibility = plan.strict_no_compatibility;
+    if (Objc3IRMessageSendIsEligibleForCacheAwareDispatch(lowered, plan)) {
+      Objc3IRCacheAwareDispatchCallRequest cache_request;
+      cache_request.result_value = dispatch_value;
+      cache_request.result_envelope_value = callbacks.new_temp(ctx);
+      cache_request.status_value = callbacks.new_temp(ctx);
+      cache_request.status_ok_value = callbacks.new_temp(ctx);
+      cache_request.descriptor_ptr =
+          "%objc3.cache_aware.dispatch.descriptor." +
+          std::to_string(ctx.temp_counter++);
+      cache_request.selector_ptr = selector_ptr;
+      cache_request.receiver = lowered.receiver;
+      cache_request.args = lowered.args;
+      cache_request.source_line = lowered.source_line;
+      cache_request.source_column = lowered.source_column;
+      cache_request.strict_no_retired_route = plan.strict_no_retired_route;
+      cache_request.strict_no_compatibility = plan.strict_no_compatibility;
+      if (!Objc3IRCacheAwareDispatchCallRequestOwnsResult(cache_request)) {
+        failure_reason =
+            "cache-aware dispatch result is missing explicit IR ownership";
+        return false;
+      }
+      const std::string strict_failure_label =
+          callbacks.new_label(ctx, "cache_dispatch_strict_fail_");
+      const std::string value_label =
+          callbacks.new_label(ctx, "cache_dispatch_value_");
+      const std::vector<std::string> cache_lines =
+          BuildObjc3IRCacheAwareDispatchCall(cache_request,
+                                             strict_failure_label, value_label);
+      ctx.code_lines.insert(ctx.code_lines.end(), cache_lines.begin(),
+                            cache_lines.end());
+      options.runtime_dispatch_call_state.NoteCacheAwareDispatchCall();
+      return true;
+    }
     if (!Objc3IRRuntimeDispatchCallRequestOwnsResult(request)) {
       failure_reason =
           "runtime dispatch result is missing explicit IR ownership";

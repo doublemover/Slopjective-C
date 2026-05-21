@@ -52,7 +52,8 @@ std::string SerializeObjc3IRMethodDispatchEmissionSurface(
     const Objc3IRRuntimeDispatchCallState &state,
     const Objc3IRMethodDispatchEmissionStats &stats) {
   if (!state.runtime_dispatch_call_emitted &&
-      state.direct_dispatch_call_sites_emitted == 0) {
+      state.direct_dispatch_call_sites_emitted == 0 &&
+      state.cache_aware_dispatch_call_sites_emitted == 0) {
     return {};
   }
   return BuildObjc3IRCommentSurface(
@@ -65,6 +66,8 @@ std::string SerializeObjc3IRMethodDispatchEmissionSurface(
                    state.runtime_dispatch_call_emitted),
        Objc3IRField("runtime_dispatch_call_sites",
                     state.runtime_dispatch_call_sites_emitted),
+       Objc3IRField("cache_aware_dispatch_call_sites",
+                    state.cache_aware_dispatch_call_sites_emitted),
        Objc3IRField("direct_dispatch_call_sites",
                     state.direct_dispatch_call_sites_emitted),
        Objc3IRField("selector_pool_gep_sites",

@@ -73,6 +73,11 @@ struct Objc3SemanticOptimizationCandidate {
   bool method_inline_recursion_absent = false;
   bool method_inline_callee_generation_pinned = false;
   bool method_inline_invalidation_complete = false;
+  bool runtime_cache_invalidation_semantics_public = false;
+  bool cache_aware_helper_symbol_present = false;
+  bool cache_aware_semantic_replay_preserves_miss_behavior = false;
+  bool cache_aware_strict_status_envelope_checked = false;
+  bool cache_aware_source_map_debug_preserved = false;
   bool all_prior_mutations_declared_invalidation = false;
   bool unsupported_skips_emit_no_success_claim = false;
   bool semantic_equivalence_verdict_present = false;

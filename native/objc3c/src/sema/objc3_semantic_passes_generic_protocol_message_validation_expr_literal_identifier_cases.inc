@@ -62,9 +62,9 @@
             "selector resolution failed: 'super' is only valid inside an implementation method"));
         return MakeScalarSemanticType(ValueType::Unknown);
       }
-      const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
-      if (!IsUnknownSemanticType(local_type)) {
-        return local_type;
+      if (const SemanticTypeInfo *local_type =
+              ScopeLookupTypeOrNull(scopes, expr->ident)) {
+        return *local_type;
       }
       auto global_it = globals.find(expr->ident);
       if (global_it != globals.end()) {

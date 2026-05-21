@@ -38,6 +38,11 @@ static void CollectAtomicMemoryOrderMappingsInStatement(const Stmt *stmt,
         CollectAtomicMemoryOrderMappingsInStatements(stmt->for_stmt->body, summary);
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->for_in_stmt->body, summary);
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         for (const auto &case_stmt : stmt->switch_stmt->cases) {
@@ -57,6 +62,7 @@ static void CollectAtomicMemoryOrderMappingsInStatement(const Stmt *stmt,
       }
       return;
     case Stmt::Kind::Let:
+    case Stmt::Kind::CollectionMutation:
     case Stmt::Kind::Return:
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

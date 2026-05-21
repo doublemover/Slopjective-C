@@ -41,6 +41,17 @@ std::unique_ptr<Expr> BuildObjc3StringLiteralExpr(
     int unit_count,
     const Objc3LexToken &token);
 
+std::unique_ptr<Expr> BuildObjc3CollectionLiteralExpr(
+    Expr::CollectionLiteralKind kind,
+    const Objc3LexToken &token,
+    std::vector<std::unique_ptr<Expr>> keys,
+    std::vector<std::unique_ptr<Expr>> values);
+
+std::unique_ptr<Expr> BuildObjc3IndexAccessExpr(
+    const Objc3LexToken &open,
+    std::unique_ptr<Expr> collection,
+    std::unique_ptr<Expr> index);
+
 std::unique_ptr<Expr> BuildObjc3IdentifierExpr(
     const std::string &identifier,
     const Objc3LexToken &token);

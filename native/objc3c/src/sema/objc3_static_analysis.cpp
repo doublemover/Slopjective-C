@@ -26,6 +26,7 @@ static bool StatementReturnsOrFallsThroughToNextCase(const Stmt *stmt, const Sta
   switch (stmt->kind) {
     case Stmt::Kind::Let:
     case Stmt::Kind::Assign:
+    case Stmt::Kind::CollectionMutation:
     case Stmt::Kind::Expr:
     case Stmt::Kind::Empty:
       return true;
@@ -85,6 +86,8 @@ static bool StatementReturnsOrFallsThroughToNextCase(const Stmt *stmt, const Sta
         return false;
       }
       return ExprIsStaticallyFalse(stmt->for_stmt->condition.get(), bindings);
+    case Stmt::Kind::ForIn:
+      return false;
     case Stmt::Kind::While:
       if (stmt->while_stmt == nullptr) {
         return false;
@@ -213,6 +216,9 @@ bool StatementAlwaysReturns(const Stmt *stmt, const StaticScalarBindings *bindin
       return false;
     }
     return BlockAlwaysReturns(stmt->for_stmt->body, bindings);
+  }
+  if (stmt->kind == Stmt::Kind::ForIn && stmt->for_in_stmt != nullptr) {
+    return false;
   }
   if (stmt->kind == Stmt::Kind::DoWhile && stmt->do_while_stmt != nullptr) {
     return BlockAlwaysReturns(stmt->do_while_stmt->body, bindings);

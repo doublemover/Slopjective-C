@@ -11,6 +11,7 @@ APPLICATION_STDLIB_HANDLER_OWNER_SURFACE = (
 
 APPLICATION_STDLIB_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "materialize-stdlib-workspace": application_surfaces.action_materialize_stdlib_workspace,
+    "validate-string-text-model-runtime": application_surfaces.action_validate_string_text_model_runtime,
     "validate-stdlib-foundation": application_surfaces.action_validate_stdlib_foundation,
     "validate-stdlib-advanced": application_surfaces.action_validate_stdlib_advanced,
     "validate-stdlib-program": application_surfaces.action_validate_stdlib_program,

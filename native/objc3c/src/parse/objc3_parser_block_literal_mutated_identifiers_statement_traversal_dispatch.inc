@@ -28,6 +28,12 @@ void CollectBlockLiteralMutatedIdentifiersFromStatement(
     CollectBlockLiteralMutatedIdentifiersFromForStmt(
         stmt, mutated_identifiers);
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectBlockLiteralMutatedIdentifiersFromStatementBody(
+          stmt->for_in_stmt->body, mutated_identifiers);
+    }
+    return;
   case Stmt::Kind::Switch:
     CollectBlockLiteralMutatedIdentifiersFromSwitchStmt(
         stmt, mutated_identifiers);
@@ -40,6 +46,13 @@ void CollectBlockLiteralMutatedIdentifiersFromStatement(
   case Stmt::Kind::Defer:
     CollectBlockLiteralMutatedIdentifiersFromBlockStmt(
         stmt, mutated_identifiers);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr &&
+        !stmt->collection_mutation_stmt->collection_name.empty()) {
+      mutated_identifiers.push_back(
+          stmt->collection_mutation_stmt->collection_name);
+    }
     return;
   }
 }

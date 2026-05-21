@@ -82,6 +82,20 @@ static void WalkErrorHandlingTryDoCatchStmt(
                                       context);
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt == nullptr) {
+      return;
+    }
+    WalkErrorHandlingTryDoCatchExpr(
+        stmt->for_in_stmt->collection.get(), program, summary, diagnostics,
+        allow_source_only_error_runtime_surface, context);
+    for (const auto &body_stmt : stmt->for_in_stmt->body) {
+      WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary,
+                                      diagnostics,
+                                      allow_source_only_error_runtime_surface,
+                                      context);
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt == nullptr) {
       return;
@@ -134,6 +148,17 @@ static void WalkErrorHandlingTryDoCatchStmt(
         stmt->expr_stmt != nullptr ? stmt->expr_stmt->value.get() : nullptr,
         program, summary, diagnostics, allow_source_only_error_runtime_surface,
         context);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt == nullptr) {
+      return;
+    }
+    WalkErrorHandlingTryDoCatchExpr(
+        stmt->collection_mutation_stmt->key_or_index.get(), program, summary,
+        diagnostics, allow_source_only_error_runtime_surface, context);
+    WalkErrorHandlingTryDoCatchExpr(
+        stmt->collection_mutation_stmt->value.get(), program, summary,
+        diagnostics, allow_source_only_error_runtime_surface, context);
     return;
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:

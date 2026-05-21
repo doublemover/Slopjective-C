@@ -61,6 +61,15 @@ void AccumulateBlockSourceModelCompletionFromStmt(
         }
       }
       break;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->for_in_stmt->collection.get(), contract);
+        for (const auto &child : stmt->for_in_stmt->body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+      }
+      break;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         AccumulateBlockSourceModelCompletionFromExpr(
@@ -93,6 +102,14 @@ void AccumulateBlockSourceModelCompletionFromStmt(
       if (stmt->expr_stmt != nullptr) {
         AccumulateBlockSourceModelCompletionFromExpr(
             stmt->expr_stmt->value.get(), contract);
+      }
+      break;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->collection_mutation_stmt->key_or_index.get(), contract);
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->collection_mutation_stmt->value.get(), contract);
       }
       break;
     case Stmt::Kind::Break:
@@ -167,5 +184,11 @@ void AccumulateBlockSourceModelCompletionFromExpr(
   AccumulateBlockSourceModelCompletionFromExpr(expr->third.get(), contract);
   for (const auto &arg : expr->args) {
     AccumulateBlockSourceModelCompletionFromExpr(arg.get(), contract);
+  }
+  for (const auto &key : expr->collection_keys) {
+    AccumulateBlockSourceModelCompletionFromExpr(key.get(), contract);
+  }
+  for (const auto &value : expr->collection_values) {
+    AccumulateBlockSourceModelCompletionFromExpr(value.get(), contract);
   }
 }

@@ -194,9 +194,12 @@ int main() {
       snapshot.equality_call_count != 2 ||
       snapshot.compare_call_count != 4 ||
       snapshot.format_call_count != 1 ||
-      snapshot.text_record_count != 7 ||
+      snapshot.text_record_count != 8 ||
       snapshot.owned_storage_record_count != 5 ||
       snapshot.owned_storage_byte_count != 40 ||
+      snapshot.literal_record_count != 1 ||
+      snapshot.builder_record_count != 1 ||
+      snapshot.scalar_iterator_record_count != 1 ||
       snapshot.last_malformed_offset != 0) {
     return Fail("owned UTF-8 storage counters drifted");
   }
@@ -226,6 +229,12 @@ int main() {
             << snapshot.owned_storage_record_count
             << ",\"owned_storage_byte_count\":"
             << snapshot.owned_storage_byte_count
+            << ",\"literal_record_count\":"
+            << snapshot.literal_record_count
+            << ",\"builder_record_count\":"
+            << snapshot.builder_record_count
+            << ",\"scalar_iterator_record_count\":"
+            << snapshot.scalar_iterator_record_count
             << ",\"last_malformed_offset\":"
             << snapshot.last_malformed_offset
             << ",\"last_status\":" << snapshot.last_status << "}\n";

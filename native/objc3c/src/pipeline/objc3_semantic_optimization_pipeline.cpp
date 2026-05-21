@@ -80,6 +80,10 @@ bool AllMutatingPassesDeclareInvalidation(
         !pass.invalidates_global_proof_state) {
       return false;
     }
+    if (pass.pass_id == "cache-aware-dispatch" &&
+        !pass.invalidates_global_proof_state) {
+      return false;
+    }
   }
   return !passes.empty();
 }
@@ -239,7 +243,23 @@ BuildObjc3SemanticOptimizationTraceCandidates(
 
   objc3c::opt::Objc3SemanticOptimizationCandidate cache_aware;
   cache_aware.pass_id = "cache-aware-dispatch";
-  cache_aware.source_replay_key = "reserved-cache-aware-dispatch-opportunity";
+  cache_aware.source_replay_key = "ir-cache-aware-dispatch-helper-lowering";
+  cache_aware.benchmark_governance_ready = benchmark_governance_ready;
+  cache_aware.runtime_cache_invalidation_semantics_public =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  cache_aware.cache_aware_helper_symbol_present =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .runtime_dispatch_declaration_ready;
+  cache_aware.cache_aware_semantic_replay_preserves_miss_behavior =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  cache_aware.cache_aware_strict_status_envelope_checked =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  cache_aware.cache_aware_source_map_debug_preserved =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .parse_lowering_readiness_ready;
   candidates.push_back(cache_aware);
 
   objc3c::opt::Objc3SemanticOptimizationCandidate verifier;
@@ -420,21 +440,23 @@ BuildObjc3SemanticOptimizationPassRegistry() {
       {
           "cache-aware-dispatch",
           80,
-          "runtime-owned-dispatch-optimization-reserved",
-          Objc3SemanticOptimizationPassMode::kReserved,
+          "runtime-owned-cache-aware-dispatch-helper-lowering",
+          Objc3SemanticOptimizationPassMode::kEnabled,
           "runtime cache invalidation contract",
           "runtime-owned cache-aware dispatch helper",
           {"runtime cache invalidation semantics are public",
            "ABI-stable helper symbol exists",
-           "semantic replay preserves dispatch miss behavior"},
-          "cache invalidation remains runtime-owned; no IR helper is materialized",
+           "semantic replay preserves dispatch miss behavior",
+           "strict dispatch status envelope is checked",
+           "source-map and line-table debug preservation is proven"},
+          "invalidates runtime_cache_version, selector_resolution, and source_map_debug cache-aware dispatch proof state",
+          true,
+          true,
+          true,
+          true,
           true,
           false,
-          false,
-          true,
-          true,
-          false,
-          "cache-aware dispatch is reserved behind the runtime cache contract",
+          "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation",
       },
       {
           "ir-cleanup-verifier",

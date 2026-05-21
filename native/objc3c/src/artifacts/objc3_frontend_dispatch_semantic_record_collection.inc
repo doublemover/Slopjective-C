@@ -76,6 +76,13 @@ void AccumulateDispatchSurfaceClassificationStmt(
         AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
       }
       return;
+    case Stmt::Kind::ForIn:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->for_in_stmt->collection.get(), contract);
+      for (const auto &nested : stmt->for_in_stmt->body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      return;
     case Stmt::Kind::Switch:
       AccumulateDispatchSurfaceClassificationExpr(
           stmt->switch_stmt->condition.get(), contract);
@@ -97,6 +104,12 @@ void AccumulateDispatchSurfaceClassificationStmt(
       for (const auto &nested : stmt->block_stmt->body) {
         AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
       }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->collection_mutation_stmt->value.get(), contract);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
@@ -155,17 +168,33 @@ void AccumulateDispatchSurfaceClassificationExpr(
       AccumulateDispatchSurfaceClassificationExpr(expr->third.get(), contract);
       return;
     case Expr::Kind::Call:
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
       AccumulateDispatchSurfaceClassificationExpr(expr->receiver.get(),
                                                   contract);
       for (const auto &arg : expr->args) {
         AccumulateDispatchSurfaceClassificationExpr(arg.get(), contract);
       }
       return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        AccumulateDispatchSurfaceClassificationExpr(key.get(), contract);
+      }
+      for (const auto &value : expr->collection_values) {
+        AccumulateDispatchSurfaceClassificationExpr(value.get(), contract);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      AccumulateDispatchSurfaceClassificationExpr(expr->left.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(expr->right.get(), contract);
+      return;
     case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
+    case Expr::Kind::StringLiteral:
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Identifier:
       return;
   }

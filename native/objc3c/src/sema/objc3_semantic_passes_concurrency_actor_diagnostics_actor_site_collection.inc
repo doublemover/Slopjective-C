@@ -156,6 +156,18 @@ static void CollectConcurrencyActorMethodBodyProfileExpr(
     CollectConcurrencyActorMethodBodyProfileExpr(expr->right.get(), profile);
     CollectConcurrencyActorMethodBodyProfileExpr(expr->third.get(), profile);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectConcurrencyActorMethodBodyProfileExpr(key.get(), profile);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectConcurrencyActorMethodBodyProfileExpr(value.get(), profile);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->left.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->right.get(), profile);
+    return;
   default:
     return;
   }
@@ -222,6 +234,16 @@ static void CollectConcurrencyActorMethodBodyProfileStmt(
       CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt == nullptr) {
+      return;
+    }
+    CollectConcurrencyActorMethodBodyProfileExpr(
+        stmt->for_in_stmt->collection.get(), profile);
+    for (const auto &body_stmt : stmt->for_in_stmt->body) {
+      CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt == nullptr) {
       return;
@@ -257,6 +279,14 @@ static void CollectConcurrencyActorMethodBodyProfileStmt(
     if (stmt->expr_stmt != nullptr) {
       CollectConcurrencyActorMethodBodyProfileExpr(stmt->expr_stmt->value.get(),
                                              profile);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectConcurrencyActorMethodBodyProfileExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileExpr(
+          stmt->collection_mutation_stmt->value.get(), profile);
     }
     return;
   default:

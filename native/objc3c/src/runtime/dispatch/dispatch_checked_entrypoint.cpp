@@ -106,8 +106,7 @@ void RecordCacheAwareDispatchUnlocked(
     const objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
     bool descriptor_valid,
     bool fallback_used,
-    int invalidation_reason,
-    objc3_runtime_dispatch_status_code status_code) {
+    int invalidation_reason) {
   state.last_cache_aware_descriptor_valid = descriptor_valid;
   state.last_cache_aware_fallback_used = fallback_used;
   state.last_cache_aware_descriptor_flags =
@@ -138,8 +137,7 @@ objc3_runtime_dispatch_i32_result CacheAwareMalformedDispatchResult(
   state.last_dispatch_implementation_kind = "strict-dispatch-error";
   RecordCacheAwareDispatchUnlocked(
       state, descriptor, false, false,
-      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE,
-      OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA);
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE);
   return MakeRuntimeDispatchI32Result(
       OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
 }
@@ -236,7 +234,7 @@ objc3_runtime_dispatch_i32_result ExecuteRuntimeCacheAwareDispatchI32Checked(
     std::lock_guard<std::mutex> lock(state.mutex);
     RecordCacheAwareDispatchUnlocked(
         state, descriptor, descriptor_valid, fallback_used,
-        invalidation_reason, result.status_code);
+        invalidation_reason);
   }
   return result;
 }

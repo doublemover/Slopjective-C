@@ -73,6 +73,11 @@ int objc3_runtime_stdlib_collections_array_storage_i32(const int *values,
 int objc3_runtime_stdlib_collections_mutable_array_i32(void);
 int objc3_runtime_stdlib_collections_mutable_array_append_i32(int handle,
                                                               int value);
+int objc3_runtime_stdlib_collections_mutable_array_set_i32(int handle,
+                                                           int index,
+                                                           int value);
+int objc3_runtime_stdlib_collections_mutable_array_remove_at_i32(int handle,
+                                                                 int index);
 int objc3_runtime_stdlib_collections_array_count_i32(int handle);
 int objc3_runtime_stdlib_collections_array_get_or_i32(int handle,
                                                       int index,
@@ -85,21 +90,28 @@ int objc3_runtime_stdlib_collections_array_slice_i32(int handle,
                                                      int count);
 int objc3_runtime_stdlib_collections_array_iterator_i32(int handle);
 int objc3_runtime_stdlib_collections_map_entry_i32(int key, int value);
+int objc3_runtime_stdlib_collections_map_empty_i32(void);
 int objc3_runtime_stdlib_collections_map_count_i32(int handle);
 int objc3_runtime_stdlib_collections_map_contains_i32(int handle, int key);
 int objc3_runtime_stdlib_collections_map_insert_i32(int handle,
                                                     int key,
                                                     int value);
+int objc3_runtime_stdlib_collections_map_delete_i32(int handle, int key);
 int objc3_runtime_stdlib_collections_map_lookup_or_i32(int handle,
                                                        int key,
                                                        int default_value);
+int objc3_runtime_stdlib_collections_map_key_iterator_i32(int handle);
+int objc3_runtime_stdlib_collections_map_value_iterator_i32(int handle);
 int objc3_runtime_stdlib_collections_set3_i32(int first,
                                              int second,
                                              int third,
                                              int count);
+int objc3_runtime_stdlib_collections_set_storage_i32(const int *values,
+                                                     int count);
 int objc3_runtime_stdlib_collections_set_count_i32(int handle);
 int objc3_runtime_stdlib_collections_set_contains_i32(int handle, int value);
 int objc3_runtime_stdlib_collections_set_insert_i32(int handle, int value);
+int objc3_runtime_stdlib_collections_set_delete_i32(int handle, int value);
 int objc3_runtime_stdlib_collections_set_iterator_i32(int handle);
 int objc3_runtime_stdlib_collections_slice_count_i32(int handle);
 int objc3_runtime_stdlib_collections_slice_get_or_i32(int handle,

@@ -250,6 +250,18 @@ static void CollectTypeSystemTypeSemanticStmtSites(
         scopes.pop_back();
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectTypeSystemTypeSemanticExprSites(
+            stmt->for_in_stmt->collection.get(), scopes, globals, functions,
+            max_message_send_args, message_send_context, summary);
+        scopes.push_back({});
+        CollectTypeSystemTypeSemanticStmtSitesFromList(
+            stmt->for_in_stmt->body, scopes, globals, functions,
+            max_message_send_args, message_send_context, summary);
+        scopes.pop_back();
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         CollectTypeSystemTypeSemanticExprSites(stmt->switch_stmt->condition.get(), scopes,
@@ -289,6 +301,17 @@ static void CollectTypeSystemTypeSemanticStmtSites(
                                                   max_message_send_args,
                                                   message_send_context, summary);
         scopes.pop_back();
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        CollectTypeSystemTypeSemanticExprSites(
+            stmt->collection_mutation_stmt->key_or_index.get(), scopes,
+            globals, functions, max_message_send_args, message_send_context,
+            summary);
+        CollectTypeSystemTypeSemanticExprSites(
+            stmt->collection_mutation_stmt->value.get(), scopes, globals,
+            functions, max_message_send_args, message_send_context, summary);
       }
       return;
     case Stmt::Kind::Break:

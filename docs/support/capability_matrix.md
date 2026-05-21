@@ -42,7 +42,11 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
 | `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
 | `objc3c.behavior.language.blocks.escape-capture-legality` | `sema` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `language.blocks.escape-capture-legality` |
+| `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.for-in-syntax-runtime-backed` |
+| `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.literal-syntax-runtime-backed` |
+| `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.mutation-syntax-runtime-backed` |
 | `objc3c.behavior.language.generics.callable-type-parameters` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.callable-type-parameters` |
+| `objc3c.behavior.language.generics.collection-identity` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.collection-identity` |
 | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
 | `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
 | `objc3c.behavior.language.metaprogramming.derive-expansion-inventory` | `sema` | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.derive-expansion-inventory` |
@@ -64,6 +68,8 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.release.channel-operations` | `e2e` | `tests/tooling/fixtures/release_operations/channel_operations_model.json` | `npm run objc3c -- validate-release-operations-end-to-end` | `release.operations.channel-lifecycle` |
 | `objc3c.behavior.runtime.blocks.byref-forwarding` | `runtime` | `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.byref-forwarding` |
 | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `runtime` | `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.copy-dispose-invoke` |
+| `objc3c.behavior.runtime.cache-aware-dispatch` | `ir` | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `runtime.optimization.cache-aware-dispatch` |
+| `objc3c.behavior.runtime.collections.type-descriptors` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `runtime.collections.type-descriptors` |
 | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `runtime` | `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.actor-mailbox-isolation` |
 | `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
 | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `runtime` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.task-continuation-lifecycle` |
@@ -87,9 +93,11 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
 | `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
 | `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
+| `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.devirtualization` |
 | `objc3c.behavior.semantic_optimization_pipeline` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.semantic-preserving-pipeline` |
 | `objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-aggregate-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-slice-runtime-shape` |
+| `objc3c.behavior.stdlib.collections.generic-type-model` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `stdlib.collections.generic-type-model` |
 | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.map-entry-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.set-iteration-runtime-shape` |
 | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
@@ -98,8 +106,12 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-group-cancellation-api` |
 | `objc3c.behavior.stdlib.concurrency.public-task-spawn-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-spawn-api` |
 | `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
+| `objc3c.behavior.stdlib.text.basic-formatting` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.basic-formatting` |
 | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.byte-span-runtime-shape` |
+| `objc3c.behavior.stdlib.text.equality-comparison` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.equality-comparison` |
+| `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.runtime-builder-interpolation` |
 | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.string-view-runtime-shape` |
+| `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.unicode-scalar-iteration` |
 | `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
 | `objc3c.behavior.tooling.first-run-product-path` | `e2e` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` | `tooling.developer-experience.first-run-product-path` |
 | `objc3c.behavior.tooling.formatter-lsp-workspace` | `e2e` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` | `tooling.editor.formatter-lsp-workspace` |
@@ -560,7 +572,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, and bounded query snapshots; debugger-grade public reflection ABI remains reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, while debugger-grade source identity remains reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -571,6 +583,9 @@ the canonical manifest fixture and public npm command above.
   - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
   - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
+  - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`
+  - test: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`
+  - test: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
 
 ### Protocol-qualified existential value flow
@@ -821,6 +836,106 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
   - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
 
+### Runtime-backed objc3.text Unicode scalar iteration
+
+- Capability ID: `stdlib.text.unicode-scalar-iteration`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.text.unicode-scalar-iteration`
+- Summary: The objc3.text runtime exposes explicit scalar-count, scalar-at-or, and scalar iterator APIs over validated owned UTF-8 storage. Byte APIs remain separate from scalar APIs; invalid handles, missing storage, out-of-bounds scalar indexes, and builder mutation during iteration fail closed with stable status.
+- Owner modules:
+  - `stdlib/modules/objc3.text/module.json`
+  - `stdlib/modules/objc3.text/module.objc3`
+  - `stdlib/modules/objc3.text/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/runtime/string_text_model_runtime_probe.cpp` via `npm run objc3c -- validate-string-text-model-runtime`
+  - test: `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.text/module.json`
+  - source: `stdlib/modules/objc3.text/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+
+### Runtime-backed objc3.text basic i32 formatting
+
+- Capability ID: `stdlib.text.basic-formatting`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.text.basic-formatting`
+- Summary: The objc3.text runtime formats i32 values as deterministic base-10 UTF-8 text handles and can append i32 payloads into text builders. Locale-sensitive formatting, arbitrary object display, and Foundation formatter bridging remain outside this claim.
+- Owner modules:
+  - `stdlib/modules/objc3.text/module.json`
+  - `stdlib/modules/objc3.text/module.objc3`
+  - `stdlib/modules/objc3.text/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/runtime/string_text_model_runtime_probe.cpp` via `npm run objc3c -- validate-string-text-model-runtime`
+  - test: `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.text/module.json`
+  - source: `stdlib/modules/objc3.text/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+
+### Runtime-backed objc3.text equality and comparison
+
+- Capability ID: `stdlib.text.equality-comparison`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.text.equality-comparison`
+- Summary: The objc3.text runtime exposes byte-exact UTF-8 equality and deterministic lexicographic UTF-8 code-unit comparison for runtime-owned text storage. Normalization, collation, locale-aware comparison, and NSString bridging remain outside this claim.
+- Owner modules:
+  - `stdlib/modules/objc3.text/module.json`
+  - `stdlib/modules/objc3.text/module.objc3`
+  - `stdlib/modules/objc3.text/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/runtime/string_text_model_runtime_probe.cpp` via `npm run objc3c -- validate-string-text-model-runtime`
+  - test: `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.text/module.json`
+  - source: `stdlib/modules/objc3.text/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+
+### Runtime-backed objc3.text builder interpolation
+
+- Capability ID: `stdlib.text.runtime-builder-interpolation`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.text.runtime-builder-interpolation`
+- Summary: The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation lowering and arbitrary object interpolation remain outside this claim.
+- Owner modules:
+  - `stdlib/modules/objc3.text/module.json`
+  - `stdlib/modules/objc3.text/module.objc3`
+  - `stdlib/modules/objc3.text/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/runtime/string_text_model_runtime_probe.cpp` via `npm run objc3c -- validate-string-text-model-runtime`
+  - test: `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.text/module.json`
+  - source: `stdlib/modules/objc3.text/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+
 ### Source string literal Text shape handles
 
 - Capability ID: `language.text.source-string-literal-text-shape-handle`
@@ -958,6 +1073,71 @@ the canonical manifest fixture and public npm command above.
   - source: `stdlib/modules/objc3.collections/module.json`
   - source: `stdlib/modules/objc3.collections/module.objc3`
   - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+
+### Runtime-backed collection literal syntax
+
+- Capability ID: `language.collections.literal-syntax-runtime-backed`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.collections.literal-syntax-runtime-backed`
+- Summary: #array, #map, and #set literals lower to checked runtime-owned concrete i32 collection handles over the objc3.collections substrate. Generic element/key/value typing, nested collection typing, Foundation bridging, non-i32 hashing, and display/string interpolation remain outside this claim.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc`
+  - `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp`
+  - `native/objc3c/src/ast/objc3_ast_expr_kind_members.h`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt`
+  - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc`
+  - source: `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+
+### Runtime-backed collection mutation syntax
+
+- Capability ID: `language.collections.mutation-syntax-runtime-backed`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.collections.mutation-syntax-runtime-backed`
+- Summary: Indexed assignment, append-style insertion, and delete syntax lower to checked runtime collection operations for parser-visible var bindings created from collection literals. Mutation of let bindings and unknown collection origins fails closed.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc`
+  - `native/objc3c/src/ast/objc3_ast_stmt_nodes.h`
+  - `native/objc3c/src/ir/objc3_ir_statement_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_statement_binding_emission_assignment.inc`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.meta.json`
+  - source: `native/objc3c/src/parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc`
+  - source: `native/objc3c/src/ir/objc3_ir_statement_emission.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+
+### Runtime-backed collection for-in syntax
+
+- Capability ID: `language.collections.for-in-syntax-runtime-backed`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.collections.for-in-syntax-runtime-backed`
+- Summary: Syntax-level for-in lowers array and set value iteration plus map key/value iteration through deterministic runtime iterators while preserving fail-closed iterator status behavior for invalid handles, stale iterators, and mutation during iteration.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc`
+  - `native/objc3c/src/ast/objc3_ast_stmt_nodes.h`
+  - `native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_statement_loop_emission.h`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3`
+  - source: `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc`
+  - source: `native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp`
   - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
   - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
 
@@ -1905,8 +2085,7 @@ the canonical manifest fixture and public npm command above.
 
 - Capability ID: `compiler.optimization.devirtualization`
 - State: `implemented`
-- Support claims:
-  - `objc3c.behavior.semantic_optimization.exact_target_devirtualization`
+- Support claims: `objc3c.behavior.semantic_optimization.exact_target_devirtualization`
 - Summary: Exact-target devirtualization is enabled behind sealed/final dispatch evidence, static receiver proof, mutation-generation invalidation, runtime-cache dependency pinning, ownership safety, source-map preservation, ABI safety, and package identity proof. Candidates without that complete proof set reject fail-closed and publish no success claim.
 - Owner modules:
   - `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
@@ -1918,7 +2097,8 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
   - source: `scripts/objc3c_semantic_optimization_pipeline.py`
   - source: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
-  - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json`
+  - test: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
 
 ### Method inlining optimization lane
 
@@ -1935,13 +2115,18 @@ the canonical manifest fixture and public npm command above.
 ### Cache-aware dispatch optimization lane
 
 - Capability ID: `runtime.optimization.cache-aware-dispatch`
-- State: `reserved`
-- Support claims: None
-- Summary: Cache-aware dispatch remains reserved behind runtime-owned cache invalidation and ABI-stable helper contracts. The compiler pipeline preserves runtime dispatch semantics and does not materialize private selector-cache helpers in IR.
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.cache-aware-dispatch`
+- Summary: Eligible i32 message sends now lower to the runtime-owned checked cache-aware dispatch helper when the cache-aware ABI is present. The compiler keeps strict dispatch semantics by checking the returned status envelope and aborting non-value strict failures, and it emits optimization plus source-map/debug anchors for cache-aware sites.
 - Owner modules:
-  - `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json`
+  - `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
+  - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json`
+  - source: `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
+  - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - test: `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 
 ### Structured runtime debug trace
@@ -2203,6 +2388,63 @@ the canonical manifest fixture and public npm command above.
   - source: `showcase/applicationFrameworkSamples/manifest.json`
   - source: `scripts/check_objc3c_application_framework_samples.py`
   - doc: `showcase/applicationFrameworkSamples/README.md`
+
+### Generic collection type model
+
+- Capability ID: `stdlib.collections.generic-type-model`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.collections.generic-type-model`
+- Summary: Semantic analysis models Array, MutableArray, Slice, Map, MutableMap, Set, MutableSet, Iterator, and MapIterator generic identities with invariant type arguments, explicit mutability, element/key/value identity, and fail-closed unsupported-shape diagnostics without claiming literals or for-in syntax.
+- Owner modules:
+  - `native/objc3c/src/sema/model/generic_collection_type_model.h`
+  - `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h`
+  - `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_type_factory.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_type_relations.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/test_generic_collection_type_model.py`
+  - source: `native/objc3c/src/sema/model/generic_collection_type_model.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_factory.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_relations.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
+
+### Collection type descriptor identity
+
+- Capability ID: `runtime.collections.type-descriptors`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.collections.type-descriptors`
+- Summary: Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract so later runtime descriptor lanes can reject cross-kind or cross-type misuse.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc`
+- Evidence:
+  - test: `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/test_generic_collection_type_model.py`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc`
+
+### Collection generic identity semantics
+
+- Capability ID: `language.generics.collection-identity`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.generics.collection-identity`
+- Summary: The language generic model treats collection specializations as invariant semantic identities with deterministic equality and assignment compatibility checks over type arguments, mutability, runtime descriptor identity, and ABI identity.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_type_relations.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_type_factory.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/test_generic_collection_type_model.py`
+  - source: `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_relations.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_type_factory.cpp`
 
 ## State Meanings
 

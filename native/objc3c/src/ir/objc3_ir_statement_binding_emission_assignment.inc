@@ -120,6 +120,11 @@ void EmitObjc3IRForClause(
       if (ctx.scopes.empty() || clause.value == nullptr) {
         return;
       }
+      if (clause.value->kind == Expr::Kind::CollectionLiteral &&
+          clause.value->collection_literal_kind ==
+              Expr::CollectionLiteralKind::Array) {
+        clause.value->collection_literal_mutable = clause.mutable_binding;
+      }
       const std::string value = callbacks.emit_expr(clause.value.get(), ctx);
       if (ctx.terminated) {
         return;
@@ -131,6 +136,13 @@ void EmitObjc3IRForClause(
                                                 callbacks);
       ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
       ctx.scopes.back()[clause.name] = ptr;
+      if (clause.value->kind == Expr::Kind::CollectionLiteral) {
+        ctx.collection_kind_by_ptr[ptr] =
+            clause.value->collection_literal_kind;
+        if (clause.mutable_binding) {
+          ctx.mutable_collection_ptrs.insert(ptr);
+        }
+      }
       RecordObjc3IRLocalI32StorageMetadata(ptr, metadata, ctx, false);
       ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr +
                                ", align 4");

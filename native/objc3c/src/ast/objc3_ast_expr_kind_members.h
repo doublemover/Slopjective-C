@@ -11,7 +11,9 @@
     BoolLiteral,
     NilLiteral,
     StringLiteral,
+    CollectionLiteral,
     Identifier,
+    IndexAccess,
     KeyPathLiteral,
     Binary,
     Conditional,
@@ -23,6 +25,7 @@
   };
   enum class MessageSendForm { None, Unary, Keyword };
   enum class TryOperatorKind { None, Propagate, Optional, Forced };
+  enum class CollectionLiteralKind { None, Array, Map, Set };
   enum class DispatchSurfaceKind {
     Unclassified,
     Instance,

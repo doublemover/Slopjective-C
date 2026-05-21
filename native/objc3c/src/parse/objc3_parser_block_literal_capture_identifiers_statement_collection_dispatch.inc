@@ -34,6 +34,21 @@ void CollectBlockLiteralStmtIdentifiers(
     CollectBlockLiteralForStmtIdentifiers(
         stmt->for_stmt.get(), used_identifiers, declared_identifiers);
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      if (!stmt->for_in_stmt->value_name.empty()) {
+        declared_identifiers.push_back(stmt->for_in_stmt->value_name);
+      }
+      if (stmt->for_in_stmt->has_key_binding &&
+          !stmt->for_in_stmt->key_name.empty()) {
+        declared_identifiers.push_back(stmt->for_in_stmt->key_name);
+      }
+      CollectBlockLiteralExprIdentifiers(
+          stmt->for_in_stmt->collection.get(), used_identifiers);
+      CollectBlockLiteralStmtBodyIdentifiers(
+          stmt->for_in_stmt->body, used_identifiers, declared_identifiers);
+    }
+    return;
   case Stmt::Kind::Switch:
     CollectBlockLiteralSwitchStmtIdentifiers(
         stmt->switch_stmt.get(), used_identifiers, declared_identifiers);
@@ -46,6 +61,19 @@ void CollectBlockLiteralStmtIdentifiers(
   case Stmt::Kind::Defer:
     CollectBlockLiteralBlockStmtIdentifiers(
         stmt->block_stmt.get(), used_identifiers, declared_identifiers);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      if (!stmt->collection_mutation_stmt->collection_name.empty()) {
+        used_identifiers.push_back(
+            stmt->collection_mutation_stmt->collection_name);
+      }
+      CollectBlockLiteralExprIdentifiers(
+          stmt->collection_mutation_stmt->key_or_index.get(),
+          used_identifiers);
+      CollectBlockLiteralExprIdentifiers(
+          stmt->collection_mutation_stmt->value.get(), used_identifiers);
+    }
     return;
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:

@@ -59,6 +59,7 @@ std::string BuildConcurrencyTaskRuntimeLoweringContractJson(
     const std::string &task_replay_key,
     const Objc3ConcurrencyReplayRaceGuardLoweringContract &race_contract,
     const std::string &race_replay_key) {
+  (void)structured_summary;
   const bool deterministic_handoff =
       actor_contract.deterministic && task_contract.deterministic &&
       race_contract.deterministic;

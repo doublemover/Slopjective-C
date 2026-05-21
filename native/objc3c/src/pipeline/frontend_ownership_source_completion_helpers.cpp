@@ -43,6 +43,24 @@ void CollectOwnershipCleanupResourceCaptureExprSites(
     for (const auto &arg : expr->args) {
       CollectOwnershipCleanupResourceCaptureExprSites(arg.get(), summary);
     }
+    for (const auto &key : expr->collection_keys) {
+      CollectOwnershipCleanupResourceCaptureExprSites(key.get(), summary);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectOwnershipCleanupResourceCaptureExprSites(value.get(), summary);
+    }
+    return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectOwnershipCleanupResourceCaptureExprSites(key.get(), summary);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectOwnershipCleanupResourceCaptureExprSites(value.get(), summary);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->left.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->right.get(), summary);
     return;
   case Expr::Kind::Binary:
   case Expr::Kind::Conditional:
@@ -92,6 +110,14 @@ void CollectOwnershipCleanupResourceCaptureStmtSites(
           stmt->assign_stmt->value.get(), summary);
     }
     return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectOwnershipCleanupResourceCaptureExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), summary);
+      CollectOwnershipCleanupResourceCaptureExprSites(
+          stmt->collection_mutation_stmt->value.get(), summary);
+    }
+    return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
       CollectOwnershipCleanupResourceCaptureExprSites(
@@ -131,6 +157,16 @@ void CollectOwnershipCleanupResourceCaptureStmtSites(
       CollectOwnershipCleanupResourceCaptureExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectOwnershipCleanupResourceCaptureStmtSites(
+            body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectOwnershipCleanupResourceCaptureExprSites(
+          stmt->for_in_stmt->collection.get(), summary);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
         CollectOwnershipCleanupResourceCaptureStmtSites(
             body_stmt.get(), summary);
       }

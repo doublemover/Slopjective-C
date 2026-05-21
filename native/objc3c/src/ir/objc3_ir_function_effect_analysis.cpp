@@ -68,6 +68,13 @@ void CollectMutableGlobalSymbolsStmt(
                                     global_symbols, mutable_global_symbols);
       }
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        NotePotentialGlobalMutation(
+            stmt->collection_mutation_stmt->collection_name, scopes,
+            global_symbols, mutable_global_symbols);
+      }
+      return;
     case Stmt::Kind::If:
       if (stmt->if_stmt == nullptr) {
         return;
@@ -113,6 +120,24 @@ void CollectMutableGlobalSymbolsStmt(
       CollectMutableGlobalSymbolsForClause(
           stmt->for_stmt->step, scopes, global_symbols,
           mutable_global_symbols);
+      scopes.pop_back();
+      return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return;
+      }
+      scopes.push_back({});
+      if (!stmt->for_in_stmt->value_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->value_name);
+      }
+      if (stmt->for_in_stmt->has_key_binding &&
+          !stmt->for_in_stmt->key_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->key_name);
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
+        CollectMutableGlobalSymbolsStmt(
+            loop_stmt.get(), scopes, global_symbols, mutable_global_symbols);
+      }
       scopes.pop_back();
       return;
     case Stmt::Kind::Switch:

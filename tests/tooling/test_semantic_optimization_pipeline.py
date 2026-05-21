@@ -73,13 +73,9 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
         REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS
     )
     assert result.payload["enabled_pass_count"] >= 3
-    assert result.payload["reserved_pass_count"] == 1
-    assert result.payload["reserved_skip_fixture_count"] == (
-        result.payload["reserved_pass_count"]
-    )
-    assert result.payload["reserved_skip_passes"] == [
-        "cache-aware-dispatch",
-    ]
+    assert result.payload["reserved_pass_count"] == 0
+    assert result.payload["reserved_skip_fixture_count"] == 0
+    assert result.payload["reserved_skip_passes"] == []
     assert result.payload["performance_governance_contract"] == (
         PERFORMANCE_GOVERNANCE_CONTRACT_ID
     )
@@ -178,6 +174,19 @@ def test_semantic_optimization_pipeline_method_inlining_trace_is_proof_backed() 
     assert "source-map inline frame preserved" in after_text
     assert "diagnostic location preserved" in after_text
     assert "semantic-optimization.invalidate-global-proof-state" in after_text
+
+
+def test_semantic_optimization_pipeline_cache_aware_dispatch_trace_is_strict() -> None:
+    fixture = ROOT / "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll"
+    text = fixture.read_text(encoding="utf-8")
+
+    assert "objc3_runtime_cache_aware_dispatch_i32_checked" in text
+    assert "semantic-optimization.cache-aware-dispatch" in text
+    assert "source-map.cache-aware-dispatch" in text
+    assert "extractvalue" in text
+    assert "icmp sge i32 %status, 0" in text
+    assert "cache_dispatch_strict_fail" in text
+    assert "call void @abort()" in text
 
 
 def _write_pipeline_variant(tmp_path: Path, payload: dict[str, object]) -> Path:
@@ -379,26 +388,20 @@ def test_semantic_optimization_pipeline_rejects_reserved_success_claim(tmp_path:
     )
 
 
-def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fixture(
+def test_semantic_optimization_pipeline_requires_cache_aware_dispatch_fixture(
     tmp_path: Path,
 ) -> None:
     payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
     for pass_row in payload["pass_registry"]:
         if pass_row["pass_id"] == "cache-aware-dispatch":
-            pass_row["fixtures"] = [
-                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
-            ]
+            pass_row["fixtures"] = []
             break
 
     result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
 
     assert not result.passed
     assert any(
-        "skip fixture pass_id mismatch for cache-aware-dispatch" in failure
-        for failure in result.failures
-    )
-    assert any(
-        "missing proofs drift from preservation contract: cache-aware-dispatch" in failure
+        "cache-aware dispatch enabled pass must cite cache-aware IR fixture" in failure
         for failure in result.failures
     )
 

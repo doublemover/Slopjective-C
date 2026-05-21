@@ -47,6 +47,43 @@
       scopes.pop_back();
       return;
     }
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        const SemanticTypeInfo collection_type = ValidateExpr(
+            stmt->for_in_stmt->collection.get(), scopes, globals, functions,
+            diagnostics, max_message_send_args, message_send_context);
+        (void)collection_type;
+        scopes.push_back({});
+        if (!stmt->for_in_stmt->value_name.empty()) {
+          scopes.back().emplace(
+              stmt->for_in_stmt->value_name,
+              MakeScalarSemanticType(ValueType::Unknown));
+        }
+        if (stmt->for_in_stmt->has_key_binding &&
+            !stmt->for_in_stmt->key_name.empty()) {
+          scopes.back().emplace(
+              stmt->for_in_stmt->key_name,
+              MakeScalarSemanticType(ValueType::Unknown));
+        }
+        ValidateStatements(stmt->for_in_stmt->body, scopes, globals, functions,
+                           expected_return_type, function_name, diagnostics,
+                           loop_depth + 1, switch_depth,
+                           defer_loop_base_depth, defer_switch_base_depth,
+                           inside_defer_body, max_message_send_args,
+                           message_send_context);
+        scopes.pop_back();
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        ValidateExpr(stmt->collection_mutation_stmt->key_or_index.get(),
+                     scopes, globals, functions, diagnostics,
+                     max_message_send_args, message_send_context);
+        ValidateExpr(stmt->collection_mutation_stmt->value.get(), scopes,
+                     globals, functions, diagnostics, max_message_send_args,
+                     message_send_context);
+      }
+      return;
     case Stmt::Kind::Switch: {
       const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
       if (switch_stmt == nullptr) {

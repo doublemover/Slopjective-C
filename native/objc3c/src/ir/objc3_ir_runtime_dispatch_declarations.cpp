@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 
+#include "ir/objc3_ir_runtime_dispatch_calls.h"
 #include "lower/contracts/runtime_dispatch_strict_abi_entrypoint_contracts.h"
 
 void EmitObjc3IRRuntimeDispatchDeclarations(
@@ -15,7 +16,12 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     if (symbol.empty()) {
       continue;
     }
-    if (symbol == kObjc3RuntimeTypedDispatchValueFromClassSymbol) {
+    std::size_t arg_slots = boundary.runtime_dispatch_arg_slots;
+    if (symbol == kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol) {
+      out << "declare " << Objc3IRRuntimeDispatchI32ResultType() << " @"
+          << symbol << "(i32, ptr";
+      arg_slots = kObjc3RuntimeDispatchDefaultArgs;
+    } else if (symbol == kObjc3RuntimeTypedDispatchValueFromClassSymbol) {
       out << "declare i32 @" << symbol << "(i32, i32, ptr, ptr";
     } else if (symbol == kObjc3RuntimeDispatchFromClassSymbol) {
       out << "declare i32 @" << symbol << "(i32, ptr, ptr";
@@ -24,7 +30,7 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     } else {
       out << "declare i32 @" << symbol << "(i32, ptr";
     }
-    for (std::size_t i = 0; i < boundary.runtime_dispatch_arg_slots; ++i) {
+    for (std::size_t i = 0; i < arg_slots; ++i) {
       out << ", i32";
     }
     out << ")\n";

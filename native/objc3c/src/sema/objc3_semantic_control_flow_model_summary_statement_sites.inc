@@ -55,6 +55,14 @@ static void CollectControlFlowControlFlowSemanticStmtSites(
           summary);
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
+          stmt->for_in_stmt->body, loop_depth + 1, switch_depth,
+          defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
+          summary);
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
       const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
@@ -159,6 +167,7 @@ static void CollectControlFlowControlFlowSemanticStmtSites(
     return;
   case Stmt::Kind::Let:
   case Stmt::Kind::Assign:
+  case Stmt::Kind::CollectionMutation:
   case Stmt::Kind::Expr:
   case Stmt::Kind::Empty:
     return;

@@ -868,7 +868,7 @@
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, and bounded query snapshots; debugger-grade public reflection ABI remains reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, while debugger-grade source identity remains reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -891,6 +891,18 @@
         {
           "kind": "source",
           "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
         },
         {
           "kind": "test",
@@ -1525,7 +1537,7 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
-          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+          "command": "npm run objc3c -- validate-string-text-model-runtime"
         },
         {
           "kind": "test",
@@ -1584,7 +1596,7 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
-          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+          "command": "npm run objc3c -- validate-string-text-model-runtime"
         },
         {
           "kind": "test",
@@ -1643,7 +1655,7 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
-          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+          "command": "npm run objc3c -- validate-string-text-model-runtime"
         },
         {
           "kind": "test",
@@ -1702,7 +1714,7 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
-          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+          "command": "npm run objc3c -- validate-string-text-model-runtime"
         },
         {
           "kind": "test",
@@ -2056,6 +2068,144 @@
         {
           "kind": "source",
           "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "language.collections.literal-syntax-runtime-backed",
+      "title": "Runtime-backed collection literal syntax",
+      "state": "implemented",
+      "summary": "#array, #map, and #set literals lower to checked runtime-owned concrete i32 collection handles over the objc3.collections substrate. Generic element/key/value typing, nested collection typing, Foundation bridging, non-i32 hashing, and display/string interpolation remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.language.collections.literal-syntax-runtime-backed"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc",
+        "native/objc3c/src/parse/objc3_parser_expression_nodes.cpp",
+        "native/objc3c/src/ast/objc3_ast_expr_kind_members.h",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_expression_nodes.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.collections.mutation-syntax-runtime-backed",
+      "title": "Runtime-backed collection mutation syntax",
+      "state": "implemented",
+      "summary": "Indexed assignment, append-style insertion, and delete syntax lower to checked runtime collection operations for parser-visible var bindings created from collection literals. Mutation of let bindings and unknown collection origins fails closed.",
+      "support_claims": [
+        "objc3c.behavior.language.collections.mutation-syntax-runtime-backed"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc",
+        "native/objc3c/src/ast/objc3_ast_stmt_nodes.h",
+        "native/objc3c/src/ir/objc3_ir_statement_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_statement_binding_emission_assignment.inc",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.meta.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_statement_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "language.collections.for-in-syntax-runtime-backed",
+      "title": "Runtime-backed collection for-in syntax",
+      "state": "implemented",
+      "summary": "Syntax-level for-in lowers array and set value iteration plus map key/value iteration through deterministic runtime iterators while preserving fail-closed iterator status behavior for invalid handles, stale iterators, and mutation during iteration.",
+      "support_claims": [
+        "objc3c.behavior.language.collections.for-in-syntax-runtime-backed"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc",
+        "native/objc3c/src/ast/objc3_ast_stmt_nodes.h",
+        "native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_statement_loop_emission.h",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp"
         },
         {
           "kind": "source",
@@ -4270,7 +4420,13 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         }
       ]
     },
@@ -4296,20 +4452,38 @@
     {
       "id": "runtime.optimization.cache-aware-dispatch",
       "title": "Cache-aware dispatch optimization lane",
-      "state": "reserved",
-      "summary": "Cache-aware dispatch remains reserved behind runtime-owned cache invalidation and ABI-stable helper contracts. The compiler pipeline preserves runtime dispatch semantics and does not materialize private selector-cache helpers in IR.",
+      "state": "implemented",
+      "summary": "Eligible i32 message sends now lower to the runtime-owned checked cache-aware dispatch helper when the cache-aware ABI is present. The compiler keeps strict dispatch semantics by checking the returned status envelope and aborting non-value strict failures, and it emits optimization plus source-map/debug anchors for cache-aware sites.",
       "owner_modules": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+        "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         },
         {
           "kind": "doc",
           "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
         }
+      ],
+      "support_claims": [
+        "objc3c.behavior.runtime.cache-aware-dispatch"
       ]
     },
     {

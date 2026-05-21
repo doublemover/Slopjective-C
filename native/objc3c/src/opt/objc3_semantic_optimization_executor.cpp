@@ -101,15 +101,17 @@ const std::vector<Objc3SemanticOptimizationPassPlan> &PassPlans() {
        "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"},
       {"cache-aware-dispatch",
        80,
-       Objc3SemanticOptimizationPassMode::kReserved,
+       Objc3SemanticOptimizationPassMode::kEnabled,
        true,
-       false,
-       false,
-       "SKIP_FAIL_CLOSED",
+       true,
+       true,
+       "REJECT_FAIL_CLOSED",
        {"runtime cache invalidation semantics are public",
         "ABI-stable helper symbol exists",
-        "semantic replay preserves dispatch miss behavior"},
-       "cache-aware dispatch is reserved behind the runtime cache contract"},
+        "semantic replay preserves dispatch miss behavior",
+        "strict dispatch status envelope is checked",
+        "source-map and debug trace anchors are preserved"},
+       "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation"},
       {"ir-cleanup-verifier",
        90,
        Objc3SemanticOptimizationPassMode::kVerifierOnly,
@@ -198,6 +200,23 @@ std::string BuildObjc3SemanticOptimizationMetadataKey(
         << ";inline-invalidation-complete="
         << (candidate.method_inline_invalidation_complete ? "true" : "false");
   }
+  if (plan.pass_id == "cache-aware-dispatch") {
+    key << ";runtime-cache-invalidation-public="
+        << (candidate.runtime_cache_invalidation_semantics_public ? "true"
+                                                                  : "false")
+        << ";helper-symbol-present="
+        << (candidate.cache_aware_helper_symbol_present ? "true" : "false")
+        << ";miss-replay-preserved="
+        << (candidate.cache_aware_semantic_replay_preserves_miss_behavior
+                ? "true"
+                : "false")
+        << ";strict-status-envelope-checked="
+        << (candidate.cache_aware_strict_status_envelope_checked ? "true"
+                                                                 : "false")
+        << ";source-map-debug-preserved="
+        << (candidate.cache_aware_source_map_debug_preserved ? "true"
+                                                            : "false");
+  }
   return key.str();
 }
 
@@ -282,6 +301,35 @@ Objc3SemanticOptimizationResult MissingProofResult(
   if (plan.pass_id == "method-inlining") {
     return MakeResult(plan, MissingProofDecision(plan), candidate,
                       BuildMethodInliningFailClosedDiagnostic(plan, candidate));
+  }
+  if (plan.pass_id == "cache-aware-dispatch") {
+    std::vector<std::string> missing;
+    AppendMissingGate(
+        candidate.runtime_cache_invalidation_semantics_public,
+        "runtime_cache_invalidation_semantics_public", missing);
+    AppendMissingGate(candidate.cache_aware_helper_symbol_present,
+                      "cache_aware_helper_symbol_present", missing);
+    AppendMissingGate(
+        candidate.cache_aware_semantic_replay_preserves_miss_behavior,
+        "cache_aware_semantic_replay_preserves_miss_behavior", missing);
+    AppendMissingGate(candidate.cache_aware_strict_status_envelope_checked,
+                      "cache_aware_strict_status_envelope_checked", missing);
+    AppendMissingGate(candidate.cache_aware_source_map_debug_preserved,
+                      "cache_aware_source_map_debug_preserved", missing);
+    if (missing.empty()) {
+      return MakeResult(plan, MissingProofDecision(plan), candidate,
+                        plan.failure_diagnostic);
+    }
+    std::ostringstream diagnostic;
+    diagnostic << plan.failure_diagnostic << "; failed gates: ";
+    for (std::size_t i = 0; i < missing.size(); ++i) {
+      if (i != 0) {
+        diagnostic << ", ";
+      }
+      diagnostic << missing[i];
+    }
+    return MakeResult(plan, MissingProofDecision(plan), candidate,
+                      diagnostic.str());
   }
   return MakeResult(plan, MissingProofDecision(plan), candidate,
                     plan.failure_diagnostic);
@@ -418,6 +466,18 @@ Objc3SemanticOptimizationResult EvaluateObjc3SemanticOptimizationCandidate(
     return MissingProofResult(*plan, candidate);
   }
 
+  if (plan->pass_id == "cache-aware-dispatch") {
+    if (candidate.runtime_cache_invalidation_semantics_public &&
+        candidate.cache_aware_helper_symbol_present &&
+        candidate.cache_aware_semantic_replay_preserves_miss_behavior &&
+        candidate.cache_aware_strict_status_envelope_checked &&
+        candidate.cache_aware_source_map_debug_preserved) {
+      return MakeResult(*plan, Objc3SemanticOptimizationDecision::kApplied,
+                        candidate, "");
+    }
+    return MissingProofResult(*plan, candidate);
+  }
+
   if (plan->pass_id == "ir-cleanup-verifier") {
     if (candidate.all_prior_mutations_declared_invalidation &&
         candidate.unsupported_skips_emit_no_success_claim &&
@@ -458,6 +518,10 @@ bool AllObjc3SemanticOptimizationTraceMutationsDeclareInvalidation(
       return false;
     }
     if (result.pass_id == "method-inlining" &&
+        !result.invalidates_global_proof_state) {
+      return false;
+    }
+    if (result.pass_id == "cache-aware-dispatch" &&
         !result.invalidates_global_proof_state) {
       return false;
     }

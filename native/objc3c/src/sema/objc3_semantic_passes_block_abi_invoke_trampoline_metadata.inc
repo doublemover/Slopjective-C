@@ -35,6 +35,12 @@ static void CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(
   CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(expr->left.get(), sites);
   CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(expr->right.get(), sites);
   CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(expr->third.get(), sites);
+  for (const auto &key : expr->collection_keys) {
+    CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(key.get(), sites);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(value.get(), sites);
+  }
   for (const auto &arg : expr->args) {
     CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(arg.get(), sites);
   }
@@ -82,6 +88,10 @@ static void CollectBlockAbiInvokeTrampolineSiteMetadataFromStatement(
       CollectBlockAbiInvokeTrampolineSiteMetadataFromForClause(stmt->for_stmt->step, sites);
       CollectBlockAbiInvokeTrampolineSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectBlockAbiInvokeTrampolineSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
@@ -98,6 +108,10 @@ static void CollectBlockAbiInvokeTrampolineSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Expr:
       CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectBlockAbiInvokeTrampolineSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

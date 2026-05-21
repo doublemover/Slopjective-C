@@ -39,6 +39,16 @@ static void CollectAssignedIdentifiersFromStmt(const Stmt *stmt, std::unordered_
         CollectAssignedIdentifiers(stmt->for_stmt->body, assigned);
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectAssignedIdentifiers(stmt->for_in_stmt->body, assigned);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        assigned.insert(stmt->collection_mutation_stmt->collection_name);
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         for (const auto &case_stmt : stmt->switch_stmt->cases) {
@@ -101,6 +111,20 @@ static void CollectNonTopLevelLetNamesFromStmt(const Stmt *stmt, bool is_top_lev
         }
         CollectNonTopLevelLetNames(stmt->for_stmt->body, false, names);
       }
+      return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        if (!stmt->for_in_stmt->value_name.empty()) {
+          names.insert(stmt->for_in_stmt->value_name);
+        }
+        if (stmt->for_in_stmt->has_key_binding &&
+            !stmt->for_in_stmt->key_name.empty()) {
+          names.insert(stmt->for_in_stmt->key_name);
+        }
+        CollectNonTopLevelLetNames(stmt->for_in_stmt->body, false, names);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
@@ -166,6 +190,13 @@ static void CollectSwitchConditionIdentifierNamesFromStmt(const Stmt *stmt, std:
       if (stmt->for_stmt != nullptr) {
         CollectSwitchConditionIdentifierNames(stmt->for_stmt->body, names);
       }
+      return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectSwitchConditionIdentifierNames(stmt->for_in_stmt->body, names);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
       return;
     case Stmt::Kind::While:
       if (stmt->while_stmt != nullptr) {

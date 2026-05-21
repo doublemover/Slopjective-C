@@ -13,6 +13,27 @@
     }
 #include "sema/objc3_semantic_passes_expression_statement_validation_block_literal_case.inc"
 #include "sema/objc3_semantic_passes_expression_statement_validation_callable_checks.inc"
+    case Expr::Kind::CollectionLiteral: {
+      for (const auto &key : expr->collection_keys) {
+        ValidateExpr(key.get(), scopes, globals, functions, diagnostics,
+                     max_message_send_args, message_send_context,
+                     allow_throwing_call);
+      }
+      for (const auto &value : expr->collection_values) {
+        ValidateExpr(value.get(), scopes, globals, functions, diagnostics,
+                     max_message_send_args, message_send_context,
+                     allow_throwing_call);
+      }
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    case Expr::Kind::IndexAccess:
+      ValidateExpr(expr->left.get(), scopes, globals, functions, diagnostics,
+                   max_message_send_args, message_send_context,
+                   allow_throwing_call);
+      ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics,
+                   max_message_send_args, message_send_context,
+                   allow_throwing_call);
+      return MakeScalarSemanticType(ValueType::Unknown);
     case Expr::Kind::MessageSend: {
       return ValidateMessageSendExpr(expr, scopes, globals, functions,
                                      diagnostics, max_message_send_args,

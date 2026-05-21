@@ -30,6 +30,12 @@ static void CollectBlockLiteralCaptureSiteMetadataFromExpr(const Expr *expr,
   CollectBlockLiteralCaptureSiteMetadataFromExpr(expr->left.get(), sites);
   CollectBlockLiteralCaptureSiteMetadataFromExpr(expr->right.get(), sites);
   CollectBlockLiteralCaptureSiteMetadataFromExpr(expr->third.get(), sites);
+  for (const auto &key : expr->collection_keys) {
+    CollectBlockLiteralCaptureSiteMetadataFromExpr(key.get(), sites);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectBlockLiteralCaptureSiteMetadataFromExpr(value.get(), sites);
+  }
   for (const auto &arg : expr->args) {
     CollectBlockLiteralCaptureSiteMetadataFromExpr(arg.get(), sites);
   }
@@ -76,6 +82,10 @@ static void CollectBlockLiteralCaptureSiteMetadataFromStatement(
       CollectBlockLiteralCaptureSiteMetadataFromForClause(stmt->for_stmt->step, sites);
       CollectBlockLiteralCaptureSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectBlockLiteralCaptureSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectBlockLiteralCaptureSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectBlockLiteralCaptureSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
@@ -92,6 +102,10 @@ static void CollectBlockLiteralCaptureSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Expr:
       CollectBlockLiteralCaptureSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectBlockLiteralCaptureSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectBlockLiteralCaptureSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

@@ -33,4 +33,32 @@ std::unique_ptr<Expr> BuildObjc3ConditionalExpr(
   return node;
 }
 
+std::unique_ptr<Expr> BuildObjc3CollectionLiteralExpr(
+    Expr::CollectionLiteralKind kind,
+    const Objc3LexToken &token,
+    std::vector<std::unique_ptr<Expr>> keys,
+    std::vector<std::unique_ptr<Expr>> values) {
+  auto node = std::make_unique<Expr>();
+  node->kind = Expr::Kind::CollectionLiteral;
+  node->collection_literal_kind = kind;
+  node->line = token.line;
+  node->column = token.column;
+  node->collection_keys = std::move(keys);
+  node->collection_values = std::move(values);
+  return node;
+}
+
+std::unique_ptr<Expr> BuildObjc3IndexAccessExpr(
+    const Objc3LexToken &open,
+    std::unique_ptr<Expr> collection,
+    std::unique_ptr<Expr> index) {
+  auto node = std::make_unique<Expr>();
+  node->kind = Expr::Kind::IndexAccess;
+  node->line = open.line;
+  node->column = open.column;
+  node->left = std::move(collection);
+  node->right = std::move(index);
+  return node;
+}
+
 }  // namespace objc3c::parse

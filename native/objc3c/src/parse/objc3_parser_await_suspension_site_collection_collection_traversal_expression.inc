@@ -38,6 +38,18 @@ void CollectAwaitSuspensionExprSites(
     CollectAwaitSuspensionExprSites(expr->right.get(), counts);
     CollectAwaitSuspensionExprSites(expr->third.get(), counts);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectAwaitSuspensionExprSites(key.get(), counts);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectAwaitSuspensionExprSites(value.get(), counts);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectAwaitSuspensionExprSites(expr->left.get(), counts);
+    CollectAwaitSuspensionExprSites(expr->right.get(), counts);
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

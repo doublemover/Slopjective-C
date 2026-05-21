@@ -11,6 +11,16 @@ static bool ExprContainsRunnableBlockLiteral(const Expr *expr) {
       ExprContainsRunnableBlockLiteral(expr->receiver.get())) {
     return true;
   }
+  for (const auto &key : expr->collection_keys) {
+    if (ExprContainsRunnableBlockLiteral(key.get())) {
+      return true;
+    }
+  }
+  for (const auto &value : expr->collection_values) {
+    if (ExprContainsRunnableBlockLiteral(value.get())) {
+      return true;
+    }
+  }
   for (const auto &arg : expr->args) {
     if (ExprContainsRunnableBlockLiteral(arg.get())) {
       return true;
@@ -83,6 +93,20 @@ static bool StmtContainsRunnableBlockLiteral(const Stmt *stmt) {
       }
     }
     return false;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(
+            stmt->for_in_stmt->collection.get())) {
+      return true;
+    }
+    for (const auto &body_stmt : stmt->for_in_stmt->body) {
+      if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt == nullptr) {
       return false;
@@ -122,6 +146,12 @@ static bool StmtContainsRunnableBlockLiteral(const Stmt *stmt) {
       }
     }
     return false;
+  case Stmt::Kind::CollectionMutation:
+    return stmt->collection_mutation_stmt != nullptr &&
+           (ExprContainsRunnableBlockLiteral(
+                stmt->collection_mutation_stmt->key_or_index.get()) ||
+            ExprContainsRunnableBlockLiteral(
+                stmt->collection_mutation_stmt->value.get()));
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:
   case Stmt::Kind::Empty:

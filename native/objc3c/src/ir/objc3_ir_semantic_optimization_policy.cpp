@@ -67,11 +67,11 @@ BuildObjc3IRSemanticOptimizationProofContracts() {
        true,
        false},
       {"cache-aware-dispatch",
-       "runtime cache invalidation semantics and ABI-stable helper symbol",
-       "SKIP_FAIL_CLOSED",
+       "runtime cache invalidation semantics, ABI-stable helper symbol, strict status envelope, semantic miss replay, and source-map debug preservation",
+       "REJECT_FAIL_CLOSED",
        true,
-       false,
-       false,
+       true,
+       true,
        false},
       {"ir-cleanup-verifier",
        "deterministic pass trace and semantic equivalence verdict",
@@ -117,6 +117,12 @@ bool IsObjc3IRSemanticOptimizationProofContractFailClosed(
       !contract.invalidates_global_proof_state) {
     reason =
         "method inlining semantic optimization must invalidate global proof state";
+    return false;
+  }
+  if (contract.pass_id == "cache-aware-dispatch" &&
+      !contract.invalidates_global_proof_state) {
+    reason =
+        "cache-aware dispatch semantic optimization must invalidate global proof state";
     return false;
   }
   reason.clear();

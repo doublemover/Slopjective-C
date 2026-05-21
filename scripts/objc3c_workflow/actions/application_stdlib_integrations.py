@@ -24,7 +24,19 @@ def action_validate_stdlib_program(_: list[str]) -> int:
     return run([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
 
 
+def action_validate_string_text_model_runtime(_: list[str]) -> int:
+    return run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/tooling/test_string_text_model_runtime.py",
+        ]
+    )
+
+
 __all__ = [
+    "action_validate_string_text_model_runtime",
     "action_validate_stdlib_advanced",
     "action_validate_stdlib_foundation",
     "action_validate_stdlib_program",

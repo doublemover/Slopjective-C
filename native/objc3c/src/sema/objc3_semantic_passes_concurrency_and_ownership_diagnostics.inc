@@ -123,6 +123,18 @@ static void DiagnoseOwnershipResourceMoveExpr(
       DiagnoseOwnershipResourceMoveExpr(expr->right.get(), scopes, diagnostics);
       DiagnoseOwnershipResourceMoveExpr(expr->third.get(), scopes, diagnostics);
       return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        DiagnoseOwnershipResourceMoveExpr(key.get(), scopes, diagnostics);
+      }
+      for (const auto &value : expr->collection_values) {
+        DiagnoseOwnershipResourceMoveExpr(value.get(), scopes, diagnostics);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      DiagnoseOwnershipResourceMoveExpr(expr->left.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->right.get(), scopes, diagnostics);
+      return;
     case Expr::Kind::Call:
     case Expr::Kind::MessageSend:
       DiagnoseOwnershipResourceMoveExpr(expr->receiver.get(), scopes, diagnostics);

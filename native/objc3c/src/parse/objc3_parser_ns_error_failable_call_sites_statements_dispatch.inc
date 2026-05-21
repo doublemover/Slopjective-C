@@ -16,6 +16,14 @@ std::size_t CountFailableCallSitesInStmt(const Stmt *stmt) {
     return CountFailableCallSitesInDoWhileStmt(stmt);
   case Stmt::Kind::For:
     return CountFailableCallSitesInForStmt(stmt);
+  case Stmt::Kind::ForIn: {
+    std::size_t count =
+        CountFailableCallSitesInExpr(stmt->for_in_stmt->collection.get());
+    for (const auto &body_stmt : stmt->for_in_stmt->body) {
+      count += CountFailableCallSitesInStmt(body_stmt.get());
+    }
+    return count;
+  }
   case Stmt::Kind::Switch:
     return CountFailableCallSitesInSwitchStmt(stmt);
   case Stmt::Kind::While:
@@ -25,9 +33,19 @@ std::size_t CountFailableCallSitesInStmt(const Stmt *stmt) {
     return CountFailableCallSitesInBlockStmt(stmt);
   case Stmt::Kind::Expr:
     return CountFailableCallSitesInExprStmt(stmt);
+  case Stmt::Kind::CollectionMutation: {
+    std::size_t count = CountFailableCallSitesInExpr(
+        stmt->collection_mutation_stmt->key_or_index.get());
+    if (stmt->collection_mutation_stmt->value) {
+      count += CountFailableCallSitesInExpr(
+          stmt->collection_mutation_stmt->value.get());
+    }
+    return count;
+  }
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:
   case Stmt::Kind::Empty:
     return 0;
   }
+  return 0;
 }

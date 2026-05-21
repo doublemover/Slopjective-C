@@ -59,6 +59,9 @@ static bool IsOwnershipBorrowedExpr(
                                      callable_contracts) ||
              IsOwnershipBorrowedExpr(expr->third.get(), scopes,
                                      callable_contracts);
+    case Expr::Kind::CollectionLiteral:
+    case Expr::Kind::IndexAccess:
+      return false;
     default:
       return false;
   }
