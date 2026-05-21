@@ -225,7 +225,9 @@
         "support_claim",
         "existential_identity",
         "witness_table",
+        "conformance_metadata",
         "composition_policy",
+        "unsupported_semantics",
         "fail_closed_diagnostics"
       ],
       "additionalProperties": false,
@@ -233,7 +235,9 @@
         "support_claim": { "const": "objc3c.behavior.language.protocols.existential-witness-model" },
         "existential_identity": { "$ref": "#/$defs/identity_policy" },
         "witness_table": { "$ref": "#/$defs/witness_table" },
+        "conformance_metadata": { "$ref": "#/$defs/conformance_metadata" },
         "composition_policy": { "$ref": "#/$defs/composition_policy" },
+        "unsupported_semantics": { "$ref": "#/$defs/protocol_unsupported_semantics" },
         "fail_closed_diagnostics": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
@@ -278,6 +282,22 @@
         "associated_type_policy": { "enum": ["rejected", "reserved"] }
       }
     },
+    "conformance_metadata": {
+      "type": "object",
+      "required": ["metadata_key", "runtime_record", "builder", "key_fields"],
+      "additionalProperties": false,
+      "properties": {
+        "metadata_key": { "const": "protocol-witness-conformance-metadata" },
+        "runtime_record": { "const": "ProtocolConformanceMatch" },
+        "builder": { "const": "BuildRuntimeProtocolExistentialWitnessMetadata" },
+        "key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        }
+      }
+    },
     "composition_policy": {
       "type": "object",
       "required": ["duplicates", "unknown_protocols", "conflicting_requirements"],
@@ -286,6 +306,25 @@
         "duplicates": { "enum": ["rejected"] },
         "unknown_protocols": { "enum": ["rejected"] },
         "conflicting_requirements": { "enum": ["rejected"] }
+      }
+    },
+    "protocol_unsupported_semantics": {
+      "type": "object",
+      "required": ["associated_types", "dynamic_existential_dispatch"],
+      "additionalProperties": false,
+      "properties": {
+        "associated_types": { "$ref": "#/$defs/unsupported_semantic_policy" },
+        "dynamic_existential_dispatch": { "$ref": "#/$defs/unsupported_semantic_policy" }
+      }
+    },
+    "unsupported_semantic_policy": {
+      "type": "object",
+      "required": ["public_state", "diagnostic_code", "fixture"],
+      "additionalProperties": false,
+      "properties": {
+        "public_state": { "enum": ["rejected", "reserved"] },
+        "diagnostic_code": { "type": "string", "minLength": 1 },
+        "fixture": { "type": "string", "minLength": 1 }
       }
     },
     "ownership_memory_model": {

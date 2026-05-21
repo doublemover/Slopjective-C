@@ -15,10 +15,29 @@ bool SnapshotReady(
          snapshot.sema_lowering_evidence == 1 &&
          snapshot.executable_fixture_evidence == 1 &&
          snapshot.fail_closed == 1 && snapshot.public_api_surface == 1 &&
+         snapshot.associated_type_support == 0 &&
+         snapshot.dynamic_existential_dispatch_support == 0 &&
          snapshot.support_claim != nullptr && snapshot.semantic_surface != nullptr &&
          snapshot.metadata_key != nullptr && snapshot.runtime_anchor != nullptr &&
+         snapshot.witness_metadata_key != nullptr &&
+         snapshot.conformance_metadata_key != nullptr &&
          snapshot.positive_fixture != nullptr &&
-         snapshot.negative_fixture != nullptr && snapshot.replay_key != nullptr;
+         snapshot.negative_fixture != nullptr &&
+         snapshot.unsupported_associated_type_diagnostic != nullptr &&
+         snapshot.unsupported_dynamic_dispatch_diagnostic != nullptr &&
+         snapshot.replay_key != nullptr;
+}
+
+bool ProtocolSnapshotReady(
+    const objc3_runtime_language_semantics_surface_snapshot &snapshot) {
+  return SnapshotReady(
+             snapshot,
+             OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS,
+             8164) &&
+         snapshot.witness_metadata_key[0] != '\0' &&
+         snapshot.conformance_metadata_key[0] != '\0' &&
+         snapshot.unsupported_associated_type_diagnostic[0] != '\0' &&
+         snapshot.unsupported_dynamic_dispatch_diagnostic[0] != '\0';
 }
 
 }  // namespace
@@ -69,9 +88,7 @@ int main() {
       SnapshotReady(generic,
                     OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_GENERIC_RUNTIME_IDENTITY,
                     8160) &&
-      SnapshotReady(protocol,
-                    OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS,
-                    8164) &&
+      ProtocolSnapshotReady(protocol) &&
       SnapshotReady(ownership,
                     OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE,
                     8166) &&

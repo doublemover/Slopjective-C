@@ -185,16 +185,33 @@ def _validate_generic_surface(surface: dict[str, Any], failures: list[str]) -> N
 def _validate_protocol_surface(surface: dict[str, Any], failures: list[str]) -> None:
     identity = _as_dict(surface.get("existential_identity"))
     witness_table = _as_dict(surface.get("witness_table"))
+    conformance_metadata = _as_dict(surface.get("conformance_metadata"))
     composition_policy = _as_dict(surface.get("composition_policy"))
+    unsupported_semantics = _as_dict(surface.get("unsupported_semantics"))
 
     identity_fields = {str(field) for field in _as_list(identity.get("key_fields"))}
     if not {"protocols_lexicographic", "module_owner"}.issubset(identity_fields):
         failures.append("protocol existential identity must be module-owned and lexicographic")
     witness_fields = {str(field) for field in _as_list(witness_table.get("key_fields"))}
-    if not {"protocol_owner_identity", "requirement_selector_or_property_key"}.issubset(witness_fields):
+    if not {"protocol_owner_identity", "conformance_owner_identity", "requirement_selector_or_property_key"}.issubset(witness_fields):
         failures.append("protocol witness table key fields are incomplete")
     if witness_table.get("runtime_lookup_anchor") != "QueryRealizedClassProtocolConformanceUnlocked":
         failures.append("protocol witness table must anchor to runtime conformance lookup")
+    if witness_table.get("associated_type_policy") != "rejected":
+        failures.append("protocol associated types must stay rejected until executable proof lands")
+    if conformance_metadata.get("runtime_record") != "ProtocolConformanceMatch":
+        failures.append("protocol conformance metadata must bind ProtocolConformanceMatch")
+    if conformance_metadata.get("builder") != "BuildRuntimeProtocolExistentialWitnessMetadata":
+        failures.append("protocol conformance metadata must use the runtime witness metadata builder")
+    conformance_fields = {str(field) for field in _as_list(conformance_metadata.get("key_fields"))}
+    if not {"protocol_owner_identity", "conformance_owner_identity", "runtime_lookup_anchor"}.issubset(conformance_fields):
+        failures.append("protocol conformance metadata key fields are incomplete")
+    associated_types = _as_dict(unsupported_semantics.get("associated_types"))
+    dynamic_dispatch = _as_dict(unsupported_semantics.get("dynamic_existential_dispatch"))
+    if associated_types.get("public_state") != "rejected" or associated_types.get("diagnostic_code") != "O3P100":
+        failures.append("protocol associated-type policy must publish rejected O3P100 diagnostics")
+    if dynamic_dispatch.get("public_state") != "rejected" or dynamic_dispatch.get("diagnostic_code") != "O3S314":
+        failures.append("dynamic protocol existential dispatch must publish rejected O3S314 diagnostics")
     if any(composition_policy.get(field) != "rejected" for field in ("duplicates", "unknown_protocols", "conflicting_requirements")):
         failures.append("protocol composition policy must reject duplicate, unknown, and conflicting protocols")
 

@@ -75,11 +75,22 @@ struct Objc3ProtocolExistentialWitnessSurface {
   std::string existential_canonical_spelling;
   std::vector<std::string> protocols_lexicographic;
   std::vector<std::string> witness_table_key_fields;
+  std::vector<std::string> conformance_metadata_key_fields;
   std::string conformance_lookup_replay_key;
+  std::string runtime_lookup_anchor =
+      "QueryRealizedClassProtocolConformanceUnlocked";
+  std::string witness_metadata_key = "protocol-witness-conformance-metadata";
+  std::string requirement_resolution_policy =
+      "semantic-requirements-before-runtime-conformance-edge";
+  std::string unsupported_associated_type_diagnostic = "O3P100";
+  std::string unsupported_dynamic_dispatch_diagnostic = "O3S314";
   Objc3PublicLanguageSemanticCapabilityState public_state =
       Objc3PublicLanguageSemanticCapabilityState::kSupported;
   bool witness_table_shape_published = true;
+  bool conformance_metadata_shape_published = true;
+  bool runtime_conformance_lookup_required = true;
   bool associated_type_inference_claimed = false;
+  bool dynamic_existential_dispatch_claimed = false;
   bool swift_protocol_bridge_claimed = false;
 };
 

@@ -891,7 +891,7 @@
       "id": "language.protocols.protocol-qualified-existential-value-flow",
       "title": "Protocol-qualified existential value flow",
       "state": "implemented",
-      "summary": "The current protocol-existential support claim is limited to protocol-qualified value flow, required/optional member lookup, nullable flow, and semantic diagnostics; witness tables, associated types, existential ABI records, and dynamic existential dispatch remain unclaimed.",
+      "summary": "Protocol-qualified value flow now includes required/optional member lookup, nullable flow, semantic diagnostics, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, cross-module existential import/export, and protocol composition beyond the typed semantic suffix remain unclaimed.",
       "support_claims": [
         "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow"
       ],
@@ -899,6 +899,8 @@
         "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
         "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc",
         "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp"
       ],
       "evidence": [
@@ -924,12 +926,107 @@
           "path": "tests/conformance/semantic/TYP-8013-07.json"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-22.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-21.json"
+        },
+        {
           "kind": "source",
           "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc"
         },
         {
           "kind": "source",
           "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.protocols.existential-witness-model",
+      "title": "Protocol existential witness model",
+      "state": "implemented",
+      "summary": "Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.",
+      "support_claims": [
+        "objc3c.behavior.language.protocols.existential-witness-model"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/model/language_semantics_public_model.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-22.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-21.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/model/language_semantics_public_model.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
         }
       ]
     },

@@ -47,6 +47,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism` | `sema` | `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.macro-safety-sandbox-determinism` |
 | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `sema` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `language.metaprogramming.property-behavior-semantics` |
 | `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
+| `objc3c.behavior.language.protocols.existential-witness-model` | `runtime` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.existential-witness-model` |
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
@@ -566,11 +567,13 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.protocols.protocol-qualified-existential-value-flow`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow`
-- Summary: The current protocol-existential support claim is limited to protocol-qualified value flow, required/optional member lookup, nullable flow, and semantic diagnostics; witness tables, associated types, existential ABI records, and dynamic existential dispatch remain unclaimed.
+- Summary: Protocol-qualified value flow now includes required/optional member lookup, nullable flow, semantic diagnostics, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, cross-module existential import/export, and protocol composition beyond the typed semantic suffix remain unclaimed.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc`
   - `native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc`
   - `native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp`
+  - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` via `npm run objc3c -- validate-conformance-corpus`
@@ -578,8 +581,41 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/conformance/semantic/TYP-8013-01.json`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3`
   - test: `tests/conformance/semantic/TYP-8013-07.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-22.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-21.json`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc`
+  - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
+
+### Protocol existential witness model
+
+- Capability ID: `language.protocols.existential-witness-model`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.protocols.existential-witness-model`
+- Summary: Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.
+- Owner modules:
+  - `native/objc3c/src/sema/model/language_semantics_public_model.h`
+  - `native/objc3c/src/runtime/classes/protocol_conformance.h`
+  - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/runtime/language_semantics_runtime_api_probe.cpp`
+  - test: `tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json`
+  - test: `tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-22.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-21.json`
+  - source: `native/objc3c/src/sema/model/language_semantics_public_model.h`
+  - source: `native/objc3c/src/runtime/classes/protocol_conformance.h`
+  - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
 
 ### Protocol-qualified generic arguments
 

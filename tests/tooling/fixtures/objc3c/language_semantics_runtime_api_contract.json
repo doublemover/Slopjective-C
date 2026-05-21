@@ -41,10 +41,16 @@
       "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
       "semantic_surface": "protocol-existential-witness-record",
       "metadata_key": "protocol-witness-conformance-metadata",
-      "runtime_anchor": "QueryRealizedClassProtocolConformanceUnlocked",
+      "runtime_anchor": "BuildRuntimeProtocolExistentialWitnessMetadata+QueryRealizedClassProtocolConformanceUnlocked",
+      "witness_metadata_key": "protocol-witness-conformance-metadata",
+      "conformance_metadata_key": "ProtocolConformanceMatch",
+      "associated_type_support": false,
+      "dynamic_existential_dispatch_support": false,
       "positive_fixture": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
-      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
-      "diagnostic_code": "O3S216"
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+      "diagnostic_code": "O3S216",
+      "unsupported_associated_type_diagnostic": "O3P100",
+      "unsupported_dynamic_dispatch_diagnostic": "O3S314"
     },
     {
       "issue": 8166,

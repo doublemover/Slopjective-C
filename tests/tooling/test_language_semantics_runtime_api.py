@@ -29,6 +29,9 @@ HEADER_PATH = (
 )
 UMBRELLA_PATH = HEADER_PATH.with_name("objc3_runtime_api.h")
 IMPLEMENTATION_PATH = HEADER_PATH.with_suffix(".cpp")
+PROTOCOL_CONFORMANCE_HEADER = (
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "classes" / "protocol_conformance.h"
+)
 CMAKE_PATH = ROOT / "native" / "objc3c" / "src" / "runtime" / "CMakeLists.txt"
 PROBE_PATH = ROOT / "tests" / "tooling" / "runtime" / "language_semantics_runtime_api_probe.cpp"
 SEMA_CONTRACT_HEADER = (
@@ -74,6 +77,10 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     assert "public/objc3_runtime_language_semantics.h" in cmake
     assert "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION" in header
     assert "typedef struct objc3_runtime_language_semantics_surface_snapshot" in header
+    assert "associated_type_support" in header
+    assert "dynamic_existential_dispatch_support" in header
+    assert "unsupported_associated_type_diagnostic" in header
+    assert "unsupported_dynamic_dispatch_diagnostic" in header
 
     for symbol in contract["entrypoints"]:
         assert f"{symbol}(" in header
@@ -95,6 +102,7 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
 def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None:
     contract = _contract()
     implementation = _read(IMPLEMENTATION_PATH)
+    runtime_evidence = implementation + "\n" + _read(PROTOCOL_CONFORMANCE_HEADER)
     probe = _read(PROBE_PATH)
 
     assert "kRuntimeLanguageSemanticsSurfaces" in implementation
@@ -103,13 +111,24 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
         assert str(row["issue"]) in implementation
         assert row["support_claim"] in implementation
         assert row["semantic_surface"] in implementation
-        assert row["metadata_key"] in implementation
+        assert row["metadata_key"] in runtime_evidence
         assert row["runtime_anchor"] in implementation
         assert row["positive_fixture"] in implementation
         assert row["negative_fixture"] in implementation
         assert row["diagnostic_code"] in implementation
+        for optional_runtime_field in (
+            "witness_metadata_key",
+            "conformance_metadata_key",
+            "unsupported_associated_type_diagnostic",
+            "unsupported_dynamic_dispatch_diagnostic",
+        ):
+            if optional_runtime_field in row:
+                assert row[optional_runtime_field] in runtime_evidence
 
     assert "EmittedKeyPathDescriptor::generic_metadata_replay_key" in implementation
+    assert "BuildRuntimeProtocolExistentialWitnessMetadata" in implementation
+    assert "kObjc3ProtocolExistentialWitnessMetadataKey" in implementation
+    assert "ProtocolConformanceMatch" in implementation
     assert "QueryRealizedClassProtocolConformanceUnlocked" in implementation
     assert "RuntimeResultFailClosedOwnershipModel" in implementation
     assert "objc3_runtime_spawn_task_i32+objc3_runtime_executor_hop_i32+" in implementation

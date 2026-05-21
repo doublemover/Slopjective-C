@@ -72,6 +72,12 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.protocols.existential-witness-model",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
       "claim_id": "objc3c.behavior.language.generics.variance-specialization",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
@@ -970,6 +976,36 @@
       "behavior_family": "objc",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "objc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "objc",
+      "fixture_kind": "canonical_rejection",
+      "retired_surface_tags": [
+        "unsupported-feature"
+      ],
+      "expected_diagnostic_code": "O3P100"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "objc",
+      "fixture_kind": "canonical_rejection",
+      "retired_surface_tags": [
+        "unsupported-feature"
+      ],
+      "expected_diagnostic_code": "O3S314"
     },
     {
       "path": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",

@@ -712,6 +712,30 @@
     {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-22.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-21.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc"
     },
@@ -720,6 +744,97 @@
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-22.json"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-21.json"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/model/language_semantics_public_model.h"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.h"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
     },
     {
       "capability_id": "language.generics.protocol-qualified-arguments",

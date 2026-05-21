@@ -197,22 +197,49 @@
         "key_fields": [
           "conforming_type_canonical_spelling",
           "protocol_owner_identity",
+          "conformance_owner_identity",
           "requirement_selector_or_property_key",
           "implementation_owner_identity"
         ],
         "requirement_resolution": "semantic-requirements-before-runtime-conformance-edge",
         "runtime_lookup_anchor": "QueryRealizedClassProtocolConformanceUnlocked",
-        "associated_type_policy": "reserved"
+        "associated_type_policy": "rejected"
+      },
+      "conformance_metadata": {
+        "metadata_key": "protocol-witness-conformance-metadata",
+        "runtime_record": "ProtocolConformanceMatch",
+        "builder": "BuildRuntimeProtocolExistentialWitnessMetadata",
+        "key_fields": [
+          "existential_canonical_spelling",
+          "conforming_type_canonical_spelling",
+          "protocol_owner_identity",
+          "conformance_owner_identity",
+          "runtime_lookup_anchor"
+        ]
       },
       "composition_policy": {
         "duplicates": "rejected",
         "unknown_protocols": "rejected",
         "conflicting_requirements": "rejected"
       },
+      "unsupported_semantics": {
+        "associated_types": {
+          "public_state": "rejected",
+          "diagnostic_code": "O3P100",
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        "dynamic_existential_dispatch": {
+          "public_state": "rejected",
+          "diagnostic_code": "O3S314",
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        }
+      },
       "fail_closed_diagnostics": [
         "missing_requirement",
         "ambiguous_conformance",
-        "invalid_protocol_composition"
+        "invalid_protocol_composition",
+        "unsupported_associated_type",
+        "unsupported_dynamic_existential_dispatch"
       ]
     },
     "interop_bridge_model": {

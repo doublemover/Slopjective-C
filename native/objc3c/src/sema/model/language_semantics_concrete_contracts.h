@@ -30,7 +30,7 @@ struct Objc3LanguageSemanticsConcreteFixtureContract {
   bool unsupported_patterns_fail_closed = true;
 };
 
-inline constexpr std::array<Objc3LanguageSemanticsConcreteFixtureContract, 17>
+inline constexpr std::array<Objc3LanguageSemanticsConcreteFixtureContract, 19>
     kObjc3LanguageSemanticsConcreteFixtureContracts = {{
         {8160,
          Objc3LanguageSemanticsConcretePhase::kSema,
@@ -93,6 +93,28 @@ inline constexpr std::array<Objc3LanguageSemanticsConcreteFixtureContract, 17>
          "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
          "objc3c.behavior.language.protocols.existential-witness-model",
          "O3S216",
+         true,
+         true,
+         false,
+         false,
+         true},
+        {8164,
+         Objc3LanguageSemanticsConcretePhase::kParser,
+         "protocol-existential-associated-type-rejection",
+         "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+         "objc3c.behavior.language.protocols.existential-witness-model",
+         "O3P100",
+         true,
+         true,
+         false,
+         false,
+         true},
+        {8164,
+         Objc3LanguageSemanticsConcretePhase::kSema,
+         "protocol-existential-dynamic-dispatch-rejection",
+         "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3",
+         "objc3c.behavior.language.protocols.existential-witness-model",
+         "O3S314",
          true,
          true,
          false,

@@ -42,6 +42,8 @@ def test_language_semantics_public_model_schema_and_contract_are_stable() -> Non
     assert '"const": "validate-language-semantics-public-model"' in schema_text
     assert '"fallback_or_compatibility_shim_allowed": { "const": false }' in schema_text
     assert '"support_claim": { "const": "objc3c.behavior.language.generics.public-type-parameters" }' in schema_text
+    assert '"builder": { "const": "BuildRuntimeProtocolExistentialWitnessMetadata" }' in schema_text
+    assert '"dynamic_existential_dispatch"' in schema_text
 
 
 def test_language_semantics_public_model_header_exposes_typed_surfaces() -> None:
@@ -54,6 +56,9 @@ def test_language_semantics_public_model_header_exposes_typed_surfaces() -> None
         "Objc3GenericTypeParameterSurface",
         "Objc3GenericSpecializationSurface",
         "Objc3ProtocolExistentialWitnessSurface",
+        "conformance_metadata_shape_published",
+        "runtime_conformance_lookup_required",
+        "dynamic_existential_dispatch_claimed",
         "Objc3OwnershipFlowSurface",
         "Objc3ConcurrencyEffectSurface",
         "Objc3ModuleVisibilitySurface",
