@@ -5,16 +5,18 @@
       8159,
       8175,
       8191,
-      8192
+      8192,
+      8193
     ],
     "support_claims": [
-      "objc3c.behavior.semantic_optimization_pipeline"
+      "objc3c.behavior.semantic_optimization_pipeline",
+      "objc3c.behavior.optimization.method-inlining-safe-subset"
     ],
     "capability_rows_required": [
       "objc3c.behavior.semantic_optimization_pipeline",
       "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "objc3c.behavior.optimization.method-inlining-safe-subset",
       "objc3c.internal.semantic_optimization_pass_registry",
-      "objc3c.reserved.semantic_optimization.method_inlining",
       "objc3c.reserved.semantic_optimization.cache_aware_dispatch"
     ],
     "evidence_ids_required": [
@@ -26,7 +28,8 @@
       "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
       "objc3c.evidence.semantic_optimization_pipeline.proof_model",
       "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
-      "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization"
+      "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
+      "objc3c.evidence.semantic_optimization_pipeline.method_inlining"
     ]
   },
   "source_truth": {
@@ -105,7 +108,8 @@
         "tokens": [
           "exact_target_receiver_static_type_proven",
           "sealed_final_dispatch_evidence_present",
-          "runtime_cache_version_dependency_pinned"
+          "runtime_cache_version_dependency_pinned",
+          "method_inline_callee_body_identity_present"
         ]
       },
       {
@@ -302,27 +306,37 @@
     {
       "pass_id": "method-inlining",
       "ordinal": 70,
-      "stage": "semantic-optimization-reserved",
-      "mode": "reserved",
+      "stage": "semantic-method-function-inlining-safe-subset",
+      "mode": "enabled",
       "semantic_preserving": true,
-      "rewrites_ir": false,
-      "invalidates_global_proof_state": false,
-      "input_contract": "side-effect and ownership-preserving inline candidate",
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3OwnershipSafeInlineCandidate",
       "output_contract": "expanded IR body",
       "preconditions": [
-        "callee body is available",
-        "ownership effects are replayable",
-        "debug and diagnostic source mapping are preserved"
+        "callee body identity is present",
+        "function or final method belongs to the scalar inline subset",
+        "ownership and ARC effects are replayable",
+        "side-effect summary is pure and call-free",
+        "source-map inline frame and line-table preservation are proven",
+        "diagnostic source location is preserved",
+        "runtime ABI and package import identity are unchanged",
+        "inlining depth is within limit and recursion is absent",
+        "callee generation snapshot is pinned"
       ],
-      "invalidation": "would invalidate local value, ownership, and diagnostic proof state",
+      "invalidation": "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state",
       "post_verify": [
-        "reserved pass emits skip diagnostic without success claim"
+        "callee body identity matches the inlined IR digest",
+        "source-map inline frame and diagnostic location are preserved",
+        "ownership, side-effect, ABI/package, depth, recursion, generation, and invalidation proofs are consumed"
       ],
       "fail_closed_diagnostics": [
-        "method inlining is reserved until ownership and source-map proofs exist"
+        "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
       ]
     },
     {
@@ -453,13 +467,20 @@
     {
       "pass_id": "method-inlining",
       "required_proofs": [
-        "callee body is available",
-        "ownership effects are replayable",
-        "debug and diagnostic source mapping are preserved"
+        "callee body identity is present",
+        "function or final method belongs to the scalar inline subset",
+        "ownership and ARC effects are replayable",
+        "side-effect summary is pure and call-free",
+        "source-map inline frame and line-table preservation are proven",
+        "diagnostic source location is preserved",
+        "runtime ABI and package import identity are unchanged",
+        "inlining depth is within limit and recursion is absent",
+        "callee generation snapshot is pinned",
+        "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state"
       ],
-      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "reserved pass emits skip diagnostic without success claim"
+      "semantic_equivalence": "method/function inlining rewrites IR only when callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, invalidation, and semantic equivalence proofs are present"
     },
     {
       "pass_id": "cache-aware-dispatch",
@@ -582,6 +603,41 @@
         "proof_id": "runtime_cache_version_dependency",
         "source": "runtime method-cache and dispatch-version dependency pinned before runtime lookup is bypassed",
         "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "callee_body_identity",
+        "source": "stable callee body identity and IR digest for the exact inlined body",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "scalar_inline_subset",
+        "source": "pure scalar free-function or final-method subset proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "ownership_arc_effects_replay",
+        "source": "ownership and ARC effects replayed without consumed ambiguity",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "source_map_inline_frame_preservation",
+        "source": "source-map inline frame and line-table preservation proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "diagnostic_location_preservation",
+        "source": "diagnostic location remapping proof for the call site and inlined body",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "inlining_depth_recursion_limit",
+        "source": "bounded inlining depth and no-recursion proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "callee_generation_invalidation",
+        "source": "callee body and generation snapshots plus invalidated proof-state record",
+        "fail_closed_if_missing": true
       }
     ],
     "candidate_input_fields": [
@@ -602,7 +658,18 @@
       "exact_target_method_identity",
       "mutation_generation_snapshot",
       "runtime_cache_version_dependency",
-      "devirtualized_target_symbol"
+      "devirtualized_target_symbol",
+      "callee_body_identity",
+      "callee_body_ir_digest",
+      "inline_candidate_kind",
+      "scalar_signature_proof",
+      "ownership_effects_summary",
+      "source_map_inline_frame_id",
+      "diagnostic_location_id",
+      "inlining_depth",
+      "recursion_state",
+      "callee_generation_snapshot",
+      "inlined_target_symbol"
     ],
     "result_payload_fields": [
       "decision",
@@ -623,6 +690,7 @@
       "runtime_cache_version_verdict",
       "devirtualized_target_symbol",
       "runtime_cache_version_dependency",
+      "inlined_target_symbol",
       "success_claim",
       "diagnostic"
     ],
@@ -672,6 +740,10 @@
       {
         "verifier_id": "runtime-cache-version-dependency-verifier",
         "verifies": "class/category/method mutation invalidation and pinned runtime cache version dependencies"
+      },
+      {
+        "verifier_id": "method-inlining-safe-subset-verifier",
+        "verifies": "callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
       }
     ],
     "pass_proof_contracts": [
@@ -882,9 +954,16 @@
           "side_effect_summary",
           "generation_assumption_validity",
           "semantic_equivalence",
-          "invalidation_completeness"
+          "invalidation_completeness",
+          "callee_body_identity",
+          "scalar_inline_subset",
+          "ownership_arc_effects_replay",
+          "source_map_inline_frame_preservation",
+          "diagnostic_location_preservation",
+          "inlining_depth_recursion_limit",
+          "callee_generation_invalidation"
         ],
-        "invalidation_contract": "reserved pass would invalidate local values, ownership transfer, source-map, and diagnostic proof state",
+        "invalidation_contract": "method inlining invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, runtime metadata, ABI, and package proof state",
         "semantic_equivalence_verdict": "required",
         "runtime_abi_safety_verdict": "required",
         "source_map_debug_impact_verdict": "required",
@@ -892,7 +971,7 @@
         "package_import_abi_identity_verdict": "required",
         "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
         "success_claim_on_skip": false,
-        "fail_closed_diagnostic": "method inlining is reserved until ownership and source-map proofs exist",
+        "fail_closed_diagnostic": "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs",
         "exact_target_eligibility_verdict": "not-applicable",
         "mutation_invalidation_verdict": "not-applicable",
         "runtime_cache_version_verdict": "not-applicable"

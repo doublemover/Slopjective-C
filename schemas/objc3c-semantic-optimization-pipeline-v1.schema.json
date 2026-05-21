@@ -34,13 +34,17 @@
           "allOf": [
             { "contains": { "const": 8175 } },
             { "contains": { "const": 8191 } },
-            { "contains": { "const": 8192 } }
+            { "contains": { "const": 8192 } },
+            { "contains": { "const": 8193 } }
           ]
         },
         "support_claims": {
           "type": "array",
           "items": { "type": "string" },
-          "contains": { "const": "objc3c.behavior.semantic_optimization_pipeline" }
+          "allOf": [
+            { "contains": { "const": "objc3c.behavior.semantic_optimization_pipeline" } },
+            { "contains": { "const": "objc3c.behavior.optimization.method-inlining-safe-subset" } }
+          ]
         },
         "capability_rows_required": {
           "type": "array",
@@ -219,7 +223,10 @@
           "allOf": [
             { "contains": { "const": "source_graph_node_ids" } },
             { "contains": { "const": "static_receiver_type_proof" } },
-            { "contains": { "const": "runtime_cache_version_dependency" } }
+            { "contains": { "const": "runtime_cache_version_dependency" } },
+            { "contains": { "const": "callee_body_identity" } },
+            { "contains": { "const": "inlining_depth" } },
+            { "contains": { "const": "callee_generation_snapshot" } }
           ]
         },
         "result_payload_fields": {
@@ -228,7 +235,8 @@
           "allOf": [
             { "contains": { "const": "success_claim" } },
             { "contains": { "const": "exact_target_eligibility_verdict" } },
-            { "contains": { "const": "runtime_cache_version_verdict" } }
+            { "contains": { "const": "runtime_cache_version_verdict" } },
+            { "contains": { "const": "inlined_target_symbol" } }
           ]
         },
         "required_verdict_fields": {

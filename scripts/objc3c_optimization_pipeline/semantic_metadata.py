@@ -75,11 +75,15 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
     },
     "method-inlining": {
         "ordinal": 70,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "method inlining is reserved until ownership and source-map proofs exist",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "method inlining requires callee body identity, scalar subset, ownership, "
+            "side-effect, source-map, diagnostic, ABI/package, depth, recursion, "
+            "generation, and invalidation proofs"
+        ),
     },
     "cache-aware-dispatch": {
         "ordinal": 80,
@@ -102,15 +106,34 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
 
 def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any]) -> str:
     success_claim = "true" if decision == "APPLIED" else "false"
-    return (
+    key = (
         "objc3-semantic-optimization:v1"
         f";pass={candidate['pass_id']}"
         f";ordinal={plan['ordinal']}"
         f";decision={decision}"
         f";rewrites-ir={str(plan['rewrites_ir']).lower()}"
+        f";invalidates-global-proof-state={str(plan['invalidates_global_proof_state']).lower()}"
         f";success-claim={success_claim}"
         f";source={candidate.get('source_replay_key', '')}"
     )
+    if candidate.get("pass_id") == "method-inlining":
+        inline_gates = (
+            "method_inline_callee_body_identity_present",
+            "method_inline_scalar_subset",
+            "method_inline_ownership_arc_effects_safe",
+            "method_inline_side_effect_summary_safe",
+            "method_inline_source_map_debug_preserved",
+            "method_inline_diagnostic_location_preserved",
+            "method_inline_runtime_abi_safe",
+            "method_inline_package_abi_identical",
+            "method_inline_depth_within_limit",
+            "method_inline_recursion_absent",
+            "method_inline_callee_generation_pinned",
+            "method_inline_invalidation_complete",
+        )
+        for gate in inline_gates:
+            key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
+    return key
 
 
 def _missing_proof_decision(plan: dict[str, Any]) -> str:
@@ -141,6 +164,29 @@ def _result(
 
 
 def _missing(candidate: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    if candidate.get("pass_id") == "method-inlining":
+        missing_gates = [
+            gate
+            for gate in (
+                "benchmark_governance_ready",
+                "method_inline_callee_body_identity_present",
+                "method_inline_scalar_subset",
+                "method_inline_ownership_arc_effects_safe",
+                "method_inline_side_effect_summary_safe",
+                "method_inline_source_map_debug_preserved",
+                "method_inline_diagnostic_location_preserved",
+                "method_inline_runtime_abi_safe",
+                "method_inline_package_abi_identical",
+                "method_inline_depth_within_limit",
+                "method_inline_recursion_absent",
+                "method_inline_callee_generation_pinned",
+                "method_inline_invalidation_complete",
+            )
+            if not candidate.get(gate)
+        ]
+        if missing_gates:
+            diagnostic = plan["diagnostic"] + "; failed gates: " + ", ".join(missing_gates)
+            return _result(candidate, plan, _missing_proof_decision(plan), diagnostic)
     return _result(candidate, plan, _missing_proof_decision(plan), plan["diagnostic"])
 
 
@@ -225,6 +271,24 @@ def evaluate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
             and candidate.get("devirtualization_source_map_debug_preserved")
             and candidate.get("devirtualization_runtime_abi_safe")
             and candidate.get("devirtualization_package_abi_identical")
+        ):
+            return _result(candidate, plan, "APPLIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "method-inlining":
+        if (
+            candidate.get("method_inline_callee_body_identity_present")
+            and candidate.get("method_inline_scalar_subset")
+            and candidate.get("method_inline_ownership_arc_effects_safe")
+            and candidate.get("method_inline_side_effect_summary_safe")
+            and candidate.get("method_inline_source_map_debug_preserved")
+            and candidate.get("method_inline_diagnostic_location_preserved")
+            and candidate.get("method_inline_runtime_abi_safe")
+            and candidate.get("method_inline_package_abi_identical")
+            and candidate.get("method_inline_depth_within_limit")
+            and candidate.get("method_inline_recursion_absent")
+            and candidate.get("method_inline_callee_generation_pinned")
+            and candidate.get("method_inline_invalidation_complete")
         ):
             return _result(candidate, plan, "APPLIED")
         return _missing(candidate, plan)

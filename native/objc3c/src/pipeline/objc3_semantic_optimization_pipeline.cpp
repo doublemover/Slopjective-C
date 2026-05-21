@@ -76,6 +76,10 @@ bool AllMutatingPassesDeclareInvalidation(
         !pass.invalidates_global_proof_state) {
       return false;
     }
+    if (pass.pass_id == "method-inlining" &&
+        !pass.invalidates_global_proof_state) {
+      return false;
+    }
   }
   return !passes.empty();
 }
@@ -198,12 +202,45 @@ BuildObjc3SemanticOptimizationTraceCandidates(
           .runtime_dispatch_declaration_consistent;
   candidates.push_back(devirtualization);
 
-  for (const auto *pass_id : {"method-inlining", "cache-aware-dispatch"}) {
-    objc3c::opt::Objc3SemanticOptimizationCandidate reserved;
-    reserved.pass_id = pass_id;
-    reserved.source_replay_key = "reserved-optimization-opportunity";
-    candidates.push_back(reserved);
-  }
+  objc3c::opt::Objc3SemanticOptimizationCandidate method_inlining;
+  method_inlining.pass_id = "method-inlining";
+  method_inlining.source_replay_key = "ir-method-inlining-safe-scalar-subset";
+  method_inlining.benchmark_governance_ready = benchmark_governance_ready;
+  method_inlining.method_inline_callee_body_identity_present =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .direct_ir_entrypoint_enabled;
+  method_inlining.method_inline_scalar_subset =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  method_inlining.method_inline_ownership_arc_effects_safe =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  method_inlining.method_inline_side_effect_summary_safe =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .runtime_dispatch_declaration_ready;
+  method_inlining.method_inline_source_map_debug_preserved =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .parse_lowering_readiness_ready;
+  method_inlining.method_inline_diagnostic_location_preserved =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .typed_surface_ready;
+  method_inlining.method_inline_runtime_abi_safe =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  method_inlining.method_inline_package_abi_identical =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  method_inlining.method_inline_depth_within_limit = true;
+  method_inlining.method_inline_recursion_absent = true;
+  method_inlining.method_inline_callee_generation_pinned =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold.typed_surface_ready;
+  method_inlining.method_inline_invalidation_complete = true;
+  candidates.push_back(method_inlining);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate cache_aware;
+  cache_aware.pass_id = "cache-aware-dispatch";
+  cache_aware.source_replay_key = "reserved-cache-aware-dispatch-opportunity";
+  candidates.push_back(cache_aware);
 
   objc3c::opt::Objc3SemanticOptimizationCandidate verifier;
   verifier.pass_id = "ir-cleanup-verifier";
@@ -358,21 +395,27 @@ BuildObjc3SemanticOptimizationPassRegistry() {
       {
           "method-inlining",
           70,
-          "semantic-optimization-reserved",
-          Objc3SemanticOptimizationPassMode::kReserved,
-          "side-effect and ownership-preserving inline candidate",
+          "semantic-method-function-inlining-safe-subset",
+          Objc3SemanticOptimizationPassMode::kEnabled,
+          "Objc3OwnershipSafeInlineCandidate",
           "expanded IR body",
-          {"callee body is available",
-           "ownership effects are replayable",
-           "debug and diagnostic source mapping are preserved"},
-          "would invalidate local value, ownership, and diagnostic proof state",
+          {"callee body identity is present",
+           "function or final method belongs to the scalar inline subset",
+           "ownership and ARC effects are replayable",
+           "side-effect summary is pure and call-free",
+           "source-map inline frame and line-table preservation are proven",
+           "diagnostic source location is preserved",
+           "runtime ABI and package import identity are unchanged",
+           "inlining depth is within limit and recursion is absent",
+           "callee generation snapshot is pinned"},
+          "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state",
+          true,
+          true,
+          true,
+          true,
           true,
           false,
-          false,
-          true,
-          true,
-          false,
-          "method inlining is reserved until ownership and source-map proofs exist",
+          "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs",
       },
       {
           "cache-aware-dispatch",

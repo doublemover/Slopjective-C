@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from scripts.objc3c_semantic_optimization_pipeline import (
@@ -72,13 +73,12 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
         REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS
     )
     assert result.payload["enabled_pass_count"] >= 3
-    assert result.payload["reserved_pass_count"] == 2
+    assert result.payload["reserved_pass_count"] == 1
     assert result.payload["reserved_skip_fixture_count"] == (
         result.payload["reserved_pass_count"]
     )
     assert result.payload["reserved_skip_passes"] == [
         "cache-aware-dispatch",
-        "method-inlining",
     ]
     assert result.payload["performance_governance_contract"] == (
         PERFORMANCE_GOVERNANCE_CONTRACT_ID
@@ -162,6 +162,22 @@ def test_semantic_optimization_pipeline_direct_dispatch_trace_is_semantic() -> N
     assert "objc3_runtime_dispatch_i32" not in after_text
     assert "zext i1 %direct to i32" in after_text
     assert "ret i32 %value" in after_text
+
+
+def test_semantic_optimization_pipeline_method_inlining_trace_is_proof_backed() -> None:
+    before = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+    after = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+
+    before_text = before.read_text(encoding="utf-8")
+    assert "call i32 @objc3_inlineable_Math_addOne" in before_text
+    assert "callee body identity: body:Math.addOne:v1" in before_text
+
+    after_text = after.read_text(encoding="utf-8")
+    assert "call i32 @objc3_inlineable_Math_addOne" not in after_text
+    assert "add nsw i32 %value, 1" in after_text
+    assert "source-map inline frame preserved" in after_text
+    assert "diagnostic location preserved" in after_text
+    assert "semantic-optimization.invalidate-global-proof-state" in after_text
 
 
 def _write_pipeline_variant(tmp_path: Path, payload: dict[str, object]) -> Path:
@@ -253,14 +269,86 @@ def test_optimization_proof_model_rejects_stale_package_identity() -> None:
     assert result["package_import_abi_identity_verdict"] == "STALE"
 
 
-def test_optimization_proof_model_reserved_skip_is_not_success() -> None:
+def test_optimization_proof_model_accepts_safe_method_inlining() -> None:
     result = evaluate_optimization_proof_case(
-        _proof_case("method-inlining-reserved-skip-no-success")
+        _proof_case("method-inlining-safe-scalar-function-full-proof-record")
     )
 
-    assert result["decision"] == "SKIPPED_FAIL_CLOSED"
+    assert result["decision"] == "APPLIED"
+    assert result["success_claim"] is True
+    assert result["missing_proofs"] == []
+    assert result["failed_proofs"] == []
+    assert result["inlined_target_symbol"] == "objc3_inlineable_InlineMath_addOne"
+
+
+def test_optimization_proof_model_rechecks_method_inlining_candidate_semantics() -> None:
+    base = _proof_case("method-inlining-safe-scalar-function-full-proof-record")
+
+    dynamic_candidate = deepcopy(base)
+    dynamic_candidate["candidate"]["inline_candidate_kind"] = "dynamic-method"
+    dynamic_result = evaluate_optimization_proof_case(dynamic_candidate)
+    assert dynamic_result["decision"] == "REJECTED_FAIL_CLOSED"
+    assert dynamic_result["failed_proofs"] == ["scalar_inline_subset"]
+
+    side_effecting_candidate = deepcopy(base)
+    side_effecting_candidate["candidate"]["side_effect_summaries"] = [
+        "pure",
+        "reads:none",
+        "writes:globalCounter",
+        "calls:none",
+    ]
+    side_effecting_result = evaluate_optimization_proof_case(side_effecting_candidate)
+    assert side_effecting_result["decision"] == "REJECTED_FAIL_CLOSED"
+    assert side_effecting_result["failed_proofs"] == ["side_effect_summary"]
+
+    stale_generation_candidate = deepcopy(base)
+    stale_generation_candidate["candidate"][
+        "callee_generation_snapshot"
+    ] = "callee-generation=G11"
+    stale_generation_result = evaluate_optimization_proof_case(stale_generation_candidate)
+    assert stale_generation_result["decision"] == "REJECTED_FAIL_CLOSED"
+    assert stale_generation_result["failed_proofs"] == [
+        "callee_generation_invalidation"
+    ]
+
+
+def test_optimization_proof_model_rejects_method_inlining_missing_body_identity() -> None:
+    result = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-callee-body-identity")
+    )
+
+    assert result["decision"] == "REJECTED_FAIL_CLOSED"
     assert result["success_claim"] is False
-    assert set(result["missing_proofs"]) >= REQUIRED_PROOF_IDS
+    assert result["missing_proofs"] == ["callee_body_identity"]
+
+
+def test_optimization_proof_model_rejects_method_inlining_safety_drift() -> None:
+    unsafe_ownership = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-unsafe-ownership-effects")
+    )
+    side_effects = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-side-effecting-callee")
+    )
+    source_map = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-source-map-drift")
+    )
+    package_abi = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-package-abi-drift")
+    )
+    recursion = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-recursion-depth-limit")
+    )
+    stale_generation = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-stale-callee-generation")
+    )
+
+    assert unsafe_ownership["decision"] == "REJECTED_FAIL_CLOSED"
+    assert "ownership_arc_effects_replay" in unsafe_ownership["failed_proofs"]
+    assert side_effects["failed_proofs"] == ["side_effect_summary"]
+    assert "source_map_inline_frame_preservation" in source_map["failed_proofs"]
+    assert package_abi["failed_proofs"] == ["package_import_abi_identity"]
+    assert recursion["failed_proofs"] == ["inlining_depth_recursion_limit"]
+    assert stale_generation["failed_proofs"] == ["callee_generation_invalidation"]
 
 
 def test_semantic_optimization_pipeline_order_drift_fails_closed(tmp_path: Path) -> None:
@@ -296,9 +384,9 @@ def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fix
 ) -> None:
     payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
     for pass_row in payload["pass_registry"]:
-        if pass_row["pass_id"] == "method-inlining":
+        if pass_row["pass_id"] == "cache-aware-dispatch":
             pass_row["fixtures"] = [
-                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
             ]
             break
 
@@ -306,11 +394,11 @@ def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fix
 
     assert not result.passed
     assert any(
-        "skip fixture pass_id mismatch for method-inlining" in failure
+        "skip fixture pass_id mismatch for cache-aware-dispatch" in failure
         for failure in result.failures
     )
     assert any(
-        "missing proofs drift from preservation contract: method-inlining" in failure
+        "missing proofs drift from preservation contract: cache-aware-dispatch" in failure
         for failure in result.failures
     )
 

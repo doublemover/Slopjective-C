@@ -24,8 +24,11 @@ PIPELINE_PATH = (
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "semantic-optimization-pipeline.json"
 PROOF_MODEL_REPORT_PATH = ROOT / "tmp" / "reports" / "optimization-proof-model.json"
-REQUIRED_ISSUES = {8175, 8191, 8192}
+REQUIRED_ISSUES = {8175, 8191, 8192, 8193}
 REQUIRED_SUPPORT_CLAIM = "objc3c.behavior.semantic_optimization_pipeline"
+REQUIRED_METHOD_INLINING_SUPPORT_CLAIM = (
+    "objc3c.behavior.optimization.method-inlining-safe-subset"
+)
 REQUIRED_PASS_ORDER = [
     "semantic-precondition-gate",
     "nil-receiver-folding",
@@ -55,8 +58,8 @@ FAIL_CLOSED_MISSING_PROOF_ACTIONS = {"SKIP_FAIL_CLOSED", "REJECT_FAIL_CLOSED"}
 REQUIRED_CAPABILITY_ROWS = {
     "objc3c.behavior.semantic_optimization_pipeline",
     "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+    "objc3c.behavior.optimization.method-inlining-safe-subset",
     "objc3c.internal.semantic_optimization_pass_registry",
-    "objc3c.reserved.semantic_optimization.method_inlining",
     "objc3c.reserved.semantic_optimization.cache_aware_dispatch",
 }
 REQUIRED_EVIDENCE_IDS = {
@@ -69,6 +72,7 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.proof_model",
     "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
     "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
+    "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
 }
 RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
 REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
@@ -133,6 +137,19 @@ REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS = {
     "runtime_cache_version_dependency",
     "devirtualized_target_symbol",
 }
+REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS = {
+    "callee_body_identity",
+    "callee_body_ir_digest",
+    "inline_candidate_kind",
+    "scalar_signature_proof",
+    "ownership_effects_summary",
+    "source_map_inline_frame_id",
+    "diagnostic_location_id",
+    "inlining_depth",
+    "recursion_state",
+    "callee_generation_snapshot",
+    "inlined_target_symbol",
+}
 REQUIRED_PROOF_RESULT_FIELDS = {
     "decision",
     "reason",
@@ -152,6 +169,7 @@ REQUIRED_PROOF_RESULT_FIELDS = {
     "runtime_cache_version_verdict",
     "devirtualized_target_symbol",
     "runtime_cache_version_dependency",
+    "inlined_target_symbol",
     "success_claim",
 }
 REQUIRED_PROOF_VERDICT_FIELDS = {
@@ -183,7 +201,47 @@ REQUIRED_DEVIRTUALIZATION_PROOF_IDS = {
     "class_category_method_mutation_invalidation",
     "runtime_cache_version_dependency",
 }
-REQUIRED_ALL_PROOF_IDS = REQUIRED_PROOF_IDS | REQUIRED_DEVIRTUALIZATION_PROOF_IDS
+REQUIRED_METHOD_INLINING_PROOF_IDS = {
+    "callee_body_identity",
+    "scalar_inline_subset",
+    "ownership_arc_effects_replay",
+    "source_map_inline_frame_preservation",
+    "diagnostic_location_preservation",
+    "inlining_depth_recursion_limit",
+    "callee_generation_invalidation",
+}
+SAFE_METHOD_INLINING_CANDIDATE_KINDS = {
+    "pure-scalar-free-function",
+    "final-scalar-class-method",
+    "final-scalar-instance-method",
+}
+METHOD_INLINING_REQUIRED_SIDE_EFFECT_SUMMARIES = {
+    "pure",
+    "reads:none",
+    "writes:none",
+    "calls:none",
+    "runtime_helpers:none",
+    "dispatch:none",
+    "allocation:none",
+    "ownership_transfer:none",
+    "error_behavior:none",
+}
+METHOD_INLINING_MAX_DEPTH = 3
+METHOD_INLINING_REQUIRED_INVALIDATED_PROOFS = {
+    "callee_body_identity",
+    "callee_generation",
+    "local_value",
+    "ownership_transfer",
+    "source_map_inline_frame",
+    "diagnostic_location",
+    "runtime_metadata_identity",
+    "package_import_abi_identity",
+}
+REQUIRED_ALL_PROOF_IDS = (
+    REQUIRED_PROOF_IDS
+    | REQUIRED_DEVIRTUALIZATION_PROOF_IDS
+    | REQUIRED_METHOD_INLINING_PROOF_IDS
+)
 REQUIRED_DEVIRTUALIZATION_VERDICT_FIELDS = {
     "exact_target_eligibility_verdict",
     "mutation_invalidation_verdict",
@@ -218,6 +276,7 @@ REQUIRED_VERIFIER_PASSES = {
     "invalidation-completeness-verifier",
     "exact-target-devirtualization-verifier",
     "runtime-cache-version-dependency-verifier",
+    "method-inlining-safe-subset-verifier",
 }
 REQUIRED_PROOF_CASE_IDS = {
     "direct-dispatch-full-proof-record",
@@ -230,7 +289,15 @@ REQUIRED_PROOF_CASE_IDS = {
     "devirtualization-missing-sealed-final-evidence",
     "devirtualization-stale-mutation-generation",
     "devirtualization-runtime-cache-version-drift",
-    "method-inlining-reserved-skip-no-success",
+    "method-inlining-safe-scalar-function-full-proof-record",
+    "method-inlining-final-method-full-proof-record",
+    "method-inlining-missing-callee-body-identity",
+    "method-inlining-unsafe-ownership-effects",
+    "method-inlining-side-effecting-callee",
+    "method-inlining-source-map-drift",
+    "method-inlining-package-abi-drift",
+    "method-inlining-recursion-depth-limit",
+    "method-inlining-stale-callee-generation",
 }
 SAFE_PROOF_VERDICTS = {
     "semantic_equivalence_verdict": {
@@ -407,8 +474,61 @@ def _proof_result_diagnostic(
 
 def _required_proof_ids_for_pass(pass_id: str) -> set[str]:
     if pass_id == "devirtualization":
-        return REQUIRED_ALL_PROOF_IDS
+        return REQUIRED_PROOF_IDS | REQUIRED_DEVIRTUALIZATION_PROOF_IDS
+    if pass_id == "method-inlining":
+        return REQUIRED_PROOF_IDS | REQUIRED_METHOD_INLINING_PROOF_IDS
     return REQUIRED_PROOF_IDS
+
+
+def _method_inlining_candidate_failed_proofs(
+    candidate: dict[str, Any],
+    invalidation: dict[str, Any],
+) -> list[str]:
+    failed: list[str] = []
+
+    if str(candidate.get("inline_candidate_kind", "")) not in (
+        SAFE_METHOD_INLINING_CANDIDATE_KINDS
+    ):
+        failed.append("scalar_inline_subset")
+    if "no-consumed-values" not in str(candidate.get("ownership_effects_summary", "")):
+        failed.append("ownership_arc_effects_replay")
+
+    side_effects = {str(item) for item in _as_list(candidate.get("side_effect_summaries"))}
+    if not METHOD_INLINING_REQUIRED_SIDE_EFFECT_SUMMARIES.issubset(side_effects):
+        failed.append("side_effect_summary")
+
+    if str(candidate.get("line_table_status", "")) != "PRESERVED":
+        failed.append("line_table_debug_status")
+    if not str(candidate.get("source_map_inline_frame_id", "")).startswith(
+        "sm-inline-frame:"
+    ):
+        failed.append("source_map_inline_frame_preservation")
+    if not str(candidate.get("diagnostic_location_id", "")).startswith("diag:inline:"):
+        failed.append("diagnostic_location_preservation")
+
+    try:
+        depth = int(candidate.get("inlining_depth"))
+    except (TypeError, ValueError):
+        failed.append("inlining_depth_recursion_limit")
+    else:
+        if depth < 0 or depth > METHOD_INLINING_MAX_DEPTH:
+            failed.append("inlining_depth_recursion_limit")
+    if str(candidate.get("recursion_state", "")) != "ABSENT":
+        failed.append("inlining_depth_recursion_limit")
+
+    generation_snapshot = str(candidate.get("callee_generation_snapshot", ""))
+    generation_assumptions = {
+        str(item)
+        for item in _as_list(candidate.get("class_category_protocol_generation_assumptions"))
+    }
+    if generation_snapshot not in generation_assumptions:
+        failed.append("callee_generation_invalidation")
+
+    invalidated = {str(proof) for proof in _as_list(invalidation.get("invalidated_proofs"))}
+    if not METHOD_INLINING_REQUIRED_INVALIDATED_PROOFS.issubset(invalidated):
+        failed.append("callee_generation_invalidation")
+
+    return failed
 
 
 def evaluate_optimization_proof_case(
@@ -467,6 +587,18 @@ def evaluate_optimization_proof_case(
                     missing_proofs.append(field)
             elif not str(value or ""):
                 missing_proofs.append(field)
+    if pass_id == "method-inlining":
+        candidate_fields = _as_dict(case.get("candidate"))
+        for field in REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS:
+            value = candidate_fields.get(field)
+            if isinstance(value, list):
+                if not value:
+                    missing_proofs.append(field)
+            elif value is None or str(value) == "":
+                missing_proofs.append(field)
+        failed_proofs.extend(
+            _method_inlining_candidate_failed_proofs(candidate_fields, invalidation)
+        )
 
     missing_proofs = _unique_ordered(missing_proofs)
     failed_proofs = _unique_ordered(failed_proofs)
@@ -538,6 +670,7 @@ def evaluate_optimization_proof_case(
         "runtime_cache_version_dependency": str(
             candidate.get("runtime_cache_version_dependency", "")
         ),
+        "inlined_target_symbol": str(candidate.get("inlined_target_symbol", "")),
         "success_claim": success_claim,
         "diagnostic": diagnostic,
     }
@@ -882,6 +1015,29 @@ def _validate_pass_registry(
         if token not in devirt_text:
             failures.append(f"devirtualization pass missing exact-target proof token: {token}")
 
+    inline_pass = pass_by_id.get("method-inlining", {})
+    inline_text = _pass_text(inline_pass)
+    if inline_pass.get("mode") != "enabled":
+        failures.append("method inlining pass must be enabled for the safe scalar subset")
+    if inline_pass.get("rewrites_ir") is not True:
+        failures.append("method inlining pass must rewrite IR")
+    if inline_pass.get("invalidates_global_proof_state") is not True:
+        failures.append("method inlining pass must invalidate global proof state")
+    for token in (
+        "callee body identity",
+        "ownership",
+        "side-effect",
+        "source-map",
+        "diagnostic",
+        "abi",
+        "depth",
+        "recursion",
+        "generation",
+        "invalidation",
+    ):
+        if token not in inline_text:
+            failures.append(f"method inlining pass missing proof token: {token}")
+
     return pass_by_id
 
 
@@ -1004,6 +1160,26 @@ def _validate_semantic_preservation_contracts(
                 if token not in proof_text:
                     failures.append(
                         f"devirtualization preservation contract missing exact-target proof token: {token}"
+                    )
+        if pass_id == "method-inlining":
+            proof_text = " ".join(
+                required_proofs + [str(row.get("semantic_equivalence", ""))]
+            ).lower()
+            for token in (
+                "callee body identity",
+                "ownership",
+                "side-effect",
+                "source-map",
+                "diagnostic",
+                "abi",
+                "depth",
+                "recursion",
+                "generation",
+                "invalidation",
+            ):
+                if token not in proof_text:
+                    failures.append(
+                        f"method inlining preservation contract missing proof token: {token}"
                     )
 
     missing = [pass_id for pass_id in REQUIRED_PASS_ORDER if pass_id not in contracts_by_id]
@@ -1188,6 +1364,25 @@ def _validate_proof_case_fixture(
                     failures.append(
                         f"devirtualization proof case candidate lacks {field}: {case_id}"
                     )
+        if pass_id == "method-inlining":
+            missing_inline_fields = sorted(
+                REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS.difference(candidate)
+            )
+            if missing_inline_fields:
+                failures.append(
+                    f"method inlining proof case candidate fields missing for {case_id}: "
+                    + ", ".join(missing_inline_fields)
+                )
+            for field in REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS:
+                value = candidate.get(field)
+                if isinstance(value, list):
+                    empty = not value
+                else:
+                    empty = value is None or str(value) == ""
+                if empty:
+                    failures.append(
+                        f"method inlining proof case candidate lacks {field}: {case_id}"
+                    )
 
         result = evaluate_optimization_proof_case(
             row,
@@ -1258,6 +1453,7 @@ def _validate_proof_model(
     if not (
         REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS
         | REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS
+        | REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS
     ).issubset(candidate_fields):
         failures.append("optimization proof model candidate input fields incomplete")
 
@@ -1391,10 +1587,14 @@ def validate_pipeline(
     issue_mapping = _as_dict(pipeline.get("issue_mapping"))
     issues = set(int(issue) for issue in _as_list(issue_mapping.get("primary_issues")))
     if not REQUIRED_ISSUES.issubset(issues):
-        failures.append("semantic optimization pipeline must map to issues #8175, #8191, and #8192")
+        failures.append(
+            "semantic optimization pipeline must map to issues #8175, #8191, #8192, and #8193"
+        )
     support_claims = {str(claim) for claim in _as_list(issue_mapping.get("support_claims"))}
     if REQUIRED_SUPPORT_CLAIM not in support_claims:
         failures.append("semantic optimization pipeline support claim is missing")
+    if REQUIRED_METHOD_INLINING_SUPPORT_CLAIM not in support_claims:
+        failures.append("method inlining safe-subset support claim is missing")
     capability_rows = {
         str(row) for row in _as_list(issue_mapping.get("capability_rows_required"))
     }

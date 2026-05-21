@@ -83,15 +83,22 @@ const std::vector<Objc3SemanticOptimizationPassPlan> &PassPlans() {
        "exact-target devirtualization requires sealed or final dispatch, static receiver, mutation invalidation, runtime cache, ownership, source-map, ABI, and package proofs"},
       {"method-inlining",
        70,
-       Objc3SemanticOptimizationPassMode::kReserved,
+       Objc3SemanticOptimizationPassMode::kEnabled,
        true,
-       false,
-       false,
-       "SKIP_FAIL_CLOSED",
-       {"callee body is available",
-        "ownership effects are replayable",
-        "debug and diagnostic source mapping are preserved"},
-       "method inlining is reserved until ownership and source-map proofs exist"},
+       true,
+       true,
+       "REJECT_FAIL_CLOSED",
+       {"callee body identity is present",
+        "function or final method belongs to the scalar inline subset",
+        "ownership and ARC effects are replayable",
+        "side-effect summary is pure and call-free",
+        "source-map inline frame and line-table preservation are proven",
+        "diagnostic source location is preserved",
+        "runtime ABI and package import identity are unchanged",
+        "inlining depth is within limit and recursion is absent",
+        "callee generation snapshot is pinned",
+        "invalidation covers callee body, generation, ownership, source-map, diagnostic, ABI, and package proof state"},
+       "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"},
       {"cache-aware-dispatch",
        80,
        Objc3SemanticOptimizationPassMode::kReserved,
@@ -159,7 +166,93 @@ std::string BuildObjc3SemanticOptimizationMetadataKey(
       << (decision == Objc3SemanticOptimizationDecision::kApplied ? "true"
                                                                    : "false")
       << ";source=" << candidate.source_replay_key;
+  if (plan.pass_id == "method-inlining") {
+    key << ";inline-callee-body-identity="
+        << (candidate.method_inline_callee_body_identity_present ? "true"
+                                                                 : "false")
+        << ";inline-scalar-subset="
+        << (candidate.method_inline_scalar_subset ? "true" : "false")
+        << ";inline-ownership-arc-effects="
+        << (candidate.method_inline_ownership_arc_effects_safe ? "true"
+                                                               : "false")
+        << ";inline-side-effect-summary="
+        << (candidate.method_inline_side_effect_summary_safe ? "true"
+                                                             : "false")
+        << ";inline-source-map-debug="
+        << (candidate.method_inline_source_map_debug_preserved ? "true"
+                                                               : "false")
+        << ";inline-diagnostic-location="
+        << (candidate.method_inline_diagnostic_location_preserved ? "true"
+                                                                  : "false")
+        << ";inline-runtime-abi="
+        << (candidate.method_inline_runtime_abi_safe ? "true" : "false")
+        << ";inline-package-abi="
+        << (candidate.method_inline_package_abi_identical ? "true" : "false")
+        << ";inline-depth-within-limit="
+        << (candidate.method_inline_depth_within_limit ? "true" : "false")
+        << ";inline-recursion-absent="
+        << (candidate.method_inline_recursion_absent ? "true" : "false")
+        << ";inline-callee-generation-pinned="
+        << (candidate.method_inline_callee_generation_pinned ? "true"
+                                                             : "false")
+        << ";inline-invalidation-complete="
+        << (candidate.method_inline_invalidation_complete ? "true" : "false");
+  }
   return key.str();
+}
+
+void AppendMissingGate(bool present,
+                       const char *gate,
+                       std::vector<std::string> &missing) {
+  if (!present) {
+    missing.push_back(gate);
+  }
+}
+
+std::string BuildMethodInliningFailClosedDiagnostic(
+    const Objc3SemanticOptimizationPassPlan &plan,
+    const Objc3SemanticOptimizationCandidate &candidate) {
+  std::vector<std::string> missing;
+  AppendMissingGate(candidate.benchmark_governance_ready,
+                    "benchmark_governance_ready", missing);
+  AppendMissingGate(candidate.method_inline_callee_body_identity_present,
+                    "method_inline_callee_body_identity_present", missing);
+  AppendMissingGate(candidate.method_inline_scalar_subset,
+                    "method_inline_scalar_subset", missing);
+  AppendMissingGate(candidate.method_inline_ownership_arc_effects_safe,
+                    "method_inline_ownership_arc_effects_safe", missing);
+  AppendMissingGate(candidate.method_inline_side_effect_summary_safe,
+                    "method_inline_side_effect_summary_safe", missing);
+  AppendMissingGate(candidate.method_inline_source_map_debug_preserved,
+                    "method_inline_source_map_debug_preserved", missing);
+  AppendMissingGate(candidate.method_inline_diagnostic_location_preserved,
+                    "method_inline_diagnostic_location_preserved", missing);
+  AppendMissingGate(candidate.method_inline_runtime_abi_safe,
+                    "method_inline_runtime_abi_safe", missing);
+  AppendMissingGate(candidate.method_inline_package_abi_identical,
+                    "method_inline_package_abi_identical", missing);
+  AppendMissingGate(candidate.method_inline_depth_within_limit,
+                    "method_inline_depth_within_limit", missing);
+  AppendMissingGate(candidate.method_inline_recursion_absent,
+                    "method_inline_recursion_absent", missing);
+  AppendMissingGate(candidate.method_inline_callee_generation_pinned,
+                    "method_inline_callee_generation_pinned", missing);
+  AppendMissingGate(candidate.method_inline_invalidation_complete,
+                    "method_inline_invalidation_complete", missing);
+
+  if (missing.empty()) {
+    return plan.failure_diagnostic;
+  }
+
+  std::ostringstream diagnostic;
+  diagnostic << plan.failure_diagnostic << "; failed gates: ";
+  for (std::size_t i = 0; i < missing.size(); ++i) {
+    if (i != 0) {
+      diagnostic << ", ";
+    }
+    diagnostic << missing[i];
+  }
+  return diagnostic.str();
 }
 
 Objc3SemanticOptimizationResult MakeResult(
@@ -186,6 +279,10 @@ Objc3SemanticOptimizationResult MakeResult(
 Objc3SemanticOptimizationResult MissingProofResult(
     const Objc3SemanticOptimizationPassPlan &plan,
     const Objc3SemanticOptimizationCandidate &candidate) {
+  if (plan.pass_id == "method-inlining") {
+    return MakeResult(plan, MissingProofDecision(plan), candidate,
+                      BuildMethodInliningFailClosedDiagnostic(plan, candidate));
+  }
   return MakeResult(plan, MissingProofDecision(plan), candidate,
                     plan.failure_diagnostic);
 }
@@ -302,6 +399,25 @@ Objc3SemanticOptimizationResult EvaluateObjc3SemanticOptimizationCandidate(
     return MissingProofResult(*plan, candidate);
   }
 
+  if (plan->pass_id == "method-inlining") {
+    if (candidate.method_inline_callee_body_identity_present &&
+        candidate.method_inline_scalar_subset &&
+        candidate.method_inline_ownership_arc_effects_safe &&
+        candidate.method_inline_side_effect_summary_safe &&
+        candidate.method_inline_source_map_debug_preserved &&
+        candidate.method_inline_diagnostic_location_preserved &&
+        candidate.method_inline_runtime_abi_safe &&
+        candidate.method_inline_package_abi_identical &&
+        candidate.method_inline_depth_within_limit &&
+        candidate.method_inline_recursion_absent &&
+        candidate.method_inline_callee_generation_pinned &&
+        candidate.method_inline_invalidation_complete) {
+      return MakeResult(*plan, Objc3SemanticOptimizationDecision::kApplied,
+                        candidate, "");
+    }
+    return MissingProofResult(*plan, candidate);
+  }
+
   if (plan->pass_id == "ir-cleanup-verifier") {
     if (candidate.all_prior_mutations_declared_invalidation &&
         candidate.unsupported_skips_emit_no_success_claim &&
@@ -338,6 +454,10 @@ bool AllObjc3SemanticOptimizationTraceMutationsDeclareInvalidation(
       return false;
     }
     if (result.pass_id == "devirtualization" &&
+        !result.invalidates_global_proof_state) {
+      return false;
+    }
+    if (result.pass_id == "method-inlining" &&
         !result.invalidates_global_proof_state) {
       return false;
     }

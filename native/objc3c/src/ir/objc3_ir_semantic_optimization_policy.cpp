@@ -60,11 +60,11 @@ BuildObjc3IRSemanticOptimizationProofContracts() {
        false,
        false},
       {"method-inlining",
-       "available callee body, replayable ownership effects, and source map",
-       "SKIP_FAIL_CLOSED",
+       "callee body identity, scalar subset, ownership and side-effect summaries, source-map and diagnostic preservation, ABI/package identity, depth and recursion limits, callee generation snapshot, and invalidation completeness",
+       "REJECT_FAIL_CLOSED",
        true,
-       false,
-       false,
+       true,
+       true,
        false},
       {"cache-aware-dispatch",
        "runtime cache invalidation semantics and ABI-stable helper symbol",
@@ -111,6 +111,12 @@ bool IsObjc3IRSemanticOptimizationProofContractFailClosed(
       !contract.invalidates_global_proof_state) {
     reason =
         "direct dispatch semantic optimization must invalidate global proof state";
+    return false;
+  }
+  if (contract.pass_id == "method-inlining" &&
+      !contract.invalidates_global_proof_state) {
+    reason =
+        "method inlining semantic optimization must invalidate global proof state";
     return false;
   }
   reason.clear();
