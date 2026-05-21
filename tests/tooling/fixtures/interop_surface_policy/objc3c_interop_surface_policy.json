@@ -1,0 +1,372 @@
+{
+  "contract_id": "objc3c.interop.surface.policy.v1",
+  "schema": "schemas/objc3c-interop-surface-policy-v1.schema.json",
+  "issue_refs": [
+    8165
+  ],
+  "source_authority": "checked-in-interop-surface-policy-fixture",
+  "evidence_log_allowed": false,
+  "public_commands": [
+    "npm run objc3c -- validate-module-interop-contracts",
+    "npm run objc3c -- validate-interop-conformance",
+    "npm run objc3c -- validate-runnable-interop",
+    "npm run objc3c -- validate-migration-workflow",
+    "npm run objc3c -- validate-package-ecosystem"
+  ],
+  "lanes": [
+    {
+      "lane_id": "c.header-import-export",
+      "language": "c",
+      "interop_kind": "header-import-export",
+      "public_state": "supported",
+      "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [
+        "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+        "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+      ],
+      "public_commands": [
+        "npm run objc3c -- validate-module-interop-contracts",
+        "npm run objc3c -- validate-interop-conformance"
+      ],
+      "policy_anchors": [
+        "schemas/objc3c-module-interop-contract-v1.schema.json",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3MOD8166",
+          "condition": "imported module ABI identity or bridge metadata digest drifts"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "explicit-retain-release-transfer",
+        "errors": "status-or-nserror-bridge",
+        "async": "callback-requires-bridge-metadata",
+        "object_identity": "opaque-handle"
+      },
+      "notes": "C interop support is limited to checked header import/export and generated bridge metadata."
+    },
+    {
+      "lane_id": "objc2.metadata-only-migration",
+      "language": "objc2",
+      "interop_kind": "metadata-only-migration",
+      "public_state": "supported",
+      "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [
+        "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
+        "tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json"
+      ],
+      "public_commands": [
+        "npm run objc3c -- validate-module-interop-contracts",
+        "npm run objc3c -- validate-migration-workflow"
+      ],
+      "policy_anchors": [
+        "docs/runbooks/objc3c_adoption_legibility.md",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8165",
+          "condition": "retired Objective-C 2 syntax is presented as accepted Objective-C 3 source"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "arc-boundary-explicit",
+        "errors": "nserror-out-parameter-only",
+        "async": "block-callback-requires-metadata",
+        "object_identity": "objc-object-identity-preserved"
+      },
+      "notes": "Objective-C 2 support is metadata and migration routing only; retired source syntax remains rejected."
+    },
+    {
+      "lane_id": "swift.annotation-metadata",
+      "language": "swift",
+      "interop_kind": "annotation-metadata",
+      "public_state": "supported",
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [
+        "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3",
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+        "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/valid_bridge_surface.json"
+      ],
+      "public_commands": [
+        "npm run objc3c -- validate-interop-conformance",
+        "npm run objc3c -- validate-package-ecosystem"
+      ],
+      "policy_anchors": [
+        "scripts/check_runtime_import_interop_bridge_metadata.py",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8166",
+          "condition": "Swift ABI import or async/throws bridging is claimed without executable bridge proof"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "explicit-bridged-reference",
+        "errors": "throws-mapped-through-bridge-metadata-only",
+        "async": "async-import-reserved-without-runtime-proof",
+        "object_identity": "stable-objc-identity"
+      },
+      "notes": "Swift support is limited to checked objc_swift_name and objc_swift_private metadata preservation."
+    },
+    {
+      "lane_id": "cpp.annotation-metadata",
+      "language": "cpp",
+      "interop_kind": "annotation-metadata",
+      "public_state": "supported",
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [
+        "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3",
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+        "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/valid_bridge_surface.json"
+      ],
+      "public_commands": [
+        "npm run objc3c -- validate-interop-conformance",
+        "npm run objc3c -- validate-package-ecosystem"
+      ],
+      "policy_anchors": [
+        "scripts/check_runtime_import_interop_bridge_metadata.py",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8167",
+          "condition": "C++ template instantiation or C++ ABI import is claimed without executable bridge proof"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "explicit-raii-boundary-metadata",
+        "errors": "status-or-nserror-bridge",
+        "async": "no-implicit-async-thunks",
+        "object_identity": "stable-opaque-handle"
+      },
+      "notes": "C++ support is limited to checked objc_cxx_name and objc_header_name metadata preservation."
+    },
+    {
+      "lane_id": "package.mixed-image-loader-metadata",
+      "language": "package",
+      "interop_kind": "package-loader-metadata",
+      "public_state": "supported",
+      "support_claim": "objc3c.behavior.runtime.interop.mixed-image-replay",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+        "tests/tooling/fixtures/native/interop_lowering_abi_contract_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3"
+      ],
+      "public_commands": [
+        "npm run objc3c -- validate-interop-conformance",
+        "npm run objc3c -- validate-package-ecosystem"
+      ],
+      "policy_anchors": [
+        "scripts/package_ecosystem_contracts.py",
+        "docs/runbooks/objc3c_package_ecosystem.md",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3PKG8054",
+          "condition": "mixed-image interop package metadata digest or payload drifts"
+        },
+        {
+          "code": "O3PKG8053",
+          "condition": "unsafe mixed-image bridge topology is presented as loadable"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "package-lock-digest-owned",
+        "errors": "stable-o3pkg-diagnostics",
+        "async": "no-package-stage-async-upgrade",
+        "object_identity": "image-and-symbol-owner-bound"
+      },
+      "notes": "Package interop support is limited to local mixed-image metadata with digest-checked bridge surfaces."
+    },
+    {
+      "lane_id": "swift.full-abi-callable-import",
+      "language": "swift",
+      "interop_kind": "full-abi-callable-import",
+      "public_state": "reserved",
+      "support_claim": "",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [],
+      "public_commands": [],
+      "policy_anchors": [
+        "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8166",
+          "condition": "Swift ABI import is requested outside annotation metadata preservation"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "reserved-until-executable-swift-proof",
+        "errors": "reserved-until-throws-bridge-proof",
+        "async": "reserved-until-async-import-proof",
+        "object_identity": "reserved-until-swift-identity-proof"
+      },
+      "notes": "Swift ABI import, protocol bridging, async import, and throws bridging are not claimed."
+    },
+    {
+      "lane_id": "cpp.template-and-abi-import",
+      "language": "cpp",
+      "interop_kind": "full-abi-callable-import",
+      "public_state": "reserved",
+      "support_claim": "",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [],
+      "public_commands": [],
+      "policy_anchors": [
+        "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8167",
+          "condition": "C++ template or ABI import is requested outside annotation metadata preservation"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "reserved-until-executable-cpp-proof",
+        "errors": "reserved-until-cpp-exception-policy",
+        "async": "reserved-no-implicit-cpp-thunks",
+        "object_identity": "reserved-until-cpp-object-identity-proof"
+      },
+      "notes": "C++ ABI import and template instantiation remain reserved."
+    },
+    {
+      "lane_id": "objc2.retired-source-compatibility",
+      "language": "objc2",
+      "interop_kind": "source-compatibility",
+      "public_state": "rejected",
+      "support_claim": "",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [],
+      "public_commands": [],
+      "policy_anchors": [
+        "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3INT8165",
+          "condition": "retired Objective-C 2 syntax is submitted as Objective-C 3 source"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "rejected-retired-source",
+        "errors": "stable-interop-diagnostic",
+        "async": "not-applicable-retired-source",
+        "object_identity": "metadata-only-bridge-required"
+      },
+      "notes": "Objective-C 2 source compatibility is rejected; migration tooling may route it to metadata contracts."
+    },
+    {
+      "lane_id": "package.unchecked-abi-alignment-fallback",
+      "language": "package",
+      "interop_kind": "abi-alignment-fallback",
+      "public_state": "rejected",
+      "support_claim": "",
+      "complete_language_compatibility_claimed": false,
+      "source_syntax_compatibility_claimed": false,
+      "fail_closed": true,
+      "evidence_anchors": [],
+      "public_commands": [],
+      "policy_anchors": [
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+        "docs/runbooks/objc3c_package_ecosystem.md",
+        "docs/runbooks/objc3c_interop_surface.md"
+      ],
+      "diagnostics": [
+        {
+          "code": "O3PKG8052",
+          "condition": "ABI alignment metadata is missing, malformed, or unsupported"
+        }
+      ],
+      "safety_policies": {
+        "ownership": "rejected-unchecked-abi",
+        "errors": "stable-o3pkg-diagnostic",
+        "async": "not-package-loader-upgradable",
+        "object_identity": "image-owner-metadata-required"
+      },
+      "notes": "Unchecked ABI alignment fallback is rejected before mixed-image loading."
+    }
+  ],
+  "bridge_metadata_policy": {
+    "runtime_import_surface_fixture": "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/valid_bridge_surface.json",
+    "tampered_runtime_import_surface_fixture": "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/tampered_bridge_surface.json",
+    "checker": "scripts/check_runtime_import_interop_bridge_metadata.py",
+    "canonical_artifact_paths": {
+      "header": "module.interop-bridge.h",
+      "modulemap": "module.interop-bridge.modulemap",
+      "bridge": "module.interop-bridge.json"
+    },
+    "active_bridge_requires": [
+      "ready-foreign-surface-packet",
+      "ready-ffi-preservation-packet",
+      "deterministic-replay-metadata",
+      "foreign-callable-count-match",
+      "import-module-metadata",
+      "header-annotation-coverage",
+      "swift-or-cpp-facing-annotation-metadata"
+    ],
+    "fail_closed_messages": [
+      "header artifact path traverses directories",
+      "active bridge packet has no C++ or Swift-facing metadata"
+    ]
+  },
+  "package_loader_policy": {
+    "metadata_fixture": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+    "required_package_ids": [
+      "showcase:patchKit",
+      "stdlib:objc3.system"
+    ],
+    "required_bridge_kinds": [
+      "objcxx",
+      "swift"
+    ],
+    "tamper_diagnostic": "O3PKG8054",
+    "unsupported_surfaces": [
+      "network-resolved interop metadata",
+      "hosted registry mixed-image restore",
+      "unchecked ABI alignment fallback"
+    ]
+  },
+  "fail_closed_policy": {
+    "fallback_or_compatibility_shim_allowed": false,
+    "objc2_source_compatibility_claimed": false,
+    "swift_abi_import_claimed": false,
+    "cpp_template_import_claimed": false,
+    "unchecked_abi_alignment_fallback_allowed": false,
+    "network_resolved_interop_metadata_allowed": false
+  },
+  "docs": {
+    "runbook": "docs/runbooks/objc3c_interop_surface.md"
+  }
+}

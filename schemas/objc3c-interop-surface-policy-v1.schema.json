@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-interop-surface-policy-v1.schema.json",
+  "title": "Objective-C 3 interop surface policy",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema",
+    "issue_refs",
+    "source_authority",
+    "evidence_log_allowed",
+    "public_commands",
+    "lanes",
+    "bridge_metadata_policy",
+    "package_loader_policy",
+    "fail_closed_policy",
+    "docs"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.interop.surface.policy.v1"
+    },
+    "schema": {
+      "const": "schemas/objc3c-interop-surface-policy-v1.schema.json"
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": { "enum": [8165] },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "source_authority": {
+      "const": "checked-in-interop-surface-policy-fixture"
+    },
+    "evidence_log_allowed": {
+      "const": false
+    },
+    "public_commands": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/publicCommand" },
+      "minItems": 3,
+      "uniqueItems": true
+    },
+    "lanes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/lane" },
+      "minItems": 8
+    },
+    "bridge_metadata_policy": {
+      "type": "object",
+      "required": [
+        "runtime_import_surface_fixture",
+        "tampered_runtime_import_surface_fixture",
+        "checker",
+        "canonical_artifact_paths",
+        "active_bridge_requires",
+        "fail_closed_messages"
+      ],
+      "properties": {
+        "runtime_import_surface_fixture": { "type": "string", "minLength": 1 },
+        "tampered_runtime_import_surface_fixture": { "type": "string", "minLength": 1 },
+        "checker": { "type": "string", "minLength": 1 },
+        "canonical_artifact_paths": {
+          "type": "object",
+          "required": ["header", "modulemap", "bridge"],
+          "properties": {
+            "header": { "const": "module.interop-bridge.h" },
+            "modulemap": { "const": "module.interop-bridge.modulemap" },
+            "bridge": { "const": "module.interop-bridge.json" }
+          },
+          "additionalProperties": false
+        },
+        "active_bridge_requires": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "fail_closed_messages": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "package_loader_policy": {
+      "type": "object",
+      "required": [
+        "metadata_fixture",
+        "required_package_ids",
+        "required_bridge_kinds",
+        "tamper_diagnostic",
+        "unsupported_surfaces"
+      ],
+      "properties": {
+        "metadata_fixture": { "type": "string", "minLength": 1 },
+        "required_package_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_bridge_kinds": {
+          "type": "array",
+          "items": { "enum": ["objcxx", "swift"] },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "tamper_diagnostic": { "const": "O3PKG8054" },
+        "unsupported_surfaces": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 3,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "fail_closed_policy": {
+      "type": "object",
+      "required": [
+        "fallback_or_compatibility_shim_allowed",
+        "objc2_source_compatibility_claimed",
+        "swift_abi_import_claimed",
+        "cpp_template_import_claimed",
+        "unchecked_abi_alignment_fallback_allowed",
+        "network_resolved_interop_metadata_allowed"
+      ],
+      "properties": {
+        "fallback_or_compatibility_shim_allowed": { "const": false },
+        "objc2_source_compatibility_claimed": { "const": false },
+        "swift_abi_import_claimed": { "const": false },
+        "cpp_template_import_claimed": { "const": false },
+        "unchecked_abi_alignment_fallback_allowed": { "const": false },
+        "network_resolved_interop_metadata_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "docs": {
+      "type": "object",
+      "required": ["runbook"],
+      "properties": {
+        "runbook": { "const": "docs/runbooks/objc3c_interop_surface.md" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "publicCommand": {
+      "enum": [
+        "npm run objc3c -- validate-module-interop-contracts",
+        "npm run objc3c -- validate-interop-conformance",
+        "npm run objc3c -- validate-runnable-interop",
+        "npm run objc3c -- validate-migration-workflow",
+        "npm run objc3c -- validate-package-ecosystem"
+      ]
+    },
+    "lane": {
+      "type": "object",
+      "required": [
+        "lane_id",
+        "language",
+        "interop_kind",
+        "public_state",
+        "support_claim",
+        "complete_language_compatibility_claimed",
+        "source_syntax_compatibility_claimed",
+        "fail_closed",
+        "evidence_anchors",
+        "public_commands",
+        "policy_anchors",
+        "diagnostics",
+        "safety_policies",
+        "notes"
+      ],
+      "properties": {
+        "lane_id": { "type": "string", "minLength": 1 },
+        "language": { "enum": ["c", "objc2", "swift", "cpp", "package"] },
+        "interop_kind": {
+          "enum": [
+            "header-import-export",
+            "metadata-only-migration",
+            "annotation-metadata",
+            "full-abi-callable-import",
+            "source-compatibility",
+            "package-loader-metadata",
+            "abi-alignment-fallback"
+          ]
+        },
+        "public_state": { "enum": ["supported", "reserved", "rejected"] },
+        "support_claim": { "type": "string" },
+        "complete_language_compatibility_claimed": { "const": false },
+        "source_syntax_compatibility_claimed": { "const": false },
+        "fail_closed": { "const": true },
+        "evidence_anchors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "public_commands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicCommand" },
+          "uniqueItems": true
+        },
+        "policy_anchors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "condition"],
+            "properties": {
+              "code": { "type": "string", "pattern": "^O3" },
+              "condition": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
+          "uniqueItems": true
+        },
+        "safety_policies": {
+          "type": "object",
+          "required": ["ownership", "errors", "async", "object_identity"],
+          "properties": {
+            "ownership": { "type": "string", "minLength": 1 },
+            "errors": { "type": "string", "minLength": 1 },
+            "async": { "type": "string", "minLength": 1 },
+            "object_identity": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "notes": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
