@@ -13,6 +13,15 @@ from scripts.platform_hardening_contracts.support_evidence import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+REQUIRED_TOOLCHAIN_COMPONENTS = [
+    "llvm",
+    "clang",
+    "cmake",
+    "ninja",
+    "python",
+    "node",
+    "pwsh",
+]
 
 
 def load_fixture(relative_path: str) -> dict:
@@ -38,6 +47,11 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "support_claims_require_live_network": False,
         "network_unavailable_result": "skip-no-support-claim",
         "unsupported_host_result": "fail-closed",
+    }
+    assert evidence["toolchain_evidence_requirements"] == {
+        "required_components": REQUIRED_TOOLCHAIN_COMPONENTS,
+        "support_claim_policy": "evidence-bound-current-probes-only",
+        "unsupported_component_behavior": "fail-closed-no-range-claim",
     }
     assert [row["row_id"] for row in evidence["support_rows"]] == [
         "objc3c.platform.windows-x64.tier1",
@@ -66,12 +80,38 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     ]
     assert [row["platform_id"] for row in supported_rows] == ["windows-x64"]
     windows_row = supported_rows[0]
+    assert windows_row["required_toolchain_components"] == REQUIRED_TOOLCHAIN_COMPONENTS
     assert windows_row["evidence"] == {
         "build": "objc3c.evidence.platform.windows-x64.build.native-binaries",
         "package": "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
         "install": "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
         "execution": "objc3c.evidence.platform.windows-x64.execution.native-smoke",
     }
+    assert windows_row["toolchain_evidence_ids"] == [
+        "objc3c.evidence.toolchain.llvm.current-probe",
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+        "objc3c.evidence.toolchain.python-node-pwsh.package-bridge",
+    ]
+    toolchain_ranges = payload["toolchain_support"]["toolchain_ranges"]
+    assert payload["toolchain_support"]["toolchain_evidence_requirements"] == {
+        "required_components": REQUIRED_TOOLCHAIN_COMPONENTS,
+        "support_claim_policy": "evidence-bound-current-probes-only",
+        "unsupported_component_behavior": "fail-closed-no-range-claim",
+    }
+    assert {row["component"] for row in toolchain_ranges} == set(REQUIRED_TOOLCHAIN_COMPONENTS)
+    assert {
+        row["component"]: row["range_claim"]
+        for row in toolchain_ranges
+    } == {
+        "llvm": "current-probed-executable-only",
+        "clang": "current-clangxx-executable-only",
+        "cmake": "current-cmake-executable-only",
+        "ninja": "current-ninja-executable-only",
+        "python": "checked-in-package-bridge-current-major-lines-only",
+        "node": "current-node-executable-used-by-public-npm-bridge-only",
+        "pwsh": "current-pwsh-executable-used-by-packaging-scripts-only",
+    }
+    assert all(row["required_evidence_classes"] == ["toolchain"] for row in toolchain_ranges)
     clean_room_record = next(
         record
         for record in payload["evidence_records"]
@@ -135,4 +175,24 @@ def test_platform_toolchain_support_evidence_rejects_unsupported_host_widening()
             break
 
     with pytest.raises(RuntimeError, match="widened support outside"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_missing_required_toolchain_component() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["toolchain_ranges"] = [
+        row
+        for row in evidence["toolchain_ranges"]
+        if row["component"] != "node"
+    ]
+
+    with pytest.raises(RuntimeError, match="missing required node toolchain range"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_toolchain_compatibility_claim() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["toolchain_ranges"][0]["range_claim"] = "compatible fallback LLVM versions"
+
+    with pytest.raises(RuntimeError, match="unsupported compatibility language"):
         validate_evidence(evidence)

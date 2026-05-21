@@ -275,10 +275,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "toolchain_evidence_requirements",
         "toolchain_ranges",
         "sanitizer_variants"
       ],
       "properties": {
+        "toolchain_evidence_requirements": {
+          "type": "object"
+        },
         "toolchain_ranges": {
           "type": "array"
         },

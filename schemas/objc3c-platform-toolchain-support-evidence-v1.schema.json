@@ -13,6 +13,7 @@
     "owner_policy",
     "network_policy",
     "support_rows",
+    "toolchain_evidence_requirements",
     "toolchain_ranges",
     "sanitizer_variants",
     "evidence_records"
@@ -62,6 +63,39 @@
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/supportRow"
+      }
+    },
+    "toolchain_evidence_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_components",
+        "support_claim_policy",
+        "unsupported_component_behavior"
+      ],
+      "properties": {
+        "required_components": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "llvm",
+              "clang",
+              "cmake",
+              "ninja",
+              "python",
+              "node",
+              "pwsh"
+            ]
+          },
+          "minItems": 7,
+          "uniqueItems": true
+        },
+        "support_claim_policy": {
+          "const": "evidence-bound-current-probes-only"
+        },
+        "unsupported_component_behavior": {
+          "const": "fail-closed-no-range-claim"
+        }
       }
     },
     "toolchain_ranges": {
@@ -138,6 +172,21 @@
             ]
           }
         },
+        "required_toolchain_components": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "llvm",
+              "clang",
+              "cmake",
+              "ninja",
+              "python",
+              "node",
+              "pwsh"
+            ]
+          },
+          "uniqueItems": true
+        },
         "evidence": {
           "type": "object",
           "additionalProperties": {
@@ -179,6 +228,7 @@
         "platform_ids",
         "claim_state",
         "range_claim",
+        "required_evidence_classes",
         "evidence_ids",
         "unsupported_version_behavior"
       ],
@@ -211,6 +261,14 @@
         },
         "range_claim": {
           "type": "string"
+        },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "const": "toolchain"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "evidence_ids": {
           "type": "array",

@@ -20,6 +20,19 @@
     "network_unavailable_result": "skip-no-support-claim",
     "unsupported_host_result": "fail-closed"
   },
+  "toolchain_evidence_requirements": {
+    "required_components": [
+      "llvm",
+      "clang",
+      "cmake",
+      "ninja",
+      "python",
+      "node",
+      "pwsh"
+    ],
+    "support_claim_policy": "evidence-bound-current-probes-only",
+    "unsupported_component_behavior": "fail-closed-no-range-claim"
+  },
   "support_rows": [
     {
       "row_id": "objc3c.platform.windows-x64.tier1",
@@ -35,6 +48,15 @@
         "install",
         "execution"
       ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
       "evidence": {
         "build": "objc3c.evidence.platform.windows-x64.build.native-binaries",
         "package": "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
@@ -43,6 +65,7 @@
       },
       "toolchain_evidence_ids": [
         "objc3c.evidence.toolchain.llvm.current-probe",
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
         "objc3c.evidence.toolchain.python-node-pwsh.package-bridge"
       ],
       "hosted_ci_evidence_ids": [
@@ -91,8 +114,59 @@
       ],
       "claim_state": "evidence-bound",
       "range_claim": "current-probed-executable-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.llvm.current-probe"
+      ],
+      "unsupported_version_behavior": "fail-closed-no-range-claim"
+    },
+    {
+      "toolchain_id": "objc3c.toolchain.clang.current-probed-executable",
+      "component": "clang",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
+      "range_claim": "current-clangxx-executable-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution"
+      ],
+      "unsupported_version_behavior": "fail-closed-no-range-claim"
+    },
+    {
+      "toolchain_id": "objc3c.toolchain.cmake.current-probed-executable",
+      "component": "cmake",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
+      "range_claim": "current-cmake-executable-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution"
+      ],
+      "unsupported_version_behavior": "fail-closed-no-range-claim"
+    },
+    {
+      "toolchain_id": "objc3c.toolchain.ninja.current-probed-executable",
+      "component": "ninja",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
+      "range_claim": "current-ninja-executable-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution"
       ],
       "unsupported_version_behavior": "fail-closed-no-range-claim"
     },
@@ -104,6 +178,41 @@
       ],
       "claim_state": "evidence-bound",
       "range_claim": "checked-in-package-bridge-current-major-lines-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.toolchain.python-node-pwsh.package-bridge"
+      ],
+      "unsupported_version_behavior": "fail-closed-no-range-claim"
+    },
+    {
+      "toolchain_id": "objc3c.toolchain.node.package-bridge-current",
+      "component": "node",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
+      "range_claim": "current-node-executable-used-by-public-npm-bridge-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.toolchain.python-node-pwsh.package-bridge"
+      ],
+      "unsupported_version_behavior": "fail-closed-no-range-claim"
+    },
+    {
+      "toolchain_id": "objc3c.toolchain.pwsh.package-bridge-current",
+      "component": "pwsh",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
+      "range_claim": "current-pwsh-executable-used-by-packaging-scripts-only",
+      "required_evidence_classes": [
+        "toolchain"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.python-node-pwsh.package-bridge"
       ],
@@ -224,6 +333,26 @@
       ],
       "generated_report_paths": [
         "tmp/reports/platform-hardening/toolchain-range-replay/llvm-capabilities.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+      "evidence_class": "toolchain",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "scripts/build_objc3c_native.ps1",
+        "scripts/objc3c_native_cmake/toolchain.psm1"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- build-native-binaries"
+      ],
+      "generated_report_paths": [
+        "tmp/build-objc3c-native/native_build_summary.json"
       ],
       "supports_platform_ids": [
         "windows-x64"

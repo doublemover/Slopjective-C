@@ -110,7 +110,10 @@
   "required_tools": [
     "pwsh",
     "python",
-    "clang++"
+    "node",
+    "clang++",
+    "cmake",
+    "ninja"
   ],
   "gap_claims": [
     "no non-windows-x64 support claim",

@@ -22,6 +22,22 @@ REQUIRED_SUPPORTED_EVIDENCE_CLASSES: tuple[str, ...] = (
     "install",
     "execution",
 )
+REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS: tuple[str, ...] = (
+    "llvm",
+    "clang",
+    "cmake",
+    "ninja",
+    "python",
+    "node",
+    "pwsh",
+)
+FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
+    "all",
+    "best-effort",
+    "best effort",
+    "compat",
+    "fallback",
+)
 CLEAN_INSTALL_SUMMARY_PATH = (
     "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
 )
@@ -153,6 +169,77 @@ def _require_no_claims_outside_boundary(
             )
 
 
+def _required_toolchain_components(payload: dict[str, Any]) -> set[str]:
+    requirements = payload.get("toolchain_evidence_requirements")
+    expect(isinstance(requirements, dict), "platform support evidence missing toolchain_evidence_requirements")
+    components = [str(component) for component in requirements.get("required_components", [])]
+    expect(components, "platform support evidence missing required toolchain components")
+    expect(
+        set(components) == set(REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS),
+        "platform support evidence required toolchain components drifted",
+    )
+    expect(
+        requirements.get("unsupported_component_behavior") == "fail-closed-no-range-claim",
+        "unsupported toolchain components must fail closed",
+    )
+    expect(
+        requirements.get("support_claim_policy") == "evidence-bound-current-probes-only",
+        "toolchain support claim policy drifted",
+    )
+    return set(components)
+
+
+def _toolchain_ranges_by_component(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    by_component: dict[str, dict[str, Any]] = {}
+    for toolchain_range in payload.get("toolchain_ranges", []):
+        component = str(toolchain_range.get("component", ""))
+        expect(component, "toolchain range missing component")
+        expect(component not in by_component, f"duplicate toolchain range component: {component}")
+        by_component[component] = toolchain_range
+
+        claim_state = str(toolchain_range.get("claim_state", ""))
+        range_claim = str(toolchain_range.get("range_claim", "")).lower()
+        expect(
+            toolchain_range.get("unsupported_version_behavior") == "fail-closed-no-range-claim",
+            f"{component} toolchain range must fail closed outside evidence",
+        )
+        for forbidden_term in FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS:
+            expect(
+                forbidden_term not in range_claim,
+                f"{component} toolchain range used unsupported compatibility language: {forbidden_term}",
+            )
+
+        platform_ids = [str(platform_id) for platform_id in toolchain_range.get("platform_ids", [])]
+        evidence_ids = [str(evidence_id) for evidence_id in toolchain_range.get("evidence_ids", [])]
+        required_classes = [str(item) for item in toolchain_range.get("required_evidence_classes", [])]
+        expect(required_classes == ["toolchain"], f"{component} toolchain range must require toolchain evidence")
+        expect(evidence_ids, f"{component} toolchain range missing evidence_ids")
+
+        if claim_state == "evidence-bound":
+            expect(platform_ids, f"{component} evidence-bound toolchain range missing platform ids")
+            for platform_id in platform_ids:
+                expect(platform_id in boundary_supported_platform_ids, f"{component} toolchain range widened support to {platform_id}")
+            for evidence_id in evidence_ids:
+                expect(evidence_id in records_by_id, f"{component} toolchain range missing evidence record {evidence_id}")
+                record = records_by_id[evidence_id]
+                for platform_id in platform_ids:
+                    _supporting_record_is_claimable(record, platform_id, "toolchain")
+            continue
+
+        expect(claim_state == "reserved", f"{component} toolchain range used unknown claim_state {claim_state}")
+        expect(not platform_ids, f"{component} reserved toolchain range cannot list platforms")
+        for evidence_id in evidence_ids:
+            expect(evidence_id in records_by_id, f"{component} reserved toolchain range missing evidence record {evidence_id}")
+            _policy_record_is_fail_closed(records_by_id[evidence_id])
+
+    return by_component
+
+
 def validate_platform_toolchain_support_evidence(
     payload: dict[str, Any],
     *,
@@ -170,6 +257,12 @@ def validate_platform_toolchain_support_evidence(
 
     records_by_id = evidence_records_by_id(payload)
     boundary_supported_ids = {str(platform_id) for platform_id in boundary.get("supported_platform_ids", [])}
+    required_toolchain_components = _required_toolchain_components(payload)
+    toolchain_ranges = _toolchain_ranges_by_component(
+        payload,
+        records_by_id=records_by_id,
+        boundary_supported_platform_ids=boundary_supported_ids,
+    )
     supported_platform_ids = {
         str(platform.get("platform_id"))
         for platform in supported_platforms.get("supported_platforms", [])
@@ -193,12 +286,32 @@ def validate_platform_toolchain_support_evidence(
             expect(row.get("claim_class") == "supported", f"{platform_id} support row must use supported claim_class")
             required_classes = tuple(str(item) for item in row.get("required_evidence_classes", []))
             expect(set(required_classes) == set(REQUIRED_SUPPORTED_EVIDENCE_CLASSES), f"{platform_id} missing required evidence classes")
+            row_toolchain_components = {str(item) for item in row.get("required_toolchain_components", [])}
+            expect(
+                row_toolchain_components == required_toolchain_components,
+                f"{platform_id} missing required toolchain components",
+            )
             evidence = row.get("evidence", {})
             expect(isinstance(evidence, dict), f"{platform_id} support row missing evidence map")
             for evidence_class in REQUIRED_SUPPORTED_EVIDENCE_CLASSES:
                 evidence_id = str(evidence.get(evidence_class, ""))
                 expect(evidence_id in records_by_id, f"{platform_id} missing {evidence_class} evidence record {evidence_id}")
                 _supporting_record_is_claimable(records_by_id[evidence_id], platform_id, evidence_class)
+            row_toolchain_evidence_ids = {str(evidence_id) for evidence_id in row.get("toolchain_evidence_ids", [])}
+            for component in required_toolchain_components:
+                expect(component in toolchain_ranges, f"{platform_id} missing required {component} toolchain range")
+                toolchain_range = toolchain_ranges[component]
+                expect(toolchain_range.get("claim_state") == "evidence-bound", f"{platform_id} {component} toolchain range is not evidence-bound")
+                expect(platform_id in toolchain_range.get("platform_ids", []), f"{platform_id} {component} toolchain range does not include the supported platform")
+                missing_range_evidence = [
+                    str(evidence_id)
+                    for evidence_id in toolchain_range.get("evidence_ids", [])
+                    if str(evidence_id) not in row_toolchain_evidence_ids
+                ]
+                expect(
+                    not missing_range_evidence,
+                    f"{platform_id} {component} toolchain evidence missing from support row: {', '.join(missing_range_evidence)}",
+                )
             for evidence_id in (
                 *row.get("toolchain_evidence_ids", []),
                 *row.get("hosted_ci_evidence_ids", []),
@@ -223,18 +336,6 @@ def validate_platform_toolchain_support_evidence(
 
     expect(sorted(supported_row_ids) == sorted(boundary_supported_ids), "supported support rows drifted from boundary inventory")
 
-    for toolchain_range in payload.get("toolchain_ranges", []):
-        evidence_ids = [str(evidence_id) for evidence_id in toolchain_range.get("evidence_ids", [])]
-        expect(toolchain_range.get("unsupported_version_behavior") == "fail-closed-no-range-claim", "toolchain range must fail closed outside evidence")
-        expect("all" not in str(toolchain_range.get("range_claim", "")).lower(), "toolchain range attempted an all-version support claim")
-        for platform_id in toolchain_range.get("platform_ids", []):
-            expect(str(platform_id) in boundary_supported_ids, f"toolchain range widened support to {platform_id}")
-        for evidence_id in evidence_ids:
-            record = records_by_id[evidence_id]
-            expect(record.get("evidence_class") == "toolchain", f"{evidence_id} is not toolchain evidence")
-            expect(record.get("requires_network") is False, f"{evidence_id} requires network")
-            _required_source_paths_exist(record)
-
     for sanitizer in payload.get("sanitizer_variants", []):
         if sanitizer.get("claim_state") == "reserved":
             expect(not sanitizer.get("platform_ids"), f"{sanitizer['variant_id']} reserved sanitizer variant cannot list platforms")
@@ -256,6 +357,7 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
         },
         "platform_support_rows": payload["support_rows"],
         "toolchain_support": {
+            "toolchain_evidence_requirements": payload["toolchain_evidence_requirements"],
             "toolchain_ranges": payload["toolchain_ranges"],
             "sanitizer_variants": payload["sanitizer_variants"],
         },
@@ -277,6 +379,7 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "support_row_count": len(payload["support_rows"]),
         "supported_platform_ids": [str(row["platform_id"]) for row in supported_rows],
         "unsupported_platform_ids": [str(row["platform_id"]) for row in unsupported_rows],
+        "required_toolchain_components": list(REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS),
         "toolchain_range_ids": [str(row["toolchain_id"]) for row in payload["toolchain_ranges"]],
         "sanitizer_variant_ids": [str(row["variant_id"]) for row in payload["sanitizer_variants"]],
         "supporting_evidence_ids": [
@@ -295,6 +398,7 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
 
 __all__ = [
     "REQUIRED_SUPPORTED_EVIDENCE_CLASSES",
+    "REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS",
     "build_support_evidence_matrix_sections",
     "build_support_evidence_summary",
     "evidence_records_by_id",
