@@ -14,6 +14,7 @@ function New-RunnableToolchainPackageApplicationManifestSection {
       template_harness_checker = "scripts/check_application_architecture_template_harness.py"
       integration_validation = "scripts/check_objc3c_application_architecture_integration.py"
       runnable_end_to_end_validation = "scripts/check_objc3c_runnable_application_architecture_end_to_end.py"
+      application_framework_samples_validation = "scripts/check_objc3c_application_framework_samples.py"
     }
     application_architecture_scripts = [ordered]@{
       boundary_inventory_summary = "scripts/build_application_architecture_testing_boundary_inventory_summary.py"
@@ -25,13 +26,50 @@ function New-RunnableToolchainPackageApplicationManifestSection {
       canonical_workspace_materializer = "scripts/materialize_objc3c_canonical_application_workspace.py"
       integration_validation = "scripts/check_objc3c_application_architecture_integration.py"
       runnable_end_to_end_validation = "scripts/check_objc3c_runnable_application_architecture_end_to_end.py"
+      application_framework_samples_validation = "scripts/check_objc3c_application_framework_samples.py"
     }
     application_architecture_public_actions = @(
       "materialize-project-template",
       "materialize-canonical-application-workspace",
       "validate-application-architecture",
+      "validate-application-framework-samples",
       "validate-runnable-application-architecture"
     )
+    application_framework_samples = [ordered]@{
+      manifest = "showcase/applicationFrameworkSamples/manifest.json"
+      readme = "showcase/applicationFrameworkSamples/README.md"
+      tutorial = "docs/tutorials/application-framework-samples.md"
+      dependency_evidence = "showcase/applicationFrameworkSamples/dependency-evidence.json"
+      contract_fixture = "tests/tooling/fixtures/application_framework_samples/contract.json"
+      checker = "scripts/check_objc3c_application_framework_samples.py"
+      summary = "tmp/reports/application-framework-samples/summary.json"
+      validate_action = "validate-application-framework-samples"
+      validate_command = "npm run objc3c -- validate-application-framework-samples"
+      package_action = "package-runnable-toolchain"
+      package_command = "npm run objc3c -- package-runnable-toolchain"
+      runnable_validation_action = "validate-runnable-application-architecture"
+      runnable_validation_command = "npm run objc3c -- validate-runnable-application-architecture"
+      manifest_contract_id = "objc3c.application_framework_samples.v1"
+      contract_fixture_id = "objc3c.application_framework_samples.contract.v1"
+      package_manifest_fields = @(
+        "application_framework_samples",
+        "application_architecture_public_actions",
+        "command_surfaces",
+        "copied_files"
+      )
+      sample_ids = @(
+        "routeModelKit",
+        "interopAdapterKit",
+        "workflowStdlibCLI",
+        "asyncRuntimeConsole"
+      )
+      capability_rows = @(
+        "applications.framework-samples.object-runtime-library",
+        "applications.framework-samples.interop-adapter-library",
+        "applications.framework-samples.stdlib-text-collections-cli",
+        "applications.framework-samples.async-runtime-application"
+      )
+    }
     package_ecosystem_runbook = "docs/runbooks/objc3c_package_ecosystem.md"
     package_ecosystem_boundary_inventory = "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json"
     package_ecosystem_dependency_lock_policy = "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json"

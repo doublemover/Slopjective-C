@@ -92,8 +92,18 @@
     "required_performance_actions": [
       "benchmark-compiler-throughput",
       "benchmark-runtime-performance",
+      "test-execution-replay",
+      "test-lowering-runtime-stress",
+      "validate-semantic-optimization-pipeline",
       "validate-performance-governance"
-    ]
+    ],
+    "runtime_equivalence_contract_id": "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1",
+    "required_runtime_equivalence_actions": [
+      "test-execution-replay",
+      "test-lowering-runtime-stress",
+      "validate-semantic-optimization-pipeline"
+    ],
+    "minimum_runtime_equivalence_cases": 2
   },
   "performance_evidence": {
     "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",

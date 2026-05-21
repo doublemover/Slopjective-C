@@ -93,7 +93,7 @@
     },
     {
       "path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
-      "sha256": "208d825bf96d264159c47a28dd98323776f841cb1296136a21538761377f8f56",
+      "sha256": "77299a20ff94cf5525f26bab15204ff419869e0d036840935ad1b598ff146cf5",
       "fragments": [
         "objc3c.release.foundation.abi_api_governance.v1",
         "check-release-abi-api-drift",

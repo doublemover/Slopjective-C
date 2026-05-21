@@ -17,6 +17,34 @@ from .commands import run_validate_developer_tooling
 from .outputs import extract_last_output_value
 
 
+def _assert_runtime_debug_trace_payload(
+    payload: dict[str, Any],
+    *,
+    contract: dict[str, Any],
+    label: str,
+) -> None:
+    expect(
+        payload.get("runtime_debug_trace_command")
+        == contract["expected_runtime_debug_trace_command"],
+        f"{label} runtime debug trace command drifted",
+    )
+    expect(
+        payload.get("runtime_debug_trace_path")
+        == contract["expected_runtime_debug_trace_path"],
+        f"{label} runtime debug trace path drifted",
+    )
+    expect(
+        payload.get("runtime_debug_trace_schema")
+        == contract["expected_runtime_debug_trace_schema"],
+        f"{label} runtime debug trace schema drifted",
+    )
+    expect(
+        payload.get("runtime_debug_trace_model")
+        == contract["expected_runtime_debug_trace_model"],
+        f"{label} runtime debug trace model drifted",
+    )
+
+
 def run_inspect_editor_tooling_check(
     *,
     package_root: Path,
@@ -72,6 +100,11 @@ def run_inspect_editor_tooling_check(
     expect(
         int(debug_payload.get("declaration_breakpoint_anchor_count", 0)) >= 3,
         "packaged editor surface did not publish enough breakpoint anchors",
+    )
+    _assert_runtime_debug_trace_payload(
+        debug_payload,
+        contract=contract,
+        label="packaged editor surface",
     )
     return inspect_result, str(dump_path_text)
 
@@ -143,7 +176,17 @@ def run_workspace_check(
         int(workspace_editor_tooling.get("workspace_package_count", 0)) >= 9,
         "packaged workspace semantic index package count drifted",
     )
-    for action in ("inspect-editor-tooling", "format-objc3c", "validate-developer-tooling"):
+    _assert_runtime_debug_trace_payload(
+        workspace_editor_tooling,
+        contract=contract,
+        label="packaged workspace",
+    )
+    for action in (
+        "inspect-editor-tooling",
+        "format-objc3c",
+        "trace-runtime-debug",
+        "validate-developer-tooling",
+    ):
         expect(
             action in workspace.get("public_actions", []),
             f"packaged workspace missing public action {action}",
@@ -151,7 +194,11 @@ def run_workspace_check(
     return workspace_result, str(workspace_path_text)
 
 
-def run_integrated_validation_check(*, package_root: Path) -> tuple[Any, str]:
+def run_integrated_validation_check(
+    *,
+    package_root: Path,
+    contract: dict[str, Any],
+) -> tuple[Any, str]:
     integrated_result = run_validate_developer_tooling(cwd=package_root)
     if integrated_result.returncode != 0:
         raise RuntimeError("packaged validate-developer-tooling failed")
@@ -167,6 +214,40 @@ def run_integrated_validation_check(*, package_root: Path) -> tuple[Any, str]:
     expect(
         integrated_summary.get("ok") is True,
         "packaged developer-tooling integration summary did not report ok=true",
+    )
+    step_names = {
+        str(step.get("name", ""))
+        for step in integrated_summary.get("steps", [])
+        if isinstance(step, dict)
+    }
+    expect(
+        "trace-runtime-debug" in step_names,
+        "packaged developer-tooling integration did not run trace-runtime-debug",
+    )
+    reports = integrated_summary.get("reports", {})
+    expect(
+        isinstance(reports, dict),
+        "packaged developer-tooling integration summary did not publish reports",
+    )
+    expect(
+        reports.get("runtime_debug_trace") == contract["expected_runtime_debug_trace_path"],
+        "packaged developer-tooling integration runtime debug trace path drifted",
+    )
+    runtime_debug_trace_path = package_root / normalize_rel_path(
+        contract["expected_runtime_debug_trace_path"]
+    )
+    expect(
+        runtime_debug_trace_path.is_file(),
+        "packaged developer-tooling integration did not publish runtime debug trace report",
+    )
+    runtime_debug_trace = load_json(runtime_debug_trace_path)
+    expect(
+        runtime_debug_trace.get("contract_id") == "objc3c.runtime.debug.trace.v1",
+        "packaged runtime debug trace report contract id drifted",
+    )
+    expect(
+        runtime_debug_trace.get("ok") is True,
+        "packaged runtime debug trace report did not report ok=true",
     )
     return integrated_result, str(integrated_summary_path_text)
 

@@ -55,20 +55,8 @@ def test_post_cutover_completion_contracts_pass_current_source_truth() -> None:
     )
 
     assert failures == []
-    assert summary["contract_count"] == 4
-    assert set(summary["covered_issues"]) == {
-        "#8159",
-        "#8160",
-        "#8163",
-        "#8164",
-        "#8165",
-        "#8166",
-        "#8167",
-        "#8168",
-        "#8173",
-        "#8174",
-        "#8175",
-    }
+    assert summary["contract_count"] == len(checker.COMPLETION_CONTRACT_SPECS)
+    assert set(summary["covered_issues"]) == set(checker.REQUIRED_ISSUES) - {"#8153"}
 
 
 def test_post_cutover_issue_evidence_rejects_missing_issue_row() -> None:

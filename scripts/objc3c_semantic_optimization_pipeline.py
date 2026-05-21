@@ -69,18 +69,35 @@ REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
 PERFORMANCE_GOVERNANCE_CONTRACT_ID = (
     "objc3c.optimization.semantic.pipeline.performance.governance.v1"
 )
+RUNTIME_EQUIVALENCE_CONTRACT_ID = (
+    "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"
+)
 PERFORMANCE_BUDGET_MODEL_PATH = (
     "tests/tooling/fixtures/performance_governance/budget_model.json"
 )
 REQUIRED_PERFORMANCE_PUBLIC_ACTIONS = {
     "benchmark-compiler-throughput",
     "benchmark-runtime-performance",
+    "test-execution-replay",
+    "test-lowering-runtime-stress",
+    "validate-semantic-optimization-pipeline",
     "validate-performance-governance",
+}
+REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS = {
+    "test-execution-replay",
+    "test-lowering-runtime-stress",
+    "validate-semantic-optimization-pipeline",
 }
 REQUIRED_PERFORMANCE_CHECKED_IN_PATHS = {
     "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
     "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
     PERFORMANCE_BUDGET_MODEL_PATH,
+}
+REQUIRED_RUNTIME_EQUIVALENCE_CHECKED_IN_PATHS = {
+    "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
+    "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
+    "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+    "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
 }
 FORBIDDEN_PERFORMANCE_SOURCE_ROOTS = ("tmp/", "checked_outputs/")
 
@@ -177,6 +194,98 @@ def _budget_metric_ids_by_family(budget_model: dict[str, Any]) -> dict[str, set[
         if budget_id:
             families[budget_id] = metric_ids
     return families
+
+
+def _validate_runtime_equivalence_validation(
+    runtime_equivalence: dict[str, Any],
+    *,
+    parent_public_actions: set[str],
+    failures: list[str],
+) -> dict[str, int]:
+    if runtime_equivalence.get("contract_id") != RUNTIME_EQUIVALENCE_CONTRACT_ID:
+        failures.append("semantic optimization runtime equivalence contract_id drifted")
+    if runtime_equivalence.get("issue_ref") != "#8175":
+        failures.append("semantic optimization runtime equivalence must bind issue #8175")
+
+    policy_text = str(runtime_equivalence.get("source_truth_policy", "")).lower()
+    if "generated reports" not in policy_text or "not source truth" not in policy_text:
+        failures.append(
+            "semantic optimization runtime equivalence must reject generated reports as source truth"
+        )
+
+    actions = {
+        str(action)
+        for action in _as_list(runtime_equivalence.get("required_public_actions"))
+    }
+    if not REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS.issubset(actions):
+        failures.append("semantic optimization runtime equivalence actions incomplete")
+    missing_parent_actions = REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS.difference(
+        parent_public_actions
+    )
+    if missing_parent_actions:
+        failures.append(
+            "semantic optimization performance governance does not publish runtime "
+            f"equivalence actions: {', '.join(sorted(missing_parent_actions))}"
+        )
+
+    checked_paths = {
+        str(path)
+        for path in _as_list(runtime_equivalence.get("checked_in_paths"))
+    }
+    if not REQUIRED_RUNTIME_EQUIVALENCE_CHECKED_IN_PATHS.issubset(checked_paths):
+        failures.append("semantic optimization runtime equivalence checked paths incomplete")
+    for checked_path in checked_paths:
+        normalized = checked_path.replace("\\", "/")
+        if normalized.startswith(FORBIDDEN_PERFORMANCE_SOURCE_ROOTS):
+            failures.append(
+                f"semantic optimization runtime equivalence checked path is generated output: {checked_path}"
+            )
+        elif not (ROOT / checked_path).is_file():
+            failures.append(
+                f"semantic optimization runtime equivalence checked path missing: {checked_path}"
+            )
+
+    case_count = 0
+    for row in _as_list(runtime_equivalence.get("equivalence_cases")):
+        if not isinstance(row, dict):
+            failures.append("semantic optimization runtime equivalence case is not an object")
+            continue
+        case_count += 1
+        case_id = str(row.get("case_id", ""))
+        public_action = str(row.get("public_action", ""))
+        if public_action not in REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS:
+            failures.append(
+                f"semantic optimization runtime equivalence case action is not public: {case_id}"
+            )
+        if public_action not in actions:
+            failures.append(
+                f"semantic optimization runtime equivalence case action is not declared: {case_id}"
+            )
+        if not str(row.get("semantic_equivalence_claim", "")):
+            failures.append(
+                f"semantic optimization runtime equivalence case missing claim: {case_id}"
+            )
+        source_paths = [str(path) for path in _as_list(row.get("source_paths"))]
+        if not source_paths:
+            failures.append(
+                f"semantic optimization runtime equivalence case missing sources: {case_id}"
+            )
+        for source_path in source_paths:
+            if source_path not in checked_paths:
+                failures.append(
+                    f"semantic optimization runtime equivalence case source is not checked: {case_id}"
+                )
+            elif not (ROOT / source_path).is_file():
+                failures.append(
+                    f"semantic optimization runtime equivalence source missing: {source_path}"
+                )
+
+    if case_count < 2:
+        failures.append("semantic optimization runtime equivalence needs optimized and preserved cases")
+    return {
+        "runtime_equivalence_case_count": case_count,
+        "runtime_equivalence_checked_path_count": len(checked_paths),
+    }
 
 
 def _validate_performance_governance(
@@ -300,10 +409,16 @@ def _validate_performance_governance(
         elif source_digest:
             digest_count += 1
 
+    runtime_equivalence_counts = _validate_runtime_equivalence_validation(
+        _as_dict(performance_governance.get("runtime_equivalence_validation")),
+        parent_public_actions=public_actions,
+        failures=failures,
+    )
     return {
         "performance_workload_count": workload_count,
         "performance_trace_count": trace_count,
         "performance_digest_count": digest_count,
+        **runtime_equivalence_counts,
     }
 
 
@@ -670,6 +785,9 @@ def validate_pipeline(
         performance_governance,
         failures,
     )
+    runtime_equivalence = _as_dict(
+        performance_governance.get("runtime_equivalence_validation")
+    )
     _validate_direct_dispatch_fixture(failures)
     reserved_skip_fixture_count = _validate_reserved_skip_fixtures(
         pass_by_id,
@@ -709,6 +827,11 @@ def validate_pipeline(
             str(action)
             for action in _as_list(performance_governance.get("required_public_actions"))
         ),
+        "runtime_equivalence_contract": runtime_equivalence.get("contract_id", ""),
+        "runtime_equivalence_actions": sorted(
+            str(action)
+            for action in _as_list(runtime_equivalence.get("required_public_actions"))
+        ),
         "performance_workload_count": performance_governance_counts[
             "performance_workload_count"
         ],
@@ -717,6 +840,12 @@ def validate_pipeline(
         ],
         "performance_digest_count": performance_governance_counts[
             "performance_digest_count"
+        ],
+        "runtime_equivalence_case_count": performance_governance_counts[
+            "runtime_equivalence_case_count"
+        ],
+        "runtime_equivalence_checked_path_count": performance_governance_counts[
+            "runtime_equivalence_checked_path_count"
         ],
         "failures": failures,
     }
@@ -727,9 +856,11 @@ __all__ = [
     "CONTRACT_ID",
     "PIPELINE_PATH",
     "PERFORMANCE_GOVERNANCE_CONTRACT_ID",
+    "RUNTIME_EQUIVALENCE_CONTRACT_ID",
     "REPORT_PATH",
     "RESERVED_SKIP_CONTRACT_ID",
     "REQUIRED_PERFORMANCE_PUBLIC_ACTIONS",
+    "REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS",
     "REQUIRED_EVIDENCE_IDS",
     "REQUIRED_CAPABILITY_ROWS",
     "REQUIRED_PASS_ORDER",

@@ -68,6 +68,10 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     developer_tooling_diagnostic_quality_contract = "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json"
     developer_tooling_workspace_contract = "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json"
     developer_tooling_packaged_contract = "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json"
+    developer_tooling_runtime_debug_trace_script = "scripts/build_objc3c_runtime_debug_trace.py"
+    developer_tooling_runtime_debug_trace_schema = "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+    developer_tooling_runtime_debug_trace_path = "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json"
+    developer_tooling_runtime_debug_trace_model = "deterministic-runtime-inspector-and-editor-debug-artifact-trace"
     developer_tooling_example_source = "tests/tooling/fixtures/native/hello.objc3"
     developer_tooling_negative_source = "tests/tooling/fixtures/native/negative_undefined_symbol.objc3"
     developer_tooling_formatter_source = "tests/tooling/fixtures/developer_tooling/messy_hello.objc3"
@@ -81,6 +85,7 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       formatter_rewrite_validation = "scripts/check_developer_tooling_formatter_rewrite_surface.py"
       diagnostic_quality_validation = "scripts/check_developer_tooling_diagnostic_quality.py"
       workspace_validation = "scripts/check_developer_tooling_workspace_integration.py"
+      runtime_debug_trace = "scripts/build_objc3c_runtime_debug_trace.py"
       integration_validation = "scripts/check_objc3c_developer_tooling_integration.py"
       runnable_end_to_end_validation = "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py"
     }
@@ -88,6 +93,7 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       "inspect-editor-tooling",
       "format-objc3c",
       "materialize-playground-workspace",
+      "trace-runtime-debug",
       "validate-developer-tooling",
       "validate-runnable-developer-tooling"
     )

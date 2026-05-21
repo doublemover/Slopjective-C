@@ -359,9 +359,61 @@ def _validate_semantic_optimization(
     policy_text = str(governance.get("source_truth_policy", "")).lower()
     if "generated reports" not in policy_text or "not source truth" not in policy_text:
         failures.append("semantic optimization performance governance overclaims generated reports")
+    governance_public_actions = {
+        str(value) for value in _as_list(governance.get("required_public_actions"))
+    }
     for action in _as_list(section.get("required_performance_actions")):
-        if str(action) not in {str(value) for value in _as_list(governance.get("required_public_actions"))}:
+        if str(action) not in governance_public_actions:
             failures.append(f"semantic optimization performance action missing: {action}")
+
+    runtime_equivalence = _as_dict(governance.get("runtime_equivalence_validation"))
+    if runtime_equivalence.get("contract_id") != section.get("runtime_equivalence_contract_id"):
+        failures.append("semantic optimization runtime equivalence contract drifted")
+    if runtime_equivalence.get("issue_ref") != "#8175":
+        failures.append("semantic optimization runtime equivalence issue binding drifted")
+    runtime_policy = str(runtime_equivalence.get("source_truth_policy", "")).lower()
+    if "generated reports" not in runtime_policy or "not source truth" not in runtime_policy:
+        failures.append("semantic optimization runtime equivalence overclaims generated reports")
+    runtime_actions = {
+        str(value) for value in _as_list(runtime_equivalence.get("required_public_actions"))
+    }
+    for action in _as_list(section.get("required_runtime_equivalence_actions")):
+        if str(action) not in runtime_actions:
+            failures.append(f"semantic optimization runtime equivalence action missing: {action}")
+        if str(action) not in governance_public_actions:
+            failures.append(
+                f"semantic optimization runtime equivalence action not published: {action}"
+            )
+    checked_paths = {
+        str(value) for value in _as_list(runtime_equivalence.get("checked_in_paths"))
+    }
+    for case in _as_list(runtime_equivalence.get("equivalence_cases")):
+        if not isinstance(case, dict):
+            failures.append("semantic optimization runtime equivalence case is malformed")
+            continue
+        if str(case.get("public_action", "")) not in runtime_actions:
+            failures.append(
+                f"semantic optimization runtime equivalence case action missing: {case.get('case_id')}"
+            )
+        if not str(case.get("semantic_equivalence_claim", "")):
+            failures.append(
+                f"semantic optimization runtime equivalence case missing claim: {case.get('case_id')}"
+            )
+        for source_path in _as_list(case.get("source_paths")):
+            source_text = str(source_path)
+            if source_text not in checked_paths:
+                failures.append(
+                    f"semantic optimization runtime equivalence case source is not checked: {case.get('case_id')}"
+                )
+            _repo_path(
+                source_text,
+                failures,
+                f"semantic optimization runtime equivalence source {case.get('case_id')}",
+            )
+    if len(_as_list(runtime_equivalence.get("equivalence_cases"))) < int(
+        section.get("minimum_runtime_equivalence_cases", 0)
+    ):
+        failures.append("semantic optimization runtime equivalence cases incomplete")
 
     return {
         "pipeline_contract": repo_rel(pipeline_path),
@@ -371,6 +423,10 @@ def _validate_semantic_optimization(
             pass_id for pass_id, row in pass_rows.items() if row.get("mode") == "enabled"
         ),
         "performance_governance_contract": governance.get("contract_id"),
+        "runtime_equivalence_contract": runtime_equivalence.get("contract_id"),
+        "runtime_equivalence_case_count": len(
+            _as_list(runtime_equivalence.get("equivalence_cases"))
+        ),
         "pipeline_validation_status": pipeline_result.payload.get("status"),
     }
 

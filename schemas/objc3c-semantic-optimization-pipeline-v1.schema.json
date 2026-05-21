@@ -193,7 +193,8 @@
         "required_public_actions",
         "required_checked_in_paths",
         "workload_evidence",
-        "semantic_trace_evidence"
+        "semantic_trace_evidence",
+        "runtime_equivalence_validation"
       ],
       "properties": {
         "contract_id": {
@@ -267,6 +268,57 @@
             }
           },
           "minItems": 1
+        },
+        "runtime_equivalence_validation": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "issue_ref",
+            "source_truth_policy",
+            "required_public_actions",
+            "checked_in_paths",
+            "equivalence_cases"
+          ],
+          "properties": {
+            "contract_id": {
+              "const": "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"
+            },
+            "issue_ref": { "const": "#8175" },
+            "source_truth_policy": { "type": "string" },
+            "required_public_actions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "contains": { "const": "test-execution-replay" }
+            },
+            "checked_in_paths": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "equivalence_cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "case_id",
+                  "public_action",
+                  "source_paths",
+                  "semantic_equivalence_claim"
+                ],
+                "properties": {
+                  "case_id": { "type": "string" },
+                  "public_action": { "type": "string" },
+                  "source_paths": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "minItems": 1
+                  },
+                  "semantic_equivalence_claim": { "type": "string" }
+                }
+              },
+              "minItems": 1
+            }
+          }
         }
       }
     },

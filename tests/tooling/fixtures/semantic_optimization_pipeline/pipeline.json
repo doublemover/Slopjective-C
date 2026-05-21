@@ -461,6 +461,9 @@
     "required_public_actions": [
       "benchmark-compiler-throughput",
       "benchmark-runtime-performance",
+      "test-execution-replay",
+      "test-lowering-runtime-stress",
+      "validate-semantic-optimization-pipeline",
       "validate-performance-governance"
     ],
     "required_checked_in_paths": [
@@ -495,7 +498,42 @@
         "source_sha256": "38bd165e05d088e3fca6e5eb8ea62eb4c74d15fa5e47d09ac938faf15a4c440d",
         "claim_boundary": "semantic-preservation trace only; benchmark reports cannot replace this checked IR truth"
       }
-    ]
+    ],
+    "runtime_equivalence_validation": {
+      "contract_id": "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1",
+      "issue_ref": "#8175",
+      "source_truth_policy": "runtime equivalence claims require checked IR/source fixtures and public replay/stress actions; generated reports are evidence outputs, not source truth",
+      "required_public_actions": [
+        "test-execution-replay",
+        "test-lowering-runtime-stress",
+        "validate-semantic-optimization-pipeline"
+      ],
+      "checked_in_paths": [
+        "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json"
+      ],
+      "equivalence_cases": [
+        {
+          "case_id": "direct-dispatch-exact-call-ir-equivalence",
+          "public_action": "test-lowering-runtime-stress",
+          "source_paths": [
+            "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
+            "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll"
+          ],
+          "semantic_equivalence_claim": "exact direct call replacement preserves scalar result marshalling and records global proof-state invalidation"
+        },
+        {
+          "case_id": "runtime-dispatch-preservation-replay",
+          "public_action": "test-execution-replay",
+          "source_paths": [
+            "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+          ],
+          "semantic_equivalence_claim": "non-nil receiver sends remain runtime-dispatched through replay instead of being folded by semantic optimization"
+        }
+      ]
+    }
   },
   "unsupported_policy": {
     "unsafe_flags_allowed": false,

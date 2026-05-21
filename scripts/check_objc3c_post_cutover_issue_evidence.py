@@ -43,9 +43,36 @@ class CompletionContractSpec:
     contract_id: str
     script: str
     covered_issues: tuple[str, ...]
+    args: tuple[str, ...] = ()
 
 
 COMPLETION_CONTRACT_SPECS: tuple[CompletionContractSpec, ...] = (
+    CompletionContractSpec(
+        contract_id="objc3c.runtime.public_rows.completion.v1",
+        script="scripts/check_objc3c_next_runtime_public_rows.py",
+        covered_issues=("#8154", "#8155"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.stdlib.foundation.completion.pytest.v1",
+        script="-m",
+        args=(
+            "pytest",
+            "tests/tooling/test_collections_support_claim_groundwork.py",
+            "tests/tooling/test_text_support_claim_groundwork.py",
+        ),
+        covered_issues=("#8156", "#8161", "#8162"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.developer_tooling.product_workflow_source_truth.v1",
+        script="scripts/check_developer_tooling_product_workflow_source_truth.py",
+        covered_issues=("#8157", "#8169", "#8170", "#8171", "#8172", "#8178"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.release.operations.end_to_end.skip_upstream.v1",
+        script="scripts/check_objc3c_release_operations_end_to_end.py",
+        args=("--skip-upstream",),
+        covered_issues=("#8158", "#8179"),
+    ),
     CompletionContractSpec(
         contract_id="objc3c.type_protocol.generic_protocol_completion_contract.v1",
         script="scripts/check_generic_protocol_completion_contract.py",
@@ -57,6 +84,11 @@ COMPLETION_CONTRACT_SPECS: tuple[CompletionContractSpec, ...] = (
         covered_issues=("#8163", "#8165", "#8173"),
     ),
     CompletionContractSpec(
+        contract_id="objc3c.release.abi_api_drift.completion.v1",
+        script="scripts/check_objc3c_release_abi_api_drift.py",
+        covered_issues=("#8173",),
+    ),
+    CompletionContractSpec(
         contract_id="objc3c.ownership-concurrency-macro.completion.contract.v1",
         script="scripts/check_ownership_concurrency_macro_completion_contract.py",
         covered_issues=("#8166", "#8167", "#8168"),
@@ -65,6 +97,22 @@ COMPLETION_CONTRACT_SPECS: tuple[CompletionContractSpec, ...] = (
         contract_id="objc3c.reflection.optimization.performance.completion.v1",
         script="scripts/check_reflection_optimization_performance_completion_contract.py",
         covered_issues=("#8159", "#8174", "#8175"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.runtime.debug_trace.completion.pytest.v1",
+        script="-m",
+        args=("pytest", "tests/tooling/test_runtime_debug_trace_surface.py"),
+        covered_issues=("#8176",),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.platform.support_matrix.completion.v1",
+        script="scripts/check_objc3c_platform_support_matrix.py",
+        covered_issues=("#8177",),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.release.channel_operations_policy.completion.v1",
+        script="scripts/check_objc3c_release_channel_operations_policy.py",
+        covered_issues=("#8179",),
     ),
 )
 
@@ -285,7 +333,8 @@ def validate_completion_contracts(
     contracts: list[dict[str, Any]] = []
     for spec in specs:
         script_path = ROOT / spec.script
-        if not script_path.is_file():
+        script_is_module = spec.script == "-m"
+        if not script_is_module and not script_path.is_file():
             failures.append(f"{spec.contract_id}: missing checker script {spec.script}")
             contracts.append(
                 {
@@ -297,8 +346,13 @@ def validate_completion_contracts(
             )
             continue
 
+        command = (
+            [sys.executable, spec.script, *spec.args]
+            if script_is_module
+            else [sys.executable, str(script_path), *spec.args]
+        )
         completed = subprocess.run(
-            [sys.executable, str(script_path)],
+            command,
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -309,6 +363,7 @@ def validate_completion_contracts(
             {
                 "contract_id": spec.contract_id,
                 "script": spec.script,
+                "args": list(spec.args),
                 "status": status,
                 "covered_issues": list(spec.covered_issues),
                 "returncode": completed.returncode,

@@ -90,6 +90,14 @@ def build_playground_workspace_payload(
                 "runtime_debug_trace_command",
                 "",
             ),
+            "runtime_debug_trace_schema": debug_payload.get(
+                "runtime_debug_trace_schema",
+                "",
+            ),
+            "runtime_debug_trace_model": debug_payload.get(
+                "runtime_debug_trace_model",
+                "",
+            ),
             "artifact_inspector_supported": artifact_inspector_payload.get(
                 "supported"
             ),

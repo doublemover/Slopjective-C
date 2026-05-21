@@ -22,6 +22,10 @@ from scripts.objc3c_application_framework_samples.runner import (
 )
 from scripts.objc3c_tooling.subprocesses import command_text
 from scripts.objc3c_tooling.subprocesses import CommandExecution
+from scripts.check_objc3c_runnable_application_architecture_end_to_end import (
+    EXPECTED_APPLICATION_FRAMEWORK_SAMPLES,
+    validate_application_framework_sample_package_metadata,
+)
 
 
 def test_application_framework_sample_manifest_is_real_source_backed() -> None:
@@ -234,3 +238,61 @@ def test_application_framework_sample_compile_fails_on_replay_contract_drift() -
     result = payload["compile_results"][0]
     assert result["status"] == "FAIL"
     assert "routeModelKit: compiled manifest module drifted" in result["replay_failures"]
+
+
+def test_runnable_application_architecture_fails_closed_without_packaged_sample_metadata(
+    tmp_path: Path,
+) -> None:
+    failures: list[str] = []
+
+    validate_application_framework_sample_package_metadata(
+        manifest={},
+        package_root=tmp_path,
+        failures=failures,
+        run_packaged_checker=False,
+    )
+
+    assert "package manifest missing application_framework_samples" in failures
+
+
+def test_runnable_toolchain_package_records_framework_sample_evidence_fields() -> None:
+    artifact_application = (
+        ROOT
+        / "scripts"
+        / "package_objc3c_runnable_toolchain"
+        / "artifact_report_application.psm1"
+    ).read_text(encoding="utf-8")
+    artifact_surfaces = (
+        ROOT
+        / "scripts"
+        / "package_objc3c_runnable_toolchain"
+        / "artifact_report_surfaces.psm1"
+    ).read_text(encoding="utf-8")
+    application_provenance = (
+        ROOT
+        / "scripts"
+        / "objc3c_runnable_toolchain_package_helpers"
+        / "manifest_provenance"
+        / "application_package.psm1"
+    ).read_text(encoding="utf-8")
+
+    assert "application_framework_samples = [ordered]@{" in artifact_application
+    for key in (
+        "manifest",
+        "contract_fixture",
+        "checker",
+        "package_action",
+        "runnable_validation_action",
+    ):
+        assert f"{key} =" in artifact_application
+    assert (
+        'application_framework_samples = "npm run objc3c -- validate-application-framework-samples"'
+        in artifact_surfaces
+    )
+    for relative_path in (
+        EXPECTED_APPLICATION_FRAMEWORK_SAMPLES["manifest"],
+        EXPECTED_APPLICATION_FRAMEWORK_SAMPLES["contract_fixture"],
+        EXPECTED_APPLICATION_FRAMEWORK_SAMPLES["checker"],
+        EXPECTED_APPLICATION_FRAMEWORK_SAMPLES["tutorial"],
+    ):
+        assert f'"{relative_path}"' in application_provenance

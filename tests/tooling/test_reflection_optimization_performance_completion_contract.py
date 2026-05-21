@@ -44,6 +44,10 @@ def test_completion_contract_passes_against_checked_in_sources() -> None:
         "devirtualization",
         "method-inlining",
     ]
+    assert result.payload["semantic_optimization"]["runtime_equivalence_contract"] == (
+        "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"
+    )
+    assert result.payload["semantic_optimization"]["runtime_equivalence_case_count"] == 2
     scale_counts = result.payload["performance_evidence"]["scale_evidence_counts"]
     assert scale_counts["stress_scale"] >= 8
     assert scale_counts["scale_scenarios"] >= 4
@@ -93,6 +97,24 @@ def test_completion_contract_rejects_reserved_optimization_success_claims(
     assert not result.passed
     assert any(
         "permits reserved pass success claims" in failure
+        for failure in result.failures
+    )
+
+
+def test_completion_contract_rejects_runtime_equivalence_action_drift(
+    tmp_path: Path,
+) -> None:
+    payload = _contract_payload()
+    variant = copy.deepcopy(payload)
+    variant["semantic_optimization"]["required_runtime_equivalence_actions"].append(
+        "test-runtime-equivalence-report-only"
+    )
+
+    result = checker.validate_completion_contract(_variant(tmp_path, variant))
+
+    assert not result.passed
+    assert any(
+        "runtime equivalence action missing" in failure
         for failure in result.failures
     )
 

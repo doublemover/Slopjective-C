@@ -9,10 +9,12 @@ from scripts.objc3c_semantic_optimization_pipeline import (
     PERFORMANCE_GOVERNANCE_CONTRACT_ID,
     PIPELINE_PATH,
     REQUIRED_PERFORMANCE_PUBLIC_ACTIONS,
+    REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS,
     REQUIRED_CAPABILITY_ROWS,
     REQUIRED_EVIDENCE_IDS,
     REQUIRED_PASS_ORDER,
     REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE,
+    RUNTIME_EQUIVALENCE_CONTRACT_ID,
     RESERVED_SKIP_CONTRACT_ID,
     validate_pipeline,
 )
@@ -70,6 +72,12 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
     assert set(result.payload["performance_public_actions"]) >= (
         REQUIRED_PERFORMANCE_PUBLIC_ACTIONS
     )
+    assert result.payload["runtime_equivalence_contract"] == RUNTIME_EQUIVALENCE_CONTRACT_ID
+    assert set(result.payload["runtime_equivalence_actions"]) >= (
+        REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS
+    )
+    assert result.payload["runtime_equivalence_case_count"] == 2
+    assert result.payload["runtime_equivalence_checked_path_count"] == 4
     assert result.payload["performance_workload_count"] == 2
     assert result.payload["performance_trace_count"] == 1
     assert result.payload["performance_digest_count"] == 3
@@ -100,6 +108,10 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     assert '"reserved_pass_success_claims_allowed": { "const": false }' in text
     assert (
         '"const": "objc3c.optimization.semantic.pipeline.performance.governance.v1"'
+        in text
+    )
+    assert (
+        '"const": "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"'
         in text
     )
     assert '"pattern": "^[0-9a-f]{64}$"' in text
@@ -212,6 +224,24 @@ def test_semantic_optimization_pipeline_rejects_workload_digest_drift(
     assert not result.passed
     assert any(
         "workload digest drifted: compile-cold-wrapper" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_requires_runtime_equivalence_actions(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    runtime_equivalence = payload["performance_governance"][
+        "runtime_equivalence_validation"
+    ]
+    runtime_equivalence["required_public_actions"].remove("test-execution-replay")
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "runtime equivalence actions incomplete" in failure
         for failure in result.failures
     )
 

@@ -637,8 +637,8 @@
       "supported_major_line": 1,
       "current_minor_line": 0,
       "compatibility_class": "package-lockfile-abi",
-      "stdlib_public_api_symbol_count": 99,
-      "stdlib_runtime_abi_symbol_count": 48,
+      "stdlib_public_api_symbol_count": 100,
+      "stdlib_runtime_abi_symbol_count": 49,
       "frontend_c_api_symbol_count": 33
     }
   },

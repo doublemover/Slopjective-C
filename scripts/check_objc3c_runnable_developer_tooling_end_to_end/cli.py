@@ -74,6 +74,7 @@ def main() -> int:
     )
     integrated_result, integrated_summary_path_text = run_integrated_validation_check(
         package_root=package_root,
+        contract=contract,
     )
 
     payload = build_summary_payload(
