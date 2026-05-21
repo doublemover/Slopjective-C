@@ -28,6 +28,25 @@ EXPECTED_GENERIC_ROWS = {
         },
         "required_codes": {"O3S206"},
     },
+    "objc3c.behavior.language.generics.callable-type-parameters": {
+        "capability_id": "language.generics.callable-type-parameters",
+        "owner_phase": "sema",
+        "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+        "runtime_acceptance_case": "type-semantic-model-callable-generic-contract",
+        "required_positive": {
+            "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+            "tests/conformance/semantic/TYP-8013-23.json",
+            "tests/conformance/semantic/TYP-8013-24.json",
+            "scripts/objc3c_type_semantic_model_closure/positive.py",
+            "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h",
+        },
+        "required_negative": {
+            "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+            "tests/conformance/semantic/TYP-8013-09.json",
+        },
+        "required_codes": {"O3S206"},
+    },
     "objc3c.behavior.language.generics.variance-specialization": {
         "capability_id": "language.generics.variance-specialization",
         "owner_phase": "sema",
@@ -72,6 +91,10 @@ EXPECTED_GENERIC_FIXTURES = {
         "positive",
         "",
     ),
+    "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3": (
+        "positive",
+        "",
+    ),
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3": ("positive", ""),
     "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3": ("positive", ""),
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3": (
@@ -89,6 +112,14 @@ EXPECTED_GENERIC_FIXTURES = {
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3": (
         "diagnostic_negative",
         "O3S216",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3": (
+        "diagnostic_negative",
+        "O3S206",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3": (
+        "diagnostic_negative",
+        "O3S206",
     ),
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3": (
         "diagnostic_negative",

@@ -890,6 +890,55 @@
       "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc"
     },
     {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-23.json"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-24.json"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc"
+    },
+    {
+      "capability_id": "language.generics.callable-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
+    },
+    {
       "capability_id": "language.generics.variance-specialization",
       "support_claim": "objc3c.behavior.language.generics.variance-specialization",
       "evidence_kind": "test",

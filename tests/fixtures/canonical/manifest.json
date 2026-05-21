@@ -66,6 +66,12 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.generics.callable-type-parameters",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
       "claim_id": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
@@ -1010,6 +1016,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -1094,6 +1108,22 @@
       "behavior_family": "generics",
       "fixture_kind": "diagnostic_negative",
       "expected_diagnostic_code": "O3S216"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
     },
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3",

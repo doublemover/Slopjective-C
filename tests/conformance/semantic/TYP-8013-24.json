@@ -1,0 +1,35 @@
+{
+  "id": "TYP-8013-24",
+  "title": "Accept bounded generic function identity calls",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8013,
+  "references": [
+    "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+    "scripts/objc3c_type_semantic_model_closure/positive.py",
+    "scripts/objc3c_type_semantic_model_closure/negative.py",
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "module TypeSemanticGenericFunctionPositive;\n\n@protocol Persistable\n@end\n\n@interface SemanticBox <Persistable>\n@property (readonly) id title;\n@end\n\n@implementation SemanticBox\n@end\n\nfn genericIdentity<T : id<Persistable>>(value: T) -> T {\n  return value;\n}\n\nfn consumeGenericFunction(box: SemanticBox *?) -> i32 {\n  let record = genericIdentity(box);\n  let title = [record? title];\n  return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "manifest_surface": [
+      "semantic_canonical_type_metadata.functions.genericIdentity.generic_parameter_names_source_order",
+      "semantic_canonical_type_metadata.functions.consumeGenericFunction.param_canonical_types"
+    ],
+    "negative_diagnostics": [
+      {
+        "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+        "code": "O3S206"
+      },
+      {
+        "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+        "code": "O3S206"
+      }
+    ]
+  }
+}

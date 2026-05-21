@@ -103,6 +103,39 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "capability_id": "language.generics.callable-type-parameters",
+      "owner_phase": "sema",
+      "conformance_fixture": "tests/conformance/semantic/TYP-8013-23.json",
+      "traceability_fixture": "tests/conformance/semantic/TYP-8013-24.json",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "runtime_acceptance_case": "type-semantic-model-callable-generic-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-23.json",
+        "tests/conformance/semantic/TYP-8013-24.json",
+        "scripts/objc3c_type_semantic_model_closure/positive.py",
+        "scripts/objc3c_type_semantic_model_closure/summary_checks.py",
+        "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
+        "tests/conformance/semantic/TYP-8013-09.json",
+        "scripts/objc3c_type_semantic_model_closure/negative.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Generic callable type-parameter support is claimed only for checked-in generic method receiver substitution and bounded generic function identity fixtures",
+        "Unsatisfied callable generic constraints and unresolved generic return inference remain fail-closed O3S206 evidence",
+        "This row does not claim higher-kinded types, inferred associated types, generic collection ABI, or generic function overloading"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
       "owner_phase": "sema",

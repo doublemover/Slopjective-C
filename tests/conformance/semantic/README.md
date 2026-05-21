@@ -22,7 +22,7 @@ Current semantic fixtures for the E.3.3 type-system lane:
   rejection, including removed extension-flag diagnostics.
 - `KPATH-66-01.json`, `KPATH-66-02.json` for key path support and
   unsupported-mode diagnostics.
-- `TYP-8013-01.json` through `TYP-8013-22.json` for issue #8013 typed object,
+- `TYP-8013-01.json` through `TYP-8013-24.json` for issue #8013 typed object,
   nullability, canonical protocol conformance, protocol-composition,
   protocol-qualified message dispatch, typed object-pointer receiver dispatch,
   generic parameter binding/substitution/constraint diagnostics, nested generic
@@ -33,12 +33,15 @@ Current semantic fixtures for the E.3.3 type-system lane:
   contract preservation through runtime import surfaces, inherited protocol
   requirement conflict rejection, category/protocol adoption preservation,
   fail-closed associated-type and dynamic protocol dispatch claims,
+  generic method receiver substitution, bounded generic function calls,
   generic-suffix, optional-flow, and key-path semantic model closure. These are
   backed by
   `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`,
   `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3`,
   `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`,
   `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`,
+  `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3`,
+  `tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3`,
   `tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`,
@@ -50,6 +53,8 @@ Current semantic fixtures for the E.3.3 type-system lane:
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3`,

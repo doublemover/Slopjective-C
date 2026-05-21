@@ -1085,6 +1085,55 @@
       ]
     },
     {
+      "id": "language.generics.callable-type-parameters",
+      "title": "Generic callable type parameters",
+      "state": "implemented",
+      "summary": "Generic methods and functions are claimed for checked-in receiver substitution and bounded identity-call fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns.",
+      "support_claims": [
+        "objc3c.behavior.language.generics.callable-type-parameters"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp",
+        "native/objc3c/src/ir/objc3_ir_type_model.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-23.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-24.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
+        }
+      ]
+    },
+    {
       "id": "language.generics.variance-specialization",
       "title": "Generic variance and specialization policy",
       "state": "implemented",

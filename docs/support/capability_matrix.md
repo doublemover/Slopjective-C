@@ -41,6 +41,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
 | `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
 | `objc3c.behavior.language.blocks.escape-capture-legality` | `sema` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `language.blocks.escape-capture-legality` |
+| `objc3c.behavior.language.generics.callable-type-parameters` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.callable-type-parameters` |
 | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
 | `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
 | `objc3c.behavior.language.metaprogramming.derive-expansion-inventory` | `sema` | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.derive-expansion-inventory` |
@@ -642,6 +643,26 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+
+### Generic callable type parameters
+
+- Capability ID: `language.generics.callable-type-parameters`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.generics.callable-type-parameters`
+- Summary: Generic methods and functions are claimed for checked-in receiver substitution and bounded identity-call fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+  - `native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp`
+  - `native/objc3c/src/ir/objc3_ir_type_model.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-23.json`
+  - test: `tests/conformance/semantic/TYP-8013-24.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+  - source: `native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp`
 
 ### Generic variance and specialization policy
 
