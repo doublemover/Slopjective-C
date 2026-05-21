@@ -7,7 +7,9 @@
     "contract_id",
     "issue_mapping",
     "source_truth",
+    "pass_order_contract",
     "pass_registry",
+    "semantic_preservation_contracts",
     "verification_gates",
     "unsupported_policy"
   ],
@@ -71,6 +73,20 @@
         }
       }
     },
+    "pass_order_contract": {
+      "type": "object",
+      "required": ["order_authority", "ordered_pass_ids", "ordering_rule", "drift_policy"],
+      "properties": {
+        "order_authority": { "type": "string" },
+        "ordered_pass_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "ordering_rule": { "type": "string" },
+        "drift_policy": { "const": "REJECT_FAIL_CLOSED" }
+      }
+    },
     "pass_registry": {
       "type": "array",
       "items": {
@@ -123,6 +139,33 @@
             "type": "array",
             "items": { "type": "string" }
           }
+        }
+      },
+      "minItems": 1
+    },
+    "semantic_preservation_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pass_id",
+          "required_proofs",
+          "missing_proof_action",
+          "success_claim_on_skip",
+          "semantic_equivalence"
+        ],
+        "properties": {
+          "pass_id": { "type": "string" },
+          "required_proofs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "missing_proof_action": {
+            "enum": ["SKIP_FAIL_CLOSED", "REJECT_FAIL_CLOSED"]
+          },
+          "success_claim_on_skip": { "const": false },
+          "semantic_equivalence": { "type": "string" }
         }
       },
       "minItems": 1

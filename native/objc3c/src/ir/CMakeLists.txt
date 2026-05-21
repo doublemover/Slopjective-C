@@ -10,6 +10,7 @@ add_library(objc3c_ir_core_models STATIC
   objc3_ir_function_signature_model.cpp
   objc3_ir_literal_parsing.cpp
   objc3_ir_module_identity.cpp
+  objc3_ir_semantic_optimization_policy.cpp
   objc3_ir_symbol_model.cpp
   objc3_ir_type_model.cpp
 )

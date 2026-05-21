@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 
 from scripts.objc3c_semantic_optimization_pipeline import (
@@ -44,7 +45,11 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
         "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
     )
     assert result.payload["pass_order"] == REQUIRED_PASS_ORDER
+    assert result.payload["explicit_pass_order"] == REQUIRED_PASS_ORDER
     assert result.payload["pass_count"] == len(REQUIRED_PASS_ORDER)
+    assert result.payload["semantic_preservation_contract_count"] == len(
+        REQUIRED_PASS_ORDER
+    )
     assert result.payload["enabled_pass_count"] >= 3
     assert result.payload["reserved_pass_count"] == 3
     assert set(result.payload["capability_rows_required"]) >= REQUIRED_CAPABILITY_ROWS
@@ -69,6 +74,8 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     text = schema.read_text(encoding="utf-8")
 
     assert CONTRACT_ID == "objc3c.optimization.semantic.pipeline.v1"
+    assert '"drift_policy": { "const": "REJECT_FAIL_CLOSED" }' in text
+    assert '"success_claim_on_skip": { "const": false }' in text
     assert '"reserved_pass_success_claims_allowed": { "const": false }' in text
     assert '"workflow_action": { "const": "validate-semantic-optimization-pipeline" }' in text
 
@@ -87,3 +94,37 @@ def test_semantic_optimization_pipeline_direct_dispatch_trace_is_semantic() -> N
     assert "objc3_runtime_dispatch_i32" not in after_text
     assert "zext i1 %direct to i32" in after_text
     assert "ret i32 %value" in after_text
+
+
+def _write_pipeline_variant(tmp_path: Path, payload: dict[str, object]) -> Path:
+    path = tmp_path / "pipeline.json"
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return path
+
+
+def test_semantic_optimization_pipeline_order_drift_fails_closed(tmp_path: Path) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    ordered = payload["pass_order_contract"]["ordered_pass_ids"]
+    ordered[1], ordered[2] = ordered[2], ordered[1]
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "explicit pass order contract drifted" in failure for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_reserved_success_claim(tmp_path: Path) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    for contract in payload["semantic_preservation_contracts"]:
+        if contract["pass_id"] == "devirtualization":
+            contract["success_claim_on_skip"] = True
+            break
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "allows skip success claim" in failure for failure in result.failures
+    )

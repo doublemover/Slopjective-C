@@ -47,6 +47,7 @@ FALSE_UNSUPPORTED_POLICY_FIELDS = {
     "whole_program_optimization_allowed",
     "compatibility_shims_allowed",
 }
+FAIL_CLOSED_MISSING_PROOF_ACTIONS = {"SKIP_FAIL_CLOSED", "REJECT_FAIL_CLOSED"}
 REQUIRED_CAPABILITY_ROWS = {
     "objc3c.behavior.semantic_optimization_pipeline",
     "objc3c.internal.semantic_optimization_pass_registry",
@@ -95,6 +96,13 @@ def _require_path_with_tokens(path_text: str, tokens: list[object], failures: li
 def _require_fixture(path_text: str, failures: list[str]) -> None:
     if not (ROOT / path_text).is_file():
         failures.append(f"optimization fixture missing: {path_text}")
+
+
+def _policy_path_label(path: Path) -> str:
+    try:
+        return repo_rel(path)
+    except ValueError:
+        return path.resolve().as_posix()
 
 
 def _pass_text(row: dict[str, Any]) -> str:
@@ -180,6 +188,129 @@ def _validate_pass_registry(
     return pass_by_id
 
 
+def _validate_pass_order_contract(
+    order_contract: dict[str, Any],
+    pass_by_id: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> list[str]:
+    authority = str(order_contract.get("order_authority", ""))
+    ordered_pass_ids = [
+        str(pass_id) for pass_id in _as_list(order_contract.get("ordered_pass_ids"))
+    ]
+    if authority != "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp":
+        failures.append("semantic optimization pass order authority drifted")
+    if order_contract.get("drift_policy") != "REJECT_FAIL_CLOSED":
+        failures.append(
+            "semantic optimization pass order drift policy must reject fail-closed"
+        )
+    if not str(order_contract.get("ordering_rule", "")):
+        failures.append("semantic optimization pass order contract is missing ordering_rule")
+    if ordered_pass_ids != REQUIRED_PASS_ORDER:
+        failures.append(
+            "semantic optimization explicit pass order contract drifted: "
+            + ", ".join(ordered_pass_ids)
+        )
+    if ordered_pass_ids != list(pass_by_id):
+        failures.append("semantic optimization pass registry and order contract disagree")
+
+    authority_path = ROOT / authority
+    if authority_path.is_file():
+        authority_text = authority_path.read_text(encoding="utf-8")
+        for pass_id in REQUIRED_PASS_ORDER:
+            if pass_id not in authority_text:
+                failures.append(
+                    f"native IR optimization order surface missing pass: {pass_id}"
+                )
+        for token in ("REJECT_FAIL_CLOSED", "SKIP_FAIL_CLOSED"):
+            if token not in authority_text:
+                failures.append(
+                    f"native IR optimization policy missing fail-closed token: {token}"
+                )
+    else:
+        failures.append(f"semantic optimization pass order authority missing: {authority}")
+    return ordered_pass_ids
+
+
+def _validate_semantic_preservation_contracts(
+    contracts: list[object],
+    pass_by_id: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> dict[str, dict[str, Any]]:
+    contracts_by_id: dict[str, dict[str, Any]] = {}
+    actual_order: list[str] = []
+    for row in contracts:
+        if not isinstance(row, dict):
+            failures.append("semantic preservation contract row is not an object")
+            continue
+        pass_id = str(row.get("pass_id", ""))
+        if not pass_id:
+            failures.append("semantic preservation contract missing pass_id")
+            continue
+        if pass_id in contracts_by_id:
+            failures.append(f"duplicate semantic preservation contract: {pass_id}")
+            continue
+        contracts_by_id[pass_id] = row
+        actual_order.append(pass_id)
+
+        if pass_id not in pass_by_id:
+            failures.append(
+                f"semantic preservation contract has no pass registry row: {pass_id}"
+            )
+            continue
+        pass_row = pass_by_id[pass_id]
+        required_proofs = [str(proof) for proof in _as_list(row.get("required_proofs"))]
+        if not required_proofs:
+            failures.append(
+                f"semantic preservation contract missing required_proofs: {pass_id}"
+            )
+        if row.get("missing_proof_action") not in FAIL_CLOSED_MISSING_PROOF_ACTIONS:
+            failures.append(
+                f"semantic preservation contract has unsafe missing proof action: {pass_id}"
+            )
+        if row.get("success_claim_on_skip") is not False:
+            failures.append(f"semantic preservation contract allows skip success claim: {pass_id}")
+        if not str(row.get("semantic_equivalence", "")):
+            failures.append(f"semantic preservation contract missing equivalence text: {pass_id}")
+        pass_contract_text = {
+            str(proof)
+            for proof in (
+                _as_list(pass_row.get("preconditions"))
+                + _as_list(pass_row.get("post_verify"))
+                + [pass_row.get("invalidation")]
+            )
+        }
+        if not set(required_proofs).issubset(pass_contract_text):
+            failures.append(
+                f"semantic preservation contract proofs drift from pass registry contract: {pass_id}"
+            )
+        if (
+            pass_row.get("mode") == "reserved"
+            and row.get("missing_proof_action") != "SKIP_FAIL_CLOSED"
+        ):
+            failures.append(f"reserved optimization pass must skip fail-closed: {pass_id}")
+        if pass_row.get("mode") == "enabled" and pass_row.get("rewrites_ir") is True:
+            if row.get("missing_proof_action") not in FAIL_CLOSED_MISSING_PROOF_ACTIONS:
+                failures.append(f"mutating optimization pass lacks fail-closed action: {pass_id}")
+        if pass_id == "direct-dispatch-exact-call":
+            proof_text = " ".join(
+                required_proofs + [str(row.get("semantic_equivalence", ""))]
+            ).lower()
+            if "invalidation" not in proof_text and "invalidates" not in proof_text:
+                failures.append(
+                    "direct dispatch preservation contract must require proof invalidation"
+                )
+
+    missing = [pass_id for pass_id in REQUIRED_PASS_ORDER if pass_id not in contracts_by_id]
+    if missing:
+        failures.append(f"semantic preservation contracts missing passes: {', '.join(missing)}")
+    if actual_order != REQUIRED_PASS_ORDER:
+        failures.append(
+            "semantic preservation contract order drifted: "
+            + ", ".join(actual_order)
+        )
+    return contracts_by_id
+
+
 def _validate_direct_dispatch_fixture(failures: list[str]) -> None:
     before = ROOT / "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll"
     after = ROOT / "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll"
@@ -261,6 +392,16 @@ def validate_pipeline(
             failures.append("semantic optimization source anchor is not an object")
 
     pass_by_id = _validate_pass_registry(_as_list(pipeline.get("pass_registry")), failures)
+    explicit_pass_order = _validate_pass_order_contract(
+        _as_dict(pipeline.get("pass_order_contract")),
+        pass_by_id,
+        failures,
+    )
+    preservation_contracts = _validate_semantic_preservation_contracts(
+        _as_list(pipeline.get("semantic_preservation_contracts")),
+        pass_by_id,
+        failures,
+    )
 
     gates = _as_list(pipeline.get("verification_gates"))
     gate_ids = {
@@ -283,7 +424,7 @@ def validate_pipeline(
     payload: dict[str, Any] = {
         "contract_id": "objc3c.optimization.semantic.pipeline.validation.v1",
         "status": "PASS" if not failures else "FAIL",
-        "policy_path": repo_rel(pipeline_path),
+        "policy_path": _policy_path_label(pipeline_path),
         "schema_path": schema_path,
         "workflow_action": source_truth.get("workflow_action", ""),
         "issue_mapping": {
@@ -291,7 +432,9 @@ def validate_pipeline(
             "support_claims": sorted(support_claims),
         },
         "pass_order": [pass_id for pass_id in REQUIRED_PASS_ORDER if pass_id in pass_by_id],
+        "explicit_pass_order": explicit_pass_order,
         "pass_count": len(pass_by_id),
+        "semantic_preservation_contract_count": len(preservation_contracts),
         "enabled_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "enabled"),
         "reserved_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "reserved"),
         "verifier_only_pass_count": sum(

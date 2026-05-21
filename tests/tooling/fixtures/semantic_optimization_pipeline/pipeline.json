@@ -70,8 +70,34 @@
           "RequiresFailClosedObjc3RuntimeDispatchError",
           "method_family_retained_result_cleanup_required"
         ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp",
+        "tokens": [
+          "BuildObjc3IRSemanticOptimizationPassOrder",
+          "BuildObjc3IRSemanticOptimizationProofContracts",
+          "IsObjc3IRSemanticOptimizationProofContractFailClosed",
+          "REJECT_FAIL_CLOSED",
+          "SKIP_FAIL_CLOSED"
+        ]
       }
     ]
+  },
+  "pass_order_contract": {
+    "order_authority": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp",
+    "ordered_pass_ids": [
+      "semantic-precondition-gate",
+      "nil-receiver-folding",
+      "direct-dispatch-exact-call",
+      "arc-retained-result-cleanup",
+      "runtime-dispatch-preservation",
+      "devirtualization",
+      "method-inlining",
+      "cache-aware-dispatch",
+      "ir-cleanup-verifier"
+    ],
+    "ordering_rule": "precondition gates run before rewrites, mutating IR passes run before preservation verifiers, reserved passes skip before final equivalence verification",
+    "drift_policy": "REJECT_FAIL_CLOSED"
   },
   "pass_registry": [
     {
@@ -291,6 +317,107 @@
       "fixtures": [
         "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll"
       ]
+    }
+  ],
+  "semantic_preservation_contracts": [
+    {
+      "pass_id": "semantic-precondition-gate",
+      "required_proofs": [
+        "typed sema handoff is deterministic",
+        "lowering boundary replay key is present",
+        "parse-to-lowering readiness is ready"
+      ],
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "verifier-only precondition publication cannot mutate IR"
+    },
+    {
+      "pass_id": "nil-receiver-folding",
+      "required_proofs": [
+        "receiver fact is compile_time_nil_receiver",
+        "selector and argument lowering are side-effect free for optional nil send"
+      ],
+      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "unknown or non-nil receivers remain runtime dispatched"
+    },
+    {
+      "pass_id": "direct-dispatch-exact-call",
+      "required_proofs": [
+        "callee symbol and signature are both present",
+        "explicit argument types cover every explicit argument",
+        "direct dispatch result owns explicit IR storage",
+        "global proof state invalidation trace is present"
+      ],
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "exact direct call preserves typed scalar marshalling and invalidates stale receiver proofs"
+    },
+    {
+      "pass_id": "arc-retained-result-cleanup",
+      "required_proofs": [
+        "ARC mode is enabled",
+        "method family returns a retained object result",
+        "related-result receiver cleanup is disarmed before transfer"
+      ],
+      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "owned result cleanup remains explicit"
+    },
+    {
+      "pass_id": "runtime-dispatch-preservation",
+      "required_proofs": [
+        "runtime dispatch result owner is explicit",
+        "dispatch symbol is canonical or typed canonical from-class variant",
+        "retired routes and compatibility routes remain disabled"
+      ],
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "runtime lookup and cache behavior remain runtime-owned"
+    },
+    {
+      "pass_id": "devirtualization",
+      "required_proofs": [
+        "class finality proof exists",
+        "override set is closed",
+        "ABI stability allows direct target publication"
+      ],
+      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "reserved pass emits skip diagnostic without success claim"
+    },
+    {
+      "pass_id": "method-inlining",
+      "required_proofs": [
+        "callee body is available",
+        "ownership effects are replayable",
+        "debug and diagnostic source mapping are preserved"
+      ],
+      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "reserved pass emits skip diagnostic without success claim"
+    },
+    {
+      "pass_id": "cache-aware-dispatch",
+      "required_proofs": [
+        "runtime cache invalidation semantics are public",
+        "ABI-stable helper symbol exists",
+        "semantic replay preserves dispatch miss behavior"
+      ],
+      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "reserved runtime-owned optimization emits skip diagnostic without IR helper materialization"
+    },
+    {
+      "pass_id": "ir-cleanup-verifier",
+      "required_proofs": [
+        "pass order trace is deterministic",
+        "all mutating passes declared invalidation",
+        "all unsupported opportunities emitted skip diagnostics"
+      ],
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
+      "success_claim_on_skip": false,
+      "semantic_equivalence": "post-pass trace carries a semantic equivalence verdict"
     }
   ],
   "verification_gates": [
