@@ -9,7 +9,7 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from check_developer_tooling_diagnostic_quality import build_diagnostic_quality_summary
+import check_developer_tooling_diagnostic_quality as diagnostic_quality
 from format_objc3c_source import build_format_summary_for_source
 from rewrite_objc3c_source import build_rewrite_for_source, build_rule_set
 
@@ -21,6 +21,11 @@ def load_json(path: Path) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(payload, dict)
     return payload
+
+
+def write_json(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def test_formatter_formats_canonical_objc3_subset_and_fails_closed() -> None:
@@ -92,7 +97,7 @@ def test_safe_source_rewrite_skips_strings_comments_and_publishes_token_edits() 
 def test_diagnostic_quality_gate_covers_taxonomy_and_machine_fixits() -> None:
     contract = load_json(FIXTURE_ROOT / "diagnostic_quality_contract.json")
 
-    summary = build_diagnostic_quality_summary(contract)
+    summary = diagnostic_quality.build_diagnostic_quality_summary(contract)
 
     assert summary["ok"] is True
     assert summary["diagnostic_entry_count"] >= contract["minimum_diagnostic_count"]
@@ -108,4 +113,94 @@ def test_diagnostic_quality_gate_covers_taxonomy_and_machine_fixits() -> None:
     assert summary["missing_required_recovery_case_ids"] == []
     assert summary["missing_required_recovery_phases"] == []
     assert summary["checks"]["structured_recovery_payloads_valid"] is True
+    assert summary["checks"]["native_recovery_fixtures_within_root"] is True
+    assert summary["checks"]["native_recovery_fixture_sources_match"] is True
+    assert summary["checks"]["native_recovery_fixture_expected_codes_match"] is True
     assert summary["deterministic_digest"]
+
+
+def test_diagnostic_quality_gate_fails_closed_on_stale_native_recovery_fixture(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(diagnostic_quality, "ROOT", tmp_path)
+    diagnostic_root = tmp_path / "tests" / "conformance" / "diagnostics"
+    fixture_root = (
+        tmp_path / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative"
+    )
+    case_source = "module FixtureTruth;\n\nfn main() -> i32 {\n  return 1;\n}\n"
+    stale_fixture_source = "module StaleFixture;\n\nfn main() -> i32 {\n  return 1;\n}\n"
+    fixture = fixture_root / "stale_recovery_fixture.objc3"
+    fixture.parent.mkdir(parents=True, exist_ok=True)
+    fixture.write_text(
+        stale_fixture_source + "\n// Expected diagnostic code(s): O3P100.\n",
+        encoding="utf-8",
+    )
+    write_json(
+        diagnostic_root / "CASE.json",
+        {
+            "id": "STALE-RECOVERY-FIXTURE",
+            "source": case_source,
+            "expect": {
+                "parse": "reject",
+                "diagnostics": [
+                    {
+                        "code": "O3P104",
+                        "severity": "error",
+                        "phase": "parse",
+                        "category": "parsing",
+                        "span": {
+                            "start": {"line": 4, "column": 3},
+                            "end": {"line": 4, "column": 9},
+                        },
+                        "message": "missing ';' after return",
+                        "explanation": "Synthetic stale-fixture guard case.",
+                        "fixits": [],
+                        "recovery": {
+                            "strategy": "parser-statement-boundary-synchronization",
+                            "boundary": "next statement token",
+                            "deterministic": True,
+                            "accepts_invalid_program": False,
+                            "recovery_counts_as_success": False,
+                            "native_fixture": (
+                                "tests/tooling/fixtures/native/recovery/negative/"
+                                "stale_recovery_fixture.objc3"
+                            ),
+                            "expected_native_code": "O3P104",
+                        },
+                    }
+                ],
+            },
+        },
+    )
+    write_json(
+        diagnostic_root / "manifest.json",
+        {
+            "schema_version": "1.0.0",
+            "groups": [{"name": "stale", "files": ["CASE.json"]}],
+        },
+    )
+
+    summary = diagnostic_quality.build_diagnostic_quality_summary(
+        {
+            "contract_id": "stale-fixture-test",
+            "surface_kind": "diagnostic-quality-test",
+            "manifest_path": "tests/conformance/diagnostics/manifest.json",
+            "native_recovery_fixture_root": (
+                "tests/tooling/fixtures/native/recovery/negative"
+            ),
+            "minimum_diagnostic_count": 1,
+            "minimum_machine_applicable_fixit_count": 0,
+            "minimum_recovery_diagnostic_count": 1,
+            "minimum_native_recovery_fixture_count": 1,
+            "required_fixit_codes": [],
+            "required_recovery_case_ids": ["STALE-RECOVERY-FIXTURE"],
+            "required_recovery_phases": ["parse"],
+        }
+    )
+
+    assert summary["ok"] is False
+    assert summary["checks"]["native_recovery_fixture_sources_match"] is False
+    assert summary["checks"]["native_recovery_fixture_expected_codes_match"] is False
+    failures = "\n".join(str(failure) for failure in summary["failures"])
+    assert "native_fixture source does not match diagnostic source" in failures
+    assert "native_fixture header does not include expected_native_code O3P104" in failures

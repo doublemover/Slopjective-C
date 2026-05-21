@@ -81,6 +81,20 @@ std::string BuildObjc3ParserDiagnosticWithFixIt(
       token, code, AppendObjc3ParserFixItMetadata(message, fixit));
 }
 
+std::string BuildObjc3ParserDiagnosticWithFixItAndRecovery(
+    const Objc3LexToken &token,
+    const char *code,
+    const std::string &message,
+    const Objc3ParserDiagnosticFixIt &fixit,
+    std::string_view strategy,
+    std::string_view boundary) {
+  return BuildObjc3ParserDiagnostic(
+      token,
+      code,
+      AppendObjc3ParserRecoveryMetadata(
+          AppendObjc3ParserFixItMetadata(message, fixit), strategy, boundary));
+}
+
 std::string BuildObjc3ParserDiagnosticWithRecovery(
     const Objc3LexToken &token,
     const char *code,

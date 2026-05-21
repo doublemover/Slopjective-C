@@ -52,11 +52,15 @@ def test_parser_diagnostic_builder_publishes_machine_fixit_and_recovery_metadata
 
     assert "struct Objc3ParserDiagnosticFixIt" in header
     assert "BuildObjc3ParserDiagnosticWithFixIt" in header
+    assert "BuildObjc3ParserDiagnosticWithFixItAndRecovery" in header
     assert "BuildObjc3ParserDiagnosticWithRecovery" in header
     assert "machine-applicable=" in builder
     assert "recovery-counts-as-success=false" in builder
+    assert "AppendObjc3ParserRecoveryMetadata(" in builder
     assert "insert-missing-semicolon-after-" in rejection
+    assert "parser-statement-boundary-synchronization" in rejection
     assert "replace-optional-alias-with-Optional" in rejection
+    assert "parser-canonical-spelling-rejection" in rejection
     assert "skip-unsupported-top-level-fragment" in rejection
 
 
@@ -114,6 +118,10 @@ def test_native_diagnostics_json_promotes_fixit_metadata_out_of_message(
     assert missing_semicolon["message"] == "missing ';' after assignment"
     assert "{fix-it:" not in str(missing_semicolon["message"])
     assert missing_semicolon["explanation"]
+    assert missing_semicolon["span"] == {
+        "start": {"line": 10, "column": 3},
+        "end": {"line": 10, "column": 4},
+    }
 
     fixits = missing_semicolon["fixits"]
     assert isinstance(fixits, list)
@@ -123,8 +131,8 @@ def test_native_diagnostics_json_promotes_fixit_metadata_out_of_message(
             "kind": "insert-text",
             "label": "insert-missing-semicolon-after-assignment",
             "range": {
-                "start": {"line": 11, "column": 3},
-                "end": {"line": 11, "column": 3},
+                "start": {"line": 9, "column": 20},
+                "end": {"line": 9, "column": 20},
             },
             "replacement": ";",
             "title": "insert-missing-semicolon-after-assignment",

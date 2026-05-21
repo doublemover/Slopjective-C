@@ -5,18 +5,30 @@ namespace objc3c::parse {
 std::string BuildObjc3MissingSemicolonDiagnostic(
     const Objc3LexToken &token,
     const std::string &context) {
-  return BuildObjc3ParserDiagnosticWithFixIt(
+  return BuildObjc3MissingSemicolonDiagnostic(token, token, context);
+}
+
+std::string BuildObjc3MissingSemicolonDiagnostic(
+    const Objc3LexToken &token,
+    const Objc3LexToken &insertion_anchor,
+    const std::string &context) {
+  const unsigned insertion_column =
+      insertion_anchor.column +
+      static_cast<unsigned>(insertion_anchor.text.size());
+  return BuildObjc3ParserDiagnosticWithFixItAndRecovery(
       token,
       "O3P104",
       "missing ';' after " + context,
       Objc3ParserDiagnosticFixIt{
-          token.line,
-          token.column,
-          token.line,
-          token.column,
+          insertion_anchor.line,
+          insertion_column,
+          insertion_anchor.line,
+          insertion_column,
           "insert-missing-semicolon-after-" + context,
           ";",
-          true});
+          true},
+      "parser-statement-boundary-synchronization",
+      "next statement token");
 }
 
 std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
@@ -29,7 +41,7 @@ std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
     const Objc3LexToken &token) {
   const unsigned end_column =
       token.column + static_cast<unsigned>(token.text.empty() ? 8u : token.text.size());
-  return BuildObjc3ParserDiagnosticWithFixIt(
+  return BuildObjc3ParserDiagnosticWithFixItAndRecovery(
       token,
       "O3C004",
       "optional<T> aliases are rejected; use canonical Optional<T> spelling",
@@ -40,7 +52,9 @@ std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
           end_column,
           "replace-optional-alias-with-Optional",
           "Optional",
-          true});
+          true},
+      "parser-canonical-spelling-rejection",
+      "canonical type spelling");
 }
 
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(

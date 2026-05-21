@@ -20,6 +20,12 @@ JSON_OUT = OUT_DIR / "diagnostic_quality_summary.json"
 MD_OUT = OUT_DIR / "diagnostic_quality_summary.md"
 DOC_CODE_RE = re.compile(r"^OBJC3-D-[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$")
 NATIVE_CODE_RE = re.compile(r"^O3[CLPSREAT][0-9]{3}$")
+NATIVE_CODE_TOKEN_RE = re.compile(r"\bO3[CLPSREAT][0-9]{3}\b")
+EXPECTED_DIAGNOSTIC_HEADER_RE = re.compile(
+    r"^\s*//\s*Expected diagnostic code\(s\):\s*(?P<codes>.+?)\s*$",
+    re.MULTILINE,
+)
+DEFAULT_NATIVE_RECOVERY_FIXTURE_ROOT = "tests/tooling/fixtures/native/recovery/negative"
 ALLOWED_SEVERITIES = {"note", "warning", "error", "fatal"}
 ALLOWED_PHASES = {
     "lex",
@@ -89,12 +95,90 @@ def valid_fixit(fixit: object) -> bool:
     )
 
 
+def path_is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def normalize_recovery_fixture_source(text: str) -> str:
+    retained_lines: list[str] = []
+    for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if EXPECTED_DIAGNOSTIC_HEADER_RE.match(line):
+            continue
+        retained_lines.append(line)
+    return "\n".join(retained_lines).strip()
+
+
+def expected_codes_from_native_fixture(text: str) -> set[str]:
+    match = EXPECTED_DIAGNOSTIC_HEADER_RE.search(text)
+    if match is None:
+        return set()
+    return set(NATIVE_CODE_TOKEN_RE.findall(match.group("codes")))
+
+
+def valid_native_recovery_fixture(
+    native_fixture: str,
+    *,
+    case_source: object,
+    expected_native_code: object,
+    failures: list[str],
+    failure_prefix: str,
+    native_recovery_fixture_root: Path,
+) -> dict[str, bool]:
+    result = {
+        "within_root": False,
+        "source_matches": False,
+        "expected_code_matches": False,
+    }
+    fixture_path = (ROOT / native_fixture).resolve()
+    if not path_is_relative_to(fixture_path, native_recovery_fixture_root):
+        failures.append(
+            f"{failure_prefix}: native_fixture must stay under "
+            f"{native_recovery_fixture_root.relative_to(ROOT).as_posix()}"
+        )
+    else:
+        result["within_root"] = True
+
+    if not fixture_path.is_file():
+        return result
+
+    fixture_text = fixture_path.read_text(encoding="utf-8")
+    expected_codes = expected_codes_from_native_fixture(fixture_text)
+    if not expected_codes:
+        failures.append(
+            f"{failure_prefix}: native_fixture is missing expected diagnostic header"
+        )
+    elif isinstance(expected_native_code, str) and expected_native_code in expected_codes:
+        result["expected_code_matches"] = True
+    elif isinstance(expected_native_code, str):
+        failures.append(
+            f"{failure_prefix}: native_fixture header does not include "
+            f"expected_native_code {expected_native_code}"
+        )
+
+    if not isinstance(case_source, str) or not case_source.strip():
+        failures.append(f"{failure_prefix}: recovery diagnostic case source is missing")
+    elif normalize_recovery_fixture_source(fixture_text) == normalize_recovery_fixture_source(
+        case_source
+    ):
+        result["source_matches"] = True
+    else:
+        failures.append(f"{failure_prefix}: native_fixture source does not match diagnostic source")
+
+    return result
+
+
 def valid_recovery_payload(
     recovery: object,
     *,
+    case_source: object,
     diagnostic_code: str,
     failures: list[str],
     failure_prefix: str,
+    native_recovery_fixture_root: Path,
 ) -> bool:
     if not isinstance(recovery, dict):
         failures.append(f"{failure_prefix}: missing structured recovery payload")
@@ -132,9 +216,21 @@ def valid_recovery_payload(
         if not isinstance(native_fixture, str) or not native_fixture.strip():
             failures.append(f"{failure_prefix}: native_fixture must be non-empty")
             ok = False
-        elif not (ROOT / native_fixture).is_file():
-            failures.append(f"{failure_prefix}: native_fixture does not exist")
-            ok = False
+        else:
+            fixture_path = ROOT / native_fixture
+            if not fixture_path.is_file():
+                failures.append(f"{failure_prefix}: native_fixture does not exist")
+                ok = False
+            fixture_result = valid_native_recovery_fixture(
+                native_fixture,
+                case_source=case_source,
+                expected_native_code=expected_native_code,
+                failures=failures,
+                failure_prefix=failure_prefix,
+                native_recovery_fixture_root=native_recovery_fixture_root,
+            )
+            recovery["_fixture_validation"] = fixture_result
+            ok = ok and all(fixture_result.values())
 
     return ok
 
@@ -181,11 +277,21 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
     required_recovery_phases = set(
         str(phase) for phase in contract.get("required_recovery_phases", [])
     )
+    native_recovery_fixture_root = (
+        ROOT / str(contract.get("native_recovery_fixture_root", DEFAULT_NATIVE_RECOVERY_FIXTURE_ROOT))
+    ).resolve()
+    minimum_native_recovery_fixture_count = int(
+        contract.get("minimum_native_recovery_fixture_count", 0)
+    )
     observed_fixit_codes: set[str] = set()
     observed_recovery_case_ids: set[str] = set()
     observed_recovery_phases: set[str] = set()
+    observed_native_recovery_fixtures: set[str] = set()
     recovery_diagnostic_count = 0
     native_recovery_fixture_count = 0
+    native_recovery_fixture_within_root_count = 0
+    native_recovery_fixture_source_match_count = 0
+    native_recovery_fixture_expected_code_match_count = 0
 
     for file_name in files:
         case_path = diagnostic_root / file_name
@@ -249,15 +355,26 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
                     recovery_ok = False
                 if not valid_recovery_payload(
                     recovery,
+                    case_source=case_payload.get("source"),
                     diagnostic_code=code_text,
                     failures=failures,
                     failure_prefix=recovery_prefix,
+                    native_recovery_fixture_root=native_recovery_fixture_root,
                 ):
                     recovery_ok = False
                 if isinstance(recovery, dict) and isinstance(
                     recovery.get("native_fixture"), str
                 ):
                     native_recovery_fixture_count += 1
+                    observed_native_recovery_fixtures.add(str(recovery["native_fixture"]))
+                    fixture_validation = recovery.get("_fixture_validation")
+                    if isinstance(fixture_validation, dict):
+                        if fixture_validation.get("within_root") is True:
+                            native_recovery_fixture_within_root_count += 1
+                        if fixture_validation.get("source_matches") is True:
+                            native_recovery_fixture_source_match_count += 1
+                        if fixture_validation.get("expected_code_matches") is True:
+                            native_recovery_fixture_expected_code_match_count += 1
             entries.append(
                 {
                     "case_id": case_id,
@@ -320,11 +437,18 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             "recovery diagnostic count "
             f"{recovery_diagnostic_count} below required {min_recovery_diagnostic_count}"
         )
+    if len(observed_native_recovery_fixtures) < minimum_native_recovery_fixture_count:
+        failures.append(
+            "native recovery fixture count "
+            f"{len(observed_native_recovery_fixtures)} below required "
+            f"{minimum_native_recovery_fixture_count}"
+        )
 
     digest_input = {
         "files": files,
         "entries": entries,
         "code_families": dict(sorted(code_families.items())),
+        "native_recovery_fixtures": sorted(observed_native_recovery_fixtures),
     }
     deterministic_digest = hashlib.sha256(stable_json(digest_input).encode("utf-8")).hexdigest()
     checks = {
@@ -340,6 +464,14 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "structured_recovery_payloads_valid": not any(
             entry["has_recovery"] and not entry["recovery_ok"] for entry in entries
         ),
+        "minimum_native_recovery_fixture_count_met": len(observed_native_recovery_fixtures)
+        >= minimum_native_recovery_fixture_count,
+        "native_recovery_fixtures_within_root": native_recovery_fixture_within_root_count
+        == native_recovery_fixture_count,
+        "native_recovery_fixture_sources_match": native_recovery_fixture_source_match_count
+        == native_recovery_fixture_count,
+        "native_recovery_fixture_expected_codes_match": native_recovery_fixture_expected_code_match_count
+        == native_recovery_fixture_count,
         "deterministic_digest_ready": bool(deterministic_digest),
     }
     return {
@@ -355,6 +487,12 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "machine_applicable_fixit_count": machine_applicable_fixit_count,
         "recovery_diagnostic_count": recovery_diagnostic_count,
         "native_recovery_fixture_count": native_recovery_fixture_count,
+        "unique_native_recovery_fixture_count": len(observed_native_recovery_fixtures),
+        "native_recovery_fixture_root": display_path(native_recovery_fixture_root),
+        "native_recovery_fixture_within_root_count": native_recovery_fixture_within_root_count,
+        "native_recovery_fixture_source_match_count": native_recovery_fixture_source_match_count,
+        "native_recovery_fixture_expected_code_match_count": native_recovery_fixture_expected_code_match_count,
+        "minimum_native_recovery_fixture_count": minimum_native_recovery_fixture_count,
         "required_fixit_codes": sorted(required_fixit_codes),
         "missing_required_fixit_codes": missing_required_fixit_codes,
         "required_recovery_case_ids": sorted(required_recovery_case_ids),
@@ -382,6 +520,7 @@ def main() -> int:
         f"- Code families: `{summary['code_family_count']}`\n"
         f"- Machine-applicable fix-its: `{summary['machine_applicable_fixit_count']}`\n"
         f"- Recovery diagnostics: `{summary['recovery_diagnostic_count']}`\n"
+        f"- Native recovery fixtures: `{summary['unique_native_recovery_fixture_count']}`\n"
         f"- Status: `{summary['status']}`\n",
         encoding="utf-8",
     )

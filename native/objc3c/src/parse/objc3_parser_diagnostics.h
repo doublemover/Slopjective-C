@@ -37,6 +37,13 @@ std::string BuildObjc3ParserDiagnosticWithFixIt(
     const char *code,
     const std::string &message,
     const Objc3ParserDiagnosticFixIt &fixit);
+std::string BuildObjc3ParserDiagnosticWithFixItAndRecovery(
+    const Objc3LexToken &token,
+    const char *code,
+    const std::string &message,
+    const Objc3ParserDiagnosticFixIt &fixit,
+    std::string_view strategy,
+    std::string_view boundary);
 std::string BuildObjc3ParserDiagnosticWithRecovery(
     const Objc3LexToken &token,
     const char *code,
@@ -45,6 +52,10 @@ std::string BuildObjc3ParserDiagnosticWithRecovery(
     std::string_view boundary);
 std::string BuildObjc3MissingSemicolonDiagnostic(
     const Objc3LexToken &token,
+    const std::string &context);
+std::string BuildObjc3MissingSemicolonDiagnostic(
+    const Objc3LexToken &token,
+    const Objc3LexToken &insertion_anchor,
     const std::string &context);
 std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
     const Objc3LexToken &token);

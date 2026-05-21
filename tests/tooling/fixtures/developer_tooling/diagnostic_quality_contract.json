@@ -10,9 +10,11 @@
   ],
   "summary_implementation_anchor": "scripts/check_developer_tooling_diagnostic_quality.py",
   "manifest_path": "tests/conformance/diagnostics/manifest.json",
+  "native_recovery_fixture_root": "tests/tooling/fixtures/native/recovery/negative",
   "minimum_diagnostic_count": 80,
   "minimum_machine_applicable_fixit_count": 20,
   "minimum_recovery_diagnostic_count": 4,
+  "minimum_native_recovery_fixture_count": 4,
   "required_fixit_codes": [
     "OBJC3-D-CONC-MISSING-AWAIT",
     "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",

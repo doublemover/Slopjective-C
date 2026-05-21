@@ -1,6 +1,7 @@
-// Expected diagnostic code(s): O3C004 O3P100.
 module Obj3Next016OptionalAliasFixitRecovery;
 
 fn main(value: optional<int>) -> i32 {
   return value;
 }
+
+// Expected diagnostic code(s): O3C004 O3P100.
