@@ -1172,6 +1172,60 @@
       ]
     },
     {
+      "id": "modules.visibility-reexport-rebuild-contract",
+      "title": "Module visibility and rebuild contract",
+      "state": "implemented",
+      "summary": "The module system publishes a checked import visibility, public reexport, ABI/version identity, bridge metadata, and deterministic rebuild replay contract for the FoundationNext visibility bridge slice. This row is limited to the checked contract and does not claim network package resolution, dynamic plugins, Swift ABI acceptance, C++ template import, or Objective-C 2.0 source compatibility.",
+      "support_claims": [
+        "objc3c.behavior.modules.visibility-reexport-rebuild-contract"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "scripts/check_objc3c_module_interop_contracts.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+          "command": "npm run objc3c -- validate-module-interop-contracts"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_module_interop_contracts.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-module-interop-contract-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_module_interop_contracts.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+        }
+      ]
+    },
+    {
       "id": "runtime.modules.imported-runtime-packaging-replay",
       "title": "Imported runtime packaging replay",
       "state": "implemented",

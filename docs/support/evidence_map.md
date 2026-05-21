@@ -181,6 +181,15 @@ diagnostic, documentation, or boundary evidence only.
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3` |  |
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h` |  |
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` | `npm run objc3c -- validate-module-interop-contracts` |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/test_objc3c_module_interop_contracts.py` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `schema` | `schemas/objc3c-module-interop-contract-v1.schema.json` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `source` | `scripts/check_objc3c_module_interop_contracts.py` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `source` | `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `source` | `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp` |  |
+| `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `source` | `native/objc3c/src/pipeline/objc3_runtime_import_surface.h` |  |
 | `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` |
 | `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_provider.objc3` |  |
 | `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/runtime/import_module_execution_matrix_probe.cpp` |  |
@@ -628,3 +637,4 @@ diagnostic, documentation, or boundary evidence only.
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
+

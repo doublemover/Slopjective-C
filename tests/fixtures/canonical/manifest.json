@@ -96,6 +96,12 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+      "executable_command": "npm run objc3c -- validate-module-interop-contracts"
+    },
+    {
       "claim_id": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
@@ -1385,6 +1391,14 @@
     },
     {
       "path": "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "module-import",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "module-import",

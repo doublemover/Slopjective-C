@@ -53,6 +53,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
 | `objc3c.behavior.modules.public-import-lookup` | `sema` | `tests/tooling/fixtures/native/module_import_lookup_consumer.objc3` | `npm run objc3c -- validate-conformance-corpus` | `modules.public-import-lookup` |
+| `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `sema` | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` | `npm run objc3c -- validate-module-interop-contracts` | `modules.visibility-reexport-rebuild-contract` |
 | `objc3c.behavior.package.install-clean-distribution` | `e2e` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` | `ecosystem.package-install.clean-distribution` |
 | `objc3c.behavior.package.manager-local-registry` | `e2e` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` | `ecosystem.package-manager.local-registry` |
 | `objc3c.behavior.parser.canonical-syntax` | `parser` | `tests/native/parser/positive/canonical_module_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.parser.core-declarations` |
@@ -679,6 +680,28 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3`
   - source: `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h`
   - source: `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h`
+
+### Module visibility and rebuild contract
+
+- Capability ID: `modules.visibility-reexport-rebuild-contract`
+- State: `implemented`
+- Support claims: `objc3c.behavior.modules.visibility-reexport-rebuild-contract`
+- Summary: The module system publishes a checked import visibility, public reexport, ABI/version identity, bridge metadata, and deterministic rebuild replay contract for the FoundationNext visibility bridge slice. This row is limited to the checked contract and does not claim network package resolution, dynamic plugins, Swift ABI acceptance, C++ template import, or Objective-C 2.0 source compatibility.
+- Owner modules:
+  - `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h`
+  - `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.h`
+  - `scripts/check_objc3c_module_interop_contracts.py`
+- Evidence:
+  - test: `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` via `npm run objc3c -- validate-module-interop-contracts`
+  - test: `tests/tooling/test_objc3c_module_interop_contracts.py`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3`
+  - schema: `schemas/objc3c-module-interop-contract-v1.schema.json`
+  - source: `scripts/check_objc3c_module_interop_contracts.py`
+  - source: `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h`
+  - source: `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp`
+  - source: `native/objc3c/src/pipeline/objc3_runtime_import_surface.h`
 
 ### Imported runtime packaging replay
 
@@ -2046,3 +2069,4 @@ the canonical manifest fixture and public npm command above.
   unavailable until a narrower implemented row exists.
 - `internal`: the row names implementation, schema, report, workflow, or
   owner boundaries, not public Objective-C 3.0 behavior.
+

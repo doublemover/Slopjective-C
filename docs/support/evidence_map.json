@@ -970,6 +970,61 @@
       "path": "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
     },
     {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+      "command": "npm run objc3c -- validate-module-interop-contracts"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_objc3c_module_interop_contracts.py"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-module-interop-contract-v1.schema.json"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_module_interop_contracts.py"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+    },
+    {
+      "capability_id": "modules.visibility-reexport-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+    },
+    {
       "capability_id": "runtime.modules.imported-runtime-packaging-replay",
       "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
       "evidence_kind": "test",
