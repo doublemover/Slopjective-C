@@ -1,6 +1,7 @@
 #include "pipeline/objc3_module_interop_contract_surface.h"
 
 #include <algorithm>
+#include <cctype>
 #include <set>
 #include <sstream>
 #include <string>
@@ -30,6 +31,21 @@ namespace {
 bool HasAnyRebuildEffect(const Objc3ModuleImportEdgeContract &edge) {
   return edge.rebuild_affects_semantic || edge.rebuild_affects_abi ||
          edge.rebuild_affects_link || edge.rebuild_affects_package_lock;
+}
+
+bool IsStableDiagnosticCode(const std::string &code) {
+  return code.rfind("O3", 0) == 0 && code.size() > 2;
+}
+
+bool IsPowerOfTwo(std::size_t value) {
+  return value != 0u && (value & (value - 1u)) == 0u;
+}
+
+bool IsSha256HexDigest(const std::string &digest) {
+  return digest.size() == 64u &&
+         std::all_of(digest.begin(), digest.end(), [](unsigned char ch) {
+           return std::isxdigit(ch) != 0;
+         });
 }
 
 bool InsertUnique(const std::string &value,
@@ -95,7 +111,7 @@ std::string BuildObjc3ModuleInteropRebuildKey(
       foreign_part << ",";
     }
     foreign_part << lane.language << ":" << lane.surface_id << ":"
-                 << surface.module_name << ":"
+                 << lane.symbol_owner << ":" << lane.abi_alignment << ":"
                  << (lane.state == Objc3ModuleInteropLaneState::kSupported
                          ? "supported"
                          : "reserved");
@@ -103,19 +119,37 @@ std::string BuildObjc3ModuleInteropRebuildKey(
 
   return "module=" + surface.module_name + ";metadata=" +
          surface.module_metadata_version + ";abi=" +
-         surface.module_abi_identity + ";package=" +
+         surface.module_abi_identity + ";source_digest=" +
+         surface.module_source_digest + ";package=" +
          surface.package_lock_module_identity + ";imports=[" +
          import_part.str() + "];exports=[" +
          JoinSortedStrings(surface.public_exports_source_order) +
-         "];foreign=[" + foreign_part.str() + "]";
+         "];bridge_metadata_digest=" + surface.bridge_metadata_digest +
+         ";mixed_image_loader_metadata_digest=" +
+         surface.mixed_image_loader_metadata_digest + ";foreign=[" +
+         foreign_part.str() + "]";
 }
 
 bool ValidateObjc3ModuleInteropContractSurface(
     const Objc3ModuleInteropContractSurface &surface,
     std::string &error) {
-  if (surface.module_name.empty() || surface.module_metadata_version.empty() ||
-      surface.module_abi_identity.empty()) {
+  if (surface.module_name.empty() ||
+      surface.module_metadata_version.empty() ||
+      surface.module_abi_identity.empty() ||
+      surface.module_source_digest.empty()) {
     error = "module identity fields must be present";
+    return false;
+  }
+  if (!IsSha256HexDigest(surface.module_source_digest) ||
+      !IsSha256HexDigest(surface.bridge_metadata_digest) ||
+      !IsSha256HexDigest(surface.mixed_image_loader_metadata_digest)) {
+    error = "module interop rebuild digests must be stable sha256 hex values";
+    return false;
+  }
+  if (!IsStableDiagnosticCode(surface.stale_metadata_diagnostic_code) ||
+      !IsStableDiagnosticCode(surface.abi_mismatch_diagnostic_code)) {
+    error = "module interop stale metadata and ABI mismatch diagnostics must "
+            "be stable";
     return false;
   }
   if (!surface.deterministic_rebuild_identity ||
@@ -204,11 +238,33 @@ bool ValidateObjc3ModuleInteropContractSurface(
     return false;
   }
 
+  for (const Objc3ModuleVisibilityAccessContract &access :
+       surface.visibility_access_source_order) {
+    if (access.symbol.empty() || access.provided_by.empty()) {
+      error = "module visibility access contract must name symbol and provider";
+      return false;
+    }
+    const bool public_access =
+        access.visibility == Objc3ModuleImportVisibility::kPublic;
+    if (access.allowed != public_access) {
+      error = "module visibility access allowance drifted: " + access.symbol;
+      return false;
+    }
+    if (!public_access && !IsStableDiagnosticCode(access.diagnostic_code)) {
+      error = "hidden declaration access must fail closed with a stable "
+              "diagnostic: " +
+              access.symbol;
+      return false;
+    }
+  }
+
   std::size_t supported_lanes = 0;
   std::size_t reserved_lanes = 0;
   for (const Objc3ModuleInteropForeignLaneContract &lane :
        surface.foreign_lane_contracts) {
-    if (lane.language.empty() || lane.surface_id.empty() || !lane.fail_closed ||
+    if (lane.language.empty() || lane.surface_id.empty() ||
+        lane.symbol_owner != surface.module_name ||
+        !IsPowerOfTwo(lane.abi_alignment) || !lane.fail_closed ||
         !lane.ownership_policy_explicit || !lane.error_policy_explicit ||
         !lane.async_policy_explicit ||
         !lane.object_identity_policy_explicit) {
@@ -224,7 +280,7 @@ bool ValidateObjc3ModuleInteropContractSurface(
       }
     } else {
       ++reserved_lanes;
-      if (lane.diagnostic_code.rfind("O3", 0) != 0) {
+      if (!IsStableDiagnosticCode(lane.diagnostic_code)) {
         error = "reserved foreign lane must publish a stable diagnostic: " +
                 lane.language;
         return false;

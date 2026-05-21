@@ -28,12 +28,22 @@ struct Objc3ModuleImportEdgeContract {
   bool rebuild_affects_package_lock = false;
 };
 
+struct Objc3ModuleVisibilityAccessContract {
+  std::string symbol;
+  std::string provided_by;
+  Objc3ModuleImportVisibility visibility = Objc3ModuleImportVisibility::kPrivate;
+  bool allowed = false;
+  std::string diagnostic_code;
+};
+
 struct Objc3ModuleInteropForeignLaneContract {
   std::string language;
   std::string surface_id;
+  std::string symbol_owner;
   Objc3ModuleInteropLaneState state = Objc3ModuleInteropLaneState::kReserved;
   std::string diagnostic_code;
   std::vector<std::string> evidence_anchors_source_order;
+  std::size_t abi_alignment = 0;
   bool fail_closed = true;
   bool ownership_policy_explicit = true;
   bool error_policy_explicit = true;
@@ -45,12 +55,15 @@ struct Objc3ModuleInteropContractSurface {
   std::string module_name;
   std::string module_metadata_version;
   std::string module_abi_identity;
+  std::string module_source_digest;
   std::string package_lock_module_identity;
   std::string module_identity_rebuild_key;
   std::vector<Objc3ModuleImportEdgeContract> import_edges_source_order;
   std::vector<std::string> public_exports_source_order;
   std::vector<std::string> private_exports_source_order;
   std::vector<std::string> package_imported_module_identities_source_order;
+  std::vector<Objc3ModuleVisibilityAccessContract>
+      visibility_access_source_order;
   std::size_t public_import_edge_count = 0;
   std::size_t private_import_edge_count = 0;
   std::size_t reexported_import_edge_count = 0;
@@ -62,6 +75,10 @@ struct Objc3ModuleInteropContractSurface {
   std::string bridge_header_relative_path;
   std::string bridge_modulemap_relative_path;
   std::string bridge_metadata_relative_path;
+  std::string bridge_metadata_digest;
+  std::string mixed_image_loader_metadata_digest;
+  std::string stale_metadata_diagnostic_code;
+  std::string abi_mismatch_diagnostic_code;
   std::size_t c_foreign_type_contract_count = 0;
   std::size_t objc2_bridge_metadata_only_count = 0;
   bool objc2_bridge_metadata_only_retired_syntax_rejected = false;

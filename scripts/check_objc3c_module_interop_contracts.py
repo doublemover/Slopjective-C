@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -79,14 +81,22 @@ NATIVE_ANCHOR_FRAGMENTS = {
     "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h": (
         "Objc3ModuleImportVisibility",
         "Objc3ModuleImportEdgeContract",
+        "Objc3ModuleVisibilityAccessContract",
         "Objc3ModuleInteropLaneState",
         "Objc3ModuleInteropForeignLaneContract",
         "Objc3ModuleInteropContractSurface",
         "import_edges_source_order",
         "public_exports_source_order",
         "package_imported_module_identities_source_order",
+        "visibility_access_source_order",
         "module_identity_rebuild_key",
+        "module_source_digest",
         "bridge_modulemap_relative_path",
+        "bridge_metadata_digest",
+        "mixed_image_loader_metadata_digest",
+        "stale_metadata_diagnostic_code",
+        "abi_mismatch_diagnostic_code",
+        "abi_alignment",
         "c_foreign_type_contract_count",
         "objc2_bridge_metadata_only_retired_syntax_rejected",
         "swift_callable_metadata_count",
@@ -102,9 +112,13 @@ NATIVE_ANCHOR_FRAGMENTS = {
         "module interop rebuild key must be deterministic",
         "reexported import edge must be public",
         "package imported module identities must match import graph",
+        "module interop rebuild digests must be stable sha256 hex values",
+        "module visibility access allowance drifted",
+        "hidden declaration access must fail closed with a stable",
         "reserved foreign lane must publish a stable diagnostic",
     ),
 }
+SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:
@@ -131,6 +145,18 @@ def _is_portable_relative_path(value: object) -> bool:
     if path.is_absolute() or "\\" in value:
         return False
     return all(part not in {"", ".", ".."} for part in path.parts)
+
+
+def _is_sha256_digest(value: object) -> bool:
+    return isinstance(value, str) and SHA256_RE.fullmatch(value) is not None
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _import_identity(entry: dict[str, Any]) -> str:
@@ -175,9 +201,12 @@ def replay_key_for_contract(payload: dict[str, Any]) -> str:
         f"module={module_identity.get('module_name')};"
         f"metadata={module_identity.get('metadata_version')};"
         f"abi={module_identity.get('abi_identity')};"
+        f"source_digest={module_identity.get('source_digest')};"
         f"package={module_identity.get('package_lock_identity')};"
         f"imports=[{import_part}];"
         f"exports=[{','.join(public_exports)}];"
+        f"bridge_metadata_digest={_as_object(payload.get('interop')).get('bridge_metadata_digest')};"
+        f"mixed_image_loader_metadata_digest={_as_object(payload.get('package_metadata')).get('mixed_image_loader_metadata_digest')};"
         f"foreign=[{foreign_part}]"
     )
 
@@ -222,6 +251,11 @@ def _validate_module_identity(payload: dict[str, Any], failures: list[str]) -> N
     source_identity = module_identity.get("source_identity_key")
     package_identity = module_identity.get("package_lock_identity")
 
+    expect(
+        _is_sha256_digest(module_identity.get("source_digest")),
+        "module source digest must be a stable sha256 hex value",
+        failures,
+    )
     expect(source_identity == package_identity, "source and package module identities drifted", failures)
     expect(
         package_metadata.get("module_identity") == package_identity,
@@ -360,6 +394,16 @@ def _validate_rebuild(payload: dict[str, Any], failures: list[str]) -> None:
     rebuild = _as_object(payload.get("incremental_rebuild"))
     expect(rebuild.get("deterministic") is True, "incremental rebuild identity must be deterministic", failures)
     expect(
+        rebuild.get("stale_metadata_diagnostic") == REQUIRED_MODULE_DIAGNOSTICS["stale-metadata"],
+        "incremental rebuild stale metadata diagnostic drifted",
+        failures,
+    )
+    expect(
+        rebuild.get("abi_mismatch_diagnostic") == REQUIRED_MODULE_DIAGNOSTICS["abi-mismatch"],
+        "incremental rebuild ABI mismatch diagnostic drifted",
+        failures,
+    )
+    expect(
         REQUIRED_REBUILD_INPUTS <= {str(value) for value in _as_list(rebuild.get("identity_inputs"))},
         "incremental rebuild identity inputs are incomplete",
         failures,
@@ -384,12 +428,18 @@ def _validate_interop(payload: dict[str, Any], failures: list[str]) -> None:
     bridge_header = interop.get("bridge_header")
     modulemap = interop.get("modulemap")
     bridge_metadata = interop.get("bridge_metadata")
+    bridge_metadata_digest = interop.get("bridge_metadata_digest")
     for label, value in (
         ("bridge header", bridge_header),
         ("modulemap", modulemap),
         ("bridge metadata", bridge_metadata),
     ):
         expect(_is_portable_relative_path(value), f"{label} path is not portable-relative", failures)
+    expect(
+        _is_sha256_digest(bridge_metadata_digest),
+        "bridge metadata digest must be a stable sha256 hex value",
+        failures,
+    )
 
     foreign_surfaces = [
         _as_object(entry)
@@ -486,7 +536,15 @@ def _validate_interop(payload: dict[str, Any], failures: list[str]) -> None:
     mixed_image_metadata = package_metadata.get("mixed_image_loader_metadata")
     expect(_is_portable_relative_path(mixed_image_metadata), "mixed image metadata path is not portable-relative", failures)
     if isinstance(mixed_image_metadata, str):
-        expect((ROOT / mixed_image_metadata).is_file(), "mixed image loader metadata fixture is missing", failures)
+        metadata_path = ROOT / mixed_image_metadata
+        expect(metadata_path.is_file(), "mixed image loader metadata fixture is missing", failures)
+        if metadata_path.is_file():
+            expect(
+                package_metadata.get("mixed_image_loader_metadata_digest")
+                == _file_sha256(metadata_path),
+                "mixed image loader metadata digest drifted",
+                failures,
+            )
 
 
 def _validate_unsupported_surfaces(payload: dict[str, Any], failures: list[str]) -> None:

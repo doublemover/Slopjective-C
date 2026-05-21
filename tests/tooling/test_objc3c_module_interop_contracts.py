@@ -50,6 +50,44 @@ def test_module_interop_rebuild_key_rejects_import_version_drift() -> None:
     assert "deterministic rebuild replay key drifted" in failures
 
 
+def test_module_interop_rebuild_key_rejects_bridge_metadata_digest_drift() -> None:
+    payload = deepcopy(_contract())
+    interop = payload["interop"]
+    assert isinstance(interop, dict)
+    interop["bridge_metadata_digest"] = "0" * 64
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        replay_key_for_contract(payload)
+        != payload["incremental_rebuild"]["replay_key"]
+    )
+    assert "deterministic rebuild replay key drifted" in failures
+
+
+def test_module_interop_rejects_mixed_image_loader_metadata_digest_drift() -> None:
+    payload = deepcopy(_contract())
+    package_metadata = payload["package_metadata"]
+    assert isinstance(package_metadata, dict)
+    package_metadata["mixed_image_loader_metadata_digest"] = "0" * 64
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "mixed image loader metadata digest drifted" in failures
+    assert "deterministic rebuild replay key drifted" in failures
+
+
+def test_module_interop_rejects_abi_mismatch_diagnostic_drift() -> None:
+    payload = deepcopy(_contract())
+    rebuild = payload["incremental_rebuild"]
+    assert isinstance(rebuild, dict)
+    rebuild["abi_mismatch_diagnostic"] = "O3INT8165"
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "incremental rebuild ABI mismatch diagnostic drifted" in failures
+
+
 def test_module_interop_rejects_missing_reserved_swift_bridge_surface() -> None:
     payload = deepcopy(_contract())
     interop = payload["interop"]

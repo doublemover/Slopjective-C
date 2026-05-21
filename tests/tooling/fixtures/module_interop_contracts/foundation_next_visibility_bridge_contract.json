@@ -12,6 +12,7 @@
     "module_name": "FoundationNext.VisibilityBridge",
     "metadata_version": "1.0.0",
     "abi_identity": "objc3c.foundation-next.visibility-bridge.abi.v1",
+    "source_digest": "00cfd35af985117b0a23620136572995d8502d1d85933f698cdab98b2f7dd75b",
     "source_identity_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1",
     "package_lock_identity": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1"
   },
@@ -176,13 +177,14 @@
       "bridge-metadata-digest-drift"
     ],
     "stale_metadata_diagnostic": "O3MOD8163",
-    "abi_mismatch_diagnostic": "O3INT8165",
-    "replay_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;package=module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;imports=[FoundationCore@1.0.0:objc3c.foundation-core.abi.v1:public:reexport,FoundationPrivateShims@1.0.0:objc3c.foundation-private-shims.abi.v1:private:import,FoundationText@1.0.0:objc3c.foundation-text.abi.v1:public:import];exports=[FNBridgeString,FNBridgeToken,FNMakeOpaqueHandle];foreign=[c:c.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,cpp:cpp.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:16:reserved,objc2:objc2.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,swift:swift.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:reserved]"
+    "abi_mismatch_diagnostic": "O3MOD8166",
+    "replay_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;source_digest=00cfd35af985117b0a23620136572995d8502d1d85933f698cdab98b2f7dd75b;package=module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;imports=[FoundationCore@1.0.0:objc3c.foundation-core.abi.v1:public:reexport,FoundationPrivateShims@1.0.0:objc3c.foundation-private-shims.abi.v1:private:import,FoundationText@1.0.0:objc3c.foundation-text.abi.v1:public:import];exports=[FNBridgeString,FNBridgeToken,FNMakeOpaqueHandle];bridge_metadata_digest=485d69d649d515ae6f67893a7fcd8d1bb813727dfcb6b16b14a767a030a2ee77;mixed_image_loader_metadata_digest=a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003;foreign=[c:c.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,cpp:cpp.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:16:reserved,objc2:objc2.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,swift:swift.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:reserved]"
   },
   "interop": {
     "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
     "modulemap": "include/FoundationNext/module.modulemap",
     "bridge_metadata": "include/FoundationNext/FoundationNextVisibilityBridge.interop.json",
+    "bridge_metadata_digest": "485d69d649d515ae6f67893a7fcd8d1bb813727dfcb6b16b14a767a030a2ee77",
     "foreign_surfaces": [
       {
         "language": "c",
@@ -323,6 +325,7 @@
       "FoundationText@1.0.0:objc3c.foundation-text.abi.v1"
     ],
     "mixed_image_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+    "mixed_image_loader_metadata_digest": "a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003",
     "bridge_surface_count": 4,
     "supported_bridge_surface_count": 2,
     "reserved_bridge_surface_count": 2,
