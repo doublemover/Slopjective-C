@@ -5,11 +5,14 @@ from __future__ import annotations
 from scripts.objc3c_workflow.action_spec import ActionHandler
 from scripts.objc3c_workflow.actions.docs_documentation import (
     VALIDATE_DOCUMENTATION_SURFACE_ACTION,
+    VALIDATE_UMBRELLA_READINESS_ACTION,
     action_validate_documentation_surface,
+    action_validate_umbrella_readiness,
 )
 
 CORE_DOCUMENTATION_VALIDATION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     VALIDATE_DOCUMENTATION_SURFACE_ACTION: action_validate_documentation_surface,
+    VALIDATE_UMBRELLA_READINESS_ACTION: action_validate_umbrella_readiness,
 }
 
 __all__ = ["CORE_DOCUMENTATION_VALIDATION_ACTION_HANDLERS"]

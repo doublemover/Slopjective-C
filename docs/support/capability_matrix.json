@@ -26,16 +26,19 @@
   "projection_policy": {
     "authoritative_data": [
       "docs/support/capability_matrix.json",
-      "docs/support/evidence_map.json"
+      "docs/support/evidence_map.json",
+      "docs/support/umbrella_readiness.json"
     ],
     "schema_sources": [
       "schemas/objc3c-capability-matrix-v1.schema.json",
       "docs/support/capability_matrix.schema.json",
-      "schemas/objc3c-capability-evidence-map-v1.schema.json"
+      "schemas/objc3c-capability-evidence-map-v1.schema.json",
+      "schemas/objc3c-umbrella-readiness-v1.schema.json"
     ],
     "human_projections": [
       "docs/support/capability_matrix.md",
       "docs/support/evidence_map.md",
+      "docs/support/umbrella_readiness.md",
       "docs/support/capability_claim_responsibility.md",
       "docs/support/hard_cutover_capability_truth.md"
     ],
@@ -3009,6 +3012,51 @@
       ]
     },
     {
+      "id": "capability.governance.umbrella-readiness",
+      "title": "Umbrella capability readiness governance",
+      "state": "internal",
+      "summary": "Schema-backed umbrella readiness records explain and validate why broad reserved capability rows cannot be promoted by prose, issue comments, generated projections, or tmp reports. This is governance evidence for future promotion, not a public language behavior claim.",
+      "owner_modules": [
+        "schemas/objc3c-umbrella-readiness-v1.schema.json",
+        "docs/support/umbrella_readiness.json",
+        "docs/support/umbrella_readiness.md",
+        "scripts/capability_docs_validator/umbrella_readiness.py",
+        "scripts/check_objc3c_umbrella_readiness.py",
+        "scripts/objc3c_workflow/action_catalog_core_documentation_validation.py",
+        "scripts/objc3c_workflow/action_handlers_core_documentation_validation.py"
+      ],
+      "evidence": [
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-umbrella-readiness-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/capability_docs_validator/umbrella_readiness.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_umbrella_readiness.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_catalog_core_documentation_validation.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_handlers_core_documentation_validation.py"
+        }
+      ]
+    },
+    {
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
@@ -3016,6 +3064,7 @@
       "owner_modules": [
         "schemas/objc3c-capability-matrix-v1.schema.json",
         "schemas/objc3c-capability-evidence-map-v1.schema.json",
+        "schemas/objc3c-umbrella-readiness-v1.schema.json",
         "scripts/objc3c_shared/schema_registry.py",
         "native/objc3c/src/io/json/json_parser.cpp",
         "native/objc3c/src/io/json/json_writer.cpp",
@@ -3046,6 +3095,10 @@
         {
           "kind": "schema",
           "path": "schemas/objc3c-capability-evidence-map-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-umbrella-readiness-v1.schema.json"
         },
         {
           "kind": "schema",

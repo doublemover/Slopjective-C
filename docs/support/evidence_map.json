@@ -2688,6 +2688,41 @@
       "path": "docs/runbooks/objc3c_public_command_surface.md"
     },
     {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-umbrella-readiness-v1.schema.json"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.md"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/capability_docs_validator/umbrella_readiness.py"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_umbrella_readiness.py"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog_core_documentation_validation.py"
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_handlers_core_documentation_validation.py"
+    },
+    {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-capability-matrix-v1.schema.json"
@@ -2701,6 +2736,11 @@
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-capability-evidence-map-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-umbrella-readiness-v1.schema.json"
     },
     {
       "capability_id": "tooling.json.schema-registry",

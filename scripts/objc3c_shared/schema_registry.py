@@ -55,6 +55,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     / "objc3c-package-channels-manifest-v1.schema.json",
     "objc3c-package-manifest-v1": ROOT / "schemas" / "objc3c-package-manifest-v1.schema.json",
     "objc3c-package-lock-v1": ROOT / "schemas" / "objc3c-package-lock-v1.schema.json",
+    "objc3c-package-signing-trust-v1": ROOT
+    / "schemas"
+    / "objc3c-package-signing-trust-v1.schema.json",
     "objc3c-package-offline-mirror-index-v1": ROOT
     / "schemas"
     / "objc3c-package-offline-mirror-index-v1.schema.json",
@@ -130,6 +133,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-capability-evidence-map-v1": ROOT
     / "schemas"
     / "objc3c-capability-evidence-map-v1.schema.json",
+    "objc3c-umbrella-readiness-v1": ROOT
+    / "schemas"
+    / "objc3c-umbrella-readiness-v1.schema.json",
 }
 
 

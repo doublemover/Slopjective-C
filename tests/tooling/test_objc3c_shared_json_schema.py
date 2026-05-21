@@ -136,6 +136,10 @@ def test_schema_registry_includes_capability_truth_schemas() -> None:
             "schemas/objc3c-capability-evidence-map-v1.schema.json",
             ROOT / "docs" / "support" / "evidence_map.json",
         ),
+        "objc3c-umbrella-readiness-v1": (
+            "schemas/objc3c-umbrella-readiness-v1.schema.json",
+            ROOT / "docs" / "support" / "umbrella_readiness.json",
+        ),
     }
     summary = schema_registry_summary()
 
@@ -178,6 +182,7 @@ def test_schema_registry_includes_release_adoption_schemas() -> None:
         "objc3c-package-channels-manifest-v1": "schemas/objc3c-package-channels-manifest-v1.schema.json",
         "objc3c-package-manifest-v1": "schemas/objc3c-package-manifest-v1.schema.json",
         "objc3c-package-lock-v1": "schemas/objc3c-package-lock-v1.schema.json",
+        "objc3c-package-signing-trust-v1": "schemas/objc3c-package-signing-trust-v1.schema.json",
         "objc3c-package-offline-mirror-index-v1": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
         "objc3c-package-local-registry-index-v1": "schemas/objc3c-package-local-registry-index-v1.schema.json",
         "objc3c-package-install-receipt-v1": "schemas/objc3c-package-install-receipt-v1.schema.json",

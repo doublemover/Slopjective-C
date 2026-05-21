@@ -79,6 +79,15 @@ WORKFLOW_SCHEMA_SPECS: tuple[WorkflowSchemaSpec, ...] = (
         public_contract=True,
         **SCHEMA_OWNER_SURFACES,
     ),
+    WorkflowSchemaSpec(
+        schema_id="objc3c-umbrella-readiness-v1",
+        schema_path="schemas/objc3c-umbrella-readiness-v1.schema.json",
+        payload_surface="docs/support/umbrella_readiness.json",
+        owner_surface="schemas/objc3c-umbrella-readiness-v1.schema.json",
+        capability_truth_scope="capability-umbrella-readiness",
+        public_contract=True,
+        **SCHEMA_OWNER_SURFACES,
+    ),
 )
 
 

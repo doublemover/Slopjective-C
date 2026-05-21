@@ -189,6 +189,7 @@ def test_action_registry_payload_publishes_schema_index_and_capability_truth() -
     assert {
         "objc3c-capability-matrix-v1",
         "objc3c-capability-evidence-map-v1",
+        "objc3c-umbrella-readiness-v1",
         ACTION_REGISTRY_SCHEMA_ID,
     }.issubset(indexed_schema_ids)
     assert indexed_payload_surfaces[WORKFLOW_SCHEMA_INDEX_SCHEMA_ID] == (
