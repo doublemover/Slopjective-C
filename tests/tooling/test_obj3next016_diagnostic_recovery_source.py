@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 from pathlib import Path
 
 
@@ -7,10 +9,40 @@ ROOT = Path(__file__).resolve().parents[2]
 PARSE = ROOT / "native" / "objc3c" / "src" / "parse"
 SEMA = ROOT / "native" / "objc3c" / "src" / "sema"
 FIXTURES = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery"
+NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def compile_negative_fixture(fixture: Path, tmp_path: Path) -> list[dict[str, object]]:
+    assert NATIVE_EXE.exists(), (
+        "native compiler binary must exist before running diagnostics recovery test"
+    )
+
+    out_dir = tmp_path / fixture.stem
+    out_dir.mkdir(parents=True, exist_ok=True)
+    completed = subprocess.run(
+        [
+            str(NATIVE_EXE),
+            str(fixture),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode != 0
+
+    diagnostics_path = out_dir / "module.diagnostics.json"
+    payload = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+    diagnostics = payload["diagnostics"]
+    assert isinstance(diagnostics, list)
+    return [diagnostic for diagnostic in diagnostics if isinstance(diagnostic, dict)]
 
 
 def test_parser_diagnostic_builder_publishes_machine_fixit_and_recovery_metadata() -> None:
@@ -65,3 +97,74 @@ def test_obj3next016_recovery_fixtures_cover_parser_then_sema_followup() -> None
     assert "fn second() -> i32" in negative
     assert "return value + 1;" in positive
     assert "Expected diagnostic" not in positive
+
+
+def test_native_diagnostics_json_promotes_fixit_metadata_out_of_message(
+    tmp_path: Path,
+) -> None:
+    diagnostics = compile_negative_fixture(
+        FIXTURES
+        / "negative"
+        / "negative_obj3next016_parser_missing_semicolon_recovery.objc3",
+        tmp_path,
+    )
+    missing_semicolon = diagnostics[0]
+
+    assert missing_semicolon["code"] == "O3P104"
+    assert missing_semicolon["message"] == "missing ';' after assignment"
+    assert "{fix-it:" not in str(missing_semicolon["message"])
+    assert missing_semicolon["explanation"]
+
+    fixits = missing_semicolon["fixits"]
+    assert isinstance(fixits, list)
+    assert fixits == [
+        {
+            "applicability": "machine-applicable",
+            "kind": "insert-text",
+            "label": "insert-missing-semicolon-after-assignment",
+            "range": {
+                "start": {"line": 11, "column": 3},
+                "end": {"line": 11, "column": 3},
+            },
+            "replacement": ";",
+            "title": "insert-missing-semicolon-after-assignment",
+        }
+    ]
+
+    recovery = missing_semicolon["recovery"]
+    assert isinstance(recovery, dict)
+    assert recovery == {
+        "accepts_invalid_program": False,
+        "available": True,
+        "boundary": "next statement token",
+        "deterministic": True,
+        "recovery_counts_as_success": False,
+        "strategy": "parser-statement-boundary-synchronization",
+    }
+
+
+def test_native_diagnostics_json_promotes_recovery_metadata_out_of_message(
+    tmp_path: Path,
+) -> None:
+    diagnostics = compile_negative_fixture(
+        FIXTURES
+        / "negative"
+        / "negative_obj3next016_optional_alias_fixit_recovery.objc3",
+        tmp_path,
+    )
+    unsupported = next(
+        diagnostic for diagnostic in diagnostics if diagnostic["code"] == "O3P100"
+    )
+
+    assert unsupported["message"] == "unsupported Objective-C 3 statement"
+    assert "{recovery:" not in str(unsupported["message"])
+    assert unsupported["explanation"]
+    assert unsupported["fixits"] == []
+    assert unsupported["recovery"] == {
+        "accepts_invalid_program": False,
+        "available": True,
+        "boundary": "next-top-level-declaration-or-semicolon",
+        "deterministic": True,
+        "recovery_counts_as_success": False,
+        "strategy": "skip-unsupported-top-level-fragment",
+    }
