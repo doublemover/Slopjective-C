@@ -60,6 +60,7 @@ def test_tooling_developer_catalog_preserves_owner_order() -> None:
         "materialize-project-template",
         "test-capability-routed-source-parity",
         "validate-developer-tooling",
+        "validate-language-service",
         "validate-bonus-experiences",
         "validate-runnable-bonus-experiences",
         "lint-spec",

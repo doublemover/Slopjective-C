@@ -1,0 +1,182 @@
+{
+  "contract_id": "objc3c.language_service.request_replay.fixture.v1",
+  "source_path": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3",
+  "requests": [
+    {
+      "id": 1,
+      "method": "initialize",
+      "params": {}
+    },
+    {
+      "id": 2,
+      "method": "textDocument/didOpen",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3",
+          "version": 1,
+          "text": "int globalCounter = 0;\n\n// globalCounter in a comment is not a semantic reference.\nconst char *label = \"globalCounter\";\nint main() {\n  return globalCounter;\n}\n"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "method": "textDocument/publishDiagnostics",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "method": "textDocument/documentSymbol",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "method": "textDocument/definition",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        },
+        "position": {
+          "line": 0,
+          "character": 4
+        }
+      }
+    },
+    {
+      "id": 6,
+      "method": "textDocument/hover",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        },
+        "position": {
+          "line": 0,
+          "character": 4
+        }
+      }
+    },
+    {
+      "id": 7,
+      "method": "workspace/symbol",
+      "params": {
+        "query": "global"
+      }
+    },
+    {
+      "id": 8,
+      "method": "textDocument/references",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        },
+        "position": {
+          "line": 5,
+          "character": 9
+        }
+      }
+    },
+    {
+      "id": 9,
+      "method": "textDocument/rename",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        },
+        "position": {
+          "line": 0,
+          "character": 4
+        },
+        "newName": "renamedCounter"
+      }
+    },
+    {
+      "id": 10,
+      "method": "textDocument/codeAction",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        },
+        "range": {
+          "start": {
+            "line": 0,
+            "character": 0
+          },
+          "end": {
+            "line": 0,
+            "character": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "method": "textDocument/semanticTokens/full",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "method": "textDocument/didChange",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3",
+          "version": 2
+        },
+        "contentChanges": [
+          {
+            "text": "int globalCounter = 1;\nint main() {\n  return globalCounter;\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "method": "workspace/didChangeWatchedFiles",
+      "params": {
+        "changes": [
+          {
+            "uri": "tests/tooling/fixtures/developer_tooling/source_graph/extra.objc3",
+            "type": "created"
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "method": "textDocument/didClose",
+      "params": {
+        "textDocument": {
+          "uri": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3"
+        }
+      }
+    }
+  ],
+  "expected_supported_methods": [
+    "initialize",
+    "textDocument/didOpen",
+    "textDocument/publishDiagnostics",
+    "textDocument/documentSymbol",
+    "textDocument/definition",
+    "textDocument/hover",
+    "workspace/symbol",
+    "textDocument/didChange",
+    "workspace/didChangeWatchedFiles",
+    "textDocument/didClose"
+  ],
+  "expected_fail_closed_methods": [
+    "textDocument/references",
+    "textDocument/rename",
+    "textDocument/codeAction",
+    "textDocument/semanticTokens/full"
+  ]
+}

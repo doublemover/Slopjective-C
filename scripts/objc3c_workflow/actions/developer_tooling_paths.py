@@ -13,6 +13,8 @@ RUNNABLE_DEVELOPER_TOOLING_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_developer_tooling_end_to_end.py"
 )
 EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
+LANGUAGE_SERVICE_SURFACE_PY = ROOT / "scripts" / "build_objc3c_language_service_surface.py"
+CHECK_LANGUAGE_SERVICE_PY = ROOT / "scripts" / "check_objc3c_language_service.py"
 FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
 REWRITE_OBJC3C_SOURCE_PY = ROOT / "scripts" / "rewrite_objc3c_source.py"
 CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY = (

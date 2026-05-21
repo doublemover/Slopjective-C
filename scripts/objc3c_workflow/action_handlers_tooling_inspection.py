@@ -13,6 +13,7 @@ from scripts.objc3c_workflow.actions import (
     validation_timing,
 )
 from scripts.objc3c_workflow.actions.developer_tooling_paths import (
+    CHECK_LANGUAGE_SERVICE_PY,
     DEVELOPER_TOOLING_INTEGRATION_PY,
     RUNTIME_DEBUG_TRACE_PY,
     RUNNABLE_DEVELOPER_TOOLING_E2E_PY,
@@ -32,6 +33,10 @@ def _action_validate_runnable_developer_tooling(_: list[str]) -> int:
     return _run_python_script(RUNNABLE_DEVELOPER_TOOLING_E2E_PY)
 
 
+def _action_validate_language_service(_: list[str]) -> int:
+    return _run_python_script(CHECK_LANGUAGE_SERVICE_PY)
+
+
 def _action_trace_runtime_debug(rest: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_DEBUG_TRACE_PY), *rest])
 
@@ -45,6 +50,7 @@ TOOLING_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "trace-compile-stages": developer_tooling_dump_actions.action_trace_compile_stages,
     "test-capability-routed-source-parity": developer_tooling_llvm_parity.action_test_capability_routed_source_parity,
     "validate-developer-tooling": _action_validate_developer_tooling,
+    "validate-language-service": _action_validate_language_service,
     "validate-runnable-developer-tooling": _action_validate_runnable_developer_tooling,
     "validate-bonus-experiences": developer_tooling_bonus.action_validate_bonus_experiences,
     "validate-runnable-bonus-experiences": developer_tooling_bonus.action_validate_runnable_bonus_experiences,

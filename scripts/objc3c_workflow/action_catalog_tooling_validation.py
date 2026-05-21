@@ -15,6 +15,16 @@ TOOLING_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
             "and tied to the live frontend runner"
         ),
     ),
+    "validate-language-service": ActionSpec(
+        "validate-language-service",
+        "replay checked Objective-C 3 language-service requests and validate source-graph-backed responses",
+        "python:scripts/check_objc3c_language_service.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "language-service request dispatch, document lifecycle, workspace indexing, "
+            "cache invalidation, and unsupported request boundaries stay fixture-backed"
+        ),
+    ),
     "validate-bonus-experiences": ActionSpec(
         "validate-bonus-experiences",
         "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces",
