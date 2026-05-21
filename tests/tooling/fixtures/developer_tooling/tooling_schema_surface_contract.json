@@ -1,0 +1,75 @@
+{
+  "contract_id": "objc3c.developer.tooling.schema.surface.contract.v1",
+  "surface_kind": "developer-tooling-schema-surface-contract",
+  "issue": "OBJ3-NEXT-017",
+  "summary_implementation_anchor": "scripts/check_objc3c_developer_tooling_schema_surface.py",
+  "public_action": "inspect-editor-tooling",
+  "source": "tests/tooling/fixtures/native/hello.objc3",
+  "editor_surface_schema": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+  "summary_schema": "schemas/objc3c-developer-tooling-schema-surface-summary-v1.schema.json",
+  "required_output_labels": [
+    "dump_path",
+    "capabilities_path",
+    "navigation_path",
+    "workspace_index_path",
+    "artifact_inspector_path",
+    "formatter_path",
+    "debug_path"
+  ],
+  "checked_subpayloads": [
+    "language_server",
+    "navigation",
+    "workspace_index",
+    "artifact_inspector",
+    "formatter",
+    "debug"
+  ],
+  "expected_supported_capabilities": [
+    "publishDiagnostics",
+    "documentSymbol",
+    "workspaceSymbol",
+    "definition"
+  ],
+  "expected_fail_closed_capabilities": [
+    "references",
+    "rename",
+    "semanticTokens",
+    "codeAction",
+    "statementLevelStepping"
+  ],
+  "expected_workspace_unsupported_surfaces": [
+    "network-backed workspace restore",
+    "tmp-only workspace source truth",
+    "workspace symbols without manifest-backed source coordinates"
+  ],
+  "expected_workspace_source_truth_inputs": [
+    "stdlib/module_inventory.json",
+    "showcase/portfolio.json",
+    "showcase/demo_packages.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+  ],
+  "expected_artifact_record_kinds": [
+    "diagnostics",
+    "ir",
+    "manifest",
+    "object",
+    "runtime_metadata_binary",
+    "summary"
+  ],
+  "expected_inspection_command_keys": [
+    "diagnostics",
+    "ir",
+    "manifest",
+    "object",
+    "object_sections",
+    "object_symbols",
+    "summary"
+  ],
+  "reserved_debug_capabilities": [
+    "statementLevelStepping",
+    "fullSourceMapPublication"
+  ]
+}

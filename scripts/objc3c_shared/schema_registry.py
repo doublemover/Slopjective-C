@@ -73,6 +73,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-developer-tooling-editor-surface-v1": ROOT
     / "schemas"
     / "objc3c-developer-tooling-editor-surface-v1.schema.json",
+    "objc3c-developer-tooling-schema-surface-summary-v1": ROOT
+    / "schemas"
+    / "objc3c-developer-tooling-schema-surface-summary-v1.schema.json",
     "objc3c-runtime-debug-trace-v1": ROOT
     / "schemas"
     / "objc3c-runtime-debug-trace-v1.schema.json",

@@ -184,6 +184,7 @@ def test_schema_registry_includes_release_adoption_schemas() -> None:
         "objc3c-platform-support-matrix-v1": "schemas/objc3c-platform-support-matrix-v1.schema.json",
         "objc3c-compiler-throughput-summary-v1": "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
         "objc3c-developer-tooling-editor-surface-v1": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+        "objc3c-developer-tooling-schema-surface-summary-v1": "schemas/objc3c-developer-tooling-schema-surface-summary-v1.schema.json",
         "objc3c-performance-telemetry-v1": "schemas/objc3c-performance-telemetry-v1.schema.json",
         "objc3c-full-envelope-dashboard-summary-v1": "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
     }

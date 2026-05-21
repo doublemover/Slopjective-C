@@ -7,6 +7,7 @@
     "contract_id",
     "source_path",
     "summary_path",
+    "diagnostics_path",
     "diagnostics",
     "language_server",
     "navigation",
@@ -15,40 +16,1337 @@
     "debug"
   ],
   "properties": {
-    "contract_id": {"type": "string"},
-    "source_path": {"type": "string"},
-    "summary_path": {"type": "string"},
-    "manifest_path": {"type": ["string", "null"]},
-    "diagnostics_path": {"type": "string"},
+    "contract_id": {
+      "const": "objc3c.developer.tooling.editor.surface.v1"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manifest_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "diagnostics_path": {
+      "type": "string",
+      "minLength": 1
+    },
     "diagnostics": {
+      "$ref": "#/$defs/diagnosticsSummary"
+    },
+    "language_server": {
+      "$ref": "#/$defs/languageServerCapabilitySurface"
+    },
+    "navigation": {
+      "$ref": "#/$defs/navigationIndex"
+    },
+    "artifact_inspector": {
+      "$ref": "#/$defs/artifactInspector"
+    },
+    "formatter": {
+      "$ref": "#/$defs/formatterSurface"
+    },
+    "debug": {
+      "$ref": "#/$defs/debugMapSurface"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stringMap": {
       "type": "object",
-      "required": ["status_name", "total", "entries"],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "countMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "optionalSha256": {
+      "type": "string",
+      "pattern": "^$|^[0-9a-f]{64}$"
+    },
+    "rangePosition": {
+      "type": "object",
+      "required": [
+        "line",
+        "character"
+      ],
       "properties": {
-        "status_name": {"type": "string"},
-        "total": {"type": "integer", "minimum": 0},
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "character": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "lspRange": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/rangePosition"
+        },
+        "end": {
+          "$ref": "#/$defs/rangePosition"
+        }
+      },
+      "additionalProperties": false
+    },
+    "compilerRange": {
+      "type": "object",
+      "required": [
+        "line",
+        "column",
+        "end_line",
+        "end_column"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_column": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceLocation": {
+      "type": "object",
+      "required": [
+        "uri",
+        "source_path",
+        "compiler_range",
+        "range",
+        "range_model"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compiler_range": {
+          "$ref": "#/$defs/compilerRange"
+        },
+        "range": {
+          "$ref": "#/$defs/lspRange"
+        },
+        "range_model": {
+          "const": "compiler-1-based-plus-lsp-zero-based"
+        }
+      },
+      "additionalProperties": false
+    },
+    "definitionTarget": {
+      "type": "object",
+      "required": [
+        "target_uri",
+        "target_range",
+        "target_compiler_range"
+      ],
+      "properties": {
+        "target_uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_range": {
+          "$ref": "#/$defs/lspRange"
+        },
+        "target_compiler_range": {
+          "$ref": "#/$defs/compilerRange"
+        }
+      },
+      "additionalProperties": false
+    },
+    "symbol": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind",
+        "line",
+        "column",
+        "end_line",
+        "end_column"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_column": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "symbolRecord": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind",
+        "container_name",
+        "source_path",
+        "location",
+        "definition",
+        "origin"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "container_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_id": {
+          "type": "string"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "$ref": "#/$defs/sourceLocation"
+        },
+        "definition": {
+          "$ref": "#/$defs/definitionTarget"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cross_package": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "diagnosticEntry": {
+      "type": "object",
+      "required": [
+        "severity",
+        "line",
+        "column",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "severity": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "diagnosticsSummary": {
+      "type": "object",
+      "required": [
+        "status_name",
+        "total",
+        "entries"
+      ],
+      "properties": {
+        "status_name": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
         "entries": {
           "type": "array",
           "items": {
-            "type": "object",
-            "required": ["severity", "line", "column", "code", "message"],
-            "properties": {
-              "severity": {"type": "string"},
-              "line": {"type": "integer", "minimum": 0},
-              "column": {"type": "integer", "minimum": 0},
-              "code": {"type": "string"},
-              "message": {"type": "string"}
-            },
-            "additionalProperties": false
+            "$ref": "#/$defs/diagnosticEntry"
           }
         }
       },
       "additionalProperties": false
     },
-    "language_server": {"type": "object"},
-    "navigation": {"type": "object"},
-    "artifact_inspector": {"type": "object"},
-    "formatter": {"type": "object"},
-    "debug": {"type": "object"}
-  },
-  "additionalProperties": false
+    "lspDiagnosticTransport": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "publish_method",
+        "diagnostic_count",
+        "severity_counts",
+        "diagnostics",
+        "machine_applicable_fixit_count",
+        "code_action_count",
+        "code_actions",
+        "recovery_boundary_count",
+        "recovery_boundaries",
+        "recovery_acceptance_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.lsp.diagnostic.transport.v1"
+        },
+        "source_path": {
+          "type": "string"
+        },
+        "publish_method": {
+          "const": "textDocument/publishDiagnostics"
+        },
+        "diagnostic_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "severity_counts": {
+          "$ref": "#/$defs/countMap"
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "machine_applicable_fixit_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "code_action_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "code_actions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "recovery_boundary_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recovery_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "recovery_acceptance_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilityStatus": {
+      "type": "object",
+      "required": [
+        "supported",
+        "support_class",
+        "evidence_ids",
+        "fail_closed"
+      ],
+      "properties": {
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "unpublished_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "languageServerCapabilitySurface": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "summary_status_name",
+        "manifest_backed_navigation",
+        "workspace_index_backed_navigation",
+        "diagnostic_transport",
+        "capability_evidence_roots",
+        "publication_boundary",
+        "supported_capability_ids",
+        "unpublished_capability_ids",
+        "capability_statuses"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.language.server.capability.surface.v1"
+        },
+        "summary_status_name": {
+          "type": "string"
+        },
+        "manifest_backed_navigation": {
+          "type": "boolean"
+        },
+        "workspace_index_backed_navigation": {
+          "type": "boolean"
+        },
+        "diagnostic_transport": {
+          "$ref": "#/$defs/lspDiagnosticTransport"
+        },
+        "capability_evidence_roots": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/stringArray"
+          }
+        },
+        "publication_boundary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supported_capability_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "unpublished_capability_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "capability_statuses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/capabilityStatus"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "workspacePackage": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "package_kind",
+        "module_name",
+        "source_path",
+        "source_authority",
+        "definition"
+      ],
+      "properties": {
+        "package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "$ref": "#/$defs/sourceLocation"
+        }
+      },
+      "additionalProperties": true
+    },
+    "workspaceEdge": {
+      "type": "object",
+      "required": [
+        "from_package_id",
+        "to_package_id",
+        "edge_kind",
+        "source_authority"
+      ],
+      "properties": {
+        "from_package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edge_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_authority": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "workspaceGuardrails": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_contracts",
+        "checks",
+        "ok"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.workspace.package.guardrails.v1"
+        },
+        "source_contracts": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "ok": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workspaceIndex": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "available",
+        "index_model",
+        "source_truth_model",
+        "evidence_roots",
+        "unsupported_surfaces",
+        "fail_closed",
+        "package_count",
+        "cross_package_edge_count",
+        "packages",
+        "cross_package_edges",
+        "package_symbols",
+        "guardrails",
+        "workspace_index_digest",
+        "deterministic_ordering",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.workspace.semantic.index.v1"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "index_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_truth_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_roots": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "unsupported_surfaces": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "package_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cross_package_edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workspacePackage"
+          }
+        },
+        "cross_package_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workspaceEdge"
+          }
+        },
+        "package_symbols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/symbolRecord"
+          }
+        },
+        "guardrails": {
+          "$ref": "#/$defs/workspaceGuardrails"
+        },
+        "workspace_index_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "deterministic_ordering": {
+          "const": "package-id-then-source-path"
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "navigationIndex": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "available",
+        "manifest_path",
+        "symbol_count",
+        "supported_symbol_kinds",
+        "symbols",
+        "document_symbols",
+        "workspace_symbols",
+        "definition_targets",
+        "workspace_index",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.navigation.index.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "manifest_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "symbol_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "supported_symbol_kinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "symbols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/symbol"
+          }
+        },
+        "document_symbols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/symbolRecord"
+          }
+        },
+        "workspace_symbols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/symbolRecord"
+          }
+        },
+        "definition_targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "kind",
+              "target_uri",
+              "target_range",
+              "target_compiler_range"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_uri": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_range": {
+                "$ref": "#/$defs/lspRange"
+              },
+              "target_compiler_range": {
+                "$ref": "#/$defs/compilerRange"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "workspace_index": {
+          "$ref": "#/$defs/workspaceIndex"
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifactRecord": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path",
+        "available",
+        "size_bytes",
+        "sha256",
+        "explanation",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "diagnostics",
+            "ir",
+            "manifest",
+            "object",
+            "runtime_metadata_binary",
+            "summary"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifactInspector": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "supported",
+        "support_class",
+        "artifact_records",
+        "inspected_artifact_kinds",
+        "unsupported_artifact_kinds",
+        "diagnostics",
+        "manifest",
+        "ir",
+        "object",
+        "runtime_imports",
+        "source_graph",
+        "inspection_commands",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.artifact.inspector.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactRecord"
+          }
+        },
+        "inspected_artifact_kinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "unsupported_artifact_kinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "diagnostics": {
+          "type": "object",
+          "required": [
+            "available",
+            "path",
+            "diagnostic_count",
+            "severity_counts",
+            "diagnostic_codes",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "diagnostic_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "severity_counts": {
+              "$ref": "#/$defs/countMap"
+            },
+            "diagnostic_codes": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "manifest": {
+          "type": "object",
+          "required": [
+            "available",
+            "path",
+            "module",
+            "declaration_count",
+            "symbol_kind_counts",
+            "source_graph_field_count",
+            "source_graph_fields",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "module": {
+              "type": "string"
+            },
+            "declaration_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "symbol_kind_counts": {
+              "$ref": "#/$defs/countMap"
+            },
+            "source_graph_field_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "source_graph_fields": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "ir": {
+          "type": "object",
+          "required": [
+            "available",
+            "path",
+            "line_count",
+            "function_definition_count",
+            "external_declaration_count",
+            "global_record_count",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "line_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "function_definition_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "external_declaration_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "global_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "required": [
+            "available",
+            "path",
+            "size_bytes",
+            "sha256",
+            "object_symbol_inventory_command",
+            "object_section_inventory_command",
+            "inspection_ready",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sha256": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "object_symbol_inventory_command": {
+              "type": "string"
+            },
+            "object_section_inventory_command": {
+              "type": "string"
+            },
+            "inspection_ready": {
+              "type": "boolean"
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "runtime_imports": {
+          "type": "object",
+          "required": [
+            "available",
+            "runtime_metadata_binary_path",
+            "runtime_metadata_binary_present",
+            "runtime_import_count",
+            "runtime_imports",
+            "runtime_inspector_available",
+            "runtime_inspector_contract_id",
+            "runtime_dump_commands",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "runtime_metadata_binary_path": {
+              "type": "string"
+            },
+            "runtime_metadata_binary_present": {
+              "type": "boolean"
+            },
+            "runtime_import_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "runtime_imports": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "runtime_inspector_available": {
+              "type": "boolean"
+            },
+            "runtime_inspector_contract_id": {
+              "type": "string"
+            },
+            "runtime_dump_commands": {
+              "$ref": "#/$defs/stringMap"
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "source_graph": {
+          "type": "object",
+          "required": [
+            "available",
+            "graph_inputs",
+            "declaration_node_count",
+            "workspace_package_count",
+            "workspace_index_digest",
+            "source_graph_digest",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "graph_inputs": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "declaration_node_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "workspace_package_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "workspace_index_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "source_graph_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "inspection_commands": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "formatterSurface": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "supported",
+        "support_class",
+        "preview_subset_id",
+        "formatted_output_path",
+        "changed",
+        "source_line_count",
+        "formatted_line_count",
+        "retired_route_reason",
+        "feature_ids",
+        "diagnostics",
+        "max_delimiter_depth"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.formatter.surface.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preview_subset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "formatted_output_path": {
+          "type": "string"
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "source_line_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "formatted_line_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retired_route_reason": {
+          "type": "string"
+        },
+        "feature_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "max_delimiter_depth": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "debugMapSurface": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "supported",
+        "support_class",
+        "debugger_model",
+        "source_map_supported",
+        "source_map_model",
+        "statement_level_stepping",
+        "stepping_retired_route_reason",
+        "object_artifact_present",
+        "object_path",
+        "declaration_breakpoint_anchor_count",
+        "declaration_breakpoints",
+        "object_section_inventory_command",
+        "object_symbol_inventory_command",
+        "runtime_debug_trace_command",
+        "runtime_debug_trace_path",
+        "runtime_debug_trace_schema",
+        "runtime_debug_trace_model",
+        "runtime_inspector_contract_id",
+        "artifact_inspection_ready",
+        "evidence_roots",
+        "reserved_capability_rows",
+        "retired_route_reason"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.debug.map.surface.v1"
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "debugger_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_map_supported": {
+          "type": "boolean"
+        },
+        "source_map_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement_level_stepping": {
+          "type": "boolean"
+        },
+        "stepping_retired_route_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object_artifact_present": {
+          "type": "boolean"
+        },
+        "object_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "declaration_breakpoint_anchor_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "declaration_breakpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "symbol",
+              "kind",
+              "line",
+              "column"
+            ],
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "column": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "object_section_inventory_command": {
+          "type": "string"
+        },
+        "object_symbol_inventory_command": {
+          "type": "string"
+        },
+        "runtime_debug_trace_command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_debug_trace_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_debug_trace_schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_debug_trace_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_inspector_contract_id": {
+          "type": "string"
+        },
+        "artifact_inspection_ready": {
+          "type": "boolean"
+        },
+        "evidence_roots": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "reserved_capability_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "capability_id",
+              "status",
+              "fail_closed",
+              "unpublished_reason"
+            ],
+            "properties": {
+              "capability_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "const": "reserved"
+              },
+              "fail_closed": {
+                "const": true
+              },
+              "unpublished_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "retired_route_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }
