@@ -1,0 +1,108 @@
+{
+  "contract_id": "objc3c.object_model.full_realization.combined_readiness.v1",
+  "issue": 8198,
+  "capability_id": "runtime.object-model.full-realization",
+  "public_status": "reserved",
+  "support_claim_published": false,
+  "readiness_role": "combined evidence for umbrella promotion, not a public support claim",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "umbrella_readiness": "docs/support/umbrella_readiness.json",
+  "combined_positive_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+  "combined_positive_fixture_meta": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.meta.json",
+  "public_reflection_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+  "public_reflection_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+  "public_commands": [
+    "npm run objc3c -- validate-object-model-conformance",
+    "npm run objc3c -- validate-public-runtime-reflection-api"
+  ],
+  "combined_axes": [
+    "class",
+    "metaclass",
+    "category",
+    "protocol",
+    "property",
+    "ivar",
+    "selector",
+    "public-reflection",
+    "registration-replay"
+  ],
+  "source_anchors": [
+    {
+      "anchor_id": "class-metaclass-realization",
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+    },
+    {
+      "anchor_id": "category-protocol-registration",
+      "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+    },
+    {
+      "anchor_id": "protocol-conformance-query",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "anchor_id": "property-ivar-layout",
+      "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+    },
+    {
+      "anchor_id": "selector-table",
+      "path": "native/objc3c/src/runtime/selectors/selector_table.cpp"
+    },
+    {
+      "anchor_id": "registration-replay",
+      "path": "native/objc3c/src/runtime/images/registration.cpp"
+    },
+    {
+      "anchor_id": "public-reflection-header",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+    },
+    {
+      "anchor_id": "public-reflection-implementation",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+    }
+  ],
+  "reflection_lifetime_contract": {
+    "snapshot_ownership": "caller-owned snapshot structs",
+    "string_lifetime": "runtime-owned borrowed strings",
+    "state_source": "runtime-owned realized state",
+    "invalid_output_status": "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+    "invalid_query_status": "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+    "malformed_metadata_status": "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+  },
+  "negative_boundaries": [
+    {
+      "boundary_id": "private-snapshots-not-public-reflection",
+      "policy": "private _for_testing snapshots remain internal evidence and cannot satisfy the public reflection ABI",
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+        "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp"
+      ]
+    },
+    {
+      "boundary_id": "malformed-metadata-fails-closed",
+      "policy": "malformed class/protocol/category/property metadata returns status or rejection evidence without becoming reflectable support",
+      "evidence": [
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
+        "tests/tooling/runtime/property_ivar_invalid_layout_probe.cpp",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+        "scripts/objc3c_runtime_acceptance/domains/storage_reflection_runtime_property_invalid_layout_assertions.py"
+      ]
+    },
+    {
+      "boundary_id": "stale-generation-replay-does-not-promote-support",
+      "policy": "reset/replay generation state is evidence for deterministic runtime lifecycle only; stale or blocked replay cannot promote object-model support",
+      "evidence": [
+        "tests/tooling/runtime/deterministic_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe/reset_replay_assertions.h",
+        "native/objc3c/src/runtime/classes/runtime_object_snapshot_contracts.h",
+        "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+      ]
+    }
+  ],
+  "remaining_blockers": [
+    {
+      "blocker_id": "object-model-debugger-source-identity",
+      "summary": "Debugger-grade source identity, line tables, and replayable value inspection remain required before this reserved umbrella can become implemented."
+    }
+  ]
+}

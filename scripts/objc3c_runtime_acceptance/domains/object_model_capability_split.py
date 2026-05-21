@@ -9,6 +9,10 @@ OBJECT_MODEL_RESERVED_UMBRELLA_ID = "runtime.object-model.full-realization"
 OBJECT_MODEL_CAPABILITY_SPLIT_SOURCE = (
     "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
 )
+OBJECT_MODEL_FULL_REALIZATION_READINESS_CONTRACT = (
+    "tests/tooling/fixtures/object_model_closure/"
+    "full_realization_combined_readiness_contract.json"
+)
 
 OBJECT_MODEL_PUBLIC_CAPABILITY_ROWS: tuple[dict[str, str], ...] = (
     {
@@ -165,6 +169,35 @@ OBJECT_MODEL_RESERVED_BOUNDARIES: tuple[dict[str, str], ...] = (
     },
 )
 
+OBJECT_MODEL_FULL_REALIZATION_READINESS_EVIDENCE: tuple[dict[str, object], ...] = (
+    {
+        "contract_id": "objc3c.object-model.full-realization.combined-readiness.v1",
+        "capability_id": OBJECT_MODEL_RESERVED_UMBRELLA_ID,
+        "issue": 8198,
+        "public_status": "reserved",
+        "support_claim_published": False,
+        "contract_path": OBJECT_MODEL_FULL_REALIZATION_READINESS_CONTRACT,
+        "combined_positive_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "public_reflection_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+        "public_commands": (
+            "npm run objc3c -- validate-object-model-conformance",
+            "npm run objc3c -- validate-public-runtime-reflection-api",
+        ),
+        "covered_axes": (
+            "class",
+            "metaclass",
+            "category",
+            "protocol",
+            "property",
+            "ivar",
+            "selector",
+            "public-reflection",
+            "registration-replay",
+        ),
+        "remaining_blockers": ("object-model-debugger-source-identity",),
+    },
+)
+
 
 def build_object_model_capability_split_contract() -> dict[str, Any]:
     return {
@@ -176,11 +209,16 @@ def build_object_model_capability_split_contract() -> dict[str, Any]:
             OBJECT_MODEL_IMPLEMENTED_SUPPORT_CONTRACTS
         ),
         "reserved_boundaries": list(OBJECT_MODEL_RESERVED_BOUNDARIES),
+        "full_realization_readiness_evidence": list(
+            OBJECT_MODEL_FULL_REALIZATION_READINESS_EVIDENCE
+        ),
     }
 
 
 __all__ = [
     "OBJECT_MODEL_CAPABILITY_SPLIT_SOURCE",
+    "OBJECT_MODEL_FULL_REALIZATION_READINESS_CONTRACT",
+    "OBJECT_MODEL_FULL_REALIZATION_READINESS_EVIDENCE",
     "OBJECT_MODEL_IMPLEMENTED_SUPPORT_CONTRACTS",
     "OBJECT_MODEL_PUBLIC_CAPABILITY_ROWS",
     "OBJECT_MODEL_RESERVED_BOUNDARIES",

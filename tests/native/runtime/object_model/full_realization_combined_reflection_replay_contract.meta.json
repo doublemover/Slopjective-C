@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "fixture": "full_realization_combined_reflection_replay_contract.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "runtime",
+  "behavior_family": "object_model",
+  "fixture_kind": "positive",
+  "issue": 8198,
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false,
+    "umbrella_capability_id": "runtime.object-model.full-realization",
+    "support_claim_published": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": [
+      "@interface RuntimeFullWidget",
+      "@protocol RuntimeFullTraceable",
+      "@interface RuntimeFullWidget (ReplayReflection)",
+      "@property (nonatomic, getter=value, setter=setValue:) i32 value"
+    ]
+  }
+}

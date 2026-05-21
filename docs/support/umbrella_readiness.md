@@ -46,6 +46,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Class and metaclass graph runtime source remains the object-model realization owner. (path: `native/objc3c/src/runtime/classes/class_graph.cpp`)
 - `satisfied` Image registration and replay source remains the runtime registration owner. (path: `native/objc3c/src/runtime/images/registration.cpp`)
 - `satisfied` Public runtime reflection API source remains checked in and evidence-linked. (path: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`)
+- `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
 - `blocked` Debugger source identity and line-table/source-map integration must be owned by checked compiler artifacts. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
@@ -58,16 +59,21 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Class realization behavior fixture remains checked in. (path: `tests/native/runtime/object_model/class_realization_contract.objc3`)
 - `satisfied` Property and ivar reflection behavior fixture remains checked in. (path: `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3`)
+- `satisfied` Combined class/metaclass/category/protocol/property/ivar/selector/reflection/replay fixture remains checked in. (path: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`)
 - `blocked` Debugger-grade object inspection must be covered by integrated source-map and reflection fixtures. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Negative Fixtures
 
 - `satisfied` Invalid category attachment remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3`)
-- `blocked` Foreign runtime compatibility and Objective-C 2 compatibility must remain explicit non-goals until implemented by their own rows. (blocker_id: `object-model-unsupported-runtime-boundaries`)
+- `satisfied` Private testing snapshots remain internal and cannot satisfy public reflection or debugger-grade support. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
+- `satisfied` Malformed object-model metadata remains fail-closed and cannot become reflectable support. (path: `tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp`)
+- `satisfied` Stale or blocked reset/replay generation evidence remains lifecycle rejection/provenance rather than umbrella support. (path: `tests/tooling/runtime/deterministic_reset_replay_probe.cpp`)
+- `satisfied` Foreign runtime compatibility and Objective-C 2 compatibility remain explicit non-goals until implemented by their own rows. (path: `docs/support/hard_cutover_capability_truth.md`)
 
 #### Runtime Probes
 
 - `satisfied` Public reflection API probe remains checked in. (path: `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp`)
+- `satisfied` Registration reset/replay generation probe remains checked in for lifecycle boundary evidence. (path: `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp`)
 - `blocked` Debugger value inspection must prove runtime metadata through a checked probe or replay fixture. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Abi Governance Rows
@@ -79,6 +85,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Object-model closure runbook remains checked in. (path: `docs/runbooks/objc3c_object_model_closure.md`)
+- `satisfied` Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
 
 ### Generated Output Boundary
 
@@ -98,10 +105,6 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - Source maps and native line tables for debugger stepping.
   - LLDB or replayable debugger protocol evidence for object value inspection.
   - Integrated object-model debugger fixtures and negative cases.
-- `object-model-unsupported-runtime-boundaries`: Unsupported foreign/runtime compatibility boundaries must remain explicit.
-  - Objective-C 2 runtime compatibility remains a non-goal unless its own row is implemented.
-  - Swift and C++ runtime mirroring remain non-goals unless their own rows are implemented.
-  - Docs must not imply foreign runtime compatibility from Objective-C 3 metadata evidence.
 
 ### Final Promotion Criteria
 
@@ -109,7 +112,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - All required prerequisite rows remain implemented with evidence-map rows.
 - All readiness requirements are satisfied.
 - No promotion blockers remain.
-- Debugger-grade reflection, source identity, and negative boundaries are covered by public npm-bridge commands.
+- Debugger-grade reflection and source identity are covered by public npm-bridge commands without relying on private snapshots or generated reports.
 
 ## language.advanced-runtime-closure
 
