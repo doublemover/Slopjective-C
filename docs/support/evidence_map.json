@@ -2929,6 +2929,20 @@
       "capability_id": "diagnostics.parser-sema.recovery-fixits",
       "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json",
+      "command": "npm run objc3c -- check-developer-diagnostic-quality"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py",
+      "command": "npm run objc3c -- check-developer-diagnostic-quality"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "test",
       "path": "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
       "command": "npm run objc3c -- validate-conformance-corpus"
     },
@@ -2937,6 +2951,12 @@
       "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
       "evidence_kind": "source",
       "path": "native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "source",
+      "path": "scripts/check_developer_tooling_diagnostic_quality.py"
     },
     {
       "capability_id": "diagnostics.parser-sema.recovery-fixits",
@@ -2976,6 +2996,65 @@
       "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_editor_diagnostics.py",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/workspace_index.py"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/diagnostic_bridge.py"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "source",
+      "path": "scripts/format_objc3c_source.py"
     },
     {
       "capability_id": "tooling.developer-experience.first-run-product-path",
@@ -3098,8 +3177,41 @@
     {
       "capability_id": "conformance.public.stable-suite-manifest",
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/conformance/public_suite_package_replay_evidence.json",
+      "command": "npm run objc3c -- validate-public-conformance-suite"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/public_conformance_suite/package_contract.json",
+      "command": "npm run objc3c -- validate-public-conformance-suite"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_public_conformance_suite_package.py",
+      "command": "npm run objc3c -- validate-public-conformance-suite"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_public_conformance_suite.py"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_public_conformance_suite/package.py"
     },
     {
       "capability_id": "conformance.public.stable-suite-manifest",
@@ -3227,6 +3339,38 @@
       "support_claim": "objc3c.behavior.release.abi-stability-governance",
       "evidence_kind": "source",
       "path": "scripts/objc3c_release_manifest/abi_api_drift.py"
+    },
+    {
+      "capability_id": "abi.governance.source-truth",
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "command": "npm run objc3c -- validate-abi-governance"
+    },
+    {
+      "capability_id": "abi.governance.source-truth",
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_abi_governance.py",
+      "command": "npm run objc3c -- validate-abi-governance"
+    },
+    {
+      "capability_id": "abi.governance.source-truth",
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-abi-governance-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "abi.governance.source-truth",
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_abi_governance.py"
+    },
+    {
+      "capability_id": "abi.governance.source-truth",
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py"
     },
     {
       "capability_id": "release.operations.channel-lifecycle",
@@ -3461,11 +3605,33 @@
     },
     {
       "capability_id": "runtime.debug-trace.async-tasks",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
     },
     {
       "capability_id": "runtime.debug-trace.async-tasks",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+      "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
+      "capability_id": "runtime.debug-trace.async-tasks",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+    },
+    {
+      "capability_id": "runtime.debug-trace.async-tasks",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_debug_trace/source_contracts.py"
+    },
+    {
+      "capability_id": "runtime.debug-trace.async-tasks",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_developer_tooling.md"
     },

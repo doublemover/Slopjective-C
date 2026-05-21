@@ -30,6 +30,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 | Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
 | --- | --- | --- | --- | --- |
+| `objc3c.behavior.abi.governance-source-truth` | `e2e` | `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json` | `npm run objc3c -- validate-abi-governance` | `abi.governance.source-truth` |
 | `objc3c.behavior.application-framework-samples.async-runtime-application` | `e2e` | `showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.async-runtime-application` |
 | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `e2e` | `showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.interop-adapter-library` |
 | `objc3c.behavior.application-framework-samples.object-runtime-library` | `e2e` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.object-runtime-library` |
@@ -67,6 +68,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
 | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `runtime` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.task-continuation-lifecycle` |
 | `objc3c.behavior.runtime.debug_trace` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.structured-inspection` |
+| `objc3c.behavior.runtime.debug_trace.async_tasks` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.async-tasks` |
 | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `runtime` | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` | `npm run objc3c -- validate-error-conformance` | `runtime.errors.live-bridge-cleanup` |
 | `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
 | `objc3c.behavior.runtime.generics.cross-module-metadata` | `runtime` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `runtime.generics.cross-module-metadata` |
@@ -99,6 +101,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.string-view-runtime-shape` |
 | `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
 | `objc3c.behavior.tooling.first-run-product-path` | `e2e` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` | `tooling.developer-experience.first-run-product-path` |
+| `objc3c.behavior.tooling.formatter-lsp-workspace` | `e2e` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` | `tooling.editor.formatter-lsp-workspace` |
 
 ## Phase Owner Contract
 
@@ -1583,12 +1586,16 @@ the canonical manifest fixture and public npm command above.
   - `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json`
   - `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-02.json`
   - `native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp`
+  - `scripts/check_developer_tooling_diagnostic_quality.py`
   - `scripts/objc3c_native_recovery_contract_runner/fixture_contracts.psm1`
 - Evidence:
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` via `npm run objc3c -- validate-conformance-corpus`
   - test: `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json` via `npm run objc3c -- check-developer-diagnostic-quality`
+  - test: `tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py` via `npm run objc3c -- check-developer-diagnostic-quality`
   - test: `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json` via `npm run objc3c -- validate-conformance-corpus`
   - source: `native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp`
+  - source: `scripts/check_developer_tooling_diagnostic_quality.py`
   - source: `tests/conformance/diagnostics/manifest.json`
 
 ### Editor artifact inspector
@@ -1611,6 +1618,31 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
   - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
   - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+
+### Formatter, LSP diagnostics, and workspace index
+
+- Capability ID: `tooling.editor.formatter-lsp-workspace`
+- State: `implemented`
+- Support claims: `objc3c.behavior.tooling.formatter-lsp-workspace`
+- Summary: The editor tooling surface publishes stable formatter output, LSP-compatible diagnostics/code actions from deterministic fix-its, manifest-backed hover and definition payloads, and a workspace index rooted in checked package and stdlib inputs. References, rename, semantic tokens, statement stepping, and network-backed workspace restore remain fail-closed.
+- Owner modules:
+  - `scripts/format_objc3c_source.py`
+  - `scripts/rewrite_objc3c_source.py`
+  - `scripts/objc3c_editor_tooling/diagnostic_bridge.py`
+  - `scripts/objc3c_editor_tooling/model.py`
+  - `scripts/objc3c_editor_tooling/workspace_index.py`
+  - `scripts/check_developer_tooling_language_server_navigation.py`
+  - `scripts/check_developer_tooling_workspace_integration.py`
+- Evidence:
+  - test: `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` via `npm run objc3c -- validate-developer-tooling`
+  - test: `tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json` via `npm run objc3c -- validate-developer-tooling`
+  - test: `tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json` via `npm run objc3c -- validate-developer-tooling`
+  - test: `tests/tooling/test_developer_tooling_editor_diagnostics.py` via `npm run objc3c -- validate-developer-tooling`
+  - test: `tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py` via `npm run objc3c -- validate-developer-tooling`
+  - schema: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+  - source: `scripts/objc3c_editor_tooling/workspace_index.py`
+  - source: `scripts/objc3c_editor_tooling/diagnostic_bridge.py`
+  - source: `scripts/format_objc3c_source.py`
 
 ### First-run developer product path
 
@@ -1652,12 +1684,19 @@ the canonical manifest fixture and public npm command above.
   - `tests/conformance/public_suite_manifest.json`
   - `schemas/objc3c-public-conformance-suite-v1.schema.json`
   - `scripts/check_objc3c_public_conformance_suite_manifest.py`
+  - `scripts/check_objc3c_public_conformance_suite.py`
+  - `scripts/objc3c_public_conformance_suite/package.py`
   - `tests/conformance/corpus_surface.json`
   - `scripts/check_objc3c_conformance_corpus_integration.py`
 - Evidence:
   - test: `tests/conformance/public_suite_manifest.json` via `npm run objc3c -- validate-conformance-corpus`
   - test: `schemas/objc3c-public-conformance-suite-v1.schema.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/conformance/public_suite_package_replay_evidence.json` via `npm run objc3c -- validate-public-conformance-suite`
+  - test: `tests/tooling/fixtures/public_conformance_suite/package_contract.json` via `npm run objc3c -- validate-public-conformance-suite`
+  - test: `tests/tooling/test_public_conformance_suite_package.py` via `npm run objc3c -- validate-public-conformance-suite`
   - source: `scripts/check_objc3c_public_conformance_suite_manifest.py`
+  - source: `scripts/check_objc3c_public_conformance_suite.py`
+  - source: `scripts/objc3c_public_conformance_suite/package.py`
   - source: `tests/conformance/corpus_surface.json`
 
 ### Local package manager and registry model
@@ -1723,6 +1762,25 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/test_release_abi_api_drift.py` via `npm run objc3c -- check-release-abi-api-drift`
   - schema: `schemas/objc3c-abi-api-governance-v1.schema.json`
   - source: `scripts/objc3c_release_manifest/abi_api_drift.py`
+
+### ABI governance source-of-truth manifest
+
+- Capability ID: `abi.governance.source-truth`
+- State: `implemented`
+- Support claims: `objc3c.behavior.abi.governance-source-truth`
+- Summary: ABI governance now has a checked source-of-truth manifest and public workflow action that validate governed ABI surfaces, schema identities, public runtime/header symbol digests, stdlib ABI signatures, package ABI identity, and fail-closed compatibility policy. This row is developer-tooling governance evidence and does not perform release channel publication.
+- Owner modules:
+  - `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json`
+  - `schemas/objc3c-abi-governance-manifest-v1.schema.json`
+  - `scripts/check_objc3c_abi_governance.py`
+  - `scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py`
+  - `scripts/objc3c_workflow/action_handlers_release_foundation.py`
+- Evidence:
+  - test: `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json` via `npm run objc3c -- validate-abi-governance`
+  - test: `tests/tooling/test_abi_governance.py` via `npm run objc3c -- validate-abi-governance`
+  - schema: `schemas/objc3c-abi-governance-manifest-v1.schema.json`
+  - source: `scripts/check_objc3c_abi_governance.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py`
 
 ### Release channel operations
 
@@ -1841,7 +1899,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.structured-inspection`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.debug_trace`
-- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, and editor debug-map artifacts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, async task inspection, and error/unwind tracing remain reserved.
+- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, full source-map publication, and error/unwind tracing remain reserved.
 - Owner modules:
   - `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - `scripts/build_objc3c_runtime_debug_trace.py`
@@ -1883,13 +1941,20 @@ the canonical manifest fixture and public npm command above.
 ### Async task runtime inspection
 
 - Capability ID: `runtime.debug-trace.async-tasks`
-- State: `reserved`
-- Support claims: None
-- Summary: Async task, continuation, actor, and executor inspection are reserved until runtime snapshots are published into the debug trace model. The current trace does not claim those debugger surfaces.
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.debug_trace.async_tasks`
+- Summary: Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and error/unwind snapshots remain reserved.
 - Owner modules:
+  - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h`
+  - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp`
+  - `scripts/objc3c_runtime_debug_trace/source_contracts.py`
   - `scripts/objc3c_runtime_debug_trace/payload.py`
+  - `scripts/objc3c_runtime_debug_trace/validation.py`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json`
+  - test: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
+  - test: `tests/tooling/test_runtime_debug_trace_surface.py` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
+  - source: `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h`
+  - source: `scripts/objc3c_runtime_debug_trace/source_contracts.py`
   - doc: `docs/runbooks/objc3c_developer_tooling.md`
 
 ### Error and unwind runtime tracing
@@ -2090,4 +2155,3 @@ the canonical manifest fixture and public npm command above.
   unavailable until a narrower implemented row exists.
 - `internal`: the row names implementation, schema, report, workflow, or
   owner boundaries, not public Objective-C 3.0 behavior.
-

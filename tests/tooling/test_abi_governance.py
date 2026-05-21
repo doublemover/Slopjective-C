@@ -11,6 +11,11 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 import check_objc3c_abi_governance as abi_governance
 from objc3c_shared.json_io import load_json_object, write_json_file
+from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
+from scripts.objc3c_workflow.public_command_api import (
+    public_workflow_action_names,
+    public_workflow_action_payload,
+)
 
 MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "abi_governance" / "source_of_truth_manifest.json"
 RELEASE_GOVERNANCE = (
@@ -44,9 +49,41 @@ def test_abi_governance_accepts_checked_in_manifest(tmp_path: Path) -> None:
         item["extractor_id"]: item for item in summary["surface_extractors"]  # type: ignore[index]
     }
     assert observed["runtime-public-c-header-symbols"]["observed_count"] == 122
-    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 146
+    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 147
     assert observed["package-lock-abi-identity-schema"]["observed_count"] == 3
     assert summary["release_blocker_issue_refs"] == ["#8173"]
+
+
+def test_abi_governance_public_workflow_action_is_registered() -> None:
+    action = "validate-abi-governance"
+    payload = public_workflow_action_payload(action)
+
+    assert action in public_workflow_action_names()
+    assert action in ACTION_HANDLERS
+    assert payload["backend"] == "python:scripts/check_objc3c_abi_governance.py"
+    assert payload["validation_tier"] == "repo"
+    assert "source-owned" in str(payload["guarantee_owner"])
+
+
+def test_abi_governance_support_row_is_source_owned_and_non_release_channel() -> None:
+    matrix = load_json_object(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}  # type: ignore[index]
+    row = rows["abi.governance.source-truth"]
+    evidence_paths = {item["path"] for item in row["evidence"]}
+    evidence_commands = {
+        item["command"]
+        for item in row["evidence"]
+        if "command" in item
+    }
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.abi.governance-source-truth"
+    ]
+    assert "does not perform release channel publication" in row["summary"]
+    assert "scripts/check_objc3c_abi_governance.py" in evidence_paths
+    assert "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json" in evidence_paths
+    assert "npm run objc3c -- validate-abi-governance" in evidence_commands
 
 
 def test_abi_governance_rejects_missing_issue_8173(tmp_path: Path) -> None:

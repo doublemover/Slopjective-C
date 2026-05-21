@@ -511,14 +511,26 @@ diagnostic, documentation, or boundary evidence only.
 | `support.hard-cutover-capability-truth` |  | `doc` | `docs/issues/hard_cutover_8132_8150_closeout/payloads.md` |  |
 | `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `test` | `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `test` | `tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json` | `npm run objc3c -- check-developer-diagnostic-quality` |
+| `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `test` | `tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py` | `npm run objc3c -- check-developer-diagnostic-quality` |
 | `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `test` | `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json` | `npm run objc3c -- validate-conformance-corpus` |
 | `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `source` | `native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp` |  |
+| `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `source` | `scripts/check_developer_tooling_diagnostic_quality.py` |  |
 | `diagnostics.parser-sema.recovery-fixits` | `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `source` | `tests/conformance/diagnostics/manifest.json` |  |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/test_developer_tooling_editor_diagnostics.py` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `schema` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/objc3c_editor_tooling/workspace_index.py` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/objc3c_editor_tooling/diagnostic_bridge.py` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/format_objc3c_source.py` |  |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json` | `npm run objc3c -- validate-getting-started` |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/test_getting_started_surface_command_parity.py` | `npm run objc3c -- validate-getting-started` |
@@ -537,7 +549,12 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `source` | `scripts/check_objc3c_migration_workflow.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/conformance/public_suite_manifest.json` | `npm run objc3c -- validate-conformance-corpus` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `schemas/objc3c-public-conformance-suite-v1.schema.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/conformance/public_suite_package_replay_evidence.json` | `npm run objc3c -- validate-public-conformance-suite` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/public_conformance_suite/package_contract.json` | `npm run objc3c -- validate-public-conformance-suite` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/test_public_conformance_suite_package.py` | `npm run objc3c -- validate-public-conformance-suite` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite_manifest.py` |  |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite.py` |  |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/objc3c_public_conformance_suite/package.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `tests/conformance/corpus_surface.json` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/test_package_manager_model.py` | `npm run objc3c -- validate-package-manager-model` |
@@ -558,6 +575,11 @@ diagnostic, documentation, or boundary evidence only.
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/test_release_abi_api_drift.py` | `npm run objc3c -- check-release-abi-api-drift` |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `schema` | `schemas/objc3c-abi-api-governance-v1.schema.json` |  |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `source` | `scripts/objc3c_release_manifest/abi_api_drift.py` |  |
+| `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `test` | `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json` | `npm run objc3c -- validate-abi-governance` |
+| `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `test` | `tests/tooling/test_abi_governance.py` | `npm run objc3c -- validate-abi-governance` |
+| `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `schema` | `schemas/objc3c-abi-governance-manifest-v1.schema.json` |  |
+| `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `source` | `scripts/check_objc3c_abi_governance.py` |  |
+| `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `source` | `scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py` |  |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/fixtures/release_operations/channel_operations_model.json` | `npm run objc3c -- validate-release-operations-end-to-end` |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/test_release_operations_channel_model.py` | `npm run objc3c -- validate-release-operations-end-to-end` |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `schema` | `schemas/objc3c-release-channel-operations-v1.schema.json` |  |
@@ -597,8 +619,11 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |
 | `runtime.debug-trace.statement-stepping` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.async-tasks` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
-| `runtime.debug-trace.async-tasks` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h` |  |
+| `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `scripts/objc3c_runtime_debug_trace/source_contracts.py` |  |
+| `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.error-unwind` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
 | `runtime.debug-trace.error-unwind` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `test` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` | `npm run objc3c -- build-platform-support-matrix` |
@@ -645,4 +670,3 @@ diagnostic, documentation, or boundary evidence only.
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
 | `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
-

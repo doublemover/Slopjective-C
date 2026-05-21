@@ -216,3 +216,26 @@ def test_language_server_policy_documents_fixit_backed_code_action_boundary() ->
         "support_class": "diagnostics-fixit-backed",
         "unpublished_without": "machine-applicable diagnostic fix-it ranges",
     }
+
+
+def test_formatter_lsp_workspace_support_row_is_public_and_bounded() -> None:
+    matrix = load_json(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["tooling.editor.formatter-lsp-workspace"]
+    evidence_paths = {item["path"] for item in row["evidence"]}
+    evidence_commands = {
+        item["command"]
+        for item in row["evidence"]
+        if "command" in item
+    }
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.tooling.formatter-lsp-workspace"
+    ]
+    assert "References, rename, semantic tokens" in row["summary"]
+    assert "fail-closed" in row["summary"]
+    assert "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json" in evidence_paths
+    assert "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json" in evidence_paths
+    assert "scripts/objc3c_editor_tooling/workspace_index.py" in evidence_paths
+    assert "npm run objc3c -- validate-developer-tooling" in evidence_commands

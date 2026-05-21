@@ -288,3 +288,29 @@ def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     assert "trace-runtime-debug" in ACTION_SPECS
     assert "trace-runtime-debug" in ACTION_HANDLERS
     assert ACTION_SPECS["trace-runtime-debug"].pass_through_args is True
+
+
+def test_runtime_debug_trace_async_task_support_row_matches_payload() -> None:
+    matrix = load_json(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    async_row = rows["runtime.debug-trace.async-tasks"]
+    structured_row = rows["runtime.debug-trace.structured-inspection"]
+    evidence_paths = {item["path"] for item in async_row["evidence"]}
+    payload = fixture_payload()
+    handoff_rows = {
+        row["capability_id"]: row
+        for row in payload["support_handoff"]["capability_rows"]
+    }
+
+    assert async_row["state"] == "implemented"
+    assert async_row["support_claims"] == [
+        "objc3c.behavior.runtime.debug_trace.async_tasks"
+    ]
+    assert "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h" in evidence_paths
+    assert "scripts/objc3c_runtime_debug_trace/source_contracts.py" in evidence_paths
+    assert "async/actor trace contract rows" in structured_row["summary"]
+    assert "async task inspection" not in structured_row["summary"]
+    assert (
+        handoff_rows["objc3c.behavior.runtime.debug_trace.async_tasks"]["status"]
+        == "supported"
+    )

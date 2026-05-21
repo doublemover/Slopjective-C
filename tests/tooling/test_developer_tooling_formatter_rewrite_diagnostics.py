@@ -119,6 +119,27 @@ def test_diagnostic_quality_gate_covers_taxonomy_and_machine_fixits() -> None:
     assert summary["deterministic_digest"]
 
 
+def test_diagnostic_recovery_support_row_cites_quality_gate() -> None:
+    matrix = load_json(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["diagnostics.parser-sema.recovery-fixits"]
+    evidence_paths = {item["path"] for item in row["evidence"]}
+    evidence_commands = {
+        item["command"]
+        for item in row["evidence"]
+        if "command" in item
+    }
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.diagnostics.parser-sema-recovery-fixits"
+    ]
+    assert "scripts/check_developer_tooling_diagnostic_quality.py" in row["owner_modules"]
+    assert "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json" in evidence_paths
+    assert "scripts/check_developer_tooling_diagnostic_quality.py" in evidence_paths
+    assert "npm run objc3c -- check-developer-diagnostic-quality" in evidence_commands
+
+
 def test_diagnostic_quality_gate_fails_closed_on_stale_native_recovery_fixture(
     tmp_path: Path, monkeypatch
 ) -> None:

@@ -89,8 +89,8 @@
       ],
       "release_blocker": true,
       "output_policy": "tmp-report-only",
-      "expected_count": 146,
-      "expected_digest": "sha256:b50db705b4f94ee3b7ff587690cf1035e91d5b68e588e51b8f9ed2b85ac488e0"
+      "expected_count": 147,
+      "expected_digest": "sha256:ededb5e98ba643f9730f11fb950c74942e9968c84e3e3784f8b04303136d7273"
     },
     {
       "extractor_id": "package-lock-abi-identity-schema",

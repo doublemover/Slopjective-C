@@ -372,6 +372,12 @@
       "executable_command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
     },
     {
+      "claim_id": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+      "executable_command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
       "claim_id": "objc3c.behavior.tooling.first-run-product-path",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
@@ -402,6 +408,12 @@
       "executable_command": "npm run objc3c -- check-release-abi-api-drift"
     },
     {
+      "claim_id": "objc3c.behavior.abi.governance-source-truth",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "executable_command": "npm run objc3c -- validate-abi-governance"
+    },
+    {
       "claim_id": "objc3c.behavior.release.channel-operations",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/release_operations/channel_operations_model.json",
@@ -421,6 +433,12 @@
     },
     {
       "claim_id": "objc3c.behavior.runtime.debug_trace",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "executable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.debug_trace.async_tasks",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
       "executable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
@@ -1492,10 +1510,26 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "developer-tooling",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
       "behavior_family": "release-governance",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "abi-governance",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     },

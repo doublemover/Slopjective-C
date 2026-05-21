@@ -1652,6 +1652,42 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+      "runnable_command": "npm run objc3c -- validate-developer-tooling",
+      "runtime_acceptance_case": "formatter-lsp-workspace-editor-tooling",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+        "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+        "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+        "tests/tooling/test_developer_tooling_editor_diagnostics.py",
+        "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py",
+        "scripts/format_objc3c_source.py",
+        "scripts/rewrite_objc3c_source.py",
+        "scripts/objc3c_editor_tooling/workspace_index.py",
+        "scripts/objc3c_editor_tooling/diagnostic_bridge.py",
+        "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+        "tests/tooling/fixtures/developer_tooling/behavior_owner_splits/strict_error.json",
+        "tests/tooling/test_developer_tooling_editor_diagnostics.py",
+        "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3T200",
+        "O3P104"
+      ],
+      "source_truth_requirements": [
+        "Formatter, LSP diagnostic/code-action transport, hover, definition, and workspace index support is bounded to checked developer-tooling contracts and validate-developer-tooling",
+        "References, rename, semantic tokens, statement stepping, and network-backed workspace restore remain unpublished fail-closed capabilities",
+        "Generated editor payloads and tmp workspace outputs are replay artifacts only and cannot widen this support claim"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.tooling.first-run-product-path",
       "capability_id": "tooling.developer-experience.first-run-product-path",
       "owner_phase": "e2e",
@@ -1775,6 +1811,36 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.abi.governance-source-truth",
+      "capability_id": "abi.governance.source-truth",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "traceability_fixture": "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-abi-governance",
+      "runtime_acceptance_case": "abi-governance-source-truth-manifest",
+      "positive_evidence": [
+        "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+        "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+        "scripts/check_objc3c_abi_governance.py",
+        "scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py",
+        "scripts/objc3c_workflow/action_handlers_release_foundation.py",
+        "tests/tooling/test_abi_governance.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+        "tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json",
+        "tests/tooling/test_abi_governance.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3ABI8173"
+      ],
+      "source_truth_requirements": [
+        "ABI governance source truth is bounded to checked manifests, schema identities, surface digests, public runtime/header symbol digests, stdlib ABI signatures, and package ABI identity",
+        "Unsupported compatibility drift, stale digests, missing governed surfaces, and fallback compatibility policies remain fail-closed",
+        "The validate-abi-governance action is developer-tooling governance evidence only and must not publish, promote, or operate release channels"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.runtime.public-reflection-api",
       "capability_id": "runtime.public-api.reflection",
       "owner_phase": "runtime",
@@ -1862,9 +1928,41 @@
         "O3DBG8176"
       ],
       "source_truth_requirements": [
-        "Runtime debug trace support is bounded to schema-backed trace composition over runtime inspector, compile-stage trace, and editor debug-map inputs",
-        "LLDB plugin integration, statement stepping, async task inspection, and error/unwind tracing remain reserved lanes",
+        "Runtime debug trace support is bounded to schema-backed trace composition over runtime inspector, compile-stage trace, editor debug-map inputs, and source-owned runtime trace contract rows",
+        "LLDB plugin integration, statement stepping, full source-map publication, and error/unwind tracing remain reserved lanes",
         "Generated trace reports under tmp are replay outputs, not source truth for additional debugger claims"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.debug_trace.async_tasks",
+      "capability_id": "runtime.debug-trace.async-tasks",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "traceability_fixture": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+      "runnable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3",
+      "runtime_acceptance_case": "runtime-debug-trace-async-task-source-contracts",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp",
+        "scripts/objc3c_runtime_debug_trace/source_contracts.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py",
+        "tests/tooling/test_runtime_debug_trace_surface.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+        "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
+        "scripts/objc3c_runtime_debug_trace/validation.py",
+        "tests/tooling/test_runtime_debug_trace_surface.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3DBG8176"
+      ],
+      "source_truth_requirements": [
+        "Async task, continuation, actor, and executor inspection support is claimed only as source-owned runtime trace contract metadata in the runtime debug trace payload",
+        "Supported async/task rows must retain live source anchors and replayable runtime debug trace inputs",
+        "Statement stepping, LLDB integration, full source maps, and error/unwind snapshots remain reserved and fail-closed"
       ]
     },
     {

@@ -8,6 +8,7 @@ from scripts.objc3c_workflow.action_execution_dispatch import execute_registered
 
 from ..commands import run
 from .release_governance_foundation_paths import (
+    ABI_GOVERNANCE_PY,
     RELEASE_ABI_API_DRIFT_PY,
     RELEASE_FOUNDATION_SOURCE_SURFACE_PY,
     RELEASE_MANIFEST_PY,
@@ -31,6 +32,10 @@ def action_check_release_foundation_surface(_: list[str]) -> int:
 
 def action_check_release_abi_api_drift(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_ABI_API_DRIFT_PY)])
+
+
+def action_validate_abi_governance(_: list[str]) -> int:
+    return run([sys.executable, str(ABI_GOVERNANCE_PY)])
 
 
 def action_build_release_manifest(_: list[str]) -> int:

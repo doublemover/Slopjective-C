@@ -7,6 +7,7 @@ from .release_governance_foundation_artifacts import (
     action_check_release_abi_api_drift,
     action_check_release_foundation_surface,
     action_publish_release_provenance,
+    action_validate_abi_governance,
 )
 from .release_governance_foundation_validation import action_validate_release_foundation
 
@@ -15,5 +16,6 @@ __all__ = [
     "action_check_release_abi_api_drift",
     "action_check_release_foundation_surface",
     "action_publish_release_provenance",
+    "action_validate_abi_governance",
     "action_validate_release_foundation",
 ]

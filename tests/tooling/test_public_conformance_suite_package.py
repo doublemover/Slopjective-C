@@ -139,6 +139,27 @@ def test_public_conformance_suite_package_contract_is_checked_source_truth() -> 
     assert "every public-stable case carries source-owned fixture provenance" in contract["fail_closed_invariants"]
 
 
+def test_public_conformance_suite_support_row_cites_package_replay_source_truth() -> None:
+    matrix = load_json_object(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}  # type: ignore[index]
+    row = rows["conformance.public.stable-suite-manifest"]
+    evidence_paths = {item["path"] for item in row["evidence"]}
+    evidence_commands = {
+        item["command"]
+        for item in row["evidence"]
+        if "command" in item
+    }
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [
+        "objc3c.behavior.conformance.public-stable-suite"
+    ]
+    assert "tests/conformance/public_suite_package_replay_evidence.json" in evidence_paths
+    assert "tests/tooling/fixtures/public_conformance_suite/package_contract.json" in evidence_paths
+    assert "scripts/objc3c_public_conformance_suite/package.py" in evidence_paths
+    assert "npm run objc3c -- validate-public-conformance-suite" in evidence_commands
+
+
 def test_public_workflow_action_uses_package_checker() -> None:
     catalog = load_json_object(ROOT / "scripts" / "objc3c_workflow" / "schemas" / "action-registry-v1.schema.json")
     assert catalog["$schema"] == "https://json-schema.org/draft/2020-12/schema"

@@ -40,6 +40,17 @@ RELEASE_FOUNDATION_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
         ),
     ),
     ReleaseGovernanceActionContract(
+        "validate-abi-governance",
+        "validate the checked ABI governance source-of-truth manifest",
+        "python:scripts/check_objc3c_abi_governance.py",
+        "release-foundation",
+        "repo",
+        (
+            "ABI governance stays source-owned by checked manifests, schema "
+            "identity, surface digests, and fail-closed compatibility policy"
+        ),
+    ),
+    ReleaseGovernanceActionContract(
         "build-release-manifest",
         "derive the machine-owned release manifest from repeated runnable package assembly runs",
         "python:scripts/build_objc3c_release_manifest.py",
