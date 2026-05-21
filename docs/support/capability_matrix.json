@@ -888,6 +888,52 @@
       ]
     },
     {
+      "id": "language.protocols.protocol-qualified-existential-value-flow",
+      "title": "Protocol-qualified existential value flow",
+      "state": "implemented",
+      "summary": "The current protocol-existential support claim is limited to protocol-qualified value flow, required/optional member lookup, nullable flow, and semantic diagnostics; witness tables, associated types, existential ABI records, and dynamic existential dispatch remain unclaimed.",
+      "support_claims": [
+        "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc",
+        "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-01.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-07.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+        }
+      ]
+    },
+    {
       "id": "language.generics.protocol-qualified-arguments",
       "title": "Protocol-qualified generic arguments",
       "state": "implemented",
@@ -966,6 +1012,98 @@
       ]
     },
     {
+      "id": "modules.public-import-lookup",
+      "title": "Public cross-module import lookup",
+      "state": "implemented",
+      "summary": "The current module-import support claim is limited to public import lookup and symbol access through checked-in provider/consumer fixtures, module-roundtrip conformance rows, and duplicate-module rejection evidence.",
+      "support_claims": [
+        "objc3c.behavior.modules.public-import-lookup"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.cpp",
+        "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h",
+        "native/objc3c/src/io/objc3_cross_module_imported_modules_document.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/module_import_lookup_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/module_roundtrip/MOD-53-01.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/module_roundtrip/MOD-53-02.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
+        }
+      ]
+    },
+    {
+      "id": "runtime.modules.imported-runtime-packaging-replay",
+      "title": "Imported runtime packaging replay",
+      "state": "implemented",
+      "summary": "Cross-module runtime replay support is claimed for imported runtime package preservation, runtime packaging provider/consumer fixtures, import execution probes, and fail-closed replay proof rejection without claiming registry or plugin loading behavior.",
+      "support_claims": [
+        "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/runtime_import_preservation.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation_readiness.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/artifacts/objc3_frontend_runtime_import_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+          "command": "npm run objc3c -- validate-interop-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_preservation.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+        }
+      ]
+    },
+    {
       "id": "runtime.generics.cross-module-metadata",
       "title": "Cross-module generic metadata replay",
       "state": "implemented",
@@ -1003,6 +1141,100 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.string-view-runtime-shape",
+      "title": "Runtime-backed string-view helper shape",
+      "state": "implemented",
+      "summary": "The current text support claim is limited to objc3.core string-view length and prefix-unit helper shape, with literals, owned storage, UTF-8 validation, scalar iteration, formatting, interpolation, and NSString bridging reserved.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.string-view-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.core/module.json",
+        "stdlib/modules/objc3.core/module.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+        "native/objc3c/src/runtime/strings/borrowed_string.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_string_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.core/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/strings/borrowed_string.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.byte-span-runtime-shape",
+      "title": "Runtime-backed byte-span helper shape",
+      "state": "implemented",
+      "summary": "The current byte-span support claim is limited to objc3.core byte-span length and prefix-length helper shape, with byte ownership, encoding conversion, mutation, iteration, and Foundation NSData bridging reserved.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.byte-span-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.core/module.json",
+        "stdlib/modules/objc3.core/module.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.core/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
         }
       ]
     },
@@ -1208,6 +1440,74 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.ownership.memory-model",
+      "title": "Ownership and memory model groundwork",
+      "state": "implemented",
+      "summary": "The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.",
+      "support_claims": [
+        "objc3c.behavior.language.ownership-memory-model"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_arc_ownership_checks.inc",
+        "native/objc3c/src/lower/contracts/lowering_arc_contracts.h",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/memory/autorelease_pool.cpp",
+        "native/objc3c/src/runtime/storage/weak_slot_registry.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/ownership/strong_id_assignment.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/memory/arc.cpp"
         }
       ]
     },

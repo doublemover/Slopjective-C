@@ -133,6 +133,13 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/conformance/semantic/TYP-8013-01.json` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/conformance/semantic/TYP-8013-07.json` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc` |  |
+| `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc` |  |
 | `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/conformance/semantic/TYP-8013-15.json` |  |
 | `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3` |  |
@@ -144,12 +151,40 @@ diagnostic, documentation, or boundary evidence only.
 | `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/conformance/semantic/TYP-8013-13.json` |  |
 | `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3` |  |
 | `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `source` | `native/objc3c/src/ir/objc3_ir_type_model.cpp` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/tooling/fixtures/native/module_import_lookup_consumer.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/tooling/fixtures/native/module_import_lookup_provider.objc3` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/conformance/module_roundtrip/MOD-53-01.json` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/conformance/module_roundtrip/MOD-53-02.json` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h` |  |
+| `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_provider.objc3` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/runtime/import_module_execution_matrix_probe.cpp` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `test` | `tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `source` | `native/objc3c/src/pipeline/runtime_import_preservation.cpp` |  |
+| `runtime.modules.imported-runtime-packaging-replay` | `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `source` | `native/objc3c/src/pipeline/objc3_runtime_import_surface.h` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/conformance/semantic/TYP-8013-17.json` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `source` | `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `native/objc3c/src/runtime/strings/borrowed_string.cpp` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/core_runtime.cpp` |  |
 | `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
 | `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
@@ -180,6 +215,18 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `stdlib/advanced_helper_package_surface.json` |  |
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp` |  |
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/ownership/strong_id_assignment.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `source` | `native/objc3c/src/runtime/memory/arc.cpp` |  |
 | `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` |
 | `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json` |  |
 | `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3` |  |

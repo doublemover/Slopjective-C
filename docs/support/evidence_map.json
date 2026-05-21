@@ -679,6 +679,49 @@
       "path": "docs/runbooks/objc3c_object_model_closure.md"
     },
     {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-01.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-07.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+    },
+    {
       "capability_id": "language.generics.protocol-qualified-arguments",
       "support_claim": "objc3c.behavior.language.generics.protocol-qualified-arguments",
       "evidence_kind": "test",
@@ -747,6 +790,92 @@
       "path": "native/objc3c/src/ir/objc3_ir_type_model.cpp"
     },
     {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/module_import_lookup_provider.objc3"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "test",
+      "path": "tests/conformance/module_roundtrip/MOD-53-01.json"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "test",
+      "path": "tests/conformance/module_roundtrip/MOD-53-02.json"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h"
+    },
+    {
+      "capability_id": "modules.public-import-lookup",
+      "support_claim": "objc3c.behavior.modules.public-import-lookup",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+      "command": "npm run objc3c -- validate-interop-conformance"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/runtime_packaging_provider.objc3"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/runtime_import_preservation.cpp"
+    },
+    {
+      "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+      "support_claim": "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+    },
+    {
       "capability_id": "runtime.generics.cross-module-metadata",
       "support_claim": "objc3c.behavior.runtime.generics.cross-module-metadata",
       "evidence_kind": "test",
@@ -782,6 +911,92 @@
       "support_claim": "objc3c.behavior.runtime.generics.cross-module-metadata",
       "evidence_kind": "source",
       "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.core/module.json"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/strings/borrowed_string.cpp"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.core/module.json"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
     },
     {
       "capability_id": "stdlib.collections.array-slice-runtime-shape",
@@ -971,6 +1186,79 @@
       "support_claim": "objc3c.behavior.stdlib.concurrency-runtime-v1",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/native/sema/ownership/strong_id_assignment.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/memory/arc.cpp"
     },
     {
       "capability_id": "language.blocks.escape-capture-legality",

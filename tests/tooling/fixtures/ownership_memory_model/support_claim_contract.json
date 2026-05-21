@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.ownership.memory-model.support-claim-groundwork.v1",
+  "issue_ref": 8166,
+  "support_claim": "objc3c.behavior.language.ownership-memory-model",
+  "capability_id": "language.ownership.memory-model",
+  "owner_phase": "sema",
+  "public_command": "npm run objc3c -- validate-conformance-corpus",
+  "positive_evidence": [
+    "tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3",
+    "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3",
+    "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
+    "tests/native/sema/ownership/strong_id_assignment.objc3",
+    "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+    "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+  ],
+  "negative_evidence": [
+    "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+    "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_parameter_ownership.objc3",
+    "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_return_ownership.objc3",
+    "tests/tooling/fixtures/native/invalid_borrowed_return_rejected.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_negative.objc3"
+  ],
+  "required_diagnostic_codes": [
+    "O3S221"
+  ],
+  "source_truth_requirements": [
+    "This groundwork claim only links checked-in ownership evidence that already exercises borrowed, retained, autoreleased, cleanup, weak/autoreleasepool, block capture, and lowering ownership surfaces.",
+    "Unsupported ARC ownership qualifier syntax remains negative evidence until issue 8166 lands explicit sema support for additional qualifiers.",
+    "Generated reports and tmp outputs are not source truth for this claim."
+  ]
+}

@@ -1,0 +1,7 @@
+module moduleImportLookupConsumer;
+
+@import moduleImportLookupProvider;
+
+fn module_import_lookup_packet_count() -> i32 {
+  return @moduleImportLookupProvider.ModuleImportPacketCount;
+}

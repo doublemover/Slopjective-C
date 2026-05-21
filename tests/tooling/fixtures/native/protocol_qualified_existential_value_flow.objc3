@@ -1,0 +1,31 @@
+module ProtocolQualifiedExistentialValueFlow;
+
+@protocol SemanticValue
+@required
+@property (readonly) id requiredToken;
+- (id<SemanticValue>*?)requiredNode;
+@optional
+@property (readonly) id optionalToken;
+@end
+
+@interface SemanticBox
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+fn chooseValue(flag: bool, whenTrue: id<SemanticValue>*?, whenFalse: id<SemanticValue>*!) -> id<SemanticValue>*? {
+  if (flag) {
+    return whenTrue;
+  }
+  return whenFalse;
+}
+
+fn consumeExistential(value: id<SemanticValue>*?) -> i32 {
+  let token = [value? requiredToken];
+  let optionalToken = [value? optionalToken];
+  let node = [value? requiredNode];
+  let chosen = chooseValue(true, value, node);
+  return 0;
+}

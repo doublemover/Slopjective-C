@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.stdlib.text.runtime_backed_claims.v1",
+  "issue_ref": 8162,
+  "scope": "bounded-runtime-backed-text-groundwork",
+  "source_truth": [
+    "stdlib/modules/objc3.core/module.json",
+    "stdlib/semantic_policy.json",
+    "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+    "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "native/objc3c/src/runtime/strings/borrowed_string.cpp",
+    "native/objc3c/src/runtime/public/objc3_runtime_string_contract.h"
+  ],
+  "claims": [
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
+      "capability_id": "stdlib.text.string-view-runtime-shape",
+      "module": "objc3.core",
+      "api_family": "string-view",
+      "exports": [
+        "objc3_core_string_view_length",
+        "objc3_core_string_view_prefix_units"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_core_count_i32",
+        "objc3_runtime_stdlib_core_prefix_count_i32"
+      ],
+      "semantic_policy_keys": [
+        "string_view_length",
+        "string_view_prefix_units"
+      ],
+      "supported_now": [
+        "string-view length helper applies a zero floor to negative unit counts",
+        "string-view prefix helper clamps source and requested unit counts through the runtime ABI"
+      ],
+      "reserved_until_runtime_storage": [
+        "string literals",
+        "owned string storage",
+        "UTF-8 validation",
+        "Unicode scalar iteration",
+        "formatting and interpolation",
+        "NSString bridging"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+      "capability_id": "stdlib.text.byte-span-runtime-shape",
+      "module": "objc3.core",
+      "api_family": "byte-span",
+      "exports": [
+        "objc3_core_bytes_span_length",
+        "objc3_core_bytes_span_prefix_length"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_core_count_i32",
+        "objc3_runtime_stdlib_core_prefix_count_i32"
+      ],
+      "semantic_policy_keys": [
+        "byte_span_length",
+        "byte_span_prefix_length"
+      ],
+      "supported_now": [
+        "byte-span length helper applies a zero floor to negative byte counts",
+        "byte-span prefix helper clamps source and requested byte counts through the runtime ABI"
+      ],
+      "reserved_until_runtime_storage": [
+        "byte buffer ownership",
+        "encoding conversion",
+        "slice mutation",
+        "iteration protocol",
+        "Foundation NSData bridging"
+      ]
+    }
+  ],
+  "non_goals": [
+    "string literal support claims",
+    "owned string or byte storage claims",
+    "Unicode normalization or collation claims",
+    "locale-sensitive formatting claims",
+    "Foundation compatibility promises"
+  ]
+}
