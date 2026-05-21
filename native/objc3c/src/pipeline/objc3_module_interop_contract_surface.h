@@ -4,9 +4,28 @@
 #include <string>
 #include <vector>
 
+enum class Objc3ModuleImportVisibility {
+  kPublic,
+  kPrivate,
+  kInternal,
+};
+
 enum class Objc3ModuleInteropLaneState {
   kSupported,
   kReserved,
+};
+
+struct Objc3ModuleImportEdgeContract {
+  std::string module_name;
+  std::string metadata_version;
+  std::string abi_identity;
+  Objc3ModuleImportVisibility visibility = Objc3ModuleImportVisibility::kPrivate;
+  bool reexported = false;
+  std::vector<std::string> exported_symbols_source_order;
+  bool rebuild_affects_semantic = false;
+  bool rebuild_affects_abi = false;
+  bool rebuild_affects_link = false;
+  bool rebuild_affects_package_lock = false;
 };
 
 struct Objc3ModuleInteropForeignLaneContract {
@@ -28,6 +47,10 @@ struct Objc3ModuleInteropContractSurface {
   std::string module_abi_identity;
   std::string package_lock_module_identity;
   std::string module_identity_rebuild_key;
+  std::vector<Objc3ModuleImportEdgeContract> import_edges_source_order;
+  std::vector<std::string> public_exports_source_order;
+  std::vector<std::string> private_exports_source_order;
+  std::vector<std::string> package_imported_module_identities_source_order;
   std::size_t public_import_edge_count = 0;
   std::size_t private_import_edge_count = 0;
   std::size_t reexported_import_edge_count = 0;
@@ -52,3 +75,14 @@ struct Objc3ModuleInteropContractSurface {
   bool bridge_metadata_digest_participates_in_rebuild_key = false;
   bool reserved_lanes_have_stable_diagnostics = false;
 };
+
+std::string Objc3ModuleImportVisibilityName(Objc3ModuleImportVisibility visibility);
+std::string BuildObjc3ModuleImportIdentity(
+    const Objc3ModuleImportEdgeContract &import_edge);
+std::string BuildObjc3ModuleInteropRebuildKey(
+    const Objc3ModuleInteropContractSurface &surface);
+bool ValidateObjc3ModuleInteropContractSurface(
+    const Objc3ModuleInteropContractSurface &surface,
+    std::string &error);
+bool IsReadyObjc3ModuleInteropContractSurface(
+    const Objc3ModuleInteropContractSurface &surface);

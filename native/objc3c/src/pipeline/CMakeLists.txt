@@ -153,6 +153,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_manifest_preservation_descriptor_inventory.cpp
   runtime_import_manifest_preservation_linker_flags.cpp
   runtime_import_manifest_preservation_readiness.cpp
+  objc3_module_interop_contract_surface.cpp
   runtime_import_json_helpers.cpp
   runtime_import_json_helpers_accessors.cpp
   runtime_import_json_helpers_parser_values.cpp

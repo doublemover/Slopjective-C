@@ -56,6 +56,14 @@ REQUIRED_UNSUPPORTED_SURFACES = {
     "swift-unstable-abi-shape",
     "cpp-template-instantiation-import",
 }
+REQUIRED_MODULE_DIAGNOSTICS = {
+    "missing-module": "O3MOD8161",
+    "import-cycle": "O3MOD8162",
+    "stale-metadata": "O3MOD8163",
+    "duplicate-export": "O3MOD8164",
+    "hidden-declaration": "O3MOD8165",
+    "abi-mismatch": "O3MOD8166",
+}
 FORBIDDEN_SOURCE_PREFIXES = (
     "docs/support/",
     "docs/runbooks/objc3c_release",
@@ -69,9 +77,14 @@ NATIVE_ANCHOR_FRAGMENTS = {
         "interop_local_cpp_name_annotation_count",
     ),
     "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h": (
+        "Objc3ModuleImportVisibility",
+        "Objc3ModuleImportEdgeContract",
         "Objc3ModuleInteropLaneState",
         "Objc3ModuleInteropForeignLaneContract",
         "Objc3ModuleInteropContractSurface",
+        "import_edges_source_order",
+        "public_exports_source_order",
+        "package_imported_module_identities_source_order",
         "module_identity_rebuild_key",
         "bridge_modulemap_relative_path",
         "c_foreign_type_contract_count",
@@ -82,6 +95,14 @@ NATIVE_ANCHOR_FRAGMENTS = {
         "reserved_foreign_lane_count",
         "reserved_lanes_have_stable_diagnostics",
         "bridge_metadata_digest_participates_in_rebuild_key",
+    ),
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp": (
+        "BuildObjc3ModuleInteropRebuildKey",
+        "ValidateObjc3ModuleInteropContractSurface",
+        "module interop rebuild key must be deterministic",
+        "reexported import edge must be public",
+        "package imported module identities must match import graph",
+        "reserved foreign lane must publish a stable diagnostic",
     ),
 }
 
@@ -249,6 +270,92 @@ def _validate_imports_and_exports(payload: dict[str, Any], failures: list[str]) 
     expect(package_imports == expected_imports, "package imported module identities do not match import graph", failures)
 
 
+def _validate_dependency_graph(payload: dict[str, Any], failures: list[str]) -> None:
+    module_name = str(_as_object(payload.get("module_identity")).get("module_name", ""))
+    imports = {
+        str(entry.get("module_name")): _as_object(entry)
+        for entry in _as_list(payload.get("imports"))
+        if isinstance(entry, dict)
+    }
+    graph = _as_object(payload.get("dependency_graph"))
+    edges = [
+        _as_object(entry)
+        for entry in _as_list(graph.get("edges"))
+        if isinstance(entry, dict)
+    ]
+    expect(len(edges) == len(imports), "dependency graph edge count must match imports", failures)
+    for edge in edges:
+        target = str(edge.get("to"))
+        import_entry = imports.get(target)
+        expect(edge.get("from") == module_name, f"dependency edge source drifted for {target}", failures)
+        expect(import_entry is not None, f"dependency graph references unknown import {target}", failures)
+        if import_entry is None:
+            continue
+        expect(edge.get("visibility") == import_entry.get("visibility"), f"dependency edge visibility drifted for {target}", failures)
+        expect(edge.get("reexport") == import_entry.get("reexport"), f"dependency edge reexport flag drifted for {target}", failures)
+
+    expected_reexports = {
+        str(entry.get("module_name"))
+        for entry in imports.values()
+        if entry.get("reexport") is True
+    }
+    actual_reexports = {str(value) for value in _as_list(graph.get("reexported_modules"))}
+    expect(actual_reexports == expected_reexports, "dependency graph reexports do not match public reexport imports", failures)
+
+    diagnostics = {
+        str(entry.get("case")): str(entry.get("diagnostic"))
+        for entry in _as_list(graph.get("diagnostics"))
+        if isinstance(entry, dict)
+    }
+    expect(
+        diagnostics == REQUIRED_MODULE_DIAGNOSTICS,
+        "dependency graph diagnostics must cover missing modules, cycles, stale metadata, duplicate exports, hidden declarations, and ABI mismatch",
+        failures,
+    )
+
+
+def _validate_visibility_access(payload: dict[str, Any], failures: list[str]) -> None:
+    module_name = str(_as_object(payload.get("module_identity")).get("module_name", ""))
+    imports = [
+        _as_object(entry)
+        for entry in _as_list(payload.get("imports"))
+        if isinstance(entry, dict)
+    ]
+    public_exports = {str(symbol) for symbol in _as_list(_as_object(payload.get("exports")).get("public"))}
+    private_exports = {str(symbol) for symbol in _as_list(_as_object(payload.get("exports")).get("private"))}
+    import_by_symbol = {
+        str(symbol): entry
+        for entry in imports
+        for symbol in _as_list(entry.get("exported_symbols"))
+    }
+
+    access_cases = [
+        _as_object(entry)
+        for entry in _as_list(payload.get("visibility_access_cases"))
+        if isinstance(entry, dict)
+    ]
+    expect(access_cases != [], "visibility access cases are missing", failures)
+    for case in access_cases:
+        symbol = str(case.get("symbol"))
+        provider = str(case.get("provided_by"))
+        allowed = case.get("allowed") is True
+        diagnostic = case.get("diagnostic")
+        if provider == module_name:
+            public = symbol in public_exports
+            hidden = symbol in private_exports
+        else:
+            import_entry = import_by_symbol.get(symbol)
+            public = bool(import_entry and import_entry.get("visibility") == "public")
+            hidden = bool(import_entry and import_entry.get("visibility") != "public")
+        expect(allowed == public, f"visibility access allowance drifted for {symbol}", failures)
+        if hidden or not allowed:
+            expect(
+                isinstance(diagnostic, str) and diagnostic == REQUIRED_MODULE_DIAGNOSTICS["hidden-declaration"],
+                f"hidden access case must fail closed with O3MOD8165 for {symbol}",
+                failures,
+            )
+
+
 def _validate_rebuild(payload: dict[str, Any], failures: list[str]) -> None:
     rebuild = _as_object(payload.get("incremental_rebuild"))
     expect(rebuild.get("deterministic") is True, "incremental rebuild identity must be deterministic", failures)
@@ -409,6 +516,8 @@ def validate_contract_payload(payload: dict[str, Any]) -> tuple[list[str], dict[
     native_checks = _validate_source_paths(payload, failures)
     _validate_module_identity(payload, failures)
     _validate_imports_and_exports(payload, failures)
+    _validate_dependency_graph(payload, failures)
+    _validate_visibility_access(payload, failures)
     _validate_rebuild(payload, failures)
     _validate_interop(payload, failures)
     _validate_unsupported_surfaces(payload, failures)

@@ -74,6 +74,91 @@
     "duplicate_policy": "fail-closed",
     "hidden_import_access_policy": "reject"
   },
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationCore",
+        "visibility": "public",
+        "reexport": true
+      },
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationPrivateShims",
+        "visibility": "private",
+        "reexport": false
+      },
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationText",
+        "visibility": "public",
+        "reexport": false
+      }
+    ],
+    "reexported_modules": [
+      "FoundationCore"
+    ],
+    "diagnostics": [
+      {
+        "case": "missing-module",
+        "diagnostic": "O3MOD8161"
+      },
+      {
+        "case": "import-cycle",
+        "diagnostic": "O3MOD8162"
+      },
+      {
+        "case": "stale-metadata",
+        "diagnostic": "O3MOD8163"
+      },
+      {
+        "case": "duplicate-export",
+        "diagnostic": "O3MOD8164"
+      },
+      {
+        "case": "hidden-declaration",
+        "diagnostic": "O3MOD8165"
+      },
+      {
+        "case": "abi-mismatch",
+        "diagnostic": "O3MOD8166"
+      }
+    ]
+  },
+  "visibility_access_cases": [
+    {
+      "symbol": "FNBridgeString",
+      "provided_by": "FoundationNext.VisibilityBridge",
+      "access": "public-export",
+      "allowed": true
+    },
+    {
+      "symbol": "FNCoreObject",
+      "provided_by": "FoundationCore",
+      "access": "public-reexport",
+      "allowed": true
+    },
+    {
+      "symbol": "FNTextStorage",
+      "provided_by": "FoundationText",
+      "access": "public-import",
+      "allowed": true
+    },
+    {
+      "symbol": "FNPrivateBridgeShim",
+      "provided_by": "FoundationPrivateShims",
+      "access": "private-import",
+      "allowed": false,
+      "diagnostic": "O3MOD8165"
+    },
+    {
+      "symbol": "FNBridgeScratchBuffer",
+      "provided_by": "FoundationNext.VisibilityBridge",
+      "access": "private-export",
+      "allowed": false,
+      "diagnostic": "O3MOD8165"
+    }
+  ],
   "incremental_rebuild": {
     "deterministic": true,
     "identity_inputs": [
@@ -263,7 +348,8 @@
   ],
   "native_anchors": [
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
-    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h"
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
   ],
   "fixture_anchors": [
     "schemas/objc3c-module-interop-contract-v1.schema.json",

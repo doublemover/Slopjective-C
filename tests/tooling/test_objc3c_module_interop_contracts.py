@@ -67,6 +67,52 @@ def test_module_interop_rejects_missing_reserved_swift_bridge_surface() -> None:
     assert "deterministic rebuild replay key drifted" in failures
 
 
+def test_module_interop_rejects_private_reexport_edge() -> None:
+    payload = deepcopy(_contract())
+    imports = payload["imports"]
+    assert isinstance(imports, list)
+    imports[1]["reexport"] = True
+    graph = payload["dependency_graph"]
+    assert isinstance(graph, dict)
+    graph["edges"][1]["reexport"] = True
+    graph["reexported_modules"].append("FoundationPrivateShims")
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "reexported imports must be public" in failures
+
+
+def test_module_interop_rejects_hidden_import_access_becoming_public() -> None:
+    payload = deepcopy(_contract())
+    access_cases = payload["visibility_access_cases"]
+    assert isinstance(access_cases, list)
+    for case in access_cases:
+        if case["symbol"] == "FNPrivateBridgeShim":
+            case["allowed"] = True
+            case.pop("diagnostic")
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "visibility access allowance drifted for FNPrivateBridgeShim" in failures
+    assert "hidden access case must fail closed with O3MOD8165 for FNPrivateBridgeShim" in failures
+
+
+def test_module_interop_rejects_missing_module_graph_diagnostic() -> None:
+    payload = deepcopy(_contract())
+    graph = payload["dependency_graph"]
+    assert isinstance(graph, dict)
+    graph["diagnostics"] = [
+        entry for entry in graph["diagnostics"] if entry["case"] != "import-cycle"
+    ]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "dependency graph diagnostics must cover missing modules, cycles, stale metadata, duplicate exports, hidden declarations, and ABI mismatch"
+        in failures
+    )
+
+
 def test_module_interop_rejects_unsupported_lane_claimed_without_evidence() -> None:
     payload = deepcopy(_contract())
     interop = payload["interop"]
