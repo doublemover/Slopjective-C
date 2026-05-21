@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION 2u
+#define OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION 3u
 
 typedef enum objc3_runtime_language_semantics_status_code {
   OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_OK = 0,
@@ -21,6 +21,7 @@ typedef enum objc3_runtime_language_semantics_surface_kind {
   OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS = 2,
   OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE = 3,
   OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API = 4,
+  OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_ADVANCED_RUNTIME_CLOSURE = 5,
 } objc3_runtime_language_semantics_surface_kind;
 
 typedef struct objc3_runtime_language_semantics_surface_snapshot {
@@ -37,6 +38,10 @@ typedef struct objc3_runtime_language_semantics_surface_snapshot {
   int public_api_surface;
   int associated_type_support;
   int dynamic_existential_dispatch_support;
+  int combined_runtime_evidence;
+  int negative_combination_evidence;
+  int source_identity_evidence;
+  int umbrella_closure_support;
   const char *support_claim;
   const char *semantic_surface;
   const char *metadata_key;
@@ -48,7 +53,11 @@ typedef struct objc3_runtime_language_semantics_surface_snapshot {
   const char *diagnostic_code;
   const char *unsupported_associated_type_diagnostic;
   const char *unsupported_dynamic_dispatch_diagnostic;
+  const char *unsupported_combination_diagnostic;
   const char *unsupported_policy;
+  const char *combined_fixture;
+  const char *combined_contract;
+  const char *public_command;
   const char *replay_key;
 } objc3_runtime_language_semantics_surface_snapshot;
 

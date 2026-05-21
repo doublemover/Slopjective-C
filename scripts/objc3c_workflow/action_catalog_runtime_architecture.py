@@ -27,6 +27,17 @@ RUNTIME_ARCHITECTURE_ACTION_SPECS: dict[str, ActionSpec] = {
             "contract, public header, realized-state implementation, and public probe"
         ),
     ),
+    "validate-advanced-runtime-closure": ActionSpec(
+        "validate-advanced-runtime-closure",
+        "validate the combined advanced runtime language-semantics closure contract",
+        "python:scripts/check_objc3c_advanced_runtime_closure.py",
+        validation_tier="fast",
+        guarantee_owner=(
+            "combined ownership, blocks, errors, concurrency, property behavior, "
+            "metaprogramming provenance, and package replay closure stays tied to "
+            "checked source truth and the public language-semantics runtime API"
+        ),
+    ),
 }
 
 

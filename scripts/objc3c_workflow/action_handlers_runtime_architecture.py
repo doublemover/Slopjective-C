@@ -13,6 +13,9 @@ RUNTIME_ARCHITECTURE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-public-runtime-reflection-api": (
         runtime_test_acceptance.action_validate_public_runtime_reflection_api
     ),
+    "validate-advanced-runtime-closure": (
+        runtime_test_acceptance.action_validate_advanced_runtime_closure
+    ),
 }
 
 

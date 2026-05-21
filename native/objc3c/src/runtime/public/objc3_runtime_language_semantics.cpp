@@ -19,6 +19,10 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   bool public_api_surface;
   bool associated_type_support;
   bool dynamic_existential_dispatch_support;
+  bool combined_runtime_evidence;
+  bool negative_combination_evidence;
+  bool source_identity_evidence;
+  bool umbrella_closure_support;
   const char *support_claim;
   const char *semantic_surface;
   const char *metadata_key;
@@ -30,7 +34,11 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   const char *diagnostic_code;
   const char *unsupported_associated_type_diagnostic;
   const char *unsupported_dynamic_dispatch_diagnostic;
+  const char *unsupported_combination_diagnostic;
   const char *unsupported_policy;
+  const char *combined_fixture;
+  const char *combined_contract;
+  const char *public_command;
   const char *replay_key;
 };
 
@@ -50,6 +58,10 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          false,
          false,
+         false,
+         false,
+         false,
+         false,
          "objc3c.behavior.runtime.generics.cross-module-metadata",
          "generic-runtime-identity-record",
          "generic-specialization-metadata",
@@ -61,7 +73,11 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "O3S206",
          "",
          "",
+         "",
          kUnsupportedPatternsPolicy,
+         "",
+         "",
+         "npm run objc3c -- validate-type-conformance",
          "language-semantics:generic-runtime-identity:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS,
          8164,
@@ -71,6 +87,10 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
+         false,
+         false,
          false,
          false,
          "objc3c.behavior.language.protocols.existential-witness-model",
@@ -84,7 +104,11 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "O3S216",
          objc3c::runtime::kObjc3ProtocolExistentialAssociatedTypeDiagnosticCode,
          objc3c::runtime::kObjc3ProtocolExistentialDynamicDispatchDiagnosticCode,
+         "",
          kUnsupportedPatternsPolicy,
+         "",
+         "",
+         "npm run objc3c -- validate-type-conformance",
          "language-semantics:protocol-existential-witness:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE,
          8166,
@@ -94,6 +118,10 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
+         false,
+         false,
          false,
          false,
          "objc3c.behavior.language.ownership-memory-model",
@@ -107,7 +135,11 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "O3S301",
          "",
          "",
+         "",
          kUnsupportedPatternsPolicy,
+         "",
+         "",
+         "npm run objc3c -- test-runtime-acceptance-block-arc",
          "language-semantics:ownership-memory-edge:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API,
          8167,
@@ -117,6 +149,10 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
+         false,
+         false,
          false,
          false,
          "objc3c.behavior.language.concurrency.public-usability-model",
@@ -130,8 +166,47 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "O3S224",
          "",
          "",
+         "",
          kUnsupportedPatternsPolicy,
+         "",
+         "",
+         "npm run objc3c -- validate-concurrency-conformance",
          "language-semantics:concurrency-public-api-surface:v1"},
+        {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_ADVANCED_RUNTIME_CLOSURE,
+         8199,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         false,
+         false,
+         true,
+         true,
+         true,
+         true,
+         "objc3c.behavior.language.advanced-runtime-closure",
+         "advanced-runtime-combined-closure",
+         "advanced-runtime-combined-source-identity",
+         "build_advanced_runtime_capability_split_contract+ownership_concurrency_macro_completion",
+         "",
+         "",
+         "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3",
+         "tests/tooling/fixtures/ownership_concurrency_macro_completion/fail_closed/unsupported_behavior_widened.contract.json",
+         "O3S336",
+         "",
+         "",
+         "advanced-runtime.unsupported-combination",
+         "combined runtime closure is bounded to checked ownership, blocks, "
+         "errors, concurrency, property behavior, metaprogramming provenance, "
+         "and package replay evidence; Swift ABI, distributed actors, broad "
+         "scheduler guarantees, and arbitrary macro host execution remain "
+         "reserved or rejected",
+         "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3",
+         "tests/tooling/fixtures/ownership_concurrency_macro_completion/contract.json",
+         "npm run objc3c -- validate-advanced-runtime-closure",
+         "language-semantics:advanced-runtime-combined-closure:v1"},
 };
 
 constexpr std::uint64_t RuntimeLanguageSemanticsSurfaceCount() {
@@ -166,6 +241,14 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
       record.associated_type_support ? 1 : 0;
   snapshot.dynamic_existential_dispatch_support =
       record.dynamic_existential_dispatch_support ? 1 : 0;
+  snapshot.combined_runtime_evidence =
+      record.combined_runtime_evidence ? 1 : 0;
+  snapshot.negative_combination_evidence =
+      record.negative_combination_evidence ? 1 : 0;
+  snapshot.source_identity_evidence =
+      record.source_identity_evidence ? 1 : 0;
+  snapshot.umbrella_closure_support =
+      record.umbrella_closure_support ? 1 : 0;
   snapshot.support_claim = record.support_claim;
   snapshot.semantic_surface = record.semantic_surface;
   snapshot.metadata_key = record.metadata_key;
@@ -179,7 +262,12 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
       record.unsupported_associated_type_diagnostic;
   snapshot.unsupported_dynamic_dispatch_diagnostic =
       record.unsupported_dynamic_dispatch_diagnostic;
+  snapshot.unsupported_combination_diagnostic =
+      record.unsupported_combination_diagnostic;
   snapshot.unsupported_policy = record.unsupported_policy;
+  snapshot.combined_fixture = record.combined_fixture;
+  snapshot.combined_contract = record.combined_contract;
+  snapshot.public_command = record.public_command;
   snapshot.replay_key = record.replay_key;
 }
 

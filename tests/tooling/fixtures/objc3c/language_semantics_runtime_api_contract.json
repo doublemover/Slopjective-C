@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.runtime.language-semantics.api.v1",
-  "issues": [8160, 8164, 8166, 8167],
+  "issues": [8160, 8164, 8166, 8167, 8199],
   "public_header": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
   "public_umbrella_header": "native/objc3c/src/runtime/public/objc3_runtime_api.h",
   "implementation": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
@@ -23,7 +23,8 @@
     "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_GENERIC_RUNTIME_IDENTITY",
     "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS",
     "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE",
-    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API"
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_ADVANCED_RUNTIME_CLOSURE"
   ],
   "surface_rows": [
     {
@@ -71,6 +72,24 @@
       "positive_fixture": "tests/tooling/fixtures/native/stdlib_concurrency_runtime_helper_surface_positive.objc3",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_executor_on_sync_function.objc3",
       "diagnostic_code": "O3S224"
+    },
+    {
+      "issue": 8199,
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "semantic_surface": "advanced-runtime-combined-closure",
+      "metadata_key": "advanced-runtime-combined-source-identity",
+      "runtime_anchor": "build_advanced_runtime_capability_split_contract+ownership_concurrency_macro_completion",
+      "combined_runtime_evidence": true,
+      "negative_combination_evidence": true,
+      "source_identity_evidence": true,
+      "umbrella_closure_support": true,
+      "combined_fixture": "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3",
+      "combined_contract": "tests/tooling/fixtures/ownership_concurrency_macro_completion/contract.json",
+      "positive_fixture": "tests/tooling/fixtures/native/cpp_ownership_throws_and_async_interaction_completion_positive.objc3",
+      "negative_fixture": "tests/tooling/fixtures/ownership_concurrency_macro_completion/fail_closed/unsupported_behavior_widened.contract.json",
+      "diagnostic_code": "O3S336",
+      "unsupported_combination_diagnostic": "advanced-runtime.unsupported-combination",
+      "public_command": "npm run objc3c -- validate-advanced-runtime-closure"
     }
   ],
   "forbidden_public_symbols": [
