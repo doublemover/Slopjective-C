@@ -436,8 +436,8 @@ JsonValue BuildDiagnosticRecovery(const std::string &code,
     boundary = "canonical type spelling";
     available = true;
   } else if (code == "O3P100") {
-    strategy = "parser-local-rejection-boundary";
-    boundary = "unsupported top-level construct";
+    strategy = "skip-unsupported-top-level-fragment";
+    boundary = "next-top-level-declaration-or-semicolon";
     available = true;
   } else if (code == "O3S203") {
     strategy = "semantic-symbol-resolution-boundary";

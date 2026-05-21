@@ -51,11 +51,11 @@
           "end": { "line": 5, "column": 2 }
         },
         "message": "unsupported Objective-C 3 statement",
-        "explanation": "After the alias rejection, the parser records the local unsupported-statement boundary instead of treating recovery as success.",
+        "explanation": "After the alias rejection, the parser skips only the unsupported top-level fragment instead of treating recovery as success.",
         "fixits": [],
         "recovery": {
-          "strategy": "parser-local-rejection-boundary",
-          "boundary": "unsupported top-level construct",
+          "strategy": "skip-unsupported-top-level-fragment",
+          "boundary": "next-top-level-declaration-or-semicolon",
           "deterministic": true,
           "accepts_invalid_program": false,
           "recovery_counts_as_success": false,

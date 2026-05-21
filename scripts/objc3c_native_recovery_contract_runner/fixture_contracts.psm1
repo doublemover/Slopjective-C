@@ -111,7 +111,7 @@ function Get-NegativeFixtureDiagnosticJsonContracts {
         Code = "O3P100"
         Phase = "parse"
         Category = "parsing"
-        RecoveryStrategy = "parser-local-rejection-boundary"
+        RecoveryStrategy = "skip-unsupported-top-level-fragment"
       }
     )
     "negative_obj3next016_sema_missing_return_value_recovery.objc3" = @(
