@@ -8,22 +8,26 @@
   ],
   "source_authority": "checked-source-anchors",
   "evidence_log_allowed": false,
-  "public_command": "npm run objc3c -- validate-module-abi-interop-completion-contract",
+  "public_command": "npm run objc3c -- validate-post-cutover-issue-evidence",
   "source_anchors": [
     {
       "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
-      "sha256": "62537ee671d73b77988878aaec88d959bb0cdc7349efe1b7221064bdb3e1dcfc",
+      "sha256": "c4c530a85b650193fac1839c696d68f1b00b031c9b3ee0126b0df38ff0c6fc73",
       "fragments": [
         "Objc3ModuleImportEdgeContract",
+        "Objc3ModuleDependencyGraphDiagnosticContract",
         "module_identity_rebuild_key",
+        "dependency_graph_diagnostics_source_order",
         "bridge_metadata_digest_participates_in_rebuild_key"
       ]
     },
     {
       "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
-      "sha256": "206ed4f921f3973c43cd05813f6b6a98ed8c76fdf73d0978f091136e312e7e73",
+      "sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
       "fragments": [
         "BuildObjc3ModuleInteropRebuildKey",
+        "IsRequiredDependencyGraphDiagnostic",
+        "dependency graph diagnostic must be stable and issue-scoped",
         "reexported import edge must be public",
         "module visibility access allowance drifted"
       ]
@@ -57,7 +61,7 @@
     },
     {
       "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
-      "sha256": "922cfa20fdfaf620b365c4312ce13d81baed5ff0c34e2382fe9e8fba837c6427",
+      "sha256": "37353ef259544b8981dd9e7764cfe515b5ecd101ed0f5b75220a2f7e2a7c75e0",
       "fragments": [
         "FoundationNext.VisibilityBridge",
         "visibility-surface-drift",

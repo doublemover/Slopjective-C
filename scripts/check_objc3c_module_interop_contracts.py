@@ -88,6 +88,16 @@ REQUIRED_MODULE_DIAGNOSTICS = {
     "hidden-declaration": "O3MOD8165",
     "abi-mismatch": "O3MOD8166",
 }
+REQUIRED_CHECKED_SOURCE_PROOFS = {
+    "missing-module": "O3MOD8161",
+    "import-cycle": "O3MOD8162",
+    "duplicate-export": "O3MOD8164",
+    "hidden-declaration": "O3MOD8165",
+    "private-reexport": "O3MOD8165",
+    "stale-metadata": "O3MOD8163",
+    "abi-mismatch": "O3MOD8166",
+    "bridge-digest-drift": "O3MOD8163",
+}
 FORBIDDEN_SOURCE_PREFIXES = (
     "docs/support/",
     "docs/runbooks/objc3c_release",
@@ -265,6 +275,198 @@ def _validate_source_paths(payload: dict[str, Any], failures: list[str]) -> dict
         checks[raw_path] = checks.get(raw_path, True) and fragments_present
         expect(fragments_present, f"native anchor missing module/interop fragments: {raw_path}", failures)
     return checks
+
+
+def _validate_checked_source_proofs(payload: dict[str, Any], failures: list[str]) -> None:
+    proofs = [
+        _as_object(entry)
+        for entry in _as_list(payload.get("checked_source_proofs"))
+        if isinstance(entry, dict)
+    ]
+    proofs_by_case: dict[str, dict[str, Any]] = {}
+    for proof in proofs:
+        case = str(proof.get("case", ""))
+        expect(case not in proofs_by_case, f"checked source proof duplicated: {case}", failures)
+        proofs_by_case[case] = proof
+
+        expected_diagnostic = REQUIRED_CHECKED_SOURCE_PROOFS.get(case)
+        expect(
+            expected_diagnostic is not None,
+            f"checked source proof case is unsupported: {case}",
+            failures,
+        )
+        if expected_diagnostic is not None:
+            expect(
+                proof.get("diagnostic") == expected_diagnostic,
+                f"checked source proof diagnostic drifted for {case}",
+                failures,
+            )
+        expect(proof.get("fail_closed") is True, f"checked source proof is not fail-closed: {case}", failures)
+
+        raw_path = proof.get("source_anchor")
+        portable = _is_portable_relative_path(raw_path)
+        allowed = isinstance(raw_path, str) and not raw_path.replace("\\", "/").startswith(FORBIDDEN_SOURCE_PREFIXES)
+        expect(portable, f"checked source proof anchor is not portable-relative: {case}: {raw_path}", failures)
+        expect(allowed, f"checked source proof touched forbidden support/release surface: {case}: {raw_path}", failures)
+        if not isinstance(raw_path, str):
+            continue
+        path = ROOT / raw_path
+        exists = path.is_file()
+        expect(exists, f"checked source proof anchor is missing: {case}: {raw_path}", failures)
+        if not exists:
+            continue
+        expected_sha = proof.get("source_sha256")
+        if _is_sha256_digest(expected_sha):
+            expect(
+                str(expected_sha).lower() == _file_sha256(path),
+                f"checked source proof digest drifted for {case}: {raw_path}",
+                failures,
+            )
+        fragments = [str(fragment) for fragment in _as_list(proof.get("fragments"))]
+        expect(fragments != [], f"checked source proof has no fragments: {case}", failures)
+        if fragments:
+            text = path.read_text(encoding="utf-8")
+            missing_fragments = [fragment for fragment in fragments if fragment not in text]
+            expect(
+                missing_fragments == [],
+                f"checked source proof fragments missing for {case}: {raw_path}: {', '.join(missing_fragments)}",
+                failures,
+            )
+
+    missing_cases = sorted(set(REQUIRED_CHECKED_SOURCE_PROOFS) - set(proofs_by_case))
+    expect(
+        missing_cases == [],
+        "checked source proofs are incomplete: " + ", ".join(missing_cases),
+        failures,
+    )
+
+    graph_diagnostics = {
+        str(entry.get("case")): str(entry.get("diagnostic"))
+        for entry in _as_list(_as_object(payload.get("dependency_graph")).get("diagnostics"))
+        if isinstance(entry, dict)
+    }
+    for case in REQUIRED_MODULE_DIAGNOSTICS:
+        proof = proofs_by_case.get(case)
+        if proof is None:
+            continue
+        expect(
+            graph_diagnostics.get(case) == proof.get("diagnostic"),
+            f"checked source proof diagnostic is not wired to dependency graph: {case}",
+            failures,
+        )
+
+    rebuild = _as_object(payload.get("incremental_rebuild"))
+    stale_proof = proofs_by_case.get("stale-metadata")
+    if stale_proof is not None:
+        expect(
+            rebuild.get("stale_metadata_diagnostic") == stale_proof.get("diagnostic"),
+            "checked source stale metadata proof is not wired to rebuild diagnostics",
+            failures,
+        )
+    abi_proof = proofs_by_case.get("abi-mismatch")
+    if abi_proof is not None:
+        expect(
+            rebuild.get("abi_mismatch_diagnostic") == abi_proof.get("diagnostic"),
+            "checked source ABI mismatch proof is not wired to rebuild diagnostics",
+            failures,
+        )
+    bridge_proof = proofs_by_case.get("bridge-digest-drift")
+    if bridge_proof is not None:
+        invalidation_cases = {
+            str(entry.get("condition")): _as_object(entry)
+            for entry in _as_list(rebuild.get("invalidation_cases"))
+            if isinstance(entry, dict)
+        }
+        bridge_case = invalidation_cases.get("bridge-metadata-digest-drift")
+        expect(
+            bridge_case is not None and bridge_case.get("diagnostic") == bridge_proof.get("diagnostic"),
+            "checked source bridge digest proof is not wired to bridge metadata invalidation",
+            failures,
+        )
+        if bridge_case is not None:
+            expect(
+                bridge_case.get("fail_closed") is True and bridge_case.get("deterministic") is True,
+                "checked source bridge digest proof must be deterministic fail-closed",
+                failures,
+            )
+        replay_key = rebuild.get("replay_key")
+        bridge_digest = _as_object(payload.get("interop")).get("bridge_metadata_digest")
+        expect(
+            isinstance(replay_key, str)
+            and "bridge_metadata_digest=" in replay_key
+            and isinstance(bridge_digest, str)
+            and bridge_digest in replay_key,
+            "checked source bridge digest proof lost replay-key binding",
+            failures,
+        )
+
+    duplicate_proof = proofs_by_case.get("duplicate-export")
+    if duplicate_proof is not None:
+        expect(
+            _as_object(payload.get("exports")).get("duplicate_policy") == "fail-closed",
+            "checked source duplicate export proof lost fail-closed policy",
+            failures,
+        )
+    hidden_proof = proofs_by_case.get("hidden-declaration")
+    if hidden_proof is not None:
+        hidden_access_cases = [
+            _as_object(entry)
+            for entry in _as_list(payload.get("visibility_access_cases"))
+            if isinstance(entry, dict)
+            and entry.get("allowed") is False
+            and entry.get("diagnostic") == hidden_proof.get("diagnostic")
+        ]
+        expect(
+            hidden_access_cases != [],
+            "checked source hidden declaration proof has no fail-closed access case",
+            failures,
+        )
+    private_reexport_proof = proofs_by_case.get("private-reexport")
+    if private_reexport_proof is not None:
+        imports = [
+            _as_object(entry)
+            for entry in _as_list(payload.get("imports"))
+            if isinstance(entry, dict)
+        ]
+        private_imports = {
+            str(entry.get("module_name"))
+            for entry in imports
+            if entry.get("visibility") != "public"
+        }
+        private_reexports = sorted(
+            str(entry.get("module_name"))
+            for entry in imports
+            if entry.get("visibility") != "public" and entry.get("reexport") is True
+        )
+        expect(
+            private_reexports == [],
+            "checked source private reexport proof found private reexports: " + ", ".join(private_reexports),
+            failures,
+        )
+        graph_reexports = {
+            str(value)
+            for value in _as_list(_as_object(payload.get("dependency_graph")).get("reexported_modules"))
+        }
+        graph_private_reexports = sorted(private_imports & graph_reexports)
+        expect(
+            graph_private_reexports == [],
+            "checked source private reexport proof found graph private reexports: "
+            + ", ".join(graph_private_reexports),
+            failures,
+        )
+        private_hidden_cases = [
+            _as_object(entry)
+            for entry in _as_list(payload.get("visibility_access_cases"))
+            if isinstance(entry, dict)
+            and entry.get("provided_by") in private_imports
+            and entry.get("allowed") is False
+            and entry.get("diagnostic") == private_reexport_proof.get("diagnostic")
+        ]
+        expect(
+            private_hidden_cases != [],
+            "checked source private reexport proof has no hidden/private import rejection case",
+            failures,
+        )
 
 
 def _validate_module_identity(payload: dict[str, Any], failures: list[str]) -> None:
@@ -645,6 +847,7 @@ def validate_contract_payload(payload: dict[str, Any]) -> tuple[list[str], dict[
     expect(payload.get("public_command") == PUBLIC_COMMAND, "public command drifted", failures)
     expect(payload.get("evidence_log_allowed") is False, "evidence logs cannot be source authority", failures)
     native_checks = _validate_source_paths(payload, failures)
+    _validate_checked_source_proofs(payload, failures)
     _validate_module_identity(payload, failures)
     _validate_imports_and_exports(payload, failures)
     _validate_dependency_graph(payload, failures)
@@ -678,6 +881,7 @@ def build_summary(path: Path = CONTRACT_PATH) -> dict[str, Any]:
         "bridge_surface_count": package_metadata.get("bridge_surface_count"),
         "supported_bridge_surface_count": package_metadata.get("supported_bridge_surface_count"),
         "reserved_bridge_surface_count": package_metadata.get("reserved_bridge_surface_count"),
+        "checked_source_proof_count": len(_as_list(payload.get("checked_source_proofs"))),
         "invalidation_case_count": len(
             _as_list(_as_object(payload.get("incremental_rebuild")).get("invalidation_cases"))
         ),

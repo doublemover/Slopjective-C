@@ -48,6 +48,29 @@ bool IsSha256HexDigest(const std::string &digest) {
          });
 }
 
+bool IsRequiredDependencyGraphDiagnostic(const std::string &case_name,
+                                         const std::string &code) {
+  if (case_name == "missing-module") {
+    return code == "O3MOD8161";
+  }
+  if (case_name == "import-cycle") {
+    return code == "O3MOD8162";
+  }
+  if (case_name == "stale-metadata") {
+    return code == "O3MOD8163";
+  }
+  if (case_name == "duplicate-export") {
+    return code == "O3MOD8164";
+  }
+  if (case_name == "hidden-declaration") {
+    return code == "O3MOD8165";
+  }
+  if (case_name == "abi-mismatch") {
+    return code == "O3MOD8166";
+  }
+  return false;
+}
+
 bool InsertUnique(const std::string &value,
                   std::set<std::string> &seen,
                   const char *label,
@@ -159,10 +182,40 @@ bool ValidateObjc3ModuleInteropContractSurface(
     return false;
   }
   if (!surface.visibility_fail_closed ||
+      !surface.missing_module_lookup_fail_closed ||
+      !surface.import_cycle_detection_fail_closed ||
+      !surface.duplicate_export_detection_fail_closed ||
       !surface.package_identity_matches_module_identity ||
       !surface.bridge_metadata_digest_participates_in_rebuild_key) {
+    error = "module interop visibility, graph, package identity, and bridge "
+            "metadata must fail closed";
+    return false;
+  }
+
+  std::set<std::string> graph_diagnostic_cases;
+  for (const Objc3ModuleDependencyGraphDiagnosticContract &diagnostic :
+       surface.dependency_graph_diagnostics_source_order) {
+    if (!InsertUnique(diagnostic.case_name, graph_diagnostic_cases,
+                      "dependency graph diagnostic case", error)) {
+      return false;
+    }
+    if (!IsStableDiagnosticCode(diagnostic.diagnostic_code) ||
+        !IsRequiredDependencyGraphDiagnostic(diagnostic.case_name,
+                                             diagnostic.diagnostic_code)) {
+      error =
+          "dependency graph diagnostic must be stable and issue-scoped: " +
+          diagnostic.case_name;
+      return false;
+    }
+  }
+  const std::set<std::string> required_graph_cases = {
+      "missing-module", "import-cycle", "stale-metadata",
+      "duplicate-export", "hidden-declaration", "abi-mismatch"};
+  if (graph_diagnostic_cases != required_graph_cases) {
     error =
-        "module interop visibility, package identity, and bridge metadata must fail closed";
+        "dependency graph diagnostics must cover missing modules, cycles, "
+        "stale metadata, duplicate exports, hidden declarations, and ABI "
+        "mismatch";
     return false;
   }
 

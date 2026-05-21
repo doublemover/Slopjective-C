@@ -716,7 +716,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `modules.visibility-reexport-rebuild-contract`
 - State: `implemented`
 - Support claims: `objc3c.behavior.modules.visibility-reexport-rebuild-contract`
-- Summary: The module system publishes a checked import visibility, public reexport, ABI/version identity, bridge metadata, and deterministic rebuild replay contract for the FoundationNext visibility bridge slice. This row is limited to the checked contract and does not claim network package resolution, dynamic plugins, Swift ABI acceptance, C++ template import, or Objective-C 2.0 source compatibility.
+- Summary: The module system publishes a checked import visibility, public reexport, dependency-graph diagnostic, ABI/version identity, bridge metadata, and deterministic rebuild replay contract for the FoundationNext visibility bridge slice. This row is limited to the checked contract and does not claim network package resolution, dynamic plugins, Swift ABI acceptance, C++ template import, or Objective-C 2.0 source compatibility.
 - Owner modules:
   - `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h`
   - `native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp`

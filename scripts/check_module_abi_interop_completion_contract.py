@@ -462,7 +462,7 @@ def validate_contract_payload(payload: dict[str, Any]) -> tuple[list[str], dict[
         failures.append("source authority must be checked source anchors")
     if payload.get("evidence_log_allowed") is not False:
         failures.append("evidence logs cannot be source authority")
-    if payload.get("public_command") != "npm run objc3c -- validate-module-abi-interop-completion-contract":
+    if payload.get("public_command") != "npm run objc3c -- validate-post-cutover-issue-evidence":
         failures.append("public command drifted")
 
     source_anchor_status = _validate_source_anchors(payload, failures)

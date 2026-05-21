@@ -302,6 +302,7 @@
         "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
         "tests/tooling/test_objc3c_module_interop_contracts.py",
         "scripts/check_objc3c_module_interop_contracts.py",
+        "tests/tooling/fixtures/module_abi_interop/completion_contract.json",
         "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
         "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
         "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
@@ -326,6 +327,7 @@
       ],
       "source_truth_requirements": [
         "Module visibility and rebuild support is claimed only for the checked-in module interop contract and public validate-module-interop-contracts command",
+        "Missing modules, import cycles, duplicate exports, hidden declarations, stale metadata, and ABI mismatches must stay bound to stable O3MOD diagnostics in the native module interop surface",
         "Public reexports must come only from public imports, hidden declarations must fail closed, and version or digest drift must change the deterministic rebuild replay key",
         "C and ObjC2 bridge metadata may be modeled by the current contract, while Swift ABI, C++ template import, network package resolution, dynamic plugins, and ObjC2 source compatibility remain unsupported"
       ]

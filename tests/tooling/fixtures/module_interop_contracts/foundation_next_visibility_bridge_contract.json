@@ -8,6 +8,104 @@
   "public_command": "npm run objc3c -- validate-module-interop-contracts",
   "source_authority": "checked-in-module-interop-contract-fixture",
   "evidence_log_allowed": false,
+  "checked_source_proofs": [
+    {
+      "case": "missing-module",
+      "diagnostic": "O3MOD8161",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "missing_module_lookup_fail_closed",
+        "missing-module",
+        "O3MOD8161"
+      ]
+    },
+    {
+      "case": "import-cycle",
+      "diagnostic": "O3MOD8162",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "import_cycle_detection_fail_closed",
+        "import-cycle",
+        "O3MOD8162"
+      ]
+    },
+    {
+      "case": "duplicate-export",
+      "diagnostic": "O3MOD8164",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "duplicate_export_detection_fail_closed",
+        "duplicate-export",
+        "O3MOD8164"
+      ]
+    },
+    {
+      "case": "hidden-declaration",
+      "diagnostic": "O3MOD8165",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "hidden-declaration",
+        "O3MOD8165",
+        "hidden declaration access must fail closed"
+      ]
+    },
+    {
+      "case": "private-reexport",
+      "diagnostic": "O3MOD8165",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "edge.reexported",
+        "edge.visibility != Objc3ModuleImportVisibility::kPublic",
+        "reexported import edge must be public"
+      ]
+    },
+    {
+      "case": "stale-metadata",
+      "diagnostic": "O3MOD8163",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "stale-metadata",
+        "O3MOD8163",
+        "stale_metadata_diagnostic_code"
+      ]
+    },
+    {
+      "case": "abi-mismatch",
+      "diagnostic": "O3MOD8166",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "abi-mismatch",
+        "O3MOD8166",
+        "abi_mismatch_diagnostic_code"
+      ]
+    },
+    {
+      "case": "bridge-digest-drift",
+      "diagnostic": "O3MOD8163",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "bridge_metadata_digest_participates_in_rebuild_key",
+        "bridge_metadata_digest=",
+        "surface.bridge_metadata_digest"
+      ]
+    }
+  ],
   "module_identity": {
     "module_name": "FoundationNext.VisibilityBridge",
     "metadata_version": "1.0.0",

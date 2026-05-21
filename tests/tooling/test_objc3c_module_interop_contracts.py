@@ -13,6 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from check_objc3c_module_interop_contracts import (  # noqa: E402
     CONTRACT_PATH,
     PUBLIC_COMMAND,
+    REQUIRED_CHECKED_SOURCE_PROOFS,
     REQUIRED_LANGUAGES,
     build_summary,
     replay_key_for_contract,
@@ -35,7 +36,66 @@ def test_module_interop_contract_summary_passes() -> None:
     assert summary["bridge_surface_count"] == 4
     assert summary["supported_bridge_surface_count"] == 2
     assert summary["reserved_bridge_surface_count"] == 2
+    assert summary["checked_source_proof_count"] == len(REQUIRED_CHECKED_SOURCE_PROOFS)
     assert all(summary["native_checks"].values())
+
+
+def test_module_interop_requires_checked_source_proofs_for_all_fail_closed_cases() -> None:
+    for proof_case in REQUIRED_CHECKED_SOURCE_PROOFS:
+        payload = deepcopy(_contract())
+        proofs = payload["checked_source_proofs"]
+        assert isinstance(proofs, list)
+        payload["checked_source_proofs"] = [
+            proof for proof in proofs if proof["case"] != proof_case
+        ]
+
+        failures, _ = validate_contract_payload(payload)
+
+        assert f"checked source proofs are incomplete: {proof_case}" in failures
+
+
+def test_module_interop_rejects_checked_source_proof_digest_drift() -> None:
+    payload = deepcopy(_contract())
+    proofs = payload["checked_source_proofs"]
+    assert isinstance(proofs, list)
+    proofs[0]["source_sha256"] = "0" * 64
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "checked source proof digest drifted for missing-module: "
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+        in failures
+    )
+
+
+def test_module_interop_rejects_checked_source_proof_fragment_drift() -> None:
+    payload = deepcopy(_contract())
+    proofs = payload["checked_source_proofs"]
+    assert isinstance(proofs, list)
+    proofs[0]["fragments"] = ["missing-module", "not-present-in-source"]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "checked source proof fragments missing for missing-module: "
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp: "
+        "not-present-in-source"
+        in failures
+    )
+
+
+def test_module_interop_rejects_checked_source_proof_diagnostic_drift() -> None:
+    payload = deepcopy(_contract())
+    proofs = payload["checked_source_proofs"]
+    assert isinstance(proofs, list)
+    for proof in proofs:
+        if proof["case"] == "abi-mismatch":
+            proof["diagnostic"] = "O3MOD8163"
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "checked source proof diagnostic drifted for abi-mismatch" in failures
 
 
 def test_module_interop_rebuild_key_rejects_import_version_drift() -> None:
@@ -112,6 +172,24 @@ def test_module_interop_rejects_invalidation_scope_drift() -> None:
     )
 
 
+def test_module_interop_bridge_digest_proof_requires_rebuild_invalidation() -> None:
+    payload = deepcopy(_contract())
+    rebuild = payload["incremental_rebuild"]
+    assert isinstance(rebuild, dict)
+    rebuild["invalidation_cases"] = [
+        case
+        for case in rebuild["invalidation_cases"]
+        if case["condition"] != "bridge-metadata-digest-drift"
+    ]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "checked source bridge digest proof is not wired to bridge metadata invalidation"
+        in failures
+    )
+
+
 def test_module_interop_rejects_mixed_image_loader_metadata_digest_drift() -> None:
     payload = deepcopy(_contract())
     package_metadata = payload["package_metadata"]
@@ -167,6 +245,17 @@ def test_module_interop_rejects_private_reexport_edge() -> None:
     assert "reexported imports must be public" in failures
 
 
+def test_module_interop_rejects_duplicate_export_across_imports() -> None:
+    payload = deepcopy(_contract())
+    imports = payload["imports"]
+    assert isinstance(imports, list)
+    imports[2]["exported_symbols"] = ["FNCoreObject"]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "exported symbols must be unique across module and imports" in failures
+
+
 def test_module_interop_rejects_hidden_import_access_becoming_public() -> None:
     payload = deepcopy(_contract())
     access_cases = payload["visibility_access_cases"]
@@ -180,6 +269,24 @@ def test_module_interop_rejects_hidden_import_access_becoming_public() -> None:
 
     assert "visibility access allowance drifted for FNPrivateBridgeShim" in failures
     assert "hidden access case must fail closed with O3MOD8165 for FNPrivateBridgeShim" in failures
+
+
+def test_module_interop_private_reexport_proof_requires_hidden_import_rejection() -> None:
+    payload = deepcopy(_contract())
+    access_cases = payload["visibility_access_cases"]
+    assert isinstance(access_cases, list)
+    payload["visibility_access_cases"] = [
+        case
+        for case in access_cases
+        if case["provided_by"] != "FoundationPrivateShims"
+    ]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "checked source private reexport proof has no hidden/private import rejection case"
+        in failures
+    )
 
 
 def test_module_interop_rejects_missing_module_graph_diagnostic() -> None:

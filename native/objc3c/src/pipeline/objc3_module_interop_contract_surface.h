@@ -36,6 +36,11 @@ struct Objc3ModuleVisibilityAccessContract {
   std::string diagnostic_code;
 };
 
+struct Objc3ModuleDependencyGraphDiagnosticContract {
+  std::string case_name;
+  std::string diagnostic_code;
+};
+
 struct Objc3ModuleInteropForeignLaneContract {
   std::string language;
   std::string surface_id;
@@ -64,6 +69,8 @@ struct Objc3ModuleInteropContractSurface {
   std::vector<std::string> package_imported_module_identities_source_order;
   std::vector<Objc3ModuleVisibilityAccessContract>
       visibility_access_source_order;
+  std::vector<Objc3ModuleDependencyGraphDiagnosticContract>
+      dependency_graph_diagnostics_source_order;
   std::size_t public_import_edge_count = 0;
   std::size_t private_import_edge_count = 0;
   std::size_t reexported_import_edge_count = 0;
@@ -71,6 +78,9 @@ struct Objc3ModuleInteropContractSurface {
   std::size_t private_export_count = 0;
   bool deterministic_rebuild_identity = false;
   bool visibility_fail_closed = false;
+  bool missing_module_lookup_fail_closed = false;
+  bool import_cycle_detection_fail_closed = false;
+  bool duplicate_export_detection_fail_closed = false;
   bool package_identity_matches_module_identity = false;
   std::string bridge_header_relative_path;
   std::string bridge_modulemap_relative_path;
