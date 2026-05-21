@@ -63,6 +63,68 @@
       "status": "supported",
       "artifact_contract": "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1",
       "generated_artifacts_are_support_authority": false
+    },
+    "expansion_metadata_model": {
+      "status": "supported",
+      "metadata_authority": "checked semantic summaries plus macro trust registry and host-cache provenance contract",
+      "required_metadata_fields": [
+        "package",
+        "macro",
+        "provenance",
+        "cache_key",
+        "sandbox_policy",
+        "signer_key_id",
+        "manifest_digest",
+        "signature_digest",
+        "replay_metadata",
+        "deterministic"
+      ],
+      "replay_visible_metadata_sources": [
+        "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+        "tests/tooling/fixtures/metaprogramming_public_surface/macro_expansion_artifact_ownership_contract.json"
+      ],
+      "generated_artifact_authority": false,
+      "deterministic_replay_required": true
+    },
+    "rejection_behavior_model": {
+      "status": "supported",
+      "unsupported_topologies": [
+        "methods",
+        "async-functions",
+        "throwing-functions",
+        "extern-only-functions",
+        "arbitrary-plugin-entrypoints"
+      ],
+      "required_negative_case_ids": [
+        "missing_metadata",
+        "orphan_metadata",
+        "invalid_package",
+        "invalid_provenance",
+        "nonpure_callable",
+        "missing_cache_key",
+        "missing_sandbox_policy",
+        "method_topology"
+      ],
+      "required_diagnostic_codes": [
+        "O3S320",
+        "O3S321",
+        "O3S322",
+        "O3S323",
+        "O3S324",
+        "O3S325",
+        "O3S331",
+        "O3S332"
+      ],
+      "denial_case_ids": [
+        "unknown-package-denied",
+        "revoked-provenance-denied",
+        "unsigned-provenance-denied",
+        "sandbox-network-denied",
+        "untrusted-signer-denied",
+        "missing-replay-metadata-denied"
+      ],
+      "fail_closed_before_expansion": true
     }
   },
   "reserved_surface": {

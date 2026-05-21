@@ -53,13 +53,17 @@
         "macro_declaration_model",
         "derive_model",
         "property_behavior_model",
-        "host_cache_boundary"
+        "host_cache_boundary",
+        "expansion_metadata_model",
+        "rejection_behavior_model"
       ],
       "properties": {
         "macro_declaration_model": { "$ref": "#/$defs/macro_declaration_model" },
         "derive_model": { "$ref": "#/$defs/derive_model" },
         "property_behavior_model": { "$ref": "#/$defs/property_behavior_model" },
-        "host_cache_boundary": { "$ref": "#/$defs/host_cache_boundary" }
+        "host_cache_boundary": { "$ref": "#/$defs/host_cache_boundary" },
+        "expansion_metadata_model": { "$ref": "#/$defs/expansion_metadata_model" },
+        "rejection_behavior_model": { "$ref": "#/$defs/rejection_behavior_model" }
       },
       "additionalProperties": false
     },
@@ -320,6 +324,46 @@
           "const": "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
         },
         "generated_artifacts_are_support_authority": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "expansion_metadata_model": {
+      "type": "object",
+      "required": [
+        "status",
+        "metadata_authority",
+        "required_metadata_fields",
+        "replay_visible_metadata_sources",
+        "generated_artifact_authority",
+        "deterministic_replay_required"
+      ],
+      "properties": {
+        "status": { "const": "supported" },
+        "metadata_authority": { "type": "string", "minLength": 1 },
+        "required_metadata_fields": { "$ref": "#/$defs/string_array" },
+        "replay_visible_metadata_sources": { "$ref": "#/$defs/string_array" },
+        "generated_artifact_authority": { "const": false },
+        "deterministic_replay_required": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "rejection_behavior_model": {
+      "type": "object",
+      "required": [
+        "status",
+        "unsupported_topologies",
+        "required_negative_case_ids",
+        "required_diagnostic_codes",
+        "denial_case_ids",
+        "fail_closed_before_expansion"
+      ],
+      "properties": {
+        "status": { "const": "supported" },
+        "unsupported_topologies": { "$ref": "#/$defs/string_array" },
+        "required_negative_case_ids": { "$ref": "#/$defs/string_array" },
+        "required_diagnostic_codes": { "$ref": "#/$defs/string_array" },
+        "denial_case_ids": { "$ref": "#/$defs/string_array" },
+        "fail_closed_before_expansion": { "const": true }
       },
       "additionalProperties": false
     },

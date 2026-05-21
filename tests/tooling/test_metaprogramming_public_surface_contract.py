@@ -82,6 +82,15 @@ def test_metaprogramming_public_surface_contract_passes(tmp_path: Path) -> None:
     assert summary["supported_surface"]["macro_declaration_model"][
         "unsafe_host_execution_allowed"
     ] is False
+    assert summary["supported_surface"]["expansion_metadata_model"][
+        "generated_artifact_authority"
+    ] is False
+    assert summary["supported_surface"]["expansion_metadata_model"][
+        "deterministic_replay_required"
+    ] is True
+    assert summary["supported_surface"]["rejection_behavior_model"][
+        "fail_closed_before_expansion"
+    ] is True
     assert summary["expansion_security_policy"][
         "arbitrary_host_process_execution_allowed"
     ] is False
@@ -133,4 +142,46 @@ def test_metaprogramming_public_surface_rejects_arbitrary_execution_claim(
         "arbitrary_compile_time_execution" in failure
         or "unsafe host execution" in failure
         for failure in summary["failures"]
+    )
+
+
+def test_metaprogramming_public_surface_rejects_generated_metadata_authority(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    _redirect_outputs(checker, tmp_path)
+    contract = deepcopy(load_json_object(CONTRACT_PATH))
+    contract["supported_surface"]["expansion_metadata_model"][
+        "generated_artifact_authority"
+    ] = True
+    tmp_contract = tmp_path / "contract.json"
+    write_json_file(tmp_contract, contract, sort_keys=True)
+    checker.CONTRACT_PATH = tmp_contract
+
+    assert checker.main() == 1
+
+    summary = load_json_object(checker.REPORT_PATH)
+    assert summary["status"] == "FAIL"
+    assert any("expansion metadata" in failure for failure in summary["failures"])
+
+
+def test_metaprogramming_public_surface_rejects_rejection_diagnostic_drift(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    _redirect_outputs(checker, tmp_path)
+    contract = deepcopy(load_json_object(CONTRACT_PATH))
+    contract["supported_surface"]["rejection_behavior_model"][
+        "required_diagnostic_codes"
+    ].remove("O3S332")
+    tmp_contract = tmp_path / "contract.json"
+    write_json_file(tmp_contract, contract, sort_keys=True)
+    checker.CONTRACT_PATH = tmp_contract
+
+    assert checker.main() == 1
+
+    summary = load_json_object(checker.REPORT_PATH)
+    assert summary["status"] == "FAIL"
+    assert any(
+        "rejection behavior drifted" in failure for failure in summary["failures"]
     )

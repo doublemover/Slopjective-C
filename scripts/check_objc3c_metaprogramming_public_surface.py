@@ -493,9 +493,11 @@ def _validate_supported_surface_policy(
     derive_model = _as_dict(supported.get("derive_model"))
     property_model = _as_dict(supported.get("property_behavior_model"))
     host_boundary = _as_dict(supported.get("host_cache_boundary"))
+    rejection_model = _as_dict(supported.get("rejection_behavior_model"))
     macro_surface = _as_dict(contract.get("macro_safety_surface"))
     derive_surface = _as_dict(contract.get("derive_surface"))
     property_surface = _as_dict(contract.get("property_behavior_surface"))
+    fail_closed_validation = _as_dict(contract.get("fail_closed_validation"))
 
     supported_derive_forms: set[str] = set()
     for form in _as_list(derive_surface.get("supported_forms")):
@@ -555,6 +557,87 @@ def _validate_supported_surface_policy(
         == "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
         and host_boundary.get("generated_artifacts_are_support_authority") is False,
         "host-cache boundary must point at artifact ownership and deny support authority",
+    )
+    _record(
+        checks,
+        failures,
+        "supported-surface:rejection-topology",
+        _string_set(rejection_model.get("unsupported_topologies"))
+        == _string_set(macro_model.get("reserved_callable_topologies"))
+        and rejection_model.get("fail_closed_before_expansion") is True,
+        "macro rejection behavior must mirror reserved callable topologies and fail before expansion",
+    )
+    _record(
+        checks,
+        failures,
+        "supported-surface:rejection-diagnostics",
+        _string_set(rejection_model.get("required_negative_case_ids"))
+        == _string_set(fail_closed_validation.get("required_negative_case_ids"))
+        and _string_set(rejection_model.get("required_diagnostic_codes"))
+        == _string_set(fail_closed_validation.get("required_diagnostic_codes"))
+        and _string_set(rejection_model.get("denial_case_ids"))
+        == _string_set(macro_surface.get("expected_denial_case_ids")),
+        "macro rejection behavior drifted from fail-closed cases, diagnostics, or denial ids",
+    )
+
+
+def _validate_expansion_metadata_model(
+    contract: dict[str, Any],
+    registry: dict[str, Any],
+    checks: dict[str, bool],
+    failures: list[str],
+) -> None:
+    supported = _as_dict(contract.get("supported_surface"))
+    metadata_model = _as_dict(supported.get("expansion_metadata_model"))
+    required_fields = _string_set(metadata_model.get("required_metadata_fields"))
+    sources = [
+        str(path)
+        for path in _as_list(metadata_model.get("replay_visible_metadata_sources"))
+    ]
+    signed_artifacts = [
+        artifact
+        for artifact in _as_list(registry.get("signed_artifacts"))
+        if isinstance(artifact, dict)
+    ]
+
+    def artifact_has_required_fields(artifact: dict[str, Any]) -> bool:
+        for field in required_fields:
+            if field == "deterministic":
+                if (
+                    _as_dict(artifact.get("replay_metadata")).get("deterministic")
+                    is not True
+                ):
+                    return False
+                continue
+            if field not in artifact:
+                return False
+        return True
+
+    _record(
+        checks,
+        failures,
+        "expansion-metadata:authority",
+        metadata_model.get("generated_artifact_authority") is False
+        and metadata_model.get("deterministic_replay_required") is True
+        and "trust registry" in str(metadata_model.get("metadata_authority", "")),
+        "expansion metadata must be source-authoritative, deterministic, and not generated-artifact authoritative",
+    )
+    _record(
+        checks,
+        failures,
+        "expansion-metadata:sources",
+        all(path and _repo_path(path).is_file() for path in sources)
+        and all(not path.startswith("tmp/") for path in sources)
+        and str(metadata_model.get("status")) == "supported",
+        "expansion metadata replay sources must be checked-in non-tmp source paths",
+    )
+    _record(
+        checks,
+        failures,
+        "expansion-metadata:registry-fields",
+        bool(signed_artifacts)
+        and all(artifact_has_required_fields(artifact) for artifact in signed_artifacts),
+        "macro trust registry signed artifacts do not satisfy the public expansion metadata fields",
     )
 
 
@@ -859,6 +942,7 @@ def build_summary() -> dict[str, Any]:
     _validate_property_surface(contract, checks, failures)
     _validate_macro_surface(contract, registry, checks, failures)
     _validate_supported_surface_policy(contract, checks, failures)
+    _validate_expansion_metadata_model(contract, registry, checks, failures)
     _validate_reserved_surface_policy(contract, checks, failures)
     _validate_expansion_security_policy(contract, registry, checks, failures)
     _validate_deterministic_fixture_contracts(contract, checks, failures)
