@@ -46,6 +46,31 @@ def test_post_cutover_issue_evidence_covers_every_issue_and_owned_capability() -
     assert capability_rows["implemented_owned_capability_count"] > 0
 
 
+def test_post_cutover_completion_contracts_pass_current_source_truth() -> None:
+    failures: list[str] = []
+
+    summary = checker.validate_completion_contracts(
+        checker.COMPLETION_CONTRACT_SPECS,
+        failures,
+    )
+
+    assert failures == []
+    assert summary["contract_count"] == 4
+    assert set(summary["covered_issues"]) == {
+        "#8159",
+        "#8160",
+        "#8163",
+        "#8164",
+        "#8165",
+        "#8166",
+        "#8167",
+        "#8168",
+        "#8173",
+        "#8174",
+        "#8175",
+    }
+
+
 def test_post_cutover_issue_evidence_rejects_missing_issue_row() -> None:
     markdown = "\n".join(
         line

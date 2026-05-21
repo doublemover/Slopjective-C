@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,37 @@ class IssueEvidenceRow:
     local_evidence: str
     public_replay_surface: str
     boundary: str
+
+
+@dataclass(frozen=True)
+class CompletionContractSpec:
+    contract_id: str
+    script: str
+    covered_issues: tuple[str, ...]
+
+
+COMPLETION_CONTRACT_SPECS: tuple[CompletionContractSpec, ...] = (
+    CompletionContractSpec(
+        contract_id="objc3c.type_protocol.generic_protocol_completion_contract.v1",
+        script="scripts/check_generic_protocol_completion_contract.py",
+        covered_issues=("#8160", "#8164"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.module_abi_interop.completion_contract.v1",
+        script="scripts/check_module_abi_interop_completion_contract.py",
+        covered_issues=("#8163", "#8165", "#8173"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.ownership-concurrency-macro.completion.contract.v1",
+        script="scripts/check_ownership_concurrency_macro_completion_contract.py",
+        covered_issues=("#8166", "#8167", "#8168"),
+    ),
+    CompletionContractSpec(
+        contract_id="objc3c.reflection.optimization.performance.completion.v1",
+        script="scripts/check_reflection_optimization_performance_completion_contract.py",
+        covered_issues=("#8159", "#8174", "#8175"),
+    ),
+)
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:
@@ -245,6 +277,58 @@ def validate_owned_capabilities(
     }
 
 
+def validate_completion_contracts(
+    specs: tuple[CompletionContractSpec, ...],
+    failures: list[str],
+) -> dict[str, Any]:
+    covered_issues: set[str] = set()
+    contracts: list[dict[str, Any]] = []
+    for spec in specs:
+        script_path = ROOT / spec.script
+        if not script_path.is_file():
+            failures.append(f"{spec.contract_id}: missing checker script {spec.script}")
+            contracts.append(
+                {
+                    "contract_id": spec.contract_id,
+                    "script": spec.script,
+                    "status": "missing",
+                    "covered_issues": list(spec.covered_issues),
+                }
+            )
+            continue
+
+        completed = subprocess.run(
+            [sys.executable, str(script_path)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        status = "PASS" if completed.returncode == 0 else "FAIL"
+        contracts.append(
+            {
+                "contract_id": spec.contract_id,
+                "script": spec.script,
+                "status": status,
+                "covered_issues": list(spec.covered_issues),
+                "returncode": completed.returncode,
+                "stdout_tail": completed.stdout.strip().splitlines()[-6:],
+                "stderr_tail": completed.stderr.strip().splitlines()[-6:],
+            }
+        )
+        covered_issues.update(spec.covered_issues)
+        if completed.returncode != 0:
+            failures.append(
+                f"{spec.contract_id}: checker failed with exit code {completed.returncode}"
+            )
+
+    return {
+        "contract_count": len(specs),
+        "covered_issues": sorted(covered_issues),
+        "contracts": contracts,
+    }
+
+
 def validate_markdown_text(
     markdown: str,
     *,
@@ -282,12 +366,23 @@ def validate_current_state() -> dict[str, Any]:
     matrix = load_json_object(CAPABILITY_MATRIX_PATH)
     evidence_map = load_json_object(EVIDENCE_MAP_PATH)
     registered_actions = set(public_workflow_action_names())
-    return validate_markdown_text(
+    summary = validate_markdown_text(
         markdown,
         matrix=matrix,
         evidence_map=evidence_map,
         registered_actions=registered_actions,
     )
+    failures = summary["failures"]
+    if not isinstance(failures, list):
+        failures = []
+        summary["failures"] = failures
+    completion_contracts = validate_completion_contracts(
+        COMPLETION_CONTRACT_SPECS,
+        failures,
+    )
+    summary["completion_contracts"] = completion_contracts
+    summary["ok"] = not failures
+    return summary
 
 
 def main() -> int:
