@@ -1,0 +1,374 @@
+{
+  "contract_id": "objc3c.type_protocol.generic_protocol_completion_contract.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    8160,
+    8164
+  ],
+  "policy": {
+    "source_truth": "checked-in native source anchors, canonical fixtures, support manifest rows, capability rows, and runnable evidence catalog rows",
+    "tmp_source_truth_allowed": false,
+    "generated_projection_source_truth_allowed": false,
+    "public_command_prefix": "npm run objc3c -- ",
+    "fail_closed_rule": "each public generic/protocol claim must carry checked-in positive evidence, checked-in negative evidence, stable diagnostic codes, and source_truth_requirements that bound unsupported behavior"
+  },
+  "claims": [
+    {
+      "issue_ref": 8160,
+      "support_claim": "objc3c.behavior.language.generics.protocol-qualified-arguments",
+      "capability_id": "language.generics.protocol-qualified-arguments",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-15.json",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3",
+        "tests/conformance/semantic/TYP-8013-09.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp",
+          "snippets": [
+            "NormalizeGenericArgumentTypeSpelling",
+            "InterfaceAdoptsProtocolDirectly"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+          "snippets": [
+            "ParseProtocolCompositionSuffixText",
+            "duplicate_identifiers"
+          ]
+        }
+      ],
+      "required_source_truth_phrases": [
+        "checked-in semantic fixture",
+        "fail-closed O3S206 evidence"
+      ],
+      "unsupported_boundaries": [
+        "unknown protocol-qualified generic arguments",
+        "constraint violations"
+      ]
+    },
+    {
+      "issue_ref": 8160,
+      "support_claim": "objc3c.behavior.language.generics.callable-type-parameters",
+      "capability_id": "language.generics.callable-type-parameters",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-23.json",
+        "tests/conformance/semantic/TYP-8013-24.json",
+        "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h",
+          "snippets": [
+            "generic-method-substitution",
+            "unsupported_patterns_fail_closed"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_function_call_substitution.inc",
+          "snippets": [
+            "generic parameter",
+            "generic return parameter"
+          ]
+        }
+      ],
+      "required_source_truth_phrases": [
+        "checked-in generic method receiver substitution",
+        "fail-closed O3S206 evidence",
+        "does not claim"
+      ],
+      "unsupported_boundaries": [
+        "higher-kinded types",
+        "inferred associated types",
+        "generic collection ABI",
+        "generic function overloading"
+      ]
+    },
+    {
+      "issue_ref": 8160,
+      "support_claim": "objc3c.behavior.language.generics.variance-specialization",
+      "capability_id": "language.generics.variance-specialization",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-12.json",
+        "tests/conformance/semantic/TYP-8013-13.json"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206",
+        "O3S216"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_assignment.inc",
+          "snippets": [
+            "generic variance policy rejects assignment",
+            "O3S206"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h",
+          "snippets": [
+            "generic-variance-specialization",
+            "O3S216"
+          ]
+        }
+      ],
+      "required_source_truth_phrases": [
+        "declared covariance",
+        "fail-closed evidence",
+        "does not claim"
+      ],
+      "unsupported_boundaries": [
+        "higher-kinded types",
+        "inferred associated types",
+        "generic collection ABI"
+      ]
+    },
+    {
+      "issue_ref": 8160,
+      "support_claim": "objc3c.behavior.runtime.generics.cross-module-metadata",
+      "capability_id": "runtime.generics.cross-module-metadata",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-17.json",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json",
+        "tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
+        "scripts/objc3c_type_semantic_model_closure/cross_module.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp",
+          "snippets": [
+            "type-system generic contract preservation",
+            "generic_variance_annotation_count",
+            "protocol_qualified_generic_argument_count",
+            "dropped variance annotations"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+          "snippets": [
+            "objc3c.behavior.runtime.generics.cross-module-metadata",
+            "generic-specialization-metadata"
+          ]
+        }
+      ],
+      "cross_module_metadata_requirements": [
+        "generic_interface_count",
+        "generic_parameter_count",
+        "generic_variance_annotation_count",
+        "protocol_qualified_generic_argument_count",
+        "type_semantic_replay_key",
+        "replay_key"
+      ],
+      "required_source_truth_phrases": [
+        "Cross-module generic metadata support",
+        "Runtime-import drift",
+        "fail closed",
+        "does not claim"
+      ],
+      "unsupported_boundaries": [
+        "broad generic collection ABI",
+        "higher-kinded type metadata",
+        "inferred associated-type import/export"
+      ]
+    },
+    {
+      "issue_ref": 8164,
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+        "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
+        "tests/conformance/semantic/TYP-8013-01.json",
+        "native/objc3c/src/runtime/classes/protocol_conformance.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_optional_required_conflict.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3",
+        "tests/conformance/semantic/TYP-8013-02.json",
+        "tests/conformance/semantic/TYP-8013-06.json",
+        "tests/conformance/semantic/TYP-8013-07.json",
+        "tests/conformance/semantic/TYP-8013-19.json",
+        "tests/conformance/semantic/TYP-8013-21.json",
+        "tests/conformance/semantic/TYP-8013-22.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3P100",
+        "O3S206",
+        "O3S216",
+        "O3S218",
+        "O3S314"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
+          "snippets": [
+            "protocol",
+            "message"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+          "snippets": [
+            "ParseProtocolCompositionSuffixText",
+            "malformed_composition",
+            "duplicate_identifiers"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+          "snippets": [
+            "ProtocolConformanceMatch",
+            "BuildRuntimeProtocolExistentialWitnessMetadata"
+          ]
+        }
+      ],
+      "required_source_truth_phrases": [
+        "id<Protocol>",
+        "Runtime witness/conformance metadata",
+        "fail-closed evidence",
+        "does not claim"
+      ],
+      "unsupported_boundaries": [
+        "associated types",
+        "dynamic existential invocation dispatch",
+        "protocol composition beyond the typed semantic suffix",
+        "cross-module existential import/export"
+      ]
+    },
+    {
+      "issue_ref": 8164,
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "capability_id": "language.protocols.existential-witness-model",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+      "public_command": "npm run objc3c -- validate-conformance-corpus",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+        "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json",
+        "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json",
+        "native/objc3c/src/sema/model/language_semantics_public_model.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
+        "tests/conformance/semantic/TYP-8013-22.json",
+        "tests/conformance/semantic/TYP-8013-21.json",
+        "tests/conformance/semantic/TYP-8013-07.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3P100",
+        "O3S216",
+        "O3S314"
+      ],
+      "source_anchors": [
+        {
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.h",
+          "snippets": [
+            "ProtocolConformanceMatch",
+            "kObjc3ProtocolExistentialWitnessMetadataKey",
+            "fail_closed_for_unsupported_semantics"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+          "snippets": [
+            "BuildRuntimeProtocolExistentialWitnessMetadata",
+            "metadata.associated_types_supported = false",
+            "metadata.dynamic_existential_dispatch_supported = false",
+            "metadata.fail_closed_for_unsupported_semantics = true"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+          "snippets": [
+            "BuildRuntimeProtocolExistentialWitnessMetadata",
+            "dynamic_existential_dispatch_supported"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+          "snippets": [
+            "objc3c.behavior.language.protocols.existential-witness-model",
+            "ProtocolConformanceMatch",
+            "unsupported patterns stay rejected"
+          ]
+        }
+      ],
+      "required_source_truth_phrases": [
+        "limited to public metadata contracts",
+        "does not claim existential invocation ABI",
+        "fail-closed"
+      ],
+      "unsupported_boundaries": [
+        "associated type declarations",
+        "dynamic protocol dispatch attributes"
+      ]
+    }
+  ]
+}

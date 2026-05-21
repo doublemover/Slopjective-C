@@ -1,0 +1,158 @@
+{
+  "contract_id": "objc3c.reflection.optimization.performance.completion.v1",
+  "issue_mapping": {
+    "issues": [8174, 8175, 8159],
+    "support_claims": [
+      "objc3c.behavior.runtime.public-reflection-api",
+      "objc3c.behavior.semantic_optimization_pipeline",
+      "objc3c.runtime.performance.scale.evidence"
+    ]
+  },
+  "public_reflection": {
+    "source_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+    "expected_lifetime_model": "caller-owned snapshots with runtime-owned borrowed strings",
+    "expected_unsupported_metadata_policy": "unsupported and internal metadata returns status without private fields",
+    "required_surface_fields": [
+      "creates_dynamic_runtime_state",
+      "exposes_private_testing_snapshot",
+      "unsupported_metadata_status",
+      "malformed_metadata_status"
+    ],
+    "required_status_codes": [
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+    ],
+    "header_tokens": [
+      "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u",
+      "objc3_runtime_reflection_state_snapshot",
+      "const char *result_lifetime_model",
+      "const char *unsupported_metadata_policy"
+    ],
+    "implementation_tokens": [
+      "ProcessRuntimeState()",
+      "std::lock_guard<std::mutex> lock(state.mutex)",
+      "kPublicReflectionLifetimeModel",
+      "kUnsupportedMetadataPolicy",
+      "snapshot.creates_dynamic_runtime_state = 0",
+      "snapshot.exposes_private_testing_snapshot = 0",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+    ],
+    "probe_tokens": [
+      "#include \"runtime/public/objc3_runtime_api.h\"",
+      "surface.creates_dynamic_runtime_state",
+      "surface.exposes_private_testing_snapshot"
+    ],
+    "forbidden_public_header_tokens": [
+      "_for_testing",
+      "owner_identity;",
+      "ProcessRuntimeState",
+      "RuntimeState"
+    ],
+    "forbidden_probe_tokens": [
+      "objc3_runtime_copy_realized_class_entry_for_testing",
+      "objc3_runtime_copy_property_entry_for_testing",
+      "objc3_runtime_copy_protocol_conformance_query_for_testing",
+      "objc3_runtime_copy_selector_lookup_entry_for_testing"
+    ]
+  },
+  "semantic_optimization": {
+    "pipeline_contract": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+    "validation_script": "scripts/check_objc3c_semantic_optimization_pipeline.py",
+    "required_pass_order": [
+      "semantic-precondition-gate",
+      "nil-receiver-folding",
+      "direct-dispatch-exact-call",
+      "arc-retained-result-cleanup",
+      "runtime-dispatch-preservation",
+      "devirtualization",
+      "method-inlining",
+      "cache-aware-dispatch",
+      "ir-cleanup-verifier"
+    ],
+    "required_reserved_passes": [
+      "devirtualization",
+      "method-inlining",
+      "cache-aware-dispatch"
+    ],
+    "required_enabled_passes": [
+      "nil-receiver-folding",
+      "direct-dispatch-exact-call",
+      "arc-retained-result-cleanup"
+    ],
+    "reserved_pass_success_claims_allowed": false,
+    "unsafe_flags_allowed": false,
+    "whole_program_optimization_allowed": false,
+    "compatibility_shims_allowed": false,
+    "generated_report_input_allowed": false,
+    "required_performance_actions": [
+      "benchmark-compiler-throughput",
+      "benchmark-runtime-performance",
+      "validate-performance-governance"
+    ]
+  },
+  "performance_evidence": {
+    "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "workload_replay_contract": "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "metadata_resilience_contract": "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "stress_sanitizer_contract": "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+    "scale_scenario_contract": "tests/tooling/fixtures/runtime_performance/scale_scenario_contract.json",
+    "budget_model": "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "parser_sema_fuzz_manifest": "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+    "lowering_runtime_stress_manifest": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+    "scale_evidence_probe": "scripts/probe_objc3c_runtime_scale_evidence.py",
+    "support_authority_allowed": false,
+    "generated_report_authority_allowed": false,
+    "minimum_counts": {
+      "stress_scale": 8,
+      "sanitizer": 4,
+      "metadata_fuzz": 1,
+      "scale_scenarios": 4,
+      "validation_actions": 5,
+      "parser_sema_fuzz_cases": 7,
+      "lowering_runtime_compile_cases": 10,
+      "lowering_runtime_execution_cases": 3,
+      "lowering_runtime_semantic_provenance_cases": 2
+    },
+    "required_workload_ids": [
+      "dispatch-cache",
+      "reflection-query",
+      "registration-replay",
+      "block-arc-runtime",
+      "live-concurrency-runtime"
+    ],
+    "required_scale_scenarios": [
+      "dispatch-cache-fuzz-sanitized-scale",
+      "registration-replay-runtime-scale",
+      "block-arc-lifetime-sanitized-scale",
+      "live-concurrency-runtime-thread-scale"
+    ],
+    "required_fuzz_subsystems": ["parser", "semantic"]
+  },
+  "fail_closed_boundaries": [
+    {
+      "boundary_id": "public-reflection-unsupported-private-metadata",
+      "owner": "public_reflection",
+      "must_not_expose_private_snapshot": true
+    },
+    {
+      "boundary_id": "semantic-optimization-reserved-pass-skip",
+      "owner": "semantic_optimization",
+      "must_not_claim_success": true
+    },
+    {
+      "boundary_id": "runtime-performance-malformed-metadata",
+      "owner": "performance_evidence",
+      "must_fail_closed": true
+    },
+    {
+      "boundary_id": "runtime-performance-generated-report-provenance",
+      "owner": "performance_evidence",
+      "support_authority": false
+    }
+  ]
+}

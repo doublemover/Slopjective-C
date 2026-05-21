@@ -19,6 +19,7 @@ ECOSYSTEM_PUBLICATION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "publish-adoption-legibility": ecosystem_publication.action_publish_adoption_legibility,
     "validate-governance-sustainability": ecosystem_publication.action_validate_governance_sustainability,
     "publish-governance-sustainability": ecosystem_publication.action_publish_governance_sustainability,
+    "validate-post-cutover-issue-evidence": ecosystem_publication.action_validate_post_cutover_issue_evidence,
     "publish-planning-issues": ecosystem_publication.action_publish_planning_issues,
     "check-planning-publication-drift": ecosystem_publication.action_check_planning_publication_drift,
 }

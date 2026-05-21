@@ -15,6 +15,7 @@ from .ecosystem_publication_contracts import (
     LONG_HORIZON_OPERATIONS_PUBLICATION_PY,
     PLANNING_ISSUE_PUBLISHER_PY,
     PLANNING_PUBLICATION_AUDIT_PY,
+    POST_CUTOVER_ISSUE_EVIDENCE_PY,
     PUBLICATION_ARTIFACT_CONTRACTS,
     PublicationArtifactContract,
 )
@@ -65,6 +66,7 @@ from .ecosystem_publication_package_contracts import (
 from .ecosystem_publication_planning import (
     action_check_planning_publication_drift,
     action_publish_planning_issues,
+    action_validate_post_cutover_issue_evidence,
 )
 
 
@@ -91,6 +93,7 @@ __all__ = [
     "PACKAGE_SOURCE_CONTRACTS",
     "PLANNING_ISSUE_PUBLISHER_PY",
     "PLANNING_PUBLICATION_AUDIT_PY",
+    "POST_CUTOVER_ISSUE_EVIDENCE_PY",
     "PUBLICATION_ARTIFACT_CONTRACTS",
     "PackagePublicationActionContract",
     "EcosystemPublicationOwnerContract",
@@ -104,6 +107,7 @@ __all__ = [
     "action_publish_governance_sustainability",
     "action_publish_long_horizon_operations",
     "action_publish_planning_issues",
+    "action_validate_post_cutover_issue_evidence",
     "action_validate_adoption_legibility",
     "action_validate_governance_sustainability",
     "action_validate_long_horizon_operations",

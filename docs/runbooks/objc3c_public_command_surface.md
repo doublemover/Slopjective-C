@@ -4,8 +4,8 @@ This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
 - Package bridge count: `1`
-- Operator action count: `142`
-- Maintainer action count: `71`
+- Operator action count: `143`
+- Maintainer action count: `72`
 - Runner path: `package.json scripts.objc3c -> scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
@@ -111,6 +111,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `validate-performance-governance-runtime-contract-linkage` | `validate` | `repo` | `runtime performance workload, replay, stress, sanitizer, budget, and release-evidence contracts stay linked through checked-in source truth` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_contract_linkage.py` |
 | `validate-platform-hardening` | `validate` | `nightly` | `packaging-channels-source -> packaging-channels-gate -> packaging-channels-blockers: supported host package install and release claims stay tiered package-backed and fail-closed outside the checked-in matrix` | `fixed-shape` | `python:scripts/check_objc3c_platform_hardening_integration.py` |
 | `validate-platform-hardening-end-to-end` | `validate` | `full` | `packaging-channels-source -> packaging-channels-gate -> packaging-channels-blockers: packaged platform support inspection and validation remain runnable from the staged toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_platform_hardening_end_to_end.py` |
+| `validate-post-cutover-issue-evidence` | `validate` | `repo` | `post-cutover issue evidence stays tied to checked-in source truth, registered public commands, and capability/evidence-map rows` | `fixed-shape` | `python:scripts/check_objc3c_post_cutover_issue_evidence.py` |
 | `validate-public-conformance-reporting` | `validate` | `repo` | `source, schema, scorecard, and publication owners run as one strict public-conformance workflow` | `fixed-shape` | `runner-internal public-reporting child actions` |
 | `validate-public-conformance-reporting-end-to-end` | `validate` | `repo` | `public-conformance reporting is reachable through the public workflow surface with the same strict action inventory` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_end_to_end.py` |
 | `validate-public-conformance-reporting-integration` | `validate` | `repo` | `integrated public-conformance reporting stays coherent across child report contracts, published artifacts, and stability truth` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_integration.py` |
@@ -177,6 +178,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check-conformance-minima` | `check` | `ci` | `conformance minima stay routed through the public workflow bridge` | `fixed-shape` | `pwsh:scripts/check_conformance_suite.ps1` |
 | `check-dependency-boundaries` | `check` | `repo` | `repo dependency boundaries stay explicit and strict` | `fixed-shape` | `python:scripts/check_objc3c_dependency_boundaries.py --strict` |
 | `check-developer-diagnostic-quality` | `check` | `repo` | `diagnostic taxonomy and fix-it claims stay backed by structured checked-in diagnostic fixtures` | `fixed-shape` | `python:scripts/check_developer_tooling_diagnostic_quality.py` |
+| `check-developer-tooling-editor-source-truth` | `check` | `repo` | `editor tooling claims stay rooted in checked-in source contracts, capability rows, evidence-map rows, and registered npm bridge commands` | `fixed-shape` | `python:scripts/check_developer_tooling_editor_source_truth.py` |
 | `check-distribution-credibility-schema-surface` | `check` | `repo` | `distribution dashboard and trust-report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_schema_surface.py` |
 | `check-distribution-credibility-surface` | `check` | `repo` | `distribution credibility only publishes from the checked-in trust-signal, install-doc, operator, drill, workflow, and artifact contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_source_surface.py` |
 | `check-documentation-surface` | `check` | `docs` | `reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |

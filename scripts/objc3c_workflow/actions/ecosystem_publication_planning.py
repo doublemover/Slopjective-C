@@ -5,8 +5,13 @@ from __future__ import annotations
 from .ecosystem_publication_contracts import (
     PLANNING_ISSUE_PUBLISHER_PY,
     PLANNING_PUBLICATION_AUDIT_PY,
+    POST_CUTOVER_ISSUE_EVIDENCE_PY,
 )
 from .ecosystem_publication_runner import run_publication_action
+
+
+def action_validate_post_cutover_issue_evidence(_: list[str]) -> int:
+    return run_publication_action("validate-post-cutover-issue-evidence")
 
 
 def action_publish_planning_issues(rest: list[str]) -> int:
@@ -20,6 +25,8 @@ def action_check_planning_publication_drift(rest: list[str]) -> int:
 __all__ = [
     "PLANNING_ISSUE_PUBLISHER_PY",
     "PLANNING_PUBLICATION_AUDIT_PY",
+    "POST_CUTOVER_ISSUE_EVIDENCE_PY",
     "action_check_planning_publication_drift",
     "action_publish_planning_issues",
+    "action_validate_post_cutover_issue_evidence",
 ]

@@ -20,6 +20,7 @@ GOVERNANCE_SUSTAINABILITY_ACTION_SPECS: dict[str, ActionSpec] = {
 }
 
 PLANNING_PUBLICATION_ACTION_SPECS: dict[str, ActionSpec] = {
+    "validate-post-cutover-issue-evidence": ActionSpec("validate-post-cutover-issue-evidence", "validate Objective-C 3 post-cutover issue evidence coverage and public replay surfaces", "python:scripts/check_objc3c_post_cutover_issue_evidence.py", validation_tier="repo", guarantee_owner="post-cutover issue evidence stays tied to checked-in source truth, registered public commands, and capability/evidence-map rows"),
     "publish-planning-issues": ActionSpec("publish-planning-issues", "publish checked-in Objective-C 3 planning issues to GitHub while preserving GitHub-assigned numbers", "python:scripts/publish_objc3c_planning_issues.py", validation_tier="repo", guarantee_owner="issue publication stays rooted in checked-in planning payloads, durable GitHub number mappings, labels, milestones, and blocker references", pass_through_args=True),
     "check-planning-publication-drift": ActionSpec("check-planning-publication-drift", "audit checked-in Objective-C 3 planning publication references for GitHub mapping drift", "python:scripts/audit_objc3c_planning_publication.py --check", validation_tier="repo", guarantee_owner="planning payloads, markdown reports, durable GitHub mappings, and dependency references stay synchronized with assigned GitHub numbers", pass_through_args=True),
 }

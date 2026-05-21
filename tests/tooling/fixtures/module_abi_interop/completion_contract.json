@@ -1,0 +1,217 @@
+{
+  "contract_id": "objc3c.module_abi_interop.completion_contract.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    "#8163",
+    "#8165",
+    "#8173"
+  ],
+  "source_authority": "checked-source-anchors",
+  "evidence_log_allowed": false,
+  "public_command": "npm run objc3c -- validate-module-abi-interop-completion-contract",
+  "source_anchors": [
+    {
+      "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+      "sha256": "62537ee671d73b77988878aaec88d959bb0cdc7349efe1b7221064bdb3e1dcfc",
+      "fragments": [
+        "Objc3ModuleImportEdgeContract",
+        "module_identity_rebuild_key",
+        "bridge_metadata_digest_participates_in_rebuild_key"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "sha256": "206ed4f921f3973c43cd05813f6b6a98ed8c76fdf73d0978f091136e312e7e73",
+      "fragments": [
+        "BuildObjc3ModuleInteropRebuildKey",
+        "reexported import edge must be public",
+        "module visibility access allowance drifted"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+      "sha256": "457ea9b98dd8b904b09303e507179626cb2445eebe19f801cde6b900349ed34b",
+      "fragments": [
+        "interop_ffi_local_metadata_preservation_sites",
+        "interop_header_module_bridge_local_foreign_callable_count",
+        "interop_foreign_surface_interface_preservation_present"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/artifacts/objc3_frontend_interop_semantic_artifacts.cpp",
+      "sha256": "215b6aa3333df9f42cf6c0876a194f22f986803ab66a7b8a52e519c3409fca03",
+      "fragments": [
+        "interface_preserved_metadata_annotation_sites",
+        "metadata_preservation_sites",
+        "objc_mixed_image_declared"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/artifacts/objc3_frontend_runtime_import_artifact_payload_json.cpp",
+      "sha256": "0cbbd630715c80f4bee146a66dedd217cabf53ebd6d0b79c0ff4cb7a682cb516",
+      "fragments": [
+        "objc_interop_ffi_metadata_and_interface_preservation",
+        "objc_interop_foreign_surface_interface_and_module_preservation",
+        "objc_interop_header_module_and_bridge_generation"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+      "sha256": "922cfa20fdfaf620b365c4312ce13d81baed5ff0c34e2382fe9e8fba837c6427",
+      "fragments": [
+        "FoundationNext.VisibilityBridge",
+        "visibility-surface-drift",
+        "bridge-metadata-digest-drift"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/valid_bridge_surface.json",
+      "sha256": "156f0884561b0e600e74f5888afd2bf90d49f0fc2953a8ca15205cd1e607702e",
+      "fragments": [
+        "objc_interop_foreign_surface_interface_and_module_preservation",
+        "unsupported_topologies",
+        "cpp-template-instantiation-import"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+      "sha256": "a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003",
+      "fragments": [
+        "mixed_image_interop_loader_metadata",
+        "unchecked ABI alignment fallback",
+        "BridgeProviderExtrasGate"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "sha256": "26d51fe13218a9ee1fbdbf8ce030b8544d88baf163a616c0b4e9ca4ffb756aab",
+      "fragments": [
+        "objc3c.abi_governance.source_of_truth.v1",
+        "no-compatibility-shims",
+        "package-abi-identity-drift"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "sha256": "208d825bf96d264159c47a28dd98323776f841cb1296136a21538761377f8f56",
+      "fragments": [
+        "objc3c.release.foundation.abi_api_governance.v1",
+        "check-release-abi-api-drift",
+        "schema-breaking-change-without-major-line"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+      "sha256": "2760096d7ff96fedf583ce632d4ff44cca3a24e4a971cd94b298d482dd2d8549",
+      "fragments": [
+        "runtime_package_loading_module_identity_semantics_surface",
+        "runtime_package_loader_bridge_abi_surface",
+        "runtime_import_version_feature_claim_diagnostics_surface"
+      ]
+    }
+  ],
+  "module_semantics": {
+    "contract_path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+    "module_name": "FoundationNext.VisibilityBridge",
+    "metadata_version": "1.0.0",
+    "abi_identity": "objc3c.foundation-next.visibility-bridge.abi.v1",
+    "required_imports": [
+      "FoundationCore",
+      "FoundationPrivateShims",
+      "FoundationText"
+    ],
+    "required_public_reexports": [
+      "FoundationCore"
+    ],
+    "required_private_imports": [
+      "FoundationPrivateShims"
+    ],
+    "required_invalidation_conditions": [
+      "source-digest-drift",
+      "imported-module-abi-identity-drift",
+      "package-lock-module-identity-drift",
+      "visibility-surface-drift",
+      "bridge-metadata-digest-drift"
+    ],
+    "required_rebuild_inputs": [
+      "module_identity",
+      "import_graph",
+      "visibility",
+      "foreign_surfaces",
+      "package_lock"
+    ],
+    "expected_hidden_diagnostic": "O3MOD8165",
+    "expected_stale_metadata_diagnostic": "O3MOD8163",
+    "expected_abi_mismatch_diagnostic": "O3MOD8166",
+    "rebuild_key_sha256": "6bed3a2ab231ec6f2cf575eb623f2a60fb0a767312469cbc573cf863ac418dad"
+  },
+  "interop_metadata": {
+    "runtime_bridge_surface_path": "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/valid_bridge_surface.json",
+    "package_loader_metadata_path": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+    "stress_manifest_path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+    "required_languages": [
+      "c",
+      "objc2",
+      "swift",
+      "cpp"
+    ],
+    "required_supported_languages": [
+      "c",
+      "objc2"
+    ],
+    "required_reserved_languages": [
+      "swift",
+      "cpp"
+    ],
+    "required_runtime_metadata_sections": [
+      "objc_interop_ffi_metadata_interface_preservation",
+      "objc_interop_foreign_surface_interface_and_module_preservation",
+      "objc_interop_header_module_and_bridge_generation"
+    ],
+    "required_unsupported_topologies": [
+      "objc2-source-compatibility",
+      "swift-full-abi-callable-import",
+      "cpp-template-instantiation-import",
+      "unchecked-abi-alignment-fallback"
+    ],
+    "required_package_unsupported_surfaces": [
+      "network-resolved interop metadata",
+      "hosted registry mixed-image restore",
+      "unchecked ABI alignment fallback"
+    ],
+    "tamper_diagnostic": "O3PKG8054",
+    "required_stress_surfaces": {
+      "runtime_package_loading_module_identity_semantics_surface": "objc3c.runtime.package.loading.module.identity.semantics.surface.v1",
+      "runtime_import_version_feature_claim_diagnostics_surface": "objc3c.runtime.import.version.feature.claim.diagnostics.surface.v1",
+      "runtime_package_loader_bridge_abi_surface": "objc3c.runtime.package.loader.bridge.abi.surface.v1"
+    }
+  },
+  "abi_governance": {
+    "manifest_path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+    "release_governance_path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+    "diagnostic": "O3ABI8173",
+    "required_release_blocked_transitions": [
+      "public-symbol-removal-without-deprecation-window",
+      "runtime-symbol-removal-without-deprecation-window",
+      "signature-change-without-major-line",
+      "private-helper-graduation-without-policy",
+      "unsupported-upgrade-route",
+      "unsupported-downgrade-route",
+      "package-abi-identity-drift",
+      "schema-breaking-change-without-major-line"
+    ],
+    "required_unsupported_claims": [
+      "cross-major forward compatibility",
+      "drop-in legacy ABI compatibility",
+      "indefinite support window",
+      "compatibility shim support",
+      "fallback downgrade route"
+    ],
+    "required_compatibility_transitions": [
+      "public-symbol-removal-without-deprecation-window",
+      "signature-change-without-major-line",
+      "package-abi-identity-drift",
+      "unsupported-downgrade-route"
+    ]
+  }
+}
