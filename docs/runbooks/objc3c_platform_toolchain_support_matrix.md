@@ -5,6 +5,9 @@ at `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidenc
 It defines what may be called supported, what remains unsupported or reserved,
 and which evidence classes are mandatory before a row can move.
 
+Issue evidence for the post-cutover roadmap index and #8177 lives in
+`docs/issues/objc3_next_8153_8179_evidence.md`.
+
 ## Source Of Truth
 
 Checked-in source truth:

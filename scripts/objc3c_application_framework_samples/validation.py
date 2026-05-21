@@ -48,7 +48,6 @@ def build_compile_command(sample: FrameworkSample) -> list[str]:
 def build_public_compile_command_text(sample: FrameworkSample) -> str:
     command = public_workflow_command(
         "compile-objc3c",
-        "--",
         sample.source,
         "--out-dir",
         sample.artifact_root,

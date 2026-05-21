@@ -3,10 +3,12 @@
 This directory contains checked-in Objective-C 3.0 application framework
 samples for issue #8178.
 
-The sample set is intentionally separate from the existing three-example
-showcase portfolio. It gives the application-framework work a real source,
-manifest, and validation surface without widening the established
-`showcase/portfolio.json` contract before support-matrix integration is ready.
+The sample set is a package-aware extension of the existing showcase portfolio.
+`showcase/portfolio.json` routes readers to this manifest, while the
+application-framework capability rows in `docs/support/capability_matrix.json`
+and `docs/support/evidence_map.json` remain the public support authority.
+The local issue evidence pointer for #8178 is
+`docs/issues/objc3_next_8153_8179_evidence.md`.
 
 ## Sample Set
 
@@ -39,7 +41,7 @@ The checker validates `manifest.json`, each workspace manifest, each
 each sample source through:
 
 ```powershell
-npm run objc3c -- compile-objc3c -- <source> --out-dir <sample artifact root> --emit-prefix module
+npm run objc3c -- compile-objc3c <source> --out-dir <sample artifact root> --emit-prefix module
 ```
 
 Outputs are machine-owned under `tmp/artifacts/application-framework-samples/`

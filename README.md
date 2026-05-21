@@ -18,6 +18,8 @@ Canonical roots:
 - `CONTRIBUTING.md`: contributor boundaries and repo hygiene expectations.
 - `docs/tutorials/`: guided setup, migration, and comparison tutorials.
 - `showcase/README.md`: checked-in example portfolio.
+- `showcase/applicationFrameworkSamples/README.md`: package-aware application
+  framework sample libraries and apps.
 - `docs/runbooks/objc3c_public_command_surface.md`: synchronized command
   reference.
 - `docs/support/capability_matrix.json`: machine-readable support truth.
@@ -150,6 +152,13 @@ npm run objc3c -- validate-showcase
 Showcase validation writes machine-owned artifacts under `tmp/artifacts/showcase/`
 and reports under `tmp/reports/showcase/`. The checked-in sources and workspace
 contracts under `showcase/` remain the example inputs.
+
+For package-aware library and application samples, use
+`showcase/applicationFrameworkSamples/README.md` and validate them with:
+
+```powershell
+npm run objc3c -- validate-application-framework-samples
+```
 
 ## Fresh Setup
 

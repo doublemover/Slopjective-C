@@ -12,6 +12,11 @@ This runbook defines the checked-in release-operations surface for objc3c:
 - revert, deprecation, and upgrade-path publication derived from checked-in contracts
 - release-operations validation over the existing release-foundation and packaging-channel outputs
 
+The post-cutover issue evidence page for #8153/#8179 is
+`docs/issues/objc3_next_8153_8179_evidence.md`. It records docs and release-note
+references only; generated release artifacts and release operation scripts remain
+owned by the release proof lane.
+
 This milestone does not add a hosted updater daemon, background auto-update service,
 or package-manager-specific upgrade logic.
 

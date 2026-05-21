@@ -17,6 +17,7 @@ from scripts.objc3c_application_framework_samples.validation import (
 from scripts.objc3c_application_framework_samples.runner import (
     run_framework_sample_validation,
 )
+from scripts.objc3c_tooling.subprocesses import command_text
 from scripts.objc3c_tooling.subprocesses import CommandExecution
 
 
@@ -53,7 +54,8 @@ def test_application_framework_sample_compile_commands_use_public_bridge() -> No
         assert "--out-dir" in command
         assert "--emit-prefix" in command
         public_command = build_public_compile_command_text(sample)
-        assert public_command.startswith("npm run objc3c -- compile-objc3c -- ")
+        assert public_command.startswith("npm run objc3c -- compile-objc3c ")
+        assert public_command == command_text(command)
         assert public_command == sample.public_compile_command
 
 

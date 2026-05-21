@@ -484,6 +484,77 @@ def test_developer_experience_first_run_claim_is_bounded_and_evidence_backed() -
     } <= set(catalog_row["negative_evidence"])
 
 
+def test_platform_and_application_framework_issue_rows_are_support_catalog_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    evidence_map = json.loads(
+        (ROOT / "docs" / "support" / "evidence_map.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    catalog = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "conformance"
+            / "support_claim_runnable_evidence_catalog.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    expected = {
+        "platform.windows-x64.tier1": (
+            "objc3c.behavior.platform.windows-x64-tier1",
+            "npm run objc3c -- build-platform-support-matrix",
+            "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        ),
+        "applications.framework-samples.object-runtime-library": (
+            "objc3c.behavior.application-framework-samples.object-runtime-library",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+        ),
+        "applications.framework-samples.interop-adapter-library": (
+            "objc3c.behavior.application-framework-samples.interop-adapter-library",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+        ),
+        "applications.framework-samples.stdlib-text-collections-cli": (
+            "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+        ),
+        "applications.framework-samples.async-runtime-application": (
+            "objc3c.behavior.application-framework-samples.async-runtime-application",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+        ),
+    }
+    matrix_rows = {row["id"]: row for row in matrix["capabilities"]}
+    evidence_rows = {
+        (
+            row["capability_id"],
+            row.get("support_claim"),
+            row.get("command"),
+            row["path"],
+        )
+        for row in evidence_map["rows"]
+    }
+    catalog_rows = {row["support_claim"]: row for row in catalog["rows"]}
+
+    assert {8177, 8178} <= set(catalog["issue_refs"])
+    for capability_id, (support_claim, command, positive_path) in expected.items():
+        row = matrix_rows[capability_id]
+        assert row["state"] == "implemented"
+        assert row["support_claims"] == [support_claim]
+        assert (capability_id, support_claim, command, positive_path) in evidence_rows
+        catalog_row = catalog_rows[support_claim]
+        assert catalog_row["capability_id"] == capability_id
+        assert catalog_row["runnable_command"] == command
+        assert positive_path in catalog_row["positive_evidence"]
+
+
 def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() -> None:
     matrix = json.loads(
         (ROOT / "docs" / "support" / "capability_matrix.json").read_text(

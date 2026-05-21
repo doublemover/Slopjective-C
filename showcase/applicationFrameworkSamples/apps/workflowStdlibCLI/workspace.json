@@ -24,5 +24,5 @@
   "support_claims": [
     "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
   ],
-  "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
+  "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
 }

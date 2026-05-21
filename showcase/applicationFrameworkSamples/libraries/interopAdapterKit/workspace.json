@@ -21,5 +21,5 @@
   "support_claims": [
     "objc3c.behavior.application-framework-samples.interop-adapter-library"
   ],
-  "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
+  "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
 }

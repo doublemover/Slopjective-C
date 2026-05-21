@@ -13,6 +13,11 @@ They do not create support claims by themselves. A channel may be called
 releasable only after the policy-required release-foundation, update-manifest,
 rollback-proof, and signed-artifact evidence is verified.
 
+The docs/index evidence slice for #8179 is recorded in
+`docs/issues/objc3_next_8153_8179_evidence.md`. That page is limited to
+source-derived release notes, public changelog, and runbook references; release
+publication scripts and manifests stay owned by the release-operations lane.
+
 ## Channel Mechanics
 
 `stable` is the only channel allowed to carry a stable support claim, and only
@@ -39,12 +44,13 @@ metadata before publication can proceed.
 
 ## Operator Check
 
-Run the policy validator before treating channel metadata as releasable:
+Run the public release-operations validator before treating channel metadata as
+releasable:
 
 ```powershell
-python scripts/check_objc3c_release_channel_operations_policy.py
+npm run objc3c -- validate-release-operations
 ```
 
-This check is intentionally narrower than the full release operations workflow:
-it proves the checked-in channel/update/rollback policy and claim boundaries,
-not that a production distribution has been published.
+This check proves the checked-in channel/update/rollback policy and claim
+boundaries through the public command surface. It does not mean a production
+distribution has been published.

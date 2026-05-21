@@ -172,6 +172,31 @@ def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
         "presentation_readme": "showcase/README.md",
     }
     assert payload["demo_packages_manifest"] == "showcase/demo_packages.json"
+    assert payload["application_framework_samples"] == {
+        "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+        "readme": "showcase/applicationFrameworkSamples/README.md",
+        "tutorial": "docs/tutorials/application-framework-samples.md",
+        "validate_action": "validate-application-framework-samples",
+        "validate_command": "npm run objc3c -- validate-application-framework-samples",
+        "sample_ids": [
+            "routeModelKit",
+            "interopAdapterKit",
+            "workflowStdlibCLI",
+            "asyncRuntimeConsole",
+        ],
+        "capability_rows": [
+            "applications.framework-samples.object-runtime-library",
+            "applications.framework-samples.interop-adapter-library",
+            "applications.framework-samples.stdlib-text-collections-cli",
+            "applications.framework-samples.async-runtime-application",
+        ],
+    }
+    for path in (
+        payload["application_framework_samples"]["manifest"],
+        payload["application_framework_samples"]["readme"],
+        payload["application_framework_samples"]["tutorial"],
+    ):
+        assert (ROOT / path).is_file()
 
 
 def test_showcase_demo_packages_publish_reproducible_application_smokes() -> None:

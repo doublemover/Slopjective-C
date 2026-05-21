@@ -12,7 +12,7 @@ protocol requirements, class inheritance, synthesized properties, category
 extension, message dispatch, and typed key-path reflection.
 
 ```powershell
-npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module
 ```
 
 ## interopAdapterKit
@@ -23,7 +23,7 @@ metadata, derive metadata, property behavior, and macro provenance in one
 workspace.
 
 ```powershell
-npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module
 ```
 
 ## workflowStdlibCLI
@@ -33,7 +33,7 @@ runtime-backed stdlib helper surface for text-like counts, byte-span prefixes,
 array windows, and map-entry presence/value access.
 
 ```powershell
-npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module
 ```
 
 ## asyncRuntimeConsole
@@ -43,7 +43,7 @@ concurrency stdlib module, executor annotations, task runtime helpers, executor
 hops, and actor-shaped mailbox behavior.
 
 ```powershell
-npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module
 ```
 
 ## Validate

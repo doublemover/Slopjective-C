@@ -7,6 +7,25 @@
   "machine_report_root": "tmp/reports/showcase",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
   "demo_packages_manifest": "showcase/demo_packages.json",
+  "application_framework_samples": {
+    "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+    "readme": "showcase/applicationFrameworkSamples/README.md",
+    "tutorial": "docs/tutorials/application-framework-samples.md",
+    "validate_action": "validate-application-framework-samples",
+    "validate_command": "npm run objc3c -- validate-application-framework-samples",
+    "sample_ids": [
+      "routeModelKit",
+      "interopAdapterKit",
+      "workflowStdlibCLI",
+      "asyncRuntimeConsole"
+    ],
+    "capability_rows": [
+      "applications.framework-samples.object-runtime-library",
+      "applications.framework-samples.interop-adapter-library",
+      "applications.framework-samples.stdlib-text-collections-cli",
+      "applications.framework-samples.async-runtime-application"
+    ]
+  },
   "public_command_model": {
     "entrypoint_kind": "single-npm-bridge",
     "canonical_template": "npm run objc3c -- <action>",

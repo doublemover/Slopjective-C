@@ -20,5 +20,5 @@
   "support_claims": [
     "objc3c.behavior.application-framework-samples.object-runtime-library"
   ],
-  "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module"
+  "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module"
 }

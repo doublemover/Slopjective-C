@@ -8,7 +8,7 @@
   "public_command_model": {
     "entrypoint_kind": "single-npm-bridge",
     "compile_action": "compile-objc3c",
-    "compile_command_template": "npm run objc3c -- compile-objc3c -- <source> --out-dir <artifact-root>/<sample-id> --emit-prefix module"
+    "compile_command_template": "npm run objc3c -- compile-objc3c <source> --out-dir <artifact-root>/<sample-id> --emit-prefix module"
   },
   "capability_domains": [
     "object-runtime-library",
@@ -38,7 +38,7 @@
         "category-extension",
         "typed-keypath-reflection"
       ],
-      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module"
+      "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module"
     },
     {
       "id": "interopAdapterKit",
@@ -61,7 +61,7 @@
         "macro-provenance",
         "property-behavior"
       ],
-      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
+      "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
     },
     {
       "id": "workflowStdlibCLI",
@@ -87,7 +87,7 @@
         "stdlib:objc3.core",
         "showcase-framework:routeModelKit"
       ],
-      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
+      "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
     },
     {
       "id": "asyncRuntimeConsole",
@@ -113,7 +113,7 @@
         "showcase-framework:routeModelKit",
         "showcase-framework:interopAdapterKit"
       ],
-      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module"
+      "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module"
     }
   ],
   "package_edges": [
