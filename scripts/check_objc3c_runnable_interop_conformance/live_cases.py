@@ -6,16 +6,18 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import check_objc3c_runtime_acceptance as runtime_acceptance
+from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.domains import interop_packaging as runtime_acceptance
+from objc3c_runtime_acceptance.native_binaries import find_clangxx
 from objc3c_tooling.paths import repo_rel
 
 from .constants import ROOT
 
 
-def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
+def collect_live_results() -> tuple[list[CaseResult], str]:
     live_case_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-interop-conformance" / "live-case"
     live_case_root.mkdir(parents=True, exist_ok=True)
-    clangxx = runtime_acceptance.find_clangxx()
+    clangxx = find_clangxx()
     with tempfile.TemporaryDirectory(dir=live_case_root) as tmp_dir:
         run_dir = Path(tmp_dir)
         results = [
@@ -35,7 +37,7 @@ def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
     return results, run_dir_rel
 
 
-def build_live_surfaces(results: list[runtime_acceptance.CaseResult]) -> dict[str, dict[str, Any]]:
+def build_live_surfaces(results: list[CaseResult]) -> dict[str, dict[str, Any]]:
     return {
         "runtime_cross_module_package_interop_source_surface": runtime_acceptance.build_runtime_cross_module_package_interop_source_surface(
             results

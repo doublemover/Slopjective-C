@@ -1,13 +1,13 @@
 {
   "objc_interop_ffi_metadata_interface_preservation": {
     "deterministic": true,
-    "local_foreign_callable_count": 2,
+    "local_foreign_callable_count": 4,
     "runtime_import_artifact_ready": true,
     "separate_compilation_preservation_ready": true
   },
   "objc_interop_foreign_surface_interface_and_module_preservation": {
     "deterministic": true,
-    "local_foreign_callable_count": 2,
+    "local_foreign_callable_count": 4,
     "runtime_import_artifact_ready": true,
     "separate_compilation_preservation_ready": true
   },
@@ -16,14 +16,190 @@
     "cross_module_packaging_ready": true,
     "deterministic": true,
     "header_artifact_relative_path": "module.interop-bridge.h",
-    "local_cpp_name_annotation_count": 2,
-    "local_foreign_callable_count": 2,
-    "local_header_name_annotation_count": 2,
+    "local_cpp_name_annotation_count": 1,
+    "local_foreign_callable_count": 4,
+    "local_header_name_annotation_count": 4,
     "local_import_module_name_count": 1,
     "local_swift_name_annotation_count": 1,
     "module_artifact_relative_path": "module.interop-bridge.modulemap",
     "preservation_replay_key": "ffi-preservation-key",
     "replay_key": "bridge-generation-key",
-    "runtime_generation_ready": true
+    "runtime_generation_ready": true,
+    "bridge_surfaces": [
+      {
+        "language": "c",
+        "surface_id": "c.header-import-export.bridge-provider",
+        "bridge_kind": "c-header",
+        "support_state": "supported",
+        "fail_closed": true,
+        "source_fixture": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+        "source_range": "3:1-3:220",
+        "callable_symbols": [
+          "ffiInbound"
+        ],
+        "abi": {
+          "calling_convention": "c",
+          "alignment": 8,
+          "ownership": "caller-owned-opaque-handle",
+          "error_model": "status-or-nserror-bridge",
+          "async_model": "callback-requires-bridge-metadata",
+          "object_identity": "opaque-handle"
+        },
+        "linkage": {
+          "symbol": "ffiInbound",
+          "symbol_owner": "BridgeProviderKit",
+          "linkage_kind": "external-c-header",
+          "visibility": "public",
+          "header_artifact": "module.interop-bridge.h",
+          "module_artifact": "module.interop-bridge.modulemap"
+        },
+        "evidence_contract": {
+          "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+          "anchors": [
+            "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
+          ],
+          "public_commands": [
+            "npm run objc3c -- validate-interop-conformance"
+          ]
+        }
+      },
+      {
+        "language": "objc2",
+        "surface_id": "objc2.metadata-only.nserror-bridge",
+        "bridge_kind": "objc2-metadata",
+        "support_state": "supported",
+        "fail_closed": true,
+        "source_fixture": "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
+        "source_range": "2:1-4:148",
+        "callable_symbols": [
+          "decodeStatus"
+        ],
+        "abi": {
+          "calling_convention": "objc-message-metadata",
+          "alignment": 8,
+          "ownership": "arc-boundary-explicit",
+          "error_model": "nserror-out-parameter-only",
+          "async_model": "block-callback-requires-metadata",
+          "object_identity": "objc-object-identity-preserved"
+        },
+        "linkage": {
+          "symbol": "decodeStatus",
+          "symbol_owner": "m267_bridge_legality_positive",
+          "linkage_kind": "metadata-only-retired-source-rejected",
+          "visibility": "public",
+          "header_artifact": "module.interop-bridge.h",
+          "module_artifact": "module.interop-bridge.modulemap"
+        },
+        "evidence_contract": {
+          "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+          "anchors": [
+            "tests/tooling/fixtures/native/bridge_legality_positive.objc3"
+          ],
+          "public_commands": [
+            "npm run objc3c -- validate-migration-workflow"
+          ]
+        }
+      },
+      {
+        "language": "swift",
+        "surface_id": "swift.annotation-metadata.swift-name",
+        "bridge_kind": "swift-annotation",
+        "support_state": "supported",
+        "fail_closed": true,
+        "source_fixture": "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3",
+        "source_range": "3:1-3:161",
+        "callable_symbols": [
+          "annotatedBridge"
+        ],
+        "abi": {
+          "calling_convention": "objc-bridge-metadata",
+          "alignment": 8,
+          "ownership": "explicit-bridged-reference",
+          "error_model": "throws-mapped-through-bridge-metadata-only",
+          "async_model": "async-import-reserved-without-runtime-proof",
+          "object_identity": "stable-objc-identity"
+        },
+        "linkage": {
+          "symbol": "SwiftBridge",
+          "symbol_owner": "CppSwiftAnnotationPositive",
+          "linkage_kind": "swift-name-annotation",
+          "visibility": "private",
+          "header_artifact": "module.interop-bridge.h",
+          "module_artifact": "module.interop-bridge.modulemap"
+        },
+        "evidence_contract": {
+          "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+          "anchors": [
+            "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3"
+          ],
+          "public_commands": [
+            "npm run objc3c -- validate-interop-conformance"
+          ]
+        }
+      },
+      {
+        "language": "cpp",
+        "surface_id": "cpp.annotation-metadata.cxx-name",
+        "bridge_kind": "cpp-annotation",
+        "support_state": "supported",
+        "fail_closed": true,
+        "source_fixture": "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3",
+        "source_range": "3:1-3:161",
+        "callable_symbols": [
+          "annotatedBridge"
+        ],
+        "abi": {
+          "calling_convention": "objc-bridge-metadata",
+          "alignment": 16,
+          "ownership": "explicit-raii-boundary-metadata",
+          "error_model": "status-or-nserror-bridge",
+          "async_model": "no-implicit-async-thunks",
+          "object_identity": "stable-opaque-handle"
+        },
+        "linkage": {
+          "symbol": "CppBridge",
+          "symbol_owner": "CppSwiftAnnotationPositive",
+          "linkage_kind": "cxx-name-annotation",
+          "visibility": "public",
+          "header_artifact": "module.interop-bridge.h",
+          "module_artifact": "module.interop-bridge.modulemap"
+        },
+        "evidence_contract": {
+          "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+          "anchors": [
+            "tests/tooling/fixtures/native/cpp_swift_annotation_positive.objc3"
+          ],
+          "public_commands": [
+            "npm run objc3c -- validate-interop-conformance"
+          ]
+        }
+      }
+    ],
+    "unsupported_topologies": [
+      {
+        "topology_id": "objc2-source-compatibility",
+        "public_state": "rejected",
+        "fallback_allowed": false,
+        "diagnostic": "O3INT8165"
+      },
+      {
+        "topology_id": "swift-full-abi-callable-import",
+        "public_state": "rejected",
+        "fallback_allowed": false,
+        "diagnostic": "O3INT8166"
+      },
+      {
+        "topology_id": "cpp-template-instantiation-import",
+        "public_state": "rejected",
+        "fallback_allowed": false,
+        "diagnostic": "O3INT8167"
+      },
+      {
+        "topology_id": "unchecked-abi-alignment-fallback",
+        "public_state": "rejected",
+        "fallback_allowed": false,
+        "diagnostic": "O3PKG8052"
+      }
+    ]
   }
 }
