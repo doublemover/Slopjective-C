@@ -17,6 +17,11 @@
     "current_host",
     "required_tool_probes",
     "claim_boundary",
+    "support_evidence_contract",
+    "platform_support_rows",
+    "toolchain_support",
+    "evidence_records",
+    "support_evidence_ids",
     "publication_surface"
   ],
   "properties": {
@@ -197,6 +202,138 @@
             "type": "string"
           }
         }
+      }
+    },
+    "support_evidence_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "schema_version",
+        "issue",
+        "schema_path",
+        "source_path",
+        "network_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.platform.toolchain.support.evidence.v1"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "issue": {
+          "const": "OBJ3-NEXT-024"
+        },
+        "schema_path": {
+          "const": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+        },
+        "source_path": {
+          "const": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        "network_policy": {
+          "type": "object"
+        }
+      }
+    },
+    "platform_support_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "row_id",
+          "platform_id",
+          "support_state",
+          "claim_class",
+          "evidence"
+        ],
+        "properties": {
+          "row_id": { "type": "string" },
+          "platform_id": { "type": "string" },
+          "support_state": {
+            "enum": [
+              "supported",
+              "unsupported"
+            ]
+          },
+          "claim_class": {
+            "enum": [
+              "supported",
+              "fail-closed"
+            ]
+          },
+          "evidence": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "toolchain_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toolchain_ranges",
+        "sanitizer_variants"
+      ],
+      "properties": {
+        "toolchain_ranges": {
+          "type": "array"
+        },
+        "sanitizer_variants": {
+          "type": "array"
+        }
+      }
+    },
+    "evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "evidence_class",
+          "claim_weight",
+          "source_paths",
+          "replay_commands",
+          "requires_network",
+          "unsupported_host_behavior"
+        ],
+        "properties": {
+          "evidence_id": { "type": "string" },
+          "evidence_class": { "type": "string" },
+          "claim_weight": {
+            "enum": [
+              "supporting",
+              "policy"
+            ]
+          },
+          "source_paths": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "replay_commands": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "requires_network": { "type": "boolean" },
+          "unsupported_host_behavior": {
+            "enum": [
+              "fail-closed",
+              "not-applicable"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "support_evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
       }
     },
     "publication_surface": {

@@ -16,6 +16,10 @@ RUNNABLE_APPLICATION_ARCHITECTURE_GUARANTEE_OWNER = (
     "packaged canonical application workspaces and template harness validation "
     "stay reproducible from the staged runnable toolchain bundle"
 )
+APPLICATION_FRAMEWORK_SAMPLES_GUARANTEE_OWNER = (
+    "application framework samples stay checked-in, package-aware, and "
+    "compiled through the public objc3c workflow surface"
+)
 
 APPLICATION_ARCHITECTURE_ACTION_SPECS: dict[str, ActionSpec] = {
     "materialize-canonical-application-workspace": ActionSpec(
@@ -33,6 +37,13 @@ APPLICATION_ARCHITECTURE_ACTION_SPECS: dict[str, ActionSpec] = {
         validation_tier="repo",
         guarantee_owner=APPLICATION_ARCHITECTURE_GUARANTEE_OWNER,
     ),
+    "validate-application-framework-samples": ActionSpec(
+        "validate-application-framework-samples",
+        "compile and validate the checked application framework sample libraries and apps",
+        "python:scripts/check_objc3c_application_framework_samples.py",
+        validation_tier="repo",
+        guarantee_owner=APPLICATION_FRAMEWORK_SAMPLES_GUARANTEE_OWNER,
+    ),
     "validate-runnable-application-architecture": ActionSpec(
         "validate-runnable-application-architecture",
         "validate packaged canonical application workspace and template surfaces end to end from the staged runnable toolchain bundle",
@@ -45,6 +56,7 @@ APPLICATION_ARCHITECTURE_ACTION_SPECS: dict[str, ActionSpec] = {
 
 __all__ = [
     "APPLICATION_ARCHITECTURE_ACTION_SPECS",
+    "APPLICATION_FRAMEWORK_SAMPLES_GUARANTEE_OWNER",
     "APPLICATION_ARCHITECTURE_GUARANTEE_OWNER",
     "CANONICAL_APPLICATION_WORKSPACE_GUARANTEE_OWNER",
     "RUNNABLE_APPLICATION_ARCHITECTURE_GUARANTEE_OWNER",

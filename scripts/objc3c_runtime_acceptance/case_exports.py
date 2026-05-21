@@ -15,6 +15,10 @@ from objc3c_runtime_acceptance.domains.registration import (
 from objc3c_runtime_acceptance.domains.storage_reflection import (
     check_storage_ownership_reflection_case,
 )
+from objc3c_runtime_acceptance.domains.stdlib_runtime_cases import (
+    check_stdlib_concurrency_runtime_probe_case,
+    check_stdlib_core_runtime_probe_case,
+)
 from objc3c_runtime_acceptance.native_binaries import ensure_native_binaries
 from objc3c_runtime_acceptance.native_binaries import find_clangxx
 
@@ -24,6 +28,8 @@ __all__ = [
     "check_live_dispatch_fast_path_case",
     "check_realization_lookup_reflection_runtime_case",
     "check_storage_ownership_reflection_case",
+    "check_stdlib_concurrency_runtime_probe_case",
+    "check_stdlib_core_runtime_probe_case",
     "ensure_native_binaries",
     "find_clangxx",
 ]

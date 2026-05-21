@@ -3,10 +3,55 @@
   "schema_version": 1,
   "release_blocker_issue_refs": [
     "#8099",
-    "#8100"
+    "#8100",
+    "#8173"
   ],
   "gate_action": "check-release-abi-api-drift",
   "schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
+  "abi_version_taxonomy": {
+    "identity": "objc3-abi-2025Q4",
+    "abi_epoch": "objc3c-foundation-abi-2026q2",
+    "current_major_line": 1,
+    "current_minor_line": 0,
+    "supported_major_lines": [
+      1
+    ],
+    "compatibility_classes": [
+      {
+        "class_id": "stable-public-api",
+        "claim_scope": "same-major public API symbols with checked signatures and deprecation windows",
+        "release_blocker": true
+      },
+      {
+        "class_id": "stable-runtime-abi",
+        "claim_scope": "same-major runtime ABI symbols with checked signatures and owner-approved transitions",
+        "release_blocker": true
+      },
+      {
+        "class_id": "frontend-c-api-exact-abi",
+        "claim_scope": "exact public C ABI version only; no compatibility aliases or downgrade route",
+        "release_blocker": true
+      },
+      {
+        "class_id": "governed-artifact-schema",
+        "claim_scope": "checked compiler and release artifact schema identity with additive same-major transitions only",
+        "release_blocker": true
+      },
+      {
+        "class_id": "package-lockfile-abi",
+        "claim_scope": "generated package lockfiles encode the checked ABI identity before package publication",
+        "release_blocker": true
+      }
+    ],
+    "surface_classes": {
+      "stdlib-public-api": "stable-public-api",
+      "stdlib-runtime-abi": "stable-runtime-abi",
+      "frontend-c-api-helper": "frontend-c-api-exact-abi",
+      "frontend-c-api-type-alias": "frontend-c-api-exact-abi",
+      "compiler-artifact-schema": "governed-artifact-schema",
+      "package-lockfile": "package-lockfile-abi"
+    }
+  },
   "source_manifests": {
     "stdlib_module_inventory": "stdlib/module_inventory.json",
     "stdlib_stability_policy": "stdlib/stability_policy.json",
@@ -42,12 +87,48 @@
         "Objc3ErrorsResultOkTag"
       ]
     },
+    "objc3.text": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_text_"
+      ],
+      "allowed_runtime_prefixes": [
+        "objc3_runtime_stdlib_text_"
+      ],
+      "allowed_public_symbols": [
+        "Objc3TextStatusOk",
+        "Objc3TextStatusInvalidHandle",
+        "Objc3TextStatusInvalidShape",
+        "Objc3TextStatusMalformedUtf8"
+      ]
+    },
+    "objc3.collections": {
+      "required_profile": "Core and above",
+      "allowed_public_prefixes": [
+        "objc3_collections_"
+      ],
+      "allowed_runtime_prefixes": [
+        "objc3_runtime_stdlib_collections_"
+      ],
+      "allowed_public_symbols": [
+        "Objc3CollectionsStatusOk",
+        "Objc3CollectionsStatusInvalidHandle",
+        "Objc3CollectionsStatusOutOfBounds",
+        "Objc3CollectionsStatusInvalidCount",
+        "Objc3CollectionsStatusNotFound"
+      ]
+    },
     "objc3.concurrency": {
       "required_profile": "Core and above",
       "allowed_public_prefixes": [
-        "objc3_concurrency_"
+        "objc3_concurrency_",
+        "objc3_task_",
+        "objc3_executor_",
+        "objc3_actor_"
       ],
-      "allowed_runtime_prefixes": [],
+      "allowed_runtime_prefixes": [
+        "objc3_runtime_"
+      ],
       "allowed_public_symbols": []
     },
     "objc3.keypath": {
@@ -72,6 +153,14 @@
       "module": "objc3.core",
       "manifest": "stdlib/modules/objc3.core/module.json",
       "source": "stdlib/modules/objc3.core/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.core",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
       "symbol_set_field": "exports",
       "signature_field": "abi_signatures",
       "symbols": {
@@ -96,6 +185,14 @@
       "module": "objc3.errors",
       "manifest": "stdlib/modules/objc3.errors/module.json",
       "source": "stdlib/modules/objc3.errors/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.errors",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
       "symbol_set_field": "exports",
       "signature_field": "abi_signatures",
       "symbols": {
@@ -115,9 +212,76 @@
       }
     },
     {
+      "module": "objc3.text",
+      "manifest": "stdlib/modules/objc3.text/module.json",
+      "source": "stdlib/modules/objc3.text/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.text",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "Objc3TextStatusOk": "let Objc3TextStatusOk = 0",
+        "Objc3TextStatusInvalidHandle": "let Objc3TextStatusInvalidHandle = 30641",
+        "Objc3TextStatusInvalidShape": "let Objc3TextStatusInvalidShape = 30642",
+        "Objc3TextStatusMalformedUtf8": "let Objc3TextStatusMalformedUtf8 = 30643",
+        "objc3_text_utf8_literal": "fn objc3_text_utf8_literal(byte_count: i32, unit_count: i32, valid_utf8: i32)",
+        "objc3_text_byte_count": "fn objc3_text_byte_count(handle: i32)",
+        "objc3_text_unit_count": "fn objc3_text_unit_count(handle: i32)",
+        "objc3_text_is_valid_utf8": "fn objc3_text_is_valid_utf8(handle: i32)",
+        "objc3_text_prefix_units": "fn objc3_text_prefix_units(handle: i32, requested_units: i32)",
+        "objc3_text_concat": "fn objc3_text_concat(left_handle: i32, right_handle: i32)",
+        "objc3_text_last_status": "fn objc3_text_last_status()"
+      }
+    },
+    {
+      "module": "objc3.collections",
+      "manifest": "stdlib/modules/objc3.collections/module.json",
+      "source": "stdlib/modules/objc3.collections/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.collections",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
+      "symbol_set_field": "exports",
+      "signature_field": "abi_signatures",
+      "symbols": {
+        "Objc3CollectionsStatusOk": "let Objc3CollectionsStatusOk = 0",
+        "Objc3CollectionsStatusInvalidHandle": "let Objc3CollectionsStatusInvalidHandle = 30631",
+        "Objc3CollectionsStatusOutOfBounds": "let Objc3CollectionsStatusOutOfBounds = 30632",
+        "Objc3CollectionsStatusInvalidCount": "let Objc3CollectionsStatusInvalidCount = 30633",
+        "Objc3CollectionsStatusNotFound": "let Objc3CollectionsStatusNotFound = 30634",
+        "objc3_collections_array3": "fn objc3_collections_array3(first: i32, second: i32, third: i32, count: i32)",
+        "objc3_collections_array_count": "fn objc3_collections_array_count(handle: i32)",
+        "objc3_collections_array_get_or": "fn objc3_collections_array_get_or(handle: i32, index: i32, default_value: i32)",
+        "objc3_collections_array_prefix_count": "fn objc3_collections_array_prefix_count(handle: i32, requested: i32)",
+        "objc3_collections_map_entry": "fn objc3_collections_map_entry(key: i32, value: i32)",
+        "objc3_collections_map_count": "fn objc3_collections_map_count(handle: i32)",
+        "objc3_collections_map_contains": "fn objc3_collections_map_contains(handle: i32, key: i32)",
+        "objc3_collections_map_lookup_or": "fn objc3_collections_map_lookup_or(handle: i32, key: i32, default_value: i32)",
+        "objc3_collections_last_status": "fn objc3_collections_last_status()"
+      }
+    },
+    {
       "module": "objc3.concurrency",
       "manifest": "stdlib/modules/objc3.concurrency/module.json",
       "source": "stdlib/modules/objc3.concurrency/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.concurrency",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
       "symbol_set_field": "exports",
       "signature_field": "abi_signatures",
       "symbols": {
@@ -129,13 +293,30 @@
         "objc3_concurrency_executor_hop_token": "fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32)",
         "objc3_concurrency_join_status": "async fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32) -> i32 __attribute__((objc_executor(global)))",
         "objc3_concurrency_spawn_token": "async fn objc3_concurrency_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(global)))",
-        "objc3_concurrency_task_group_scope_depth": "async fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) -> i32 __attribute__((objc_executor(global)))"
+        "objc3_concurrency_task_group_scope_depth": "async fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_actor_mailbox_send_and_drain": "fn objc3_actor_mailbox_send_and_drain(actor_handle: i32, value: i32, executor_tag: i32)",
+        "objc3_executor_hop": "fn objc3_executor_hop(value: i32, executor_tag: i32)",
+        "objc3_task_cancel_if_needed": "async fn objc3_task_cancel_if_needed(executor_tag: i32, should_cancel: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_group_run_two": "async fn objc3_task_group_run_two(executor_tag: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_is_cancelled": "async fn objc3_task_is_cancelled(executor_tag: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_join": "async fn objc3_task_join(result_code: i32, executor_tag: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_spawn": "async fn objc3_task_spawn(executor_tag: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_spawn_child": "async fn objc3_task_spawn_child(executor_tag: i32) -> i32 __attribute__((objc_executor(global)))",
+        "objc3_task_spawn_detached": "async fn objc3_task_spawn_detached(executor_tag: i32) -> i32 __attribute__((objc_executor(named(\"objc3.concurrency.detached\"))))"
       }
     },
     {
       "module": "objc3.keypath",
       "manifest": "stdlib/modules/objc3.keypath/module.json",
       "source": "stdlib/modules/objc3.keypath/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.keypath",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
       "symbol_set_field": "exports",
       "signature_field": "abi_signatures",
       "symbols": {
@@ -152,6 +333,14 @@
       "module": "objc3.system",
       "manifest": "stdlib/modules/objc3.system/module.json",
       "source": "stdlib/modules/objc3.system/module.objc3",
+      "surface_owner": "stdlib-abi-owner:objc3.system",
+      "compatibility_class": "stable-public-api",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-public-symbol",
+      "release_blocker": true,
       "symbol_set_field": "exports",
       "signature_field": "abi_signatures",
       "symbols": {
@@ -168,6 +357,14 @@
       "module": "objc3.core",
       "manifest": "stdlib/modules/objc3.core/module.json",
       "source": "stdlib/modules/objc3.core/module.objc3",
+      "surface_owner": "runtime-abi-owner:objc3.core",
+      "compatibility_class": "stable-runtime-abi",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-runtime-symbol",
+      "release_blocker": true,
       "symbol_set_field": "runtime_abi",
       "signature_field": "runtime_abi_signatures",
       "symbols": {
@@ -181,12 +378,98 @@
         "objc3_runtime_stdlib_core_prefix_count_i32": "extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32",
         "objc3_runtime_stdlib_core_profile_revision_i32": "extern fn objc3_runtime_stdlib_core_profile_revision_i32() -> i32"
       }
+    },
+    {
+      "module": "objc3.text",
+      "manifest": "stdlib/modules/objc3.text/module.json",
+      "source": "stdlib/modules/objc3.text/module.objc3",
+      "surface_owner": "runtime-abi-owner:objc3.text",
+      "compatibility_class": "stable-runtime-abi",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-runtime-symbol",
+      "release_blocker": true,
+      "symbol_set_field": "runtime_abi",
+      "signature_field": "runtime_abi_signatures",
+      "symbols": {
+        "objc3_runtime_stdlib_text_utf8_literal_i32": "extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32",
+        "objc3_runtime_stdlib_text_byte_count_i32": "extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_text_unit_count_i32": "extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_text_is_valid_utf8_i32": "extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_text_prefix_units_i32": "extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32",
+        "objc3_runtime_stdlib_text_concat_i32": "extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32",
+        "objc3_runtime_stdlib_text_last_status_i32": "extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32"
+      }
+    },
+    {
+      "module": "objc3.collections",
+      "manifest": "stdlib/modules/objc3.collections/module.json",
+      "source": "stdlib/modules/objc3.collections/module.objc3",
+      "surface_owner": "runtime-abi-owner:objc3.collections",
+      "compatibility_class": "stable-runtime-abi",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-runtime-symbol",
+      "release_blocker": true,
+      "symbol_set_field": "runtime_abi",
+      "signature_field": "runtime_abi_signatures",
+      "symbols": {
+        "objc3_runtime_stdlib_collections_array3_i32": "extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, third: i32, count: i32) -> i32",
+        "objc3_runtime_stdlib_collections_array_count_i32": "extern fn objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_array_get_or_i32": "extern fn objc3_runtime_stdlib_collections_array_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_array_prefix_count_i32": "extern fn objc3_runtime_stdlib_collections_array_prefix_count_i32(handle: i32, requested: i32) -> i32",
+        "objc3_runtime_stdlib_collections_map_entry_i32": "extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_map_count_i32": "extern fn objc3_runtime_stdlib_collections_map_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_map_contains_i32": "extern fn objc3_runtime_stdlib_collections_map_contains_i32(handle: i32, key: i32) -> i32",
+        "objc3_runtime_stdlib_collections_map_lookup_or_i32": "extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_last_status_i32": "extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32"
+      }
+    },
+    {
+      "module": "objc3.concurrency",
+      "manifest": "stdlib/modules/objc3.concurrency/module.json",
+      "source": "stdlib/modules/objc3.concurrency/module.objc3",
+      "surface_owner": "runtime-abi-owner:objc3.concurrency",
+      "compatibility_class": "stable-runtime-abi",
+      "introduced_in": "1.0",
+      "minimum_supported_abi": "1.0",
+      "maximum_supported_abi": null,
+      "deprecation_state": "active",
+      "allowed_transition_set": "stable-runtime-symbol",
+      "release_blocker": true,
+      "symbol_set_field": "runtime_abi",
+      "signature_field": "runtime_abi_signatures",
+      "symbols": {
+        "objc3_runtime_actor_bind_executor_i32": "extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32": "extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32": "extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32",
+        "objc3_runtime_add_task_group_task_i32": "extern fn objc3_runtime_add_task_group_task_i32(executor_tag: i32) -> i32",
+        "objc3_runtime_cancel_task_group_i32": "extern fn objc3_runtime_cancel_task_group_i32(executor_tag: i32) -> i32",
+        "objc3_runtime_enter_task_group_scope_i32": "extern fn objc3_runtime_enter_task_group_scope_i32(executor_tag: i32) -> i32",
+        "objc3_runtime_executor_hop_i32": "extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32",
+        "objc3_runtime_spawn_task_i32": "extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32",
+        "objc3_runtime_task_is_cancelled_i32": "extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32",
+        "objc3_runtime_task_on_cancel_i32": "extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32",
+        "objc3_runtime_wait_task_group_next_i32": "extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32"
+      }
     }
   ],
   "frontend_c_api": {
     "helper_contract": "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json",
     "runner_contract": "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
     "public_private_partition_owner": "frontend-c-api-public-private-partition",
+    "surface_owner": "frontend-c-api-abi-owner",
+    "compatibility_class": "frontend-c-api-exact-abi",
+    "introduced_in": "1.0",
+    "minimum_supported_abi": "1.0",
+    "maximum_supported_abi": null,
+    "deprecation_state": "active",
+    "allowed_transition_set": "frontend-c-api-exact",
+    "release_blocker": true,
     "required_helpers": [
       "objc3c_frontend_c_compile_file_owned",
       "objc3c_frontend_c_compile_source_owned",
@@ -244,6 +527,168 @@
       "hard-deprecated",
       "removed"
     ]
+  },
+  "allowed_transition_policy": {
+    "transition_sets": {
+      "stable-public-symbol": [
+        "signature-preserving-patch",
+        "additive-same-major-minor",
+        "deprecate-with-successor-and-warning",
+        "remove-after-hard-deprecated-window-with-replay"
+      ],
+      "stable-runtime-symbol": [
+        "signature-preserving-patch",
+        "additive-same-major-minor",
+        "owner-approved-private-helper-graduation",
+        "remove-after-hard-deprecated-window-with-replay"
+      ],
+      "frontend-c-api-exact": [
+        "exact-abi-version-only",
+        "signature-preserving-patch",
+        "additive-same-major-minor"
+      ],
+      "governed-artifact-schema": [
+        "additive-same-major-schema-field",
+        "same-contract-patch-clarification",
+        "major-line-schema-revision-only"
+      ],
+      "package-lockfile-abi": [
+        "lockfile-identity-match",
+        "same-major-package-metadata-addition",
+        "reject-unsupported-downgrade-route"
+      ]
+    },
+    "release_blocked_transitions": [
+      "public-symbol-removal-without-deprecation-window",
+      "runtime-symbol-removal-without-deprecation-window",
+      "signature-change-without-major-line",
+      "private-helper-graduation-without-policy",
+      "unsupported-upgrade-route",
+      "unsupported-downgrade-route",
+      "package-abi-identity-drift",
+      "schema-breaking-change-without-major-line"
+    ]
+  },
+  "deprecation_lifecycle": {
+    "policy_source": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "public_claim_allowed_states": [
+      "active",
+      "soft-deprecated"
+    ],
+    "public_claim_blocking_states": [
+      "hard-deprecated",
+      "removed"
+    ],
+    "required_warning_classes": {
+      "soft-deprecated": "deprecated-channel",
+      "hard-deprecated": "cross-major-unsupported",
+      "removed": "support-window-expired"
+    },
+    "required_evidence_fields": [
+      "support_window",
+      "deprecation_state",
+      "warning_class",
+      "successor_surface",
+      "conversion_replay_evidence",
+      "revert_evidence"
+    ]
+  },
+  "package_abi_identity": {
+    "package_lock_schema": "schemas/objc3c-package-lock-v1.schema.json",
+    "package_lock_action": "build-package-lock",
+    "package_compatibility_rule": "same-major-line-lockfiles-must-match-governed-abi-identity",
+    "lockfile_abi_identity": {
+      "identity": "objc3-abi-2025Q4",
+      "governance_manifest": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "governance_schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
+      "supported_major_line": 1,
+      "current_minor_line": 0,
+      "compatibility_class": "package-lockfile-abi",
+      "stdlib_public_api_symbol_count": 83,
+      "stdlib_runtime_abi_symbol_count": 36,
+      "frontend_c_api_symbol_count": 33
+    }
+  },
+  "compiler_artifact_compatibility": {
+    "artifact_schema_surfaces": [
+      {
+        "surface_id": "abi-governance-manifest",
+        "schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
+        "identity_path": [
+          "properties",
+          "contract_id",
+          "const"
+        ],
+        "expected_identity": "objc3c.release.foundation.abi_api_governance.v1",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "governed-artifact-schema"
+      },
+      {
+        "surface_id": "release-manifest",
+        "schema": "schemas/objc3c-release-manifest-v1.schema.json",
+        "identity_path": [
+          "properties",
+          "contract_id",
+          "const"
+        ],
+        "expected_identity": "objc3c.release.foundation.manifest.v1",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "governed-artifact-schema"
+      },
+      {
+        "surface_id": "package-lockfile",
+        "schema": "schemas/objc3c-package-lock-v1.schema.json",
+        "identity_path": [
+          "properties",
+          "contract_id",
+          "const"
+        ],
+        "expected_identity": "objc3c.package_ecosystem.lockfile.v1",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "governed-artifact-schema"
+      },
+      {
+        "surface_id": "package-lockfile-abi-identity",
+        "schema": "schemas/objc3c-package-lock-v1.schema.json",
+        "identity_path": [
+          "properties",
+          "package_manager",
+          "properties",
+          "abi_identity",
+          "const"
+        ],
+        "expected_identity": "objc3-abi-2025Q4",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "package-lockfile-abi"
+      },
+      {
+        "surface_id": "objc3-abi-manifest",
+        "schema": "schemas/objc3-abi-2025Q4.schema.json",
+        "identity_path": [
+          "properties",
+          "manifest_schema",
+          "const"
+        ],
+        "expected_identity": "objc3-abi-2025Q4",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "governed-artifact-schema"
+      },
+      {
+        "surface_id": "runtime-abi-manifest",
+        "schema": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+        "identity_path": [
+          "$defs",
+          "runtimeManifest",
+          "properties",
+          "artifact_id",
+          "const"
+        ],
+        "expected_identity": "objc3-runtime-2025Q4",
+        "compatibility_class": "governed-artifact-schema",
+        "allowed_transition_set": "governed-artifact-schema"
+      }
+    ],
+    "required_schema_transition_policy": "schema-breaking-change-without-major-line"
   },
   "private_helper_graduation_records": [],
   "change_policy": {

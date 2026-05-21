@@ -40,6 +40,7 @@ def build_upstream_reports(paths: DistributionCredibilityDashboardPaths) -> dict
     return {
         "release_manifest": repo_rel(paths.release_foundation_manifest),
         "package_channels_end_to_end": repo_rel(paths.package_channels_end_to_end),
+        "package_install_distribution": repo_rel(paths.package_install_distribution_summary),
         "release_operations_publication": repo_rel(paths.release_operations_publication),
         "release_operations_end_to_end": repo_rel(paths.release_operations_end_to_end),
         "release_evidence_index": repo_rel(paths.release_evidence_index),

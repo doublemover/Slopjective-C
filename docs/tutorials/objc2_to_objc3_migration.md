@@ -106,6 +106,36 @@ npm run objc3c -- validate-showcase
 
 That keeps canonicalization teaching tied to the same examples the repo already compiles and runs.
 
+## Step 5 Replay The Checked-In Migration Examples
+
+The migration analyzer has checked-in input and output examples for an ObjC2
+source that touches Swift and C++ bridge boundaries. Use them when you want to
+see what the current migration tooling can safely rewrite and what it leaves as
+manual work.
+
+Analyze the positive example:
+
+```sh
+npm run objc3c -- analyze-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json
+```
+
+Apply the safe rewrite plan to a machine-owned output path:
+
+```sh
+npm run objc3c -- rewrite-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json --output tmp/artifacts/migration-analyzer/objc2-swift-cpp-positive/rewritten.objc3
+```
+
+Validate the positive and fail-closed negative examples together:
+
+```sh
+npm run objc3c -- validate-migration-workflow
+```
+
+The durable source truth for those examples lives under
+`tests/tooling/fixtures/adoption_legibility/`. The analyzer may write reports
+under `tmp/`, but those reports are outputs, not the source of the migration
+claim.
+
 ## Recommended Reading Order
 
 - start with `docs/tutorials/getting_started.md`
@@ -123,6 +153,9 @@ That keeps canonicalization teaching tied to the same examples the repo already 
 - `showcase/auroraBoard/main.objc3`
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
+- `tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json`
+- `tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3`
+- `tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 ## Exact Live Paths For Downstream Work

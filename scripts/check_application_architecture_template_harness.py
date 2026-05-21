@@ -8,6 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_application_materialization.copy_materialization import project_template_paths
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.paths import display_path
@@ -15,8 +20,6 @@ from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 
-
-ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "project_template_workspace_semantics.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "template-harness-summary.json"
 TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
@@ -100,7 +103,7 @@ def main() -> int:
         expect(
             isinstance(contract_refs, dict)
             and contract_refs.get("project_template_workspace")
-            == repo_rel(CONTRACT_PATH),
+            == repo_rel(CONTRACT_PATH, root=ROOT),
             "template manifest did not publish the project template workspace contract",
             failures,
         )
@@ -114,6 +117,33 @@ def main() -> int:
             "template manifest public actions drifted from the canonical template semantics",
             failures,
         )
+        compile_contract = template_payload.get("template_compile_contract")
+        expect(isinstance(compile_contract, dict), "template manifest missing compile contract", failures)
+        if isinstance(compile_contract, dict):
+            expect(
+                compile_contract.get("compile_action") == "compile-objc3c",
+                "template compile contract action drifted",
+                failures,
+            )
+            expect(
+                compile_contract.get("source") == "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+                "template compile contract source drifted",
+                failures,
+            )
+            expect(
+                compile_contract.get("artifact_root") == "tmp/artifacts/project-template/auroraBoard/build",
+                "template compile artifact root drifted",
+                failures,
+            )
+            command = compile_contract.get("public_command")
+            expect(
+                isinstance(command, str)
+                and command.startswith("npm run objc3c -- compile-objc3c ")
+                and "--out-dir tmp/artifacts/project-template/auroraBoard/build" in command
+                and "--emit-prefix module" in command,
+                "template compile contract command is not copyable",
+                failures,
+            )
         expect(
             template_payload.get("tutorial_guides")
             == [
@@ -132,6 +162,21 @@ def main() -> int:
             failures,
         )
         expect(harness_payload.get("ok") is True, "template harness reported ok=false", failures)
+        compile_step = harness_payload.get("compile_step")
+        expect(isinstance(compile_step, dict), "template harness missing compile_step", failures)
+        if isinstance(compile_step, dict):
+            expect(
+                compile_step.get("name") == "compile-template-source",
+                "template harness compile step name drifted",
+                failures,
+            )
+            expect(compile_step.get("exit_code") == 0, "template harness compile step failed", failures)
+            command = compile_step.get("command")
+            expect(
+                isinstance(command, list) and "compile-objc3c" in command,
+                "template harness compile command missing",
+                failures,
+            )
         for field in ("integration_report", "playground_workspace", "benchmark_report"):
             value = harness_payload.get(field)
             expect(isinstance(value, str) and bool(value), f"template harness missing {field}", failures)
@@ -141,7 +186,7 @@ def main() -> int:
     payload = {
         "contract_id": "objc3c.application.architecture.testing.template_harness.summary.v1",
         "status": "PASS" if not failures else "FAIL",
-        "template_workspace_contract": repo_rel(CONTRACT_PATH),
+        "template_workspace_contract": repo_rel(CONTRACT_PATH, root=ROOT),
         "template_path": template_path_text,
         "harness_path": harness_path_text,
         "template_contract_id": template_payload.get("contract_id"),
@@ -151,7 +196,7 @@ def main() -> int:
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH, root=ROOT)}")
     print("application-architecture-template-harness: PASS" if not failures else "application-architecture-template-harness: FAIL")
     return 0 if not failures else 1
 

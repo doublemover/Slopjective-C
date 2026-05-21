@@ -60,6 +60,9 @@ def workspace_drill_commands(
         "artifact_inspector": f"Get-Content -Raw '{artifact_inspector_path}'"
         if artifact_inspector_path
         else "",
+        "runtime_debug_trace": str(
+            debug_payload.get("runtime_debug_trace_command", "")
+        ),
         "object_symbol_inventory": str(
             debug_payload.get("object_symbol_inventory_command", "")
         ),

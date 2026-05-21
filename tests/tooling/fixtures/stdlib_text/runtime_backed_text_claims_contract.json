@@ -2,43 +2,57 @@
   "schema_version": 1,
   "contract_id": "objc3c.stdlib.text.runtime_backed_claims.v1",
   "issue_ref": 8162,
-  "scope": "bounded-runtime-backed-text-groundwork",
+  "scope": "runtime-backed-objc3-text-module",
   "source_truth": [
-    "stdlib/modules/objc3.core/module.json",
+    "stdlib/modules/objc3.text/module.json",
+    "stdlib/modules/objc3.text/module.objc3",
+    "stdlib/modules/objc3.text/smoke.objc3",
     "stdlib/semantic_policy.json",
-    "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-    "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
-    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
-    "native/objc3c/src/runtime/strings/borrowed_string.cpp",
-    "native/objc3c/src/runtime/public/objc3_runtime_string_contract.h"
+    "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+    "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+    "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+    "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+    "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h"
   ],
   "claims": [
     {
       "support_claim": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
       "capability_id": "stdlib.text.string-view-runtime-shape",
-      "module": "objc3.core",
-      "api_family": "string-view",
+      "module": "objc3.text",
+      "api_family": "utf8-text-record",
       "exports": [
-        "objc3_core_string_view_length",
-        "objc3_core_string_view_prefix_units"
+        "objc3_text_utf8_literal",
+        "objc3_text_unit_count",
+        "objc3_text_is_valid_utf8",
+        "objc3_text_prefix_units",
+        "objc3_text_concat",
+        "objc3_text_last_status"
       ],
       "runtime_abi": [
-        "objc3_runtime_stdlib_core_count_i32",
-        "objc3_runtime_stdlib_core_prefix_count_i32"
+        "objc3_runtime_stdlib_text_utf8_literal_i32",
+        "objc3_runtime_stdlib_text_unit_count_i32",
+        "objc3_runtime_stdlib_text_is_valid_utf8_i32",
+        "objc3_runtime_stdlib_text_prefix_units_i32",
+        "objc3_runtime_stdlib_text_concat_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
       ],
       "semantic_policy_keys": [
-        "string_view_length",
-        "string_view_prefix_units"
+        "utf8_literal_record",
+        "unit_count",
+        "valid_utf8",
+        "prefix_units",
+        "concat"
       ],
       "supported_now": [
-        "string-view length helper applies a zero floor to negative unit counts",
-        "string-view prefix helper clamps source and requested unit counts through the runtime ABI"
+        "runtime-owned UTF-8 text records are created only for valid byte/unit shapes and a valid UTF-8 flag",
+        "unit counts, UTF-8 validity, prefix clamping, concatenation, and status reporting are routed through the objc3.text runtime ABI",
+        "invalid handles, malformed UTF-8 flags, and invalid byte/unit shapes fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
-        "string literals",
-        "owned string storage",
-        "UTF-8 validation",
+        "source-language string literal syntax ownership beyond the lowered UTF-8 metadata helper",
         "Unicode scalar iteration",
+        "normalization and collation",
         "formatting and interpolation",
         "NSString bridging"
       ]
@@ -46,26 +60,32 @@
     {
       "support_claim": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
       "capability_id": "stdlib.text.byte-span-runtime-shape",
-      "module": "objc3.core",
-      "api_family": "byte-span",
+      "module": "objc3.text",
+      "api_family": "text-length",
       "exports": [
-        "objc3_core_bytes_span_length",
-        "objc3_core_bytes_span_prefix_length"
+        "objc3_text_utf8_literal",
+        "objc3_text_byte_count",
+        "objc3_text_prefix_units",
+        "objc3_text_last_status"
       ],
       "runtime_abi": [
-        "objc3_runtime_stdlib_core_count_i32",
-        "objc3_runtime_stdlib_core_prefix_count_i32"
+        "objc3_runtime_stdlib_text_utf8_literal_i32",
+        "objc3_runtime_stdlib_text_byte_count_i32",
+        "objc3_runtime_stdlib_text_prefix_units_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
       ],
       "semantic_policy_keys": [
-        "byte_span_length",
-        "byte_span_prefix_length"
+        "utf8_literal_record",
+        "byte_count",
+        "prefix_units"
       ],
       "supported_now": [
-        "byte-span length helper applies a zero floor to negative byte counts",
-        "byte-span prefix helper clamps source and requested byte counts through the runtime ABI"
+        "byte counts are runtime-owned text record metadata queried through objc3_runtime_stdlib_text_byte_count_i32",
+        "prefix queries clamp requested units against the runtime-owned unit count with an explicit zero floor",
+        "invalid handles and invalid byte/unit record shapes fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
-        "byte buffer ownership",
+        "mutable byte buffer ownership",
         "encoding conversion",
         "slice mutation",
         "iteration protocol",
@@ -74,10 +94,10 @@
     }
   ],
   "non_goals": [
-    "string literal support claims",
-    "owned string or byte storage claims",
     "Unicode normalization or collation claims",
     "locale-sensitive formatting claims",
-    "Foundation compatibility promises"
+    "Objective-C Foundation compatibility promises",
+    "mutable byte or string storage APIs",
+    "widening objc3.core helper claims into objc3.text without the dedicated module contract"
   ]
 }

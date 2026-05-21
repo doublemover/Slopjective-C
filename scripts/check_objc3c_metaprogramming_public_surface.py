@@ -7,6 +7,9 @@ import re
 from pathlib import Path
 from typing import Any
 
+from objc3c_macro_expansion_artifact_ownership import (
+    validate_macro_expansion_artifact_ownership,
+)
 from objc3c_tooling.json_io import load_json_object, write_json_file
 from objc3c_tooling.paths import repo_rel
 
@@ -501,10 +504,25 @@ def build_summary() -> dict[str, Any]:
     _validate_derive_surface(contract, checks, failures)
     _validate_property_surface(contract, checks, failures)
     _validate_macro_surface(contract, registry, checks, failures)
+    artifact_ownership_result = validate_macro_expansion_artifact_ownership()
+    _record(
+        checks,
+        failures,
+        "macro_expansion_artifact_ownership",
+        artifact_ownership_result.passed,
+        "macro expansion artifact ownership contract validation failed",
+    )
+    failures.extend(
+        f"macro expansion artifact ownership: {failure}"
+        for failure in artifact_ownership_result.failures
+    )
 
     return {
         "contract_id": SUMMARY_CONTRACT_ID,
         "source_contract_id": contract["contract_id"],
+        "artifact_ownership_contract_id": artifact_ownership_result.payload[
+            "source_contract_id"
+        ],
         "status": "PASS" if not failures else "FAIL",
         "issue_ref": contract["issue_ref"],
         "public_command": contract["public_command"],
@@ -523,6 +541,12 @@ def build_summary() -> dict[str, Any]:
             "macro_positive_fixtures": len(
                 contract["macro_safety_surface"]["positive_fixture_paths"]
             ),
+            "artifact_ownership_required_fields": artifact_ownership_result.payload[
+                "required_field_count"
+            ],
+            "artifact_ownership_fail_closed_cases": artifact_ownership_result.payload[
+                "fail_closed_case_count"
+            ],
         },
         "checks": checks,
         "failures": failures,

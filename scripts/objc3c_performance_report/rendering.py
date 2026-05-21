@@ -20,6 +20,14 @@ def render_markdown_report(model: PerformanceReportModel) -> str:
     markdown_lines.extend(f"- {line}" for line in model.summary_lines)
     markdown_lines.extend(["", "## Evidence", ""])
     markdown_lines.extend(f"- `{path}`" for path in model.evidence_paths)
+    runtime_contract_evidence = model.runtime_contract_evidence
+    markdown_lines.extend(["", "## Runtime Contract Evidence", ""])
+    markdown_lines.append(f"- Status: `{runtime_contract_evidence.get('status', 'MISSING')}`")
+    markdown_lines.append(
+        f"- Support authority: `{str(runtime_contract_evidence.get('support_authority') is True).lower()}`"
+    )
+    for path in runtime_contract_evidence.get("contract_paths", []):
+        markdown_lines.append(f"- `{path}`")
     markdown_lines.extend(["", "## Policy Contracts", ""])
     markdown_lines.extend(
         f"- `{name}`: `{contract_id}`"

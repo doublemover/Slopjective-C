@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "case_id": "runtime-dispatch-link-rejection",
+  "stable_diagnostic": {
+    "code": "link.unresolved_symbol"

@@ -29,6 +29,11 @@ def assert_project_template_manifest_payload(payload: dict[str, Any]) -> None:
         "project_template_workspace": "contracts/workspace.json",
         "canonical_application_architecture": "contracts/canonical.json",
     }
+    assert payload["template_compile_contract"]["compile_action"] == "compile-objc3c"
+    assert payload["template_compile_contract"]["artifact_root"] == (
+        "tmp/artifacts/project-template/auroraBoard/build"
+    )
+    assert "compile-objc3c" in payload["public_actions"]
 
 
 def assert_stdlib_workspace_summary_payload(payload: dict[str, Any]) -> None:

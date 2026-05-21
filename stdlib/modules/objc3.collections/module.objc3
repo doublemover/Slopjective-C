@@ -1,0 +1,53 @@
+module objc3_collections;
+
+extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array_prefix_count_i32(handle: i32, requested: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_contains_i32(handle: i32, key: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32;
+
+let Objc3CollectionsStatusOk = 0;
+let Objc3CollectionsStatusInvalidHandle = 30631;
+let Objc3CollectionsStatusOutOfBounds = 30632;
+let Objc3CollectionsStatusInvalidCount = 30633;
+let Objc3CollectionsStatusNotFound = 30634;
+
+fn objc3_collections_array3(first: i32, second: i32, third: i32, count: i32) {
+  return objc3_runtime_stdlib_collections_array3_i32(first, second, third, count);
+}
+
+fn objc3_collections_array_count(handle: i32) {
+  return objc3_runtime_stdlib_collections_array_count_i32(handle);
+}
+
+fn objc3_collections_array_get_or(handle: i32, index: i32, default_value: i32) {
+  return objc3_runtime_stdlib_collections_array_get_or_i32(handle, index, default_value);
+}
+
+fn objc3_collections_array_prefix_count(handle: i32, requested: i32) {
+  return objc3_runtime_stdlib_collections_array_prefix_count_i32(handle, requested);
+}
+
+fn objc3_collections_map_entry(key: i32, value: i32) {
+  return objc3_runtime_stdlib_collections_map_entry_i32(key, value);
+}
+
+fn objc3_collections_map_count(handle: i32) {
+  return objc3_runtime_stdlib_collections_map_count_i32(handle);
+}
+
+fn objc3_collections_map_contains(handle: i32, key: i32) {
+  return objc3_runtime_stdlib_collections_map_contains_i32(handle, key);
+}
+
+fn objc3_collections_map_lookup_or(handle: i32, key: i32, default_value: i32) {
+  return objc3_runtime_stdlib_collections_map_lookup_or_i32(handle, key, default_value);
+}
+
+fn objc3_collections_last_status() {
+  return objc3_runtime_stdlib_collections_last_status_i32();
+}

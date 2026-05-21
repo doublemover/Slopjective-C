@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-runtime-debug-trace-v1.schema.json",
+  "title": "objc3c Runtime Debug Trace",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_id",
+    "schema_version",
+    "schema_path",
+    "source_path",
+    "ok",
+    "failures",
+    "trace_model",
+    "inputs",
+    "artifacts",
+    "source_mapping",
+    "runtime_inspection",
+    "trace_lanes",
+    "support_boundary",
+    "event_sequence",
+    "event_counts",
+    "determinism",
+    "inspection_commands",
+    "support_handoff",
+    "steps"
+  ],
+  "properties": {
+    "contract_id": {"const": "objc3c.runtime.debug.trace.v1"},
+    "schema_id": {"const": "objc3c-runtime-debug-trace-v1"},
+    "schema_version": {"const": 1},
+    "schema_path": {"type": "string"},
+    "source_path": {"type": "string"},
+    "ok": {"type": "boolean"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "trace_model": {"type": "string"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label", "path", "available", "size_bytes", "sha256"],
+        "properties": {
+          "label": {"type": "string"},
+          "path": {"type": "string"},
+          "available": {"type": "boolean"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifacts": {"type": "object"},
+    "source_mapping": {
+      "type": "object",
+      "required": [
+        "model",
+        "full_source_map_status",
+        "statement_level_stepping",
+        "declaration_anchor_count",
+        "anchors"
+      ],
+      "properties": {
+        "model": {"type": "string"},
+        "full_source_map_status": {"type": "string"},
+        "statement_level_stepping": {"type": "boolean"},
+        "declaration_anchor_count": {"type": "integer", "minimum": 0},
+        "anchors": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "runtime_inspection": {"type": "object"},
+    "trace_lanes": {
+      "type": "object",
+      "required": [
+        "object_inspection",
+        "message_send_trace",
+        "source_to_artifact_mapping",
+        "async_task_inspection",
+        "error_unwind_trace",
+        "lldb_plugin"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "support_class"],
+        "properties": {
+          "status": {"enum": ["supported", "reserved", "rejected", "internal"]},
+          "support_class": {"type": "string"},
+          "scope": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "support_boundary": {
+      "type": "object",
+      "required": [
+        "debug_metadata_public_abi",
+        "runtime_debug_surfaces",
+        "lldb_plugin_status",
+        "source_map_supported",
+        "statement_level_stepping",
+        "statement_level_stepping_status",
+        "debugger_model"
+      ],
+      "properties": {
+        "debug_metadata_public_abi": {"const": false},
+        "runtime_debug_surfaces": {"type": "string"},
+        "lldb_plugin_status": {"type": "string"},
+        "source_map_supported": {"type": "boolean"},
+        "statement_level_stepping": {"const": false},
+        "statement_level_stepping_status": {"type": "string"},
+        "debugger_model": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "event_sequence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ordinal",
+          "event_id",
+          "phase",
+          "domain",
+          "event_kind",
+          "subject",
+          "deterministic",
+          "attributes"
+        ],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 0},
+          "event_id": {"type": "string"},
+          "phase": {"type": "string"},
+          "domain": {"type": "string"},
+          "event_kind": {"type": "string"},
+          "subject": {"type": "string"},
+          "deterministic": {"const": true},
+          "attributes": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "event_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "determinism": {
+      "type": "object",
+      "required": ["ordering", "trace_digest", "digest_excludes"],
+      "properties": {
+        "ordering": {"type": "string"},
+        "trace_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "digest_excludes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "inspection_commands": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "support_handoff": {
+      "type": "object",
+      "required": ["capability_rows", "evidence_ids"],
+      "properties": {
+        "capability_rows": {"type": "array", "items": {"type": "object"}},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "steps": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}

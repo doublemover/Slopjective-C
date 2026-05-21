@@ -248,14 +248,14 @@
     {
       "claim_id": "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
       "owner_phase": "runtime",
-      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-      "executable_command": "npm run objc3c -- test-execution-smoke"
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
       "claim_id": "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
       "owner_phase": "runtime",
-      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-      "executable_command": "npm run objc3c -- test-execution-smoke"
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
       "claim_id": "objc3c.behavior.stdlib.concurrency-runtime-v1",
@@ -290,14 +290,14 @@
     {
       "claim_id": "objc3c.behavior.stdlib.text.string-view-runtime-shape",
       "owner_phase": "runtime",
-      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-      "executable_command": "npm run objc3c -- test-execution-smoke"
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
       "claim_id": "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
       "owner_phase": "runtime",
-      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-      "executable_command": "npm run objc3c -- test-execution-smoke"
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
       "claim_id": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
@@ -336,10 +336,88 @@
       "executable_command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
     },
     {
+      "claim_id": "objc3c.behavior.tooling.first-run-product-path",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
+      "executable_command": "npm run objc3c -- validate-getting-started"
+    },
+    {
       "claim_id": "objc3c.behavior.conformance.public-stable-suite",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/conformance/public_suite_manifest.json",
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.manager-local-registry",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-package-manager-model"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.install-clean-distribution",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+      "executable_command": "npm run objc3c -- validate-package-install-distribution"
+    },
+    {
+      "claim_id": "objc3c.behavior.release.abi-stability-governance",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "executable_command": "npm run objc3c -- check-release-abi-api-drift"
+    },
+    {
+      "claim_id": "objc3c.behavior.release.channel-operations",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+      "executable_command": "npm run objc3c -- validate-release-operations-end-to-end"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.public-reflection-api",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+      "executable_command": "npm run objc3c -- validate-public-runtime-reflection-api"
+    },
+    {
+      "claim_id": "objc3c.behavior.semantic_optimization_pipeline",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+      "executable_command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.debug_trace",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "executable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
+      "claim_id": "objc3c.behavior.platform.windows-x64-tier1",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "executable_command": "npm run objc3c -- build-platform-support-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.application-framework-samples.object-runtime-library",
+      "owner_phase": "e2e",
+      "behavior_fixture": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+      "executable_command": "npm run objc3c -- validate-application-framework-samples"
+    },
+    {
+      "claim_id": "objc3c.behavior.application-framework-samples.interop-adapter-library",
+      "owner_phase": "e2e",
+      "behavior_fixture": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+      "executable_command": "npm run objc3c -- validate-application-framework-samples"
+    },
+    {
+      "claim_id": "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
+      "owner_phase": "e2e",
+      "behavior_fixture": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+      "executable_command": "npm run objc3c -- validate-application-framework-samples"
+    },
+    {
+      "claim_id": "objc3c.behavior.application-framework-samples.async-runtime-application",
+      "owner_phase": "e2e",
+      "behavior_fixture": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+      "executable_command": "npm run objc3c -- validate-application-framework-samples"
     }
   ],
   "fixtures": [
@@ -878,6 +956,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -940,6 +1026,30 @@
       "behavior_family": "generics",
       "fixture_kind": "diagnostic_negative",
       "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_await_outside_async.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S223"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_executor_on_sync_function.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S224"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_conflicting_capture_ownership.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "ownership",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S301"
     },
     {
       "path": "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
@@ -1250,6 +1360,158 @@
       "behavior_family": "public-conformance",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "release-governance",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "release-operations",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "public-reflection-api",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "semantic-optimization",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "runtime-debug-trace",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "platform-support",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "application-framework-samples",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "application-framework-samples",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "application-framework-samples",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "application-framework-samples",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "developer-experience",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "developer-experience",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "developer-experience",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3M210"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S206"
     }
   ]
 }

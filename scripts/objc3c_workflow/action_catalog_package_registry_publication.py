@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from .action_catalog_package_lock_contracts import (
     PACKAGE_LOCK_ARTIFACT_PATH,
     PACKAGE_LOCK_SCHEMA,
+    PACKAGE_MANIFEST_ARTIFACT_ROOT,
+    PACKAGE_MANIFEST_SCHEMA,
 )
 from .action_catalog_package_public_workflows import (
     PackagePublicWorkflowAction,
@@ -83,13 +85,14 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
             "offline mirror and local registry metadata stay lock-derived, "
             "no-network, and fail closed for unsupported hosted-registry claims"
         ),
-        schema_contracts=(PACKAGE_LOCK_SCHEMA, PACKAGE_OFFLINE_MIRROR_SCHEMA),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA, PACKAGE_OFFLINE_MIRROR_SCHEMA),
         source_paths=(
             "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
             "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
         ),
         generated_paths=(
             PACKAGE_LOCK_ARTIFACT_PATH,
+            PACKAGE_MANIFEST_ARTIFACT_ROOT,
             PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
             PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
             PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,

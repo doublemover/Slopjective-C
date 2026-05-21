@@ -9,8 +9,12 @@ from objc3c_type_semantic_model_closure.cross_module import write_drifted_protoc
 from objc3c_type_semantic_model_closure.paths import COMPILER
 from objc3c_type_semantic_model_closure.paths import GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import GENERIC_VARIANCE_POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import LANGUAGE_SEMANTICS_AWAIT_OUTSIDE_ASYNC_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import LANGUAGE_SEMANTICS_CONFLICTING_CAPTURE_OWNERSHIP_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import LANGUAGE_SEMANTICS_EXECUTOR_ON_SYNC_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
 from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_POSITIVE_FIXTURE
@@ -58,6 +62,12 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         PROTOCOL_GENERIC_POSITIVE_FIXTURE,
         TMP_ROOT / "positive-protocol-generic",
     )
+    generic_method_substitution_positive_run = run_compiler(
+        ROOT,
+        COMPILER,
+        GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE,
+        TMP_ROOT / "positive-generic-method-substitution",
+    )
     protocol_category_positive_run = run_compiler(
         ROOT,
         COMPILER,
@@ -86,6 +96,7 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         "nested_generic_positive_run": nested_generic_positive_run,
         "generic_variance_positive_run": generic_variance_positive_run,
         "protocol_generic_positive_run": protocol_generic_positive_run,
+        "generic_method_substitution_positive_run": generic_method_substitution_positive_run,
         "protocol_category_positive_run": protocol_category_positive_run,
         "cross_module_nullability_consumer_run": run_compiler(
             ROOT,
@@ -144,6 +155,9 @@ def compile_runtime_runs() -> dict[str, dict[str, Any]]:
         "nested_generic_constraint_violation_negative_run": run_compiler(ROOT, COMPILER, NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation"),
         "generic_invariant_assignment_negative_run": run_compiler(ROOT, COMPILER, GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-invariant-assignment"),
         "protocol_generic_unknown_protocol_negative_run": run_compiler(ROOT, COMPILER, PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-generic-unknown-protocol"),
+        "language_semantics_await_outside_async_negative_run": run_compiler(ROOT, COMPILER, LANGUAGE_SEMANTICS_AWAIT_OUTSIDE_ASYNC_NEGATIVE_FIXTURE, TMP_ROOT / "negative-language-semantics-await-outside-async"),
+        "language_semantics_executor_on_sync_negative_run": run_compiler(ROOT, COMPILER, LANGUAGE_SEMANTICS_EXECUTOR_ON_SYNC_NEGATIVE_FIXTURE, TMP_ROOT / "negative-language-semantics-executor-on-sync"),
+        "language_semantics_conflicting_capture_ownership_negative_run": run_compiler(ROOT, COMPILER, LANGUAGE_SEMANTICS_CONFLICTING_CAPTURE_OWNERSHIP_NEGATIVE_FIXTURE, TMP_ROOT / "negative-language-semantics-conflicting-capture-ownership"),
     }
 
 

@@ -23,6 +23,7 @@ REPORT_PATHS = {
     "capability_explorer": PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json",
     "runtime_inspector_benchmark": PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-inspector-benchmark.json",
     "compile_stage_trace": PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json",
+    "runtime_debug_trace": PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-debug-trace.json",
     "editor_surface": EDITOR_SURFACE_PATH,
     "formatter_debug_summary": FORMATTER_DEBUG_SUMMARY_PATH,
     "formatter_rewrite_summary": FORMATTER_REWRITE_SUMMARY_PATH,

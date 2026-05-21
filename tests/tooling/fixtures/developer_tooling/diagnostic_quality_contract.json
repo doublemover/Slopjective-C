@@ -5,6 +5,7 @@
   "issues": [
     8075,
     8076,
+    8157,
     8169
   ],
   "summary_implementation_anchor": "scripts/check_developer_tooling_diagnostic_quality.py",
@@ -16,7 +17,8 @@
     "OBJC3-D-CONC-MISSING-AWAIT",
     "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
     "OBJC3-D-ERROR-MISSING-TRY",
-    "O3C004"
+    "O3C004",
+    "O3P104"
   ],
   "required_recovery_case_ids": [
     "OBJ3-NEXT-016-PARSE-RECOVERY-01",

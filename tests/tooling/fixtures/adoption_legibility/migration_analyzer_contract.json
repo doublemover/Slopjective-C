@@ -8,7 +8,9 @@
     "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json",
     "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_negative.json",
     "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_positive.m",
-    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m"
+    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m",
+    "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3",
+    "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json"
   ],
   "public_actions": [
     "analyze-migration-source",
@@ -28,6 +30,7 @@
     "O3M003",
     "O3M005",
     "O3M010",
+    "O3M016",
     "O3M017",
     "O3M101",
     "O3M102",
@@ -70,6 +73,12 @@
       "category": "surface-contract",
       "explanation": "Required migration surfaces are absent from the request.",
       "next_step": "Add every required surface before rerunning analysis."
+    },
+    {
+      "code": "O3M016",
+      "category": "foreign-interface",
+      "explanation": "A foreign interface entry has no symbol list to validate.",
+      "next_step": "List at least one non-empty foreign symbol."
     },
     {
       "code": "O3M017",

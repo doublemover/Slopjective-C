@@ -26,6 +26,13 @@
       "blocks_publication": true
     },
     {
+      "diagnostic_id": "nightly-release-evidence-missing",
+      "severity": "error",
+      "trigger": "nightly channel lacks source-derived release evidence or rollback proof",
+      "required_action": "block nightly channel publication until channel manifest provenance and rollback safety are generated",
+      "blocks_publication": true
+    },
+    {
       "diagnostic_id": "deprecated-channel-selected",
       "severity": "warn",
       "trigger": "requested channel is outside its support window",
@@ -40,6 +47,7 @@
   "forbidden_behaviors": [
     "silent cross-major upgrade",
     "warning-free preview promotion",
+    "nightly promoted as stable support",
     "revert path omission",
     "runtime alternate-path publication",
     "data-format alternate-path publication"

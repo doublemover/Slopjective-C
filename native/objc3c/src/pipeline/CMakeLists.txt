@@ -240,6 +240,7 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface_owners.h
   objc3_lowering_pipeline_pass_graph_core_feature_surface_owners.h
   objc3_lowering_pipeline_pass_graph_scaffold_owners.h
+  objc3_semantic_optimization_pipeline.h
   objc3_ownership_aware_lowering_behavior_scaffold_owners.h
   objc3_parse_lowering_readiness_surface.h
   objc3_runtime_import_surface.h
@@ -314,6 +315,7 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_pipeline_pass_graph_scaffold_keys.cpp
   objc3_lowering_pipeline_pass_graph_scaffold.cpp
   objc3_lowering_pipeline_pass_graph_scaffold_readiness_publication.cpp
+  objc3_semantic_optimization_pipeline.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_contract.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_evidence.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_failure_reasons.cpp

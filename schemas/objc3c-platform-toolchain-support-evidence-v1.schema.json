@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+  "title": "objc3c Platform And Toolchain Support Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "issue",
+    "schema_path",
+    "source_path",
+    "owner_policy",
+    "network_policy",
+    "support_rows",
+    "toolchain_ranges",
+    "sanitizer_variants",
+    "evidence_records"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.platform.toolchain.support.evidence.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "issue": {
+      "const": "OBJ3-NEXT-024"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+    },
+    "source_path": {
+      "const": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+    },
+    "owner_policy": {
+      "type": "object"
+    },
+    "network_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_claims_require_live_network",
+        "network_unavailable_result",
+        "unsupported_host_result"
+      ],
+      "properties": {
+        "support_claims_require_live_network": {
+          "type": "boolean"
+        },
+        "network_unavailable_result": {
+          "const": "skip-no-support-claim"
+        },
+        "unsupported_host_result": {
+          "const": "fail-closed"
+        }
+      }
+    },
+    "support_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/supportRow"
+      }
+    },
+    "toolchain_ranges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/toolchainRange"
+      }
+    },
+    "sanitizer_variants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sanitizerVariant"
+      }
+    },
+    "evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidenceRecord"
+      }
+    }
+  },
+  "$defs": {
+    "supportRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "platform_id",
+        "host_os",
+        "host_arch",
+        "support_state",
+        "claim_class",
+        "tier_id",
+        "evidence",
+        "diagnostic"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string"
+        },
+        "platform_id": {
+          "type": "string"
+        },
+        "host_os": {
+          "type": "string"
+        },
+        "host_arch": {
+          "type": "string"
+        },
+        "support_state": {
+          "enum": [
+            "supported",
+            "unsupported"
+          ]
+        },
+        "claim_class": {
+          "enum": [
+            "supported",
+            "fail-closed"
+          ]
+        },
+        "tier_id": {
+          "type": "string"
+        },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "toolchain_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hosted_ci_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "local_clean_room_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failure_id": {
+          "type": "string"
+        },
+        "diagnostic": {
+          "type": "string"
+        }
+      }
+    },
+    "toolchainRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toolchain_id",
+        "component",
+        "platform_ids",
+        "claim_state",
+        "range_claim",
+        "evidence_ids",
+        "unsupported_version_behavior"
+      ],
+      "properties": {
+        "toolchain_id": {
+          "type": "string"
+        },
+        "component": {
+          "enum": [
+            "llvm",
+            "clang",
+            "cmake",
+            "ninja",
+            "python",
+            "node",
+            "pwsh"
+          ]
+        },
+        "platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "reserved"
+          ]
+        },
+        "range_claim": {
+          "type": "string"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unsupported_version_behavior": {
+          "const": "fail-closed-no-range-claim"
+        }
+      }
+    },
+    "sanitizerVariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "claim_state",
+        "platform_ids",
+        "evidence_ids",
+        "diagnostic"
+      ],
+      "properties": {
+        "variant_id": {
+          "type": "string"
+        },
+        "claim_state": {
+          "enum": [
+            "reserved",
+            "evidence-bound"
+          ]
+        },
+        "platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diagnostic": {
+          "type": "string"
+        }
+      }
+    },
+    "evidenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "evidence_class",
+        "claim_weight",
+        "source_paths",
+        "replay_commands",
+        "generated_report_paths",
+        "supports_platform_ids",
+        "requires_network",
+        "unsupported_host_behavior"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string"
+        },
+        "evidence_class": {
+          "enum": [
+            "build",
+            "package",
+            "install",
+            "execution",
+            "toolchain",
+            "hosted_ci",
+            "clean_room",
+            "fail_closed",
+            "sanitizer_policy"
+          ]
+        },
+        "claim_weight": {
+          "enum": [
+            "supporting",
+            "policy"
+          ]
+        },
+        "source_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "replay_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "generated_report_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supports_platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requires_network": {
+          "type": "boolean"
+        },
+        "unsupported_host_behavior": {
+          "enum": [
+            "fail-closed",
+            "not-applicable"
+          ]
+        }
+      }
+    }
+  }
+}

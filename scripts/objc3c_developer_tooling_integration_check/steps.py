@@ -38,4 +38,5 @@ def run_developer_tooling_steps() -> list[dict[str, Any]]:
         run_step("inspect-capability-explorer", public_workflow_command("inspect-capability-explorer")),
         run_step("benchmark-runtime-inspector", public_workflow_command("benchmark-runtime-inspector")),
         run_step("trace-compile-stages", public_workflow_command("trace-compile-stages")),
+        run_step("trace-runtime-debug", public_workflow_command("trace-runtime-debug")),
     ]

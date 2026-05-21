@@ -410,6 +410,80 @@ def test_runtime_concurrency_claim_is_implemented_and_probe_backed() -> None:
     } <= evidence_paths
 
 
+def test_developer_experience_first_run_claim_is_bounded_and_evidence_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest = json.loads(
+        (ROOT / "tests" / "fixtures" / "canonical" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    catalog = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "conformance"
+            / "support_claim_runnable_evidence_catalog.json"
+        ).read_text(encoding="utf-8")
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["tooling.developer-experience.first-run-product-path"]
+    support_claim = "objc3c.behavior.tooling.first-run-product-path"
+    behavior_fixture = (
+        "tests/tooling/fixtures/developer_tooling/"
+        "developer_experience_completion_contract.json"
+    )
+    public_command = "npm run objc3c -- validate-getting-started"
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [support_claim]
+    assert "does not claim a full IDE" in row["summary"]
+    assert "full LSP" in row["summary"]
+    assert {
+        (evidence["kind"], evidence["path"], evidence.get("command", ""))
+        for evidence in row["evidence"]
+    } >= {
+        ("test", behavior_fixture, public_command),
+        (
+            "test",
+            "tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json",
+            public_command,
+        ),
+        (
+            "test",
+            "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+            "npm run objc3c -- validate-migration-workflow",
+        ),
+        (
+            "diagnostic",
+            "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+            "",
+        ),
+    }
+
+    manifest_claims = {
+        claim["claim_id"]: claim for claim in manifest["support_claims"]
+    }
+    assert manifest_claims[support_claim] == {
+        "claim_id": support_claim,
+        "owner_phase": "e2e",
+        "behavior_fixture": behavior_fixture,
+        "executable_command": public_command,
+    }
+
+    catalog_rows = {row["support_claim"]: row for row in catalog["rows"]}
+    catalog_row = catalog_rows[support_claim]
+    assert catalog_row["capability_id"] == row["id"]
+    assert behavior_fixture in catalog_row["positive_evidence"]
+    assert {
+        "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+        "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+    } <= set(catalog_row["negative_evidence"])
+
+
 def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() -> None:
     matrix = json.loads(
         (ROOT / "docs" / "support" / "capability_matrix.json").read_text(

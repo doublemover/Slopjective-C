@@ -24,6 +24,26 @@
       "manifest": "stdlib/modules/objc3.errors/module.json"
     },
     {
+      "module": "objc3.text",
+      "implementation_module": "objc3_text",
+      "capability_id": "objc3.cap.text",
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.text",
+      "source": "stdlib/modules/objc3.text/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.text/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.text/module.json"
+    },
+    {
+      "module": "objc3.collections",
+      "implementation_module": "objc3_collections",
+      "capability_id": "objc3.cap.collections",
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.collections",
+      "source": "stdlib/modules/objc3.collections/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.collections/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.collections/module.json"
+    },
+    {
       "module": "objc3.concurrency",
       "implementation_module": "objc3_concurrency",
       "capability_id": "objc3.cap.concurrency",

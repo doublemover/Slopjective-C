@@ -18,6 +18,7 @@ REWRITE_OBJC3C_SOURCE_PY = ROOT / "scripts" / "rewrite_objc3c_source.py"
 CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY = (
     ROOT / "scripts" / "check_developer_tooling_diagnostic_quality.py"
 )
+RUNTIME_DEBUG_TRACE_PY = ROOT / "scripts" / "build_objc3c_runtime_debug_trace.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 )

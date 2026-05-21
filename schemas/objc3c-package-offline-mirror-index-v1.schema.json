@@ -81,6 +81,12 @@
         "package_id",
         "source",
         "source_digest",
+        "source_kind",
+        "package_version",
+        "language_version",
+        "abi_identity",
+        "package_manifest",
+        "trust",
         "cache_path",
         "cache_digest"
       ],
@@ -98,6 +104,28 @@
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
+        "source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "package_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language_version": {
+          "const": "3.0"
+        },
+        "abi_identity": {
+          "const": "objc3-abi-2025Q4"
+        },
+        "package_manifest": {
+          "$ref": "#/$defs/packageManifestRef"
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
         "cache_path": {
           "type": "string",
           "minLength": 1
@@ -109,6 +137,41 @@
         "interop_loader_metadata": {
           "$ref": "#/$defs/interopLoaderPackageMetadata"
         }
+      }
+    },
+    "packageManifestRef": {
+      "type": "object",
+      "required": ["path", "contract_id", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+        },
+        "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "signature",
+        "trust_scope",
+        "revocation_state",
+        "revocation_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "signing_key_id": { "const": "objc3c-local-package-key-v1" },
+        "subject": { "type": "string", "minLength": 1 },
+        "signature": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "trust_scope": { "const": "checked-in-local-package-source" },
+        "revocation_state": { "const": "not-revoked" },
+        "revocation_policy": { "const": "revoked-package-ids-fail-resolution" }
       }
     },
     "interopLoaderSummary": {

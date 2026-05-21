@@ -18,6 +18,11 @@ from .source_surface_catalog import (
     SUPPORTED_PLATFORMS_PATH,
     UNSUPPORTED_HOST_POLICY_PATH,
 )
+from .support_evidence import (
+    build_support_evidence_matrix_sections,
+    load_platform_toolchain_support_evidence,
+    validate_platform_toolchain_support_evidence,
+)
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -86,6 +91,14 @@ def build_support_matrix_payload() -> dict[str, Any]:
     tier_policy = load_json_object(SUPPORT_TIER_POLICY_PATH)
     supported_platforms = load_json_object(SUPPORTED_PLATFORMS_PATH)
     unsupported_host_policy = load_json_object(UNSUPPORTED_HOST_POLICY_PATH)
+    support_evidence = load_platform_toolchain_support_evidence()
+    validate_platform_toolchain_support_evidence(
+        support_evidence,
+        boundary=boundary,
+        supported_platforms=supported_platforms,
+        tier_policy=tier_policy,
+        unsupported_host_policy=unsupported_host_policy,
+    )
     host = current_host()
     supported_platform_ids = list(boundary["supported_platform_ids"])
     payload = {
@@ -113,6 +126,7 @@ def build_support_matrix_payload() -> dict[str, Any]:
         ),
         "publication_surface": PUBLICATION_SURFACE,
     }
+    payload.update(build_support_evidence_matrix_sections(support_evidence))
     return payload
 
 

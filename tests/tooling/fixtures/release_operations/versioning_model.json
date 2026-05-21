@@ -3,6 +3,7 @@
   "schema_version": 1,
   "current_stable_version": "1.0.0",
   "current_candidate_version": "1.1.0-rc.1",
+  "current_nightly_version": "1.1.0-nightly.0",
   "current_preview_version": "1.2.0-preview.1",
   "semantic_versioning_rule": "major=breaking minor=additive patch=repair",
   "supported_major_line": 1,
@@ -10,6 +11,7 @@
   "version_field_contracts": {
     "current_version": "current_stable_version",
     "candidate_version": "current_candidate_version",
+    "nightly_version": "current_nightly_version",
     "preview_version": "current_preview_version",
     "supported_major_line": "same-major upgrade ceiling"
   },

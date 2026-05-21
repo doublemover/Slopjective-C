@@ -1,0 +1,26 @@
+module InteropAdapterKit;
+
+extern fn adapterForeignEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign, objc_import_module(named("FrameworkSamplesHost")), objc_header_name(named("FrameworkSamplesHost.h")), objc_cxx_name(named("FrameworkSamplesHostGate")), objc_swift_name(named("FrameworkSamplesHost.forward"))));
+
+__attribute__((objc_derive(named("Equatable"))))
+@interface AdapterRecord
+@property (strong, behavior=Observed) id value;
++ (i32) adapterSeed;
+@end
+
+@implementation AdapterRecord
+@property (strong, behavior=Observed) id value;
+
++ (i32) adapterSeed {
+  return 4;
+}
+@end
+
+pure fn adapterMacroValue() -> i32 __attribute__((objc_macro(named("FrameworkTrace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), objc_macro_cache_key(named("InteropAdapterKit.FrameworkTrace.v1")), objc_macro_sandbox(named("deterministic")))) {
+  return 6;
+}
+
+fn main() -> i32 {
+  return [AdapterRecord adapterSeed] + adapterMacroValue();
+}

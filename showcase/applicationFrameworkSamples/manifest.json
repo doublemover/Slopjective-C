@@ -1,0 +1,143 @@
+{
+  "contract_id": "objc3c.application_framework_samples.v1",
+  "schema_version": 1,
+  "issue": 8178,
+  "source_root": "showcase/applicationFrameworkSamples",
+  "artifact_root": "tmp/artifacts/application-framework-samples",
+  "report_root": "tmp/reports/application-framework-samples",
+  "public_command_model": {
+    "entrypoint_kind": "single-npm-bridge",
+    "compile_action": "compile-objc3c",
+    "compile_command_template": "npm run objc3c -- compile-objc3c -- <source> --out-dir <artifact-root>/<sample-id> --emit-prefix module"
+  },
+  "capability_domains": [
+    "object-runtime-library",
+    "stdlib-text-collections-cli",
+    "async-runtime-application",
+    "interop-adapter-library",
+    "local-package-dependency-sample"
+  ],
+  "samples": [
+    {
+      "id": "routeModelKit",
+      "kind": "library",
+      "package_id": "showcase-framework:routeModelKit",
+      "module_name": "RouteModelKit",
+      "source": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+      "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/routeModelKit/workspace.json",
+      "artifact_root": "tmp/artifacts/application-framework-samples/routeModelKit",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.object-runtime-library"
+      ],
+      "capabilities": [
+        "protocol-conformance",
+        "class-inheritance",
+        "synthesized-properties",
+        "category-extension",
+        "typed-keypath-reflection"
+      ],
+      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/routeModelKit --emit-prefix module"
+    },
+    {
+      "id": "interopAdapterKit",
+      "kind": "library",
+      "package_id": "showcase-framework:interopAdapterKit",
+      "module_name": "InteropAdapterKit",
+      "source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+      "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/workspace.json",
+      "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.interop-adapter-library"
+      ],
+      "capabilities": [
+        "foreign-import-metadata",
+        "header-export-metadata",
+        "swift-cxx-name-metadata",
+        "derive-metadata",
+        "macro-provenance",
+        "property-behavior"
+      ],
+      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
+    },
+    {
+      "id": "workflowStdlibCLI",
+      "kind": "cli-application",
+      "package_id": "showcase-framework:workflowStdlibCLI",
+      "module_name": "WorkflowStdlibCLI",
+      "source": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+      "workspace_manifest": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/workspace.json",
+      "artifact_root": "tmp/artifacts/application-framework-samples/workflowStdlibCLI",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
+      ],
+      "capabilities": [
+        "cli-entrypoint",
+        "runtime-backed-string-view",
+        "runtime-backed-byte-span",
+        "runtime-backed-array-shape",
+        "runtime-backed-map-entry-shape"
+      ],
+      "package_dependencies": [
+        "stdlib:objc3.core",
+        "showcase-framework:routeModelKit"
+      ],
+      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
+    },
+    {
+      "id": "asyncRuntimeConsole",
+      "kind": "runtime-application",
+      "package_id": "showcase-framework:asyncRuntimeConsole",
+      "module_name": "AsyncRuntimeConsole",
+      "source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+      "workspace_manifest": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/workspace.json",
+      "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.async-runtime-application"
+      ],
+      "capabilities": [
+        "async-executor-annotation",
+        "task-runtime-helper-surface",
+        "executor-hop-helper-surface",
+        "runtime-backed-main-entrypoint"
+      ],
+      "package_dependencies": [
+        "stdlib:objc3.concurrency",
+        "showcase-framework:routeModelKit",
+        "showcase-framework:interopAdapterKit"
+      ],
+      "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module"
+    }
+  ],
+  "package_edges": [
+    {
+      "from": "showcase-framework:workflowStdlibCLI",
+      "to": "stdlib:objc3.core",
+      "relationship": "runtime-backed-stdlib-helper-use"
+    },
+    {
+      "from": "showcase-framework:workflowStdlibCLI",
+      "to": "showcase-framework:routeModelKit",
+      "relationship": "application-documents-local-library-dependency"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "stdlib:objc3.concurrency",
+      "relationship": "runtime-backed-concurrency-helper-use"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "showcase-framework:routeModelKit",
+      "relationship": "application-documents-local-library-dependency"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "showcase-framework:interopAdapterKit",
+      "relationship": "application-documents-interop-adapter-dependency"
+    }
+  ],
+  "evidence": {
+    "checker": "scripts/check_objc3c_application_framework_samples.py",
+    "contract_fixture": "tests/tooling/fixtures/application_framework_samples/contract.json",
+    "summary": "tmp/reports/application-framework-samples/summary.json"
+  }
+}

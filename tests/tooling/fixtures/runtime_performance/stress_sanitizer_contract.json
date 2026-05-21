@@ -1,0 +1,87 @@
+{
+  "contract_id": "objc3c.runtime.performance.stress.sanitizer.contract.v1",
+  "schema_version": 1,
+  "contract_kind": "runtime-performance-stress-scale-sanitizer-policy",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "sanitizer_contracts": [
+    {
+      "sanitizer_id": "dispatch-cache-asan-ubsan",
+      "workload_id": "dispatch-cache",
+      "targeted_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id dispatch-cache --warmup-runs 0 --measured-runs 3",
+      "opt_in_only": true,
+      "sanitizer_modes": [
+        "address",
+        "undefined"
+      ],
+      "required_environment": [
+        "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS=halt_on_error=1"
+      ],
+      "required_failure_modes": [
+        "nonzero-exit-on-sanitizer-finding",
+        "no-telemetry-packet-for-failed-sample",
+        "stable-workload-id-in-failure"
+      ],
+      "support_authority": false
+    },
+    {
+      "sanitizer_id": "stdlib-concurrency-thread-sanitizer",
+      "workload_id": "stdlib-concurrency-runtime",
+      "targeted_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id stdlib-concurrency-runtime --warmup-runs 0 --measured-runs 3",
+      "opt_in_only": true,
+      "sanitizer_modes": [
+        "thread"
+      ],
+      "required_environment": [
+        "TSAN_OPTIONS=halt_on_error=1"
+      ],
+      "required_failure_modes": [
+        "nonzero-exit-on-data-race",
+        "no-support-claim-from-sanitizer-only-run",
+        "stable-workload-id-in-failure"
+      ],
+      "support_authority": false
+    }
+  ],
+  "stress_scale_contracts": [
+    {
+      "stress_id": "dispatch-cache-replay-scale",
+      "workload_id": "dispatch-cache",
+      "scale_axis": "repeated-runtime-dispatch-samples",
+      "scale_factor": 16,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "one-packet-per-successful-sample",
+        "same-replay-key-across-samples",
+        "duration-ms-is-the-only-required-varying-field"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "stdlib-concurrency-scheduler-scale",
+      "workload_id": "stdlib-concurrency-runtime",
+      "scale_axis": "scheduler-enqueue-dequeue-packets",
+      "scale_factor": 32,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "scheduler-sequence-remains-stable",
+        "enqueue-and-dequeue-counts-remain-balanced",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "stdlib-core-helper-scale",
+      "workload_id": "stdlib-core-runtime",
+      "scale_axis": "stdlib-core-helper-call-counts",
+      "scale_factor": 32,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "helper-call-counts-are-monotonic",
+        "last-result-remains-stable",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    }
+  ]
+}

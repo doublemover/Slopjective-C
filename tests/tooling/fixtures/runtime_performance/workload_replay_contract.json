@@ -1,0 +1,168 @@
+{
+  "contract_id": "objc3c.runtime.performance.workload.replay.contract.v1",
+  "schema_version": 1,
+  "contract_kind": "runtime-workload-replay-determinism",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "replay_policy": {
+    "replay_key_fields": [
+      "workload_id",
+      "acceptance_case_id",
+      "hot_path_family",
+      "fixture_sha256",
+      "probe_sha256",
+      "budget_metric_id"
+    ],
+    "deterministic_inputs": [
+      "checked_in_fixture",
+      "checked_in_probe",
+      "checked_in_workload_manifest",
+      "checked_in_budget_metric"
+    ],
+    "allowed_nondeterminism": [
+      "duration_ms",
+      "run_dir",
+      "wall_clock_order"
+    ],
+    "packet_rule": "each measured sample must write one telemetry packet under tmp/reports/runtime-performance/<workload-id>/sample-N.json; packet fields may not be used as support authority"
+  },
+  "workload_replay_rows": [
+    {
+      "workload_id": "startup-installation",
+      "acceptance_case_id": "installation-lifecycle",
+      "fixture": "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+      "probe": "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+      "hot_path_family": "startup-installation",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "fixture_compile_ms",
+        "probe_link_ms",
+        "probe_run_ms",
+        "case_total_ms"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "dispatch-cache",
+      "acceptance_case_id": "dispatch-fast-path",
+      "fixture": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "probe": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "hot_path_family": "dispatch-cache",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "baseline_cache_entry_count",
+        "mixed_first_dispatch_path",
+        "mixed_second_dispatch_path",
+        "strict_error_first_dispatch_path",
+        "strict_error_second_dispatch_path"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "reflection-query",
+      "acceptance_case_id": "realization-lookup-reflection-runtime",
+      "fixture": "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+      "probe": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+      "hot_path_family": "reflection-query",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "realized_class_count",
+        "reflectable_property_count",
+        "method_cache_entry_count",
+        "last_queried_protocol_name"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "ownership-helpers",
+      "acceptance_case_id": "arc-property-helper-abi",
+      "fixture": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+      "probe": "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+      "hot_path_family": "ownership-helpers",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "inside_retain_call_count",
+        "inside_current_property_exchange_count",
+        "after_autoreleasepool_pop_count",
+        "after_release_call_count"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "storage-ownership-reflection",
+      "acceptance_case_id": "storage-ownership-reflection",
+      "fixture": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+      "probe": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+      "hot_path_family": "ownership-helpers",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "owned_value",
+        "weak_value",
+        "reflected_property_count",
+        "ownership_runtime_hook_profile"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "stdlib-core-runtime",
+      "acceptance_case_id": "stdlib-core-runtime-probe",
+      "fixture": "stdlib/modules/objc3.core/module.objc3",
+      "probe": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+      "hot_path_family": "stdlib-helper-runtime",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "total_call_count",
+        "revision_call_count",
+        "capability_call_count",
+        "option_call_count",
+        "count_call_count",
+        "prefix_call_count",
+        "map_call_count",
+        "last_result"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "stdlib-concurrency-runtime",
+      "acceptance_case_id": "stdlib-concurrency-runtime-probe",
+      "fixture": "stdlib/modules/objc3.concurrency/module.objc3",
+      "probe": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "hot_path_family": "stdlib-concurrency-runtime",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "spawn_call_count",
+        "scope_call_count",
+        "add_task_call_count",
+        "wait_next_call_count",
+        "cancel_all_call_count",
+        "executor_hop_call_count",
+        "scheduler_enqueue_count",
+        "scheduler_dequeue_count",
+        "scheduler_sequence",
+        "last_queue_drain_result"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    }
+  ]
+}

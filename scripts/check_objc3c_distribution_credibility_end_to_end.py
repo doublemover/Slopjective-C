@@ -109,6 +109,10 @@ def main() -> int:
         and any("package-channels" in str(path) for path in evidence_artifact_paths),
         "trust report evidence artifacts no longer reference release-operations and package-channels outputs",
     )
+    expect(
+        any("package-ecosystem/install-distribution-credibility-summary.json" in str(path) for path in evidence_artifact_paths),
+        "trust report evidence artifacts no longer reference clean package install credibility outputs",
+    )
 
     summary = {
         "contract_id": "objc3c.distribution.credibility.end-to-end.summary.v1",

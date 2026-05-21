@@ -22,6 +22,7 @@
   "package_bridge": "objc3c",
   "required_actions": [
     "materialize-project-template",
+    "compile-objc3c",
     "materialize-playground-workspace",
     "benchmark-runtime-inspector",
     "inspect-bonus-tool-integration"
@@ -30,6 +31,7 @@
     "root": "tmp/artifacts/project-template/<example-id>",
     "required_paths": [
       "README.md",
+      "build",
       "src/main.objc3",
       "template.json"
     ]
@@ -42,6 +44,7 @@
   },
   "workspace_semantics": [
     "template source is copied from a checked-in showcase source and remains traceable through template.json",
+    "template source must publish a direct compile-objc3c command contract with a deterministic artifact root",
     "template README must point users at public workflow actions instead of internal-only scripts",
     "playground workspace materialization is the canonical generated workspace shape for editor/debug tooling and runnable drills",
     "template and playground generation must agree on source roots, public actions, and report publication"

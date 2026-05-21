@@ -20,6 +20,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "integrat
 
 REQUIRED_STEPS = [
     "validate-release-operations",
+    "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",
     "build-distribution-credibility-dashboard",
@@ -78,6 +79,20 @@ def main() -> int:
         return fail("publication summary trust report JSON path drifted")
     if publication_summary.get("trust_report_markdown") != artifact_surface.get("trust_report_markdown"):
         return fail("publication summary trust report markdown path drifted")
+    upstream_reports = dashboard_summary.get("upstream_reports")
+    if not isinstance(upstream_reports, dict):
+        return fail("dashboard upstream reports drifted")
+    package_install_summary = upstream_reports.get("package_install_distribution")
+    if package_install_summary != "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json":
+        return fail("dashboard package install distribution evidence path drifted")
+    evidence_artifacts = publication_summary.get("evidence_artifacts")
+    evidence_paths = [
+        artifact.get("path")
+        for artifact in evidence_artifacts
+        if isinstance(artifact, dict)
+    ] if isinstance(evidence_artifacts, list) else []
+    if package_install_summary not in evidence_paths:
+        return fail("publication summary omitted package install distribution evidence")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {

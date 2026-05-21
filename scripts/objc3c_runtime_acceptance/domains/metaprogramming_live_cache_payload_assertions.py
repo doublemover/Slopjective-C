@@ -15,6 +15,12 @@ from ..paths import ROOT
 
 _MATERIALIZED_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_ready": True,
+    "generated_artifact_role": "metaprogramming-host-cache-provenance-only",
+    "generated_artifact_owner": "objc3c-driver-metaprogramming-cache-publication",
+    "generated_artifact_source_of_truth": (
+        "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry"
+    ),
+    "support_claim_authority": False,
     "launch_attempted": True,
     "cache_hit": True,
     "cache_summary_present": True,
@@ -32,6 +38,12 @@ _MATERIALIZED_HOST_CACHE_FIELDS: dict[str, Any] = {
 
 _CACHE_HIT_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_ready": True,
+    "generated_artifact_role": "metaprogramming-host-cache-provenance-only",
+    "generated_artifact_owner": "objc3c-driver-metaprogramming-cache-publication",
+    "generated_artifact_source_of_truth": (
+        "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry"
+    ),
+    "support_claim_authority": False,
     "launch_attempted": False,
     "cache_hit": True,
     "cache_summary_present": True,
@@ -60,6 +72,10 @@ _CACHE_HIT_STABLE_FIELDS = (
     "cache_summary_relative_path",
     "cache_runtime_import_surface_relative_path",
     "cache_manifest_relative_path",
+    "generated_artifact_role",
+    "generated_artifact_owner",
+    "generated_artifact_source_of_truth",
+    "support_claim_authority",
     "host_executable_relative_path",
     "cache_root_relative_path",
     "cache_key_material_digest",

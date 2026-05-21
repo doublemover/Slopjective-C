@@ -60,7 +60,12 @@
         "benchmark-runtime-performance",
         "validate-runtime-performance"
       ],
-      "evidence_contract": "runtime-acceptance-probes-plus-hot-path-telemetry"
+      "contract_paths": [
+        "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+        "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+        "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
+      ],
+      "evidence_contract": "runtime-contract-replay-fail-closed-stress-policy-plus-hot-path-telemetry"
     },
     {
       "owner_id": "performance-governance-publication-owner",

@@ -27,6 +27,8 @@ def require_string_list(payload: dict[str, Any], field_name: str, *, minimum: in
 def validate_contract_payload(field_name: str, payload: dict[str, Any]) -> None:
     if field_name == "trust_signal_architecture":
         validate_trust_signal_architecture(payload)
+    elif field_name == "package_install_distribution_credibility":
+        validate_package_install_distribution_credibility(payload)
     elif field_name == "install_release_doc_surface":
         validate_install_release_doc_surface(payload)
     elif field_name == "operator_release_policy":
@@ -43,6 +45,7 @@ def validate_trust_signal_architecture(payload: dict[str, Any]) -> None:
     if payload.get("upstream_surfaces") != [
         "release-foundation",
         "packaging-channels",
+        "package-ecosystem",
         "release-operations",
         "release-evidence",
     ]:
@@ -54,6 +57,37 @@ def validate_trust_signal_architecture(payload: dict[str, Any]) -> None:
     for signal in payload.get("trust_signals", []):
         if not isinstance(signal, dict) or not signal.get("artifact_source") or not signal.get("claim_boundary"):
             raise RuntimeError("trust_signal_architecture contained an incomplete signal")
+
+
+def validate_package_install_distribution_credibility(payload: dict[str, Any]) -> None:
+    if payload.get("network_policy") != "no-network-during-validation":
+        raise RuntimeError("package install distribution network policy drifted")
+    if payload.get("network_resolution_support") != "unsupported":
+        raise RuntimeError("package install distribution network resolution support drifted")
+    if payload.get("hosted_registry_support") != "unsupported-fail-closed-if-claimed":
+        raise RuntimeError("package install distribution hosted registry support drifted")
+    generated_outputs = payload.get("generated_outputs")
+    if not isinstance(generated_outputs, dict):
+        raise RuntimeError("package install distribution generated outputs drifted")
+    if generated_outputs.get("summary") != (
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ):
+        raise RuntimeError("package install distribution summary path drifted")
+    if generated_outputs.get("clean_install_root") != (
+        "tmp/artifacts/package-ecosystem/install-validation/clean-root"
+    ):
+        raise RuntimeError("package install distribution clean install root drifted")
+    required_actions = payload.get("required_public_actions")
+    if not isinstance(required_actions, list) or "validate-package-install-distribution" not in required_actions:
+        raise RuntimeError("package install distribution action surface drifted")
+    blocker_metadata = payload.get("blocker_metadata")
+    blocking_conditions = (
+        blocker_metadata.get("blocking_conditions", [])
+        if isinstance(blocker_metadata, dict)
+        else []
+    )
+    if not any("hosted registry" in str(condition) for condition in blocking_conditions):
+        raise RuntimeError("package install distribution hosted registry blocker drifted")
 
 
 def validate_install_release_doc_surface(payload: dict[str, Any]) -> None:
@@ -73,6 +107,7 @@ def validate_release_drill_policy(payload: dict[str, Any]) -> None:
     if payload.get("required_drill_steps") != [
         "stage-package-channels",
         "verify-install-smoke",
+        "verify-clean-package-install",
         "verify-rollback-guidance",
         "verify-update-manifest-coherence",
         "verify-release-evidence-index",

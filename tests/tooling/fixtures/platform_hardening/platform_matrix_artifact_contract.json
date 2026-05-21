@@ -41,6 +41,11 @@
     "current_host",
     "required_tool_probes",
     "claim_boundary",
+    "support_evidence_contract",
+    "platform_support_rows",
+    "toolchain_support",
+    "evidence_records",
+    "support_evidence_ids",
     "unsupported_host_fail_closed",
     "publication_surface"
   ],

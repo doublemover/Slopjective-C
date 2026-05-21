@@ -1,0 +1,37 @@
+{
+  "contract_id": "objc3c.package_ecosystem.package_manager_model.v1",
+  "surface_kind": "package-ecosystem-package-manager-model",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "package_manifest_schema": "schemas/objc3c-package-manifest-v1.schema.json",
+  "package_lock_schema": "schemas/objc3c-package-lock-v1.schema.json",
+  "source_contracts": [
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json"
+  ],
+  "generated_outputs": {
+    "package_manifest_root": "tmp/artifacts/package-ecosystem/manifests",
+    "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
+    "summary": "tmp/reports/package-ecosystem/package-manager-model-summary.json"
+  },
+  "language_version": "3.0",
+  "abi_identity": "objc3-abi-2025Q4",
+  "trust_key_id": "objc3c-local-package-key-v1",
+  "tamper_diagnostic": "O3PKG8055",
+  "minimum_package_count": 10,
+  "minimum_dependency_count": 7,
+  "required_public_actions": [
+    "build-package-lock",
+    "validate-package-authoring",
+    "validate-package-manager-model"
+  ],
+  "model_rules": [
+    "package manifests are generated from checked-in stdlib and showcase source surfaces",
+    "every locked package carries language version, ABI identity, source digest, manifest digest, and local trust metadata",
+    "dependency edges resolve only through the checked-in local registry model",
+    "ABI and language requirements on dependency edges must match the target package before a lock can be accepted",
+    "revoked packages, digest drift, missing provenance, dependency cycles, hosted registry claims, and network resolution claims fail closed"
+  ],
+  "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, and install/restore receipts; hosted registry and arbitrary network dependency resolution remain unsupported"
+}

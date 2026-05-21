@@ -17,6 +17,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
 
@@ -40,20 +41,37 @@ def sha256_file(path: Path) -> str:
 
 def write_summary() -> None:
     update_manifest = load_json(UPDATE_MANIFEST)
+    release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
     upgrade_support_report = load_json(UPGRADE_SUPPORT_REPORT)
 
     channel_ids = [entry.get("channel_id") for entry in update_manifest.get("channels", [])]
-    expect(channel_ids == ["stable", "candidate", "preview"], f"channel ids drifted: {channel_ids}")
+    expect(channel_ids == ["stable", "candidate", "nightly", "preview"], f"channel ids drifted: {channel_ids}")
     expect(update_manifest.get("default_channel") == "stable", "default channel drifted")
+    expect(
+        update_manifest.get("release_channel_manifest") == repo_rel(RELEASE_CHANNEL_MANIFEST),
+        "update manifest release channel manifest link drifted",
+    )
     expect(
         update_manifest.get("upgrade_support_report") == repo_rel(UPGRADE_SUPPORT_REPORT),
         "update manifest upgrade support report link drifted",
     )
     expect(
+        release_channel_manifest.get("contract_id") == "objc3c.release.operations.channel-manifest.v1",
+        "release channel manifest contract drifted",
+    )
+    expect(
+        release_channel_manifest.get("required_channels") == ["stable", "nightly"],
+        "release channel manifest required channels drifted",
+    )
+    expect(
         upgrade_support_report.get("contract_id") == "objc3c.release.operations.upgrade-support-report.v1",
         "upgrade support report contract drifted",
     )
-    expect(len(upgrade_support_report.get("revert_guidance", [])) >= 3, "revert guidance drifted")
+    expect(
+        upgrade_support_report.get("release_channel_manifest") == repo_rel(RELEASE_CHANNEL_MANIFEST),
+        "upgrade support report release channel manifest link drifted",
+    )
+    expect(len(upgrade_support_report.get("revert_guidance", [])) >= 4, "revert guidance drifted")
     rollback_diagnostics = upgrade_support_report.get("rollback_diagnostics", [])
     expect(
         any(entry.get("user_facing_message") for entry in rollback_diagnostics if isinstance(entry, dict)),
@@ -67,6 +85,37 @@ def write_summary() -> None:
     )
 
     stable = next(entry for entry in update_manifest["channels"] if entry["channel_id"] == "stable")
+    channel_manifests = release_channel_manifest.get("channel_manifests", [])
+    stable_channel_manifest = next(
+        entry for entry in channel_manifests if entry["channel_id"] == "stable"
+    )
+    nightly_channel_manifest = next(
+        entry for entry in channel_manifests if entry["channel_id"] == "nightly"
+    )
+    stable_gates = stable_channel_manifest["release_gate_actions"]
+    nightly_gates = nightly_channel_manifest["release_gate_actions"]
+    expect("validate-release-candidate-conformance" in stable_gates, "stable channel omitted release-candidate gate")
+    expect("test-nightly" in nightly_gates, "nightly channel omitted nightly gate")
+    expect(set(stable_gates) != set(nightly_gates), "stable and nightly gates collapsed")
+    expect(
+        nightly_channel_manifest["rollback_safety"]["rollback_channel"] == "offline-bundle",
+        "nightly rollback channel drifted",
+    )
+    expect(
+        stable_channel_manifest["rollback_safety"]["rollback_channel"] == "local-installer",
+        "stable rollback channel drifted",
+    )
+    provenance = release_channel_manifest.get("local_provenance", {})
+    expect(
+        provenance.get("release_manifest_sha256")
+        == sha256_file(ROOT / provenance["release_manifest"].replace("/", os.sep)),
+        "release manifest provenance digest drifted",
+    )
+    release_evidence = release_channel_manifest.get("release_evidence", {})
+    expect(
+        repo_rel(RELEASE_CHANNEL_MANIFEST) in release_evidence.get("evidence_artifacts", []),
+        "release evidence omitted channel manifest artifact",
+    )
     for artifact_key in ("portable_archive", "installer_archive", "offline_archive"):
         artifact_rel = stable["artifacts"][artifact_key]
         artifact_path = ROOT / artifact_rel.replace("/", os.sep)
@@ -81,11 +130,15 @@ def write_summary() -> None:
         "contract_id": "objc3c.release.operations.end-to-end.summary.v1",
         "status": "PASS",
         "update_manifest": repo_rel(UPDATE_MANIFEST),
+        "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST),
         "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT),
         "channels": channel_ids,
+        "stable_gate_actions": stable_gates,
+        "nightly_gate_actions": nightly_gates,
         "stable_artifacts": stable["artifacts"],
         "fail_closed_diagnostic_count": len(fail_closed),
         "rollback_diagnostic_count": len(rollback_diagnostics),
+        "release_evidence_artifact_count": len(release_evidence.get("evidence_artifacts", [])),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

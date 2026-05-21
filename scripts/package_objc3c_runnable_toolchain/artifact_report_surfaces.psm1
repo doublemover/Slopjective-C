@@ -122,6 +122,7 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
       build_playground = "npm run objc3c -- materialize-playground-workspace"
       build_application_workspace = "npm run objc3c -- materialize-canonical-application-workspace"
       build_package_lock = "npm run objc3c -- build-package-lock"
+      package_manager_model = "npm run objc3c -- validate-package-manager-model"
       build_stdlib = "npm run objc3c -- materialize-stdlib-workspace"
       build_template = "npm run objc3c -- materialize-project-template"
       application_architecture = "npm run objc3c -- validate-application-architecture"

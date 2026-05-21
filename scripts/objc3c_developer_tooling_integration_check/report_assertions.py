@@ -71,6 +71,16 @@ def assert_stage_trace_report(stage_trace: dict[str, Any], failures: list[str]) 
     expect(stage_trace.get("stages", {}).get("lex", {}).get("stage") == 0, "expected lex stage ordinal 0", failures)
 
 
+def assert_runtime_debug_trace_report(runtime_debug_trace: dict[str, Any], failures: list[str]) -> None:
+    expect(runtime_debug_trace.get("contract_id") == "objc3c.runtime.debug.trace.v1", "expected runtime debug trace contract id", failures)
+    expect(runtime_debug_trace.get("ok") is True, "expected runtime debug trace ok=true", failures)
+    expect(int(runtime_debug_trace.get("event_counts", {}).get("compile-stage", 0) or 0) >= 5, "expected runtime debug trace compile-stage events", failures)
+    expect(int(runtime_debug_trace.get("event_counts", {}).get("debug-anchor", 0) or 0) >= 3, "expected runtime debug trace debug-anchor events", failures)
+    expect(runtime_debug_trace.get("trace_lanes", {}).get("lldb_plugin", {}).get("status") == "reserved", "expected runtime debug trace LLDB lane to stay reserved", failures)
+    expect(runtime_debug_trace.get("support_boundary", {}).get("statement_level_stepping") is False, "expected runtime debug trace statement stepping fail-closed", failures)
+    expect(len(str(runtime_debug_trace.get("determinism", {}).get("trace_digest", ""))) == 64, "expected runtime debug trace digest", failures)
+
+
 def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
     assert_observability_report(reports["compile_observability"], failures)
     assert_runtime_inspector_report(reports["runtime_inspector"], failures)
@@ -85,3 +95,4 @@ def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
     assert_capability_explorer_report(reports["capability_explorer"], failures)
     assert_runtime_inspector_benchmark_report(reports["runtime_inspector_benchmark"], failures)
     assert_stage_trace_report(reports["compile_stage_trace"], failures)
+    assert_runtime_debug_trace_report(reports["runtime_debug_trace"], failures)

@@ -1,0 +1,27 @@
+{
+  "contract_id": "objc3c.application_framework_samples.workspace.v1",
+  "schema_version": 1,
+  "sample_id": "asyncRuntimeConsole",
+  "sample_kind": "runtime-application",
+  "package_id": "showcase-framework:asyncRuntimeConsole",
+  "module_name": "AsyncRuntimeConsole",
+  "workspace_root": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole",
+  "entry_source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+  "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
+  "emit_prefix": "module",
+  "capabilities": [
+    "async-executor-annotation",
+    "task-runtime-helper-surface",
+    "executor-hop-helper-surface",
+    "runtime-backed-main-entrypoint"
+  ],
+  "package_dependencies": [
+    "stdlib:objc3.concurrency",
+    "showcase-framework:routeModelKit",
+    "showcase-framework:interopAdapterKit"
+  ],
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.async-runtime-application"
+  ],
+  "public_compile_command": "npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3 --out-dir tmp/artifacts/application-framework-samples/asyncRuntimeConsole --emit-prefix module"
+}

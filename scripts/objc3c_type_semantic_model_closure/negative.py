@@ -20,6 +20,9 @@ def compile_negative_summary(
     nested_generic_constraint_violation_negative_run: dict[str, Any],
     generic_invariant_assignment_negative_run: dict[str, Any],
     protocol_generic_unknown_protocol_negative_run: dict[str, Any],
+    language_semantics_await_outside_async_negative_run: dict[str, Any],
+    language_semantics_executor_on_sync_negative_run: dict[str, Any],
+    language_semantics_conflicting_capture_ownership_negative_run: dict[str, Any],
 ) -> dict[str, bool]:
     return {
         "negative_fixture_fails_closed": negative_run["exit_code"] != 0,
@@ -61,4 +64,13 @@ def compile_negative_summary(
         "protocol_generic_unknown_protocol_negative_fixture_fails_closed": protocol_generic_unknown_protocol_negative_run["exit_code"] != 0,
         "protocol_generic_unknown_protocol_negative_diagnostics_json_emitted": protocol_generic_unknown_protocol_negative_run["diagnostics_path"] is not None,
         "protocol_generic_unknown_protocol_diagnostic_observed": diagnostic_matches(protocol_generic_unknown_protocol_negative_run["diagnostics"], "O3S206", 10, 12),
+        "language_semantics_await_outside_async_negative_fixture_fails_closed": language_semantics_await_outside_async_negative_run["exit_code"] != 0,
+        "language_semantics_await_outside_async_negative_diagnostics_json_emitted": language_semantics_await_outside_async_negative_run["diagnostics_path"] is not None,
+        "language_semantics_await_outside_async_diagnostic_observed": diagnostic_matches(language_semantics_await_outside_async_negative_run["diagnostics"], "O3S223", 9, 16),
+        "language_semantics_executor_on_sync_negative_fixture_fails_closed": language_semantics_executor_on_sync_negative_run["exit_code"] != 0,
+        "language_semantics_executor_on_sync_negative_diagnostics_json_emitted": language_semantics_executor_on_sync_negative_run["diagnostics_path"] is not None,
+        "language_semantics_executor_on_sync_diagnostic_observed": diagnostic_matches(language_semantics_executor_on_sync_negative_run["diagnostics"], "O3S224", 4, 4),
+        "language_semantics_conflicting_capture_ownership_negative_fixture_fails_closed": language_semantics_conflicting_capture_ownership_negative_run["exit_code"] != 0,
+        "language_semantics_conflicting_capture_ownership_negative_diagnostics_json_emitted": language_semantics_conflicting_capture_ownership_negative_run["diagnostics_path"] is not None,
+        "language_semantics_conflicting_capture_ownership_diagnostic_observed": diagnostic_matches(language_semantics_conflicting_capture_ownership_negative_run["diagnostics"], "O3S301", 5, 17),
     }

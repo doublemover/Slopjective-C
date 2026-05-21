@@ -26,9 +26,11 @@ PLATFORM_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_platform_hardening.
 PACKAGING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_packaging_channels.md"
 RELEASE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_release_operations.md"
 PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-matrix-v1.schema.json"
+PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-toolchain-support-evidence-v1.schema.json"
 
 SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-matrix.json"
 SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-matrix-summary.json"
+SUPPORT_EVIDENCE_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "support-evidence-summary.json"
 BOUNDARY_INVENTORY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "boundary-inventory" / "boundary_inventory_summary.json"
 SUPPORT_TIER_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "support-tier-policy" / "support_tier_policy_summary.json"
 UNSUPPORTED_HOST_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "unsupported-host-policy" / "unsupported_host_policy_summary.json"
@@ -52,12 +54,15 @@ BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT = ROOT / "scripts" / "build_objc3c_platform
 BUILD_PACKAGE_VALIDATION_SCRIPT = ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"
 TOOLCHAIN_RANGE_REPLAY_SCRIPT = ROOT / "scripts" / "check_platform_hardening_toolchain_range_replay.py"
 INSTALL_MATRIX_INTEGRATION_SCRIPT = ROOT / "scripts" / "check_platform_hardening_install_matrix_integration.py"
+PLATFORM_SUPPORT_EVIDENCE_SCRIPT = ROOT / "scripts" / "check_platform_hardening_support_evidence.py"
+PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH = PLATFORM_FIXTURE_ROOT / "platform_toolchain_support_evidence.json"
 
 PLATFORM_HARDENING_SUMMARY_BUILDERS: tuple[Path, ...] = (
     ROOT / "scripts" / "build_platform_hardening_boundary_inventory_summary.py",
     ROOT / "scripts" / "build_platform_hardening_support_tier_policy_summary.py",
     ROOT / "scripts" / "build_platform_hardening_unsupported_host_policy_summary.py",
     ROOT / "scripts" / "build_platform_hardening_toolchain_archive_policy_summary.py",
+    ROOT / "scripts" / "check_platform_hardening_support_evidence.py",
     ROOT / "scripts" / "build_platform_hardening_artifact_contract_summary.py",
 )
 
@@ -66,6 +71,7 @@ PLATFORM_HARDENING_SUMMARY_PATHS: tuple[Path, ...] = (
     SUPPORT_TIER_POLICY_SUMMARY_PATH,
     UNSUPPORTED_HOST_POLICY_SUMMARY_PATH,
     TOOLCHAIN_ARCHIVE_POLICY_SUMMARY_PATH,
+    SUPPORT_EVIDENCE_SUMMARY_PATH,
     ARTIFACT_CONTRACT_SUMMARY_PATH,
 )
 
@@ -95,13 +101,17 @@ __all__ = [
     "PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH",
     "PLATFORM_REPORT_ROOT",
     "PLATFORM_RUNBOOK_PATH",
+    "PLATFORM_SUPPORT_EVIDENCE_SCRIPT",
     "PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH",
+    "PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH",
+    "PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH",
     "RELEASE_OPERATIONS_ROOT",
     "RELEASE_PUBLICATION_SUMMARY_PATH",
     "RELEASE_RUNBOOK_PATH",
     "ROOT",
     "RUNNABLE_END_TO_END_SUMMARY_PATH",
     "SUPPORT_MATRIX_ARTIFACT_PATH",
+    "SUPPORT_EVIDENCE_SUMMARY_PATH",
     "SUPPORT_MATRIX_SUMMARY_PATH",
     "SUPPORT_TIER_POLICY_PATH",
     "SUPPORT_TIER_POLICY_SUMMARY_PATH",

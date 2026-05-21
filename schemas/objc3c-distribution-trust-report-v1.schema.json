@@ -126,6 +126,13 @@
             "type": "string",
             "minLength": 1
           },
+          "supporting_source_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           "artifact_source": {
             "type": "string"
           },

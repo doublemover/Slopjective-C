@@ -15,6 +15,7 @@ POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_se
 NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
 GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"
 PROTOCOL_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_protocol_generic_positive.objc3"
+GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_method_substitution_positive.objc3"
 PROTOCOL_CATEGORY_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "category_attachment_protocol_runtime_library.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
@@ -29,6 +30,9 @@ GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "toolin
 NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nested_generic_constraint_violation.objc3"
 GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_invariant_assignment.objc3"
 PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_generic_unknown_protocol.objc3"
+LANGUAGE_SEMANTICS_AWAIT_OUTSIDE_ASYNC_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_language_semantics_await_outside_async.objc3"
+LANGUAGE_SEMANTICS_EXECUTOR_ON_SYNC_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_language_semantics_executor_on_sync_function.objc3"
+LANGUAGE_SEMANTICS_CONFLICTING_CAPTURE_OWNERSHIP_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_language_semantics_conflicting_capture_ownership.objc3"
 SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
@@ -70,6 +74,7 @@ SOURCE_TRUTH_PATHS = [
     NESTED_GENERIC_POSITIVE_FIXTURE,
     GENERIC_VARIANCE_POSITIVE_FIXTURE,
     PROTOCOL_GENERIC_POSITIVE_FIXTURE,
+    GENERIC_METHOD_SUBSTITUTION_POSITIVE_FIXTURE,
     PROTOCOL_CATEGORY_POSITIVE_FIXTURE,
     NEGATIVE_FIXTURE,
     NULLABILITY_NEGATIVE_FIXTURE,
@@ -84,6 +89,9 @@ SOURCE_TRUTH_PATHS = [
     NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
     GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE,
     PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE,
+    LANGUAGE_SEMANTICS_AWAIT_OUTSIDE_ASYNC_NEGATIVE_FIXTURE,
+    LANGUAGE_SEMANTICS_EXECUTOR_ON_SYNC_NEGATIVE_FIXTURE,
+    LANGUAGE_SEMANTICS_CONFLICTING_CAPTURE_OWNERSHIP_NEGATIVE_FIXTURE,
     CONFORMANCE_POSITIVE,
     CONFORMANCE_NESTED_GENERIC_POSITIVE,
     CONFORMANCE_GENERIC_VARIANCE_POSITIVE,

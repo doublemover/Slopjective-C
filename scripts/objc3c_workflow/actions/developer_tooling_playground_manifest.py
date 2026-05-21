@@ -50,6 +50,7 @@ def build_playground_workspace_payload(
             "format-objc3c",
             "rewrite-objc3c-source",
             "check-developer-diagnostic-quality",
+            "trace-runtime-debug",
             "trace-compile-stages",
             "validate-developer-tooling",
         ],
@@ -81,6 +82,14 @@ def build_playground_workspace_payload(
                 0,
             ),
             "statement_level_stepping": debug_payload.get("statement_level_stepping"),
+            "runtime_debug_trace_path": debug_payload.get(
+                "runtime_debug_trace_path",
+                "",
+            ),
+            "runtime_debug_trace_command": debug_payload.get(
+                "runtime_debug_trace_command",
+                "",
+            ),
             "artifact_inspector_supported": artifact_inspector_payload.get(
                 "supported"
             ),

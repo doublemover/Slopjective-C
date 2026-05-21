@@ -10,12 +10,17 @@
     "release_blocker_issue_refs",
     "gate_action",
     "schema",
+    "abi_version_taxonomy",
     "source_manifests",
     "module_policies",
     "stdlib_public_api",
     "stdlib_runtime_abi",
     "frontend_c_api",
     "compatibility_window_policy",
+    "allowed_transition_policy",
+    "deprecation_lifecycle",
+    "package_abi_identity",
+    "compiler_artifact_compatibility",
     "private_helper_graduation_records",
     "change_policy"
   ],
@@ -30,6 +35,41 @@
     },
     "gate_action": { "const": "check-release-abi-api-drift" },
     "schema": { "const": "schemas/objc3c-abi-api-governance-v1.schema.json" },
+    "abi_version_taxonomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "abi_epoch",
+        "current_major_line",
+        "current_minor_line",
+        "supported_major_lines",
+        "compatibility_classes",
+        "surface_classes"
+      ],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "abi_epoch": { "type": "string", "minLength": 1 },
+        "current_major_line": { "type": "integer", "minimum": 1 },
+        "current_minor_line": { "type": "integer", "minimum": 0 },
+        "supported_major_lines": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "compatibility_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/compatibilityClass" }
+        },
+        "surface_classes": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "source_manifests": {
       "type": "object",
       "additionalProperties": { "type": "string", "minLength": 1 },
@@ -65,6 +105,14 @@
         "helper_contract",
         "runner_contract",
         "public_private_partition_owner",
+        "surface_owner",
+        "compatibility_class",
+        "introduced_in",
+        "minimum_supported_abi",
+        "maximum_supported_abi",
+        "deprecation_state",
+        "allowed_transition_set",
+        "release_blocker",
         "required_helpers",
         "required_type_aliases"
       ],
@@ -72,6 +120,19 @@
         "helper_contract": { "type": "string", "minLength": 1 },
         "runner_contract": { "type": "string", "minLength": 1 },
         "public_private_partition_owner": { "type": "string", "minLength": 1 },
+        "surface_owner": { "type": "string", "minLength": 1 },
+        "compatibility_class": { "type": "string", "minLength": 1 },
+        "introduced_in": { "type": "string", "minLength": 1 },
+        "minimum_supported_abi": { "type": "string", "minLength": 1 },
+        "maximum_supported_abi": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "deprecation_state": { "type": "string", "minLength": 1 },
+        "allowed_transition_set": { "type": "string", "minLength": 1 },
+        "release_blocker": { "const": true },
         "required_helpers": {
           "type": "array",
           "minItems": 1,
@@ -84,6 +145,101 @@
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1 }
         }
+      }
+    },
+    "allowed_transition_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transition_sets",
+        "release_blocked_transitions"
+      ],
+      "properties": {
+        "transition_sets": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "release_blocked_transitions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "deprecation_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_source",
+        "public_claim_allowed_states",
+        "public_claim_blocking_states",
+        "required_warning_classes",
+        "required_evidence_fields"
+      ],
+      "properties": {
+        "policy_source": { "type": "string", "minLength": 1 },
+        "public_claim_allowed_states": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "public_claim_blocking_states": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_warning_classes": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "required_evidence_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "package_abi_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_lock_schema",
+        "package_lock_action",
+        "package_compatibility_rule",
+        "lockfile_abi_identity"
+      ],
+      "properties": {
+        "package_lock_schema": { "type": "string", "minLength": 1 },
+        "package_lock_action": { "const": "build-package-lock" },
+        "package_compatibility_rule": { "type": "string", "minLength": 1 },
+        "lockfile_abi_identity": { "$ref": "#/$defs/packageAbiIdentity" }
+      }
+    },
+    "compiler_artifact_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_schema_surfaces",
+        "required_schema_transition_policy"
+      ],
+      "properties": {
+        "artifact_schema_surfaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/artifactSchemaSurface" }
+        },
+        "required_schema_transition_policy": { "type": "string", "minLength": 1 }
       }
     },
     "compatibility_window_policy": {
@@ -146,6 +302,20 @@
     }
   },
   "$defs": {
+    "compatibilityClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class_id",
+        "claim_scope",
+        "release_blocker"
+      ],
+      "properties": {
+        "class_id": { "type": "string", "minLength": 1 },
+        "claim_scope": { "type": "string", "minLength": 1 },
+        "release_blocker": { "type": "boolean" }
+      }
+    },
     "modulePolicy": {
       "type": "object",
       "additionalProperties": false,
@@ -181,6 +351,14 @@
         "module",
         "manifest",
         "source",
+        "surface_owner",
+        "compatibility_class",
+        "introduced_in",
+        "minimum_supported_abi",
+        "maximum_supported_abi",
+        "deprecation_state",
+        "allowed_transition_set",
+        "release_blocker",
         "symbol_set_field",
         "signature_field",
         "symbols"
@@ -189,6 +367,19 @@
         "module": { "type": "string", "minLength": 1 },
         "manifest": { "type": "string", "minLength": 1 },
         "source": { "type": "string", "minLength": 1 },
+        "surface_owner": { "type": "string", "minLength": 1 },
+        "compatibility_class": { "type": "string", "minLength": 1 },
+        "introduced_in": { "type": "string", "minLength": 1 },
+        "minimum_supported_abi": { "type": "string", "minLength": 1 },
+        "maximum_supported_abi": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "deprecation_state": { "type": "string", "minLength": 1 },
+        "allowed_transition_set": { "type": "string", "minLength": 1 },
+        "release_blocker": { "const": true },
         "symbol_set_field": { "type": "string", "minLength": 1 },
         "signature_field": { "type": "string", "minLength": 1 },
         "symbols": {
@@ -223,6 +414,56 @@
           "items": { "type": "string", "pattern": "^#[0-9]+$" }
         },
         "policy_state": { "enum": ["approved", "rejected"] }
+      }
+    },
+    "packageAbiIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "governance_manifest",
+        "governance_schema",
+        "supported_major_line",
+        "current_minor_line",
+        "compatibility_class",
+        "stdlib_public_api_symbol_count",
+        "stdlib_runtime_abi_symbol_count",
+        "frontend_c_api_symbol_count"
+      ],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "governance_manifest": { "type": "string", "minLength": 1 },
+        "governance_schema": { "type": "string", "minLength": 1 },
+        "supported_major_line": { "type": "integer", "minimum": 1 },
+        "current_minor_line": { "type": "integer", "minimum": 0 },
+        "compatibility_class": { "type": "string", "minLength": 1 },
+        "stdlib_public_api_symbol_count": { "type": "integer", "minimum": 0 },
+        "stdlib_runtime_abi_symbol_count": { "type": "integer", "minimum": 0 },
+        "frontend_c_api_symbol_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "artifactSchemaSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface_id",
+        "schema",
+        "identity_path",
+        "expected_identity",
+        "compatibility_class",
+        "allowed_transition_set"
+      ],
+      "properties": {
+        "surface_id": { "type": "string", "minLength": 1 },
+        "schema": { "type": "string", "minLength": 1 },
+        "identity_path": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expected_identity": { "type": "string", "minLength": 1 },
+        "compatibility_class": { "type": "string", "minLength": 1 },
+        "allowed_transition_set": { "type": "string", "minLength": 1 }
       }
     }
   }

@@ -6,7 +6,9 @@ This runbook defines the checked-in release-operations surface for objc3c:
 
 - semantic versioning claims over the published objc3c release payloads
 - support windows and support-window classes for published channels
+- distinct stable and nightly channel operation gates
 - machine-owned update manifests and upgrade-support warning payloads
+- machine-owned release-channel manifests with local provenance and rollback safety
 - revert, deprecation, and upgrade-path publication derived from checked-in contracts
 - release-operations validation over the existing release-foundation and packaging-channel outputs
 
@@ -57,6 +59,22 @@ foundation evidence. Packaging channels remain the installable transport.
 Do not introduce a second update payload, a parallel installer tree, or a
 package-manager-only support owner surface.
 
+`stable` and `nightly` are release-operation channels with different gates:
+
+- `stable` publication requires release-foundation proof, release-candidate
+  conformance, package-channel proof, release-operations end-to-end proof, and
+  distribution-credibility proof before it can be treated as a public stable
+  channel.
+- `nightly` publication is evidence-only. It requires the nightly workflow plus
+  release-foundation, packaging-channel, and release-operations proof, but it is
+  not a stable support claim and cannot satisfy the stable gate.
+
+The checked-in source for that split is
+`tests/tooling/fixtures/release_operations/channel_operations_model.json`. The
+machine-owned projection is
+`tmp/artifacts/release-operations/channel-manifest/objc3c-release-channel-manifest.json`.
+Publication fails closed when either required channel is absent.
+
 Current platform support-tier boundary:
 
 - `Tier 1`: `windows-x64`
@@ -70,6 +88,9 @@ Current platform support-tier boundary:
 Support publication for release operations must emit:
 
 - a machine-owned update manifest with channel, version, and artifact pointers
+- a machine-owned release-channel manifest with stable/nightly gate actions,
+  source-derived notes policy, local provenance, release evidence, and rollback
+  safety
 - a machine-owned upgrade-support report with support-window, upgrade-path, and
   warning details
 - signed local-installer digest validation copied from the package-channel
@@ -80,6 +101,9 @@ Support publication for release operations must emit:
 - ABI/runtime/data-format rejection diagnostics as checked-in policy contracts
 - fail-closed diagnostics when required upstream release, package-channel,
   platform-support, or same-major revert artifacts are absent
+- release evidence derived from checked manifests, channel policy, and
+  release-foundation/package-channel outputs; generated reports may summarize
+  that evidence but cannot become source truth
 
 Warnings must be deterministic and derived from checked-in policy classes such
 as:
@@ -110,6 +134,7 @@ selected by checked-in contracts.
 The update manifest, upgrade-support report, and channel catalog must also
 publish:
 
+- the release-channel manifest path
 - the machine-owned platform support matrix path
 - the default supported platform id
 - the supported platform id set
@@ -117,6 +142,9 @@ publish:
 - the local installer digest signature selected by the package-channel surface
 - rollback diagnostics derived from the checked-in fail-closed diagnostics
   policy, not from prose release notes
+- local provenance for the release manifest digest, package-channel manifest
+  digest, release payload digest, installer signature, archive digests, and git
+  source stamp
 
 Those fields must stay aligned with
 the platform support matrix artifact selected by the checked-in

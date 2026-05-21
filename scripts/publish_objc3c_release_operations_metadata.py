@@ -18,6 +18,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
 UPGRADE_PATH_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_path_surface.json"
 UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_support_claim_policy.json"
@@ -31,6 +32,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "publication-su
 
 def main() -> int:
     update_manifest = load_json(UPDATE_MANIFEST)
+    release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
     versioning_model = load_json(VERSIONING_MODEL)
     upgrade_surface = load_json(UPGRADE_PATH_SURFACE)
     claim_policy = load_json(UPGRADE_CLAIM_POLICY)
@@ -47,6 +49,8 @@ def main() -> int:
         fail_closed_policy=fail_closed_policy,
         metadata_surface=metadata_surface,
         update_manifest_path=repo_rel(UPDATE_MANIFEST),
+        release_channel_manifest=release_channel_manifest,
+        release_channel_manifest_path=repo_rel(RELEASE_CHANNEL_MANIFEST),
         upgrade_support_report_path=repo_rel(UPGRADE_SUPPORT_REPORT),
         channel_catalog_path=repo_rel(CHANNEL_CATALOG),
     )

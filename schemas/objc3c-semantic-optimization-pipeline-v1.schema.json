@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-semantic-optimization-pipeline-v1",
+  "title": "objc3c semantic optimization pipeline",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_mapping",
+    "source_truth",
+    "pass_registry",
+    "verification_gates",
+    "unsupported_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.optimization.semantic.pipeline.v1"
+    },
+    "issue_mapping": {
+      "type": "object",
+      "required": [
+        "primary_issues",
+        "support_claims",
+        "capability_rows_required",
+        "evidence_ids_required"
+      ],
+      "properties": {
+        "primary_issues": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "contains": { "const": 8175 }
+        },
+        "support_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "objc3c.behavior.semantic_optimization_pipeline" }
+        },
+        "capability_rows_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "evidence_ids_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "source_truth": {
+      "type": "object",
+      "required": ["schema_path", "validator_path", "workflow_action", "source_anchors"],
+      "properties": {
+        "schema_path": { "type": "string" },
+        "validator_path": { "type": "string" },
+        "workflow_action": { "const": "validate-semantic-optimization-pipeline" },
+        "source_anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "tokens"],
+            "properties": {
+              "path": { "type": "string" },
+              "tokens": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "pass_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pass_id",
+          "ordinal",
+          "stage",
+          "mode",
+          "semantic_preserving",
+          "rewrites_ir",
+          "invalidates_global_proof_state",
+          "input_contract",
+          "output_contract",
+          "preconditions",
+          "invalidation",
+          "post_verify",
+          "fail_closed_diagnostics",
+          "fixtures"
+        ],
+        "properties": {
+          "pass_id": { "type": "string" },
+          "ordinal": { "type": "integer" },
+          "stage": { "type": "string" },
+          "mode": {
+            "enum": ["enabled", "reserved", "verifier-only"]
+          },
+          "semantic_preserving": { "const": true },
+          "rewrites_ir": { "type": "boolean" },
+          "invalidates_global_proof_state": { "type": "boolean" },
+          "input_contract": { "type": "string" },
+          "output_contract": { "type": "string" },
+          "preconditions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "invalidation": { "type": "string" },
+          "post_verify": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "fail_closed_diagnostics": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "fixtures": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "verification_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate_id", "required", "evidence"],
+        "properties": {
+          "gate_id": { "type": "string" },
+          "required": { "const": true },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "unsupported_policy": {
+      "type": "object",
+      "required": [
+        "unsafe_flags_allowed",
+        "reserved_pass_success_claims_allowed",
+        "whole_program_optimization_allowed",
+        "compatibility_shims_allowed"
+      ],
+      "properties": {
+        "unsafe_flags_allowed": { "const": false },
+        "reserved_pass_success_claims_allowed": { "const": false },
+        "whole_program_optimization_allowed": { "const": false },
+        "compatibility_shims_allowed": { "const": false }
+      }
+    }
+  }
+}

@@ -58,6 +58,9 @@ def test_metaprogramming_public_surface_contract_passes(tmp_path: Path) -> None:
     summary = load_json_object(checker.REPORT_PATH)
     assert summary["status"] == "PASS"
     assert summary["issue_ref"] == 8168
+    assert summary["artifact_ownership_contract_id"] == (
+        "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
+    )
     assert summary["public_command"] == "npm run objc3c -- validate-metaprogramming-conformance"
     assert "objc3c.behavior.language.metaprogramming.derive-expansion-inventory" in summary[
         "support_claim_ids"
@@ -69,6 +72,8 @@ def test_metaprogramming_public_surface_contract_passes(tmp_path: Path) -> None:
         "language.metaprogramming.derive-expansion-inventory",
         "language.metaprogramming.macro-safety-sandbox-determinism",
     ]
+    assert summary["surface_counts"]["artifact_ownership_required_fields"] >= 40
+    assert summary["surface_counts"]["artifact_ownership_fail_closed_cases"] == 4
 
 
 def test_metaprogramming_public_surface_rejects_derive_selector_drift(

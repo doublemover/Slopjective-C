@@ -59,9 +59,7 @@ def _warning_payloads(
 
 
 def _rollback_command(revert_channel: str) -> str:
-    if revert_channel == "offline-bundle":
-        return "npm run objc3c -- validate-packaging-channels-end-to-end"
-    return "npm run objc3c -- build-package-channels"
+    return "npm run objc3c -- validate-packaging-channels-end-to-end"
 
 
 def _revert_guidance_payloads(update_channel_policy: Mapping[str, Any]) -> list[JsonObject]:
@@ -120,6 +118,27 @@ def _require_upgrade_support_fields(
             )
 
 
+def _channel_operation_payloads(
+    release_channel_manifest: Mapping[str, Any],
+) -> list[JsonObject]:
+    channel_operations: list[JsonObject] = []
+    for channel in release_channel_manifest["channel_manifests"]:
+        rollback_safety = channel["rollback_safety"]
+        channel_operations.append(
+            {
+                "channel_id": channel["channel_id"],
+                "operation_class": channel["operation_class"],
+                "version": channel["version"],
+                "publication_scope": channel["publication_scope"],
+                "release_gate_actions": channel["release_gate_actions"],
+                "rollback_channel": rollback_safety["rollback_channel"],
+                "rollback_command": rollback_safety["operator_command"],
+                "blocks_publication_on_rollback_failure": rollback_safety["blocks_publication_on_failure"],
+            }
+        )
+    return channel_operations
+
+
 def build_release_operations_publication_payloads(
     *,
     update_manifest: Mapping[str, Any],
@@ -130,6 +149,8 @@ def build_release_operations_publication_payloads(
     fail_closed_policy: Mapping[str, Any],
     metadata_surface: Mapping[str, Any],
     update_manifest_path: str,
+    release_channel_manifest: Mapping[str, Any],
+    release_channel_manifest_path: str,
     upgrade_support_report_path: str,
     channel_catalog_path: str,
 ) -> ReleaseOperationsPublicationPayloads:
@@ -143,6 +164,7 @@ def build_release_operations_publication_payloads(
         update_channel_policy=update_channel_policy,
         fail_closed_policy=fail_closed_policy,
     )
+    channel_operations = _channel_operation_payloads(release_channel_manifest)
     upgrade_support_report = {
         "contract_id": "objc3c.release.operations.upgrade-support-report.v1",
         "generated_at_utc": generated_at_utc,
@@ -152,6 +174,8 @@ def build_release_operations_publication_payloads(
         "supported_platform_ids": update_manifest["supported_platform_ids"],
         "support_tiers": update_manifest["support_tiers"],
         "support_windows": versioning_model["support_windows"],
+        "release_channel_manifest": release_channel_manifest_path,
+        "channel_operations": channel_operations,
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
         "warnings": warnings,
         "revert_guidance": _revert_guidance_payloads(update_channel_policy),
@@ -173,17 +197,23 @@ def build_release_operations_publication_payloads(
         "supported_platform_ids": update_manifest["supported_platform_ids"],
         "support_tiers": update_manifest["support_tiers"],
         "upgrade_support_report": upgrade_support_report_path,
+        "release_channel_manifest": release_channel_manifest_path,
+        "local_provenance": update_manifest["local_provenance"],
+        "release_evidence": release_channel_manifest["release_evidence"],
         "channels": update_manifest["channels"],
+        "channel_operations": channel_operations,
     }
 
     summary = {
         "contract_id": "objc3c.release.operations.publication.summary.v1",
         "status": "PASS",
         "update_manifest": update_manifest_path,
+        "release_channel_manifest": release_channel_manifest_path,
         "upgrade_support_report": upgrade_support_report_path,
         "channel_catalog": channel_catalog_path,
         "warning_count": len(warnings),
         "rollback_diagnostic_count": len(rollback_diagnostics),
+        "channel_operation_count": len(channel_operations),
         "claim_class_count": len(claim_policy["upgrade_claim_classes"]),
         "platform_support_matrix": update_manifest["platform_support_matrix"],
     }

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "fixture": "language_semantics_public_runtime_contract.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "language-semantics",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false,
+    "retired_route_allowed": false,
+    "gate_allowed": false
+  },
+  "expected": {
+    "stage": "compile-and-run",
+    "diagnostic_code": "",
+    "required_tokens": []
+  },
+  "semantic_contracts": [
+    "generic protocol constraints lower through canonical metadata",
+    "protocol-qualified existentials preserve typed identity",
+    "owned block captures preserve deterministic cleanup",
+    "async executor effects remain explicit at the source boundary"
+  ]
+}

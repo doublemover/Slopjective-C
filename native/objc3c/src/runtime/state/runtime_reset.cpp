@@ -1,6 +1,8 @@
 #include "runtime/state/runtime_reset.h"
 
+#include "runtime/stdlib/collections_runtime_contract.h"
 #include "runtime/stdlib/core_runtime_contract.h"
+#include "runtime/stdlib/text_runtime_contract.h"
 #include "runtime/state/runtime_state.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
@@ -30,6 +32,8 @@ extern "C" void objc3_runtime_reset_for_testing(void) {
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();
   state.last_replayed_translation_unit_identity_key.clear();
+  objc3c::runtime::ResetRuntimeStdlibCollectionsStateForTesting();
   objc3c::runtime::ResetRuntimeStdlibCoreStateForTesting();
+  objc3c::runtime::ResetRuntimeStdlibTextStateForTesting();
   objc3c::runtime::ResetRuntimeThreadLocalDebugStateForTesting();
 }

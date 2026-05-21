@@ -35,6 +35,12 @@ def build_trust_signals(
     warning_count: int,
 ) -> list[dict[str, Any]]:
     definitions = signal_definitions(inputs)
+    package_channel_owner_policy = inputs.package_channels.get("owner_policy")
+    package_channel_guardrails = (
+        package_channel_owner_policy.get("hard_cutover_guardrails", {})
+        if isinstance(package_channel_owner_policy, dict)
+        else {}
+    )
     signal_payloads = {
         "release-foundation-lineage": {
             "signal_id": "release-foundation-lineage",
@@ -54,9 +60,22 @@ def build_trust_signals(
                     isinstance(inputs.package_channels.get(key), str)
                     for key in ("portable_archive", "installer_archive", "offline_archive")
                 )
+                and package_channel_guardrails.get("unsupported_host_success_allowed") is False
+                and inputs.package_install_distribution.get("status") == "PASS"
+                and inputs.package_install_distribution.get("network_policy") == "no-network-during-validation"
+                and inputs.package_install_distribution.get("hosted_registry_support")
+                == "unsupported-fail-closed-if-claimed"
+                and inputs.package_install_distribution.get("offline_restore_support")
+                == "local-cache-digest-checked"
             ),
             "source_path": repo_rel(paths.package_channels_end_to_end),
-            "detail": "package channel install and rollback smoke stayed executable on the packaged release surface",
+            "supporting_source_paths": [
+                repo_rel(paths.package_install_distribution_summary),
+            ],
+            "detail": (
+                "package channel install and rollback smoke stayed executable, and clean local "
+                "package installs remained no-network and hosted-registry fail-closed"
+            ),
         },
         "release-operations-metadata": {
             "signal_id": "release-operations-metadata",

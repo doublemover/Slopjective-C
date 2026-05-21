@@ -1,0 +1,334 @@
+{
+  "contract_id": "objc3c.optimization.semantic.pipeline.v1",
+  "issue_mapping": {
+    "primary_issues": [8175],
+    "support_claims": ["objc3c.behavior.semantic_optimization_pipeline"],
+    "capability_rows_required": [
+      "objc3c.behavior.semantic_optimization_pipeline",
+      "objc3c.internal.semantic_optimization_pass_registry",
+      "objc3c.reserved.semantic_optimization.devirtualization",
+      "objc3c.reserved.semantic_optimization.method_inlining",
+      "objc3c.reserved.semantic_optimization.cache_aware_dispatch"
+    ],
+    "evidence_ids_required": [
+      "objc3c.evidence.semantic_optimization_pipeline.fixture",
+      "objc3c.evidence.semantic_optimization_pipeline.validator",
+      "objc3c.evidence.semantic_optimization_pipeline.native_surface",
+      "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
+      "objc3c.evidence.semantic_optimization_pipeline.reserved_negative"
+    ]
+  },
+  "source_truth": {
+    "schema_path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json",
+    "validator_path": "scripts/check_objc3c_semantic_optimization_pipeline.py",
+    "workflow_action": "validate-semantic-optimization-pipeline",
+    "source_anchors": [
+      {
+        "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "tokens": [
+          "BuildObjc3SemanticOptimizationPassRegistry",
+          "BuildObjc3SemanticOptimizationPipelineSurface",
+          "AllMutatingPassesDeclareInvalidation",
+          "semantic optimization pipeline is missing benchmark governance"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h",
+        "tokens": [
+          "Objc3SemanticOptimizationPassContract",
+          "Objc3SemanticOptimizationPipelineSurface",
+          "IsObjc3SemanticOptimizationPassContractFailClosed"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/pipeline/frontend_phase_publication_helpers.cpp",
+        "tokens": [
+          "BuildObjc3SemanticOptimizationPipelineSurface",
+          "semantic_optimization_pipeline_surface"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/lower/model/lowered_module_pipeline_surfaces.h",
+        "tokens": [
+          "Objc3SemanticOptimizationPipelineSurface",
+          "semantic_optimization_pipeline_ready",
+          "reserved_passes_fail_closed"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+        "tokens": [
+          "TryResolveObjc3IRDirectDispatch",
+          "BuildObjc3IRDirectDispatchCall",
+          "invalidate_global_proof_state"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_message_send_lowering.cpp",
+        "tokens": [
+          "BuildObjc3IRMessageSendLoweringPlan",
+          "RequiresFailClosedObjc3RuntimeDispatchError",
+          "method_family_retained_result_cleanup_required"
+        ]
+      }
+    ]
+  },
+  "pass_registry": [
+    {
+      "pass_id": "semantic-precondition-gate",
+      "ordinal": 10,
+      "stage": "typed-sema-to-lowering",
+      "mode": "verifier-only",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "Objc3TypedSemaToLoweringContractSurface",
+      "output_contract": "Objc3SemanticOptimizationPipelineSurface.preconditions",
+      "preconditions": [
+        "typed sema handoff is deterministic",
+        "lowering boundary replay key is present",
+        "parse-to-lowering readiness is ready"
+      ],
+      "invalidation": "no IR mutation; gate publishes immutable precondition state",
+      "post_verify": ["precondition verdict is deterministic"],
+      "fail_closed_diagnostics": [
+        "semantic optimization precondition gate failed"
+      ],
+      "fixtures": []
+    },
+    {
+      "pass_id": "nil-receiver-folding",
+      "ordinal": 20,
+      "stage": "ir-message-send-lowering",
+      "mode": "enabled",
+      "semantic_preserving": true,
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": false,
+      "input_contract": "Objc3IRReceiverDispatchFacts",
+      "output_contract": "Objc3IRMessageSendLoweringPlan",
+      "preconditions": [
+        "receiver fact is compile_time_nil_receiver",
+        "selector and argument lowering are side-effect free for optional nil send"
+      ],
+      "invalidation": "no runtime or direct dispatch proof is created for folded nil sends",
+      "post_verify": ["non-nil and unknown receivers retain runtime dispatch"],
+      "fail_closed_diagnostics": [
+        "nil receiver folding requires compile-time nil receiver proof"
+      ],
+      "fixtures": [
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_keyword_elision.objc3"
+      ]
+    },
+    {
+      "pass_id": "direct-dispatch-exact-call",
+      "ordinal": 30,
+      "stage": "ir-message-send-emission",
+      "mode": "enabled",
+      "semantic_preserving": true,
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3IRDirectDispatchCallRequest",
+      "output_contract": "BuildObjc3IRDirectDispatchCall",
+      "preconditions": [
+        "callee symbol and signature are both present",
+        "explicit argument types cover every explicit argument",
+        "direct dispatch result owns explicit IR storage"
+      ],
+      "invalidation": "invalidate global proof state after exact direct call emission",
+      "post_verify": [
+        "direct call result is coerced through typed scalar marshalling",
+        "global proof state invalidation trace is present"
+      ],
+      "fail_closed_diagnostics": [
+        "direct dispatch lowering requires exact symbol, signature, and result ownership"
+      ],
+      "fixtures": [
+        "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll"
+      ]
+    },
+    {
+      "pass_id": "arc-retained-result-cleanup",
+      "ordinal": 40,
+      "stage": "ir-arc-cleanup-lowering",
+      "mode": "enabled",
+      "semantic_preserving": true,
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": false,
+      "input_contract": "method-family ARC ownership facts",
+      "output_contract": "registered retained-result cleanup storage",
+      "preconditions": [
+        "ARC mode is enabled",
+        "method family returns a retained object result",
+        "related-result receiver cleanup is disarmed before transfer"
+      ],
+      "invalidation": "local ARC cleanup state is rewritten; global proof state is unchanged",
+      "post_verify": ["owned result cleanup remains explicit"],
+      "fail_closed_diagnostics": [
+        "ARC retained-result cleanup requires method-family ownership proof"
+      ],
+      "fixtures": [
+        "tests/native/sema/ownership/strong_id_assignment.objc3"
+      ]
+    },
+    {
+      "pass_id": "runtime-dispatch-preservation",
+      "ordinal": 50,
+      "stage": "ir-runtime-dispatch-emission",
+      "mode": "verifier-only",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "Objc3IRRuntimeDispatchCallRequest",
+      "output_contract": "canonical runtime dispatch call",
+      "preconditions": [
+        "runtime dispatch result owner is explicit",
+        "dispatch symbol is canonical or typed canonical from-class variant",
+        "retired routes and compatibility routes remain disabled"
+      ],
+      "invalidation": "runtime cache state remains runtime-owned behind dispatch entrypoints",
+      "post_verify": ["no selector-table or method-cache helper is materialized in IR"],
+      "fail_closed_diagnostics": [
+        "runtime dispatch preservation rejected non-canonical dispatch emission"
+      ],
+      "fixtures": [
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+      ]
+    },
+    {
+      "pass_id": "devirtualization",
+      "ordinal": 60,
+      "stage": "semantic-optimization-reserved",
+      "mode": "reserved",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "closed-world receiver finality proof",
+      "output_contract": "exact direct dispatch call",
+      "preconditions": [
+        "class finality proof exists",
+        "override set is closed",
+        "ABI stability allows direct target publication"
+      ],
+      "invalidation": "would invalidate receiver, selector, and callee proof state",
+      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "fail_closed_diagnostics": [
+        "devirtualization is reserved until closed-world finality proofs exist"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      ]
+    },
+    {
+      "pass_id": "method-inlining",
+      "ordinal": 70,
+      "stage": "semantic-optimization-reserved",
+      "mode": "reserved",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "side-effect and ownership-preserving inline candidate",
+      "output_contract": "expanded IR body",
+      "preconditions": [
+        "callee body is available",
+        "ownership effects are replayable",
+        "debug and diagnostic source mapping are preserved"
+      ],
+      "invalidation": "would invalidate local value, ownership, and diagnostic proof state",
+      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "fail_closed_diagnostics": [
+        "method inlining is reserved until ownership and source-map proofs exist"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      ]
+    },
+    {
+      "pass_id": "cache-aware-dispatch",
+      "ordinal": 80,
+      "stage": "runtime-owned-dispatch-optimization-reserved",
+      "mode": "reserved",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "runtime cache invalidation contract",
+      "output_contract": "runtime-owned cache-aware dispatch helper",
+      "preconditions": [
+        "runtime cache invalidation semantics are public",
+        "ABI-stable helper symbol exists",
+        "semantic replay preserves dispatch miss behavior"
+      ],
+      "invalidation": "cache invalidation remains runtime-owned; no IR helper is materialized",
+      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "fail_closed_diagnostics": [
+        "cache-aware dispatch is reserved behind the runtime cache contract"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      ]
+    },
+    {
+      "pass_id": "ir-cleanup-verifier",
+      "ordinal": 90,
+      "stage": "post-ir-optimization-verification",
+      "mode": "verifier-only",
+      "semantic_preserving": true,
+      "rewrites_ir": false,
+      "invalidates_global_proof_state": false,
+      "input_contract": "post-pass IR trace",
+      "output_contract": "semantic equivalence verdict",
+      "preconditions": [
+        "pass order trace is deterministic",
+        "all mutating passes declared invalidation",
+        "all unsupported opportunities emitted skip diagnostics"
+      ],
+      "invalidation": "no mutation; verifier consumes post-pass trace",
+      "post_verify": ["semantic equivalence verdict is present"],
+      "fail_closed_diagnostics": [
+        "post optimization IR cleanup verifier failed semantic equivalence"
+      ],
+      "fixtures": [
+        "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll"
+      ]
+    }
+  ],
+  "verification_gates": [
+    {
+      "gate_id": "deterministic-pass-order",
+      "required": true,
+      "evidence": "ordinal order is strict and replayed in native surface key"
+    },
+    {
+      "gate_id": "typed-contracts",
+      "required": true,
+      "evidence": "every pass names input and output contracts"
+    },
+    {
+      "gate_id": "explicit-invalidation",
+      "required": true,
+      "evidence": "every mutating pass declares proof-state invalidation behavior"
+    },
+    {
+      "gate_id": "post-pass-verification",
+      "required": true,
+      "evidence": "every pass has post_verify checks"
+    },
+    {
+      "gate_id": "fail-closed-diagnostics",
+      "required": true,
+      "evidence": "every pass has fail_closed_diagnostics and reserved passes skip without success claim"
+    },
+    {
+      "gate_id": "benchmark-governance",
+      "required": true,
+      "evidence": "native surface remains unready until lowering pass graph performance quality guardrails are ready"
+    }
+  ],
+  "unsupported_policy": {
+    "unsafe_flags_allowed": false,
+    "reserved_pass_success_claims_allowed": false,
+    "whole_program_optimization_allowed": false,
+    "compatibility_shims_allowed": false
+  }
+}

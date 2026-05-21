@@ -24,6 +24,8 @@ PACKAGE_SOURCE_CONTRACTS = (
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
     "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
 )
@@ -31,6 +33,7 @@ PACKAGE_FORBIDDEN_CLAIMS = (
     "hosted registry availability",
     "package-manager parity",
     "network-backed alternate install path",
+    "dependency resolution without package manifest trust",
     "generated artifact as source authority",
     "wrapper-only package publication",
 )
@@ -87,6 +90,11 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-lock-owner",
         "builds deterministic local lock evidence; it does not publish or imply hosted registry support",
     ),
+    "validate-package-manager-model": _package_contract(
+        "validate-package-manager-model",
+        "package-ecosystem-manager-owner",
+        "validates local package manifests, dependency graph resolution, ABI/language constraints, and trust envelopes before authoring claims",
+    ),
     "validate-package-authoring": _package_contract(
         "validate-package-authoring",
         "package-ecosystem-authoring-owner",
@@ -101,6 +109,11 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "validate-package-ecosystem",
         "package-ecosystem-registry-owner",
         "integrates lock, mirror, and registry metadata as local generated evidence only",
+    ),
+    "validate-package-install-distribution": _package_contract(
+        "validate-package-install-distribution",
+        "package-ecosystem-install-owner",
+        "proves clean local install credibility across package manifests, locks, mirrors, local registry metadata, restore receipts, and machine-owned install receipts",
     ),
     "validate-runnable-package-ecosystem": _package_contract(
         "validate-runnable-package-ecosystem",

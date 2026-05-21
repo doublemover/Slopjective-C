@@ -26,6 +26,7 @@ class DistributionCredibilityDashboardInputs:
     release_operations_publication: dict[str, Any]
     release_operations_end_to_end: dict[str, Any]
     release_evidence: dict[str, Any]
+    package_install_distribution: dict[str, Any]
 
 
 def require_json(path: Path, *, kind: str) -> dict[str, Any]:
@@ -65,4 +66,8 @@ def load_dashboard_inputs(
             kind="release-operations end-to-end summary",
         ),
         release_evidence=ensure_release_evidence_index(paths),
+        package_install_distribution=require_json(
+            paths.package_install_distribution_summary,
+            kind="package install distribution summary",
+        ),
     )

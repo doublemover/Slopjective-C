@@ -8,6 +8,7 @@
   ],
   "blocking_conditions": [
     "package-channel-install-failure",
+    "clean-package-install-credibility-failure",
     "rollback-proof-failure",
     "release-operations-proof-failure",
     "missing-release-evidence-index"
@@ -22,6 +23,11 @@
       "incident_id": "install-failure",
       "severity": "high",
       "required_action": "stop credibility publication until the live package-channel drill passes"
+    },
+    {
+      "incident_id": "clean-package-install-failure",
+      "severity": "high",
+      "required_action": "stop credibility publication until package install validation passes from a clean no-network root"
     },
     {
       "incident_id": "rollback-failure",

@@ -59,6 +59,10 @@
     "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
     "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
     "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_operations.cpp",
+    "native/objc3c/src/runtime/concurrency/executor.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/runtime/ARCHITECTURE.md"
   ],
@@ -73,13 +77,22 @@
     "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
     "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
-    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp"
+  ],
+  "runtime_performance_contract_paths": [
+    "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
   ],
   "hot_path_families": [
     "startup-installation",
     "dispatch-cache",
     "reflection-query",
     "ownership-helpers",
+    "stdlib-helper-runtime",
+    "stdlib-concurrency-runtime",
     "runtime-counter-snapshot"
   ],
   "artifact_roots": [

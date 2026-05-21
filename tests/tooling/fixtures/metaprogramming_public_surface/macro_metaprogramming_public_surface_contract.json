@@ -4,7 +4,7 @@
   "issue_ref": 8168,
   "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
   "runner_path": "scripts/check_objc3c_metaprogramming_public_surface.py",
-  "source_truth": "checked-in native fixtures, semantic contract sources, trust registry JSON, and runnable metaprogramming acceptance wiring",
+  "source_truth": "checked-in native fixtures, semantic contract sources, trust registry JSON, generated-artifact ownership schema/fixture, and runnable metaprogramming acceptance wiring",
   "support_claims": [
     {
       "claim_id": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
@@ -231,10 +231,16 @@
     "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
     "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc",
     "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+    "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+    "schemas/objc3c-macro-expansion-artifact-ownership-v1.schema.json",
+    "scripts/objc3c_macro_expansion_artifact_ownership.py",
+    "scripts/check_objc3c_macro_expansion_artifact_ownership.py",
     "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_positive_cases.py",
     "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_negative_cases.py",
     "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_cases.py",
     "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py",
+    "scripts/objc3c_runtime_acceptance/domains/metaprogramming_live_cache_payload_assertions.py",
+    "tests/tooling/fixtures/metaprogramming_public_surface/macro_expansion_artifact_ownership_contract.json",
     "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
     "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
   ],

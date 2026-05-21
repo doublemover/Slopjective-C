@@ -298,7 +298,8 @@ Realization and lookup semantics surface:
   - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
 - explicit non-goal:
-  - no public reflection ABI widening beyond the current runtime header
+  - object-model closure probes do not widen the bounded public reflection ABI
+    owned by `public/objc3_runtime_reflection.h`
 
 Class/metaclass/protocol realization surface:
 
@@ -357,8 +358,10 @@ Reflection visibility and runtime coherence diagnostics surface:
   - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
   - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 - semantic boundary:
-  - private testing snapshots remain the only reflection visibility surface over
-    runtime-owned class, property, and protocol state
+  - public reflection snapshots expose the bounded C ABI in
+    `public/objc3_runtime_reflection.h`; private testing snapshots remain the
+    coherence and closure-audit surface for runtime-owned class, property, and
+    protocol internals
   - missing class/property lookups must fail closed without mutating property
     registry or realized-class state
   - reflected selector, owner-identity, slot-layout, and ownership-profile

@@ -171,32 +171,42 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json` |  |
 | `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `source` | `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp` |  |
-| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
 | `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
-| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
-| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
-| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
 | `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
-| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `native/objc3c/src/runtime/strings/borrowed_string.cpp` |  |
-| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.string-view-runtime-shape` | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
 | `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
-| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
-| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
-| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/modules/objc3.text/module.json` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/modules/objc3.text/module.objc3` |  |
 | `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
-| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/core_runtime.cpp` |  |
-| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
+| `stdlib.text.byte-span-runtime-shape` | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
 | `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
-| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
-| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
-| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.json` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.objc3` |  |
 | `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
-| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
 | `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
-| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
-| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
-| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.objc3` |  |
 | `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
@@ -410,6 +420,11 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.json.schema-registry` |  | `source` | `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp` |  |
 | `tooling.json.schema-registry` |  | `source` | `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |  |
 | `tooling.json.schema-registry` |  | `test` | `tests/tooling/test_objc3c_shared_json_schema.py` |  |
+| `tooling.json.schema-registry` |  | `schema` | `schemas/objc3c-abi-api-governance-v1.schema.json` |  |
+| `tooling.json.schema-registry` |  | `schema` | `schemas/objc3c-package-manifest-v1.schema.json` |  |
+| `tooling.json.schema-registry` |  | `schema` | `schemas/objc3c-runtime-debug-trace-v1.schema.json` |  |
+| `tooling.json.schema-registry` |  | `schema` | `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json` |  |
+| `tooling.json.schema-registry` |  | `schema` | `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json` |  |
 | `support.hard-cutover-capability-truth` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `support.hard-cutover-capability-truth` |  | `doc` | `docs/support/README.md` |  |
 | `support.hard-cutover-capability-truth` |  | `doc` | `docs/support/capability_claim_responsibility.md` |  |
@@ -426,7 +441,126 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json` | `npm run objc3c -- validate-getting-started` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/test_getting_started_surface_command_parity.py` | `npm run objc3c -- validate-getting-started` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json` | `npm run objc3c -- validate-migration-workflow` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3` | `npm run objc3c -- validate-migration-workflow` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json` | `npm run objc3c -- validate-migration-workflow` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json` | `npm run objc3c -- validate-application-architecture` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/editor_diagnostic_bridge_contract.json` | `npm run objc3c -- check-developer-diagnostic-quality` |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `diagnostic` | `tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `doc` | `README.md` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `doc` | `docs/tutorials/getting_started.md` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `doc` | `docs/tutorials/objc2_to_objc3_migration.md` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `source` | `scripts/check_getting_started_surface.py` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `source` | `scripts/materialize_objc3c_project_template.py` |  |
+| `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `source` | `scripts/check_objc3c_migration_workflow.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/conformance/public_suite_manifest.json` | `npm run objc3c -- validate-conformance-corpus` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `schemas/objc3c-public-conformance-suite-v1.schema.json` | `npm run objc3c -- validate-conformance-corpus` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite_manifest.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `tests/conformance/corpus_surface.json` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/test_package_manager_model.py` | `npm run objc3c -- validate-package-manager-model` |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `schema` | `schemas/objc3c-package-manifest-v1.schema.json` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `schema` | `schemas/objc3c-package-lock-v1.schema.json` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/objc3c_package_manager/model.py` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/check_objc3c_package_manager_model.py` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/test_package_install_distribution_credibility.py` | `npm run objc3c -- validate-package-install-distribution` |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `source` | `scripts/objc3c_package_manager/install_distribution.py` |  |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `source` | `scripts/check_objc3c_package_install_distribution_credibility.py` |  |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/fixtures/release_foundation/abi_api_governance.json` | `npm run objc3c -- check-release-abi-api-drift` |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json` | `npm run objc3c -- check-release-abi-api-drift` |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/test_release_abi_api_drift.py` | `npm run objc3c -- check-release-abi-api-drift` |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `schema` | `schemas/objc3c-abi-api-governance-v1.schema.json` |  |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `source` | `scripts/objc3c_release_manifest/abi_api_drift.py` |  |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/fixtures/release_operations/channel_operations_model.json` | `npm run objc3c -- validate-release-operations-end-to-end` |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/test_release_operations_channel_model.py` | `npm run objc3c -- validate-release-operations-end-to-end` |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `schema` | `schemas/objc3c-release-channel-operations-v1.schema.json` |  |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `source` | `scripts/build_objc3c_update_manifest.py` |  |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `source` | `scripts/publish_objc3c_release_operations_metadata.py` |  |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `source` | `scripts/check_objc3c_release_operations_end_to_end.py` |  |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `doc` | `docs/runbooks/objc3c_release_operations.md` |  |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json` | `npm run objc3c -- validate-public-runtime-reflection-api` |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/test_public_runtime_reflection_api.py` | `npm run objc3c -- validate-public-runtime-reflection-api` |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp` | `npm run objc3c -- validate-public-runtime-reflection-api` |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `scripts/check_objc3c_public_runtime_reflection_api.py` |  |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/test_semantic_optimization_pipeline.py` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `schema` | `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json` |  |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `scripts/objc3c_semantic_optimization_pipeline.py` |  |
+| `compiler.optimization.semantic-pass-registry` |  | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h` |  |
+| `compiler.optimization.semantic-pass-registry` |  | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
+| `compiler.optimization.semantic-pass-registry` |  | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `compiler.optimization.devirtualization` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
+| `compiler.optimization.devirtualization` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
+| `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `runtime.optimization.cache-aware-dispatch` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
+| `runtime.optimization.cache-aware-dispatch` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `schema` | `schemas/objc3c-runtime-debug-trace-v1.schema.json` |  |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/build_objc3c_runtime_debug_trace.py` |  |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/validation.py` |  |
+| `runtime.debug-trace.lldb-plugin` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
+| `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |
+| `runtime.debug-trace.statement-stepping` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.async-tasks` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
+| `runtime.debug-trace.async-tasks` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.error-unwind` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
+| `runtime.debug-trace.error-unwind` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `test` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` | `npm run objc3c -- build-platform-support-matrix` |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `test` | `tests/tooling/test_platform_toolchain_support_evidence.py` | `npm run objc3c -- build-platform-support-matrix` |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `schema` | `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json` |  |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `source` | `scripts/platform_hardening_contracts/support_evidence.py` |  |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `source` | `scripts/check_platform_hardening_support_evidence.py` |  |
+| `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `doc` | `docs/runbooks/objc3c_platform_hardening.md` |  |
+| `platform.linux-x64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `platform.linux-x64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
+| `platform.darwin-arm64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `platform.darwin-arm64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
+| `toolchain.llvm.current-probed-executable` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `toolchain.llvm.current-probed-executable` |  | `source` | `scripts/probe_objc3c_llvm_capabilities.py` |  |
+| `toolchain.llvm.current-probed-executable` |  | `test` | `tests/tooling/test_probe_objc3c_llvm_capabilities.py` |  |
+| `toolchain.package-bridge.minimum-host-tools` |  | `source` | `package.json` |  |
+| `toolchain.package-bridge.minimum-host-tools` |  | `source` | `scripts/objc3c_workflow/public_command_api.py` |  |
+| `toolchain.package-bridge.minimum-host-tools` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `toolchain.sanitizer.address` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `toolchain.sanitizer.address` |  | `doc` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
+| `toolchain.sanitizer.undefined` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `toolchain.sanitizer.undefined` |  | `doc` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/test_application_framework_samples.py` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
+| `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `test` | `showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `test` | `tests/tooling/test_application_framework_samples.py` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
+| `applications.framework-samples.interop-adapter-library` | `objc3c.behavior.application-framework-samples.interop-adapter-library` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `test` | `showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `test` | `tests/tooling/test_application_framework_samples.py` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
+| `applications.framework-samples.stdlib-text-collections-cli` | `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `test` | `showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `test` | `tests/tooling/test_application_framework_samples.py` | `npm run objc3c -- validate-application-framework-samples` |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `showcase/applicationFrameworkSamples/manifest.json` |  |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `source` | `scripts/check_objc3c_application_framework_samples.py` |  |
+| `applications.framework-samples.async-runtime-application` | `objc3c.behavior.application-framework-samples.async-runtime-application` | `doc` | `showcase/applicationFrameworkSamples/README.md` |  |

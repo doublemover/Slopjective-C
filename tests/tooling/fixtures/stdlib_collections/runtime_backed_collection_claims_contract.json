@@ -2,40 +2,54 @@
   "schema_version": 1,
   "contract_id": "objc3c.stdlib.collections.runtime_backed_claims.v1",
   "issue_ref": 8161,
-  "scope": "bounded-runtime-backed-collection-groundwork",
+  "scope": "runtime-backed-objc3-collections-module",
   "source_truth": [
-    "stdlib/modules/objc3.core/module.json",
+    "stdlib/modules/objc3.collections/module.json",
+    "stdlib/modules/objc3.collections/module.objc3",
+    "stdlib/modules/objc3.collections/smoke.objc3",
     "stdlib/semantic_policy.json",
-    "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
-    "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
-    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp"
+    "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+    "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+    "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+    "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+    "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h"
   ],
   "claims": [
     {
       "support_claim": "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
       "capability_id": "stdlib.collections.array-slice-runtime-shape",
-      "module": "objc3.core",
-      "api_family": "array-slice",
+      "module": "objc3.collections",
+      "api_family": "concrete-i32-array-storage",
       "exports": [
-        "objc3_core_array_count",
-        "objc3_core_array_prefix_count"
+        "objc3_collections_array3",
+        "objc3_collections_array_count",
+        "objc3_collections_array_get_or",
+        "objc3_collections_array_prefix_count",
+        "objc3_collections_last_status"
       ],
       "runtime_abi": [
-        "objc3_runtime_stdlib_core_count_i32",
-        "objc3_runtime_stdlib_core_prefix_count_i32"
+        "objc3_runtime_stdlib_collections_array3_i32",
+        "objc3_runtime_stdlib_collections_array_count_i32",
+        "objc3_runtime_stdlib_collections_array_get_or_i32",
+        "objc3_runtime_stdlib_collections_array_prefix_count_i32",
+        "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
+        "array3_record",
         "array_count",
+        "array_get_or",
         "array_prefix_count"
       ],
       "supported_now": [
-        "count helper applies a zero floor to negative element counts",
-        "prefix helper clamps count and requested element counts through the runtime ABI"
+        "runtime-owned concrete i32 array records are created only for counts from zero through three",
+        "count, indexed get-or, prefix count, and status reporting are routed through the objc3.collections runtime ABI",
+        "invalid handles, out-of-bounds indexes, and invalid counts fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
         "array literals",
         "generic element typing",
-        "owned array storage",
+        "owned arbitrary-length array storage",
         "mutation",
         "iteration protocol"
       ]
@@ -43,28 +57,36 @@
     {
       "support_claim": "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
       "capability_id": "stdlib.collections.map-entry-runtime-shape",
-      "module": "objc3.core",
-      "api_family": "map-entry",
+      "module": "objc3.collections",
+      "api_family": "concrete-i32-map-entry-storage",
       "exports": [
-        "objc3_core_map_entry_present",
-        "objc3_core_map_entry_value_or"
+        "objc3_collections_map_entry",
+        "objc3_collections_map_count",
+        "objc3_collections_map_contains",
+        "objc3_collections_map_lookup_or",
+        "objc3_collections_last_status"
       ],
       "runtime_abi": [
-        "objc3_runtime_stdlib_core_map_entry_present_i32",
-        "objc3_runtime_stdlib_core_map_entry_value_or_i32"
+        "objc3_runtime_stdlib_collections_map_entry_i32",
+        "objc3_runtime_stdlib_collections_map_count_i32",
+        "objc3_runtime_stdlib_collections_map_contains_i32",
+        "objc3_runtime_stdlib_collections_map_lookup_or_i32",
+        "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
-        "map_entry_present",
-        "map_entry_value_or"
+        "map_entry",
+        "map_lookup_or"
       ],
       "supported_now": [
-        "presence helper treats zero as absent and nonzero as present",
-        "value helper returns the stored value only for a present flag and otherwise returns the caller default"
+        "single-entry i32 map records are runtime-owned handles created through objc3_runtime_stdlib_collections_map_entry_i32",
+        "map count, contains, lookup-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "invalid handles and missing keys fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
         "dictionary literals",
-        "key hashing",
-        "owned map storage",
+        "generic key or value typing",
+        "key hashing beyond the current single-entry i32 key equality record",
+        "owned multi-entry map storage",
         "mutation",
         "iteration protocol"
       ]
@@ -75,6 +97,6 @@
     "collection literal support claims",
     "generic collection ABI promises",
     "Foundation compatibility promises",
-    "storage ownership or allocator promises"
+    "widening objc3.core helper claims into objc3.collections without the dedicated module contract"
   ]
 }

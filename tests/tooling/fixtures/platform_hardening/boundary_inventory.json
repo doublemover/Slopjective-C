@@ -17,6 +17,7 @@
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
+    "scripts/check_platform_hardening_support_evidence.py",
     "scripts/objc3c_workflow"
   ],
   "policy_contract_paths": [
@@ -27,6 +28,7 @@
     "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
     "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
     "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
+    "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
     "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
     "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
     "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
@@ -83,6 +85,7 @@
     "tmp/reports/platform-hardening/support-tier-policy/support_tier_policy_summary.json",
     "tmp/reports/platform-hardening/unsupported-host-policy/unsupported_host_policy_summary.json",
     "tmp/reports/platform-hardening/toolchain-archive-policy/toolchain_archive_policy_summary.json",
+    "tmp/reports/platform-hardening/support-evidence-summary.json",
     "tmp/reports/platform-hardening/artifact-contract/artifact_contract_summary.json",
     "tmp/reports/platform-hardening/build-package-validation-summary.json",
     "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",

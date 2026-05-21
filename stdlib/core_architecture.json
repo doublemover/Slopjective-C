@@ -8,10 +8,17 @@
     "stdlib/core_architecture.json",
     "stdlib/modules/objc3.core/module.objc3",
     "stdlib/modules/objc3.errors/module.objc3",
+    "stdlib/modules/objc3.text/module.objc3",
+    "stdlib/modules/objc3.collections/module.objc3",
     "stdlib/modules/objc3.keypath/module.objc3",
     "native/objc3c/src/runtime/stdlib/core_runtime_contract.h",
     "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+    "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+    "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+    "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+    "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
     "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
     "scripts/check_stdlib_surface.py",
     "scripts/materialize_objc3c_stdlib_workspace.py",
     "scripts/objc3c_workflow/actions/application_stdlib_integrations.py",
@@ -32,6 +39,17 @@
       "result-shape",
       "option-result-shape",
       "text-data-shape"
+    ],
+    "objc3.text": [
+      "utf8-text-record",
+      "text-length",
+      "text-concat",
+      "text-status"
+    ],
+    "objc3.collections": [
+      "concrete-i32-array-storage",
+      "concrete-i32-map-entry-storage",
+      "bounds-and-lookup-status"
     ],
     "objc3.keypath": [
       "typed-keypath-application",
@@ -95,6 +113,35 @@
       "objc3_errors_text_data_shape_score",
       "objc3_errors_text_data_shape_diagnostic"
     ],
+    "objc3.text": [
+      "Objc3TextStatusOk",
+      "Objc3TextStatusInvalidHandle",
+      "Objc3TextStatusInvalidShape",
+      "Objc3TextStatusMalformedUtf8",
+      "objc3_text_utf8_literal",
+      "objc3_text_byte_count",
+      "objc3_text_unit_count",
+      "objc3_text_is_valid_utf8",
+      "objc3_text_prefix_units",
+      "objc3_text_concat",
+      "objc3_text_last_status"
+    ],
+    "objc3.collections": [
+      "Objc3CollectionsStatusOk",
+      "Objc3CollectionsStatusInvalidHandle",
+      "Objc3CollectionsStatusOutOfBounds",
+      "Objc3CollectionsStatusInvalidCount",
+      "Objc3CollectionsStatusNotFound",
+      "objc3_collections_array3",
+      "objc3_collections_array_count",
+      "objc3_collections_array_get_or",
+      "objc3_collections_array_prefix_count",
+      "objc3_collections_map_entry",
+      "objc3_collections_map_count",
+      "objc3_collections_map_contains",
+      "objc3_collections_map_lookup_or",
+      "objc3_collections_last_status"
+    ],
     "objc3.keypath": [
       "objc3_keypath_apply_index",
       "objc3_keypath_component_count",
@@ -135,6 +182,8 @@
   "module_roles": {
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and option-to-result shape diagnostics",
+    "objc3.text": "runtime-backed UTF-8 text records with byte/unit counts, concatenation, prefix helpers, and fail-closed status reporting",
+    "objc3.collections": "runtime-backed concrete i32 arrays and single-entry maps with explicit bounds and lookup status reporting",
     "objc3.keypath": "typed key-path helpers that need text/data shape naming stability",
     "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the advanced stdlib contract",
     "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the advanced stdlib contract"

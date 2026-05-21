@@ -53,7 +53,8 @@
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-    "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json"
+    "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
+    "tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json"
   ],
   "artifact_root": "tmp/artifacts/adoption-legibility/",
   "report_root": "tmp/reports/adoption-legibility/",
@@ -80,6 +81,7 @@
     "All adoption machine-owned artifacts must be regenerated from checked-in source contracts.",
     "tmp/ artifacts and reports are replay outputs, never canonical source authority.",
     "Evaluator, adoption replay, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
+    "Migration examples must be checked-in input/output fixtures, with tmp reports treated only as replay outputs.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims.",
     "Public-claim, comparison, adoption replay, and publication blockers must project through claim_audit.blocker_metadata.",
     "Adoption publication actions must have owner contracts and may not be wrapper-only.",

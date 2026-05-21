@@ -7,6 +7,7 @@ from format_objc3c_source import build_format_summary_for_source
 from objc3c_tooling.paths import display_path
 
 from objc3c_editor_tooling.artifact_inspector import build_artifact_inspector_payload
+from objc3c_editor_tooling.diagnostic_bridge import build_lsp_diagnostic_transport
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
 from objc3c_editor_tooling.validation import diagnostics_entries
@@ -76,6 +77,9 @@ def build_language_server_payload(
     manifest_path_text: str | None,
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any] | None = None,
+    *,
+    source_path: str = "",
+    diagnostic_entries: list[Any] | None = None,
 ) -> dict[str, Any]:
     manifest_available = bool(manifest_path_text)
     workspace_index_available = (
@@ -83,20 +87,27 @@ def build_language_server_payload(
         and workspace_index.get("available") is True
         and int(workspace_index.get("package_count", 0) or 0) > 1
     )
+    diagnostic_transport = build_lsp_diagnostic_transport(
+        source_path,
+        diagnostic_entries or [],
+    )
+    code_action_available = int(diagnostic_transport["code_action_count"]) > 0
     supported_capabilities = [
         "publishDiagnostics",
         "documentSymbol" if manifest_available else None,
         "workspaceSymbol" if manifest_available and workspace_index_available else None,
         "definition" if manifest_available and symbols else None,
+        "codeAction" if code_action_available else None,
     ]
     supported_capabilities = [capability for capability in supported_capabilities if capability is not None]
     unpublished_capabilities = [
         "references",
         "rename",
         "semanticTokens",
-        "codeAction",
+        "codeAction" if not code_action_available else None,
         "statementLevelStepping",
     ]
+    unpublished_capabilities = [capability for capability in unpublished_capabilities if capability is not None]
     capability_statuses = {
         "publishDiagnostics": {
             "supported": True,
@@ -138,9 +149,14 @@ def build_language_server_payload(
             "unpublished_reason": "not published; no semantic token contract is emitted on the canonical toolchain path",
         },
         "codeAction": {
-            "supported": False,
-            "support_class": "unpublished",
-            "unpublished_reason": "not published; diagnostics remain actionable only through compile output and operator guidance",
+            "supported": code_action_available,
+            "support_class": "diagnostics-fixit-backed"
+            if code_action_available
+            else "fail-closed",
+            "evidence": "diagnostics-json-fixits" if code_action_available else "",
+            "unpublished_reason": ""
+            if code_action_available
+            else "disabled until diagnostics emit machine-applicable fix-its",
         },
         "statementLevelStepping": {
             "supported": False,
@@ -153,6 +169,7 @@ def build_language_server_payload(
         "summary_status_name": summary.get("observability", {}).get("status_name", ""),
         "manifest_backed_navigation": manifest_available,
         "workspace_index_backed_navigation": workspace_index_available,
+        "diagnostic_transport": diagnostic_transport,
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
@@ -231,6 +248,10 @@ def build_debug_payload(
         "declaration_breakpoints": declaration_breakpoints,
         "object_section_inventory_command": object_sections,
         "object_symbol_inventory_command": object_symbols,
+        "runtime_debug_trace_command": "npm run objc3c -- trace-runtime-debug",
+        "runtime_debug_trace_path": "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
+        "runtime_debug_trace_schema": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+        "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
         "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
         "artifact_inspection_ready": bool(object_path_text and object_symbols),
         "retired_route_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
@@ -239,6 +260,7 @@ def build_debug_payload(
 
 def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingInputs) -> EditorToolingModel:
     symbols = extract_symbols(inputs.manifest)
+    diagnostic_entries = diagnostics_entries(inputs.diagnostics)
     module_name = str(inputs.manifest.get("module") or paths.source.path.stem)
     workspace_index = build_workspace_index(
         paths.source.display_path,
@@ -257,6 +279,8 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             inputs.manifest_path_text,
             symbols,
             workspace_index,
+            source_path=paths.source.display_path,
+            diagnostic_entries=diagnostic_entries,
         ),
         navigation=build_navigation_payload(
             paths.source.display_path,

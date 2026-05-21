@@ -60,4 +60,5 @@ class ProjectTemplatePaths:
     template_source: Path
     template_readme: Path
     template_manifest: Path
+    compile_artifact_root: Path
     harness_path: Path

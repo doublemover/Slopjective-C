@@ -14,6 +14,7 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import python_script_command
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_package_manager.model import cache_payload_from_mirror_package
 from package_ecosystem_contracts import PACKAGE_LOADER_INTEROP_TAMPER_CODE
 
 
@@ -87,6 +88,12 @@ def mirror_package_payload(package: dict[str, Any]) -> dict[str, Any]:
         "package_id": package_id,
         "source": source,
         "source_digest": source_digest(source),
+        "source_kind": str(package["source_kind"]),
+        "package_version": str(package["package_version"]),
+        "language_version": str(package["language_version"]),
+        "abi_identity": str(package["abi_identity"]),
+        "package_manifest": package["package_manifest"],
+        "trust": package["trust"],
         "cache_path": repo_rel(cache_path),
     }
     interop_metadata = package.get("interop_loader_metadata")
@@ -101,27 +108,17 @@ def registry_package_payload(package: dict[str, Any]) -> dict[str, Any]:
         "package_id": str(package["package_id"]),
         "source": str(package["source"]),
         "source_digest": source_digest(str(package["source"])),
+        "source_kind": str(package["source_kind"]),
+        "package_version": str(package["package_version"]),
+        "language_version": str(package["language_version"]),
+        "abi_identity": str(package["abi_identity"]),
+        "package_manifest": package["package_manifest"],
         "provenance_id": str(package["provenance_id"]),
+        "trust": package["trust"],
     }
     interop_metadata = package.get("interop_loader_metadata")
     if isinstance(interop_metadata, dict):
         payload["interop_loader_metadata"] = interop_metadata
-    return payload
-
-
-def cache_payload_from_mirror_package(mirror_package: dict[str, Any]) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "contract_id": "objc3c.package_ecosystem.offline_mirror.cache_entry.v1",
-        "package_id": str(mirror_package["package_id"]),
-        "source": str(mirror_package["source"]),
-        "source_digest": str(mirror_package["source_digest"]),
-        "network_policy": "no-network-during-validation",
-        "restore_failure_mode": "reject-package-metadata-digest-mismatch",
-    }
-    interop_metadata = mirror_package.get("interop_loader_metadata")
-    if isinstance(interop_metadata, dict):
-        payload["interop_loader_metadata"] = interop_metadata
-        payload["interop_loader_metadata_digest"] = str(interop_metadata.get("digest", ""))
     return payload
 
 
@@ -192,6 +189,9 @@ def main() -> int:
         "network_policy": "no-network-during-validation",
         "package_bridge": "objc3c",
         "install_command": mirror_check_command,
+        "language_version": lock.get("package_manager", {}).get("language_version"),
+        "abi_identity": lock.get("package_manager", {}).get("abi_identity"),
+        "trust_key_id": "objc3c-local-package-key-v1",
         "restore_failure_mode": "reject-package-metadata-digest-mismatch",
         "restore_timestamp_policy": "omitted-for-deterministic-replay",
     }
@@ -202,6 +202,9 @@ def main() -> int:
         "source_restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
         "support_state": "local-generated-index",
         "hosted_registry_state": "deferred",
+        "network_resolution_support": "unsupported-fail-closed",
+        "language_version": lock.get("package_manager", {}).get("language_version"),
+        "abi_identity": lock.get("package_manager", {}).get("abi_identity"),
         "interop_loader_metadata": interop_loader_metadata if isinstance(interop_loader_metadata, dict) else {},
         "packages": registry_packages,
     }
@@ -217,6 +220,10 @@ def main() -> int:
         "offline_restore_support": "local-cache-digest-checked",
         "interop_loader_support": "local-mixed-image-metadata-digest-checked",
         "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        "package_manager_tamper_diagnostic": "O3PKG8055",
+        "language_version": lock.get("package_manager", {}).get("language_version"),
+        "abi_identity": lock.get("package_manager", {}).get("abi_identity"),
+        "trust_key_id": "objc3c-local-package-key-v1",
         "package_count": len(packages),
         "cache_entry_count": len(cache_paths),
         "interop_loader_metadata_package_count": interop_package_count,

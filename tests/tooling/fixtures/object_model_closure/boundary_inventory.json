@@ -199,7 +199,7 @@
     },
     {
       "gap_id": "reflection-visibility-remains-private-runtime-query-surface",
-      "summary": "Aggregate object-model and property reflection are runtime-backed today, but the supported query surface remains private testing API and must stay explicitly fail-closed rather than being overclaimed as public reflection ABI.",
+      "summary": "Aggregate object-model and property reflection are runtime-backed today; the object-model closure query surface remains private testing API, while public reflection support is limited to the separate bounded C ABI contract and must not be overclaimed as debugger-grade reflection.",
       "evidence_references": [
         "docs/objc3c-native.md",
         "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",

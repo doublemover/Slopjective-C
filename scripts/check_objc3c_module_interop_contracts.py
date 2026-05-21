@@ -1,0 +1,477 @@
+#!/usr/bin/env python3
+"""Validate focused module identity, visibility, rebuild, and interop contracts."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Any
+
+from objc3c_shared.json_io import (
+    JsonSchemaValidationError,
+    load_json_object,
+    validate_json_schema,
+    write_json_file,
+)
+from objc3c_tooling.paths import repo_rel
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "module_interop_contracts"
+    / "foundation_next_visibility_bridge_contract.json"
+)
+SCHEMA_PATH = ROOT / "schemas" / "objc3c-module-interop-contract-v1.schema.json"
+SUMMARY_PATH = (
+    ROOT
+    / "tmp"
+    / "reports"
+    / "module-interop-contracts"
+    / "foundation-next-visibility-bridge-summary.json"
+)
+
+PUBLIC_COMMAND = "npm run objc3c -- validate-module-interop-contracts"
+REQUIRED_ISSUES = {8163, 8165}
+REQUIRED_LANGUAGES = {"c", "objc2", "swift", "cpp"}
+REQUIRED_REBUILD_INPUTS = {
+    "module_identity",
+    "import_graph",
+    "visibility",
+    "foreign_surfaces",
+    "package_lock",
+}
+REQUIRED_INVALIDATION_CONDITIONS = {
+    "source-digest-drift",
+    "imported-module-abi-identity-drift",
+    "package-lock-module-identity-drift",
+    "visibility-surface-drift",
+    "bridge-metadata-digest-drift",
+}
+REQUIRED_UNSUPPORTED_SURFACES = {
+    "objc2-retired-source-syntax",
+    "swift-unstable-abi-shape",
+    "cpp-template-instantiation-import",
+}
+FORBIDDEN_SOURCE_PREFIXES = (
+    "docs/support/",
+    "docs/runbooks/objc3c_release",
+    "schemas/objc3c-release",
+)
+NATIVE_ANCHOR_FRAGMENTS = {
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.h": (
+        "interop_header_module_bridge_cross_module_packaging_ready",
+        "interop_bridge_module_artifact_relative_path",
+        "interop_local_swift_name_annotation_count",
+        "interop_local_cpp_name_annotation_count",
+    ),
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h": (
+        "Objc3ModuleInteropLaneState",
+        "Objc3ModuleInteropForeignLaneContract",
+        "Objc3ModuleInteropContractSurface",
+        "module_identity_rebuild_key",
+        "bridge_modulemap_relative_path",
+        "c_foreign_type_contract_count",
+        "objc2_bridge_metadata_only_retired_syntax_rejected",
+        "swift_callable_metadata_count",
+        "cpp_callable_metadata_count",
+        "supported_foreign_lane_count",
+        "reserved_foreign_lane_count",
+        "reserved_lanes_have_stable_diagnostics",
+        "bridge_metadata_digest_participates_in_rebuild_key",
+    ),
+}
+
+
+def expect(condition: bool, message: str, failures: list[str]) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def _as_list(value: object) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def _as_object(value: object) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _is_power_of_two(value: int) -> bool:
+    return value > 0 and value & (value - 1) == 0
+
+
+def _is_portable_relative_path(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    if path.is_absolute() or "\\" in value:
+        return False
+    return all(part not in {"", ".", ".."} for part in path.parts)
+
+
+def _import_identity(entry: dict[str, Any]) -> str:
+    return (
+        f"{entry.get('module_name')}@{entry.get('metadata_version')}:"
+        f"{entry.get('abi_identity')}"
+    )
+
+
+def replay_key_for_contract(payload: dict[str, Any]) -> str:
+    module_identity = _as_object(payload.get("module_identity"))
+    imports = sorted(
+        (
+            _as_object(entry)
+            for entry in _as_list(payload.get("imports"))
+            if isinstance(entry, dict)
+        ),
+        key=lambda entry: str(entry.get("module_name", "")),
+    )
+    import_part = ",".join(
+        f"{entry.get('module_name')}@{entry.get('metadata_version')}:"
+        f"{entry.get('abi_identity')}:{entry.get('visibility')}:"
+        f"{'reexport' if entry.get('reexport') is True else 'import'}"
+        for entry in imports
+    )
+    public_exports = sorted(str(symbol) for symbol in _as_list(_as_object(payload.get("exports")).get("public")))
+    foreign_surfaces = sorted(
+        (
+            _as_object(entry)
+            for entry in _as_list(_as_object(payload.get("interop")).get("foreign_surfaces"))
+            if isinstance(entry, dict)
+        ),
+        key=lambda entry: str(entry.get("language", "")),
+    )
+    foreign_part = ",".join(
+        f"{entry.get('language')}:{entry.get('surface_id')}:"
+        f"{entry.get('symbol_owner')}:{entry.get('abi_alignment')}:"
+        f"{entry.get('support_state')}"
+        for entry in foreign_surfaces
+    )
+    return (
+        f"module={module_identity.get('module_name')};"
+        f"metadata={module_identity.get('metadata_version')};"
+        f"abi={module_identity.get('abi_identity')};"
+        f"package={module_identity.get('package_lock_identity')};"
+        f"imports=[{import_part}];"
+        f"exports=[{','.join(public_exports)}];"
+        f"foreign=[{foreign_part}]"
+    )
+
+
+def _validate_schema(payload: dict[str, Any], failures: list[str]) -> None:
+    try:
+        validate_json_schema(payload, load_json_object(SCHEMA_PATH), label=repo_rel(CONTRACT_PATH))
+    except JsonSchemaValidationError as exc:
+        failures.append(str(exc))
+
+
+def _validate_source_paths(payload: dict[str, Any], failures: list[str]) -> dict[str, bool]:
+    checks: dict[str, bool] = {}
+    source_paths = [
+        *[str(path) for path in _as_list(payload.get("native_anchors"))],
+        *[str(path) for path in _as_list(payload.get("fixture_anchors"))],
+    ]
+    for raw_path in source_paths:
+        portable = _is_portable_relative_path(raw_path)
+        allowed = not raw_path.replace("\\", "/").startswith(FORBIDDEN_SOURCE_PREFIXES)
+        exists = (ROOT / raw_path).is_file()
+        checks[raw_path] = portable and allowed and exists
+        expect(portable, f"source path is not portable-relative: {raw_path}", failures)
+        expect(allowed, f"contract slice touched forbidden support/release surface: {raw_path}", failures)
+        expect(exists, f"contract references missing source path: {raw_path}", failures)
+
+    for raw_path, fragments in NATIVE_ANCHOR_FRAGMENTS.items():
+        path = ROOT / raw_path
+        if not path.is_file():
+            checks[raw_path] = False
+            continue
+        text = path.read_text(encoding="utf-8")
+        fragments_present = all(fragment in text for fragment in fragments)
+        checks[raw_path] = checks.get(raw_path, True) and fragments_present
+        expect(fragments_present, f"native anchor missing module/interop fragments: {raw_path}", failures)
+    return checks
+
+
+def _validate_module_identity(payload: dict[str, Any], failures: list[str]) -> None:
+    module_identity = _as_object(payload.get("module_identity"))
+    package_metadata = _as_object(payload.get("package_metadata"))
+    source_identity = module_identity.get("source_identity_key")
+    package_identity = module_identity.get("package_lock_identity")
+
+    expect(source_identity == package_identity, "source and package module identities drifted", failures)
+    expect(
+        package_metadata.get("module_identity") == package_identity,
+        "package metadata module identity does not match module identity",
+        failures,
+    )
+    expect(
+        package_metadata.get("package_lock_module_identity") == package_identity,
+        "package lock module identity does not match module identity",
+        failures,
+    )
+
+
+def _validate_imports_and_exports(payload: dict[str, Any], failures: list[str]) -> None:
+    module_name = str(_as_object(payload.get("module_identity")).get("module_name", ""))
+    imports = [
+        _as_object(entry)
+        for entry in _as_list(payload.get("imports"))
+        if isinstance(entry, dict)
+    ]
+    import_names = [str(entry.get("module_name")) for entry in imports]
+    expect(import_names == sorted(import_names), "imports must be sorted by module name", failures)
+    expect(len(import_names) == len(set(import_names)), "imported module names must be unique", failures)
+    expect(module_name not in import_names, "module cannot import itself", failures)
+    for entry in imports:
+        if entry.get("reexport") is True:
+            expect(entry.get("visibility") == "public", "reexported imports must be public", failures)
+        expect(entry.get("rebuild_affects") != [], f"import has no rebuild effect: {entry.get('module_name')}", failures)
+
+    exports = _as_object(payload.get("exports"))
+    public_exports = {str(symbol) for symbol in _as_list(exports.get("public"))}
+    private_exports = {str(symbol) for symbol in _as_list(exports.get("private"))}
+    expect(public_exports.isdisjoint(private_exports), "public and private exports overlap", failures)
+    expect(exports.get("duplicate_policy") == "fail-closed", "duplicate exports must fail closed", failures)
+    expect(exports.get("hidden_import_access_policy") == "reject", "hidden import access must reject", failures)
+
+    all_imported_exports: list[str] = []
+    for entry in imports:
+        all_imported_exports.extend(str(symbol) for symbol in _as_list(entry.get("exported_symbols")))
+    all_exports = list(public_exports | private_exports) + all_imported_exports
+    expect(len(all_exports) == len(set(all_exports)), "exported symbols must be unique across module and imports", failures)
+
+    package_metadata = _as_object(payload.get("package_metadata"))
+    package_imports = set(str(identity) for identity in _as_list(package_metadata.get("imported_module_identities")))
+    expected_imports = {_import_identity(entry) for entry in imports}
+    expect(package_imports == expected_imports, "package imported module identities do not match import graph", failures)
+
+
+def _validate_rebuild(payload: dict[str, Any], failures: list[str]) -> None:
+    rebuild = _as_object(payload.get("incremental_rebuild"))
+    expect(rebuild.get("deterministic") is True, "incremental rebuild identity must be deterministic", failures)
+    expect(
+        REQUIRED_REBUILD_INPUTS <= {str(value) for value in _as_list(rebuild.get("identity_inputs"))},
+        "incremental rebuild identity inputs are incomplete",
+        failures,
+    )
+    expect(
+        REQUIRED_INVALIDATION_CONDITIONS <= {
+            str(value) for value in _as_list(rebuild.get("invalidation_conditions"))
+        },
+        "incremental rebuild invalidation conditions are incomplete",
+        failures,
+    )
+    expect(
+        rebuild.get("replay_key") == replay_key_for_contract(payload),
+        "deterministic rebuild replay key drifted",
+        failures,
+    )
+
+
+def _validate_interop(payload: dict[str, Any], failures: list[str]) -> None:
+    module_name = str(_as_object(payload.get("module_identity")).get("module_name", ""))
+    interop = _as_object(payload.get("interop"))
+    bridge_header = interop.get("bridge_header")
+    modulemap = interop.get("modulemap")
+    bridge_metadata = interop.get("bridge_metadata")
+    for label, value in (
+        ("bridge header", bridge_header),
+        ("modulemap", modulemap),
+        ("bridge metadata", bridge_metadata),
+    ):
+        expect(_is_portable_relative_path(value), f"{label} path is not portable-relative", failures)
+
+    foreign_surfaces = [
+        _as_object(entry)
+        for entry in _as_list(interop.get("foreign_surfaces"))
+        if isinstance(entry, dict)
+    ]
+    languages = {str(entry.get("language")) for entry in foreign_surfaces}
+    expect(languages == REQUIRED_LANGUAGES, "foreign surfaces must cover C, ObjC2, Swift, and C++ exactly", failures)
+
+    surface_alignments: dict[str, int] = {}
+    supported_languages: set[str] = set()
+    reserved_languages: set[str] = set()
+    for entry in foreign_surfaces:
+        language = str(entry.get("language"))
+        alignment = int(entry.get("abi_alignment", 0))
+        surface_alignments[language] = alignment
+        support_state = str(entry.get("support_state"))
+        supported = entry.get("supported") is True
+        expect(
+            support_state in {"supported", "reserved"},
+            f"{language} surface support_state must be supported or reserved",
+            failures,
+        )
+        expect(
+            supported == (support_state == "supported"),
+            f"{language} supported flag must match support_state",
+            failures,
+        )
+        if support_state == "supported":
+            supported_languages.add(language)
+        if support_state == "reserved":
+            reserved_languages.add(language)
+            expect(
+                isinstance(entry.get("reservation_reason"), str) and entry.get("reservation_reason"),
+                f"{language} reserved surface must explain why executable proof is absent",
+                failures,
+            )
+            diagnostic = entry.get("reservation_diagnostic")
+            expect(
+                isinstance(diagnostic, str) and diagnostic.startswith("O3"),
+                f"{language} reserved surface must publish a stable diagnostic",
+                failures,
+            )
+        expect(entry.get("fail_closed") is True, f"{language} surface must fail closed", failures)
+        expect(entry.get("symbol_owner") == module_name, f"{language} symbol owner drifted", failures)
+        expect(_is_power_of_two(alignment), f"{language} ABI alignment must be a power of two", failures)
+        expect(entry.get("bridge_header") == bridge_header, f"{language} bridge header drifted", failures)
+        expect(entry.get("modulemap") == modulemap, f"{language} modulemap drifted", failures)
+        expect(_as_list(entry.get("callable_metadata")) != [], f"{language} callable metadata is missing", failures)
+        evidence_anchors = _as_list(entry.get("evidence_anchors"))
+        if support_state == "supported":
+            expect(evidence_anchors != [], f"{language} supported surface is missing executable evidence anchors", failures)
+            for raw_path in evidence_anchors:
+                expect(_is_portable_relative_path(raw_path), f"{language} evidence anchor is not portable-relative: {raw_path}", failures)
+                expect((ROOT / str(raw_path)).is_file(), f"{language} evidence anchor is missing: {raw_path}", failures)
+        safety = _as_object(entry.get("safety_policies"))
+        for policy_name in ("ownership", "errors", "async", "object_identity"):
+            policy_value = safety.get(policy_name)
+            expect(
+                isinstance(policy_value, str) and policy_value and policy_value != "implicit",
+                f"{language} {policy_name} policy must be explicit",
+                failures,
+            )
+        if language == "objc2":
+            expect(
+                entry.get("source_syntax_policy") == "metadata-only-retired-syntax-rejected",
+                "ObjC2 bridge must be metadata-only and reject retired syntax",
+                failures,
+            )
+    expect(supported_languages == {"c", "objc2"}, "only C and ObjC2 interop lanes may be supported by current evidence", failures)
+    expect(reserved_languages == {"swift", "cpp"}, "Swift and C++ interop lanes must remain reserved until executable proof lands", failures)
+
+    foreign_type_contracts = [
+        _as_object(entry)
+        for entry in _as_list(interop.get("foreign_type_contracts"))
+        if isinstance(entry, dict)
+    ]
+    type_languages = {str(entry.get("source_language")) for entry in foreign_type_contracts}
+    expect(REQUIRED_LANGUAGES <= type_languages, "foreign type contracts must cover every interop language", failures)
+    type_names = [str(entry.get("type_name")) for entry in foreign_type_contracts]
+    expect(len(type_names) == len(set(type_names)), "foreign type contract names must be unique", failures)
+    for entry in foreign_type_contracts:
+        language = str(entry.get("source_language"))
+        alignment = int(entry.get("abi_alignment", 0))
+        expect(entry.get("symbol_owner") == module_name, f"{language} foreign type owner drifted", failures)
+        expect(alignment == surface_alignments.get(language), f"{language} foreign type ABI alignment drifted", failures)
+
+    package_metadata = _as_object(payload.get("package_metadata"))
+    expect(package_metadata.get("bridge_surface_count") == len(foreign_surfaces), "package bridge surface count drifted", failures)
+    expect(package_metadata.get("supported_bridge_surface_count") == len(supported_languages), "package supported bridge surface count drifted", failures)
+    expect(package_metadata.get("reserved_bridge_surface_count") == len(reserved_languages), "package reserved bridge surface count drifted", failures)
+    expect(package_metadata.get("swift_bridge_surface_count") == 0, "package Swift supported bridge surface count drifted", failures)
+    expect(package_metadata.get("cpp_bridge_surface_count") == 0, "package C++ supported bridge surface count drifted", failures)
+    mixed_image_metadata = package_metadata.get("mixed_image_loader_metadata")
+    expect(_is_portable_relative_path(mixed_image_metadata), "mixed image metadata path is not portable-relative", failures)
+    if isinstance(mixed_image_metadata, str):
+        expect((ROOT / mixed_image_metadata).is_file(), "mixed image loader metadata fixture is missing", failures)
+
+
+def _validate_unsupported_surfaces(payload: dict[str, Any], failures: list[str]) -> None:
+    unsupported = [
+        _as_object(entry)
+        for entry in _as_list(payload.get("unsupported_surfaces"))
+        if isinstance(entry, dict)
+    ]
+    surfaces = {str(entry.get("surface")) for entry in unsupported}
+    expect(REQUIRED_UNSUPPORTED_SURFACES <= surfaces, "unsupported interop surfaces are incomplete", failures)
+    for entry in unsupported:
+        expect(entry.get("fail_closed") is True, f"unsupported surface is not fail-closed: {entry.get('surface')}", failures)
+        diagnostic = entry.get("diagnostic")
+        expect(isinstance(diagnostic, str) and diagnostic.startswith("O3"), "unsupported surface diagnostic must be stable", failures)
+
+
+def validate_contract_payload(payload: dict[str, Any]) -> tuple[list[str], dict[str, bool]]:
+    failures: list[str] = []
+    _validate_schema(payload, failures)
+    expect(
+        REQUIRED_ISSUES <= {int(issue) for issue in _as_list(payload.get("issue_refs")) if isinstance(issue, int)},
+        "contract must cover issues 8163 and 8165",
+        failures,
+    )
+    expect(payload.get("public_command") == PUBLIC_COMMAND, "public command drifted", failures)
+    expect(payload.get("evidence_log_allowed") is False, "evidence logs cannot be source authority", failures)
+    native_checks = _validate_source_paths(payload, failures)
+    _validate_module_identity(payload, failures)
+    _validate_imports_and_exports(payload, failures)
+    _validate_rebuild(payload, failures)
+    _validate_interop(payload, failures)
+    _validate_unsupported_surfaces(payload, failures)
+    return failures, native_checks
+
+
+def build_summary(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    payload = load_json_object(path)
+    failures, native_checks = validate_contract_payload(payload)
+    interop = _as_object(payload.get("interop"))
+    package_metadata = _as_object(payload.get("package_metadata"))
+    foreign_surfaces = [
+        _as_object(entry)
+        for entry in _as_list(interop.get("foreign_surfaces"))
+        if isinstance(entry, dict)
+    ]
+    return {
+        "contract_id": "objc3c.module_interop.import_visibility_bridge_contract.summary.v1",
+        "status": "PASS" if not failures else "FAIL",
+        "contract": repo_rel(path),
+        "schema": repo_rel(SCHEMA_PATH),
+        "issues": payload.get("issue_refs", []),
+        "public_command": payload.get("public_command"),
+        "source_authority": payload.get("source_authority"),
+        "module_name": _as_object(payload.get("module_identity")).get("module_name"),
+        "foreign_languages": sorted(str(entry.get("language")) for entry in foreign_surfaces),
+        "bridge_surface_count": package_metadata.get("bridge_surface_count"),
+        "supported_bridge_surface_count": package_metadata.get("supported_bridge_surface_count"),
+        "reserved_bridge_surface_count": package_metadata.get("reserved_bridge_surface_count"),
+        "deterministic_replay_key": replay_key_for_contract(payload),
+        "native_checks": native_checks,
+        "failures": failures,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    paths = [Path(arg) for arg in (argv or [])] or [CONTRACT_PATH]
+    summaries = [build_summary(path) for path in paths]
+    if len(summaries) == 1:
+        summary: dict[str, Any] = summaries[0]
+    else:
+        failures = [
+            f"{summary['contract']}: {failure}"
+            for summary in summaries
+            for failure in summary["failures"]
+        ]
+        summary = {
+            "contract_id": "objc3c.module_interop.import_visibility_bridge_contract.batch_summary.v1",
+            "status": "PASS" if not failures else "FAIL",
+            "contracts": [summary["contract"] for summary in summaries],
+            "failures": failures,
+        }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(SUMMARY_PATH, summary, sort_keys=True)
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    if summary["status"] != "PASS":
+        print("objc3c-module-interop-contracts: FAIL")
+        for failure in summary["failures"]:
+            print(f"- {failure}")
+        return 1
+    print("objc3c-module-interop-contracts: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

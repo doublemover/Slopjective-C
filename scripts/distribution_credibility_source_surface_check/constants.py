@@ -12,6 +12,9 @@ SUMMARY_CONTRACT_ID = "objc3c.distribution.credibility.source.surface.summary.v1
 
 EXPECTED_CONTRACT_IDS = {
     "trust_signal_architecture": "objc3c.distribution.credibility.trust.signal.architecture.v1",
+    "package_install_distribution_credibility": (
+        "objc3c.package_ecosystem.install_distribution_credibility.v1"
+    ),
     "install_release_doc_surface": "objc3c.distribution.credibility.install.release.doc.surface.v1",
     "operator_release_policy": "objc3c.distribution.credibility.operator.release.policy.v1",
     "release_drill_policy": "objc3c.distribution.credibility.release.drill.policy.v1",
@@ -38,6 +41,7 @@ EXPECTED_WORKFLOW_ACTIONS = [
 
 EXPECTED_INTEGRATED_STEPS = [
     "validate-release-operations",
+    "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",
     "build-distribution-credibility-dashboard",

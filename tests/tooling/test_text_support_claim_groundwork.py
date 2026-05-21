@@ -19,9 +19,18 @@ CONTRACT_PATH = (
     / "stdlib_text"
     / "runtime_backed_text_claims_contract.json"
 )
-CORE_MODULE_PATH = ROOT / "stdlib" / "modules" / "objc3.core" / "module.json"
+TEXT_MODULE_PATH = ROOT / "stdlib" / "modules" / "objc3.text" / "module.json"
 SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
 PUBLIC_COMMAND_PREFIX = "npm run objc3c -- "
+TEXT_POSITIVE_FIXTURE = (
+    "tests/tooling/fixtures/native/execution/positive/"
+    "stdlib_foundation_next_text_helpers.objc3"
+)
+TEXT_NEGATIVE_FIXTURE = (
+    "tests/tooling/fixtures/native/execution/negative/"
+    "stdlib_foundation_next_text_helper_signature_conflict.objc3"
+)
+FOUNDATION_NEXT_PROBE = "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -35,12 +44,12 @@ def _assert_repo_path_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
-def test_runtime_backed_text_claims_are_bounded_to_core_helpers() -> None:
+def test_runtime_backed_text_claims_are_dedicated_module_contracts() -> None:
     matrix = _read_json(MATRIX_PATH)
     manifest = _read_json(MANIFEST_PATH)
     catalog = _read_json(CATALOG_PATH)
     contract = _read_json(CONTRACT_PATH)
-    core_module = _read_json(CORE_MODULE_PATH)
+    text_module = _read_json(TEXT_MODULE_PATH)
     semantic_policy = _read_json(SEMANTIC_POLICY_PATH)
 
     assert 8162 in catalog["issue_refs"]
@@ -73,25 +82,26 @@ def test_runtime_backed_text_claims_are_bounded_to_core_helpers() -> None:
             "tests/tooling/fixtures/stdlib_text/"
             "runtime_backed_text_claims_contract.json"
         )
-        assert row["traceability_fixture"] == "stdlib/modules/objc3.core/module.json"
+        assert row["traceability_fixture"] == "stdlib/modules/objc3.text/module.json"
         assert row["runnable_command"] == claim["executable_command"]
         assert row["runnable_command"].startswith(PUBLIC_COMMAND_PREFIX)
-        assert row["runtime_acceptance_case"] == "stdlib-core-runtime-probe"
+        assert row["runtime_acceptance_case"] == "stdlib-foundation-next-runtime-probe"
 
         assert claim["behavior_fixture"] in fixture_paths
+        assert claim["behavior_fixture"] == TEXT_POSITIVE_FIXTURE
         assert claim["behavior_fixture"] in row["positive_evidence"]
-        assert "tests/tooling/runtime/stdlib_core_runtime_probe.cpp" in row["positive_evidence"]
-        assert (
-            "tests/tooling/fixtures/native/execution/negative/"
-            "stdlib_core_runtime_helper_signature_conflict.objc3"
-        ) in row["negative_evidence"]
+        assert FOUNDATION_NEXT_PROBE in row["positive_evidence"]
+        assert "stdlib/modules/objc3.text/module.objc3" in row["positive_evidence"]
+        assert "native/objc3c/src/runtime/stdlib/text_runtime_contract.h" in row["positive_evidence"]
+        assert TEXT_NEGATIVE_FIXTURE in row["negative_evidence"]
         assert {"O3S206"}.issubset(set(row["required_diagnostic_codes"]))
 
-        assert expected["api_family"] in core_module["api_families"]
-        assert set(expected["exports"]).issubset(set(core_module["exports"]))
-        assert set(expected["runtime_abi"]).issubset(set(core_module["runtime_abi"]))
+        assert expected["module"] == text_module["canonical_module"] == "objc3.text"
+        assert expected["api_family"] in text_module["api_families"]
+        assert set(expected["exports"]).issubset(set(text_module["exports"]))
+        assert set(expected["runtime_abi"]).issubset(set(text_module["runtime_abi"]))
         assert set(expected["semantic_policy_keys"]).issubset(
-            set(semantic_policy["core_semantics"])
+            set(semantic_policy["text_semantics"])
         )
 
         requirement_text = " ".join(row["source_truth_requirements"]).lower()
@@ -104,6 +114,7 @@ def test_runtime_backed_text_claims_are_bounded_to_core_helpers() -> None:
             if item["kind"] == "test"
         }
         assert (claim["behavior_fixture"], claim["executable_command"]) in executable_evidence
+        assert (FOUNDATION_NEXT_PROBE, "npm run objc3c -- test-runtime-acceptance-fast") in executable_evidence
 
         for path in [
             row["conformance_fixture"],
@@ -126,7 +137,6 @@ def test_text_groundwork_does_not_publish_reserved_text_claims() -> None:
     }
 
     forbidden_fragments = {
-        "literal",
         "owned-string",
         "unicode",
         "normalization",

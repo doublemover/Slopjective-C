@@ -24,7 +24,6 @@ from objc3c_performance_dashboard.paths import RUNTIME_INTEGRATION_PATH
 from objc3c_performance_dashboard.paths import RUNTIME_SUMMARY_PATH
 from objc3c_performance_dashboard.paths import SOURCE_SURFACE_PATH
 from objc3c_performance_dashboard.paths import TRIAGE_POLICY_PATH
-from objc3c_performance_dashboard.paths import WAIVERS_PATH
 from objc3c_performance_dashboard.paths import WORKFLOW_SURFACE_PATH
 
 from objc3c_performance_dashboard_builder.input_loading import DashboardInputs
@@ -35,6 +34,7 @@ from objc3c_performance_dashboard_builder.series import build_dashboard_series
 from objc3c_performance_dashboard_builder.series import build_summary_lookup
 from objc3c_performance_dashboard_builder.series import evaluate_budget_families
 from objc3c_performance_dashboard_builder.series import evaluate_waivers
+from objc3c_performance_governance_contract_linkage import build_runtime_contract_evidence
 
 
 def build_dashboard_summary(
@@ -89,6 +89,12 @@ def build_dashboard_summary(
         failures=failures,
     )
     breaches = budget_evaluation.breaches
+    runtime_contract_evidence = build_runtime_contract_evidence(
+        runtime_summary=inputs.runtime_summary,
+        budget_model=inputs.budget_model,
+    )
+    if runtime_contract_evidence.get("status") == "FAIL":
+        failures.extend(str(failure) for failure in runtime_contract_evidence.get("failures", []))
 
     if series.environment_issues:
         append_environment_breach(
@@ -165,6 +171,7 @@ def build_dashboard_summary(
             "runtime_summary": repo_rel(RUNTIME_SUMMARY_PATH),
             "runtime_integration": repo_rel(RUNTIME_INTEGRATION_PATH),
         },
+        "runtime_contract_evidence": runtime_contract_evidence,
         "release_status": release_status,
         "claim_ready": release_status == "release-ready",
         "regression_gate": regression_gate,

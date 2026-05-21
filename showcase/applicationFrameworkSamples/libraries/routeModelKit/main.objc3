@@ -1,0 +1,55 @@
+module RouteModelKit;
+
+@protocol RouteReadable
+@required
+- (i32) routeCost;
+@property (readonly, getter=routeToken) id token;
+@end
+
+@protocol RouteInspectable <RouteReadable>
+@required
+- (i32) inspectionScore;
+@end
+
+@interface RouteStage
+@property (assign) i32 baseCost;
+@property (readonly, getter=routeToken) id token;
+- (i32) routeCost;
++ (i32) defaultCost;
+@end
+
+@implementation RouteStage
+@property (assign) i32 baseCost;
+@property (readonly, getter=routeToken) id token;
+
++ (i32) defaultCost {
+  return 5;
+}
+
+- (i32) routeCost {
+  return [RouteStage defaultCost] + 3;
+}
+@end
+
+@interface RouteStage (Inspection) <RouteInspectable>
+- (i32) inspectionScore;
+@end
+
+@implementation RouteStage (Inspection)
+- (i32) inspectionScore {
+  return [self routeCost] + 2;
+}
+@end
+
+fn route_model_keypath_token() -> i32 {
+  let path = @keypath(RouteStage, token);
+  if (path != nil) {
+    return 1;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  let stage = [[RouteStage alloc] init];
+  return [stage inspectionScore] + route_model_keypath_token();
+}

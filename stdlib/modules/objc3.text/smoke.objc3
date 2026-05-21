@@ -1,0 +1,21 @@
+module objc3_text_smoke;
+
+extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32;
+
+fn main() {
+  let left = objc3_runtime_stdlib_text_utf8_literal_i32(5, 5, 1);
+  let right = objc3_runtime_stdlib_text_utf8_literal_i32(6, 6, 1);
+  let joined = objc3_runtime_stdlib_text_concat_i32(left, right);
+  return joined
+    + objc3_runtime_stdlib_text_byte_count_i32(joined)
+    + objc3_runtime_stdlib_text_unit_count_i32(joined)
+    + objc3_runtime_stdlib_text_is_valid_utf8_i32(joined)
+    + objc3_runtime_stdlib_text_prefix_units_i32(joined, 4)
+    + objc3_runtime_stdlib_text_last_status_i32();
+}

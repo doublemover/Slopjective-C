@@ -67,6 +67,7 @@ def project_template_paths(
         template_source=template_root / "src" / "main.objc3",
         template_readme=template_root / "README.md",
         template_manifest=template_root / "template.json",
+        compile_artifact_root=template_root / "build",
         harness_path=example_report_root / "demo-harness.json",
     )
 

@@ -11,6 +11,7 @@ from objc3c_type_semantic_model_closure.paths import IR_EMITTER
 from objc3c_type_semantic_model_closure.paths import LOWERING_CONTRACT
 from objc3c_type_semantic_model_closure.paths import ROOT
 from objc3c_type_semantic_model_closure.positive import compile_generic_variance_positive_summary
+from objc3c_type_semantic_model_closure.positive import compile_generic_method_substitution_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_nested_generic_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_protocol_category_positive_summary
@@ -33,6 +34,7 @@ def compile_summary_checks(
     nested_generic_positive_run = runs["nested_generic_positive_run"]
     generic_variance_positive_run = runs["generic_variance_positive_run"]
     protocol_generic_positive_run = runs["protocol_generic_positive_run"]
+    generic_method_substitution_positive_run = runs["generic_method_substitution_positive_run"]
     protocol_category_positive_run = runs["protocol_category_positive_run"]
     cross_module_generic_consumer_run = runs["cross_module_generic_consumer_run"]
     cross_module_generic_drift_run = runs["cross_module_generic_drift_run"]
@@ -45,6 +47,9 @@ def compile_summary_checks(
     nested_generic_positive_checks = compile_nested_generic_positive_summary(nested_generic_positive_run)
     generic_variance_positive_checks = compile_generic_variance_positive_summary(generic_variance_positive_run)
     protocol_generic_positive_checks = compile_protocol_generic_positive_summary(protocol_generic_positive_run)
+    generic_method_substitution_positive_checks = compile_generic_method_substitution_positive_summary(
+        generic_method_substitution_positive_run
+    )
     protocol_category_positive_checks = compile_protocol_category_positive_summary(protocol_category_positive_run)
     cross_module_generic_checks = compile_cross_module_generic_contract_summary(
         ROOT,
@@ -75,6 +80,15 @@ def compile_summary_checks(
         nested_generic_constraint_violation_negative_run=runs["nested_generic_constraint_violation_negative_run"],
         generic_invariant_assignment_negative_run=runs["generic_invariant_assignment_negative_run"],
         protocol_generic_unknown_protocol_negative_run=runs["protocol_generic_unknown_protocol_negative_run"],
+        language_semantics_await_outside_async_negative_run=runs[
+            "language_semantics_await_outside_async_negative_run"
+        ],
+        language_semantics_executor_on_sync_negative_run=runs[
+            "language_semantics_executor_on_sync_negative_run"
+        ],
+        language_semantics_conflicting_capture_ownership_negative_run=runs[
+            "language_semantics_conflicting_capture_ownership_negative_run"
+        ],
     )
 
     static_presence = compile_static_presence()
@@ -83,6 +97,7 @@ def compile_summary_checks(
         **nested_generic_positive_checks,
         **generic_variance_positive_checks,
         **protocol_generic_positive_checks,
+        **generic_method_substitution_positive_checks,
         **protocol_category_positive_checks,
         **cross_module_generic_checks,
         "cross_module_generic_contract_drift_fails_closed": cross_module_generic_drift_run["exit_code"] != 0,

@@ -48,6 +48,7 @@ def test_application_workspace_catalog_aggregates_owner_catalogs() -> None:
         "materialize-playground-workspace",
         "materialize-canonical-application-workspace",
         "validate-application-architecture",
+        "validate-application-framework-samples",
         "validate-runnable-application-architecture",
         "validate-runnable-developer-tooling",
     )

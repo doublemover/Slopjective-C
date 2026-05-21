@@ -1,0 +1,11 @@
+// Negative execution fixture: objc3.collections runtime helper contracts reject ABI drift.
+module StdlibFoundationNextCollectionsHelperSignatureConflict;
+
+fn objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32;
+fn objc3_runtime_stdlib_collections_array_count_i32(handle: bool) -> i32 {
+  return handle;
+}
+
+fn main() -> i32 {
+  return objc3_runtime_stdlib_collections_array_count_i32(1);
+}

@@ -22,12 +22,14 @@ DISTRIBUTION_SOURCE_CONTRACTS = (
     "tests/tooling/fixtures/distribution_credibility/schema_surface.json",
     "tests/tooling/fixtures/distribution_credibility/workflow_surface.json",
     "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
+    "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
     "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
     "tests/tooling/fixtures/distribution_credibility/artifact_surface.json",
 )
 DISTRIBUTION_BLOCKING_CONDITIONS = (
     "trust report generated without live release drill evidence",
+    "trust report generated without clean package install evidence",
     "distribution action exposes a evidence-log credibility claim",
     "publication detaches from machine-owned release manifest lineage",
     "operator-authored trust badge replaces checked-in source contract evidence",
@@ -85,14 +87,17 @@ DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS: dict[str, DistributionCredibilityOwner
     "validate-distribution-credibility": _contract(
         "validate-distribution-credibility",
         "distribution-credibility-gate-owner",
-        ("tmp/reports/distribution-credibility/integration-summary.json",),
-        "integrated distribution credibility passes only when source, schema, dashboard, and trust publication owners agree",
+        (
+            "tmp/reports/distribution-credibility/integration-summary.json",
+            "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        ),
+        "integrated distribution credibility passes only when package install, source, schema, dashboard, and trust publication owners agree",
     ),
     "validate-distribution-credibility-end-to-end": _contract(
         "validate-distribution-credibility-end-to-end",
         "distribution-credibility-release-drill-owner",
         ("tmp/reports/distribution-credibility/end-to-end-summary.json",),
-        "end-to-end readiness requires release drill evidence from package channels, release operations, and release evidence",
+        "end-to-end readiness requires release drill evidence from package channels, clean package installs, release operations, and release evidence",
     ),
 }
 

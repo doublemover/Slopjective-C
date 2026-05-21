@@ -28,7 +28,12 @@ def canonical_workspace_readme_lines() -> list[str]:
 
 
 def project_template_readme_lines(
-    *, example_id: str, source_origin: object, template_source: Path, root: Path
+    *,
+    example_id: str,
+    source_origin: object,
+    template_source: Path,
+    compile_artifact_root: Path,
+    root: Path,
 ) -> list[str]:
     from objc3c_tooling.paths import display_path
 
@@ -41,6 +46,11 @@ def project_template_readme_lines(
         f"- generated source: `{display_path(template_source, root=root)}`",
         "- live commands:",
         f"  - `npm run objc3c -- materialize-project-template --example {example_id}`",
+        (
+            "  - `npm run objc3c -- compile-objc3c "
+            f"{display_path(template_source, root=root)} --out-dir "
+            f"{display_path(compile_artifact_root, root=root)} --emit-prefix module`"
+        ),
         f"  - `npm run objc3c -- materialize-playground-workspace {display_path(template_source, root=root)}`",
         f"  - `npm run objc3c -- benchmark-runtime-inspector {display_path(template_source, root=root)}`",
         "  - `npm run objc3c -- inspect-bonus-tool-integration`",

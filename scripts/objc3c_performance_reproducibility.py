@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from objc3c_tooling.paths import repo_rel
 
@@ -28,11 +28,35 @@ def _root_relative(root: Path, path: Path) -> str:
         return repo_rel(path)
 
 
+def file_sha256(path: Path) -> str:
+    if not path.is_file():
+        raise RuntimeError(f"performance contract file is missing: {path}")
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def source_sha256(root: Path, source_path: str) -> str:
     path = root / source_path
     if not path.is_file():
         raise RuntimeError(f"performance workload source is missing: {source_path}")
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def checked_in_contract_evidence(root: Path, contract_paths: Sequence[Path]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    root_resolved = root.resolve()
+    for contract_path in contract_paths:
+        resolved = contract_path.resolve()
+        try:
+            resolved.relative_to(root_resolved)
+        except ValueError as exc:
+            raise RuntimeError(f"performance contract file escapes repo: {contract_path}") from exc
+        rows.append(
+            {
+                "path": _root_relative(root, resolved),
+                "sha256": file_sha256(resolved),
+            }
+        )
+    return rows
 
 
 def budget_family_thresholds(budget_model: dict[str, Any], budget_id: str) -> list[dict[str, Any]]:
@@ -68,7 +92,9 @@ def runtime_budget_metric_for_workload(budget_model: dict[str, Any], workload_id
         "dispatch-cache": "dispatch_wall_clock_ms",
         "reflection-query": "reflection_wall_clock_ms",
         "ownership-helpers": "ownership_wall_clock_ms",
-        "storage-ownership-reflection": "ownership_wall_clock_ms",
+        "storage-ownership-reflection": "storage_ownership_reflection_wall_clock_ms",
+        "stdlib-core-runtime": "stdlib_core_wall_clock_ms",
+        "stdlib-concurrency-runtime": "stdlib_concurrency_wall_clock_ms",
     }
     metric_id = metric_by_workload.get(workload_id)
     if metric_id is None:
@@ -161,10 +187,14 @@ def build_runtime_workload_reproducibility_evidence(
     budget_model: dict[str, Any],
     profile: dict[str, Any],
     versions: dict[str, str],
+    contract_paths: Sequence[Path] = (),
 ) -> dict[str, Any]:
     workload_id = str(workload["workload_id"])
     fixture = str(workload["fixture"])
     probe = str(workload["probe"])
+    fixture_sha256 = source_sha256(root, fixture)
+    probe_sha256 = source_sha256(root, probe)
+    threshold = runtime_budget_metric_for_workload(budget_model, workload_id)
     return {
         "contract_id": "objc3c.runtime.performance.reproducibility.evidence.v1",
         "workload_id": workload_id,
@@ -173,16 +203,25 @@ def build_runtime_workload_reproducibility_evidence(
         "artifact_surface_path": _root_relative(root, artifact_surface_path),
         "workload_source": {
             "fixture": fixture,
-            "fixture_sha256": source_sha256(root, fixture),
+            "fixture_sha256": fixture_sha256,
             "probe": probe,
-            "probe_sha256": source_sha256(root, probe),
+            "probe_sha256": probe_sha256,
+        },
+        "replay_key": {
+            "workload_id": workload_id,
+            "acceptance_case_id": str(workload["acceptance_case_id"]),
+            "hot_path_family": str(workload["hot_path_family"]),
+            "fixture_sha256": fixture_sha256,
+            "probe_sha256": probe_sha256,
+            "budget_metric_id": str(threshold["metric_id"]),
         },
         "machine_profile": profile,
         "tool_versions": versions,
+        "contract_evidence": checked_in_contract_evidence(root, contract_paths),
         "regression_policy": {
             "budget_model_path": "tests/tooling/fixtures/performance_governance/budget_model.json",
             "budget_model_contract_id": str(budget_model["contract_id"]),
             "budget_id": "runtime-hot-path",
-            "threshold": runtime_budget_metric_for_workload(budget_model, workload_id),
+            "threshold": threshold,
         },
     }

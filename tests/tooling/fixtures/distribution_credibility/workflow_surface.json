@@ -31,10 +31,12 @@
     "upstream_owner_actions": [
       "validate-release-foundation",
       "validate-packaging-channels",
+      "validate-package-install-distribution",
       "validate-release-operations"
     ],
     "workflow_child_actions": [
       "validate-release-operations",
+      "validate-package-install-distribution",
       "check-distribution-credibility-surface",
       "check-distribution-credibility-schema-surface",
       "build-distribution-credibility-dashboard",
@@ -64,11 +66,12 @@
         "validate-distribution-credibility",
         "validate-distribution-credibility-end-to-end"
       ],
-      "claim_boundary": "release readiness requires package-channel, release-operations, and release-evidence drill outputs"
+      "claim_boundary": "release readiness requires package-channel, clean package install, release-operations, and release-evidence drill outputs"
     }
   },
   "integrated_required_steps": [
     "validate-release-operations",
+    "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",
     "build-distribution-credibility-dashboard",
@@ -85,6 +88,7 @@
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels",
+    "validate-package-install-distribution",
     "validate-release-operations"
   ],
   "nightly_action": "test-nightly"

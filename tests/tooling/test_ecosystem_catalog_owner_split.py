@@ -71,6 +71,7 @@ def test_package_ecosystem_public_actions_have_hard_cutover_owner_contracts() ->
         "package-ecosystem-authoring-owner",
         "package-ecosystem-mirror-owner",
         "package-ecosystem-registry-owner",
+        "package-ecosystem-install-owner",
         "package-ecosystem-runnable-owner",
     } <= package_owner_roles
 

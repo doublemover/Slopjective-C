@@ -1,0 +1,30 @@
+{
+  "contract_id": "objc3c.runtime.debug.trace.fixture.contract.v1",
+  "source_path": "tests/tooling/fixtures/native/hello.objc3",
+  "schema_path": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+  "expected_event_counts": {
+    "compile-stage": 5,
+    "debug-anchor": 3,
+    "reserved-surface": 4
+  },
+  "expected_supported_lanes": [
+    "message_send_trace",
+    "object_inspection",
+    "source_to_artifact_mapping"
+  ],
+  "expected_reserved_lanes": [
+    "async_task_inspection",
+    "error_unwind_trace",
+    "lldb_plugin"
+  ],
+  "required_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace",
+    "objc3c.behavior.runtime.debug_trace.lldb_plugin",
+    "objc3c.behavior.runtime.debug_trace.statement_stepping",
+    "objc3c.behavior.runtime.debug_trace.async_tasks",
+    "objc3c.behavior.runtime.debug_trace.error_unwind"
+  ],
+  "diagnostic_codes": [
+    "O3DBG8176"
+  ]
+}

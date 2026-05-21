@@ -4,6 +4,7 @@
   "upstream_surfaces": [
     "release-foundation",
     "packaging-channels",
+    "package-ecosystem",
     "release-operations",
     "release-evidence"
   ],
@@ -36,7 +37,7 @@
         "validate-distribution-credibility-end-to-end"
       ],
       "evidence_log_allowed": false,
-      "claim_boundary": "release credibility blocks unless package channel, release operations, and release evidence drill inputs remain attached"
+      "claim_boundary": "release credibility blocks unless package channel, clean package install, release operations, and release evidence drill inputs remain attached"
     }
   },
   "required_signal_order": [
@@ -54,7 +55,7 @@
     {
       "signal_id": "package-channel-install-smoke",
       "artifact_source": "tmp/reports/package-channels",
-      "claim_boundary": "distribution claims are only credible when the installable channel surfaces still produce rollback-safe smoke artifacts"
+      "claim_boundary": "distribution claims are only credible when installable channel surfaces produce rollback-safe smoke artifacts and package-ecosystem clean install evidence remains no-network and hosted-registry fail-closed"
     },
     {
       "signal_id": "release-operations-metadata",

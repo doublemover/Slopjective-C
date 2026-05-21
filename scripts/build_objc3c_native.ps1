@@ -244,6 +244,14 @@ function Test-ExecutionModeRunsNativeBuild {
   return $Mode -in @("full", "binaries-only", "contracts-binary", "contracts-closeout", "contracts-all")
 }
 
+if ($Parallelism -eq 0 -and ![string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_BUILD_PARALLELISM)) {
+  $parsedParallelism = 0
+  if (![int]::TryParse($env:OBJC3C_NATIVE_BUILD_PARALLELISM, [ref]$parsedParallelism) -or $parsedParallelism -lt 1) {
+    throw "OBJC3C_NATIVE_BUILD_PARALLELISM must be a positive integer when set"
+  }
+  $Parallelism = $parsedParallelism
+}
+
 $modeRunsNativeBuild = Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode
 if ($modeRunsNativeBuild) {
   $nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot

@@ -1,0 +1,52 @@
+module LanguageSemanticsPublicRuntimeContract;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable>>
+@end
+
+@implementation SemanticVault
+@end
+
+fn acceptProtocolVault(vault: SemanticVault<id<Persistable>> *?) -> i32 {
+  return 10;
+}
+
+fn consumeConcreteVault(vault: SemanticVault<SemanticBox *> *?) -> i32 {
+  return acceptProtocolVault(vault);
+}
+
+fn materializeEscapingCopy(handle: i32) -> i32 {
+  return 1;
+}
+
+fn ownedBlockScore(owner: id, weakPeer: __weak id) -> i32 {
+  let counter = 2;
+  let closure = ^[__block counter, weak weakPeer] (i32 add) {
+    counter = counter + add;
+    if (owner == weakPeer) {
+      return counter + owner;
+    }
+    return counter;
+  };
+  return closure(3) + materializeEscapingCopy(closure);
+}
+
+fn fetchValue() -> i32 {
+  return 4;
+}
+
+async fn runTask() -> i32 __attribute__((objc_executor(main))) {
+  return await fetchValue();
+}
+
+fn main() -> i32 {
+  return consumeConcreteVault(nil) + ownedBlockScore(11, 11) + runTask();
+}

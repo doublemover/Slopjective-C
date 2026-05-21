@@ -1,0 +1,89 @@
+{
+  "contract_id": "objc3c.migration_analyzer.expected_diagnostics.v1",
+  "schema_version": 1,
+  "input": "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_negative.json",
+  "status": "FAIL",
+  "fail_closed": true,
+  "required_diagnostics": [
+    {
+      "code": "O3M010",
+      "category": "surface-contract",
+      "surface": "migration-input",
+      "minimum_count": 1,
+      "metadata_fields": [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range"
+      ]
+    },
+    {
+      "code": "O3M016",
+      "category": "foreign-interface",
+      "surface": "migration-input",
+      "minimum_count": 1,
+      "metadata_fields": [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range"
+      ]
+    },
+    {
+      "code": "O3M017",
+      "category": "foreign-interface",
+      "surface": "migration-input",
+      "minimum_count": 1,
+      "metadata_fields": [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range"
+      ]
+    },
+    {
+      "code": "O3M102",
+      "category": "surface-evidence",
+      "surface": "abi-alignment",
+      "minimum_count": 1,
+      "metadata_fields": [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range"
+      ]
+    },
+    {
+      "code": "O3M210",
+      "category": "unsafe-loading",
+      "surface": "mixed-image-loading",
+      "minimum_count": 2,
+      "metadata_fields": [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range"
+      ]
+    }
+  ]
+}

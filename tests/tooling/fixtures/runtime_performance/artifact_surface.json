@@ -11,6 +11,11 @@
   },
   "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
   "executable_fixture_manifest": "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
+  "contract_surfaces": [
+    "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
+  ],
   "report_root": "tmp/reports/runtime-performance",
   "artifact_root": "tmp/artifacts/runtime-performance",
   "summary_reports": [
@@ -23,7 +28,9 @@
     "tmp/reports/runtime-performance/dispatch-cache",
     "tmp/reports/runtime-performance/reflection-query",
     "tmp/reports/runtime-performance/ownership-helpers",
-    "tmp/reports/runtime-performance/storage-ownership-reflection"
+    "tmp/reports/runtime-performance/storage-ownership-reflection",
+    "tmp/reports/runtime-performance/stdlib-core-runtime",
+    "tmp/reports/runtime-performance/stdlib-concurrency-runtime"
   ],
   "required_packet_fields": [
     "contract_id",
@@ -32,6 +39,7 @@
     "acceptance_case_id",
     "duration_ms",
     "counter_snapshot",
+    "replay_key",
     "summary"
   ],
   "exact_live_paths_for_downstream_work": [

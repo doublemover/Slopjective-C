@@ -10,12 +10,12 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from objc3c_performance_report.model import (
+from objc3c_performance_report.model import (  # noqa: E402
     build_performance_report_model,
     public_summary_payload,
 )
-from objc3c_performance_report.paths import PerformanceReportPaths, SUMMARY_CONTRACT_ID
-from objc3c_performance_report.rendering import render_markdown_report
+from objc3c_performance_report.paths import PerformanceReportPaths, SUMMARY_CONTRACT_ID  # noqa: E402
+from objc3c_performance_report.rendering import render_markdown_report  # noqa: E402
 
 
 OWNER_MODULES = (
@@ -71,6 +71,19 @@ def test_performance_report_model_preserves_public_contract(tmp_path: Path) -> N
             "benchmark": "tmp/reports/performance/benchmark-summary.json",
             "runtime": "tmp/reports/performance/runtime-summary.json",
         },
+        "runtime_contract_evidence": {
+            "evidence_id": "objc3c.performance.governance.runtime-contract-evidence.v1",
+            "status": "PASS",
+            "support_authority": False,
+            "contract_paths": [
+                "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+                "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+                "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+            ],
+            "budget_metric_ids": ["dispatch_wall_clock_ms"],
+            "workload_ids": ["dispatch-cache"],
+            "summary_counts": {"replay.row_count": 7},
+        },
     }
 
     model = build_performance_report_model(paths, dashboard)
@@ -96,6 +109,13 @@ def test_performance_report_model_preserves_public_contract(tmp_path: Path) -> N
     assert payload["upstream_reports"]["benchmark"] == (
         "tmp/reports/performance/benchmark-summary.json"
     )
+    assert payload["runtime_contract_evidence"]["status"] == "PASS"
+    assert payload["runtime_contract_evidence"]["support_authority"] is False
+    assert payload["runtime_contract_evidence"]["contract_paths"] == [
+        "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+        "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+        "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+    ]
     assert payload["owner_split"]["runtime_performance"] == [
         "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
     ]
@@ -133,5 +153,6 @@ def test_performance_report_markdown_is_rendering_owned(tmp_path: Path) -> None:
     assert "- Release status: `release-ready`" in markdown
     assert "Environment drift issues: none." in markdown
     assert "## Evidence" in markdown
+    assert "## Runtime Contract Evidence" in markdown
     assert "## Policy Contracts" in markdown
     assert "## Owner Split" in markdown

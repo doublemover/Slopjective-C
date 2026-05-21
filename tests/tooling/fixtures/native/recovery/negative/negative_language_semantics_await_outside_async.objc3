@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3S223.
+module NegativeLanguageSemanticsAwaitOutsideAsync;
+
+fn fetchValue() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  return await fetchValue();
+}

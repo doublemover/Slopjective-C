@@ -62,6 +62,8 @@ def main() -> int:
         return fail("release-operations publication summary did not pass")
     if manifest_summary.get("upgrade_support_report") != publication_summary.get("upgrade_support_report"):
         return fail("upgrade support report path drifted between manifest and publication")
+    if manifest_summary.get("release_channel_manifest") != publication_summary.get("release_channel_manifest"):
+        return fail("release channel manifest path drifted between manifest and publication")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -70,6 +72,7 @@ def main() -> int:
         "workflow_report": repo_rel(WORKFLOW_REPORT),
         "validated_steps": REQUIRED_STEPS,
         "update_manifest_path": manifest_summary.get("update_manifest_path"),
+        "release_channel_manifest": publication_summary.get("release_channel_manifest"),
         "upgrade_support_report": publication_summary.get("upgrade_support_report"),
         "channel_catalog": publication_summary.get("channel_catalog"),
         "release_operations_owned_actions": workflow_surface.get("release_operations_owned_actions"),

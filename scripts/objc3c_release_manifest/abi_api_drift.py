@@ -36,6 +36,25 @@ REQUIRED_SOURCE_MANIFEST_KEYS = {
     "release_operations_versioning_model",
     "long_horizon_deprecation_policy",
 }
+REQUIRED_SURFACE_CLASSES = {
+    "stdlib-public-api",
+    "stdlib-runtime-abi",
+    "frontend-c-api-helper",
+    "frontend-c-api-type-alias",
+    "compiler-artifact-schema",
+    "package-lockfile",
+}
+REQUIRED_RELEASE_BLOCKED_TRANSITIONS = {
+    "public-symbol-removal-without-deprecation-window",
+    "runtime-symbol-removal-without-deprecation-window",
+    "signature-change-without-major-line",
+    "private-helper-graduation-without-policy",
+    "unsupported-upgrade-route",
+    "unsupported-downgrade-route",
+    "package-abi-identity-drift",
+    "schema-breaking-change-without-major-line",
+}
+ABI_VERSION_RE = re.compile(r"^[0-9]+[.][0-9]+$")
 
 
 def _repo_path(raw_path: str) -> Path:
@@ -118,6 +137,107 @@ def _surface_entries_by_module(
     return by_module
 
 
+def _compatibility_class_ids(
+    governance: dict[str, Any],
+    failures: list[str],
+) -> set[str]:
+    taxonomy = governance.get("abi_version_taxonomy")
+    if not isinstance(taxonomy, dict):
+        failures.append("abi_version_taxonomy must be an object")
+        return set()
+    classes = taxonomy.get("compatibility_classes")
+    if not isinstance(classes, list) or not classes:
+        failures.append("abi_version_taxonomy.compatibility_classes must be a non-empty list")
+        return set()
+    class_ids: set[str] = set()
+    for entry in classes:
+        if not isinstance(entry, dict) or not isinstance(entry.get("class_id"), str):
+            failures.append("abi_version_taxonomy contains a malformed compatibility class")
+            continue
+        class_id = str(entry["class_id"])
+        if class_id in class_ids:
+            failures.append(f"abi_version_taxonomy contains duplicate class {class_id}")
+            continue
+        if entry.get("release_blocker") is not True:
+            failures.append(f"compatibility class {class_id} is not release-blocking")
+        class_ids.add(class_id)
+    return class_ids
+
+
+def _transition_sets(
+    governance: dict[str, Any],
+    failures: list[str],
+) -> dict[str, list[str]]:
+    policy = governance.get("allowed_transition_policy")
+    if not isinstance(policy, dict):
+        failures.append("allowed_transition_policy must be an object")
+        return {}
+    raw_sets = policy.get("transition_sets")
+    if not isinstance(raw_sets, dict) or not raw_sets:
+        failures.append("allowed_transition_policy.transition_sets must be a non-empty object")
+        return {}
+    transition_sets: dict[str, list[str]] = {}
+    for name, transitions in raw_sets.items():
+        if not isinstance(name, str) or not name:
+            failures.append("allowed transition set has malformed name")
+            continue
+        if (
+            not isinstance(transitions, list)
+            or not transitions
+            or not all(isinstance(value, str) and value for value in transitions)
+        ):
+            failures.append(f"allowed transition set {name} must be a non-empty string list")
+            continue
+        if len(set(transitions)) != len(transitions):
+            failures.append(f"allowed transition set {name} contains duplicate transitions")
+        transition_sets[name] = list(transitions)
+
+    blocked = policy.get("release_blocked_transitions")
+    if (
+        not isinstance(blocked, list)
+        or not blocked
+        or not all(isinstance(value, str) and value for value in blocked)
+    ):
+        failures.append("allowed_transition_policy.release_blocked_transitions is malformed")
+    else:
+        missing = sorted(REQUIRED_RELEASE_BLOCKED_TRANSITIONS - set(blocked))
+        if missing:
+            failures.append(
+                "allowed transition policy lost release blockers: " + ", ".join(missing)
+            )
+    return transition_sets
+
+
+def _deprecation_state_map(
+    deprecation_policy: dict[str, Any],
+    failures: list[str],
+) -> dict[str, dict[str, Any]]:
+    states = deprecation_policy.get("deprecation_states")
+    if not isinstance(states, list):
+        failures.append("deprecation policy has no deprecation_states")
+        return {}
+    result: dict[str, dict[str, Any]] = {}
+    for entry in states:
+        if not isinstance(entry, dict) or not isinstance(entry.get("state"), str):
+            failures.append("deprecation policy contains malformed state entry")
+            continue
+        state = str(entry["state"])
+        if state in result:
+            failures.append(f"deprecation policy contains duplicate state {state}")
+            continue
+        result[state] = entry
+    return result
+
+
+def _nested_value(payload: dict[str, Any], path: list[str]) -> Any:
+    current: Any = payload
+    for segment in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(segment)
+    return current
+
+
 def _load_source_manifests(
     governance: dict[str, Any],
     failures: list[str],
@@ -141,6 +261,161 @@ def _load_source_manifests(
             continue
         loaded[key] = _load_checked_json(raw_path, f"source_manifests.{key}", failures)
     return loaded
+
+
+def _validate_abi_version_taxonomy(
+    governance: dict[str, Any],
+    loaded: dict[str, dict[str, Any]],
+    class_ids: set[str],
+    failures: list[str],
+) -> None:
+    taxonomy = governance.get("abi_version_taxonomy")
+    if not isinstance(taxonomy, dict):
+        failures.append("abi_version_taxonomy must be an object")
+        return
+    versioning = loaded.get("release_operations_versioning_model", {})
+    current_major_line = taxonomy.get("current_major_line")
+    current_minor_line = taxonomy.get("current_minor_line")
+    if current_major_line != versioning.get("supported_major_line"):
+        failures.append("ABI taxonomy current_major_line drifted from release versioning model")
+    if current_minor_line != versioning.get("current_minor_line"):
+        failures.append("ABI taxonomy current_minor_line drifted from release versioning model")
+    supported_major_lines = taxonomy.get("supported_major_lines")
+    if not isinstance(supported_major_lines, list) or current_major_line not in supported_major_lines:
+        failures.append("ABI taxonomy does not include the current supported major line")
+
+    surface_classes = taxonomy.get("surface_classes")
+    if not isinstance(surface_classes, dict):
+        failures.append("abi_version_taxonomy.surface_classes must be an object")
+        return
+    missing_surfaces = sorted(REQUIRED_SURFACE_CLASSES - set(surface_classes))
+    if missing_surfaces:
+        failures.append("ABI taxonomy missing surface classes: " + ", ".join(missing_surfaces))
+    for surface_kind, class_id in surface_classes.items():
+        if not isinstance(surface_kind, str) or not isinstance(class_id, str):
+            failures.append("ABI taxonomy surface_classes contains malformed entry")
+            continue
+        if class_id not in class_ids:
+            failures.append(f"ABI taxonomy surface {surface_kind} references unknown class {class_id}")
+
+
+def _validate_surface_governance_metadata(
+    surface: dict[str, Any],
+    *,
+    surface_kind: str,
+    governance: dict[str, Any],
+    class_ids: set[str],
+    transition_sets: dict[str, list[str]],
+    deprecation_states: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> None:
+    taxonomy = governance.get("abi_version_taxonomy", {})
+    surface_classes = taxonomy.get("surface_classes") if isinstance(taxonomy, dict) else {}
+    expected_class = (
+        surface_classes.get(surface_kind) if isinstance(surface_classes, dict) else None
+    )
+    class_id = surface.get("compatibility_class")
+    if class_id != expected_class:
+        failures.append(
+            f"{surface_kind} compatibility class drifted: expected {expected_class!r}, observed {class_id!r}"
+        )
+    if not isinstance(class_id, str) or class_id not in class_ids:
+        failures.append(f"{surface_kind} references unknown compatibility class {class_id!r}")
+
+    transition_set = surface.get("allowed_transition_set")
+    if not isinstance(transition_set, str) or transition_set not in transition_sets:
+        failures.append(f"{surface_kind} references unknown transition set {transition_set!r}")
+    deprecation_state = surface.get("deprecation_state")
+    if not isinstance(deprecation_state, str) or deprecation_state not in deprecation_states:
+        failures.append(f"{surface_kind} references unknown deprecation state {deprecation_state!r}")
+
+    if surface.get("release_blocker") is not True:
+        failures.append(f"{surface_kind} must be release-blocking")
+    if not isinstance(surface.get("surface_owner"), str) or not surface.get("surface_owner"):
+        failures.append(f"{surface_kind} must name a symbol surface owner")
+    for field_name in ("introduced_in", "minimum_supported_abi"):
+        value = surface.get(field_name)
+        if not isinstance(value, str) or ABI_VERSION_RE.match(value) is None:
+            failures.append(f"{surface_kind} {field_name} must be a major.minor ABI version")
+    maximum_supported_abi = surface.get("maximum_supported_abi")
+    if maximum_supported_abi is not None and (
+        not isinstance(maximum_supported_abi, str)
+        or ABI_VERSION_RE.match(maximum_supported_abi) is None
+    ):
+        failures.append(f"{surface_kind} maximum_supported_abi must be null or a major.minor ABI version")
+
+
+def _validate_deprecation_lifecycle(
+    governance: dict[str, Any],
+    loaded: dict[str, dict[str, Any]],
+    deprecation_states: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> None:
+    lifecycle = governance.get("deprecation_lifecycle")
+    source_manifests = governance.get("source_manifests", {})
+    if not isinstance(lifecycle, dict):
+        failures.append("deprecation_lifecycle must be an object")
+        return
+    expected_source = (
+        source_manifests.get("long_horizon_deprecation_policy")
+        if isinstance(source_manifests, dict)
+        else None
+    )
+    if lifecycle.get("policy_source") != expected_source:
+        failures.append("deprecation_lifecycle policy_source drifted from source_manifests")
+
+    allowed_states = {
+        value
+        for value in lifecycle.get("public_claim_allowed_states", [])
+        if isinstance(value, str)
+    }
+    blocking_states = {
+        value
+        for value in lifecycle.get("public_claim_blocking_states", [])
+        if isinstance(value, str)
+    }
+    for state in sorted(allowed_states):
+        entry = deprecation_states.get(state)
+        if not isinstance(entry, dict):
+            failures.append(f"deprecation lifecycle references unknown allowed state {state}")
+        elif entry.get("public_claim_allowed") is not True:
+            failures.append(f"deprecation lifecycle allowed state {state} blocks public claims")
+    for state in sorted(blocking_states):
+        entry = deprecation_states.get(state)
+        if not isinstance(entry, dict):
+            failures.append(f"deprecation lifecycle references unknown blocking state {state}")
+        elif entry.get("public_claim_allowed") is not False:
+            failures.append(f"deprecation lifecycle blocking state {state} still allows public claims")
+
+    warning_classes = lifecycle.get("required_warning_classes")
+    if not isinstance(warning_classes, dict):
+        failures.append("deprecation_lifecycle.required_warning_classes must be an object")
+    else:
+        for state, expected_warning in warning_classes.items():
+            entry = deprecation_states.get(str(state))
+            if not isinstance(entry, dict):
+                failures.append(f"deprecation lifecycle warning class references unknown state {state}")
+                continue
+            if entry.get("required_warning_class") != expected_warning:
+                failures.append(f"deprecation lifecycle warning class drifted for {state}")
+
+    required_fields = set(
+        value
+        for value in lifecycle.get("required_evidence_fields", [])
+        if isinstance(value, str)
+    )
+    deprecation_policy = loaded.get("long_horizon_deprecation_policy", {})
+    published_fields = set(
+        value
+        for value in deprecation_policy.get("required_publication_fields", [])
+        if isinstance(value, str)
+    )
+    missing_fields = sorted(required_fields - published_fields)
+    if missing_fields:
+        failures.append(
+            "deprecation lifecycle evidence fields missing from policy: "
+            + ", ".join(missing_fields)
+        )
 
 
 def _validate_source_manifest_coverage(
@@ -298,8 +573,23 @@ def _validate_stdlib_symbol_surface(
     *,
     governance: dict[str, Any],
     surface_kind: str,
+    class_ids: set[str],
+    transition_sets: dict[str, list[str]],
+    deprecation_states: dict[str, dict[str, Any]],
     failures: list[str],
 ) -> int:
+    surface_contract_kind = (
+        "stdlib-runtime-abi" if surface_kind == "runtime-abi" else "stdlib-public-api"
+    )
+    _validate_surface_governance_metadata(
+        surface,
+        surface_kind=surface_contract_kind,
+        governance=governance,
+        class_ids=class_ids,
+        transition_sets=transition_sets,
+        deprecation_states=deprecation_states,
+        failures=failures,
+    )
     module_name = surface.get("module")
     manifest_path = surface.get("manifest")
     source_path = surface.get("source")
@@ -378,11 +668,28 @@ def _validate_stdlib_symbol_surface(
     return len(expected_signature_map)
 
 
-def _validate_frontend_c_api(governance: dict[str, Any], failures: list[str]) -> int:
+def _validate_frontend_c_api(
+    governance: dict[str, Any],
+    *,
+    class_ids: set[str],
+    transition_sets: dict[str, list[str]],
+    deprecation_states: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> int:
     surface = governance.get("frontend_c_api")
     if not isinstance(surface, dict):
         failures.append("frontend_c_api must be an object")
         return 0
+    for surface_kind in ("frontend-c-api-helper", "frontend-c-api-type-alias"):
+        _validate_surface_governance_metadata(
+            surface,
+            surface_kind=surface_kind,
+            governance=governance,
+            class_ids=class_ids,
+            transition_sets=transition_sets,
+            deprecation_states=deprecation_states,
+            failures=failures,
+        )
     helper_contract_path = surface.get("helper_contract")
     runner_contract_path = surface.get("runner_contract")
     if not isinstance(helper_contract_path, str) or not isinstance(runner_contract_path, str):
@@ -610,6 +917,143 @@ def _validate_compatibility_windows(governance: dict[str, Any], failures: list[s
             )
 
 
+def _validate_package_abi_identity(
+    governance: dict[str, Any],
+    loaded: dict[str, dict[str, Any]],
+    *,
+    public_symbol_count: int,
+    runtime_symbol_count: int,
+    frontend_symbol_count: int,
+    class_ids: set[str],
+    failures: list[str],
+) -> dict[str, Any]:
+    package_policy = governance.get("package_abi_identity")
+    if not isinstance(package_policy, dict):
+        failures.append("package_abi_identity must be an object")
+        return {}
+    lock_schema = package_policy.get("package_lock_schema")
+    package_lock_schema = (
+        _load_checked_json(lock_schema, "package ABI identity package lock schema", failures)
+        if isinstance(lock_schema, str)
+        else {}
+    )
+    if not isinstance(lock_schema, str) or not (_repo_path(lock_schema)).is_file():
+        failures.append("package ABI identity references missing package lock schema")
+    if package_policy.get("package_lock_action") != "build-package-lock":
+        failures.append("package ABI identity package_lock_action drifted")
+
+    identity = package_policy.get("lockfile_abi_identity")
+    if not isinstance(identity, dict):
+        failures.append("package ABI identity lockfile_abi_identity must be an object")
+        return {}
+    taxonomy = governance.get("abi_version_taxonomy", {})
+    versioning = loaded.get("release_operations_versioning_model", {})
+    if identity.get("identity") != (taxonomy.get("identity") if isinstance(taxonomy, dict) else None):
+        failures.append("package ABI identity drifted from ABI taxonomy identity")
+    if identity.get("governance_manifest") != repo_rel(GOVERNANCE_MANIFEST):
+        failures.append("package ABI identity governance_manifest drifted")
+    if identity.get("governance_schema") != "schemas/objc3c-abi-api-governance-v1.schema.json":
+        failures.append("package ABI identity governance_schema drifted")
+    if identity.get("supported_major_line") != versioning.get("supported_major_line"):
+        failures.append("package ABI identity supported_major_line drifted")
+    if identity.get("current_minor_line") != versioning.get("current_minor_line"):
+        failures.append("package ABI identity current_minor_line drifted")
+    class_id = identity.get("compatibility_class")
+    if not isinstance(class_id, str) or class_id not in class_ids:
+        failures.append(f"package ABI identity references unknown compatibility class {class_id!r}")
+    package_manager_abi_identity = _nested_value(
+        package_lock_schema,
+        ["properties", "package_manager", "properties", "abi_identity", "const"],
+    )
+    package_entry_abi_identity = _nested_value(
+        package_lock_schema,
+        ["$defs", "package", "properties", "abi_identity", "const"],
+    )
+    if package_manager_abi_identity != identity.get("identity"):
+        failures.append("package lock schema package_manager ABI identity drifted")
+    if package_entry_abi_identity != identity.get("identity"):
+        failures.append("package lock schema package entry ABI identity drifted")
+
+    expected_counts = {
+        "stdlib_public_api_symbol_count": public_symbol_count,
+        "stdlib_runtime_abi_symbol_count": runtime_symbol_count,
+        "frontend_c_api_symbol_count": frontend_symbol_count,
+    }
+    for field_name, expected_count in expected_counts.items():
+        if identity.get(field_name) != expected_count:
+            failures.append(
+                f"package ABI identity {field_name} drifted: "
+                f"expected {expected_count}, observed {identity.get(field_name)!r}"
+            )
+    return dict(identity)
+
+
+def _validate_compiler_artifact_compatibility(
+    governance: dict[str, Any],
+    *,
+    class_ids: set[str],
+    transition_sets: dict[str, list[str]],
+    failures: list[str],
+) -> int:
+    policy = governance.get("compiler_artifact_compatibility")
+    if not isinstance(policy, dict):
+        failures.append("compiler_artifact_compatibility must be an object")
+        return 0
+    required_transition = policy.get("required_schema_transition_policy")
+    transition_policy = governance.get("allowed_transition_policy", {})
+    blocked = (
+        transition_policy.get("release_blocked_transitions")
+        if isinstance(transition_policy, dict)
+        else []
+    )
+    if not isinstance(blocked, list) or required_transition not in blocked:
+        failures.append("compiler artifact compatibility required schema transition is not release-blocking")
+
+    surfaces = policy.get("artifact_schema_surfaces")
+    if not isinstance(surfaces, list) or not surfaces:
+        failures.append("compiler_artifact_compatibility.artifact_schema_surfaces is malformed")
+        return 0
+    seen: set[str] = set()
+    for surface in surfaces:
+        if not isinstance(surface, dict):
+            failures.append("compiler artifact schema surface is malformed")
+            continue
+        surface_id = surface.get("surface_id")
+        if not isinstance(surface_id, str) or not surface_id:
+            failures.append("compiler artifact schema surface is missing surface_id")
+            continue
+        if surface_id in seen:
+            failures.append(f"compiler artifact schema surface duplicated {surface_id}")
+            continue
+        seen.add(surface_id)
+        class_id = surface.get("compatibility_class")
+        if not isinstance(class_id, str) or class_id not in class_ids:
+            failures.append(f"compiler artifact {surface_id} references unknown compatibility class {class_id!r}")
+        transition_set = surface.get("allowed_transition_set")
+        if not isinstance(transition_set, str) or transition_set not in transition_sets:
+            failures.append(f"compiler artifact {surface_id} references unknown transition set {transition_set!r}")
+        schema_path = surface.get("schema")
+        identity_path = surface.get("identity_path")
+        expected_identity = surface.get("expected_identity")
+        if (
+            not isinstance(schema_path, str)
+            or not isinstance(identity_path, list)
+            or not all(isinstance(segment, str) for segment in identity_path)
+            or not isinstance(expected_identity, str)
+        ):
+            failures.append(f"compiler artifact {surface_id} schema identity contract is malformed")
+            continue
+        schema_payload = _load_checked_json(schema_path, f"compiler artifact {surface_id} schema", failures)
+        if schema_payload:
+            observed_identity = _nested_value(schema_payload, list(identity_path))
+            if observed_identity != expected_identity:
+                failures.append(
+                    f"compiler artifact {surface_id} identity drifted: "
+                    f"expected {expected_identity!r}, observed {observed_identity!r}"
+                )
+    return len(seen)
+
+
 def run_check(
     *,
     governance_path: Path = GOVERNANCE_MANIFEST,
@@ -621,10 +1065,31 @@ def run_check(
     public_symbol_count = 0
     runtime_symbol_count = 0
     frontend_symbol_count = 0
+    compiler_artifact_schema_count = 0
+    package_abi_identity: dict[str, Any] = {}
 
     if governance:
+        loaded_source_manifests = _load_source_manifests(governance, failures)
+        class_ids = _compatibility_class_ids(governance, failures)
+        transition_sets = _transition_sets(governance, failures)
+        deprecation_states = _deprecation_state_map(
+            loaded_source_manifests.get("long_horizon_deprecation_policy", {}),
+            failures,
+        )
+        _validate_abi_version_taxonomy(
+            governance,
+            loaded_source_manifests,
+            class_ids,
+            failures,
+        )
+        _validate_deprecation_lifecycle(
+            governance,
+            loaded_source_manifests,
+            deprecation_states,
+            failures,
+        )
         source_manifest_count = _validate_source_manifest_coverage(
-            governance, _load_source_manifests(governance, failures), failures
+            governance, loaded_source_manifests, failures
         )
         for surface in governance.get("stdlib_public_api", []):
             if isinstance(surface, dict):
@@ -632,6 +1097,9 @@ def run_check(
                     surface,
                     governance=governance,
                     surface_kind="public-api",
+                    class_ids=class_ids,
+                    transition_sets=transition_sets,
+                    deprecation_states=deprecation_states,
                     failures=failures,
                 )
             else:
@@ -642,12 +1110,36 @@ def run_check(
                     surface,
                     governance=governance,
                     surface_kind="runtime-abi",
+                    class_ids=class_ids,
+                    transition_sets=transition_sets,
+                    deprecation_states=deprecation_states,
                     failures=failures,
                 )
             else:
                 failures.append("stdlib_runtime_abi contained a malformed entry")
-        frontend_symbol_count = _validate_frontend_c_api(governance, failures)
+        frontend_symbol_count = _validate_frontend_c_api(
+            governance,
+            class_ids=class_ids,
+            transition_sets=transition_sets,
+            deprecation_states=deprecation_states,
+            failures=failures,
+        )
         _validate_compatibility_windows(governance, failures)
+        package_abi_identity = _validate_package_abi_identity(
+            governance,
+            loaded_source_manifests,
+            public_symbol_count=public_symbol_count,
+            runtime_symbol_count=runtime_symbol_count,
+            frontend_symbol_count=frontend_symbol_count,
+            class_ids=class_ids,
+            failures=failures,
+        )
+        compiler_artifact_schema_count = _validate_compiler_artifact_compatibility(
+            governance,
+            class_ids=class_ids,
+            transition_sets=transition_sets,
+            failures=failures,
+        )
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -659,6 +1151,15 @@ def run_check(
         "public_api_symbol_count": public_symbol_count,
         "runtime_abi_symbol_count": runtime_symbol_count,
         "frontend_c_api_symbol_count": frontend_symbol_count,
+        "governed_symbol_surface_count": (
+            len(governance.get("stdlib_public_api", []))
+            + len(governance.get("stdlib_runtime_abi", []))
+            + (1 if isinstance(governance.get("frontend_c_api"), dict) else 0)
+            if governance
+            else 0
+        ),
+        "compiler_artifact_schema_count": compiler_artifact_schema_count,
+        "package_abi_identity": package_abi_identity,
         "compatibility_policy": (
             governance.get("compatibility_window_policy", {}) if governance else {}
         ),

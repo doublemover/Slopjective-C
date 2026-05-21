@@ -6,7 +6,8 @@
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
   "summary_implementation_anchor": "scripts/build_developer_tooling_artifact_contract_summary.py",
   "schema_paths": [
-    "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+    "schemas/objc3c-runtime-debug-trace-v1.schema.json"
   ],
   "canonical_report_paths": [
     "tmp/reports/developer-tooling/editor-surface/editor-surface.json",
@@ -15,11 +16,13 @@
     "tmp/reports/developer-tooling/editor-surface/workspace-index.json",
     "tmp/reports/developer-tooling/editor-surface/artifact-inspector.json",
     "tmp/reports/developer-tooling/editor-surface/formatter-output.json",
-    "tmp/reports/developer-tooling/editor-surface/debug-map.json"
+    "tmp/reports/developer-tooling/editor-surface/debug-map.json",
+    "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json"
   ],
   "public_actions": [
     "inspect-editor-tooling",
     "format-objc3c",
+    "trace-runtime-debug",
     "validate-developer-tooling"
   ],
   "package_bridge": "objc3c",
@@ -30,7 +33,8 @@
     "workspace_index",
     "artifact_inspector",
     "formatter",
-    "debug"
+    "debug",
+    "runtime_debug_trace"
   ],
   "source_artifacts": [
     "summary",
@@ -39,7 +43,8 @@
     "ir",
     "object",
     "runtime_metadata_binary",
-    "runtime-inspector"
+    "runtime-inspector",
+    "runtime-debug-trace"
   ],
   "claim_narrowing_constraints": [
     "one combined editor surface must remain canonical over split ad hoc payloads",

@@ -21,6 +21,7 @@
     "evidence_paths",
     "policy_paths",
     "upstream_reports",
+    "runtime_contract_evidence",
     "owner_split",
     "publication_contracts"
   ],
@@ -97,6 +98,9 @@
         "$ref": "#/$defs/repoPath"
       }
     },
+    "runtime_contract_evidence": {
+      "$ref": "#/$defs/runtimeContractEvidence"
+    },
     "owner_split": {
       "type": "object",
       "additionalProperties": {
@@ -118,6 +122,75 @@
     "repoPath": {
       "type": "string",
       "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "runtimeContractEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "status",
+        "support_authority",
+        "contract_paths",
+        "budget_metric_ids",
+        "workload_ids",
+        "summary_counts"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "const": "objc3c.performance.governance.runtime-contract-evidence.v1"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "MISSING",
+            "NOT_CONFIGURED"
+          ]
+        },
+        "support_authority": {
+          "type": "boolean",
+          "const": false
+        },
+        "contract_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "budget_metric_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "workload_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "summary_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
+          }
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
     }
   }
 }

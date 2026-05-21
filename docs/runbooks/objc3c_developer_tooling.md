@@ -27,6 +27,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- format-objc3c`
 - `npm run objc3c -- rewrite-objc3c-source`
 - `npm run objc3c -- check-developer-diagnostic-quality`
+- `npm run objc3c -- trace-runtime-debug`
 - `npm run objc3c -- trace-compile-stages`
 - `npm run objc3c -- test-capability-routed-source-parity`
 
@@ -118,6 +119,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
   - `capability_demo_compatibility`
   - runtime inspector benchmark payload
+  - deterministic runtime debug trace payload
+  - `tmp/reports/objc3c-public-workflow/runtime-debug-trace.json`
   - compile-stage trace summary
   - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
   - compile-stage trace payload
@@ -145,6 +148,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the structured compile-stage trace through the public command surface:
   - `npm run objc3c -- trace-compile-stages`
+- compose the deterministic runtime debug trace through the public command surface:
+  - `npm run objc3c -- trace-runtime-debug`
 - inspect the combined editor tooling surface:
   - `npm run objc3c -- inspect-editor-tooling`
 - format one supported objc3c source through the canonical Objective-C 3 formatter subset:
@@ -195,14 +200,24 @@ The current checked-in developer-tooling surface is intentionally narrower than 
 full editor product:
 
 - supported today:
+  - first-run setup through the public `npm run objc3c -- <action>` bridge
+  - copy/paste quickstart commands checked by the getting-started surface
+  - ready-to-compile project template materialization with a published compile
+    command contract
+  - migration analyzer and rewrite examples with checked-in positive output and
+    fail-closed diagnostics
   - compile observability
   - runtime inspection
   - capability exploration
   - runtime inspector benchmarking
   - compile-stage tracing
+  - deterministic runtime debug tracing from runtime-inspector, compile-stage,
+    and editor debug artifacts
   - manifest-backed language-server capabilities and navigation
   - deterministic workspace semantic indexing across the primary source,
     checked-in stdlib modules, and showcase package workspaces
+  - diagnostic-fix-it-backed `codeAction` payloads for checked deterministic
+    fix-it ranges
   - canonical Objective-C 3 source formatter output on the supported checked-in subset
   - safe source rewrite output for token-boundary literal canonicalization and identifier rewrites
   - diagnostic taxonomy and fix-it quality gate over checked-in diagnostic fixtures
@@ -211,18 +226,28 @@ full editor product:
   - integrated developer-tooling validation
   - packaged CLI-to-editor, formatter, debug, and workspace handoff over the staged runnable toolchain bundle
 - explicit remaining gaps after the current implementation slice:
-  - references, rename, semantic tokens, and code actions remain fail-closed
+  - references, rename, semantic tokens, and non-diagnostic code actions remain fail-closed
   - statement-level stepping and full source-map publication remain fail-closed
+  - async task inspection, error/unwind tracing, and LLDB plugin support remain
+    reserved until emitted runtime trace snapshots prove those lanes directly
 
 Downstream work must extend the real frontend runner, runtime artifacts, and
 public workflow commands instead of creating an editor-only shadow parser or
 debug-only sidecar data model.
 
+The support matrix row
+`tooling.developer-experience.first-run-product-path` is the current public
+truth boundary for the normal-developer path. Its support claim is limited to
+checked-in first-run, template, migration, and diagnostic contracts. It does not
+publish a full IDE, full language-server, retired Objective-C 2 compiler input,
+or debugger-stepping claim.
+
 ## Explicit Gap Inventory
 
 Current remaining gaps after the current developer-tooling slice:
 
-- no checked-in references/rename/semantic-token/code-action contract
+- no checked-in references/rename/semantic-token/general-code-action contract
+  beyond deterministic diagnostic fix-its
 - no checked-in statement-level stepping or full source-map publication contract
 
 These remaining gaps stay fail-closed; they are not implied by the formatter,
@@ -281,7 +306,7 @@ Language-server claims must stay narrower than the real shipped capability set.
   - references
   - rename
   - semantic tokens
-  - code actions
+  - non-diagnostic code actions
   - statement-level debugger stepping
 
 The public developer-tooling surface must publish one canonical capability map
@@ -339,6 +364,7 @@ The generated developer-tooling surface must group:
   navigation edges rooted in checked-in workspace/package contracts
 - formatter execution results and formatted output references
 - debug artifact inspection, breakpoint anchors, and stepping availability
+- deterministic runtime debug trace commands and report paths
 
 The developer-tooling report family is transient output produced by the public
 runner plus replayable checked-in scripts. It does not own capability claims.
@@ -353,6 +379,7 @@ The current and follow-on public entrypoints for the surface converge on:
 - `npm run objc3c -- format-objc3c`
 - `npm run objc3c -- rewrite-objc3c-source`
 - `npm run objc3c -- check-developer-diagnostic-quality`
+- `npm run objc3c -- trace-runtime-debug`
 - `npm run objc3c -- validate-developer-tooling`
 
 The current formatter/debug/workspace slice is action-catalog-owned. Its script
@@ -362,6 +389,7 @@ Checked-in contracts for the current slice:
 
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
 - `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+- `schemas/objc3c-runtime-debug-trace-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 - `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
 
@@ -375,6 +403,7 @@ The npm entrypoints route to the same action family:
 - `npm run objc3c -- format-objc3c <source>`
 - `npm run objc3c -- rewrite-objc3c-source <source> -- --rule legacy-literal-aliases --rename-symbol oldName=newName`
 - `npm run objc3c -- check-developer-diagnostic-quality`
+- `npm run objc3c -- trace-runtime-debug`
 - `npm run objc3c -- validate-developer-tooling`
 - `npm run objc3c -- validate-runnable-developer-tooling`
 

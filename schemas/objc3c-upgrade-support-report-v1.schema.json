@@ -13,6 +13,8 @@
     "supported_platform_ids",
     "support_tiers",
     "support_windows",
+    "release_channel_manifest",
+    "channel_operations",
     "upgrade_paths",
     "warnings",
     "revert_guidance",
@@ -45,6 +47,12 @@
         "candidate": { "$ref": "#/$defs/supportWindow" },
         "preview": { "$ref": "#/$defs/supportWindow" }
       }
+    },
+    "release_channel_manifest": { "type": "string", "minLength": 1 },
+    "channel_operations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/channelOperation" },
+      "minItems": 1
     },
     "upgrade_paths": {
       "type": "array",
@@ -127,6 +135,36 @@
         "upgrade_contract": { "type": "string" },
         "requires_warning": { "type": "boolean" },
         "revert_channel": { "type": "string" }
+      }
+    },
+    "channelOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "operation_class",
+        "version",
+        "publication_scope",
+        "release_gate_actions",
+        "rollback_channel",
+        "rollback_command",
+        "blocks_publication_on_rollback_failure"
+      ],
+      "properties": {
+        "channel_id": { "type": "string", "minLength": 1 },
+        "operation_class": {
+          "enum": ["stable", "candidate", "nightly", "preview"]
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "publication_scope": { "type": "string", "minLength": 1 },
+        "release_gate_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "rollback_channel": { "type": "string", "minLength": 1 },
+        "rollback_command": { "type": "string", "minLength": 1 },
+        "blocks_publication_on_rollback_failure": { "type": "boolean" }
       }
     },
     "reportWarning": {

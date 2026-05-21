@@ -1,0 +1,13 @@
+{
+  "contract_id": "objc3c.optimization.semantic.pipeline.reserved.skip.v1",
+  "pass_id": "devirtualization",
+  "status": "SKIPPED_FAIL_CLOSED",
+  "success_claim": false,
+  "diagnostic": "devirtualization is reserved until closed-world finality proofs exist",
+  "diagnostic_code": "O3OPT8175",
+  "required_missing_proofs": [
+    "class finality proof exists",
+    "override set is closed",
+    "ABI stability allows direct target publication"
+  ]
+}

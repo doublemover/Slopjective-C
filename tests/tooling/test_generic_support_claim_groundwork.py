@@ -68,6 +68,10 @@ EXPECTED_GENERIC_ROWS = {
 
 EXPECTED_GENERIC_FIXTURES = {
     "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3": ("positive", ""),
+    "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3": (
+        "positive",
+        "",
+    ),
     "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3": ("positive", ""),
     "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3": ("positive", ""),
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3": (

@@ -1,0 +1,230 @@
+{
+  "contract_id": "objc3c.release.operations.channel.operations.model.v1",
+  "schema_version": 1,
+  "default_channel": "stable",
+  "source_authority": "checked-in-release-operations-policy",
+  "required_channels": [
+    "stable",
+    "nightly"
+  ],
+  "release_note_sources": [
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/release_operations/channel_operations_model.json"
+  ],
+  "public_changelog_sources": [
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_release_foundation.md",
+    "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json"
+  ],
+  "local_provenance_required": [
+    "release_manifest_sha256",
+    "release_payload_digest_sha256",
+    "package_channels_manifest_sha256",
+    "installer_signature",
+    "archive_digests",
+    "git_commit",
+    "git_tree_dirty"
+  ],
+  "release_evidence_required": [
+    "update_manifest",
+    "release_channel_manifest",
+    "upgrade_support_report",
+    "channel_catalog",
+    "release_manifest",
+    "package_channels_manifest",
+    "platform_support_matrix"
+  ],
+  "fail_closed_rules": [
+    {
+      "rule_id": "missing-channel-operation-source",
+      "diagnostic_id": "release-channel-source-missing",
+      "trigger": "nightly or stable channel operation source is absent",
+      "required_action": "block release-operations publication until the checked-in channel operation model declares the required channel",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "missing-local-provenance",
+      "diagnostic_id": "release-channel-provenance-missing",
+      "trigger": "release manifest, package-channel manifest, installer signature, archive digest, or git source stamp is absent",
+      "required_action": "block publication and rebuild upstream release foundation and package-channel evidence",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "missing-rollback-proof",
+      "diagnostic_id": "release-channel-rollback-proof-missing",
+      "trigger": "a channel omits rollback safety, rollback command, or rollback evidence",
+      "required_action": "block publication until rollback safety is generated from the checked-in channel model",
+      "blocks_publication": true
+    },
+    {
+      "rule_id": "stable-gate-without-release-candidate-conformance",
+      "diagnostic_id": "stable-release-candidate-conformance-missing",
+      "trigger": "stable channel gate omits release candidate conformance",
+      "required_action": "block stable publication until validate-release-candidate-conformance is part of the stable gate",
+      "blocks_publication": true
+    }
+  ],
+  "channels": [
+    {
+      "channel_id": "stable",
+      "operation_class": "stable",
+      "version_field": "current_stable_version",
+      "support_status": "supported",
+      "publication_scope": "public-stable",
+      "update_manifest_channel": "stable",
+      "release_gate_actions": [
+        "validate-release-foundation",
+        "validate-release-candidate-conformance",
+        "validate-packaging-channels",
+        "validate-release-operations-end-to-end",
+        "validate-distribution-credibility-end-to-end"
+      ],
+      "clean_install_prerequisite": {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "blocks_publication_on_failure": true
+      },
+      "release_notes_policy": {
+        "source_mode": "source-derived",
+        "required_sources": [
+          "release_manifest",
+          "update_manifest",
+          "channel_operations_model"
+        ],
+        "forbidden_sources": [
+          "manual changelog row",
+          "tmp-only support claim",
+          "operator-maintained spreadsheet"
+        ]
+      },
+      "rollback_safety": {
+        "rollback_channel": "local-installer",
+        "requires_backup": false,
+        "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "evidence": "local installer receipt and rollback removal proof",
+        "blocks_publication_on_failure": true
+      }
+    },
+    {
+      "channel_id": "candidate",
+      "operation_class": "candidate",
+      "version_field": "current_candidate_version",
+      "support_status": "release-drill",
+      "publication_scope": "release-candidate-drill",
+      "update_manifest_channel": "candidate",
+      "release_gate_actions": [
+        "validate-release-foundation",
+        "validate-packaging-channels",
+        "validate-release-operations",
+        "validate-release-candidate-conformance"
+      ],
+      "clean_install_prerequisite": {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "blocks_publication_on_failure": true
+      },
+      "release_notes_policy": {
+        "source_mode": "source-derived",
+        "required_sources": [
+          "release_manifest",
+          "update_manifest",
+          "upgrade_support_report"
+        ],
+        "forbidden_sources": [
+          "manual waiver-only support status",
+          "operator-maintained spreadsheet"
+        ]
+      },
+      "rollback_safety": {
+        "rollback_channel": "local-installer",
+        "requires_backup": false,
+        "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "evidence": "local installer receipt and rollback removal proof",
+        "blocks_publication_on_failure": true
+      }
+    },
+    {
+      "channel_id": "nightly",
+      "operation_class": "nightly",
+      "version_field": "current_nightly_version",
+      "support_status": "nightly",
+      "publication_scope": "nightly-evidence-only",
+      "update_manifest_channel": "nightly",
+      "release_gate_actions": [
+        "test-nightly",
+        "validate-release-foundation",
+        "validate-packaging-channels",
+        "validate-release-operations"
+      ],
+      "clean_install_prerequisite": {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "blocks_publication_on_failure": true
+      },
+      "release_notes_policy": {
+        "source_mode": "source-derived",
+        "required_sources": [
+          "release_manifest",
+          "update_manifest",
+          "channel_operations_model"
+        ],
+        "forbidden_sources": [
+          "stable support claim",
+          "manual changelog row",
+          "background auto-update claim"
+        ]
+      },
+      "rollback_safety": {
+        "rollback_channel": "offline-bundle",
+        "requires_backup": true,
+        "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "evidence": "offline bundle install receipt and rollback removal proof",
+        "blocks_publication_on_failure": true
+      }
+    },
+    {
+      "channel_id": "preview",
+      "operation_class": "preview",
+      "version_field": "current_preview_version",
+      "support_status": "blocked",
+      "publication_scope": "preview-blocked",
+      "update_manifest_channel": "preview",
+      "release_gate_actions": [
+        "validate-release-foundation",
+        "validate-packaging-channels",
+        "validate-long-horizon-operations"
+      ],
+      "clean_install_prerequisite": {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "blocks_publication_on_failure": true
+      },
+      "release_notes_policy": {
+        "source_mode": "source-derived",
+        "required_sources": [
+          "release_manifest",
+          "update_manifest",
+          "upgrade_support_report"
+        ],
+        "forbidden_sources": [
+          "best-effort preview support",
+          "warning-free preview promotion"
+        ]
+      },
+      "rollback_safety": {
+        "rollback_channel": "offline-bundle",
+        "requires_backup": true,
+        "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "evidence": "offline bundle install receipt and rollback removal proof",
+        "blocks_publication_on_failure": true
+      }
+    }
+  ]
+}

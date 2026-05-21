@@ -22,6 +22,7 @@ class DistributionCredibilityDashboardPaths:
     workflow_surface: Path
     release_foundation_manifest: Path
     package_channels_end_to_end: Path
+    package_install_distribution_summary: Path
     release_operations_publication: Path
     release_operations_end_to_end: Path
     release_evidence_index: Path
@@ -51,6 +52,9 @@ class DistributionCredibilityDashboardPaths:
                 / "objc3c-release-manifest.json"
             ),
             package_channels_end_to_end=report_root / "package-channels" / "end-to-end-summary.json",
+            package_install_distribution_summary=(
+                report_root / "package-ecosystem" / "install-distribution-credibility-summary.json"
+            ),
             release_operations_publication=report_root / "release-operations" / "publication-summary.json",
             release_operations_end_to_end=report_root / "release-operations" / "end-to-end-summary.json",
             release_evidence_index=report_root / "release_evidence" / "evidence-index.json",

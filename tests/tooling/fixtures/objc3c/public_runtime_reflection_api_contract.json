@@ -1,0 +1,51 @@
+{
+  "contract_id": "objc3c.runtime.public.reflection.api.v1",
+  "issue": 8154,
+  "support_claim": "objc3c.behavior.runtime.public-reflection-api",
+  "public_header": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+  "public_umbrella_header": "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+  "implementation": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp",
+  "runtime_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+  "abi_version_macro": "OBJC3_RUNTIME_REFLECTION_ABI_VERSION",
+  "entrypoints": [
+    "objc3_runtime_reflection_api_abi_version",
+    "objc3_runtime_copy_reflection_state",
+    "objc3_runtime_copy_reflection_class",
+    "objc3_runtime_copy_reflection_property",
+    "objc3_runtime_copy_reflection_method",
+    "objc3_runtime_copy_reflection_protocol",
+    "objc3_runtime_copy_reflection_protocol_conformance",
+    "objc3_runtime_copy_reflection_category",
+    "objc3_runtime_copy_reflection_selector"
+  ],
+  "snapshot_types": [
+    "objc3_runtime_reflection_state_snapshot",
+    "objc3_runtime_reflection_class_snapshot",
+    "objc3_runtime_reflection_property_snapshot",
+    "objc3_runtime_reflection_method_snapshot",
+    "objc3_runtime_reflection_protocol_snapshot",
+    "objc3_runtime_reflection_protocol_conformance_snapshot",
+    "objc3_runtime_reflection_category_snapshot",
+    "objc3_runtime_reflection_selector_snapshot"
+  ],
+  "status_codes": [
+    "OBJC3_RUNTIME_REFLECTION_STATUS_OK",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+  ],
+  "diagnostic_codes": [
+    "O3RT002",
+    "O3RT004"
+  ],
+  "lifetime_model": "caller-owned snapshots with runtime-owned borrowed strings",
+  "unsupported_metadata_policy": "unsupported and internal metadata returns status without private fields",
+  "forbidden_public_symbols": [
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_property_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "objc3_runtime_copy_selector_lookup_entry_for_testing"
+  ]
+}

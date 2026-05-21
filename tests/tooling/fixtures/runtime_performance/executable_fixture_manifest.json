@@ -21,6 +21,24 @@
       "probe_path": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
       "public_workflow_action": "benchmark-runtime-performance",
       "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "stdlib-core-runtime-positive",
+      "workload_id": "stdlib-core-runtime",
+      "acceptance_case_id": "stdlib-core-runtime-probe",
+      "source_path": "stdlib/modules/objc3.core/module.objc3",
+      "probe_path": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "stdlib-concurrency-runtime-positive",
+      "workload_id": "stdlib-concurrency-runtime",
+      "acceptance_case_id": "stdlib-concurrency-runtime-probe",
+      "source_path": "stdlib/modules/objc3.concurrency/module.objc3",
+      "probe_path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
     }
   ],
   "negative_cases": [

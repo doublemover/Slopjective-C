@@ -10,7 +10,7 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from objc3c_performance_reproducibility import (
+from objc3c_performance_reproducibility import (  # noqa: E402
     build_runtime_workload_reproducibility_evidence,
     build_workload_reproducibility_evidence,
 )
@@ -61,6 +61,20 @@ def _budget_model() -> dict[str, object]:
                     {
                         "metric_id": "dispatch_wall_clock_ms",
                         "source_field": "workloads[dispatch-cache].summary.median_duration_ms",
+                        "comparison": "max",
+                        "warning_value": 3300.0,
+                        "blocking_value": 3800.0,
+                    },
+                    {
+                        "metric_id": "stdlib_concurrency_wall_clock_ms",
+                        "source_field": "workloads[stdlib-concurrency-runtime].summary.median_duration_ms",
+                        "comparison": "max",
+                        "warning_value": 3300.0,
+                        "blocking_value": 3800.0,
+                    },
+                    {
+                        "metric_id": "storage_ownership_reflection_wall_clock_ms",
+                        "source_field": "workloads[storage-ownership-reflection].summary.median_duration_ms",
                         "comparison": "max",
                         "warning_value": 3300.0,
                         "blocking_value": 3800.0,
@@ -123,6 +137,7 @@ def test_runtime_reproducibility_evidence_maps_workload_to_budget_threshold(tmp_
             "acceptance_case_id": "dispatch-fast-path",
             "fixture": "tests/tooling/fixtures/native/dispatch.objc3",
             "probe": "tests/tooling/runtime/dispatch_probe.cpp",
+            "hot_path_family": "dispatch-cache",
         },
         workload_manifest_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json",
         artifact_surface_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json",
@@ -134,5 +149,111 @@ def test_runtime_reproducibility_evidence_maps_workload_to_budget_threshold(tmp_
     assert evidence["contract_id"] == "objc3c.runtime.performance.reproducibility.evidence.v1"
     assert evidence["regression_policy"]["budget_id"] == "runtime-hot-path"
     assert evidence["regression_policy"]["threshold"]["metric_id"] == "dispatch_wall_clock_ms"
+    assert evidence["replay_key"]["budget_metric_id"] == "dispatch_wall_clock_ms"
     assert len(evidence["workload_source"]["fixture_sha256"]) == 64
     assert len(evidence["workload_source"]["probe_sha256"]) == 64
+
+
+def test_runtime_reproducibility_evidence_maps_stdlib_concurrency_workload(tmp_path: Path) -> None:
+    fixture = tmp_path / "stdlib" / "modules" / "objc3.concurrency" / "module.objc3"
+    probe = tmp_path / "tests" / "tooling" / "runtime" / "stdlib_concurrency_runtime_probe.cpp"
+    fixture.parent.mkdir(parents=True)
+    probe.parent.mkdir(parents=True)
+    fixture.write_text("module objc3.concurrency;\n", encoding="utf-8")
+    probe.write_text("int main() { return 0; }\n", encoding="utf-8")
+
+    evidence = build_runtime_workload_reproducibility_evidence(
+        root=tmp_path,
+        workload={
+            "workload_id": "stdlib-concurrency-runtime",
+            "acceptance_case_id": "stdlib-concurrency-runtime-probe",
+            "fixture": "stdlib/modules/objc3.concurrency/module.objc3",
+            "probe": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+            "hot_path_family": "stdlib-concurrency-runtime",
+        },
+        workload_manifest_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json",
+        artifact_surface_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json",
+        budget_model=_budget_model(),
+        profile={},
+        versions={},
+    )
+
+    assert evidence["regression_policy"]["threshold"]["metric_id"] == "stdlib_concurrency_wall_clock_ms"
+    assert len(evidence["workload_source"]["fixture_sha256"]) == 64
+    assert len(evidence["workload_source"]["probe_sha256"]) == 64
+
+
+def test_runtime_reproducibility_evidence_maps_storage_reflection_to_own_budget_metric(
+    tmp_path: Path,
+) -> None:
+    fixture = (
+        tmp_path
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "runtime_backed_storage_ownership_reflection_positive.objc3"
+    )
+    probe = tmp_path / "tests" / "tooling" / "runtime" / "runtime_backed_storage_ownership_reflection_probe.cpp"
+    fixture.parent.mkdir(parents=True)
+    probe.parent.mkdir(parents=True)
+    fixture.write_text("func storageReflection() -> i32 { return 0; }\n", encoding="utf-8")
+    probe.write_text("int main() { return 0; }\n", encoding="utf-8")
+
+    evidence = build_runtime_workload_reproducibility_evidence(
+        root=tmp_path,
+        workload={
+            "workload_id": "storage-ownership-reflection",
+            "acceptance_case_id": "storage-ownership-reflection",
+            "fixture": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "probe": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "hot_path_family": "ownership-helpers",
+        },
+        workload_manifest_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json",
+        artifact_surface_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json",
+        budget_model=_budget_model(),
+        profile={},
+        versions={},
+    )
+
+    assert evidence["regression_policy"]["threshold"]["metric_id"] == (
+        "storage_ownership_reflection_wall_clock_ms"
+    )
+    assert evidence["replay_key"]["budget_metric_id"] == "storage_ownership_reflection_wall_clock_ms"
+
+
+def test_runtime_reproducibility_evidence_includes_contract_hashes(tmp_path: Path) -> None:
+    fixture = tmp_path / "tests" / "tooling" / "fixtures" / "native" / "dispatch.objc3"
+    probe = tmp_path / "tests" / "tooling" / "runtime" / "dispatch_probe.cpp"
+    replay_contract = tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_replay_contract.json"
+    fixture.parent.mkdir(parents=True)
+    probe.parent.mkdir(parents=True)
+    replay_contract.parent.mkdir(parents=True)
+    fixture.write_text("func dispatch() -> i32 { return 1; }\n", encoding="utf-8")
+    probe.write_text("int main() { return 0; }\n", encoding="utf-8")
+    replay_contract.write_text('{"contract_id":"objc3c.runtime.performance.workload.replay.contract.v1"}\n', encoding="utf-8")
+
+    evidence = build_runtime_workload_reproducibility_evidence(
+        root=tmp_path,
+        workload={
+            "workload_id": "dispatch-cache",
+            "acceptance_case_id": "dispatch-fast-path",
+            "fixture": "tests/tooling/fixtures/native/dispatch.objc3",
+            "probe": "tests/tooling/runtime/dispatch_probe.cpp",
+            "hot_path_family": "dispatch-cache",
+        },
+        workload_manifest_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json",
+        artifact_surface_path=tmp_path / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json",
+        budget_model=_budget_model(),
+        profile={},
+        versions={},
+        contract_paths=[replay_contract],
+    )
+
+    assert evidence["contract_evidence"] == [
+        {
+            "path": "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+            "sha256": evidence["contract_evidence"][0]["sha256"],
+        }
+    ]
+    assert len(evidence["contract_evidence"][0]["sha256"]) == 64

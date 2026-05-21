@@ -45,6 +45,9 @@ CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY = (
 APPLICATION_ARCHITECTURE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_application_architecture_integration.py"
 )
+APPLICATION_FRAMEWORK_SAMPLES_PY = (
+    ROOT / "scripts" / "check_objc3c_application_framework_samples.py"
+)
 RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_application_architecture_end_to_end.py"
 )

@@ -1,0 +1,78 @@
+{
+  "contract_id": "objc3c.developer.first-run.workflow.v1",
+  "schema_version": 1,
+  "package_bridge": {
+    "package_json_script": "objc3c",
+    "expected_script": "python -m scripts.objc3c_workflow",
+    "public_command_prefix": [
+      "npm",
+      "run",
+      "objc3c",
+      "--"
+    ]
+  },
+  "required_public_actions": [
+    "build-native-binaries",
+    "compile-objc3c",
+    "check-showcase-surface",
+    "validate-showcase",
+    "validate-getting-started",
+    "materialize-project-template",
+    "analyze-migration-source",
+    "rewrite-migration-source",
+    "validate-migration-workflow"
+  ],
+  "required_fenced_doc_commands": [
+    {
+      "source_path": "README.md",
+      "command": "npm run objc3c -- build-native-binaries"
+    },
+    {
+      "source_path": "README.md",
+      "command": "npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3 --out-dir tmp/readme-signalMesh --emit-prefix module"
+    },
+    {
+      "source_path": "docs/tutorials/getting_started.md",
+      "command": "npm run objc3c -- build-native-binaries"
+    },
+    {
+      "source_path": "docs/tutorials/getting_started.md",
+      "command": "npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3"
+    },
+    {
+      "source_path": "docs/tutorials/build_run_verify.md",
+      "command": "npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3"
+    },
+    {
+      "source_path": "docs/tutorials/guided_walkthrough.md",
+      "command": "npm run objc3c -- validate-showcase"
+    },
+    {
+      "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+      "command": "npm run objc3c -- analyze-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json"
+    },
+    {
+      "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+      "command": "npm run objc3c -- rewrite-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json --output tmp/artifacts/migration-analyzer/objc2-swift-cpp-positive/rewritten.objc3"
+    },
+    {
+      "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+      "command": "npm run objc3c -- validate-migration-workflow"
+    }
+  ],
+  "required_walkthrough_steps": [
+    "build-native",
+    "compile-auroraBoard",
+    "compile-signalMesh",
+    "compile-patchKit",
+    "check-showcase-surface",
+    "validate-showcase"
+  ],
+  "first_compile": {
+    "example_id": "auroraBoard",
+    "source": "showcase/auroraBoard/main.objc3",
+    "workflow_action": "compile-objc3c",
+    "walkthrough_step_id": "compile-auroraBoard",
+    "artifact_root": "tmp/artifacts/showcase/auroraBoard"
+  }
+}

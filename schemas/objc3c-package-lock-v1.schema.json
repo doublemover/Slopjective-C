@@ -7,6 +7,7 @@
     "contract_id",
     "lockfile_version",
     "workspace",
+    "package_manager",
     "packages",
     "dependencies",
     "provenance",
@@ -38,6 +39,34 @@
           "type": "string",
           "minLength": 1
         }
+      }
+    },
+    "package_manager": {
+      "type": "object",
+      "required": [
+        "model",
+        "language_version",
+        "abi_identity",
+        "package_manifest_root",
+        "package_manifest_paths",
+        "network_resolution",
+        "hosted_registry"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "model": { "const": "checked-in-local-registry-offline-mirror-v1" },
+        "language_version": { "const": "3.0" },
+        "abi_identity": { "const": "objc3-abi-2025Q4" },
+        "package_manifest_root": { "const": "tmp/artifacts/package-ecosystem/manifests" },
+        "package_manifest_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+          }
+        },
+        "network_resolution": { "const": "unsupported-fail-closed" },
+        "hosted_registry": { "const": "unsupported-fail-closed-if-claimed" }
       }
     },
     "packages": {
@@ -92,7 +121,14 @@
       "required": [
         "package_id",
         "source",
-        "provenance_id"
+        "source_kind",
+        "package_version",
+        "language_version",
+        "abi_identity",
+        "source_digest",
+        "package_manifest",
+        "provenance_id",
+        "trust"
       ],
       "additionalProperties": false,
       "properties": {
@@ -104,13 +140,74 @@
           "type": "string",
           "minLength": 1
         },
+        "source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "package_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language_version": {
+          "const": "3.0"
+        },
+        "abi_identity": {
+          "const": "objc3-abi-2025Q4"
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "package_manifest": {
+          "$ref": "#/$defs/packageManifestRef"
+        },
         "provenance_id": {
           "type": "string",
           "minLength": 1
         },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
         "interop_loader_metadata": {
           "$ref": "#/$defs/interopLoaderPackageMetadata"
         }
+      }
+    },
+    "packageManifestRef": {
+      "type": "object",
+      "required": ["path", "contract_id", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+        },
+        "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "signature",
+        "trust_scope",
+        "revocation_state",
+        "revocation_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "signing_key_id": { "const": "objc3c-local-package-key-v1" },
+        "subject": { "type": "string", "minLength": 1 },
+        "signature": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "trust_scope": { "const": "checked-in-local-package-source" },
+        "revocation_state": { "const": "not-revoked" },
+        "revocation_policy": { "const": "revoked-package-ids-fail-resolution" }
       }
     },
     "interopLoaderSummary": {
@@ -281,7 +378,10 @@
       "required": [
         "from",
         "to",
-        "source"
+        "source",
+        "language_requirement",
+        "abi_requirement",
+        "resolution"
       ],
       "additionalProperties": false,
       "properties": {
@@ -299,6 +399,15 @@
             "generated-local-package-artifact",
             "offline-mirror-artifact"
           ]
+        },
+        "language_requirement": {
+          "const": "3.0"
+        },
+        "abi_requirement": {
+          "const": "objc3-abi-2025Q4"
+        },
+        "resolution": {
+          "const": "locked-local-registry"
         }
       }
     },
@@ -308,7 +417,11 @@
         "provenance_id",
         "source_path",
         "generator",
-        "replay_command"
+        "replay_command",
+        "package_manifest",
+        "source_digest",
+        "manifest_digest",
+        "trust_signature"
       ],
       "additionalProperties": false,
       "properties": {
@@ -328,6 +441,22 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
+        "package_manifest": {
+          "type": "string",
+          "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "manifest_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "trust_signature": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
         }
       }
     }

@@ -26,6 +26,8 @@ A conforming implementation shall provide the following canonical modules and ca
 | ------------------- | ----------------------- | -------------------- |
 | `objc3.core`        | `objc3.cap.core`        | Core and above       |
 | `objc3.errors`      | `objc3.cap.errors`      | Core and above       |
+| `objc3.text`        | `objc3.cap.text`        | Core and above       |
+| `objc3.collections` | `objc3.cap.collections` | Core and above       |
 | `objc3.concurrency` | `objc3.cap.concurrency` | Core and above       |
 | `objc3.keypath`     | `objc3.cap.keypath`     | Core and above       |
 | `objc3.system`      | `objc3.cap.system`      | Strict System        |
@@ -70,7 +72,39 @@ Minimum semantic guarantees:
 - `orThrow`/`okOr` shall evaluate `makeError` lazily and at most once, only when `value` is `nil`.
 - `orThrow` shall throw exactly the produced `Error` value on `nil`; `okOr` shall return `Err(producedError)` on `nil`.
 
-### S.2.3 `objc3.concurrency` {#s-2-3}
+### S.2.3 `objc3.text` {#s-2-3}
+
+`objc3.text` shall provide at least:
+
+- UTF-8 text record construction for compiler-lowered literal metadata,
+- byte and unit count inspection,
+- prefix length helpers,
+- concatenation helpers for supported text records,
+- structured status codes for invalid shape, malformed UTF-8, and invalid handles.
+
+Minimum semantic guarantees:
+
+- valid text records preserve explicit byte and unit counts across runtime calls,
+- malformed UTF-8 and invalid byte/unit shapes fail closed instead of creating records,
+- concatenation preserves byte/unit count sums and invalid-handle failures remain observable.
+
+### S.2.4 `objc3.collections` {#s-2-4}
+
+`objc3.collections` shall provide at least:
+
+- concrete `i32` array record construction for bounded runtime-backed examples,
+- array count, index-with-default, and prefix-count helpers,
+- concrete `i32` single-entry map construction,
+- map count, contains, and lookup-with-default helpers,
+- structured status codes for invalid handles, invalid counts, out-of-bounds indexes, and missing keys.
+
+Minimum semantic guarantees:
+
+- array and map handles are runtime-owned and deterministic within a reset generation,
+- out-of-bounds array access returns the caller default and records an out-of-bounds status,
+- missing map keys return the caller default and record a not-found status.
+
+### S.2.5 `objc3.concurrency` {#s-2-5}
 
 `objc3.concurrency` shall provide at least:
 
@@ -87,7 +121,7 @@ Minimum semantic guarantees:
 - join/wait APIs reflect cancellation/error outcomes without reporting false success,
 - executor/actor boundaries preserve required suspension semantics.
 
-### S.2.4 `objc3.keypath` {#s-2-4}
+### S.2.6 `objc3.keypath` {#s-2-6}
 
 `objc3.keypath` shall provide at least:
 
@@ -95,7 +129,7 @@ Minimum semantic guarantees:
 - lookup/application APIs sufficient to evaluate key paths against supported roots,
 - metadata representation that preserves type components across module boundaries.
 
-### S.2.5 `objc3.system` (profile-gated) {#s-2-5}
+### S.2.7 `objc3.system` (profile-gated) {#s-2-7}
 
 For Strict System claims, `objc3.system` shall provide:
 
@@ -148,6 +182,7 @@ For claimed profile conformance:
 ### S.4.3 Profile-specific stability requirements {#s-4-3}
 
 - Core/Strict claims require stable `objc3.core`, `objc3.errors`, `objc3.concurrency`, and `objc3.keypath` contracts.
+- Core/Strict claims require stable `objc3.text` and `objc3.collections` contracts for public text and collection helpers.
 - Strict System claims additionally require stable `objc3.system` contracts.
 - Optional feature-set modules are out of scope unless that feature-set conformance is claimed.
 

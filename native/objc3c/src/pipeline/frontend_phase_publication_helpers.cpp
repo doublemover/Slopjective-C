@@ -15,6 +15,7 @@
 #include "pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h"
 #include "pipeline/objc3_semantic_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
+#include "pipeline/objc3_semantic_optimization_pipeline.h"
 
 namespace objc3c::pipeline::orchestration {
 
@@ -49,6 +50,10 @@ void PopulateObjc3FrontendReadinessLoweringPhaseResult(
       BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(result, options);
   result.lowering_pipeline_pass_graph_core_feature_surface =
       phase.lowering_pipeline_pass_graph_core_feature_surface;
+  phase.semantic_optimization_pipeline_surface =
+      BuildObjc3SemanticOptimizationPipelineSurface(result, options);
+  result.semantic_optimization_pipeline_surface =
+      phase.semantic_optimization_pipeline_surface;
   phase.ir_emission_completeness_scaffold =
       BuildObjc3IREmissionCompletenessScaffold(result);
   result.ir_emission_completeness_scaffold =

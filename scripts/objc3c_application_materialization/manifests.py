@@ -90,6 +90,25 @@ def project_template_manifest_payload(
         "template_root": display_path(paths.template_root, root=root),
         "template_source": display_path(paths.template_source, root=root),
         "template_readme": display_path(paths.template_readme, root=root),
+        "template_compile_contract": {
+            "compile_action": "compile-objc3c",
+            "source": display_path(paths.template_source, root=root),
+            "artifact_root": display_path(paths.compile_artifact_root, root=root),
+            "emit_prefix": "module",
+            "public_command": (
+                "npm run objc3c -- compile-objc3c "
+                f"{display_path(paths.template_source, root=root)} "
+                "--out-dir "
+                f"{display_path(paths.compile_artifact_root, root=root)} "
+                "--emit-prefix module"
+            ),
+            "expected_artifacts": [
+                "module.obj",
+                "module.ll",
+                "module.manifest.json",
+                "module.runtime-registration-manifest.json",
+            ],
+        },
         "tutorial_guides": [
             "docs/tutorials/getting_started.md",
             "docs/tutorials/build_run_verify.md",
@@ -111,6 +130,7 @@ def project_template_manifest_payload(
         },
         "public_actions": [
             "materialize-project-template",
+            "compile-objc3c",
             "materialize-playground-workspace",
             "benchmark-runtime-inspector",
             "inspect-bonus-tool-integration",
@@ -129,6 +149,7 @@ def project_harness_payload(
     root: Path,
     failures: list[str],
     paths: ProjectTemplatePaths,
+    compile_step: dict[str, object],
     integration_report: str,
     playground_workspace: str,
     benchmark_report: str,
@@ -140,11 +161,18 @@ def project_harness_payload(
         "failures": failures,
         "template_contract": display_path(paths.template_manifest, root=root),
         "template_source": display_path(paths.template_source, root=root),
+        "compile_artifact_root": display_path(paths.compile_artifact_root, root=root),
+        "compile_step": {
+            "name": compile_step.get("name"),
+            "command": compile_step.get("command"),
+            "exit_code": compile_step.get("exit_code"),
+        },
         "integration_report": integration_report,
         "playground_workspace": playground_workspace,
         "benchmark_report": benchmark_report,
         "public_actions": [
             "materialize-project-template",
+            "compile-objc3c",
             "inspect-bonus-tool-integration",
             "materialize-playground-workspace",
             "benchmark-runtime-inspector",

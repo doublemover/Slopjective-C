@@ -3,8 +3,10 @@
   "schema_version": 1,
   "update_manifest": "schemas/objc3c-update-manifest-v1.schema.json",
   "upgrade_support_report": "schemas/objc3c-upgrade-support-report-v1.schema.json",
+  "release_channel_manifest": "schemas/objc3c-release-channel-operations-v1.schema.json",
   "publication_artifacts": {
     "update_manifest": "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+    "release_channel_manifest": "tmp/artifacts/release-operations/channel-manifest/objc3c-release-channel-manifest.json",
     "upgrade_support_report": "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
     "channel_catalog": "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   },
@@ -29,6 +31,9 @@
     "supported_platform_ids",
     "support_tiers",
     "channels",
+    "release_channel_manifest",
+    "local_provenance",
+    "release_evidence",
     "upgrade_paths",
     "upgrade_support_report"
   ],
@@ -41,6 +46,8 @@
     "supported_platform_ids",
     "support_tiers",
     "support_windows",
+    "release_channel_manifest",
+    "channel_operations",
     "upgrade_paths",
     "warnings",
     "revert_guidance",

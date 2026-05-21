@@ -44,6 +44,7 @@
   ],
   "generated_roots": {
     "lock_root": "tmp/artifacts/package-ecosystem/locks",
+    "package_manifest_root": "tmp/artifacts/package-ecosystem/manifests",
     "mirror_root": "tmp/artifacts/package-ecosystem/mirrors",
     "mirror_cache_root": "tmp/artifacts/package-ecosystem/mirrors/cache",
     "offline_restore_receipt_root": "tmp/artifacts/package-ecosystem/offline-install",
@@ -51,6 +52,7 @@
   },
   "lockfile_semantics": {
     "lockfile_contract_id": "objc3c.package_ecosystem.lockfile.v1",
+    "package_manifest_contract_id": "objc3c.package_ecosystem.package_manifest.v1",
     "ordering": "stable-by-package-id-then-source-path",
     "identity_model": "canonical-module-id-plus-source-package-surface",
     "digest_model": "source-path-and-generator-command-digest-inputs",
@@ -68,6 +70,7 @@
     "workspace roots must come from checked-in package/workspace surfaces",
     "workspace materialization must be replayable from npm run objc3c actions with script paths recorded only as implementation anchors",
     "lockfiles and mirrors are generated artifacts under tmp and never source authority",
+    "package manifests are generated from checked-in workspace surfaces and carry language, ABI, digest, and trust metadata",
     "offline mirrors are valid only when derived from the current lock graph",
     "offline restores must publish a machine-owned restore receipt tied to cache digests and the public package bridge",
     "canonical applications and stdlib programs must pressure the same package semantics"
@@ -95,6 +98,7 @@
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",
+    "validate-package-manager-model",
     "package-runnable-toolchain",
     "validate-stdlib-program",
     "validate-runnable-stdlib-program",

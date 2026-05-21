@@ -1,0 +1,205 @@
+{
+  "contract_id": "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1",
+  "schema_path": "schemas/objc3c-macro-expansion-artifact-ownership-v1.schema.json",
+  "issue_ref": 8168,
+  "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+  "generated_artifact_boundary": {
+    "artifact_relative_path": "module.metaprogramming-macro-host-cache.json",
+    "artifact_suffix": ".metaprogramming-macro-host-cache.json",
+    "generated_artifact_role": "metaprogramming-host-cache-provenance-only",
+    "generated_artifact_owner": "objc3c-driver-metaprogramming-cache-publication",
+    "generated_artifact_source_of_truth": "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry",
+    "checked_output_family": "tmp/generated host-cache artifacts are replay evidence, not support-claim source truth",
+    "checked_in_source_of_truth": "schema, contract fixture, native document builder, runtime import surface, trust registry, and runtime acceptance assertions",
+    "runtime_output_root_policy": "generated cache entries must stay outside docs/support and release-channel source files",
+    "support_claim_authority": false
+  },
+  "host_cache_document": {
+    "document_builder": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+    "artifact_builder": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+    "input_contract_source": "native/objc3c/src/io/objc3_runtime_artifact_contracts.cpp",
+    "publication_owner_path": "native/objc3c/src/driver/objc3_driver_metaprogramming_cache_publication.cpp",
+    "required_fields": [
+      "contract_id",
+      "source_contract_id",
+      "surface_path",
+      "import_artifact_member_name",
+      "artifact",
+      "generated_artifact_role",
+      "generated_artifact_owner",
+      "generated_artifact_source_of_truth",
+      "support_claim_authority",
+      "host_executable_relative_path",
+      "cache_root_relative_path",
+      "cache_key",
+      "cache_key_material_digest",
+      "cache_entry_relative_path",
+      "cache_summary_relative_path",
+      "cache_runtime_import_surface_relative_path",
+      "cache_manifest_relative_path",
+      "host_model",
+      "toolchain_model",
+      "cache_model",
+      "invalidation_model",
+      "sandbox_policy_model",
+      "diagnostics_model",
+      "fail_closed_model",
+      "source_input_path",
+      "imported_runtime_surface_paths",
+      "runtime_dispatch_symbol",
+      "max_message_send_args",
+      "bootstrap_registration_order_ordinal",
+      "allow_live_error_runtime_surface",
+      "cache_ready",
+      "launch_attempted",
+      "cache_hit",
+      "cache_summary_present",
+      "cache_runtime_import_surface_present",
+      "cache_manifest_present",
+      "cache_materialization_state",
+      "cache_validation_state",
+      "cache_artifact_contract_checked",
+      "provenance_integrity_checked",
+      "sandbox_policy_checked",
+      "diagnostic_contract_checked",
+      "host_process_exit_code",
+      "deterministic",
+      "replay_key"
+    ],
+    "checked_true_fields": [
+      "cache_ready",
+      "cache_artifact_contract_checked",
+      "provenance_integrity_checked",
+      "sandbox_policy_checked",
+      "diagnostic_contract_checked"
+    ],
+    "cache_hit_stable_fields": [
+      "cache_key",
+      "cache_entry_relative_path",
+      "cache_summary_relative_path",
+      "cache_runtime_import_surface_relative_path",
+      "cache_manifest_relative_path",
+      "generated_artifact_role",
+      "generated_artifact_owner",
+      "generated_artifact_source_of_truth",
+      "support_claim_authority",
+      "host_executable_relative_path",
+      "cache_root_relative_path",
+      "cache_key_material_digest",
+      "invalidation_model",
+      "sandbox_policy_model",
+      "diagnostics_model",
+      "replay_key"
+    ]
+  },
+  "source_anchors": [
+    {
+      "path": "native/objc3c/src/ast/objc3_ast_contracts_cross_module_link_plan.h",
+      "tokens": [
+        "kObjc3MetaprogrammingMacroHostProcessCacheArtifactSuffix",
+        ".metaprogramming-macro-host-cache.json",
+        "module.metaprogramming-macro-host-cache.json"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+      "tokens": [
+        "generated_artifact_role",
+        "generated_artifact_owner",
+        "generated_artifact_source_of_truth",
+        "support_claim_authority",
+        "cache_key_material_digest",
+        "cache_artifact_contract_checked"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+      "tokens": [
+        "BuildMetaprogrammingMacroHostCacheKeyMaterial",
+        "metaprogramming macro host process/cache entry is incomplete and must fail closed",
+        "TryValidateRuntimeImportSurface",
+        "validated-existing-cache-hit",
+        "validated-after-materialization"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/io/objc3_runtime_artifact_contracts.cpp",
+      "tokens": [
+        "ValidateMetaprogrammingMacroHostProcessCacheArtifactInputs",
+        "metaprogramming macro host process/cache artifact inputs are incomplete",
+        "metaprogramming macro host process/cache imported runtime surface not found"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/driver/objc3_driver_metaprogramming_cache_publication.cpp",
+      "tokens": [
+        "PublishObjc3DriverMetaprogrammingCacheArtifact",
+        "TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact",
+        "kHardCutoverContractFailure"
+      ]
+    },
+    {
+      "path": "scripts/objc3c_runtime_acceptance/domains/metaprogramming_live_cache_payload_assertions.py",
+      "tokens": [
+        "generated_artifact_role",
+        "_CACHE_HIT_STABLE_FIELDS",
+        "metaprogramming host/cache runtime import surface drifted from cache inputs"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+      "tokens": [
+        "objc3c.behavior.runtime.metaprogramming.host-cache-boundary",
+        "no arbitrary host process execution",
+        "no network access from macro expansion"
+      ]
+    }
+  ],
+  "fail_closed_cases": [
+    {
+      "case_id": "incomplete-cache-entry",
+      "source_path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+      "tokens": [
+        "any_cache_artifact_present",
+        "complete_cache_entry",
+        "metaprogramming macro host process/cache entry is incomplete and must fail closed"
+      ]
+    },
+    {
+      "case_id": "tampered-runtime-import-surface",
+      "source_path": "scripts/objc3c_runtime_acceptance/domains/metaprogramming_live_cache_payload_assertions.py",
+      "tokens": [
+        "assert_tampered_cache_replay_key_rejected",
+        "metaprogramming host/cache runtime import surface drifted from cache inputs"
+      ]
+    },
+    {
+      "case_id": "missing-input-contract",
+      "source_path": "native/objc3c/src/io/objc3_runtime_artifact_contracts.cpp",
+      "tokens": [
+        "metaprogramming macro host process/cache artifact inputs are incomplete",
+        "metaprogramming macro host process/cache source input not found"
+      ]
+    },
+    {
+      "case_id": "host-launch-incomplete-output",
+      "source_path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_artifact.cpp",
+      "tokens": [
+        "metaprogramming macro host process launch completed but cache artifacts are incomplete",
+        "host_process_exit_code"
+      ]
+    }
+  ],
+  "non_claims": [
+    "generated host-cache JSON is replay evidence only, not positive language behavior authority",
+    "no arbitrary host process execution beyond the checked macro host/cache integration",
+    "no network access from macro expansion",
+    "no docs/support projection or release-channel file is an authority for macro artifact ownership"
+  ],
+  "forbidden_path_prefixes": [
+    "docs/support/",
+    "docs/runbooks/objc3c_release",
+    "schemas/objc3c-release-channel",
+    "schemas/objc3c-update-manifest"
+  ]
+}

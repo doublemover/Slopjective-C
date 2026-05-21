@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
+  "supported": true,
+  "support_class": "declaration-breakpoint-preview",
+  "debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
+  "source_map_supported": false,
+  "source_map_model": "declaration-coordinate-only",
+  "statement_level_stepping": false,
+  "stepping_retired_route_reason": "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
+  "object_artifact_present": true,
+  "object_path": "tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
+  "declaration_breakpoint_anchor_count": 3,
+  "declaration_breakpoints": [
+    {
+      "symbol": "globalCounter",
+      "kind": "global",
+      "line": 1,
+      "column": 5
+    },
+    {
+      "symbol": "ArtifactWidget",
+      "kind": "interface",
+      "line": 3,
+      "column": 12
+    },
+    {
+      "symbol": "main",
+      "kind": "function",
+      "line": 9,
+      "column": 1
+    }
+  ],
+  "object_section_inventory_command": "llvm-objdump -h tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
+  "object_symbol_inventory_command": "llvm-nm tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
+  "runtime_debug_trace_command": "npm run objc3c -- trace-runtime-debug",
+  "runtime_debug_trace_path": "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
+  "runtime_debug_trace_schema": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+  "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
+  "runtime_inspector_contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
+  "artifact_inspection_ready": true,
+  "retired_route_reason": ""
+}

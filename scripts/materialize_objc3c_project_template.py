@@ -9,6 +9,10 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import display_path
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
@@ -30,9 +34,6 @@ from objc3c_application_materialization.result_rendering import (
     write_lines,
     write_payload,
 )
-
-
-ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
 TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
 TEMPLATE_REPORT_ROOT = ROOT / "tmp" / "reports" / "project-template"
@@ -98,6 +99,7 @@ def main() -> int:
             example_id=args.example,
             source_origin=example_record["source"],
             template_source=paths.template_source,
+            compile_artifact_root=paths.compile_artifact_root,
             root=ROOT,
         ),
     )
@@ -112,6 +114,17 @@ def main() -> int:
         ),
     )
 
+    compile_step = run_step(
+        "compile-template-source",
+        public_workflow_command(
+            "compile-objc3c",
+            display_path(paths.template_source, root=ROOT),
+            "--out-dir",
+            display_path(paths.compile_artifact_root, root=ROOT),
+            "--emit-prefix",
+            "module",
+        ),
+    )
     integration_step = run_step(
         "inspect-bonus-tool-integration",
         public_workflow_command("inspect-bonus-tool-integration"),
@@ -135,7 +148,7 @@ def main() -> int:
     )
 
     failures: list[str] = []
-    for step in (integration_step, playground_step, benchmark_step):
+    for step in (compile_step, integration_step, playground_step, benchmark_step):
         expect(step["exit_code"] == 0, f"{step['name']} failed", failures)
 
     integration_report = extract_line_value(str(integration_step["stdout"]), "summary_path:")
@@ -154,6 +167,7 @@ def main() -> int:
             root=ROOT,
             failures=failures,
             paths=paths,
+            compile_step=compile_step,
             integration_report=integration_report,
             playground_workspace=playground_workspace,
             benchmark_report=benchmark_report,

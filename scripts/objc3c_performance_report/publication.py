@@ -44,8 +44,8 @@ def publish_performance_report(
     write_json_file(paths.public_summary, public_summary_payload(paths=paths, model=model))
 
     return PublishedPerformanceReport(
-        summary_path=repo_rel(paths.public_summary),
-        dashboard_path=repo_rel(paths.published_dashboard),
-        badge_path=repo_rel(paths.published_badge),
-        report_markdown_path=repo_rel(paths.published_report_markdown),
+        summary_path=repo_rel(paths.public_summary, root=paths.root),
+        dashboard_path=repo_rel(paths.published_dashboard, root=paths.root),
+        badge_path=repo_rel(paths.published_badge, root=paths.root),
+        report_markdown_path=repo_rel(paths.published_report_markdown, root=paths.root),
     )

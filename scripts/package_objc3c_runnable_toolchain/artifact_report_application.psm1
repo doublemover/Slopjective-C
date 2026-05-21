@@ -37,13 +37,16 @@ function New-RunnableToolchainPackageApplicationManifestSection {
     package_ecosystem_dependency_lock_policy = "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json"
     package_ecosystem_local_workspace_mirror_semantics = "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json"
     package_ecosystem_registry_publication_semantics = "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json"
+    package_ecosystem_package_manager_model = "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json"
     package_ecosystem_artifact_contract = "tests/tooling/fixtures/package_ecosystem/artifact_contract.json"
     package_ecosystem_package_authoring_contract = "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json"
     package_ecosystem_registry_mirror_contract = "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json"
+    package_ecosystem_manifest_schema = "schemas/objc3c-package-manifest-v1.schema.json"
     package_ecosystem_lock_schema = "schemas/objc3c-package-lock-v1.schema.json"
     package_ecosystem_mirror_schema = "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
     package_ecosystem_surface = [ordered]@{
       lock_generator = "scripts/build_objc3c_package_lock.py"
+      package_manager_validation = "scripts/check_objc3c_package_manager_model.py"
       authoring_validation = "scripts/check_objc3c_package_authoring_workflow.py"
       mirror_generator = "scripts/build_objc3c_package_mirror.py"
       mirror_validation = "scripts/check_objc3c_package_registry_mirror_reproducibility.py"
@@ -57,6 +60,7 @@ function New-RunnableToolchainPackageApplicationManifestSection {
       registry_publication_summary = "scripts/build_package_ecosystem_registry_publication_summary.py"
       artifact_contract_summary = "scripts/build_package_ecosystem_artifact_contract_summary.py"
       lock_generator = "scripts/build_objc3c_package_lock.py"
+      package_manager_validation = "scripts/check_objc3c_package_manager_model.py"
       authoring_validation = "scripts/check_objc3c_package_authoring_workflow.py"
       mirror_generator = "scripts/build_objc3c_package_mirror.py"
       mirror_validation = "scripts/check_objc3c_package_registry_mirror_reproducibility.py"
@@ -65,6 +69,7 @@ function New-RunnableToolchainPackageApplicationManifestSection {
     }
     package_ecosystem_public_actions = @(
       "build-package-lock",
+      "validate-package-manager-model",
       "validate-package-authoring",
       "validate-package-mirror",
       "validate-package-ecosystem",

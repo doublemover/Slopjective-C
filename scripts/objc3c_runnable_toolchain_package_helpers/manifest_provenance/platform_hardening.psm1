@@ -11,10 +11,13 @@ function Get-ManifestProvenancePlatformHardeningFiles {
     "scripts/build_platform_hardening_support_tier_policy_summary.py",
     "scripts/build_platform_hardening_unsupported_host_policy_summary.py",
     "scripts/build_platform_hardening_toolchain_archive_policy_summary.py",
+    "scripts/check_platform_hardening_support_evidence.py",
     "scripts/build_platform_hardening_artifact_contract_summary.py",
     "scripts/check_platform_hardening_build_package_validation.py",
     "scripts/check_platform_hardening_toolchain_range_replay.py",
-    "scripts/check_platform_hardening_install_matrix_integration.py"
+    "scripts/check_platform_hardening_install_matrix_integration.py",
+    "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+    "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
   )
 }
 

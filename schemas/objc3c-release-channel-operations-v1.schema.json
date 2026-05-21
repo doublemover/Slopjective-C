@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-release-channel-operations-v1.schema.json",
+  "title": "objc3c Release Channel Operations Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "source_model",
+    "default_channel",
+    "required_channels",
+    "local_provenance",
+    "channel_manifests",
+    "fail_closed_rules",
+    "release_evidence"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.operations.channel-manifest.v1" },
+    "generated_at_utc": { "type": "string", "minLength": 1 },
+    "source_model": { "type": "string", "minLength": 1 },
+    "default_channel": { "type": "string", "minLength": 1 },
+    "required_channels": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "local_provenance": { "$ref": "#/$defs/localProvenance" },
+    "channel_manifests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/channelManifest" },
+      "minItems": 1
+    },
+    "fail_closed_rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failClosedRule" },
+      "minItems": 1
+    },
+    "release_evidence": { "$ref": "#/$defs/releaseEvidence" }
+  },
+  "$defs": {
+    "localProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_manifest",
+        "release_manifest_sha256",
+        "package_channels_manifest",
+        "package_channels_manifest_sha256",
+        "release_payload_digest_sha256",
+        "package_model",
+        "git_commit",
+        "git_tree_dirty",
+        "artifact_digests",
+        "installer_signature",
+        "platform_support_matrix",
+        "platform_support_summary",
+        "source_policy_paths"
+      ],
+      "properties": {
+        "release_manifest": { "type": "string", "minLength": 1 },
+        "release_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "package_channels_manifest": { "type": "string", "minLength": 1 },
+        "package_channels_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "release_payload_digest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "package_model": { "type": "string", "minLength": 1 },
+        "git_commit": { "type": "string", "minLength": 1 },
+        "git_tree_dirty": { "type": "boolean" },
+        "artifact_digests": { "type": "object" },
+        "installer_signature": { "$ref": "#/$defs/installerSignature" },
+        "platform_support_matrix": { "type": "string", "minLength": 1 },
+        "platform_support_summary": { "type": "string", "minLength": 1 },
+        "source_policy_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "channelManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "operation_class",
+        "version",
+        "support_status",
+        "publication_scope",
+        "update_manifest_channel",
+        "release_gate_actions",
+        "artifact_refs",
+        "rollback_safety",
+        "release_notes_policy",
+        "release_evidence"
+      ],
+      "properties": {
+        "channel_id": { "type": "string", "minLength": 1 },
+        "operation_class": {
+          "enum": ["stable", "candidate", "nightly", "preview"]
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "support_status": {
+          "enum": ["supported", "release-drill", "nightly", "preview", "deprecated", "blocked"]
+        },
+        "publication_scope": { "type": "string", "minLength": 1 },
+        "update_manifest_channel": { "type": "string", "minLength": 1 },
+        "release_gate_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "artifact_refs": { "$ref": "#/$defs/artifactRefs" },
+        "rollback_safety": { "$ref": "#/$defs/rollbackSafety" },
+        "release_notes_policy": { "$ref": "#/$defs/releaseNotesPolicy" },
+        "release_evidence": { "$ref": "#/$defs/channelReleaseEvidence" }
+      }
+    },
+    "artifactRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "portable_archive",
+        "installer_archive",
+        "offline_archive",
+        "installer_signature",
+        "package_channels_manifest",
+        "release_manifest",
+        "platform_support_matrix"
+      ],
+      "properties": {
+        "portable_archive": { "type": "string", "minLength": 1 },
+        "installer_archive": { "type": "string", "minLength": 1 },
+        "offline_archive": { "type": "string", "minLength": 1 },
+        "installer_signature": { "$ref": "#/$defs/installerSignature" },
+        "package_channels_manifest": { "type": "string", "minLength": 1 },
+        "release_manifest": { "type": "string", "minLength": 1 },
+        "platform_support_matrix": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rollbackSafety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rollback_channel",
+        "requires_backup",
+        "operator_command",
+        "evidence",
+        "blocks_publication_on_failure"
+      ],
+      "properties": {
+        "rollback_channel": { "type": "string", "minLength": 1 },
+        "requires_backup": { "type": "boolean" },
+        "operator_command": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "blocks_publication_on_failure": { "type": "boolean" }
+      }
+    },
+    "releaseNotesPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_mode", "required_sources", "forbidden_sources"],
+      "properties": {
+        "source_mode": { "const": "source-derived" },
+        "required_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "forbidden_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "channelReleaseEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_artifacts",
+        "replayable_public_commands",
+        "local_provenance_required"
+      ],
+      "properties": {
+        "evidence_artifacts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "replayable_public_commands": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "local_provenance_required": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "releaseEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_note_sources",
+        "public_changelog_sources",
+        "evidence_artifacts",
+        "replayable_public_commands"
+      ],
+      "properties": {
+        "release_note_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "public_changelog_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "evidence_artifacts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "replayable_public_commands": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "failClosedRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "diagnostic_id",
+        "trigger",
+        "required_action",
+        "blocks_publication"
+      ],
+      "properties": {
+        "rule_id": { "type": "string", "minLength": 1 },
+        "diagnostic_id": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "required_action": { "type": "string", "minLength": 1 },
+        "blocks_publication": { "type": "boolean" }
+      }
+    },
+    "installerSignature": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "artifact",
+        "sha256",
+        "verification_command",
+        "trust_scope"
+      ],
+      "properties": {
+        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "signing_key_id": { "const": "objc3c-release-operations-local-installer-key-v1" },
+        "subject": { "const": "local-installer" },
+        "artifact": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "verification_command": { "const": "npm run objc3c -- validate-packaging-channels-end-to-end" },
+        "trust_scope": { "const": "checked-in-artifact-digest" }
+      }
+    }
+  }
+}

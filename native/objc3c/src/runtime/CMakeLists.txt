@@ -219,7 +219,11 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_dispatch_diagnostics.h
   public/objc3_runtime_dispatch_result.h
   public/objc3_runtime_dispatch_status.h
+  public/objc3_runtime_language_semantics.cpp
+  public/objc3_runtime_language_semantics.h
   public/objc3_runtime_ownership_contract.h
+  public/objc3_runtime_reflection.cpp
+  public/objc3_runtime_reflection.h
   public/objc3_runtime_registration.h
   public/objc3_runtime_registration_status.h
   public/objc3_runtime_result.h
@@ -276,8 +280,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_local_reset.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
+  stdlib/collections_runtime.cpp
+  stdlib/collections_runtime_contract.h
   stdlib/core_runtime.cpp
   stdlib/core_runtime_contract.h
+  stdlib/text_runtime.cpp
+  stdlib/text_runtime_contract.h
 )
 add_subdirectory(classes)
 add_subdirectory(reflection)

@@ -6,6 +6,9 @@
     "objc3_runtime_register_image",
     "objc3_runtime_lookup_selector",
     "objc3_runtime_dispatch_i32",
+    "objc3_runtime_stdlib_core_count_i32",
+    "objc3_runtime_spawn_task_i32",
+    "objc3_runtime_wait_task_group_next_i32",
     "objc3_runtime_reset_for_testing"
   ],
   "required_private_snapshot_helpers": [
@@ -34,7 +37,9 @@
       "startup-installation",
       "dispatch-cache",
       "reflection-query",
-      "ownership-helpers"
+      "ownership-helpers",
+      "stdlib-helper-runtime",
+      "stdlib-concurrency-runtime"
     ],
     "required_report_fields": [
       "duration_ms",
@@ -54,6 +59,10 @@
     "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
     "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
     "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/stdlib/core_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_operations.cpp",
+    "native/objc3c/src/runtime/concurrency/executor.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ]
 }

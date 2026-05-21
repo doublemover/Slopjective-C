@@ -15,6 +15,16 @@
       "minor": 0,
       "patch": 0
     },
+    "objc3.text": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.collections": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
     "objc3.concurrency": {
       "major": 1,
       "minor": 0,
@@ -66,6 +76,22 @@
     "text_data_shape_score": "returns unit_count plus byte_count",
     "text_data_shape_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
   },
+  "text_semantics": {
+    "utf8_literal_record": "routes compiler-lowered UTF-8 literal metadata through objc3_runtime_stdlib_text_utf8_literal_i32 and returns a runtime-owned handle only for nonnegative byte/unit counts with units not greater than bytes and a nonzero valid-UTF8 flag",
+    "byte_count": "routes through objc3_runtime_stdlib_text_byte_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "unit_count": "routes through objc3_runtime_stdlib_text_unit_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "valid_utf8": "routes through objc3_runtime_stdlib_text_is_valid_utf8_i32 and returns 1 only for valid runtime-owned text records",
+    "prefix_units": "routes through objc3_runtime_stdlib_text_prefix_units_i32 and clamps requested units to the runtime-owned text unit count with a zero floor",
+    "concat": "routes through objc3_runtime_stdlib_text_concat_i32 and creates a runtime-owned record whose byte and unit counts are the checked sums of both operands"
+  },
+  "collection_semantics": {
+    "array3_record": "routes concrete i32 array construction through objc3_runtime_stdlib_collections_array3_i32 and returns a runtime-owned handle only for counts from 0 through 3",
+    "array_count": "routes through objc3_runtime_stdlib_collections_array_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "array_get_or": "routes through objc3_runtime_stdlib_collections_array_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid indexes",
+    "array_prefix_count": "routes through objc3_runtime_stdlib_collections_array_prefix_count_i32 and clamps requested elements to the runtime-owned array count with a zero floor",
+    "map_entry": "routes single-entry i32 map construction through objc3_runtime_stdlib_collections_map_entry_i32 and returns a runtime-owned handle",
+    "map_lookup_or": "routes through objc3_runtime_stdlib_collections_map_lookup_or_i32 and returns the caller default while recording not-found status for missing keys"
+  },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",
     "component_count": "returns root plus offset as the explicit component-count shape",
@@ -109,8 +135,8 @@
   },
   "non_goals": [
     "allocator or ownership ABI claims",
-    "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
+    "Foundation NSString NSArray NSDictionary or NSData compatibility promises",
     "moving result-shape helpers into objc3.core",
     "presenting runtime-backed executor or reflection semantics without checked-in helper exports",
     "widening strict-system helpers into always-on core imports"

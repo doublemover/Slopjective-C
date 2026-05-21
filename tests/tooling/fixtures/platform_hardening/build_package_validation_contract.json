@@ -42,6 +42,10 @@
     "packaged_runtime_acceptance",
     "current_host",
     "required_tool_probes",
+    "support_evidence_contract",
+    "platform_support_rows",
+    "toolchain_support",
+    "evidence_records",
     "publication_surface"
   ]
 }

@@ -17,12 +17,16 @@ from package_ecosystem_contracts import package_ecosystem_owner_payload
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORING_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"
 LOCK_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
+PACKAGE_MANAGER_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-manager-model-summary.json"
+INSTALL_DISTRIBUTION_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
 APP_ARCH_SUMMARY = ROOT / "tmp" / "reports" / "application-architecture-testing" / "runnable-template-canonical-app-summary.json"
 STDLIB_PROGRAM_SUMMARY = ROOT / "tmp" / "reports" / "stdlib" / "program-integration-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "integration-summary.json"
 
 STEPS = [
+    ("package-manager-model", python_script_command("scripts/check_objc3c_package_manager_model.py")),
     ("package-authoring-workflow", python_script_command("scripts/check_objc3c_package_authoring_workflow.py")),
+    ("package-install-distribution", python_script_command("scripts/check_objc3c_package_install_distribution_credibility.py")),
     ("application-architecture-integration", python_script_command("scripts/check_objc3c_application_architecture_integration.py")),
     ("stdlib-program-integration", python_script_command("scripts/check_objc3c_stdlib_program_integration.py")),
 ]
@@ -61,16 +65,20 @@ def main() -> int:
         if step["exit_code"] != 0:
             break
 
-    for path in (AUTHORING_SUMMARY, LOCK_SUMMARY, APP_ARCH_SUMMARY, STDLIB_PROGRAM_SUMMARY):
+    for path in (AUTHORING_SUMMARY, LOCK_SUMMARY, PACKAGE_MANAGER_SUMMARY, INSTALL_DISTRIBUTION_SUMMARY, APP_ARCH_SUMMARY, STDLIB_PROGRAM_SUMMARY):
         expect(path.is_file(), f"missing expected package ecosystem integration child report {repo_rel(path)}", failures)
 
     authoring_summary = load_json(AUTHORING_SUMMARY) if AUTHORING_SUMMARY.is_file() else {}
     lock_summary = load_json(LOCK_SUMMARY) if LOCK_SUMMARY.is_file() else {}
+    package_manager_summary = load_json(PACKAGE_MANAGER_SUMMARY) if PACKAGE_MANAGER_SUMMARY.is_file() else {}
+    install_distribution_summary = load_json(INSTALL_DISTRIBUTION_SUMMARY) if INSTALL_DISTRIBUTION_SUMMARY.is_file() else {}
     app_arch_summary = load_json(APP_ARCH_SUMMARY) if APP_ARCH_SUMMARY.is_file() else {}
     stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY) if STDLIB_PROGRAM_SUMMARY.is_file() else {}
 
     expect(summary_passes(authoring_summary), "package authoring workflow summary did not report PASS", failures)
     expect(summary_passes(lock_summary), "package lock summary did not report PASS", failures)
+    expect(summary_passes(package_manager_summary), "package manager summary did not report PASS", failures)
+    expect(summary_passes(install_distribution_summary), "package install distribution summary did not report PASS", failures)
     expect(summary_passes(app_arch_summary), "application architecture integration summary did not report PASS", failures)
     expect(summary_passes(stdlib_program_summary), "stdlib program integration summary did not report PASS", failures)
     expect(lock_summary.get("package_count", 0) >= 8, "package lock did not include stdlib and showcase packages", failures)
@@ -94,13 +102,16 @@ def main() -> int:
             "blocking_conditions": [
                 "child package ecosystem workflow failed",
                 "package lock summary failed source-owned replay checks",
+                "package install distribution failed clean-root metadata agreement checks",
                 "application architecture package surface drifted",
                 "stdlib package program surface drifted",
             ],
         },
         "workflow_actions": [
             "build-package-lock",
+            "validate-package-manager-model",
             "validate-package-authoring",
+            "validate-package-install-distribution",
             "validate-application-architecture",
             "validate-stdlib-program",
             "validate-package-ecosystem",
@@ -108,6 +119,8 @@ def main() -> int:
         "child_report_paths": [
             repo_rel(AUTHORING_SUMMARY),
             repo_rel(LOCK_SUMMARY),
+            repo_rel(PACKAGE_MANAGER_SUMMARY),
+            repo_rel(INSTALL_DISTRIBUTION_SUMMARY),
             repo_rel(APP_ARCH_SUMMARY),
             repo_rel(STDLIB_PROGRAM_SUMMARY),
         ],

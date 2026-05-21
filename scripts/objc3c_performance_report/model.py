@@ -21,6 +21,7 @@ class PerformanceReportModel:
     evidence_paths: list[str]
     policy_paths: dict[str, str]
     upstream_reports: dict[str, str]
+    runtime_contract_evidence: dict[str, Any]
     owner_split: dict[str, list[str]]
     publication_contracts: dict[str, str]
 
@@ -54,9 +55,9 @@ def build_summary_lines(
 def build_evidence_paths(paths: PerformanceReportPaths, dashboard: dict[str, Any]) -> list[str]:
     upstream_reports = require_dashboard_upstream_reports(dashboard)
     return [
-        repo_rel(paths.source_summary),
-        repo_rel(paths.schema_summary),
-        repo_rel(paths.dashboard_summary),
+        repo_rel(paths.source_summary, root=paths.root),
+        repo_rel(paths.schema_summary, root=paths.root),
+        repo_rel(paths.dashboard_summary, root=paths.root),
         *(str(path) for path in upstream_reports.values()),
     ]
 
@@ -109,6 +110,21 @@ def build_owner_split(dashboard: dict[str, Any]) -> dict[str, list[str]]:
     return normalized
 
 
+def build_runtime_contract_evidence(dashboard: dict[str, Any]) -> dict[str, Any]:
+    evidence = dashboard.get("runtime_contract_evidence", {})
+    if not isinstance(evidence, dict):
+        return {
+            "evidence_id": "objc3c.performance.governance.runtime-contract-evidence.v1",
+            "status": "MISSING",
+            "support_authority": False,
+            "contract_paths": [],
+            "budget_metric_ids": [],
+            "workload_ids": [],
+            "summary_counts": {},
+        }
+    return evidence
+
+
 def build_performance_report_model(paths: PerformanceReportPaths, dashboard: dict[str, Any]) -> PerformanceReportModel:
     release_status = str(dashboard["release_status"])
     claim_ready = bool(dashboard["claim_ready"])
@@ -131,6 +147,7 @@ def build_performance_report_model(paths: PerformanceReportPaths, dashboard: dic
         evidence_paths=build_evidence_paths(paths, dashboard),
         policy_paths=build_policy_paths(dashboard),
         upstream_reports=build_upstream_reports(dashboard),
+        runtime_contract_evidence=build_runtime_contract_evidence(dashboard),
         owner_split=build_owner_split(dashboard),
         publication_contracts=build_publication_contracts(dashboard),
     )
@@ -156,11 +173,11 @@ def public_summary_payload(
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": generated_at.isoformat(),
         "status": "PASS",
-        "source_surface_summary_path": repo_rel(paths.source_summary),
-        "schema_surface_summary_path": repo_rel(paths.schema_summary),
-        "dashboard_summary_path": repo_rel(paths.dashboard_summary),
-        "report_markdown_path": repo_rel(paths.published_report_markdown),
-        "badge_path": repo_rel(paths.published_badge),
+        "source_surface_summary_path": repo_rel(paths.source_summary, root=paths.root),
+        "schema_surface_summary_path": repo_rel(paths.schema_summary, root=paths.root),
+        "dashboard_summary_path": repo_rel(paths.dashboard_summary, root=paths.root),
+        "report_markdown_path": repo_rel(paths.published_report_markdown, root=paths.root),
+        "badge_path": repo_rel(paths.published_badge, root=paths.root),
         "release_status": model.release_status,
         "claim_ready": model.claim_ready,
         "headline": model.headline,
@@ -168,6 +185,7 @@ def public_summary_payload(
         "evidence_paths": model.evidence_paths,
         "policy_paths": model.policy_paths,
         "upstream_reports": model.upstream_reports,
+        "runtime_contract_evidence": model.runtime_contract_evidence,
         "owner_split": model.owner_split,
         "publication_contracts": model.publication_contracts,
     }

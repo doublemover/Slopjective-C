@@ -1,0 +1,18 @@
+import Foundation;
+import foreign "LegacyWidget-Swift.h";
+import cxx "CppWidget.hpp";
+
+@interface LegacyWidget : NSObject
+@property(nonatomic, strong) NSString *name;
+- (void)renderWithCppWidget:(CppWidget *)widget swiftActor:(SwiftActor *)actor;
+@end
+
+@implementation LegacyWidget
+- (void)renderWithCppWidget:(CppWidget *)widget swiftActor:(SwiftActor *)actor {
+  Bool enabled = true;
+  id fallback = nil;
+  if (enabled && fallback == nil) {
+    [actor renderWithWidget:widget];
+  }
+}
+@end

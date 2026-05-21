@@ -1449,12 +1449,13 @@ truth from ad hoc IR inspection or release-scope notes.
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
-This is the authoritative reflection-query source and API boundary. It freezes
-the fact that current reflection queries are runtime-backed, compile-coupled,
-and exposed only through the private testing snapshots over realized
-class/property/protocol metadata. Downstream work must extend this surface
-instead of inventing a public reflection ABI or recovering reflection answers
-from source-side manifests alone.
+This is the authoritative reflection-query source and coherence boundary. It
+freezes the fact that current reflection queries are runtime-backed and
+compile-coupled. Public reflection uses the bounded C ABI in
+`public/objc3_runtime_reflection.h`; private testing snapshots remain the
+closure-audit surface over realized class/property/protocol metadata.
+Downstream work must extend these surfaces instead of recovering reflection
+answers from source-side manifests alone.
 
 ## Realization And Lookup Semantics Surface
 

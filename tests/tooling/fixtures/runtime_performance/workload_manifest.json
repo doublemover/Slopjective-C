@@ -122,6 +122,52 @@
         "reflected_property_count",
         "ownership_runtime_hook_profile"
       ]
+    },
+    {
+      "workload_id": "stdlib-core-runtime",
+      "acceptance_case_id": "stdlib-core-runtime-probe",
+      "probe": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+      "fixture": "stdlib/modules/objc3.core/module.objc3",
+      "hot_path_family": "stdlib-helper-runtime",
+      "owner_phases": [
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "stdlib core helper timing is runtime performance evidence over checked-in stdlib/runtime helper ABIs; support remains owned by stdlib behavior rows and packets stay provenance",
+      "measured_fields": [
+        "total_call_count",
+        "revision_call_count",
+        "capability_call_count",
+        "option_call_count",
+        "count_call_count",
+        "prefix_call_count",
+        "map_call_count",
+        "last_result"
+      ]
+    },
+    {
+      "workload_id": "stdlib-concurrency-runtime",
+      "acceptance_case_id": "stdlib-concurrency-runtime-probe",
+      "probe": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "fixture": "stdlib/modules/objc3.concurrency/module.objc3",
+      "hot_path_family": "stdlib-concurrency-runtime",
+      "owner_phases": [
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "stdlib concurrency helper timing is scheduler/task-group/executor runtime evidence over checked-in stdlib/runtime helper ABIs; support remains owned by stdlib behavior rows and packets stay provenance",
+      "measured_fields": [
+        "spawn_call_count",
+        "scope_call_count",
+        "add_task_call_count",
+        "wait_next_call_count",
+        "cancel_all_call_count",
+        "executor_hop_call_count",
+        "scheduler_enqueue_count",
+        "scheduler_dequeue_count",
+        "scheduler_sequence",
+        "last_queue_drain_result"
+      ]
     }
   ],
   "exact_live_commands": [
@@ -139,6 +185,8 @@
     "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
     "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
-    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp"
   ]
 }

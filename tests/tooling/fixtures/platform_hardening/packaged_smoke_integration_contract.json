@@ -26,6 +26,8 @@
     "platform_unsupported_host_policy",
     "platform_toolchain_archive_policy",
     "platform_support_matrix_schema",
+    "platform_toolchain_support_evidence_schema",
+    "platform_toolchain_support_evidence",
     "platform_support_matrix_contract",
     "platform_build_package_validation_contract",
     "platform_toolchain_range_replay_contract",

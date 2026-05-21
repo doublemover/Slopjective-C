@@ -21,15 +21,20 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     assert summary["update_manifest"] == (
         "schemas/objc3c-update-manifest-v1.schema.json"
     )
+    assert summary["release_channel_manifest"] == (
+        "schemas/objc3c-release-channel-operations-v1.schema.json"
+    )
     assert summary["upgrade_support_report"] == (
         "schemas/objc3c-upgrade-support-report-v1.schema.json"
     )
     assert summary["schemas"] == [
         "schemas/objc3c-update-manifest-v1.schema.json",
+        "schemas/objc3c-release-channel-operations-v1.schema.json",
         "schemas/objc3c-upgrade-support-report-v1.schema.json",
     ]
     assert summary["schema_ids"] == [
         "https://objc3c.dev/schemas/objc3c-update-manifest-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-release-channel-operations-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-upgrade-support-report-v1.schema.json",
     ]
 
