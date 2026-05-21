@@ -1,0 +1,92 @@
+{
+  "contract_id": "objc3c.abi_governance.source_of_truth.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    "#8173"
+  ],
+  "source_of_truth": {
+    "manifest_path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+    "schema_path": "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+    "checker_path": "scripts/check_objc3c_abi_governance.py",
+    "release_governance_manifest": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+    "release_governance_schema": "schemas/objc3c-abi-api-governance-v1.schema.json"
+  },
+  "governance_posture": {
+    "mode": "source-of-truth-manifest",
+    "failure_mode": "fail-closed",
+    "publication_claim": "exact checked ABI surface only",
+    "compatibility_shims_supported": false,
+    "fallback_routes_supported": false,
+    "unsupported_stability_claims": [
+      "cross-major forward compatibility",
+      "drop-in legacy ABI compatibility",
+      "indefinite support window",
+      "compatibility shim support",
+      "fallback downgrade route"
+    ]
+  },
+  "governed_surfaces": [
+    {
+      "surface_id": "abi-governance-manifest",
+      "owner": "abi-governance:#8173",
+      "source_path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "schema_path": "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+      "identity_path": [
+        "contract_id"
+      ],
+      "expected_identity": "objc3c.abi_governance.source_of_truth.v1",
+      "release_blocker": true,
+      "stability_claim": "exact-current-abi-only",
+      "allowed_transition_set": "abi-governance-manifest"
+    },
+    {
+      "surface_id": "abi-artifact-manifest-schema",
+      "owner": "abi-governance:#8173",
+      "source_path": "schemas/objc3-abi-2025Q4.schema.json",
+      "schema_path": "schemas/objc3-abi-2025Q4.schema.json",
+      "identity_path": [
+        "properties",
+        "manifest_schema",
+        "const"
+      ],
+      "expected_identity": "objc3-abi-2025Q4",
+      "release_blocker": true,
+      "stability_claim": "same-major-checked-manifest-only",
+      "allowed_transition_set": "governed-artifact-schema"
+    },
+    {
+      "surface_id": "release-abi-api-governance",
+      "owner": "abi-governance:#8173",
+      "source_path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "schema_path": "schemas/objc3c-abi-api-governance-v1.schema.json",
+      "identity_path": [
+        "contract_id"
+      ],
+      "expected_identity": "objc3c.release.foundation.abi_api_governance.v1",
+      "release_blocker": true,
+      "stability_claim": "same-major-checked-manifest-only",
+      "allowed_transition_set": "abi-api-governance"
+    }
+  ],
+  "release_blocked_transitions": [
+    "public-symbol-removal-without-deprecation-window",
+    "runtime-symbol-removal-without-deprecation-window",
+    "signature-change-without-major-line",
+    "private-helper-graduation-without-policy",
+    "unsupported-upgrade-route",
+    "unsupported-downgrade-route",
+    "package-abi-identity-drift",
+    "schema-breaking-change-without-major-line"
+  ],
+  "compatibility_policy": {
+    "supported_major_lines": [
+      1
+    ],
+    "current_minor_line": 0,
+    "shim_policy": "no-compatibility-shims",
+    "fallback_route_policy": "no-fallback-routes",
+    "private_helper_graduation_policy": "requires-approved-governance-record",
+    "claim_source": "checked-source-of-truth-manifest"
+  },
+  "summary_contract": "objc3c.abi_governance.summary.v1"
+}
