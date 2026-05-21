@@ -1593,18 +1593,22 @@ the canonical manifest fixture and public npm command above.
 - Summary: Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, offline mirror metadata, local trust envelopes, and fail-closed language/ABI dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.
 - Owner modules:
   - `scripts/objc3c_package_manager/model.py`
+  - `scripts/objc3c_package_manager/registry.py`
   - `scripts/build_objc3c_package_lock.py`
   - `scripts/build_objc3c_package_mirror.py`
   - `scripts/check_objc3c_package_manager_model.py`
   - `schemas/objc3c-package-manifest-v1.schema.json`
   - `schemas/objc3c-package-lock-v1.schema.json`
   - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
+  - `schemas/objc3c-package-local-registry-index-v1.schema.json`
 - Evidence:
   - test: `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` via `npm run objc3c -- validate-package-manager-model`
   - test: `tests/tooling/test_package_manager_model.py` via `npm run objc3c -- validate-package-manager-model`
   - schema: `schemas/objc3c-package-manifest-v1.schema.json`
   - schema: `schemas/objc3c-package-lock-v1.schema.json`
+  - schema: `schemas/objc3c-package-local-registry-index-v1.schema.json`
   - source: `scripts/objc3c_package_manager/model.py`
+  - source: `scripts/objc3c_package_manager/registry.py`
   - source: `scripts/check_objc3c_package_manager_model.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 

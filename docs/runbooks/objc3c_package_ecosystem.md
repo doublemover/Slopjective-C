@@ -55,6 +55,8 @@ That means the package-ecosystem owner surface must build local package semantic
 - deterministic dependency resolution and lock behavior
 - generated package manifests with Objective-C 3.0 language, ABI, digest, and
   trust metadata
+- schema-backed local registry indexes with exact locked version selection,
+  dependency digest evidence, and replay commands
 - local workspace and package-authoring workflow
 - offline mirror semantics and reproducibility evidence
 - registry/publication behavior only after the local model is executable
@@ -99,6 +101,9 @@ Resolution is intentionally local-first:
   trust signature, and revocation state
 - locks capture provenance, manifest digests, source digests, selected
   version/source identity, and replay command intent
+- local registry indexes capture exact locked target versions, dependency source
+  digests, package manifest digests, trust signatures, and replay commands for
+  every indexed package
 - dependency resolution fails closed when a dependency is missing, ambiguous,
   unpinned, provenance-free, ABI-incompatible, language-incompatible, revoked,
   or outside the allowed local/mirror roots
@@ -141,7 +146,9 @@ Registry behavior is layered on top of the local lock and mirror model:
 
 - `local-index` is supported as a generated artifact over locked package
   metadata, package manifests, ABI identity, language version, and trust
-  signatures.
+  signatures. It validates against
+  `schemas/objc3c-package-local-registry-index-v1.schema.json` and carries
+  exact locked version/dependency evidence rather than hosted package claims.
 - `offline-mirror` is supported only when derived from the lock graph.
 - `offline-restore-receipt` is supported only when every mirror cache entry
   exists and digest-matches the mirror index.
@@ -165,6 +172,7 @@ Schema surfaces:
 - `schemas/objc3c-package-manifest-v1.schema.json`
 - `schemas/objc3c-package-lock-v1.schema.json`
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
+- `schemas/objc3c-package-local-registry-index-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Machine-owned generated outputs stay in package-ecosystem artifact and report
@@ -212,8 +220,11 @@ commands.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
 digest-checked package cache entries, an offline restore receipt, local registry
-index, and publication metadata under the package-ecosystem output root, and
-refuses to claim hosted registry support.
+index, and publication metadata under the package-ecosystem output root. The
+local registry index is generated from the same lock graph, validates exact
+locked dependency versions, preserves source/manifest digests and trust
+signatures, carries replay commands, and refuses to claim hosted registry
+support.
 
 ## ObjC++ And Swift Metadata Bridge Surfaces
 

@@ -1,0 +1,441 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-local-registry-index-v1.schema.json",
+  "title": "objc3c Package Local Registry Index",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "registry_version",
+    "source_lock",
+    "source_mirror",
+    "source_restore_receipt",
+    "support_state",
+    "hosted_registry_state",
+    "network_resolution_support",
+    "language_version",
+    "abi_identity",
+    "registry_policy",
+    "packages",
+    "dependency_edges",
+    "error_policy",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.local_registry_index.v1"
+    },
+    "registry_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_lock": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_mirror": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_restore_receipt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "support_state": {
+      "const": "local-generated-index"
+    },
+    "hosted_registry_state": {
+      "const": "deferred"
+    },
+    "network_resolution_support": {
+      "const": "unsupported-fail-closed"
+    },
+    "language_version": {
+      "const": "3.0"
+    },
+    "abi_identity": {
+      "const": "objc3-abi-2025Q4"
+    },
+    "registry_policy": {
+      "$ref": "#/$defs/registryPolicy"
+    },
+    "interop_loader_metadata": {
+      "type": "object"
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/registryPackage"
+      }
+    },
+    "dependency_edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependencyEdge"
+      }
+    },
+    "error_policy": {
+      "$ref": "#/$defs/errorPolicy"
+    },
+    "replay": {
+      "$ref": "#/$defs/replay"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "registryPolicy": {
+      "type": "object",
+      "required": [
+        "source_authority",
+        "dependency_resolution",
+        "version_selection",
+        "network_resolution",
+        "hosted_registry",
+        "publication_mode",
+        "unsupported_operations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_authority": {
+          "const": "generated-from-lock-and-offline-mirror"
+        },
+        "dependency_resolution": {
+          "const": "locked-local-registry-only"
+        },
+        "version_selection": {
+          "const": "exact-locked-version-only"
+        },
+        "network_resolution": {
+          "const": "unsupported-fail-closed"
+        },
+        "hosted_registry": {
+          "const": "unsupported-fail-closed-if-claimed"
+        },
+        "publication_mode": {
+          "const": "local-metadata-only"
+        },
+        "unsupported_operations": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "hosted-registry-publication",
+              "hosted-registry-resolution",
+              "network-dependency-fetch",
+              "unlocked-version-selection",
+              "registry-authentication-service",
+              "cross-host-package-restore"
+            ]
+          },
+          "minItems": 6,
+          "uniqueItems": true
+        }
+      }
+    },
+    "packageManifestRef": {
+      "type": "object",
+      "required": ["path", "contract_id", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+        },
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.package_manifest.v1"
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "signature",
+        "trust_scope",
+        "revocation_state",
+        "revocation_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signature_format": {
+          "const": "objc3c-local-sha256-v1"
+        },
+        "signing_key_id": {
+          "const": "objc3c-local-package-key-v1"
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signature": {
+          "$ref": "#/$defs/sha256"
+        },
+        "trust_scope": {
+          "const": "checked-in-local-package-source"
+        },
+        "revocation_state": {
+          "const": "not-revoked"
+        },
+        "revocation_policy": {
+          "const": "revoked-package-ids-fail-resolution"
+        }
+      }
+    },
+    "versionPolicy": {
+      "type": "object",
+      "required": ["selected", "selection_policy", "candidate_versions"],
+      "additionalProperties": false,
+      "properties": {
+        "selected": {
+          "$ref": "#/$defs/semver"
+        },
+        "selection_policy": {
+          "const": "exact-locked-version-only"
+        },
+        "candidate_versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semver"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "packageResolution": {
+      "type": "object",
+      "required": ["source", "network", "hosted_registry", "offline_mirror_required"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "locked-local-registry"
+        },
+        "network": {
+          "const": "unsupported-fail-closed"
+        },
+        "hosted_registry": {
+          "const": "unsupported-fail-closed-if-claimed"
+        },
+        "offline_mirror_required": {
+          "const": true
+        }
+      }
+    },
+    "packageEvidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "source_digest",
+        "manifest_path",
+        "manifest_digest",
+        "provenance_id",
+        "trust_signature",
+        "replay_commands"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "manifest_path": {
+          "type": "string",
+          "pattern": "^tmp/artifacts/package-ecosystem/manifests/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.json$"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "provenance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trust_signature": {
+          "$ref": "#/$defs/sha256"
+        },
+        "replay_commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
+          "minItems": 3
+        }
+      }
+    },
+    "dependencyEdge": {
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "source",
+        "language_requirement",
+        "abi_requirement",
+        "resolution",
+        "required_version",
+        "resolved_version",
+        "target_manifest_digest",
+        "target_source_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/packageId"
+        },
+        "to": {
+          "$ref": "#/$defs/packageId"
+        },
+        "source": {
+          "const": "checked-in-local-workspace"
+        },
+        "language_requirement": {
+          "const": "3.0"
+        },
+        "abi_requirement": {
+          "const": "objc3-abi-2025Q4"
+        },
+        "resolution": {
+          "const": "locked-local-registry"
+        },
+        "required_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "resolved_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "target_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "target_source_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "registryPackage": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "source",
+        "source_digest",
+        "source_kind",
+        "package_version",
+        "language_version",
+        "abi_identity",
+        "package_manifest",
+        "provenance_id",
+        "trust",
+        "version",
+        "resolution",
+        "evidence",
+        "dependencies"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": {
+          "$ref": "#/$defs/packageId"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "package_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "language_version": {
+          "const": "3.0"
+        },
+        "abi_identity": {
+          "const": "objc3-abi-2025Q4"
+        },
+        "package_manifest": {
+          "$ref": "#/$defs/packageManifestRef"
+        },
+        "provenance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "version": {
+          "$ref": "#/$defs/versionPolicy"
+        },
+        "resolution": {
+          "$ref": "#/$defs/packageResolution"
+        },
+        "evidence": {
+          "$ref": "#/$defs/packageEvidence"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyEdge"
+          }
+        },
+        "interop_loader_metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "errorPolicy": {
+      "type": "object",
+      "required": ["diagnostic_code", "fail_closed_conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_code": {
+          "const": "O3PKG8055"
+        },
+        "fail_closed_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 10,
+          "uniqueItems": true
+        }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "required": ["commands"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
+          "minItems": 2
+        }
+      }
+    }
+  }
+}

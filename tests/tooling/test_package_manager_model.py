@@ -17,6 +17,13 @@ from objc3c_package_manager.model import (  # noqa: E402
     build_lock_components,
     collect_lock_model_failures,
 )
+from objc3c_package_manager.registry import (  # noqa: E402
+    LOCAL_REGISTRY_CONTRACT_ID,
+    LOCAL_REGISTRY_SCHEMA_KEY,
+    collect_registry_index_failures,
+    local_registry_payload,
+)
+from objc3c_shared.schema_registry import validate_registered_schema  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
 from scripts.objc3c_workflow.action_catalog_package_lock import (  # noqa: E402
     PACKAGE_LOCK_ACTION_SPECS,
@@ -138,6 +145,89 @@ def test_package_manager_revocation_fails_resolution() -> None:
     assert failures == [
         f"{PACKAGE_MANAGER_TAMPER_CODE}: revoked package cannot resolve {packages[0]['package_id']}"
     ]
+
+
+def test_local_registry_index_records_exact_version_dependencies_and_replay_evidence() -> None:
+    payload = lock_payload()
+    registry = local_registry_payload(
+        payload,
+        source_mirror="tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+        source_restore_receipt=(
+            "tmp/artifacts/package-ecosystem/offline-install/"
+            "objc3c-offline-mirror-restore-receipt.json"
+        ),
+    )
+
+    validate_registered_schema(registry, LOCAL_REGISTRY_SCHEMA_KEY)
+
+    assert registry["contract_id"] == LOCAL_REGISTRY_CONTRACT_ID
+    assert registry["registry_policy"]["dependency_resolution"] == "locked-local-registry-only"
+    assert registry["registry_policy"]["version_selection"] == "exact-locked-version-only"
+    assert registry["registry_policy"]["hosted_registry"] == "unsupported-fail-closed-if-claimed"
+    assert registry["error_policy"]["diagnostic_code"] == PACKAGE_MANAGER_TAMPER_CODE
+    assert collect_registry_index_failures(registry, payload, root=ROOT) == []
+
+    dependency_edge = registry["dependency_edges"][0]
+    target_package = next(
+        package
+        for package in payload["packages"]
+        if package["package_id"] == dependency_edge["to"]
+    )
+    assert dependency_edge["required_version"] == target_package["package_version"]
+    assert dependency_edge["resolved_version"] == target_package["package_version"]
+    assert dependency_edge["target_manifest_digest"] == target_package["package_manifest"]["digest"]
+
+    source_package = next(
+        package
+        for package in registry["packages"]
+        if package["package_id"] == dependency_edge["from"]
+    )
+    assert source_package["version"]["candidate_versions"] == [
+        source_package["package_version"]
+    ]
+    assert source_package["evidence"]["replay_commands"] == [
+        "npm run objc3c -- build-package-lock",
+        "npm run objc3c -- validate-package-manager-model",
+        "npm run objc3c -- validate-package-mirror",
+    ]
+
+
+def test_local_registry_hosted_claim_fails_closed() -> None:
+    payload = lock_payload()
+    registry = local_registry_payload(
+        payload,
+        source_mirror="tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+        source_restore_receipt=(
+            "tmp/artifacts/package-ecosystem/offline-install/"
+            "objc3c-offline-mirror-restore-receipt.json"
+        ),
+    )
+    registry["registry_policy"]["hosted_registry"] = "supported"
+
+    failures = collect_registry_index_failures(registry, payload, root=ROOT)
+
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: registry policy drifted for hosted_registry" in failures
+
+
+def test_local_registry_dependency_version_drift_fails_closed() -> None:
+    payload = lock_payload()
+    registry = local_registry_payload(
+        payload,
+        source_mirror="tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+        source_restore_receipt=(
+            "tmp/artifacts/package-ecosystem/offline-install/"
+            "objc3c-offline-mirror-restore-receipt.json"
+        ),
+    )
+    edge = registry["dependency_edges"][0]
+    edge["required_version"] = "9.9.9"
+
+    failures = collect_registry_index_failures(registry, payload, root=ROOT)
+
+    assert (
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency version mismatch "
+        f"for {edge['from']}->{edge['to']}"
+    ) in failures
 
 
 def test_package_manager_public_action_and_owner_contract_are_registered() -> None:

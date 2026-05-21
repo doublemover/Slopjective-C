@@ -20,6 +20,7 @@
     "schemas/objc3c-package-manifest-v1.schema.json",
     "schemas/objc3c-package-lock-v1.schema.json",
     "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "schemas/objc3c-package-channels-manifest-v1.schema.json",
     "schemas/objc3c-package-install-receipt-v1.schema.json"
   ],

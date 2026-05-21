@@ -7,6 +7,7 @@
   "package_authoring_workflow": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
   "mixed_image_interop_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
   "mirror_schema": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+  "local_registry_index_schema": "schemas/objc3c-package-local-registry-index-v1.schema.json",
   "generated_outputs": {
     "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
     "mirror_index": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
@@ -49,6 +50,8 @@
   "reproducibility_rules": [
     "mirror package ids must match the generated lock package ids",
     "local registry package ids must match the generated lock package ids",
+    "local registry dependency edges must preserve exact locked target versions, source digests, manifest digests, language requirements, and ABI requirements",
+    "local registry package entries must carry replay evidence for lock generation, package-manager validation, and mirror validation",
     "publication metadata must fail closed for hosted registry support claims",
     "mixed-image interop loader metadata digests must match between lock, mirror, and local registry packages",
     "mixed-image interop loader metadata payloads, including ObjC++ and Swift bridge-surface rows, must match between lock, mirror, and local registry packages when digests are preserved",

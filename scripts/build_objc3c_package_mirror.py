@@ -15,6 +15,7 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import python_script_command
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_package_manager.model import cache_payload_from_mirror_package
+from objc3c_package_manager.registry import local_registry_payload
 from package_ecosystem_contracts import PACKAGE_LOADER_INTEROP_TAMPER_CODE
 
 
@@ -103,25 +104,6 @@ def mirror_package_payload(package: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def registry_package_payload(package: dict[str, Any]) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "package_id": str(package["package_id"]),
-        "source": str(package["source"]),
-        "source_digest": source_digest(str(package["source"])),
-        "source_kind": str(package["source_kind"]),
-        "package_version": str(package["package_version"]),
-        "language_version": str(package["language_version"]),
-        "abi_identity": str(package["abi_identity"]),
-        "package_manifest": package["package_manifest"],
-        "provenance_id": str(package["provenance_id"]),
-        "trust": package["trust"],
-    }
-    interop_metadata = package.get("interop_loader_metadata")
-    if isinstance(interop_metadata, dict):
-        payload["interop_loader_metadata"] = interop_metadata
-    return payload
-
-
 def write_cache_entries(mirror_packages: list[dict[str, Any]]) -> list[str]:
     if CACHE_ROOT.is_dir():
         shutil.rmtree(CACHE_ROOT)
@@ -152,7 +134,6 @@ def main() -> int:
 
     mirror_packages = [mirror_package_payload(package) for package in packages if isinstance(package, dict)]
     cache_paths = write_cache_entries(mirror_packages)
-    registry_packages = [registry_package_payload(package) for package in packages if isinstance(package, dict)]
     interop_loader_metadata = lock.get("interop_loader_metadata")
     interop_package_count = sum(
         1
@@ -195,19 +176,11 @@ def main() -> int:
         "restore_failure_mode": "reject-package-metadata-digest-mismatch",
         "restore_timestamp_policy": "omitted-for-deterministic-replay",
     }
-    registry = {
-        "contract_id": "objc3c.package_ecosystem.local_registry_index.v1",
-        "source_lock": repo_rel(LOCK_PATH),
-        "source_mirror": repo_rel(MIRROR_PATH),
-        "source_restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
-        "support_state": "local-generated-index",
-        "hosted_registry_state": "deferred",
-        "network_resolution_support": "unsupported-fail-closed",
-        "language_version": lock.get("package_manager", {}).get("language_version"),
-        "abi_identity": lock.get("package_manager", {}).get("abi_identity"),
-        "interop_loader_metadata": interop_loader_metadata if isinstance(interop_loader_metadata, dict) else {},
-        "packages": registry_packages,
-    }
+    registry = local_registry_payload(
+        lock,
+        source_mirror=repo_rel(MIRROR_PATH),
+        source_restore_receipt=repo_rel(RESTORE_RECEIPT_PATH),
+    )
     publication = {
         "contract_id": "objc3c.package_ecosystem.publication_metadata.v1",
         "source_lock": repo_rel(LOCK_PATH),
@@ -247,6 +220,8 @@ def main() -> int:
         "cache_root": repo_rel(CACHE_ROOT),
         "cache_paths": cache_paths,
         "local_registry_index": repo_rel(REGISTRY_PATH),
+        "local_registry_contract_id": registry["contract_id"],
+        "local_registry_dependency_edge_count": len(registry["dependency_edges"]),
         "publication_metadata": repo_rel(PUBLICATION_PATH),
         "restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
         "package_count": len(packages),

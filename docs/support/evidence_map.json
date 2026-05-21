@@ -2951,8 +2951,20 @@
     {
       "capability_id": "ecosystem.package-manager.local-registry",
       "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-local-registry-index-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "source",
       "path": "scripts/objc3c_package_manager/model.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/registry.py"
     },
     {
       "capability_id": "ecosystem.package-manager.local-registry",

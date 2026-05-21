@@ -513,7 +513,9 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/test_package_manager_model.py` | `npm run objc3c -- validate-package-manager-model` |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `schema` | `schemas/objc3c-package-manifest-v1.schema.json` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `schema` | `schemas/objc3c-package-lock-v1.schema.json` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `schema` | `schemas/objc3c-package-local-registry-index-v1.schema.json` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/objc3c_package_manager/model.py` |  |
+| `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/objc3c_package_manager/registry.py` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/check_objc3c_package_manager_model.py` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` |

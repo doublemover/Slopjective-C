@@ -4,6 +4,7 @@
   "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
   "package_manifest_schema": "schemas/objc3c-package-manifest-v1.schema.json",
   "package_lock_schema": "schemas/objc3c-package-lock-v1.schema.json",
+  "local_registry_index_schema": "schemas/objc3c-package-local-registry-index-v1.schema.json",
   "source_contracts": [
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
@@ -30,6 +31,7 @@
     "package manifests are generated from checked-in stdlib and showcase source surfaces",
     "every locked package carries language version, ABI identity, source digest, manifest digest, and local trust metadata",
     "dependency edges resolve only through the checked-in local registry model",
+    "local registry entries carry exact locked version selection, dependency edge digests, fail-closed hosted/network policy, and replay evidence",
     "ABI and language requirements on dependency edges must match the target package before a lock can be accepted",
     "revoked packages, digest drift, missing provenance, dependency cycles, hosted registry claims, and network resolution claims fail closed"
   ],

@@ -64,12 +64,14 @@ def main() -> int:
     package_manifest_schema = load_json(ROOT / str(schemas.get("package_manifest", ""))) if isinstance(schemas, dict) and schemas.get("package_manifest") else {}
     package_lock_schema = load_json(ROOT / str(schemas.get("package_lock", ""))) if isinstance(schemas, dict) and schemas.get("package_lock") else {}
     mirror_schema = load_json(ROOT / str(schemas.get("offline_mirror_index", ""))) if isinstance(schemas, dict) and schemas.get("offline_mirror_index") else {}
+    local_registry_schema = load_json(ROOT / str(schemas.get("local_registry_index", ""))) if isinstance(schemas, dict) and schemas.get("local_registry_index") else {}
     claim_rules = contract.get("artifact_claim_rules", [])
     checks = {
         "runbook_mentions_artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json" in runbook_text,
         "runbook_mentions_package_manifest_schema": "schemas/objc3c-package-manifest-v1.schema.json" in runbook_text,
         "runbook_mentions_lock_schema": "schemas/objc3c-package-lock-v1.schema.json" in runbook_text,
         "runbook_mentions_mirror_schema": "schemas/objc3c-package-offline-mirror-index-v1.schema.json" in runbook_text,
+        "runbook_mentions_local_registry_schema": "schemas/objc3c-package-local-registry-index-v1.schema.json" in runbook_text,
         "boundary_contract_linked": boundary.get("contract_id") == "objc3c.package_ecosystem.boundary_inventory.v1",
         "lock_policy_linked": lock_policy.get("contract_id") == "objc3c.package_ecosystem.dependency_lock_policy.v1",
         "mirror_semantics_linked": mirror_semantics.get("contract_id") == "objc3c.package_ecosystem.local_workspace_mirror_semantics.v1",
@@ -78,6 +80,7 @@ def main() -> int:
         "package_manifest_schema_contract": package_manifest_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-manifest-v1.schema.json",
         "lock_schema_contract": package_lock_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-lock-v1.schema.json",
         "mirror_schema_contract": mirror_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "local_registry_schema_contract": local_registry_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-local-registry-index-v1.schema.json",
         "artifact_roots_under_tmp": all(root.startswith("tmp/artifacts/package-ecosystem/") for root in generated_artifact_roots),
         "report_root_under_tmp": str(contract["generated_report_root"]).startswith("tmp/reports/package-ecosystem"),
         "hosted_registry_claim_blocked": "hosted registry claims remain release-blocking until a later hosted-service evidence path exists" in claim_rules,

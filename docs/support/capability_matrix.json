@@ -3279,12 +3279,14 @@
       ],
       "owner_modules": [
         "scripts/objc3c_package_manager/model.py",
+        "scripts/objc3c_package_manager/registry.py",
         "scripts/build_objc3c_package_lock.py",
         "scripts/build_objc3c_package_mirror.py",
         "scripts/check_objc3c_package_manager_model.py",
         "schemas/objc3c-package-manifest-v1.schema.json",
         "schemas/objc3c-package-lock-v1.schema.json",
-        "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+        "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "schemas/objc3c-package-local-registry-index-v1.schema.json"
       ],
       "evidence": [
         {
@@ -3306,8 +3308,16 @@
           "path": "schemas/objc3c-package-lock-v1.schema.json"
         },
         {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-local-registry-index-v1.schema.json"
+        },
+        {
           "kind": "source",
           "path": "scripts/objc3c_package_manager/model.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/registry.py"
         },
         {
           "kind": "source",

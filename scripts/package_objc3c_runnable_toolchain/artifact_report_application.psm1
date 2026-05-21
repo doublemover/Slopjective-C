@@ -44,6 +44,7 @@ function New-RunnableToolchainPackageApplicationManifestSection {
     package_ecosystem_manifest_schema = "schemas/objc3c-package-manifest-v1.schema.json"
     package_ecosystem_lock_schema = "schemas/objc3c-package-lock-v1.schema.json"
     package_ecosystem_mirror_schema = "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+    package_ecosystem_local_registry_schema = "schemas/objc3c-package-local-registry-index-v1.schema.json"
     package_ecosystem_surface = [ordered]@{
       lock_generator = "scripts/build_objc3c_package_lock.py"
       package_manager_validation = "scripts/check_objc3c_package_manager_model.py"

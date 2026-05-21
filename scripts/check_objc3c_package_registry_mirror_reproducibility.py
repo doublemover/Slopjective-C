@@ -25,6 +25,12 @@ from objc3c_package_manager.model import (
     PACKAGE_MANAGER_TAMPER_CODE,
     collect_lock_model_failures,
 )
+from objc3c_package_manager.registry import (
+    LOCAL_REGISTRY_CONTRACT_ID,
+    LOCAL_REGISTRY_SCHEMA_KEY,
+    collect_registry_index_failures,
+)
+from objc3c_shared.schema_registry import validate_registered_schema
 from package_ecosystem_contracts import (
     PACKAGE_LOADER_INTEROP_TAMPER_CODE,
     require_package_ecosystem_blocker_metadata,
@@ -294,6 +300,13 @@ def main() -> int:
     cache_failures = collect_offline_mirror_cache_failures(mirror)
     failures.extend(cache_failures)
     failures.extend(collect_lock_model_failures(lock, root=ROOT))
+    registry_failures = collect_registry_index_failures(registry, lock, root=ROOT)
+    failures.extend(registry_failures)
+    try:
+        validate_registered_schema(registry, LOCAL_REGISTRY_SCHEMA_KEY, label=repo_rel(REGISTRY_PATH))
+    except (KeyError, RuntimeError) as exc:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry schema validation failed: {exc}")
+    expect(registry.get("contract_id") == LOCAL_REGISTRY_CONTRACT_ID, "registry contract id drifted", failures)
     expect(registry.get("network_resolution_support") == "unsupported-fail-closed", "registry network resolution must fail closed", failures)
     expect(registry.get("language_version") == LOCAL_PACKAGE_LANGUAGE_VERSION, "registry language version drifted", failures)
     expect(registry.get("abi_identity") == LOCAL_PACKAGE_ABI_IDENTITY, "registry ABI identity drifted", failures)
@@ -307,6 +320,7 @@ def main() -> int:
         "lock_path": repo_rel(LOCK_PATH),
         "mirror_index": repo_rel(MIRROR_PATH),
         "local_registry_index": repo_rel(REGISTRY_PATH),
+        "local_registry_contract_id": registry.get("contract_id"),
         "publication_metadata": repo_rel(PUBLICATION_PATH),
         "restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
@@ -337,6 +351,7 @@ def main() -> int:
         "missing_actions": missing_actions,
         "interop_integrity_failures": interop_failures,
         "offline_mirror_cache_failures": cache_failures,
+        "local_registry_failures": registry_failures,
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -12,6 +12,7 @@
     "package_manifest": "schemas/objc3c-package-manifest-v1.schema.json",
     "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
     "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "local_registry_index": "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json"
   },
   "owner_split_modules": [
@@ -51,6 +52,7 @@
     "package manifests are generated from checked-in source contracts and must preserve language, ABI, digest, and trust metadata",
     "package ecosystem artifacts must validate against checked-in schemas before publication claims",
     "registry metadata must be generated from lock and mirror evidence",
+    "registry indexes must validate exact locked versions, dependency digests, fail-closed hosted/network policy, and replay evidence",
     "offline mirror cache entries and restore receipts must be generated from the same lock-derived mirror index",
     "clean install validation roots must be re-created before package install credibility is claimed",
     "install receipts must be generated from lock, mirror, local registry, publication, and restore metadata that agree",

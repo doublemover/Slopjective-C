@@ -25,6 +25,16 @@ PACKAGE_OFFLINE_MIRROR_SCHEMA = PackageSchemaContract(
     document_contract_id="objc3c.package_ecosystem.offline_mirror.v1",
 )
 
+PACKAGE_LOCAL_REGISTRY_INDEX_SCHEMA = PackageSchemaContract(
+    contract_key="local_registry_index",
+    schema_path="schemas/objc3c-package-local-registry-index-v1.schema.json",
+    schema_id=(
+        "https://objc3c.dev/schemas/"
+        "objc3c-package-local-registry-index-v1.schema.json"
+    ),
+    document_contract_id="objc3c.package_ecosystem.local_registry_index.v1",
+)
+
 PACKAGE_REGISTRY_LOCAL_INDEX_PATH = (
     "tmp/artifacts/package-ecosystem/registry/local-package-index.json"
 )
@@ -85,7 +95,12 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
             "offline mirror and local registry metadata stay lock-derived, "
             "no-network, and fail closed for unsupported hosted-registry claims"
         ),
-        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA, PACKAGE_OFFLINE_MIRROR_SCHEMA),
+        schema_contracts=(
+            PACKAGE_MANIFEST_SCHEMA,
+            PACKAGE_LOCK_SCHEMA,
+            PACKAGE_OFFLINE_MIRROR_SCHEMA,
+            PACKAGE_LOCAL_REGISTRY_INDEX_SCHEMA,
+        ),
         source_paths=(
             "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
             "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
@@ -108,6 +123,7 @@ __all__ = [
     "PACKAGE_OFFLINE_MIRROR_CACHE_ROOT",
     "PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH",
     "PACKAGE_OFFLINE_MIRROR_SCHEMA",
+    "PACKAGE_LOCAL_REGISTRY_INDEX_SCHEMA",
     "PACKAGE_REGISTRY_LOCAL_INDEX_PATH",
     "PACKAGE_REGISTRY_PUBLICATION_LAYERS",
     "PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH",

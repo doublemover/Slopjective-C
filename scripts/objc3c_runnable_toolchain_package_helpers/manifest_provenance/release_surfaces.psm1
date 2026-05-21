@@ -10,6 +10,7 @@ function Get-ManifestProvenanceReleaseSurfaceFiles {
     "schemas/objc3c-package-install-receipt-v1.schema.json",
     "schemas/objc3c-package-lock-v1.schema.json",
     "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
     "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
     "schemas/objc3c-update-manifest-v1.schema.json",

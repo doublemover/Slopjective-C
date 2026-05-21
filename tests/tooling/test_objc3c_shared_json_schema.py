@@ -179,6 +179,7 @@ def test_schema_registry_includes_release_adoption_schemas() -> None:
         "objc3c-package-manifest-v1": "schemas/objc3c-package-manifest-v1.schema.json",
         "objc3c-package-lock-v1": "schemas/objc3c-package-lock-v1.schema.json",
         "objc3c-package-offline-mirror-index-v1": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "objc3c-package-local-registry-index-v1": "schemas/objc3c-package-local-registry-index-v1.schema.json",
         "objc3c-package-install-receipt-v1": "schemas/objc3c-package-install-receipt-v1.schema.json",
         "objc3c-platform-support-matrix-v1": "schemas/objc3c-platform-support-matrix-v1.schema.json",
         "objc3c-compiler-throughput-summary-v1": "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
