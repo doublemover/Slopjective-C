@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-operation-receipt-v1.schema.json",
+  "title": "objc3c Package Operation Receipt",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "operation",
+    "operation_action",
+    "package_id",
+    "package_identity",
+    "manifest_digest",
+    "registry_digest",
+    "trust_digest",
+    "offline_mirror_pin",
+    "previous_state",
+    "next_state",
+    "rollback_token",
+    "rollback_state",
+    "network_policy",
+    "hosted_registry_support",
+    "live_network_publication",
+    "language_version",
+    "abi_identity",
+    "plan_digest",
+    "machine_owned",
+    "receipt_digest"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.package_ecosystem.operation_receipt.v1" },
+    "operation": {
+      "enum": ["publish", "install", "update", "uninstall", "rollback"]
+    },
+    "operation_action": {
+      "enum": [
+        "package-publish",
+        "package-install",
+        "package-update",
+        "package-uninstall",
+        "package-rollback"
+      ]
+    },
+    "package_id": { "type": "string", "pattern": "^[a-z0-9_.-]+:[a-zA-Z0-9_.-]+$" },
+    "package_order": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "package_identity": { "type": "object" },
+    "manifest_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "registry_digest": { "type": "object" },
+    "trust_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "offline_mirror_pin": { "type": "object" },
+    "previous_state": { "type": "string" },
+    "next_state": { "type": "string" },
+    "rollback_token": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "rollback_state": { "type": "object" },
+    "network_policy": { "const": "no-network-during-validation" },
+    "hosted_registry_support": { "const": "offline-metadata-only-live-network-fail-closed" },
+    "live_network_publication": { "const": "fail-closed" },
+    "language_version": { "const": "3.0" },
+    "abi_identity": { "const": "objc3-abi-2025Q4" },
+    "plan_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "receipt_timestamp": { "type": "string" },
+    "machine_owned": { "const": true },
+    "diagnostics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "receipt_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  },
+  "additionalProperties": false
+}

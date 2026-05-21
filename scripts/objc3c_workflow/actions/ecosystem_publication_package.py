@@ -11,6 +11,7 @@ from .ecosystem_publication_package_contracts import (
     PACKAGE_REGISTRY_MODEL_PY,
     PACKAGE_SIGN_PY,
     PACKAGE_INSTALL_DISTRIBUTION_PY,
+    PACKAGE_OPERATIONS_PY,
     PACKAGE_VERIFY_PY,
     RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
 )
@@ -60,6 +61,30 @@ def action_validate_package_install_distribution(rest: list[str]) -> int:
     )
 
 
+def action_package_publish(rest: list[str]) -> int:
+    return run_package_publication_action("package-publish", ["--operation", "publish", *rest])
+
+
+def action_package_install(rest: list[str]) -> int:
+    return run_package_publication_action("package-install", ["--operation", "install", *rest])
+
+
+def action_package_update(rest: list[str]) -> int:
+    return run_package_publication_action("package-update", ["--operation", "update", *rest])
+
+
+def action_package_uninstall(rest: list[str]) -> int:
+    return run_package_publication_action("package-uninstall", ["--operation", "uninstall", *rest])
+
+
+def action_package_rollback(rest: list[str]) -> int:
+    return run_package_publication_action("package-rollback", ["--operation", "rollback", *rest])
+
+
+def action_validate_package_operations(rest: list[str]) -> int:
+    return run_package_publication_action("validate-package-operations", rest)
+
+
 def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
     return run_package_publication_action("validate-runnable-package-ecosystem")
 
@@ -73,6 +98,7 @@ __all__ = [
     "PACKAGE_REGISTRY_MODEL_PY",
     "PACKAGE_SIGN_PY",
     "PACKAGE_INSTALL_DISTRIBUTION_PY",
+    "PACKAGE_OPERATIONS_PY",
     "PACKAGE_VERIFY_PY",
     "RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY",
     "action_build_package_lock",
@@ -80,10 +106,16 @@ __all__ = [
     "action_verify_package",
     "action_validate_package_manager_model",
     "action_package_registry_resolve",
+    "action_package_install",
+    "action_package_publish",
+    "action_package_rollback",
+    "action_package_uninstall",
+    "action_package_update",
     "action_validate_package_authoring",
     "action_validate_package_ecosystem",
     "action_validate_package_install_distribution",
     "action_validate_package_mirror",
+    "action_validate_package_operations",
     "action_validate_package_registry_model",
     "action_validate_runnable_package_ecosystem",
 ]

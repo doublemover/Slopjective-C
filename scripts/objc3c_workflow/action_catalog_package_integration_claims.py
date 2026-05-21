@@ -10,6 +10,7 @@ from .action_catalog_package_lock_contracts import (
     PACKAGE_MANIFEST_SCHEMA,
 )
 from .action_catalog_package_public_workflows import PackagePublicWorkflowAction
+from .action_catalog_package_public_workflows import PackageSchemaContract
 from .action_catalog_package_registry_publication import (
     PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
     PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
@@ -26,6 +27,18 @@ PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS = (
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
 )
+
+PACKAGE_OPERATION_RECEIPT_SCHEMA = PackageSchemaContract(
+    contract_key="package_operation_receipt",
+    schema_path="schemas/objc3c-package-operation-receipt-v1.schema.json",
+    schema_id=(
+        "https://objc3c.dev/schemas/"
+        "objc3c-package-operation-receipt-v1.schema.json"
+    ),
+    document_contract_id="objc3c.package_ecosystem.operation_receipt.v1",
+)
+
+PACKAGE_OPERATION_RECEIPT_ROOT = "tmp/artifacts/package-ecosystem/operations"
 
 PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
     PackagePublicWorkflowAction(
@@ -122,10 +135,96 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
             PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
         ),
     ),
+    PackagePublicWorkflowAction(
+        action="package-publish",
+        summary="emit a deterministic signed local publish plan and receipt",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package publish stays local/offline/deterministic and fails "
+            "closed for live network publication"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="package-install",
+        summary="emit a deterministic signed local install plan and receipt",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package install verifies trust, registry metadata, lock identity, "
+            "offline mirror pins, language/ABI compatibility, and dependencies"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="package-update",
+        summary="emit a deterministic compatible update plan and receipt",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package update preserves rollback data and accepts only signed, "
+            "locked, cache-pinned compatible metadata"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="package-uninstall",
+        summary="emit a deterministic owned-root uninstall plan and receipt",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package uninstall proves installed-file ownership and refuses "
+            "removal outside package-owned roots"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="package-rollback",
+        summary="emit a deterministic rollback plan and receipt",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package rollback restores only signed cache-pinned previous "
+            "package state with owned-root proof"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="validate-package-operations",
+        summary="validate all deterministic package operation plans and receipts",
+        script_path="scripts/check_objc3c_package_operations.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "publish, install, update, uninstall, and rollback receipts stay "
+            "deterministic, trust-bound, cache-pinned, and fail-closed"
+        ),
+        schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(PACKAGE_OPERATION_RECEIPT_ROOT,),
+        pass_through_args=True,
+    ),
 )
 
 
 __all__ = [
     "PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS",
     "PACKAGE_INTEGRATION_PUBLIC_ACTIONS",
+    "PACKAGE_OPERATION_RECEIPT_ROOT",
+    "PACKAGE_OPERATION_RECEIPT_SCHEMA",
 ]

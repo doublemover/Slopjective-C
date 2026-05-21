@@ -135,6 +135,36 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-install-owner",
         "proves clean local install credibility across package manifests, locks, mirrors, local registry metadata, restore receipts, and machine-owned install receipts",
     ),
+    "package-publish": _package_contract(
+        "package-publish",
+        "package-ecosystem-operations-owner",
+        "publishes only deterministic local package metadata and receipts; live network publication remains fail-closed",
+    ),
+    "package-install": _package_contract(
+        "package-install",
+        "package-ecosystem-operations-owner",
+        "installs only locked, signed, registry-backed, offline-cache-pinned packages with ABI/language and dependency checks",
+    ),
+    "package-update": _package_contract(
+        "package-update",
+        "package-ecosystem-operations-owner",
+        "updates only compatible signed packages while preserving deterministic rollback tokens and previous-state pins",
+    ),
+    "package-uninstall": _package_contract(
+        "package-uninstall",
+        "package-ecosystem-operations-owner",
+        "uninstalls only machine-owned package roots after installed-state ownership proof",
+    ),
+    "package-rollback": _package_contract(
+        "package-rollback",
+        "package-ecosystem-operations-owner",
+        "rolls back only to signed cache-pinned previous package state with owned-root proof",
+    ),
+    "validate-package-operations": _package_contract(
+        "validate-package-operations",
+        "package-ecosystem-operations-owner",
+        "validates deterministic publish, install, update, uninstall, and rollback plans and receipts without network-backed fallbacks",
+    ),
     "validate-runnable-package-ecosystem": _package_contract(
         "validate-runnable-package-ecosystem",
         "package-ecosystem-runnable-owner",

@@ -67,6 +67,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-package-install-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-install-receipt-v1.schema.json",
+    "objc3c-package-operation-receipt-v1": ROOT
+    / "schemas"
+    / "objc3c-package-operation-receipt-v1.schema.json",
     "objc3c-platform-support-matrix-v1": ROOT
     / "schemas"
     / "objc3c-platform-support-matrix-v1.schema.json",
