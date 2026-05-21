@@ -388,8 +388,7 @@ The product workflow source-truth contract ties the normal-developer,
 diagnostics, formatter/LSP/workspace, public conformance, package manager, and
 application sample paths back to their capability rows, evidence-map rows, and
 public commands. It is validated inside `npm run objc3c --
-validate-developer-tooling`; generated `tmp/` reports remain replay evidence
-only.
+validate-developer-tooling`; generated reports remain replay outputs only.
 
 The current generator for the combined surface is reached through:
 

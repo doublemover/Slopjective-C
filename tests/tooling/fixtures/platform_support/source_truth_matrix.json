@@ -102,7 +102,7 @@
     }
   ],
   "report_policy": {
-    "summary_path": "tmp/reports/platform-support/source-truth-matrix-validation-summary.json",
+    "summary_path": "tmp/reports/platform-matrix/matrix-validation-summary.json",
     "generated_reports_must_not_be_source": true
   }
 }

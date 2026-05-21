@@ -23,7 +23,7 @@ from scripts.objc3c_workflow.public_command_api import (
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json"
 CAPABILITY_MATRIX_PATH = ROOT / "docs/support/capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs/support/evidence_map.json"
-SUMMARY_PATH = ROOT / "tmp/reports/developer-tooling/editor-source-truth-summary.json"
+SUMMARY_PATH = ROOT / "tmp/reports/developer-tooling/editor-summary.json"
 INTEGRATION_STEPS_PATH = ROOT / "scripts/objc3c_developer_tooling_integration_check/steps.py"
 
 

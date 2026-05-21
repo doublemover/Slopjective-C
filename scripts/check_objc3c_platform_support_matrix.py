@@ -24,7 +24,7 @@ from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
 
 SOURCE_TRUTH_PATH = ROOT / "tests" / "tooling" / "fixtures" / "platform_support" / "source_truth_matrix.json"
 SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-source-truth-v1.schema.json"
-DEFAULT_SUMMARY_PATH = ROOT / "tmp" / "reports" / "platform-support" / "source-truth-matrix-validation-summary.json"
+DEFAULT_SUMMARY_PATH = ROOT / "tmp" / "reports" / "platform-matrix" / "matrix-validation-summary.json"
 
 REQUIRED_SUPPORTED_EVIDENCE_CLASSES = ("build", "package", "install", "execution")
 REQUIRED_AUXILIARY_EVIDENCE_CLASSES = ("toolchain", "hosted_ci", "clean_room")

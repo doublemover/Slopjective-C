@@ -18,11 +18,11 @@ Checked-in source truth:
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 
-Generated artifacts are evidence outputs only:
+Generated artifacts are replay outputs only:
 
 - `tmp/artifacts/platform-hardening/objc3c-platform-matrix.json`
 - `tmp/reports/platform-hardening/platform-matrix-summary.json`
-- `tmp/reports/platform-hardening/support-evidence-summary.json`
+- `tmp/reports/platform-hardening/host-matrix-summary.json`
 
 ## Current Support State
 

@@ -24,7 +24,7 @@
       "run_dir",
       "wall_clock_order"
     ],
-    "packet_rule": "each measured sample must write one telemetry packet under tmp/reports/runtime-performance/<workload-id>/sample-N.json; packet fields may not be used as support authority"
+    "packet_rule": "each measured sample must write one telemetry packet under tmp/reports/runtime-performance/<workload-id>/sample-N.json; packet fields may not be used as public claim authority"
   },
   "workload_replay_rows": [
     {

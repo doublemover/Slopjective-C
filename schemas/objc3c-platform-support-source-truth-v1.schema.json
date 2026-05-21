@@ -152,7 +152,7 @@
       "properties": {
         "summary_path": {
           "type": "string",
-          "pattern": "^tmp/reports/platform-support/"
+          "pattern": "^tmp/reports/platform-matrix/"
         },
         "generated_reports_must_not_be_source": {
           "const": true

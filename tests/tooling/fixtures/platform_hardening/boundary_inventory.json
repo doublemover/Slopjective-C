@@ -85,7 +85,7 @@
     "tmp/reports/platform-hardening/support-tier-policy/support_tier_policy_summary.json",
     "tmp/reports/platform-hardening/unsupported-host-policy/unsupported_host_policy_summary.json",
     "tmp/reports/platform-hardening/toolchain-archive-policy/toolchain_archive_policy_summary.json",
-    "tmp/reports/platform-hardening/support-evidence-summary.json",
+    "tmp/reports/platform-hardening/host-matrix-summary.json",
     "tmp/reports/platform-hardening/artifact-contract/artifact_contract_summary.json",
     "tmp/reports/platform-hardening/build-package-validation-summary.json",
     "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",

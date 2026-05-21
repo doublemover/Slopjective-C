@@ -22,7 +22,7 @@
     "tmp/reports/runtime-performance/benchmark-summary.json",
     "tmp/reports/runtime-performance/integration-summary.json",
     "tmp/reports/runtime-performance/runnable-end-to-end-summary.json",
-    "tmp/reports/runtime-performance/scale-evidence-summary.json"
+    "tmp/reports/runtime-performance/scale-summary.json"
   ],
   "packet_roots": [
     "tmp/reports/runtime-performance/startup-installation",

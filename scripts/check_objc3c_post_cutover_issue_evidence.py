@@ -23,7 +23,7 @@ from scripts.objc3c_workflow.public_command_api import public_workflow_action_na
 ISSUE_EVIDENCE_PATH = ROOT / "docs/issues/objc3_next_8153_8179_evidence.md"
 CAPABILITY_MATRIX_PATH = ROOT / "docs/support/capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs/support/evidence_map.json"
-SUMMARY_PATH = ROOT / "tmp/reports/post-cutover/post-cutover-issue-evidence-summary.json"
+SUMMARY_PATH = ROOT / "tmp/reports/post-cutover/post-cutover-issue-summary.json"
 REQUIRED_ISSUES = tuple(f"#{number}" for number in range(8153, 8180))
 GENERATED_OUTPUT_PREFIXES = ("tmp/", "checked_outputs/")
 FORBIDDEN_SOURCE_PREFIXES = GENERATED_OUTPUT_PREFIXES

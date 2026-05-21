@@ -1304,7 +1304,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.metaprogramming.macro-safety-sandbox-determinism`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism`
-- Summary: The public macro surface validates deterministic sandbox metadata, trusted package provenance, replay cache keys, and fail-closed denial cases through checked trust-registry fixtures and native macro safety evidence. This row does not allow arbitrary host execution, network access, or fallback macro execution.
+- Summary: The public macro surface validates deterministic sandbox metadata, trusted package provenance, replay cache keys, and fail-closed denial cases through checked trust-registry fixtures and native macro safety evidence. This row does not allow arbitrary host execution, network access, or unregistered macro execution.
 - Owner modules:
   - `tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json`
   - `scripts/check_objc3c_metaprogramming_public_surface.py`
@@ -1587,7 +1587,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `diagnostics.parser-sema.recovery-fixits`
 - State: `implemented`
 - Support claims: `objc3c.behavior.diagnostics.parser-sema-recovery-fixits`
-- Summary: The diagnostics corpus now includes OBJ3-NEXT-016 parser and semantic recovery fixtures with structured spans, recovery payloads, machine-applicable fix-its where canonical, and native replay fixture links. This row claims diagnostic recovery/fix-it evidence only, not alternate syntax acceptance or fallback parsing.
+- Summary: The diagnostics corpus now includes OBJ3-NEXT-016 parser and semantic recovery fixtures with structured spans, recovery payloads, machine-applicable fix-its where canonical, and native replay fixture links. This row claims diagnostic recovery/fix-it evidence only, not alternate syntax acceptance or alternate parser acceptance.
 - Owner modules:
   - `tests/conformance/diagnostics/manifest.json`
   - `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-RECOVERY-01.json`
@@ -2097,7 +2097,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `applications.framework-samples.object-runtime-library`
 - State: `implemented`
 - Support claims: `objc3c.behavior.application-framework-samples.object-runtime-library`
-- Summary: The application framework sample set includes object runtime sample library coverage for protocol conformance, inheritance, synthesized properties, category extension, and typed key-path reflection. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated report-only evidence.
+- Summary: The application framework sample set includes object runtime sample library coverage for protocol conformance, inheritance, synthesized properties, category extension, and typed key-path reflection. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.
 - Owner modules:
   - `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3`
   - `showcase/applicationFrameworkSamples/manifest.json`
@@ -2117,7 +2117,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `applications.framework-samples.interop-adapter-library`
 - State: `implemented`
 - Support claims: `objc3c.behavior.application-framework-samples.interop-adapter-library`
-- Summary: The application framework sample set includes interop adapter sample library coverage for foreign import metadata, header export metadata, Swift/C++ naming metadata, derive metadata, macro provenance, and property behavior. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated report-only evidence.
+- Summary: The application framework sample set includes interop adapter sample library coverage for foreign import metadata, header export metadata, Swift/C++ naming metadata, derive metadata, macro provenance, and property behavior. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.
 - Owner modules:
   - `showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3`
   - `showcase/applicationFrameworkSamples/manifest.json`
@@ -2137,7 +2137,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `applications.framework-samples.stdlib-text-collections-cli`
 - State: `implemented`
 - Support claims: `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli`
-- Summary: The application framework sample set includes stdlib text and collections cli sample coverage for runtime-backed string view, byte span, array shape, map-entry shape, and a CLI entrypoint over local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated report-only evidence.
+- Summary: The application framework sample set includes stdlib text and collections cli sample coverage for runtime-backed string view, byte span, array shape, map-entry shape, and a CLI entrypoint over local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.
 - Owner modules:
   - `showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3`
   - `showcase/applicationFrameworkSamples/manifest.json`
@@ -2157,7 +2157,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `applications.framework-samples.async-runtime-application`
 - State: `implemented`
 - Support claims: `objc3c.behavior.application-framework-samples.async-runtime-application`
-- Summary: The application framework sample set includes async runtime application sample coverage for async executor annotations, task runtime helpers, executor-hop helper surface, runtime-backed main entrypoint, and local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated report-only evidence.
+- Summary: The application framework sample set includes async runtime application sample coverage for async executor annotations, task runtime helpers, executor-hop helper surface, runtime-backed main entrypoint, and local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.
 - Owner modules:
   - `showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3`
   - `showcase/applicationFrameworkSamples/manifest.json`

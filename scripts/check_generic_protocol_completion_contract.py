@@ -75,7 +75,7 @@ def _string_list(value: Any, label: str, failures: list[str], *, allow_empty: bo
 
 def _path_exists(path: str, label: str, failures: list[str]) -> None:
     normalized = path.replace("\\", "/")
-    _require(not normalized.startswith(("tmp/", "temp/")), f"{label} may not use tmp/temp source truth: {path}", failures)
+        _require(not normalized.startswith(("tmp/", "temp/")), f"{label} must use checked repository inputs: {path}", failures)
     _require(
         not normalized.startswith("docs/support/generated/"),
         f"{label} may not use generated support projections as source truth: {path}",

@@ -1629,7 +1629,7 @@
       "source_truth_requirements": [
         "Parser and semantic recovery support is bounded to the checked OBJ3-NEXT-016 diagnostics fixtures and native replay fixtures",
         "Machine-applicable fix-its must remain explicit in the conformance JSON payloads and cannot imply alias acceptance",
-        "Recovery diagnostics stay diagnostic-negative evidence; they do not create a compatibility mode or fallback parser path"
+        "Recovery diagnostics stay diagnostic-negative evidence; they reject alternate parser acceptance"
       ]
     },
     {

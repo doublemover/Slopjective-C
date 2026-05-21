@@ -36,7 +36,7 @@ SCALE_SCENARIO_CONTRACT = RUNTIME_ROOT / "scale_scenario_contract.json"
 BUDGET_MODEL = PERFORMANCE_GOVERNANCE_ROOT / "budget_model.json"
 PARSER_SEMA_FUZZ_MANIFEST = STRESS_ROOT / "parser_sema_fuzz_manifest.json"
 LOWERING_RUNTIME_STRESS_MANIFEST = STRESS_ROOT / "lowering_runtime_stress_manifest.json"
-SUMMARY_OUT = ROOT / "tmp" / "reports" / "runtime-performance" / "scale-evidence-summary.json"
+SUMMARY_OUT = ROOT / "tmp" / "reports" / "runtime-performance" / "scale-summary.json"
 
 
 def _expect(condition: bool, message: str, failures: list[str]) -> None:

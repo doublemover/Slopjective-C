@@ -88,7 +88,7 @@ def test_platform_support_source_truth_rejects_generated_source_truth(tmp_path: 
         )
     )
     upstream["evidence_records"][0]["source_paths"] = [
-        "tmp/reports/platform-support/generated-source.json"
+        "tmp/reports/platform-matrix/generated-input.json"
     ]
     upstream_path.write_text(json.dumps(upstream, indent=2, sort_keys=True), encoding="utf-8")
     payload["upstream_sources"]["platform_toolchain_support_evidence"] = str(upstream_path)

@@ -20,7 +20,7 @@ from scripts.objc3c_workflow.public_command_api import public_workflow_action_na
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json"
 CAPABILITY_MATRIX_PATH = ROOT / "docs/support/capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs/support/evidence_map.json"
-SUMMARY_PATH = ROOT / "tmp/reports/developer-tooling/product-workflow-source-truth-summary.json"
+SUMMARY_PATH = ROOT / "tmp/reports/developer-tooling/product-workflow-summary.json"
 OWNED_ISSUES = {"#8157", "#8169", "#8170", "#8171", "#8172", "#8178"}
 NORMAL_DEVELOPER_FROM_NOTHING_CONTRACT_ID = (
     "objc3c.developer_tooling.normal_developer_from_nothing.v1"

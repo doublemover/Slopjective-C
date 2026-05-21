@@ -5,7 +5,7 @@
   "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
   "scale_evidence_probe": {
     "probe_script": "scripts/probe_objc3c_runtime_scale_evidence.py",
-    "summary_report": "tmp/reports/runtime-performance/scale-evidence-summary.json",
+    "summary_report": "tmp/reports/runtime-performance/scale-summary.json",
     "deterministic_probe_id_fields": [
       "evidence_kind",
       "workload_id",

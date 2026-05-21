@@ -199,7 +199,7 @@
           "required_tokens": [
             "Macro expansion is fail closed",
             "network access and filesystem writes are denied",
-            "Generated files under `tmp/` are replay evidence only"
+            "Generated files under `tmp/` are replay outputs only"
           ]
         }
       ]

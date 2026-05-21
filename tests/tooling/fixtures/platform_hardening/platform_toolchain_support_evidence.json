@@ -471,7 +471,7 @@
         "python scripts/check_platform_hardening_support_evidence.py"
       ],
       "generated_report_paths": [
-        "tmp/reports/platform-hardening/support-evidence-summary.json"
+        "tmp/reports/platform-hardening/host-matrix-summary.json"
       ],
       "supports_platform_ids": [],
       "requires_network": false,

@@ -165,7 +165,7 @@ def test_runtime_scale_evidence_rejects_generated_report_authority() -> None:
 
 
 def test_runtime_scale_evidence_cli_writes_tmp_report(tmp_path: Path) -> None:
-    summary_out = ROOT / "tmp" / "reports" / "runtime-performance" / "pytest-scale-evidence-summary.json"
+    summary_out = ROOT / "tmp" / "reports" / "runtime-performance" / "pytest-scale-summary.json"
     if summary_out.exists():
         summary_out.unlink()
 

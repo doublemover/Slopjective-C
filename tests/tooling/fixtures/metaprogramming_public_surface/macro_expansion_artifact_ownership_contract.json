@@ -9,7 +9,7 @@
     "generated_artifact_role": "metaprogramming-host-cache-provenance-only",
     "generated_artifact_owner": "objc3c-driver-metaprogramming-cache-publication",
     "generated_artifact_source_of_truth": "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry",
-    "checked_output_family": "tmp/generated host-cache artifacts are replay evidence, not support-claim source truth",
+    "checked_output_family": "artifacts emitted below tmp/generated are replay outputs, not claim inputs",
     "checked_in_source_of_truth": "schema, contract fixture, native document builder, runtime import surface, trust registry, and runtime acceptance assertions",
     "runtime_output_root_policy": "generated cache entries must stay outside docs/support and release-channel source files",
     "support_claim_authority": false

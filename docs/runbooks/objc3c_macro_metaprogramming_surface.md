@@ -17,7 +17,7 @@ Public validation entrypoint:
 
 Targeted implementation validator:
 
-- `python scripts/check_objc3c_metaprogramming_public_surface.py`
+- covered by `npm run objc3c -- validate-metaprogramming-conformance`
 
 ## Supported Surface
 
@@ -68,7 +68,7 @@ The following are not public support claims:
 - source compatibility with third-party macro ecosystems
 - runtime expanded body materialization beyond the checked host-cache provenance boundary
 
-Those paths must remain `reserved`, `rejected`, `deferred`, or `internal` in the contract fixture. Generated files under `tmp/` are replay evidence only and cannot become support-claim source truth.
+Those paths must remain `reserved`, `rejected`, `deferred`, or `internal` in the contract fixture. Generated files under `tmp/` are replay outputs only and cannot become claim inputs.
 
 ## Deterministic Fixtures
 

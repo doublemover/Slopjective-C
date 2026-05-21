@@ -49,7 +49,7 @@
       "report_paths": [
         "tmp/reports/runtime-performance/benchmark-summary.json",
         "tmp/reports/runtime-performance/integration-summary.json",
-        "tmp/reports/runtime-performance/scale-evidence-summary.json"
+        "tmp/reports/runtime-performance/scale-summary.json"
       ],
       "lab_profile_ids": [
         "windows-live-toolchain-lab"

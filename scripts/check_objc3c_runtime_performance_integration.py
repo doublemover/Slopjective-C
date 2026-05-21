@@ -24,7 +24,7 @@ WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performan
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
 BENCHMARK_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "benchmark-summary.json"
 RUNNABLE_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "runnable-end-to-end-summary.json"
-SCALE_EVIDENCE_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "scale-evidence-summary.json"
+SCALE_EVIDENCE_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "scale-summary.json"
 SCALE_EVIDENCE_PROBE = ROOT / "scripts" / "probe_objc3c_runtime_scale_evidence.py"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime-performance" / "integration-summary.json"
 

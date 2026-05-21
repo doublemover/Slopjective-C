@@ -52,12 +52,12 @@ def test_module_abi_interop_rejects_stale_source_anchor_digest() -> None:
 def test_module_abi_interop_rejects_missing_source_fragment() -> None:
     payload = deepcopy(_contract())
     anchor = payload["source_anchors"][1]  # type: ignore[index]
-    anchor["fragments"] = ["BuildObjc3ModuleInteropRebuildKey", "compatibility shim fallback"]
+    anchor["fragments"] = ["BuildObjc3ModuleInteropRebuildKey", "retired ABI accommodation"]
 
     failures, _ = validate_contract_payload(payload)
 
     assert (
-        "source anchor fragments missing for native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp: compatibility shim fallback"
+        "source anchor fragments missing for native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp: retired ABI accommodation"
         in failures
     )
 

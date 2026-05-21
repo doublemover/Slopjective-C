@@ -11,12 +11,12 @@ Canonical inputs:
 
 Replayable gate:
 
-- `python scripts/check_objc3c_abi_governance.py`
+- `npm run objc3c -- validate-abi-governance`
 
 The gate is fail-closed. It blocks missing source-of-truth files, generated
 `tmp/` or `temp/` paths in governed inputs, ABI identity drift, lost
-release-blocking transitions, missing `#8173` ownership, and any claim that
-compatibility shims or fallback downgrade routes are supported.
+release-blocking transitions, missing `#8173` ownership, and any downgrade
+claim outside the checked manifest transition set.
 
 Current ABI claim boundary:
 
@@ -26,7 +26,7 @@ Current ABI claim boundary:
 - no cross-major forward compatibility claim
 - no drop-in legacy ABI compatibility claim
 - no indefinite support-window claim
-- no compatibility shim support
+- no retired ABI accommodation claim
 - no fallback downgrade route
 
 Generated reports remain outputs only:

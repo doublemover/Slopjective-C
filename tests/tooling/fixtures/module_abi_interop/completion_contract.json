@@ -88,7 +88,7 @@
     },
     {
       "path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
-      "sha256": "26d51fe13218a9ee1fbdbf8ce030b8544d88baf163a616c0b4e9ca4ffb756aab",
+      "sha256": "9f25a2dfcd7b90125bae3f28ab9a56d1eb1634ba41ff9c998568f257ec9f58d5",
       "fragments": [
         "objc3c.abi_governance.source_of_truth.v1",
         "no-compatibility-shims",
@@ -208,7 +208,7 @@
       "cross-major forward compatibility",
       "drop-in legacy ABI compatibility",
       "indefinite support window",
-      "compatibility shim support",
+      "retired ABI accommodation claim",
       "fallback downgrade route"
     ],
     "required_compatibility_transitions": [

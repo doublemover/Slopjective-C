@@ -37,7 +37,7 @@ REQUIRED_UNSUPPORTED_CLAIMS = {
     "cross-major forward compatibility",
     "drop-in legacy ABI compatibility",
     "indefinite support window",
-    "compatibility shim support",
+    "retired ABI accommodation claim",
     "fallback downgrade route",
 }
 REQUIRED_COMPATIBILITY_CASE_TRANSITIONS = {
@@ -279,7 +279,7 @@ def _validate_surface_extractors(manifest: dict[str, Any], failures: list[str]) 
             continue
         if target.get("release_blocker") is not True:
             failures.append(_failure(f"surface extractor {extractor_id} must be release-blocking"))
-        if target.get("output_policy") != "tmp-report-only":
+        if target.get("output_policy") != "generated-output-only":
             failures.append(_failure(f"surface extractor {extractor_id} must keep generated output in tmp"))
         entries = _extract_surface(target, failures)
         observed_digest = _canonical_digest(entries)
@@ -429,7 +429,7 @@ def _validate_posture(manifest: dict[str, Any], failures: list[str]) -> None:
     if posture.get("failure_mode") != "fail-closed":
         failures.append(_failure("ABI governance failure mode must stay fail-closed"))
     if posture.get("compatibility_shims_supported") is not False:
-        failures.append(_failure("ABI governance must not claim compatibility shim support"))
+        failures.append(_failure("ABI governance must not claim retired ABI accommodation support"))
     if posture.get("fallback_routes_supported") is not False:
         failures.append(_failure("ABI governance must not claim fallback route support"))
     unsupported = {

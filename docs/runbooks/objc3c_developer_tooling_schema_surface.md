@@ -29,13 +29,13 @@ Generated validation output stays under `tmp/`:
 Run the focused schema-surface check from the repo root:
 
 ```powershell
-python scripts/check_objc3c_developer_tooling_schema_surface.py
+npm run objc3c -- validate-developer-tooling
 ```
 
 The checker runs the existing workflow action through:
 
 ```powershell
-python -m scripts.objc3c_workflow inspect-editor-tooling tests/tooling/fixtures/native/hello.objc3
+npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/native/hello.objc3
 ```
 
 It validates the generated combined editor surface and verifies that these

@@ -113,7 +113,7 @@ def _write_temp_runtime_contracts(root: Path) -> None:
             "schema_version": 1,
             "scale_evidence_probe": {
                 "probe_script": "scripts/probe_objc3c_runtime_scale_evidence.py",
-                "summary_report": "tmp/reports/runtime-performance/scale-evidence-summary.json",
+                "summary_report": "tmp/reports/runtime-performance/scale-summary.json",
                 "support_authority": False,
             },
             "sanitizer_contracts": [
@@ -178,7 +178,7 @@ def test_runtime_performance_contract_surfaces_validate_checked_in_contracts() -
     assert summary["stress_sanitizer"]["sanitizer_contract_count"] == 4
     assert summary["stress_sanitizer"]["stress_scale_contract_count"] == 8
     assert summary["stress_sanitizer"]["scale_evidence_probe"]["summary_report"] == (
-        "tmp/reports/runtime-performance/scale-evidence-summary.json"
+        "tmp/reports/runtime-performance/scale-summary.json"
     )
     assert {row["path"] for row in summary["contract_files"]} == {
         "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",

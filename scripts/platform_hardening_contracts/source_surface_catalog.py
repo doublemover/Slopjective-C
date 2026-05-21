@@ -30,7 +30,7 @@ PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH = ROOT / "schemas" / "objc3c-pla
 
 SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-matrix.json"
 SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-matrix-summary.json"
-SUPPORT_EVIDENCE_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "support-evidence-summary.json"
+SUPPORT_EVIDENCE_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "host-matrix-summary.json"
 BOUNDARY_INVENTORY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "boundary-inventory" / "boundary_inventory_summary.json"
 SUPPORT_TIER_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "support-tier-policy" / "support_tier_policy_summary.json"
 UNSUPPORTED_HOST_POLICY_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "unsupported-host-policy" / "unsupported_host_policy_summary.json"

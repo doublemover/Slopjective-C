@@ -21,7 +21,7 @@
       "cross-major forward compatibility",
       "drop-in legacy ABI compatibility",
       "indefinite support window",
-      "compatibility shim support",
+      "retired ABI accommodation claim",
       "fallback downgrade route"
     ]
   },
@@ -77,7 +77,7 @@
         "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
       ],
       "release_blocker": true,
-      "output_policy": "tmp-report-only",
+      "output_policy": "generated-output-only",
       "expected_count": 124,
       "expected_digest": "sha256:49c7a0799962b942d9f5e53bea96da5a21ba33cb51e5b75e56df74d1882180ea"
     },
@@ -88,9 +88,9 @@
         "stdlib/modules/*/module.json"
       ],
       "release_blocker": true,
-      "output_policy": "tmp-report-only",
-      "expected_count": 149,
-      "expected_digest": "sha256:5a07c1e821bb15f782e43f75ae6eb7b87b1112b78b0fd3e10ffcb189c97ca817"
+      "output_policy": "generated-output-only",
+      "expected_count": 153,
+      "expected_digest": "sha256:e7cfeee8b7730eb073a95ee87d0527cefd93825c8002071126e9df7db8d44adb"
     },
     {
       "extractor_id": "package-lock-abi-identity-schema",
@@ -99,7 +99,7 @@
         "schemas/objc3c-package-lock-v1.schema.json"
       ],
       "release_blocker": true,
-      "output_policy": "tmp-report-only",
+      "output_policy": "generated-output-only",
       "expected_count": 3,
       "expected_digest": "sha256:718262afc9cc3bd0faa270531f106eb3e300666ef20e86f0728deaf2402ccae4"
     }

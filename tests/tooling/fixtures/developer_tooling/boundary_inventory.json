@@ -48,7 +48,7 @@
     "tmp/reports/developer-tooling/formatter-debug/formatter_debug_summary.json",
     "tmp/reports/developer-tooling/formatter-rewrite/formatter_rewrite_summary.json",
     "tmp/reports/developer-tooling/diagnostic-quality/diagnostic_quality_summary.json",
-    "tmp/reports/developer-tooling/product-workflow-source-truth-summary.json",
+    "tmp/reports/developer-tooling/product-workflow-summary.json",
     "tmp/reports/developer-tooling/workspace-integration-summary.json",
     "tmp/reports/runtime/runnable-developer-tooling-e2e/summary.json"
   ],

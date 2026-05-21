@@ -107,7 +107,7 @@ def test_completion_contract_rejects_runtime_equivalence_action_drift(
     payload = _contract_payload()
     variant = copy.deepcopy(payload)
     variant["semantic_optimization"]["required_runtime_equivalence_actions"].append(
-        "test-runtime-equivalence-report-only"
+        "test-runtime-equivalence-generated-only"
     )
 
     result = checker.validate_completion_contract(_variant(tmp_path, variant))

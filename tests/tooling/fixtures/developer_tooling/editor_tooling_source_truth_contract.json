@@ -3,7 +3,7 @@
   "surface_kind": "developer-tooling-editor-source-truth",
   "issue": "#8170",
   "summary_implementation_anchor": "scripts/check_developer_tooling_editor_source_truth.py",
-  "summary_path": "tmp/reports/developer-tooling/editor-source-truth-summary.json",
+  "summary_path": "tmp/reports/developer-tooling/editor-summary.json",
   "integration_step_name": "check-editor-tooling-source-truth",
   "source_truth_model": "checked-in contracts, source scripts, public workflow action registry rows, capability matrix rows, and evidence-map rows own editor tooling claims; tmp reports are replay outputs only",
   "generated_output_boundary": "generated tmp reports can prove replayability but cannot introduce formatter, LSP, workspace-index, or artifact-inspector support without a checked-in source row and evidence-map row",
@@ -219,7 +219,7 @@
         }
       ],
       "generated_outputs": [
-        "tmp/reports/developer-tooling/editor-source-truth-summary.json"
+        "tmp/reports/developer-tooling/editor-summary.json"
       ],
       "unsupported_claims": [
         "generated reports as source authority"

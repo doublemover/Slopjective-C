@@ -72,7 +72,7 @@
               "cross-major forward compatibility",
               "drop-in legacy ABI compatibility",
               "indefinite support window",
-              "compatibility shim support",
+              "retired ABI accommodation claim",
               "fallback downgrade route"
             ]
           }
@@ -210,7 +210,7 @@
           "items": { "$ref": "#/$defs/repoPath" }
         },
         "release_blocker": { "const": true },
-        "output_policy": { "const": "tmp-report-only" },
+        "output_policy": { "const": "generated-output-only" },
         "expected_count": { "type": "integer", "minimum": 1 },
         "expected_digest": {
           "type": "string",

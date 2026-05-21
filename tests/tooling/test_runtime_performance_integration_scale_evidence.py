@@ -87,7 +87,7 @@ def test_runtime_performance_integration_runs_scale_evidence_probe(
         },
     )
     _write_json(
-        reports / "scale-evidence-summary.json",
+        reports / "scale-summary.json",
         {
             "contract_id": "objc3c.runtime.performance.scale.evidence.summary.v1",
             "status": "PASS",
@@ -105,7 +105,7 @@ def test_runtime_performance_integration_runs_scale_evidence_probe(
     monkeypatch.setattr(checker, "ARTIFACT_SURFACE", runtime_fixtures / "artifact_surface.json")
     monkeypatch.setattr(checker, "BENCHMARK_SUMMARY", reports / "benchmark-summary.json")
     monkeypatch.setattr(checker, "RUNNABLE_SUMMARY", reports / "runnable-end-to-end-summary.json")
-    monkeypatch.setattr(checker, "SCALE_EVIDENCE_SUMMARY", reports / "scale-evidence-summary.json")
+    monkeypatch.setattr(checker, "SCALE_EVIDENCE_SUMMARY", reports / "scale-summary.json")
     monkeypatch.setattr(checker, "SCALE_EVIDENCE_PROBE", scale_probe)
     monkeypatch.setattr(checker, "REPORT_PATH", reports / "integration-summary.json")
     monkeypatch.setattr(
@@ -138,6 +138,6 @@ def test_runtime_performance_integration_runs_scale_evidence_probe(
 
     report = json.loads((reports / "integration-summary.json").read_text(encoding="utf-8"))
     assert report["status"] == "PASS"
-    assert "tmp/reports/runtime-performance/scale-evidence-summary.json" in report[
+    assert "tmp/reports/runtime-performance/scale-summary.json" in report[
         "child_report_paths"
     ]

@@ -137,7 +137,8 @@ def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_ev
         "stdlib-package",
         "release-candidate",
     } == {entry["profile_id"] for entry in evidence["packaged_entrypoints"]}
-    assert "tmp/pkg/objc3-public-conformance-suite/package-manifest.json" in evidence["required_replay_outputs"]
+    replay_outputs = evidence["required_replay_outputs"]
+    assert "tmp/pkg/objc3-public-conformance-suite/package-manifest.json" in replay_outputs
     assert evidence["source_manifest"] == "tests/conformance/public_suite_manifest.json"
     assert evidence["package_manifest_replay"]["package_manifest_contract"] == (
         "objc3c.public_conformance_suite.package_manifest.v1"
