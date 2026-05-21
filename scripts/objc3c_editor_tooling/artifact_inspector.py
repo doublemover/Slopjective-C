@@ -189,7 +189,31 @@ def _source_graph_payload(
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
     source_index: dict[str, Any] | None = None,
+    source_graph: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if isinstance(source_graph, dict) and source_graph.get("contract_id") == "objc3c.developer.tooling.source.graph.v1":
+        return {
+            "available": source_graph.get("available") is True,
+            "graph_inputs": list(source_graph.get("evidence", {}).get("source_truth_inputs", []))
+            if isinstance(source_graph.get("evidence"), dict)
+            else [],
+            "declaration_node_count": int(source_graph.get("declaration_node_count", 0) or 0),
+            "workspace_package_count": int(source_graph.get("package_provenance", {}).get("package_count", 0) or 0)
+            if isinstance(source_graph.get("package_provenance"), dict)
+            else int(workspace_index.get("package_count", 0) or 0),
+            "workspace_index_digest": str(workspace_index.get("workspace_index_digest", "") or ""),
+            "source_declaration_count": int(source_index.get("declaration_count", 0) or 0)
+            if isinstance(source_index, dict)
+            else 0,
+            "source_reference_count": int(source_index.get("reference_count", 0) or 0)
+            if isinstance(source_index, dict)
+            else 0,
+            "source_index_digest": str(source_index.get("source_index_digest", "") or "")
+            if isinstance(source_index, dict)
+            else "",
+            "source_graph_digest": str(source_graph.get("source_graph_digest", "") or ""),
+            "retired_route_reason": str(source_graph.get("retired_route_reason", "") or ""),
+        }
     workspace_available = workspace_index.get("available") is True
     source_index = source_index or {}
     source_index_available = source_index.get("available") is True
@@ -315,6 +339,7 @@ def build_artifact_inspector_payload(
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
     source_index: dict[str, Any] | None = None,
+    source_graph: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary_paths = _summary_paths(inputs.summary)
     records = {
@@ -354,6 +379,7 @@ def build_artifact_inspector_payload(
             symbols,
             workspace_index,
             source_index,
+            source_graph,
         ),
         "source_index": source_index or {},
         "inspection_commands": _inspection_commands(records, inputs.summary),

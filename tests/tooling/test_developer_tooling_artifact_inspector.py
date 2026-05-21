@@ -41,6 +41,7 @@ def fixture_paths(contract: dict[str, object]) -> EditorToolingPaths:
         language_server_capabilities=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "language-server-capabilities.json",
         navigation_index=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "navigation-index.json",
         workspace_index=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "workspace-index.json",
+        source_graph=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "source-graph.json",
         artifact_inspector=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "artifact-inspector.json",
         formatter_output=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "formatter-output.json",
         formatted_source=ROOT / "tmp" / "reports" / "developer-tooling" / "artifact-inspector-fixture" / "formatted-source.objc3",

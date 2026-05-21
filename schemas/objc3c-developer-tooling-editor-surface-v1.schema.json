@@ -12,6 +12,7 @@
     "language_server",
     "navigation",
     "source_index",
+    "source_graph",
     "workspace_index",
     "artifact_inspector",
     "formatter",
@@ -50,6 +51,9 @@
     },
     "source_index": {
       "$ref": "#/$defs/sourceIndex"
+    },
+    "source_graph": {
+      "$ref": "#/$defs/sourceGraph"
     },
     "workspace_index": {
       "$ref": "#/$defs/workspaceIndex"
@@ -451,6 +455,259 @@
       },
       "additionalProperties": false
     },
+    "sourceGraphConsumerStatus": {
+      "type": "object",
+      "required": [
+        "supported",
+        "support_class",
+        "evidence_ids",
+        "fail_closed",
+        "unpublished_reason"
+      ],
+      "properties": {
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "unpublished_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceGraphEvidence": {
+      "type": "object",
+      "required": [
+        "source_truth_inputs",
+        "manifest_path",
+        "compiler_graph_fields",
+        "source_index_digest",
+        "workspace_index_digest",
+        "compiler_declaration_coordinates",
+        "native_compiler_source_graph_present",
+        "semantic_reference_closure",
+        "lexical_candidates_authoritative",
+        "reference_authority",
+        "package_authority",
+        "unsupported_authoritative_claims"
+      ],
+      "properties": {
+        "source_truth_inputs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "manifest_path": {
+          "type": "string"
+        },
+        "compiler_graph_fields": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "source_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "workspace_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "compiler_declaration_coordinates": {
+          "type": "boolean"
+        },
+        "native_compiler_source_graph_present": {
+          "type": "boolean"
+        },
+        "semantic_reference_closure": {
+          "type": "boolean"
+        },
+        "lexical_candidates_authoritative": {
+          "const": false
+        },
+        "reference_authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unsupported_authoritative_claims": {
+          "$ref": "#/$defs/stringArray"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceGraph": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "module_name",
+        "available",
+        "fail_closed",
+        "support_class",
+        "graph_truth_model",
+        "evidence",
+        "node_count",
+        "edge_count",
+        "declaration_node_count",
+        "reference_candidate_count",
+        "semantic_reference_count",
+        "package_node_count",
+        "package_dependency_edge_count",
+        "semantic_token_count",
+        "nodes",
+        "edges",
+        "declarations",
+        "reference_candidates",
+        "navigation_consumers",
+        "references",
+        "rename",
+        "semantic_tokens",
+        "package_provenance",
+        "consumer_capabilities",
+        "diagnostics",
+        "source_graph_digest",
+        "deterministic_ordering",
+        "retired_route_reason",
+        "remaining_native_compiler_work"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.source.graph.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_truth_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/sourceGraphEvidence"
+        },
+        "node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "declaration_node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference_candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_reference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "package_node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "package_dependency_edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_token_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "reference_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "navigation_consumers": {
+          "type": "object"
+        },
+        "references": {
+          "type": "object"
+        },
+        "rename": {
+          "type": "object"
+        },
+        "semantic_tokens": {
+          "type": "object"
+        },
+        "package_provenance": {
+          "type": "object"
+        },
+        "consumer_capabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/sourceGraphConsumerStatus"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "source_graph_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "deterministic_ordering": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retired_route_reason": {
+          "type": "string"
+        },
+        "remaining_native_compiler_work": {
+          "$ref": "#/$defs/stringArray"
+        }
+      },
+      "additionalProperties": false
+    },
     "lspDiagnosticTransport": {
       "type": "object",
       "required": [
@@ -562,6 +819,8 @@
         "diagnostic_transport",
         "source_index_backed_hover",
         "source_index_digest",
+        "source_graph_backed_references",
+        "source_graph_digest",
         "capability_evidence_roots",
         "publication_boundary",
         "supported_capability_ids",
@@ -585,6 +844,12 @@
           "type": "boolean"
         },
         "source_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "source_graph_backed_references": {
+          "type": "boolean"
+        },
+        "source_graph_digest": {
           "$ref": "#/$defs/optionalSha256"
         },
         "diagnostic_transport": {
@@ -826,6 +1091,8 @@
         "definition_targets",
         "hover_targets",
         "source_index",
+        "source_graph_digest",
+        "source_graph_navigation",
         "workspace_index",
         "retired_route_reason"
       ],
@@ -946,6 +1213,12 @@
         },
         "source_index": {
           "$ref": "#/$defs/sourceIndex"
+        },
+        "source_graph_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "source_graph_navigation": {
+          "type": "object"
         },
         "workspace_index": {
           "$ref": "#/$defs/workspaceIndex"

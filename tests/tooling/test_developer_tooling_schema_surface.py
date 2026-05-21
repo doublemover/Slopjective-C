@@ -215,6 +215,8 @@ def language_server() -> dict[str, Any]:
         "workspace_index_backed_navigation": True,
         "source_index_backed_hover": True,
         "source_index_digest": "e" * 64,
+        "source_graph_backed_references": False,
+        "source_graph_digest": "f" * 64,
         "diagnostic_transport": {
             "contract_id": "objc3c.developer.tooling.lsp.diagnostic.transport.v1",
             "source_path": "tests/tooling/fixtures/native/hello.objc3",
@@ -337,6 +339,149 @@ def language_server() -> dict[str, Any]:
                 "unpublished_reason": "not published",
             },
         },
+    }
+
+
+def source_graph() -> dict[str, Any]:
+    source_path = "tests/tooling/fixtures/native/hello.objc3"
+    loc = location(source_path)
+    return {
+        "contract_id": "objc3c.developer.tooling.source.graph.v1",
+        "source_path": source_path,
+        "module_name": "Demo",
+        "available": True,
+        "fail_closed": True,
+        "support_class": "compiler-declaration-graph-with-fail-closed-reference-candidates",
+        "graph_truth_model": "compiler-owned declarations plus checked package provenance; lexical candidates are non-authoritative until native semantic reference closure is emitted",
+        "evidence": {
+            "source_truth_inputs": [
+                "compile-manifest-declaration-coordinates",
+                "workspace-semantic-index-guardrails",
+                "source-index-unverified-reference-candidates",
+            ],
+            "manifest_path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.manifest.json",
+            "compiler_graph_fields": [],
+            "source_index_digest": "e" * 64,
+            "workspace_index_digest": "a" * 64,
+            "compiler_declaration_coordinates": True,
+            "native_compiler_source_graph_present": False,
+            "semantic_reference_closure": False,
+            "lexical_candidates_authoritative": False,
+            "reference_authority": "compiler-owned semantic reference closure required",
+            "package_authority": "workspace-index package guardrails",
+            "unsupported_authoritative_claims": [
+                "regex-only reference truth",
+                "rename without semantic reference closure",
+                "semantic tokens from lexical tokenization alone",
+            ],
+        },
+        "node_count": 2,
+        "edge_count": 2,
+        "declaration_node_count": 1,
+        "reference_candidate_count": 0,
+        "semantic_reference_count": 1,
+        "package_node_count": 0,
+        "package_dependency_edge_count": 0,
+        "semantic_token_count": 1,
+        "nodes": [
+            {
+                "node_id": "sgn:module",
+                "symbol_kind": "module",
+                "display_name": "Demo",
+                "location": loc,
+            },
+            {
+                "node_id": "sgn:main",
+                "symbol_kind": "function",
+                "display_name": "main",
+                "location": loc,
+            },
+        ],
+        "edges": [
+            {"edge_id": "sge:module-main", "edge_kind": "module-declaration"},
+            {"edge_id": "sge:main-self", "edge_kind": "declaration-to-reference"},
+        ],
+        "declarations": [
+            {
+                "node_id": "sgn:main",
+                "symbol": "main",
+                "kind": "function",
+                "definition_target": definition(source_path),
+            }
+        ],
+        "reference_candidates": [],
+        "navigation_consumers": {
+            "definition_targets": [],
+            "implementation_targets": [],
+            "generated_accessor_targets": [],
+            "semantic_token_source": "source_graph.semantic_tokens.tokens",
+        },
+        "references": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "native compiler semantic reference closure is missing",
+            "query_model": "node-id-to-semantic-reference-edges",
+            "candidate_count": 0,
+            "queries": [],
+            "diagnostics": [],
+        },
+        "rename": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "safe rename remains disabled",
+            "edit_model": "workspace-edit-from-semantic-reference-closure",
+            "diagnostics": [],
+            "negative_case_policy": [],
+        },
+        "semantic_tokens": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "full semantic token publication requires compiler-owned reference classification",
+            "legend": {"token_types": ["function"], "token_modifiers": ["declaration"]},
+            "tokens": [],
+        },
+        "package_provenance": {
+            "local_package_id": f"source:{source_path}",
+            "package_count": 2,
+            "workspace_index_digest": "a" * 64,
+            "package_dependencies": [],
+        },
+        "consumer_capabilities": {
+            "references": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "native compiler semantic reference closure is missing",
+            },
+            "rename": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "safe rename remains disabled",
+            },
+            "semanticTokens": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "full semantic token publication requires compiler-owned reference classification",
+            },
+        },
+        "diagnostics": [],
+        "source_graph_digest": "f" * 64,
+        "deterministic_ordering": "node-kind-canonical-name-range-then-edge-kind-source-target-range",
+        "retired_route_reason": "",
+        "remaining_native_compiler_work": [
+            "emit structured declaration-to-reference semantic edges with source spans from sema"
+        ],
     }
 
 
@@ -481,6 +626,7 @@ def debug_surface(contract: dict[str, Any]) -> dict[str, Any]:
 def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
     workspace = workspace_index(contract)
     source = source_index()
+    graph = source_graph()
     document_symbol = symbol_record()
     navigation = {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
@@ -521,6 +667,8 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
             }
         ],
         "source_index": source,
+        "source_graph_digest": graph["source_graph_digest"],
+        "source_graph_navigation": graph["navigation_consumers"],
         "workspace_index": workspace,
         "retired_route_reason": "",
     }
@@ -534,6 +682,7 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
         "language_server": language_server(),
         "navigation": navigation,
         "source_index": source,
+        "source_graph": graph,
         "workspace_index": workspace,
         "artifact_inspector": artifact_inspector(contract),
         "formatter": {
@@ -570,6 +719,7 @@ def test_developer_tooling_editor_schema_validates_representative_payload() -> N
             "capabilities_path": "tmp/reports/developer-tooling/editor-surface/hello/language-server-capabilities.json",
             "navigation_path": "tmp/reports/developer-tooling/editor-surface/hello/navigation-index.json",
             "workspace_index_path": "tmp/reports/developer-tooling/editor-surface/hello/workspace-index.json",
+            "source_graph_path": "tmp/reports/developer-tooling/editor-surface/hello/source-graph.json",
             "artifact_inspector_path": "tmp/reports/developer-tooling/editor-surface/hello/artifact-inspector.json",
             "formatter_path": "tmp/reports/developer-tooling/editor-surface/hello/formatter-output.json",
             "debug_path": "tmp/reports/developer-tooling/editor-surface/hello/debug-map.json",
@@ -599,6 +749,7 @@ def test_developer_tooling_schema_checker_accepts_truthful_boundaries() -> None:
             "language_server": payload["language_server"],
             "navigation": payload["navigation"],
             "workspace_index": payload["navigation"]["workspace_index"],
+            "source_graph": payload["source_graph"],
             "artifact_inspector": payload["artifact_inspector"],
             "formatter": payload["formatter"],
             "debug": payload["debug"],

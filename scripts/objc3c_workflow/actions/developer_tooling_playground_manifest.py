@@ -47,6 +47,7 @@ def build_playground_workspace_payload(
             "inspect-playground-repro",
             "inspect-compile-observability",
             "inspect-editor-tooling",
+            "inspect-source-graph",
             "format-objc3c",
             "rewrite-objc3c-source",
             "check-developer-diagnostic-quality",
@@ -114,6 +115,7 @@ def build_playground_workspace_payload(
             invocation.source_display,
             debug_payload,
             workspace_index_path=published_paths.get("workspace_index_path", ""),
+            source_graph_path=published_paths.get("source_graph_path", ""),
             artifact_inspector_path=published_paths.get(
                 "artifact_inspector_path",
                 "",

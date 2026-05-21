@@ -83,6 +83,13 @@ def action_inspect_editor_tooling(rest: list[str]) -> int:
     return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
 
 
+def action_inspect_source_graph(rest: list[str]) -> int:
+    rc = ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), "--source-graph-only", *rest])
+
+
 def action_format_objc3c(rest: list[str]) -> int:
     return run([sys.executable, str(FORMAT_OBJC3C_SOURCE_PY), *rest])
 

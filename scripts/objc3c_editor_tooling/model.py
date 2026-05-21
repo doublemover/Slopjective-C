@@ -10,8 +10,8 @@ from objc3c_editor_tooling.artifact_inspector import build_artifact_inspector_pa
 from objc3c_editor_tooling.diagnostic_bridge import build_lsp_diagnostic_transport
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
-from objc3c_editor_tooling.source_index import build_source_index
-from objc3c_editor_tooling.validation import diagnostics_entries
+from objc3c_editor_tooling.source_index import build_source_graph, build_source_index
+from objc3c_editor_tooling.validation import diagnostics_entries, source_graph_consumer_status
 from objc3c_editor_tooling.workspace_index import (
     build_workspace_index,
     document_symbol_records,
@@ -28,6 +28,7 @@ class EditorToolingModel:
     formatted_source_text: str
     debug: dict[str, Any]
     source_index: dict[str, Any]
+    source_graph: dict[str, Any]
     symbols: list[dict[str, Any]]
 
 
@@ -83,6 +84,7 @@ def build_language_server_payload(
     source_path: str = "",
     diagnostic_entries: list[Any] | None = None,
     source_index: dict[str, Any] | None = None,
+    source_graph: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest_available = bool(manifest_path_text)
     workspace_index_available = (
@@ -109,8 +111,36 @@ def build_language_server_payload(
             "compile-manifest-declaration-coordinates",
             "source-derived-editor-index",
         ],
+        "references": [
+            "compiler-source-graph-artifact",
+            "semantic-reference-closure",
+        ],
+        "rename": [
+            "compiler-source-graph-artifact",
+            "semantic-reference-closure",
+            "rename-safety-diagnostics",
+        ],
+        "semanticTokens": [
+            "compiler-source-graph-artifact",
+            "semantic-token-payload",
+        ],
         "codeAction": ["diagnostics-json-fixits"],
     }
+    references_status = source_graph_consumer_status(
+        source_graph,
+        "references",
+        "not published; compiler-owned semantic reference closure is not available",
+    )
+    rename_status = source_graph_consumer_status(
+        source_graph,
+        "rename",
+        "not published; safe rename requires compiler-owned semantic references and rename safety diagnostics",
+    )
+    semantic_tokens_status = source_graph_consumer_status(
+        source_graph,
+        "semanticTokens",
+        "not published; semantic tokens require compiler-owned token classification",
+    )
     capability_statuses = {
         "publishDiagnostics": {
             "supported": True,
@@ -155,27 +185,9 @@ def build_language_server_payload(
             if hover_available
             else "disabled until the source index has manifest-backed declarations",
         },
-        "references": {
-            "supported": False,
-            "support_class": "fail-closed-unpublished",
-            "evidence_ids": [],
-            "fail_closed": True,
-            "unpublished_reason": "not published; lexical source references are indexed but no cross-module reference contract is published",
-        },
-        "rename": {
-            "supported": False,
-            "support_class": "fail-closed-unpublished",
-            "evidence_ids": [],
-            "fail_closed": True,
-            "unpublished_reason": "not published; canonical compile graph has no rename contract yet",
-        },
-        "semanticTokens": {
-            "supported": False,
-            "support_class": "fail-closed-unpublished",
-            "evidence_ids": [],
-            "fail_closed": True,
-            "unpublished_reason": "not published; no semantic token contract is emitted on the canonical toolchain path",
-        },
+        "references": references_status,
+        "rename": rename_status,
+        "semanticTokens": semantic_tokens_status,
         "codeAction": {
             "supported": code_action_available,
             "support_class": "diagnostics-fixit-backed"
@@ -216,8 +228,12 @@ def build_language_server_payload(
         "source_index_digest": str(source_index.get("source_index_digest", "") or "")
         if isinstance(source_index, dict)
         else "",
+        "source_graph_backed_references": references_status["supported"] is True,
+        "source_graph_digest": str(source_graph.get("source_graph_digest", "") or "")
+        if isinstance(source_graph, dict)
+        else "",
         "capability_evidence_roots": capability_evidence,
-        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, source-index hover, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
+        "publication_boundary": "diagnostics, compile-owned declaration coordinates, source-index hover, workspace guardrails, source-graph-backed consumers, and diagnostic fix-its publish positive LSP rows only when their evidence is complete",
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
@@ -231,6 +247,7 @@ def build_navigation_payload(
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
     source_index: dict[str, Any] | None = None,
+    source_graph: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     document_symbols = document_symbol_records(source_display, module_name, symbols)
     workspace_symbols = [
@@ -273,6 +290,12 @@ def build_navigation_payload(
         "definition_targets": definition_targets,
         "hover_targets": hover_targets,
         "source_index": source_index,
+        "source_graph_digest": str(source_graph.get("source_graph_digest", "") or "")
+        if isinstance(source_graph, dict)
+        else "",
+        "source_graph_navigation": source_graph.get("navigation_consumers", {})
+        if isinstance(source_graph, dict)
+        else {},
         "workspace_index": workspace_index,
         "retired_route_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
     }
@@ -361,6 +384,15 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
         symbols,
         source_index,
     )
+    source_graph = build_source_graph(
+        source_path=paths.source.display_path,
+        module_name=module_name,
+        manifest_path=inputs.manifest_path_text,
+        manifest=inputs.manifest,
+        symbols=symbols,
+        source_index=source_index,
+        workspace_index=workspace_index,
+    )
     formatted_text, formatter = build_format_summary_for_source(
         paths.source.display_path,
         inputs.source_text,
@@ -375,6 +407,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             source_path=paths.source.display_path,
             diagnostic_entries=diagnostic_entries,
             source_index=source_index,
+            source_graph=source_graph,
         ),
         navigation=build_navigation_payload(
             paths.source.display_path,
@@ -383,6 +416,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             symbols,
             workspace_index,
             source_index,
+            source_graph,
         ),
         workspace_index=workspace_index,
         artifact_inspector=build_artifact_inspector_payload(
@@ -391,11 +425,13 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             symbols,
             workspace_index,
             source_index,
+            source_graph,
         ),
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(inputs.summary, inputs.object_path_text, symbols),
         source_index=source_index,
+        source_graph=source_graph,
         symbols=symbols,
     )
 

@@ -30,6 +30,7 @@ class EditorToolingPaths:
     language_server_capabilities: Path
     navigation_index: Path
     workspace_index: Path
+    source_graph: Path
     artifact_inspector: Path
     formatter_output: Path
     formatted_source: Path
@@ -72,6 +73,7 @@ def paths_for_source(source: EditorToolingSource) -> EditorToolingPaths:
         language_server_capabilities=report_dir / "language-server-capabilities.json",
         navigation_index=report_dir / "navigation-index.json",
         workspace_index=report_dir / "workspace-index.json",
+        source_graph=report_dir / "source-graph.json",
         artifact_inspector=report_dir / "artifact-inspector.json",
         formatter_output=report_dir / "formatter-output.json",
         formatted_source=report_dir / "formatted-source.objc3",

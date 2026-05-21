@@ -9,6 +9,7 @@
     "inspect-playground-repro",
     "inspect-compile-observability",
     "inspect-editor-tooling",
+    "inspect-source-graph",
     "format-objc3c",
     "rewrite-objc3c-source",
     "check-developer-diagnostic-quality",
@@ -21,6 +22,7 @@
     "language_server_capabilities_path",
     "navigation_path",
     "workspace_index_path",
+    "source_graph_path",
     "artifact_inspector_path",
     "workspace_index_digest",
     "workspace_package_count",
@@ -43,6 +45,7 @@
     "inspect_editor_tooling",
     "format_preview",
     "workspace_navigation_index",
+    "source_graph",
     "artifact_inspector",
     "runtime_debug_trace",
     "object_symbol_inventory"

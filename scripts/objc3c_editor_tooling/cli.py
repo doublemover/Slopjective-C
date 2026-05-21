@@ -16,6 +16,11 @@ from objc3c_editor_tooling.validation import compile_summary_exit_code
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--source-graph-only",
+        action="store_true",
+        help="publish the editor tooling surface and print only the source graph artifact path",
+    )
     parser.add_argument("source", nargs="?", default=default_source_argument())
     return parser.parse_args()
 
@@ -38,11 +43,17 @@ def main() -> int:
     model = build_editor_tooling_model(paths, inputs)
     published = publish_editor_tooling_surface(paths=paths, inputs=inputs, model=model)
 
+    if args.source_graph_only:
+        print(f"summary_path: {published.summary_path}")
+        print(f"source_graph_path: {published.source_graph_path}")
+        return 0
+
     print(f"summary_path: {published.summary_path}")
     print(f"dump_path: {published.dump_path}")
     print(f"capabilities_path: {published.capabilities_path}")
     print(f"navigation_path: {published.navigation_path}")
     print(f"workspace_index_path: {published.workspace_index_path}")
+    print(f"source_graph_path: {published.source_graph_path}")
     print(f"artifact_inspector_path: {published.artifact_inspector_path}")
     print(f"formatter_path: {published.formatter_path}")
     print(f"debug_path: {published.debug_path}")

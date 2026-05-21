@@ -61,6 +61,9 @@ def test_editor_tooling_paths_preserve_default_surface_layout() -> None:
     assert paths.workspace_index.relative_to(ROOT).as_posix() == (
         "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/workspace-index.json"
     )
+    assert paths.source_graph.relative_to(ROOT).as_posix() == (
+        "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/source-graph.json"
+    )
     assert paths.artifact_inspector.relative_to(ROOT).as_posix() == (
         "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/artifact-inspector.json"
     )

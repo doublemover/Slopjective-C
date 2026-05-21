@@ -122,6 +122,7 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
         published_paths={
             "editor_surface_path": "tmp/reports/editor.json",
             "workspace_index_path": "tmp/reports/workspace-index.json",
+            "source_graph_path": "tmp/reports/source-graph.json",
         },
     )
 
@@ -132,6 +133,7 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
         "inspect-playground-repro",
         "inspect-compile-observability",
         "inspect-editor-tooling",
+        "inspect-source-graph",
         "format-objc3c",
         "rewrite-objc3c-source",
         "check-developer-diagnostic-quality",
@@ -147,6 +149,9 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
     assert payload["editor_tooling"]["workspace_package_count"] == 9
     assert payload["workspace_drill_commands"]["workspace_navigation_index"] == (
         "Get-Content -Raw 'tmp/reports/workspace-index.json'"
+    )
+    assert payload["workspace_drill_commands"]["source_graph"] == (
+        "Get-Content -Raw 'tmp/reports/source-graph.json'"
     )
     assert payload["workspace_drill_commands"]["runtime_debug_trace"] == (
         "npm run objc3c -- trace-runtime-debug"

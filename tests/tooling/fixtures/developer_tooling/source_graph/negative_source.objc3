@@ -1,0 +1,7 @@
+int globalCounter = 0;
+
+// globalCounter in a comment is not a semantic reference.
+const char *label = "globalCounter";
+int main() {
+  return globalCounter;
+}

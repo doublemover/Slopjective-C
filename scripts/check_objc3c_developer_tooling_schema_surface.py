@@ -46,6 +46,7 @@ SUBPAYLOAD_PATH_FIELDS = {
     "language_server": "capabilities_path",
     "navigation": "navigation_path",
     "workspace_index": "workspace_index_path",
+    "source_graph": "source_graph_path",
     "artifact_inspector": "artifact_inspector_path",
     "formatter": "formatter_path",
     "debug": "debug_path",
