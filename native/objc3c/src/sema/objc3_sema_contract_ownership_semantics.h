@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 
+#include "sema/objc3_sema_contract_ownership_memory_model.h"
+
 inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelDependencyContractId =
     "objc3c.ownership.retainable.c.family.source.completion.v1";
 inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelContractId =

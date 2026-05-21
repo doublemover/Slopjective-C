@@ -13,6 +13,9 @@ CATALOG_PATH = (
 CONTRACT_PATH = (
     ROOT / "tests" / "tooling" / "fixtures" / "ownership_memory_model" / "support_claim_contract.json"
 )
+FORMAL_CONTRACT_PATH = (
+    ROOT / "tests" / "tooling" / "fixtures" / "ownership_memory_model" / "formal_model_contract.json"
+)
 CLAIM_ID = "objc3c.behavior.language.ownership-memory-model"
 PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
 
@@ -27,6 +30,45 @@ def _read_json(path: Path) -> dict[str, Any]:
 def _assert_repo_path_exists(path: str) -> None:
     assert not path.startswith(("tmp/", "tmp\\"))
     assert (ROOT / path).is_file(), path
+
+
+def _formal_contract_failures(contract: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+
+    diagnostic_codes = {
+        str(entry["code"])
+        for entry in contract.get("diagnostic_contracts", [])
+        if isinstance(entry, dict)
+    }
+    for flow_name, flow in contract.get("flow_contracts", {}).items():
+        if not isinstance(flow, dict):
+            failures.append(f"{flow_name}: flow contract must be an object")
+            continue
+        for code in flow.get("diagnostic_codes", []):
+            if str(code) not in diagnostic_codes:
+                failures.append(f"{flow_name}: diagnostic {code} is not declared")
+        non_goal = str(flow.get("non_goal", ""))
+        if flow_name == "arc_boundary_lowering" and "public ARC runtime ABI" not in non_goal:
+            failures.append("arc_boundary_lowering: public ARC ABI non-goal drifted")
+
+    for record in contract.get("source_records", []):
+        if not isinstance(record, dict):
+            failures.append("source record must be an object")
+            continue
+        path = str(record.get("path", ""))
+        if path.startswith(("tmp/", "tmp\\")) or "generated" in path:
+            failures.append(f"{path}: source record is not durable source truth")
+            continue
+        source_path = ROOT / path
+        if not source_path.is_file():
+            failures.append(f"{path}: source record missing")
+            continue
+        text = source_path.read_text(encoding="utf-8")
+        for token in record.get("required_tokens", []):
+            if str(token) not in text:
+                failures.append(f"{path}: required token missing: {token}")
+
+    return failures
 
 
 def test_ownership_memory_model_support_claim_is_durable_groundwork() -> None:
@@ -84,3 +126,45 @@ def test_ownership_memory_model_support_claim_is_durable_groundwork() -> None:
         *row["negative_evidence"],
     ]:
         _assert_repo_path_exists(path)
+
+
+def test_ownership_memory_model_formal_slice_is_source_derived() -> None:
+    support_contract = _read_json(CONTRACT_PATH)
+    contract = _read_json(FORMAL_CONTRACT_PATH)
+
+    assert contract["contract_id"] == "objc3c.ownership.memory-model.formal-slice.v1"
+    assert contract["issue_ref"] == 8166
+    assert contract["support_claim"] == CLAIM_ID
+    assert contract["support_claim"] == support_contract["support_claim"]
+    assert set(contract["ownership_kinds"]) == {
+        "strong_owned",
+        "weak",
+        "unowned",
+        "borrowed_reference",
+        "consumed_value",
+        "autoreleased_result",
+    }
+
+    flows = contract["flow_contracts"]
+    assert flows["consumed_values"]["positive_fixture"] in support_contract["positive_evidence"]
+    assert flows["consumed_values"]["negative_fixture"] in support_contract["negative_evidence"]
+    assert flows["borrowed_references"]["positive_fixture"] in support_contract["positive_evidence"]
+    assert "summary-only" not in flows["arc_boundary_lowering"]["rule"]
+    assert "public ARC runtime ABI" in flows["arc_boundary_lowering"]["non_goal"]
+
+    assert _formal_contract_failures(contract) == []
+
+
+def test_ownership_memory_model_formal_slice_fails_closed_on_source_drift() -> None:
+    contract = _read_json(FORMAL_CONTRACT_PATH)
+    drifted = json.loads(json.dumps(contract))
+    drifted["source_records"][0]["required_tokens"].append(
+        "missing-objc3-ownership-memory-model-token"
+    )
+
+    failures = _formal_contract_failures(drifted)
+
+    assert failures == [
+        "native/objc3c/src/sema/objc3_sema_contract_ownership_memory_model.h: "
+        "required token missing: missing-objc3-ownership-memory-model-token"
+    ]
