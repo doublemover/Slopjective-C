@@ -1,11 +1,22 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "contracts/objc3_diagnostic_owner_contract.h"
 #include "token/objc3_token_contract.h"
 
 namespace objc3c::parse {
+
+struct Objc3ParserDiagnosticFixIt {
+  unsigned start_line = 1;
+  unsigned start_column = 1;
+  unsigned end_line = 1;
+  unsigned end_column = 1;
+  std::string label;
+  std::string replacement;
+  bool machine_applicable = true;
+};
 
 inline constexpr std::string_view kObjc3ParserDiagnosticOwnerContractId =
     kObjc3DiagnosticOwnerContractId;
@@ -21,6 +32,17 @@ std::string BuildObjc3ParserDiagnostic(
     const Objc3LexToken &token,
     const char *code,
     const std::string &message);
+std::string BuildObjc3ParserDiagnosticWithFixIt(
+    const Objc3LexToken &token,
+    const char *code,
+    const std::string &message,
+    const Objc3ParserDiagnosticFixIt &fixit);
+std::string BuildObjc3ParserDiagnosticWithRecovery(
+    const Objc3LexToken &token,
+    const char *code,
+    const std::string &message,
+    std::string_view strategy,
+    std::string_view boundary);
 std::string BuildObjc3MissingSemicolonDiagnostic(
     const Objc3LexToken &token,
     const std::string &context);

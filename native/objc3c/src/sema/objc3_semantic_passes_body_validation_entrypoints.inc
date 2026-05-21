@@ -123,7 +123,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(fn.body, &static_scalar_bindings)) {
         diagnostics.push_back(
-            MakeDiag(fn.line, fn.column, "O3S205", "missing return path in function '" + fn.name + "'"));
+            BuildObjc3SemaMissingReturnDiagnostic(
+                fn.line, fn.column, "function '" + fn.name + "'"));
       }
     }
   }
@@ -232,8 +233,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                          message_send_context);
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(method.body, &global_static_bindings)) {
-        diagnostics.push_back(MakeDiag(method.line, method.column, "O3S205",
-                                       "missing return path in " + method_context));
+        diagnostics.push_back(BuildObjc3SemaMissingReturnDiagnostic(
+            method.line, method.column, method_context));
       }
     }
   }

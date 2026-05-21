@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3P104 O3S205.
+module Obj3Next016ParserRecoveryPreservesFollowupSema;
+
+fn first() -> i32 {
+  let value = 1
+  return value;
+}
+
+fn second() -> i32 {
+  let value = first();
+  value = value + 1;
+}
