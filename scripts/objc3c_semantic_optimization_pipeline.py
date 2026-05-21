@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 import sys
 from typing import Any
@@ -61,9 +62,27 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.native_surface",
     "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
     "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
+    "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
 }
 RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
 REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
+PERFORMANCE_GOVERNANCE_CONTRACT_ID = (
+    "objc3c.optimization.semantic.pipeline.performance.governance.v1"
+)
+PERFORMANCE_BUDGET_MODEL_PATH = (
+    "tests/tooling/fixtures/performance_governance/budget_model.json"
+)
+REQUIRED_PERFORMANCE_PUBLIC_ACTIONS = {
+    "benchmark-compiler-throughput",
+    "benchmark-runtime-performance",
+    "validate-performance-governance",
+}
+REQUIRED_PERFORMANCE_CHECKED_IN_PATHS = {
+    "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+    "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    PERFORMANCE_BUDGET_MODEL_PATH,
+}
+FORBIDDEN_PERFORMANCE_SOURCE_ROOTS = ("tmp/", "checked_outputs/")
 
 
 @dataclass(frozen=True)
@@ -109,6 +128,183 @@ def _policy_path_label(path: Path) -> str:
 
 def _pass_text(row: dict[str, Any]) -> str:
     return " ".join(str(value) for value in row.values()).lower()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _walk_string_values(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        values: list[str] = []
+        for item in value.values():
+            values.extend(_walk_string_values(item))
+        return values
+    if isinstance(value, list):
+        values = []
+        for item in value:
+            values.extend(_walk_string_values(item))
+        return values
+    return []
+
+
+def _manifest_workload_ids(manifest: dict[str, Any]) -> set[str]:
+    ids: set[str] = set()
+    for key in ("workloads", "workload_families"):
+        for row in _as_list(manifest.get(key)):
+            if isinstance(row, dict) and isinstance(row.get("workload_id"), str):
+                ids.add(str(row["workload_id"]))
+    return ids
+
+
+def _budget_metric_ids_by_family(budget_model: dict[str, Any]) -> dict[str, set[str]]:
+    families: dict[str, set[str]] = {}
+    for family in _as_list(budget_model.get("budget_families")):
+        if not isinstance(family, dict):
+            continue
+        budget_id = str(family.get("budget_id", ""))
+        metric_ids = {
+            str(metric.get("metric_id"))
+            for metric in _as_list(family.get("metric_definitions"))
+            if isinstance(metric, dict) and metric.get("metric_id")
+        }
+        if budget_id:
+            families[budget_id] = metric_ids
+    return families
+
+
+def _validate_performance_governance(
+    performance_governance: dict[str, Any],
+    failures: list[str],
+) -> dict[str, int]:
+    if performance_governance.get("contract_id") != PERFORMANCE_GOVERNANCE_CONTRACT_ID:
+        failures.append("semantic optimization performance governance contract_id drifted")
+
+    policy_text = str(performance_governance.get("source_truth_policy", "")).lower()
+    if "generated reports" not in policy_text or "not source truth" not in policy_text:
+        failures.append(
+            "semantic optimization performance governance must reject generated reports as source truth"
+        )
+
+    forbidden_roots = tuple(
+        str(root).replace("\\", "/")
+        for root in _as_list(performance_governance.get("forbidden_input_roots"))
+        if isinstance(root, str)
+    )
+    if forbidden_roots != FORBIDDEN_PERFORMANCE_SOURCE_ROOTS:
+        failures.append("semantic optimization forbidden performance input roots drifted")
+    for value in _walk_string_values(performance_governance):
+        normalized = value.replace("\\", "/")
+        if normalized in FORBIDDEN_PERFORMANCE_SOURCE_ROOTS:
+            continue
+        if any(normalized.startswith(root) for root in FORBIDDEN_PERFORMANCE_SOURCE_ROOTS):
+            failures.append(
+                f"semantic optimization performance governance uses generated-report input: {value}"
+            )
+
+    public_actions = {
+        str(action) for action in _as_list(performance_governance.get("required_public_actions"))
+    }
+    if not REQUIRED_PERFORMANCE_PUBLIC_ACTIONS.issubset(public_actions):
+        failures.append("semantic optimization performance governance public actions incomplete")
+
+    checked_paths = {
+        str(path) for path in _as_list(performance_governance.get("required_checked_in_paths"))
+    }
+    if not REQUIRED_PERFORMANCE_CHECKED_IN_PATHS.issubset(checked_paths):
+        failures.append("semantic optimization performance checked-in paths incomplete")
+    for checked_path in checked_paths:
+        if checked_path.replace("\\", "/").startswith(FORBIDDEN_PERFORMANCE_SOURCE_ROOTS):
+            failures.append(
+                f"semantic optimization performance checked path is generated output: {checked_path}"
+            )
+        elif not (ROOT / checked_path).is_file():
+            failures.append(f"semantic optimization performance checked path missing: {checked_path}")
+
+    budget_model_path = str(performance_governance.get("budget_model", ""))
+    if budget_model_path != PERFORMANCE_BUDGET_MODEL_PATH:
+        failures.append("semantic optimization performance budget model path drifted")
+    budget_metrics = (
+        _budget_metric_ids_by_family(require_json_object(ROOT / budget_model_path))
+        if (ROOT / budget_model_path).is_file()
+        else {}
+    )
+
+    workload_count = 0
+    digest_count = 0
+    for row in _as_list(performance_governance.get("workload_evidence")):
+        if not isinstance(row, dict):
+            failures.append("semantic optimization performance workload row is not an object")
+            continue
+        workload_count += 1
+        workload_id = str(row.get("workload_id", ""))
+        manifest_path = str(row.get("manifest_path", ""))
+        source_path = str(row.get("source_path", ""))
+        budget_family = str(row.get("budget_family", ""))
+        metric_id = str(row.get("metric_id", ""))
+        source_digest = str(row.get("source_sha256", "")).lower()
+
+        if not source_digest:
+            failures.append(f"semantic optimization workload missing source digest: {workload_id}")
+        elif len(source_digest) != 64:
+            failures.append(f"semantic optimization workload digest is not sha256: {workload_id}")
+
+        manifest_file = ROOT / manifest_path
+        if not manifest_file.is_file():
+            failures.append(f"semantic optimization workload manifest missing: {manifest_path}")
+        else:
+            manifest = require_json_object(manifest_file)
+            if workload_id not in _manifest_workload_ids(manifest):
+                failures.append(
+                    f"semantic optimization workload not present in manifest: {workload_id}"
+                )
+
+        source_file = ROOT / source_path
+        if not source_file.is_file():
+            failures.append(f"semantic optimization workload source missing: {source_path}")
+        elif source_digest and _file_sha256(source_file) != source_digest:
+            failures.append(f"semantic optimization workload digest drifted: {workload_id}")
+        elif source_digest:
+            digest_count += 1
+
+        if metric_id not in budget_metrics.get(budget_family, set()):
+            failures.append(
+                f"semantic optimization workload budget metric missing: {workload_id}"
+            )
+
+    trace_count = 0
+    for row in _as_list(performance_governance.get("semantic_trace_evidence")):
+        if not isinstance(row, dict):
+            failures.append("semantic optimization trace row is not an object")
+            continue
+        trace_count += 1
+        trace_id = str(row.get("trace_id", ""))
+        source_path = str(row.get("source_path", ""))
+        source_digest = str(row.get("source_sha256", "")).lower()
+        if not source_digest:
+            failures.append(f"semantic optimization trace missing source digest: {trace_id}")
+        elif len(source_digest) != 64:
+            failures.append(f"semantic optimization trace digest is not sha256: {trace_id}")
+
+        source_file = ROOT / source_path
+        if not source_file.is_file():
+            failures.append(f"semantic optimization trace source missing: {source_path}")
+        elif source_digest and _file_sha256(source_file) != source_digest:
+            failures.append(f"semantic optimization trace digest drifted: {trace_id}")
+        elif source_digest:
+            digest_count += 1
+
+    return {
+        "performance_workload_count": workload_count,
+        "performance_trace_count": trace_count,
+        "performance_digest_count": digest_count,
+    }
 
 
 def _validate_pass_registry(
@@ -469,6 +665,11 @@ def validate_pipeline(
         if unsupported_policy.get(field) is not False:
             failures.append(f"unsupported policy must keep {field}=false")
 
+    performance_governance = _as_dict(pipeline.get("performance_governance"))
+    performance_governance_counts = _validate_performance_governance(
+        performance_governance,
+        failures,
+    )
     _validate_direct_dispatch_fixture(failures)
     reserved_skip_fixture_count = _validate_reserved_skip_fixtures(
         pass_by_id,
@@ -503,6 +704,20 @@ def validate_pipeline(
         "capability_rows_required": sorted(capability_rows),
         "evidence_ids_required": sorted(evidence_ids),
         "source_anchor_count": len(_as_list(source_truth.get("source_anchors"))),
+        "performance_governance_contract": performance_governance.get("contract_id", ""),
+        "performance_public_actions": sorted(
+            str(action)
+            for action in _as_list(performance_governance.get("required_public_actions"))
+        ),
+        "performance_workload_count": performance_governance_counts[
+            "performance_workload_count"
+        ],
+        "performance_trace_count": performance_governance_counts[
+            "performance_trace_count"
+        ],
+        "performance_digest_count": performance_governance_counts[
+            "performance_digest_count"
+        ],
         "failures": failures,
     }
     return SemanticOptimizationPipelineValidationResult(payload=payload, failures=failures)
@@ -511,8 +726,10 @@ def validate_pipeline(
 __all__ = [
     "CONTRACT_ID",
     "PIPELINE_PATH",
+    "PERFORMANCE_GOVERNANCE_CONTRACT_ID",
     "REPORT_PATH",
     "RESERVED_SKIP_CONTRACT_ID",
+    "REQUIRED_PERFORMANCE_PUBLIC_ACTIONS",
     "REQUIRED_EVIDENCE_IDS",
     "REQUIRED_CAPABILITY_ROWS",
     "REQUIRED_PASS_ORDER",

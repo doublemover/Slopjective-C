@@ -30,3 +30,19 @@ Public runtime result and string contracts expose runtime-owned borrowed data.
 Callers do not free borrowed result strings or selector spellings, and runtime
 ownership diagnostics remain the boundary for unsupported public result
 ownership crossings.
+
+## Async ownership and concurrency boundaries
+
+The cross-issue boundary contract is
+`objc3c.ownership.concurrency-boundary.v1`. Ownership across `await`,
+executor hops, and actor hops is not a public ARC runtime ABI. Strong and
+precise-lifetime values that remain live after an `await` stay retained in
+async-frame storage until the owning lexical cleanup runs, while autoreleased
+temporaries remain bounded to the current task execution slice.
+
+Public executor and actor hops consume the checked-in `objc3.concurrency`
+module contract. They do not promote scheduler fairness, distributed actors,
+Swift actor ABI compatibility, cross-process mailboxes, or generalized ARC
+optimization into public ownership support. Unsupported ownership or
+concurrency crossings remain fail-closed through the existing ownership and
+actor diagnostics instead of being documented as supported behavior.

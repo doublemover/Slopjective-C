@@ -33,6 +33,7 @@ from objc3c_package_manager.registry import (
 from objc3c_shared.schema_registry import validate_registered_schema
 from package_ecosystem_contracts import (
     PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+    collect_normalized_package_loader_interop_metadata_failures,
     require_package_ecosystem_blocker_metadata,
     require_package_ecosystem_owner_policy,
 )
@@ -176,6 +177,8 @@ def collect_interop_loader_metadata_failures(
     mirror: dict[str, Any],
     registry: dict[str, Any],
     publication: dict[str, Any],
+    *,
+    root: Path = ROOT,
 ) -> list[str]:
     lock_metadata = package_interop_metadata(lock)
     if not lock_metadata:
@@ -196,6 +199,13 @@ def collect_interop_loader_metadata_failures(
 
     for package_id in sorted(lock_ids):
         expected_metadata = lock_metadata[package_id]
+        for failure in collect_normalized_package_loader_interop_metadata_failures(
+            expected_metadata,
+            root=root,
+        ):
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: lock interop metadata {failure} for {package_id}"
+            )
         expected_digest = expected_metadata.get("digest")
         mirror_payload = mirror_metadata.get(package_id, {})
         registry_payload = registry_metadata.get(package_id, {})

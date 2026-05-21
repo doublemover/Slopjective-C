@@ -70,6 +70,22 @@ def test_native_build_writes_reproducible_summary_manifest() -> None:
     assert "native_build_summary=" in build_script
 
 
+def test_native_binary_builds_are_serialized_per_build_directory() -> None:
+    build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert "function Enter-Objc3cNativeBuildDirectoryLock" in build_script
+    assert "function Exit-Objc3cNativeBuildDirectoryLock" in build_script
+    assert '"OBJC3C_NATIVE_BUILD_LOCK_TIMEOUT_SECONDS must be a positive integer when set"' in build_script
+    assert 'Join-Path $BuildDirPath ".objc3c-native-build.lock"' in build_script
+    assert "[System.IO.FileShare]::None" in build_script
+    assert "native_build_lock_acquired=" in build_script
+    assert "native_build_lock_released=" in build_script
+    assert "native_build_lock_wait_seconds=" in build_script
+    assert "native_build_lock = " in build_script
+    assert "$nativeBuildLockState = Enter-Objc3cNativeBuildDirectoryLock `" in build_script
+    assert "finally {\n    Exit-Objc3cNativeBuildDirectoryLock -LockState $nativeBuildLockState\n  }" in build_script
+
+
 def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     cmake_lists = (ROOT / "native" / "objc3c" / "CMakeLists.txt").read_text(
         encoding="utf-8"

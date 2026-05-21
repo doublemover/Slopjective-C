@@ -14,7 +14,8 @@
     "tests/native/sema/ownership/retainable_consumed_reassignment.objc3",
     "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
     "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
-    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+    "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json"
   ],
   "negative_evidence": [
     "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",

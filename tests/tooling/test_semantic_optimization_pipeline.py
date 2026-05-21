@@ -6,7 +6,9 @@ from pathlib import Path
 
 from scripts.objc3c_semantic_optimization_pipeline import (
     CONTRACT_ID,
+    PERFORMANCE_GOVERNANCE_CONTRACT_ID,
     PIPELINE_PATH,
+    REQUIRED_PERFORMANCE_PUBLIC_ACTIONS,
     REQUIRED_CAPABILITY_ROWS,
     REQUIRED_EVIDENCE_IDS,
     REQUIRED_PASS_ORDER,
@@ -62,6 +64,15 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
         "devirtualization",
         "method-inlining",
     ]
+    assert result.payload["performance_governance_contract"] == (
+        PERFORMANCE_GOVERNANCE_CONTRACT_ID
+    )
+    assert set(result.payload["performance_public_actions"]) >= (
+        REQUIRED_PERFORMANCE_PUBLIC_ACTIONS
+    )
+    assert result.payload["performance_workload_count"] == 2
+    assert result.payload["performance_trace_count"] == 1
+    assert result.payload["performance_digest_count"] == 3
     assert set(result.payload["capability_rows_required"]) >= REQUIRED_CAPABILITY_ROWS
     assert set(result.payload["evidence_ids_required"]) >= REQUIRED_EVIDENCE_IDS
 
@@ -87,6 +98,11 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     assert '"drift_policy": { "const": "REJECT_FAIL_CLOSED" }' in text
     assert '"success_claim_on_skip": { "const": false }' in text
     assert '"reserved_pass_success_claims_allowed": { "const": false }' in text
+    assert (
+        '"const": "objc3c.optimization.semantic.pipeline.performance.governance.v1"'
+        in text
+    )
+    assert '"pattern": "^[0-9a-f]{64}$"' in text
     assert '"workflow_action": { "const": "validate-semantic-optimization-pipeline" }' in text
 
 
@@ -160,6 +176,59 @@ def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fix
     )
     assert any(
         "missing proofs drift from preservation contract: method-inlining" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_generated_report_performance_input(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    payload["performance_governance"]["required_checked_in_paths"].append(
+        "tmp/reports/performance-governance/dashboard-summary.json"
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "uses generated-report input" in failure for failure in result.failures
+    )
+    assert any(
+        "checked path is generated output" in failure for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_workload_digest_drift(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    payload["performance_governance"]["workload_evidence"][0]["source_sha256"] = (
+        "0" * 64
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "workload digest drifted: compile-cold-wrapper" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_requires_manifest_backed_budget_metric(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    payload["performance_governance"]["workload_evidence"][1]["metric_id"] = (
+        "missing_dispatch_claim_ms"
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "workload budget metric missing: dispatch-cache" in failure
         for failure in result.failures
     )
 

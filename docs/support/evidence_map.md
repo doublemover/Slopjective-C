@@ -333,6 +333,7 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.concurrency.public-actor-mailbox-api` | `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api` | `source` | `stdlib/semantic_policy.json` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3` |  |
@@ -600,6 +601,9 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/test_semantic_optimization_pipeline.py` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/compiler_throughput/workload_manifest.json` |  |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/runtime_performance/workload_manifest.json` |  |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/performance_governance/budget_model.json` |  |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `schema` | `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json` |  |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `scripts/objc3c_semantic_optimization_pipeline.py` |  |

@@ -2191,6 +2191,10 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3"
         },
         {
@@ -3847,7 +3851,7 @@
       "id": "compiler.optimization.semantic-preserving-pipeline",
       "title": "Semantic-preserving optimization pipeline",
       "state": "implemented",
-      "summary": "The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.",
+      "summary": "The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.",
       "support_claims": [
         "objc3c.behavior.semantic_optimization_pipeline"
       ],
@@ -3873,6 +3877,18 @@
           "kind": "test",
           "path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
           "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
         },
         {
           "kind": "schema",

@@ -252,6 +252,7 @@
       "source_truth_requirements": [
         "Cross-module generic metadata support is claimed only for deterministic preservation of generic interface count, parameter variance, and protocol-qualified generic argument counts",
         "Runtime-import drift that drops variance annotations must fail closed before any public generic import claim is widened",
+        "This row does not claim broad generic collection ABI, higher-kinded type metadata, or inferred associated-type import/export",
         "Replay manifests are checked-in evidence for deterministic lowering/ABI handoff, not a replacement for source fixture coverage"
       ]
     },
@@ -1053,6 +1054,7 @@
         "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
         "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+        "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json",
         "tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json"
       ],
       "negative_evidence": [
@@ -1071,6 +1073,7 @@
         "Ownership-memory model groundwork is claimed only through checked-in sema, lowering, ARC cleanup, weak/autoreleasepool, block capture, consumed-transfer, and borrowed/retainable source evidence",
         "Unsupported ARC ownership qualifiers remain fail-closed O3S221 evidence until issue 8166 widens the language model",
         "Consumed retainable-family arguments are unavailable after transfer until reassigned, with use-after-consume rejected through O3S308",
+        "Async ARC lifetime claims across executor and actor hops are bounded to the checked-in ownership concurrency boundary contract",
         "Generated reports and tmp outputs are replay artifacts only and are not source truth for this claim"
       ]
     },
@@ -1884,6 +1887,9 @@
         "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
         "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
         "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
+        "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+        "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+        "tests/tooling/fixtures/performance_governance/budget_model.json",
         "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
         "scripts/objc3c_semantic_optimization_pipeline.py",
         "tests/tooling/test_semantic_optimization_pipeline.py"
@@ -1898,6 +1904,7 @@
       ],
       "source_truth_requirements": [
         "Semantic optimization support is bounded to deterministic pass ordering, explicit contracts, invalidation declarations, and post-pass verification",
+        "Benchmark governance for semantic optimization must use checked-in workload manifests, fixture digests, and budget policy rather than generated report inputs",
         "Reserved devirtualization, method-inlining, and cache-aware dispatch lanes cannot publish success claims",
         "Direct dispatch optimization requires exact symbol/signature ownership and explicit global proof-state invalidation"
       ]

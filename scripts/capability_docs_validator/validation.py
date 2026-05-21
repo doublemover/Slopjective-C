@@ -36,6 +36,9 @@ from capability_docs_validator.runnable_evidence import (
     _validate_support_claim_runnable_evidence_catalog,
 )
 from capability_docs_validator.support_links import _validate_support_claim_links
+from capability_docs_validator.type_protocol_claims import (
+    _validate_type_protocol_capability_rows,
+)
 
 
 @dataclass(frozen=True)
@@ -72,6 +75,7 @@ def _load_validated_inputs() -> CapabilityDocsInputs:
         manifest,
         runnable_evidence_catalog,
     )
+    _validate_type_protocol_capability_rows(rows, runnable_evidence_catalog)
     return CapabilityDocsInputs(
         matrix=matrix,
         evidence_map=evidence_map,

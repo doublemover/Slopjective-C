@@ -43,6 +43,14 @@ def test_package_loader_interop_fixture_covers_headers_abi_and_mixed_images() ->
     metadata = normalized_interop_metadata()
 
     patchkit = metadata["showcase:patchKit"]
+    assert (
+        "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+        in {source_input["path"] for source_input in patchkit["source_input_digests"]}
+    )
+    assert all(
+        source_input["sha256"].startswith("sha256:")
+        for source_input in patchkit["source_input_digests"]
+    )
     assert "ParserKit/ForeignEntry.h" in patchkit["header_imports"]
     assert "ParserKit/ParserKit.h" in patchkit["header_exports"]
     assert patchkit["abi_alignment"][0]["bytes"] == 16
@@ -151,6 +159,81 @@ def test_package_loader_interop_tamper_mismatch_reports_stable_code() -> None:
 
     assert failures == [
         f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: mirror interop metadata digest mismatch for showcase:patchKit"
+    ]
+
+
+def test_package_loader_interop_lock_payload_digest_mismatch_reports_stable_code() -> None:
+    metadata = normalized_interop_metadata()
+    lock_metadata = deepcopy(metadata["showcase:patchKit"])
+    lock_metadata["header_exports"] = ["Tampered/PatchKit.h"]
+    lock = {
+        "packages": [
+            {
+                "package_id": "showcase:patchKit",
+                "interop_loader_metadata": lock_metadata,
+            }
+        ]
+    }
+    mirror = {
+        "integrity_policy": {
+            "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        },
+        "packages": deepcopy(lock["packages"]),
+    }
+    registry = deepcopy(lock)
+    publication = {
+        "interop_loader_support": "local-mixed-image-metadata-digest-checked",
+        "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+    }
+
+    failures = collect_interop_loader_metadata_failures(lock, mirror, registry, publication)
+
+    assert failures == [
+        f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: lock interop metadata digest mismatch for showcase:patchKit"
+    ]
+
+
+def test_package_loader_interop_lock_source_digest_mismatch_reports_stable_code() -> None:
+    metadata = normalized_interop_metadata()
+    lock_metadata = deepcopy(metadata["showcase:patchKit"])
+    metadata_fixture_digest = next(
+        source_input
+        for source_input in lock_metadata["source_input_digests"]
+        if source_input["path"]
+        == "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+    )
+    metadata_fixture_digest["sha256"] = "sha256:" + ("0" * 64)
+    digest_payload = dict(lock_metadata)
+    digest_payload.pop("digest")
+    lock_metadata["digest"] = stable_digest(digest_payload)
+    lock = {
+        "packages": [
+            {
+                "package_id": "showcase:patchKit",
+                "interop_loader_metadata": lock_metadata,
+            }
+        ]
+    }
+    mirror = {
+        "integrity_policy": {
+            "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+        },
+        "packages": deepcopy(lock["packages"]),
+    }
+    registry = deepcopy(lock)
+    publication = {
+        "interop_loader_support": "local-mixed-image-metadata-digest-checked",
+        "tamper_rejection_diagnostic": PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+    }
+
+    failures = collect_interop_loader_metadata_failures(lock, mirror, registry, publication)
+
+    assert failures == [
+        (
+            f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: lock interop metadata source digest mismatch for "
+            "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json "
+            "for showcase:patchKit"
+        )
     ]
 
 

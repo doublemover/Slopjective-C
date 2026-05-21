@@ -1932,6 +1932,12 @@
       "capability_id": "language.ownership.memory-model",
       "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3"
     },
     {
@@ -3502,6 +3508,24 @@
       "evidence_kind": "test",
       "path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
       "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
     },
     {
       "capability_id": "compiler.optimization.semantic-preserving-pipeline",

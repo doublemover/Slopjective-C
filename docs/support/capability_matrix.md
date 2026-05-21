@@ -1129,6 +1129,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
   - test: `tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json`
+  - test: `tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json`
   - test: `tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3`
   - test: `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3`
   - test: `tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3`
@@ -1834,7 +1835,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `compiler.optimization.semantic-preserving-pipeline`
 - State: `implemented`
 - Support claims: `objc3c.behavior.semantic_optimization_pipeline`
-- Summary: The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.
+- Summary: The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.
 - Owner modules:
   - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h`
   - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
@@ -1845,6 +1846,9 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/test_semantic_optimization_pipeline.py` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - source: `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
+  - source: `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
+  - source: `tests/tooling/fixtures/performance_governance/budget_model.json`
   - schema: `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
   - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
   - source: `scripts/objc3c_semantic_optimization_pipeline.py`

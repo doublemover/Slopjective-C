@@ -1,7 +1,7 @@
 {
   "contract_id": "objc3c.optimization.semantic.pipeline.v1",
   "issue_mapping": {
-    "primary_issues": [8175],
+    "primary_issues": [8159, 8175],
     "support_claims": ["objc3c.behavior.semantic_optimization_pipeline"],
     "capability_rows_required": [
       "objc3c.behavior.semantic_optimization_pipeline",
@@ -15,7 +15,8 @@
       "objc3c.evidence.semantic_optimization_pipeline.validator",
       "objc3c.evidence.semantic_optimization_pipeline.native_surface",
       "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
-      "objc3c.evidence.semantic_optimization_pipeline.reserved_negative"
+      "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
+      "objc3c.evidence.semantic_optimization_pipeline.performance_governance"
     ]
   },
   "source_truth": {
@@ -452,6 +453,50 @@
       "evidence": "native surface remains unready until lowering pass graph performance quality guardrails are ready"
     }
   ],
+  "performance_governance": {
+    "contract_id": "objc3c.optimization.semantic.pipeline.performance.governance.v1",
+    "source_truth_policy": "semantic optimization performance claims use checked-in workload manifests, fixture digests, and budget policy; generated reports are evidence outputs, not source truth",
+    "forbidden_input_roots": ["tmp/", "checked_outputs/"],
+    "budget_model": "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "required_public_actions": [
+      "benchmark-compiler-throughput",
+      "benchmark-runtime-performance",
+      "validate-performance-governance"
+    ],
+    "required_checked_in_paths": [
+      "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+      "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+      "tests/tooling/fixtures/performance_governance/budget_model.json"
+    ],
+    "workload_evidence": [
+      {
+        "workload_id": "compile-cold-wrapper",
+        "owner": "compiler-throughput",
+        "manifest_path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+        "source_path": "tests/tooling/fixtures/native/hello.objc3",
+        "source_sha256": "0bee2960f2d7835cf42058932160057503804937d63fc0c9580afef0c9ae8ecc",
+        "budget_family": "compile-throughput",
+        "metric_id": "cold_compile_wall_clock_ms"
+      },
+      {
+        "workload_id": "dispatch-cache",
+        "owner": "runtime-performance",
+        "manifest_path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+        "source_path": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+        "source_sha256": "31cbff98d09fd71a68bc569479110d66a7c4e37dbeb1282f3564789ef3cf57ec",
+        "budget_family": "runtime-hot-path",
+        "metric_id": "dispatch_wall_clock_ms"
+      }
+    ],
+    "semantic_trace_evidence": [
+      {
+        "trace_id": "direct-dispatch-exact-call-after-ir",
+        "source_path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
+        "source_sha256": "38bd165e05d088e3fca6e5eb8ea62eb4c74d15fa5e47d09ac938faf15a4c440d",
+        "claim_boundary": "semantic-preservation trace only; benchmark reports cannot replace this checked IR truth"
+      }
+    ]
+  },
   "unsupported_policy": {
     "unsafe_flags_allowed": false,
     "reserved_pass_success_claims_allowed": false,

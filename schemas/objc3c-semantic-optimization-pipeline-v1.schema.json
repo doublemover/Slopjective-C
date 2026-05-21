@@ -11,6 +11,7 @@
     "pass_registry",
     "semantic_preservation_contracts",
     "verification_gates",
+    "performance_governance",
     "unsupported_policy"
   ],
   "properties": {
@@ -179,6 +180,93 @@
           "gate_id": { "type": "string" },
           "required": { "const": true },
           "evidence": { "type": "string" }
+        }
+      }
+    },
+    "performance_governance": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_truth_policy",
+        "forbidden_input_roots",
+        "budget_model",
+        "required_public_actions",
+        "required_checked_in_paths",
+        "workload_evidence",
+        "semantic_trace_evidence"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.optimization.semantic.pipeline.performance.governance.v1"
+        },
+        "source_truth_policy": { "type": "string" },
+        "forbidden_input_roots": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "tmp/" }
+        },
+        "budget_model": {
+          "const": "tests/tooling/fixtures/performance_governance/budget_model.json"
+        },
+        "required_public_actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "validate-performance-governance" }
+        },
+        "required_checked_in_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "workload_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "workload_id",
+              "owner",
+              "manifest_path",
+              "source_path",
+              "source_sha256",
+              "budget_family",
+              "metric_id"
+            ],
+            "properties": {
+              "workload_id": { "type": "string" },
+              "owner": { "type": "string" },
+              "manifest_path": { "type": "string" },
+              "source_path": { "type": "string" },
+              "source_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "budget_family": { "type": "string" },
+              "metric_id": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "semantic_trace_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "trace_id",
+              "source_path",
+              "source_sha256",
+              "claim_boundary"
+            ],
+            "properties": {
+              "trace_id": { "type": "string" },
+              "source_path": { "type": "string" },
+              "source_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "claim_boundary": { "type": "string" }
+            }
+          },
+          "minItems": 1
         }
       }
     },

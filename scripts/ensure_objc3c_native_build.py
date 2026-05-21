@@ -114,6 +114,8 @@ def main(argv: Sequence[str]) -> int:
         "saw_cmake_build_skip": "cmake_build_skip=native-binaries" in combined,
         "saw_clean_room_root": "clean_room_root=" in combined,
         "saw_native_build_summary": "native_build_summary=" in combined,
+        "saw_native_build_lock": "native_build_lock_acquired=" in combined,
+        "saw_native_build_lock_release": "native_build_lock_released=" in combined,
         "saw_requested_parallelism": "requested_parallelism=" in combined,
         "saw_cmake_build_parallelism": "cmake_build_parallelism=" in combined,
         "saw_contract_mode": f"artifact_generation_mode={execution_mode}" in combined or f"artifact_generation_mode={args.mode}" in combined,
