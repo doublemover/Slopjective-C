@@ -61,6 +61,18 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
     assert summary["phase_count"] == 8
     assert summary["profile_count"] == 3
     assert summary["packageable"] is True
+    assert summary["artifact_contract_issue_id"] == "OBJ3-NEXT-018"
+    assert summary["source_owned_contract_count"] == 3
+    assert summary["source_owned_case_count"] == 10
+    assert summary["fixture_provenance_allowed_origins"] == ["checked-in-public-suite"]
+    assert summary["fixture_provenance_origin_counts"] == {"checked-in-public-suite": 10}
+    assert summary["allowed_generated_roots"] == [
+        "tmp/reports/conformance",
+        "tmp/artifacts/public-conformance/suite",
+        "tmp/pkg/objc3-public-conformance-suite",
+    ]
+    assert summary["outside_repo_replay_required"] is True
+    assert summary["public_commands_only"] is True
     assert summary["fixture_boundary"] == {
         "public_fixture_root_count": 7,
         "internal_only_root_count": 3,
@@ -90,6 +102,14 @@ def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_ev
     evidence = load_json_object(evidence_path)
 
     assert replay_case["conformance_fixture"] == "tests/conformance/public_suite_package_replay_evidence.json"
+    assert replay_case["stable_case_index"] == 9
+    assert replay_case["fixture_provenance"] == {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": True,
+        "internal_only": False,
+        "generated": False,
+    }
     assert "tests/conformance/public_suite_package_replay_evidence.json" in replay_case["positive_evidence"]
     assert replay_case["support_claim"] == "objc3c.behavior.conformance.public-stable-suite"
     assert replay_case["release_gate"] is True
@@ -140,6 +160,42 @@ def test_public_conformance_suite_manifest_declares_external_validation_intake_p
     assert release_profile["package_replay_case_id"] == "public.conformance.public-stable-suite-package-replay"
 
 
+def test_public_conformance_suite_manifest_declares_source_owned_artifact_contract() -> None:
+    manifest = load_manifest()
+    artifact_contract = manifest["artifact_contract"]
+
+    assert artifact_contract["issue_id"] == "OBJ3-NEXT-018"
+    assert artifact_contract["metadata_policy"]["stable_case_indices_required"] is True
+    assert artifact_contract["metadata_policy"]["deterministic_case_order"] == "stable_case_index"
+    assert artifact_contract["metadata_policy"]["deterministic_phase_order"] == [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "stdlib",
+        "package",
+        "release_candidate",
+    ]
+    assert {
+        entry["role"]: (entry["path"], entry["source_owned"])
+        for entry in artifact_contract["source_owned_contracts"]
+    } == {
+        "suite-manifest": ("tests/conformance/public_suite_manifest.json", True),
+        "package-replay-evidence": ("tests/conformance/public_suite_package_replay_evidence.json", True),
+        "package-contract": ("tests/tooling/fixtures/public_conformance_suite/package_contract.json", True),
+    }
+    assert artifact_contract["generated_output_policy"]["generated_outputs_committable"] is False
+    assert artifact_contract["generated_output_policy"]["generated_outputs_can_define_support"] is False
+    assert artifact_contract["package_replay_boundary"] == {
+        "outside_repo_replay_required": True,
+        "offline_required": True,
+        "repo_checkout_required": False,
+        "public_commands_only": True,
+        "unsupported_fixture_packaging_allowed": False,
+    }
+
+
 def test_public_conformance_suite_manifest_rejects_compatibility_mode(
     tmp_path: Path,
 ) -> None:
@@ -177,6 +233,70 @@ def test_public_conformance_suite_manifest_rejects_internal_only_public_case_sou
     manifest = load_manifest()
     manifest["suite_cases"][0]["positive_evidence"] = [
         "tests/conformance/spec_open_issues/README.md"
+    ]
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_tmp_public_case_source(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["suite_cases"][0]["positive_evidence"] = [
+        "tmp/reports/conformance/leaked-public-claim.json"
+    ]
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_generated_fixture_provenance(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["suite_cases"][0]["fixture_provenance"]["generated"] = True
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_unstable_case_index(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["suite_cases"][1]["stable_case_index"] = 99
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_generated_boundary_escape(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["artifact_contract"]["generated_output_policy"]["allowed_generated_roots"] = [
+        "docs/support"
     ]
 
     checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"

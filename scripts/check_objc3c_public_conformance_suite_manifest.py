@@ -16,9 +16,14 @@ from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "tests" / "conformance" / "public_suite_manifest.json"
+PACKAGE_REPLAY_EVIDENCE_PATH = ROOT / "tests" / "conformance" / "public_suite_package_replay_evidence.json"
+PACKAGE_CONTRACT_PATH = (
+    ROOT / "tests" / "tooling" / "fixtures" / "public_conformance_suite" / "package_contract.json"
+)
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "conformance" / "public-suite-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_suite.summary.v1"
 SCHEMA_ID = "objc3c-public-conformance-suite-v1"
+ISSUE_ID = "OBJ3-NEXT-018"
 REQUIRED_PHASES = (
     "parser",
     "sema",
@@ -31,6 +36,20 @@ REQUIRED_PHASES = (
 )
 REQUIRED_PROFILES = ("core", "stdlib-package", "release-candidate")
 PUBLIC_COMMAND_PREFIX = "npm run objc3c -- "
+REQUIRED_SOURCE_OWNED_CONTRACTS = {
+    "suite-manifest": (
+        "tests/conformance/public_suite_manifest.json",
+        "objc3c.public_conformance_suite.manifest.v1",
+    ),
+    "package-replay-evidence": (
+        "tests/conformance/public_suite_package_replay_evidence.json",
+        "objc3c.public_conformance_suite.package_replay_evidence.v1",
+    ),
+    "package-contract": (
+        "tests/tooling/fixtures/public_conformance_suite/package_contract.json",
+        "objc3c.public_conformance_suite.package_contract.v1",
+    ),
+}
 
 
 def fail(message: str) -> int:
@@ -145,6 +164,144 @@ def path_is_inside(relative_path: str, root_path: str) -> bool:
     path = normalized_repo_path(relative_path)
     root = normalized_repo_path(root_path)
     return path == root or path.startswith(f"{root}/")
+
+
+def validate_artifact_contract(manifest: dict[str, Any]) -> dict[str, Any]:
+    contract = require_object(manifest.get("artifact_contract"), field="artifact_contract")
+    if contract.get("issue_id") != ISSUE_ID:
+        raise RuntimeError("artifact_contract.issue_id drifted from OBJ3-NEXT-018")
+
+    metadata = require_object(contract.get("metadata_policy"), field="artifact_contract.metadata_policy")
+    if metadata.get("stable_case_indices_required") is not True:
+        raise RuntimeError("artifact_contract.metadata_policy.stable_case_indices_required must be true")
+    if metadata.get("deterministic_case_order") != "stable_case_index":
+        raise RuntimeError("artifact_contract.metadata_policy.deterministic_case_order must be stable_case_index")
+    phase_order = [
+        str(phase)
+        for phase in require_list(
+            metadata.get("deterministic_phase_order"),
+            field="artifact_contract.metadata_policy.deterministic_phase_order",
+        )
+    ]
+    if phase_order != list(REQUIRED_PHASES):
+        raise RuntimeError("artifact_contract.metadata_policy.deterministic_phase_order drifted")
+    profile_order = [
+        str(profile)
+        for profile in require_list(
+            metadata.get("deterministic_profile_order"),
+            field="artifact_contract.metadata_policy.deterministic_profile_order",
+        )
+    ]
+    if profile_order != list(REQUIRED_PROFILES):
+        raise RuntimeError("artifact_contract.metadata_policy.deterministic_profile_order drifted")
+
+    seen_roles: dict[str, tuple[str, str]] = {}
+    for raw_entry in require_list(contract.get("source_owned_contracts"), field="source_owned_contracts"):
+        entry = require_object(raw_entry, field="source-owned contract")
+        role = str(entry.get("role", ""))
+        path = normalized_repo_path(str(entry.get("path", "")))
+        contract_id = str(entry.get("contract_id", ""))
+        if entry.get("source_owned") is not True:
+            raise RuntimeError(f"artifact_contract.source_owned_contracts.{role}.source_owned must be true")
+        if path.startswith("tmp/"):
+            raise RuntimeError(f"artifact_contract.source_owned_contracts.{role} uses tmp: {path}")
+        require_file(path, kind=f"{role} source-owned contract")
+        payload = manifest if path == repo_rel(MANIFEST_PATH) else load_json(repo_path(path))
+        if payload.get("contract_id") != contract_id:
+            raise RuntimeError(f"artifact_contract.source_owned_contracts.{role} contract_id drifted")
+        seen_roles[role] = (path, contract_id)
+
+    for role, expected in REQUIRED_SOURCE_OWNED_CONTRACTS.items():
+        if seen_roles.get(role) != expected:
+            raise RuntimeError(f"artifact_contract.source_owned_contracts missing stable {role} contract")
+
+    generated_policy = require_object(
+        contract.get("generated_output_policy"),
+        field="artifact_contract.generated_output_policy",
+    )
+    if generated_policy.get("generated_outputs_committable") is not False:
+        raise RuntimeError("artifact_contract.generated_output_policy.generated_outputs_committable must be false")
+    if generated_policy.get("generated_outputs_can_define_support") is not False:
+        raise RuntimeError(
+            "artifact_contract.generated_output_policy.generated_outputs_can_define_support must be false"
+        )
+    allowed_generated_roots = [
+        normalized_repo_path(str(root))
+        for root in require_list(
+            generated_policy.get("allowed_generated_roots"),
+            field="artifact_contract.generated_output_policy.allowed_generated_roots",
+        )
+    ]
+    if len(set(allowed_generated_roots)) != len(allowed_generated_roots):
+        raise RuntimeError("artifact_contract.generated_output_policy.allowed_generated_roots contains duplicates")
+    for root in allowed_generated_roots:
+        if not root.startswith("tmp/"):
+            raise RuntimeError(f"artifact_contract generated output root must stay under tmp: {root}")
+
+    source_truth = require_object(manifest.get("source_truth"), field="source_truth")
+    package_surface = require_object(manifest.get("package_surface"), field="package_surface")
+    generated_paths = [
+        str(source_truth.get("generated_report_boundary", "")),
+        str(package_surface.get("artifact_root", "")),
+        str(package_surface.get("report_root", "")),
+        str(package_surface.get("package_stage_root", "")),
+    ]
+    for generated_path in generated_paths:
+        normalized = normalized_repo_path(generated_path)
+        if not any(path_is_inside(normalized, root) for root in allowed_generated_roots):
+            raise RuntimeError(f"generated output path is outside declared tmp roots: {normalized}")
+
+    boundary = require_object(
+        contract.get("package_replay_boundary"),
+        field="artifact_contract.package_replay_boundary",
+    )
+    required_true = ("outside_repo_replay_required", "offline_required", "public_commands_only")
+    for field in required_true:
+        if boundary.get(field) is not True:
+            raise RuntimeError(f"artifact_contract.package_replay_boundary.{field} must be true")
+    required_false = ("repo_checkout_required", "unsupported_fixture_packaging_allowed")
+    for field in required_false:
+        if boundary.get(field) is not False:
+            raise RuntimeError(f"artifact_contract.package_replay_boundary.{field} must be false")
+
+    return {
+        "artifact_contract_issue_id": contract["issue_id"],
+        "source_owned_contract_count": len(seen_roles),
+        "allowed_generated_roots": allowed_generated_roots,
+        "outside_repo_replay_required": boundary["outside_repo_replay_required"],
+        "public_commands_only": boundary["public_commands_only"],
+    }
+
+
+def validate_fixture_provenance_policy(manifest: dict[str, Any]) -> set[str]:
+    policy = require_object(manifest.get("fixture_provenance_policy"), field="fixture_provenance_policy")
+    if policy.get("required") is not True:
+        raise RuntimeError("fixture_provenance_policy.required must be true")
+    if policy.get("source_owned_required") is not True:
+        raise RuntimeError("fixture_provenance_policy.source_owned_required must be true")
+    if policy.get("internal_only_allowed") is not False:
+        raise RuntimeError("fixture_provenance_policy.internal_only_allowed must be false")
+    if policy.get("generated_allowed") is not False:
+        raise RuntimeError("fixture_provenance_policy.generated_allowed must be false")
+    allowed_origins = {
+        str(origin)
+        for origin in require_list(policy.get("allowed_origins"), field="fixture_provenance_policy.allowed_origins")
+    }
+    prohibited_origins = {
+        str(origin)
+        for origin in require_list(
+            policy.get("prohibited_origins"),
+            field="fixture_provenance_policy.prohibited_origins",
+        )
+    }
+    if not allowed_origins:
+        raise RuntimeError("fixture_provenance_policy.allowed_origins must not be empty")
+    overlap = allowed_origins.intersection(prohibited_origins)
+    if overlap:
+        raise RuntimeError(
+            "fixture_provenance_policy allowed/prohibited origins overlap: " + ", ".join(sorted(overlap))
+        )
+    return allowed_origins
 
 
 def validate_fixture_boundary(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -415,17 +572,21 @@ def validate_cases(
     evidence_pairs: set[tuple[str, str]],
     catalog_claims: set[str],
     fixture_boundary: dict[str, Any],
+    allowed_fixture_origins: set[str],
 ) -> dict[str, Any]:
     cases = require_list(manifest.get("suite_cases"), field="suite_cases")
     seen_case_ids: set[str] = set()
+    stable_case_indices: list[int] = []
     phase_counts: Counter[str] = Counter()
     profile_counts: Counter[str] = Counter()
+    provenance_counts: Counter[str] = Counter()
     public_commands: set[str] = set()
     capability_ids: set[str] = set()
     support_claims: set[str] = set()
     strict_case_count = 0
     release_gate_count = 0
     catalog_backed_count = 0
+    source_owned_case_count = 0
 
     for raw_case in cases:
         case = require_object(raw_case, field="suite case")
@@ -433,6 +594,26 @@ def validate_cases(
         if case_id in seen_case_ids:
             raise RuntimeError(f"duplicate suite case: {case_id}")
         seen_case_ids.add(case_id)
+
+        stable_case_index = case.get("stable_case_index")
+        if not isinstance(stable_case_index, int):
+            raise RuntimeError(f"{case_id}.stable_case_index must be an integer")
+        stable_case_indices.append(stable_case_index)
+
+        provenance = require_object(case.get("fixture_provenance"), field=f"{case_id}.fixture_provenance")
+        origin = str(provenance.get("origin", ""))
+        if origin not in allowed_fixture_origins:
+            raise RuntimeError(f"{case_id}.fixture_provenance.origin is not public: {origin}")
+        if provenance.get("owner") != "objc3-public-conformance":
+            raise RuntimeError(f"{case_id}.fixture_provenance.owner drifted")
+        if provenance.get("source_owned") is not True:
+            raise RuntimeError(f"{case_id}.fixture_provenance.source_owned must be true")
+        if provenance.get("internal_only") is not False:
+            raise RuntimeError(f"{case_id}.fixture_provenance.internal_only must be false")
+        if provenance.get("generated") is not False:
+            raise RuntimeError(f"{case_id}.fixture_provenance.generated must be false")
+        provenance_counts[origin] += 1
+        source_owned_case_count += 1
 
         phase = str(case["phase"])
         if phase not in phase_ids:
@@ -474,6 +655,8 @@ def validate_cases(
         if case["expectation"] in {"strict-error", "canonical-rejection"}:
             strict_case_count += 1
 
+    if stable_case_indices != list(range(1, len(cases) + 1)):
+        raise RuntimeError("suite_cases stable_case_index values must be contiguous and manifest-ordered")
     missing_case_phases = [phase for phase in REQUIRED_PHASES if phase_counts[phase] == 0]
     if missing_case_phases:
         raise RuntimeError(f"suite_cases missing required phase coverage: {', '.join(missing_case_phases)}")
@@ -490,6 +673,8 @@ def validate_cases(
         "profile_case_counts": dict(sorted(profile_counts.items())),
         "strict_or_rejection_case_count": strict_case_count,
         "release_gate_case_count": release_gate_count,
+        "source_owned_case_count": source_owned_case_count,
+        "fixture_provenance_origin_counts": dict(sorted(provenance_counts.items())),
         "capability_matrix_backed_case_count": len(cases),
         "evidence_map_backed_case_count": len(cases),
         "support_claim_catalog_backed_case_count": catalog_backed_count,
@@ -574,6 +759,8 @@ def main() -> int:
         manifest = load_manifest()
         matrix_pairs, evidence_pairs, catalog_claims = validate_source_truth(manifest)
         validate_package_surface(manifest)
+        artifact_contract_summary = validate_artifact_contract(manifest)
+        allowed_fixture_origins = validate_fixture_provenance_policy(manifest)
         fixture_boundary = validate_fixture_boundary(manifest)
         external_validation_summary = validate_external_validation_policy(manifest)
         strict_rejection_flags = validate_strict_rejection_policy(manifest)
@@ -586,6 +773,7 @@ def main() -> int:
             evidence_pairs=evidence_pairs,
             catalog_claims=catalog_claims,
             fixture_boundary=fixture_boundary,
+            allowed_fixture_origins=allowed_fixture_origins,
         )
         release_candidate_summary = validate_release_candidate_profile(manifest)
     except Exception as exc:
@@ -606,6 +794,7 @@ def main() -> int:
         "required_phases": list(REQUIRED_PHASES),
         "required_profiles": list(REQUIRED_PROFILES),
         "strict_rejection_flags": strict_rejection_flags,
+        "fixture_provenance_allowed_origins": sorted(allowed_fixture_origins),
         "fixture_boundary": {
             "public_fixture_root_count": len(fixture_boundary["public_fixture_roots"]),
             "internal_only_root_count": len(fixture_boundary["internal_only_roots"]),
@@ -613,6 +802,7 @@ def main() -> int:
                 "checked_in_expected_outputs_required"
             ],
         },
+        **artifact_contract_summary,
         **external_validation_summary,
         **release_candidate_summary,
         **case_summary,

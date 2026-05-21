@@ -104,6 +104,14 @@ def main(argv: list[str]) -> int:
         return fail("package-manifest contract_id drifted")
     if manifest.get("source_truth_policy", {}).get("tmp_source_truth_allowed") is not False:
         return fail("package manifest permits tmp source truth")
+    artifact_contract = manifest.get("artifact_contract", {})
+    generated_policy = artifact_contract.get("generated_output_policy", {})
+    if generated_policy.get("generated_outputs_committable") is not False:
+        return fail("package manifest permits generated outputs to be committed")
+    if generated_policy.get("generated_outputs_can_define_support") is not False:
+        return fail("package manifest permits generated outputs to define support")
+    if not all(str(root).startswith("tmp/") for root in generated_policy.get("allowed_generated_roots", [])):
+        return fail("package manifest generated output boundary escaped tmp")
 
     public_commands = manifest.get("public_commands", [])
     if not all(isinstance(command, str) and command.startswith(PUBLIC_PREFIX) for command in public_commands):
@@ -135,6 +143,13 @@ def main(argv: list[str]) -> int:
             return fail(f"{case['case_id']} is not a release gate")
         if not case_manifest.get("positive_evidence") or not case_manifest.get("negative_evidence"):
             return fail(f"{case['case_id']} lacks positive or negative evidence")
+        provenance = case_manifest.get("fixture_provenance", {})
+        if provenance.get("origin") != "checked-in-public-suite":
+            return fail(f"{case['case_id']} fixture provenance is not checked-in public suite")
+        if provenance.get("source_owned") is not True:
+            return fail(f"{case['case_id']} fixture provenance is not source-owned")
+        if provenance.get("internal_only") is not False or provenance.get("generated") is not False:
+            return fail(f"{case['case_id']} fixture provenance is internal or generated")
         command = case_manifest.get("runnable_command", "")
         if not isinstance(command, str) or not command.startswith(PUBLIC_PREFIX):
             return fail(f"{case['case_id']} command is not public")
@@ -207,6 +222,21 @@ def require_public_command(command: str, *, field: str) -> None:
         raise RuntimeError(f"{field} is not public: {command}")
 
 
+def require_fixture_provenance(case: dict[str, Any], *, field: str) -> dict[str, Any]:
+    provenance = require_object(case.get("fixture_provenance"), field=field)
+    if provenance.get("origin") != "checked-in-public-suite":
+        raise RuntimeError(f"{field}.origin must be checked-in-public-suite")
+    if provenance.get("owner") != "objc3-public-conformance":
+        raise RuntimeError(f"{field}.owner drifted")
+    if provenance.get("source_owned") is not True:
+        raise RuntimeError(f"{field}.source_owned must be true")
+    if provenance.get("internal_only") is not False:
+        raise RuntimeError(f"{field}.internal_only must be false")
+    if provenance.get("generated") is not False:
+        raise RuntimeError(f"{field}.generated must be false")
+    return provenance
+
+
 def require_checked_source_file(relative_path: str, *, field: str) -> str:
     normalized = normalized_repo_path(relative_path)
     if normalized.startswith("tmp/"):
@@ -244,6 +274,42 @@ def validate_package_contract(
     if replay_evidence.get("package_stage_root") != manifest["package_surface"]["package_stage_root"]:
         raise RuntimeError("package replay evidence stage root drifted from manifest")
 
+    expected_source_owned_contracts = {
+        repo_rel(MANIFEST_PATH),
+        repo_rel(PACKAGE_REPLAY_EVIDENCE_PATH),
+        repo_rel(PACKAGE_CONTRACT_PATH),
+    }
+    declared_source_owned_contracts = {
+        require_checked_source_file(str(path), field="package source-owned contract")
+        for path in require_list(package_contract.get("source_owned_contracts"), field="source_owned_contracts")
+    }
+    if declared_source_owned_contracts != expected_source_owned_contracts:
+        raise RuntimeError("public suite package source-owned contract set drifted")
+
+    generated_boundary = require_object(
+        package_contract.get("generated_output_boundary"),
+        field="generated_output_boundary",
+    )
+    required_tmp_roots = {
+        normalized_repo_path(str(path))
+        for path in require_list(generated_boundary.get("required_tmp_roots"), field="required_tmp_roots")
+    }
+    manifest_tmp_roots = {
+        normalized_repo_path(str(path))
+        for path in require_list(
+            manifest["artifact_contract"]["generated_output_policy"]["allowed_generated_roots"],
+            field="manifest generated roots",
+        )
+    }
+    if required_tmp_roots != manifest_tmp_roots:
+        raise RuntimeError("public suite package generated output roots drifted from manifest")
+    if not all(path.startswith("tmp/") for path in required_tmp_roots):
+        raise RuntimeError("public suite package generated output roots must stay under tmp")
+    if generated_boundary.get("generated_outputs_committable") is not False:
+        raise RuntimeError("public suite package generated_outputs_committable must be false")
+    if generated_boundary.get("generated_outputs_can_define_support") is not False:
+        raise RuntimeError("public suite package generated_outputs_can_define_support must be false")
+
     for entry in require_list(replay_evidence.get("packaged_entrypoints"), field="packaged_entrypoints"):
         entry_object = require_object(entry, field="packaged entrypoint")
         require_public_command(str(entry_object.get("command", "")), field=f"{entry_object.get('profile_id')}.command")
@@ -257,6 +323,8 @@ def validate_package_contract(
         "compatibility modes and fallback gates stay disabled",
         "unsupported claims cannot be promoted by packaged replay",
         "every public-stable case carries positive and negative checked evidence",
+        "every public-stable case carries source-owned fixture provenance",
+        "generated package outputs stay under tmp and are never checked-in source contracts",
     }
     declared = set(
         require_list(package_contract.get("fail_closed_invariants"), field="fail_closed_invariants")
@@ -357,6 +425,8 @@ def case_payload(
         "feature_id": case["feature_id"],
         "capability_id": case["capability_id"],
         "support_claim": case["support_claim"],
+        "stable_case_index": case["stable_case_index"],
+        "fixture_provenance": case["fixture_provenance"],
         "expectation": case["expectation"],
         "profile_ids": case["profile_ids"],
         "runnable_command": case["runnable_command"],
@@ -387,8 +457,14 @@ def build_package(
         for case in require_list(manifest["suite_cases"], field="suite_cases")
     ]
     case_entries: list[dict[str, Any]] = []
+    stable_case_indices: list[int] = []
     for case in cases:
         require_public_command(str(case["runnable_command"]), field=f"{case['case_id']}.runnable_command")
+        stable_case_index = case.get("stable_case_index")
+        if not isinstance(stable_case_index, int):
+            raise RuntimeError(f"{case['case_id']} stable_case_index must be an integer")
+        stable_case_indices.append(stable_case_index)
+        require_fixture_provenance(case, field=f"{case['case_id']}.fixture_provenance")
         if case.get("packaging_class") != "public-stable":
             raise RuntimeError(f"{case['case_id']} is not public-stable")
         if case.get("release_gate") is not True:
@@ -402,6 +478,7 @@ def build_package(
         case_entries.append(
             {
                 "case_id": case["case_id"],
+                "stable_case_index": stable_case_index,
                 "phase": case["phase"],
                 "expectation": case["expectation"],
                 "support_claim": case["support_claim"],
@@ -411,6 +488,8 @@ def build_package(
                 "case_manifest": case_file,
             }
         )
+    if stable_case_indices != list(range(1, len(cases) + 1)):
+        raise RuntimeError("public suite stable_case_index values must be contiguous and manifest-ordered")
 
     profile_commands = {
         str(profile["profile_id"]): str(profile["default_command"])
@@ -435,6 +514,7 @@ def build_package(
             "tmp_source_truth_allowed": False,
             "generated_reports_are_evidence_only": True,
         },
+        "artifact_contract": manifest["artifact_contract"],
         "offline_compatible": True,
         "profile_commands": profile_commands,
         "packaged_entrypoints": replay_evidence["packaged_entrypoints"],
@@ -496,6 +576,7 @@ def verify_package(package_root: Path) -> dict[str, Any]:
             raise RuntimeError(f"{case_object['case_id']} is not a release gate")
         if not case_manifest.get("positive_evidence") or not case_manifest.get("negative_evidence"):
             raise RuntimeError(f"{case_object['case_id']} lacks positive or negative evidence")
+        require_fixture_provenance(case_manifest, field=f"{case_object['case_id']}.fixture_provenance")
         require_public_command(
             str(case_manifest.get("runnable_command", "")),
             field=f"{case_object['case_id']}.runnable_command",
@@ -529,6 +610,10 @@ def build_summary(package_manifest: dict[str, Any], verification: dict[str, Any]
         "tmp_source_truth_allowed": package_manifest["source_truth_policy"]["tmp_source_truth_allowed"],
         "generated_reports_are_evidence_only": package_manifest["source_truth_policy"][
             "generated_reports_are_evidence_only"
+        ],
+        "source_owned_contract_count": len(package_manifest["artifact_contract"]["source_owned_contracts"]),
+        "generated_output_roots": package_manifest["artifact_contract"]["generated_output_policy"][
+            "allowed_generated_roots"
         ],
         "public_commands": verification["public_commands"],
         "support_claims": verification["support_claims"],

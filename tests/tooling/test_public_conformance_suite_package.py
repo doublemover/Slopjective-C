@@ -45,6 +45,12 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
     assert summary["offline_compatible"] is True
     assert summary["tmp_source_truth_allowed"] is False
     assert summary["generated_reports_are_evidence_only"] is True
+    assert summary["source_owned_contract_count"] == 3
+    assert summary["generated_output_roots"] == [
+        "tmp/reports/conformance",
+        "tmp/artifacts/public-conformance/suite",
+        "tmp/pkg/objc3-public-conformance-suite",
+    ]
     assert "npm run objc3c -- validate-release-candidate-conformance" in summary["public_commands"]
 
     assert package_manifest["contract_id"] == "objc3c.public_conformance_suite.package_manifest.v1"
@@ -57,8 +63,11 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
         "tmp_source_truth_allowed": False,
         "generated_reports_are_evidence_only": True,
     }
+    assert package_manifest["artifact_contract"]["issue_id"] == "OBJ3-NEXT-018"
+    assert package_manifest["artifact_contract"]["package_replay_boundary"]["public_commands_only"] is True
     assert package_manifest["case_count"] == len(package_manifest["cases"]) == 10
     assert all(case["release_gate"] is True for case in package_manifest["cases"])
+    assert [case["stable_case_index"] for case in package_manifest["cases"]] == list(range(1, 11))
     assert all(
         source["package_path"].startswith("sources/")
         and not source["repo_path"].startswith("tmp/")
@@ -69,6 +78,14 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
     case_path = package_root / package_manifest["cases"][0]["case_manifest"]
     case_manifest = load_json_object(case_path)
     assert case_manifest["contract_id"] == "objc3c.public_conformance_suite.case.v1"
+    assert case_manifest["stable_case_index"] == package_manifest["cases"][0]["stable_case_index"]
+    assert case_manifest["fixture_provenance"] == {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": True,
+        "internal_only": False,
+        "generated": False,
+    }
     assert case_manifest["positive_evidence"]
     assert case_manifest["negative_evidence"]
     assert case_manifest["runnable_command"].startswith("npm run objc3c -- ")
@@ -103,8 +120,23 @@ def test_public_conformance_suite_package_contract_is_checked_source_truth() -> 
     assert contract["contract_id"] == "objc3c.public_conformance_suite.package_contract.v1"
     assert contract["source_manifest"] == "tests/conformance/public_suite_manifest.json"
     assert contract["package_replay_evidence"] == "tests/conformance/public_suite_package_replay_evidence.json"
+    assert set(contract["source_owned_contracts"]) == {
+        "tests/conformance/public_suite_manifest.json",
+        "tests/conformance/public_suite_package_replay_evidence.json",
+        "tests/tooling/fixtures/public_conformance_suite/package_contract.json",
+    }
+    assert contract["generated_output_boundary"] == {
+        "required_tmp_roots": [
+            "tmp/reports/conformance",
+            "tmp/artifacts/public-conformance/suite",
+            "tmp/pkg/objc3-public-conformance-suite",
+        ],
+        "generated_outputs_committable": False,
+        "generated_outputs_can_define_support": False,
+    }
     assert "tmp artifacts are never source truth" in contract["fail_closed_invariants"]
     assert "unsupported claims cannot be promoted by packaged replay" in contract["fail_closed_invariants"]
+    assert "every public-stable case carries source-owned fixture provenance" in contract["fail_closed_invariants"]
 
 
 def test_public_workflow_action_uses_package_checker() -> None:

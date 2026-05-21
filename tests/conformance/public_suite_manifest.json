@@ -4,6 +4,78 @@
   "suite_id": "objc3-public-conformance-suite",
   "suite_version": "2026.05.objc3-next-018.v1",
   "public_status": "stable",
+  "artifact_contract": {
+    "issue_id": "OBJ3-NEXT-018",
+    "metadata_policy": {
+      "stable_case_indices_required": true,
+      "deterministic_case_order": "stable_case_index",
+      "deterministic_phase_order": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "stdlib",
+        "package",
+        "release_candidate"
+      ],
+      "deterministic_profile_order": [
+        "core",
+        "stdlib-package",
+        "release-candidate"
+      ]
+    },
+    "source_owned_contracts": [
+      {
+        "role": "suite-manifest",
+        "path": "tests/conformance/public_suite_manifest.json",
+        "contract_id": "objc3c.public_conformance_suite.manifest.v1",
+        "source_owned": true
+      },
+      {
+        "role": "package-replay-evidence",
+        "path": "tests/conformance/public_suite_package_replay_evidence.json",
+        "contract_id": "objc3c.public_conformance_suite.package_replay_evidence.v1",
+        "source_owned": true
+      },
+      {
+        "role": "package-contract",
+        "path": "tests/tooling/fixtures/public_conformance_suite/package_contract.json",
+        "contract_id": "objc3c.public_conformance_suite.package_contract.v1",
+        "source_owned": true
+      }
+    ],
+    "generated_output_policy": {
+      "allowed_generated_roots": [
+        "tmp/reports/conformance",
+        "tmp/artifacts/public-conformance/suite",
+        "tmp/pkg/objc3-public-conformance-suite"
+      ],
+      "generated_outputs_committable": false,
+      "generated_outputs_can_define_support": false
+    },
+    "package_replay_boundary": {
+      "outside_repo_replay_required": true,
+      "offline_required": true,
+      "repo_checkout_required": false,
+      "public_commands_only": true,
+      "unsupported_fixture_packaging_allowed": false
+    }
+  },
+  "fixture_provenance_policy": {
+    "required": true,
+    "allowed_origins": [
+      "checked-in-public-suite"
+    ],
+    "prohibited_origins": [
+      "generated-tmp-report",
+      "internal-owner-debug",
+      "external-unaccepted-evidence"
+    ],
+    "source_owned_required": true,
+    "internal_only_allowed": false,
+    "generated_allowed": false
+  },
   "source_truth": {
     "corpus_surface": "tests/conformance/corpus_surface.json",
     "support_claim_runnable_evidence_catalog": "tests/conformance/support_claim_runnable_evidence_catalog.json",
@@ -196,6 +268,14 @@
       "feature_id": "compiler.parser.core-declarations",
       "capability_id": "compiler.parser.core-declarations",
       "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "stable_case_index": 1,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "core",
@@ -229,6 +309,14 @@
       "feature_id": "language.protocols.protocol-qualified-existential-value-flow",
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "stable_case_index": 2,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "core",
@@ -263,6 +351,14 @@
       "feature_id": "diagnostics.parser-sema.recovery-fixits",
       "capability_id": "diagnostics.parser-sema.recovery-fixits",
       "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "stable_case_index": 3,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "canonical-rejection",
       "profile_ids": [
         "core",
@@ -304,6 +400,14 @@
       "feature_id": "compiler.lowering.strict-runtime-dispatch",
       "capability_id": "compiler.lowering.strict-runtime-dispatch",
       "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "stable_case_index": 4,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "strict-error",
       "profile_ids": [
         "core",
@@ -337,6 +441,14 @@
       "feature_id": "compiler.ir.module-emission",
       "capability_id": "compiler.ir.module-emission",
       "support_claim": "objc3c.behavior.ir.module-emission",
+      "stable_case_index": 5,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "core",
@@ -370,6 +482,14 @@
       "feature_id": "runtime.object-model.interface-method-table",
       "capability_id": "runtime.object-model.interface-method-table",
       "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "stable_case_index": 6,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "core",
@@ -405,6 +525,14 @@
       "feature_id": "stdlib.core.runtime-backed-v1",
       "capability_id": "stdlib.core.runtime-backed-v1",
       "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "stable_case_index": 7,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "stdlib-package",
@@ -439,6 +567,14 @@
       "feature_id": "runtime.interop.package-loader-bridge",
       "capability_id": "runtime.interop.package-loader-bridge",
       "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "stable_case_index": 8,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "stdlib-package",
@@ -474,6 +610,14 @@
       "feature_id": "conformance.public.stable-suite-manifest",
       "capability_id": "conformance.public.stable-suite-manifest",
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "stable_case_index": 9,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "release-candidate"
@@ -510,6 +654,14 @@
       "feature_id": "runtime.concurrency.task-continuation-lifecycle",
       "capability_id": "runtime.concurrency.task-continuation-lifecycle",
       "support_claim": "objc3c.behavior.runtime.concurrency-task-continuation-lifecycle",
+      "stable_case_index": 10,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
       "expectation": "pass",
       "profile_ids": [
         "release-candidate"

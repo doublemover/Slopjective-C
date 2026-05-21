@@ -72,9 +72,9 @@ def test_release_abi_api_drift_gate_accepts_checked_in_governance(tmp_path: Path
         "supported_major_line": 1,
         "current_minor_line": 0,
         "compatibility_class": "package-lockfile-abi",
-        "stdlib_public_api_symbol_count": 83,
-        "stdlib_runtime_abi_symbol_count": 36,
-        "frontend_c_api_symbol_count": 33,
+        "stdlib_public_api_symbol_count": case["expected_public_api_symbol_count"],
+        "stdlib_runtime_abi_symbol_count": case["expected_runtime_abi_symbol_count"],
+        "frontend_c_api_symbol_count": case["expected_frontend_c_api_symbol_count"],
     }
 
 
