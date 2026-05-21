@@ -86,9 +86,11 @@ def _base_semantic_policy(capability_query_encoding: str) -> dict[str, object]:
                 "and executor-tag operands"
             ),
             "public_task_group_api": (
-                "objc3_task_group_run_two enters a task-group scope, adds two "
-                "child tasks, and drains them through "
-                "objc3_concurrency_task_group_scope_depth"
+                "objc3_task_group_run_two enters a two-child task-group scope "
+                "and objc3_task_group_run_bounded accepts a caller-provided "
+                "child count; both drain through "
+                "objc3_concurrency_task_group_scope_depth and negative counts "
+                "fail closed through cancellation"
             ),
             "public_cancellation_api": (
                 "objc3_task_is_cancelled and objc3_task_cancel_if_needed expose "

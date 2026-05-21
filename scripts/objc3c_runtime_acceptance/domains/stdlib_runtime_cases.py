@@ -180,6 +180,26 @@ def check_stdlib_concurrency_runtime_probe_case(
         1,
         "stdlib actor executor binding guard drifted",
     )
+    expect_equal(
+        payload.get("unsupported_task_kind_result"),
+        -2,
+        "stdlib unsupported task-kind rejection drifted",
+    )
+    expect_equal(
+        payload.get("invalid_group_executor_result"),
+        -1,
+        "stdlib invalid task-group executor rejection drifted",
+    )
+    expect_equal(
+        payload.get("invalid_actor_bind_result"),
+        0,
+        "stdlib invalid actor bind rejection drifted",
+    )
+    expect_equal(
+        payload.get("actor_invalid_handle_failure_code"),
+        2,
+        "stdlib invalid actor handle diagnostic drifted",
+    )
     return CaseResult(
         case_id="stdlib-concurrency-runtime-probe",
         probe="tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
@@ -225,6 +245,16 @@ def check_stdlib_concurrency_runtime_probe_case(
             ),
             "actor_last_mailbox_drained_value": payload.get(
                 "actor_last_mailbox_drained_value"
+            ),
+            "unsupported_task_kind_result": payload.get(
+                "unsupported_task_kind_result"
+            ),
+            "invalid_group_executor_result": payload.get(
+                "invalid_group_executor_result"
+            ),
+            "invalid_actor_bind_result": payload.get("invalid_actor_bind_result"),
+            "actor_invalid_handle_failure_code": payload.get(
+                "actor_invalid_handle_failure_code"
             ),
         },
     )

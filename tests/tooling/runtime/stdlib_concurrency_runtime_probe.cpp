@@ -40,6 +40,16 @@ int main() {
   objc3_runtime_actor_runtime_state_snapshot actor_snapshot{};
   const int actor_copy_status =
       objc3_runtime_copy_actor_runtime_state_for_testing(&actor_snapshot);
+  const int unsupported_task_kind =
+      objc3_runtime_spawn_task_i32(99, 4);
+  const int invalid_group_executor =
+      objc3_runtime_enter_task_group_scope_i32(-1);
+  const int invalid_actor_bind =
+      objc3_runtime_actor_bind_executor_i32(0, 4);
+  objc3_runtime_actor_runtime_state_snapshot actor_failure_snapshot{};
+  const int actor_failure_copy_status =
+      objc3_runtime_copy_actor_runtime_state_for_testing(
+          &actor_failure_snapshot);
 
   if (spawn != 111 || child_spawn != 111 || detached_spawn != 121) {
     return Fail("spawn token helpers did not route through runtime task spawn");
@@ -64,6 +74,16 @@ int main() {
   }
   if (actor_copy_status != 0) {
     return Fail("actor runtime snapshot copy failed");
+  }
+  if (unsupported_task_kind != -OBJC3_RUNTIME_TASK_FAILURE_UNSUPPORTED_TASK_KIND ||
+      invalid_group_executor != -OBJC3_RUNTIME_TASK_FAILURE_INVALID_EXECUTOR) {
+    return Fail("task runtime fail-closed rejection values drifted");
+  }
+  if (invalid_actor_bind != 0 || actor_failure_copy_status != 0 ||
+      actor_failure_snapshot.last_failure_code !=
+          OBJC3_RUNTIME_ACTOR_FAILURE_INVALID_ACTOR_HANDLE ||
+      actor_failure_snapshot.last_operation_succeeded != 0) {
+    return Fail("actor mailbox fail-closed rejection values drifted");
   }
   if (snapshot.spawn_call_count != 3 || snapshot.scope_call_count != 1 ||
       snapshot.add_task_call_count != 2 || snapshot.wait_next_call_count != 2 ||
@@ -143,6 +163,14 @@ int main() {
             << ",\"actor_mailbox_identity_guard_passed\":"
             << actor_snapshot.mailbox_identity_guard_passed
             << ",\"actor_executor_binding_guard_passed\":"
-            << actor_snapshot.executor_binding_guard_passed << "}\n";
+            << actor_snapshot.executor_binding_guard_passed
+            << ",\"unsupported_task_kind_result\":"
+            << unsupported_task_kind
+            << ",\"invalid_group_executor_result\":"
+            << invalid_group_executor
+            << ",\"invalid_actor_bind_result\":"
+            << invalid_actor_bind
+            << ",\"actor_invalid_handle_failure_code\":"
+            << actor_failure_snapshot.last_failure_code << "}\n";
   return 0;
 }

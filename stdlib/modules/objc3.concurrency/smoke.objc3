@@ -69,6 +69,10 @@ async fn objc3_task_group_run_two(executor_tag: i32) -> i32 __attribute__((objc_
   return await objc3_concurrency_task_group_scope_depth(executor_tag, 2);
 }
 
+async fn objc3_task_group_run_bounded(executor_tag: i32, child_tasks: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_task_group_scope_depth(executor_tag, child_tasks);
+}
+
 async fn objc3_concurrency_cancellation_query(flag: i32) -> i32 __attribute__((objc_executor(global))) {
   return objc3_runtime_task_is_cancelled_i32(flag);
 }
@@ -127,6 +131,8 @@ async fn objc3_concurrency_smoke_async() -> i32 __attribute__((objc_executor(glo
   await objc3_task_join(7, 4);
   await objc3_concurrency_task_group_scope_depth(4, 2);
   await objc3_task_group_run_two(4);
+  await objc3_task_group_run_bounded(4, 2);
+  await objc3_task_group_run_bounded(4, -1);
   await objc3_concurrency_cancellation_query(4);
   await objc3_task_is_cancelled(4);
   await objc3_concurrency_cancellation_checkpoint(4);

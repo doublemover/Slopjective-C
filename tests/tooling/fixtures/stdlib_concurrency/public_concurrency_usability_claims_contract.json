@@ -22,8 +22,39 @@
     "actor_last_bound_executor_tag": 4,
     "actor_last_mailbox_drained_value": 13,
     "actor_mailbox_identity_guard_passed": 1,
-    "actor_executor_binding_guard_passed": 1
+    "actor_executor_binding_guard_passed": 1,
+    "unsupported_task_kind_result": -2,
+    "invalid_group_executor_result": -1,
+    "invalid_actor_bind_result": 0,
+    "actor_invalid_handle_failure_code": 2
   },
+  "diagnostic_evidence": [
+    {
+      "code": "O3S206",
+      "fixture": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "source_token": "fn objc3_runtime_spawn_task_i32(task_kind: bool, executor_tag: i32) -> i32"
+    },
+    {
+      "code": "O3S223",
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_await_outside_async.objc3",
+      "source_token": "return await fetchValue();"
+    },
+    {
+      "code": "O3S224",
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_executor_on_sync_function.objc3",
+      "source_token": "fn runTask() -> i32 __attribute__((objc_executor(main)))"
+    },
+    {
+      "code": "O3S342",
+      "fixture": "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+      "source_token": "hop_to_worker();"
+    },
+    {
+      "code": "O3S343",
+      "fixture": "tests/tooling/fixtures/native/non_actor_non_sendable_crossing_rejected.objc3",
+      "source_token": "cross_actor_non_sendable();"
+    }
+  ],
   "claims": [
     {
       "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
@@ -44,7 +75,8 @@
         "detached_spawn_token"
       ],
       "runtime_probe_payload_fields": [
-        "spawn_call_count"
+        "spawn_call_count",
+        "unsupported_task_kind_result"
       ],
       "reserved_until_runtime_contract": [
         "generic Task ABI",
@@ -59,6 +91,7 @@
       "exports": [
         "objc3_task_join",
         "objc3_task_group_run_two",
+        "objc3_task_group_run_bounded",
         "objc3_task_is_cancelled",
         "objc3_task_cancel_if_needed"
       ],
@@ -81,7 +114,8 @@
         "scope_call_count",
         "add_task_call_count",
         "wait_next_call_count",
-        "cancel_all_call_count"
+        "cancel_all_call_count",
+        "invalid_group_executor_result"
       ],
       "reserved_until_runtime_contract": [
         "arbitrary task group result typing",
@@ -133,7 +167,9 @@
         "actor_executor_binding_count",
         "actor_last_mailbox_drained_value",
         "actor_mailbox_identity_guard_passed",
-        "actor_executor_binding_guard_passed"
+        "actor_executor_binding_guard_passed",
+        "invalid_actor_bind_result",
+        "actor_invalid_handle_failure_code"
       ],
       "reserved_until_runtime_contract": [
         "distributed actors",

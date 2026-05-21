@@ -59,6 +59,7 @@
       "objc3_task_join",
       "objc3_concurrency_task_group_scope_depth",
       "objc3_task_group_run_two",
+      "objc3_task_group_run_bounded",
       "objc3_concurrency_cancellation_query",
       "objc3_task_is_cancelled",
       "objc3_concurrency_cancellation_checkpoint",

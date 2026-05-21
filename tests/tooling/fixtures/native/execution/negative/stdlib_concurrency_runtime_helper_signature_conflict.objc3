@@ -1,3 +1,4 @@
+// Expected diagnostic code(s): O3S206.
 // Negative execution fixture: stdlib concurrency runtime helper contracts reject ABI drift.
 module StdlibConcurrencyRuntimeHelperSignatureConflict;
 

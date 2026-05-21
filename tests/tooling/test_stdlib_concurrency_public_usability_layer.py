@@ -38,6 +38,9 @@ PUBLIC_ALIAS_ROUTES = {
     "objc3_task_group_run_two": [
         "return await objc3_concurrency_task_group_scope_depth(executor_tag, 2);",
     ],
+    "objc3_task_group_run_bounded": [
+        "return await objc3_concurrency_task_group_scope_depth(executor_tag, child_tasks);",
+    ],
     "objc3_task_is_cancelled": [
         "return await objc3_concurrency_cancellation_query(executor_tag);",
     ],
@@ -100,6 +103,14 @@ def test_public_claims_have_smoke_calls_and_runtime_probe_payloads() -> None:
 
         for field_name in claim["runtime_probe_payload_fields"]:
             assert field_name in required_payloads
+
+    for diagnostic in contract["diagnostic_evidence"]:
+        assert isinstance(diagnostic, dict)
+        fixture = ROOT / str(diagnostic["fixture"])
+        assert fixture.is_file()
+        fixture_text = fixture.read_text(encoding="utf-8")
+        assert str(diagnostic["code"]) in fixture_text
+        assert str(diagnostic["source_token"]) in fixture_text
 
 
 def test_public_aliases_route_through_bounded_concurrency_tokens() -> None:
