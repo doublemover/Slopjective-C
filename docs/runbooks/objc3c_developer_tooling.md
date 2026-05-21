@@ -212,7 +212,8 @@ full editor product:
   - runtime inspector benchmarking
   - compile-stage tracing
   - deterministic runtime debug tracing from runtime-inspector, compile-stage,
-    and editor debug artifacts
+    and editor debug artifacts, with replayable input-path evidence recorded on
+    the supported trace row
   - manifest-backed language-server capabilities and navigation
   - deterministic workspace semantic indexing across the primary source,
     checked-in stdlib modules, and showcase package workspaces
@@ -227,7 +228,8 @@ full editor product:
   - packaged CLI-to-editor, formatter, debug, and workspace handoff over the staged runnable toolchain bundle
 - explicit remaining gaps after the current implementation slice:
   - references, rename, semantic tokens, and non-diagnostic code actions remain fail-closed
-  - statement-level stepping and full source-map publication remain fail-closed
+  - statement-level stepping and full source-map publication publish explicit
+    reserved/fail-closed rows
   - async task inspection, error/unwind tracing, and LLDB plugin support remain
     reserved until emitted runtime trace snapshots prove those lanes directly
 
@@ -348,7 +350,10 @@ availability rules.
 Until native line-table and full debugger metadata are emitted on the canonical
 toolchain path, the public debug surface must describe itself as
 declaration-breakpoint and artifact-inspection driven rather than as a full
-statement debugger.
+statement debugger. The runtime debug trace and editor debug map must keep
+statement-level stepping and full source-map publication as reserved rows unless
+their required emitted artifacts exist on disk and are referenced by the
+supported trace handoff.
 
 ## Editor Protocol And Debug Artifact Contract
 

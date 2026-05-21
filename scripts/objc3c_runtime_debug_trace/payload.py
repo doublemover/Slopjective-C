@@ -246,6 +246,7 @@ def _debug_anchor_events(debug_map: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _reserved_surface_events() -> list[dict[str, Any]]:
     reserved = {
+        "full-source-map-publication": "fail-closed until emitted full source-map metadata exists on the canonical toolchain path",
         "lldb-plugin": "reserved; no checked-in LLDB plugin is published by this slice",
         "statement-level-stepping": "fail-closed until native line-table evidence is emitted",
         "async-task-inspection": "reserved until runtime inspector publishes task/executor snapshots in this trace",
@@ -312,18 +313,32 @@ def _trace_lanes(
         "source_to_artifact_mapping": {
             "status": "supported" if has_anchors else "reserved",
             "support_class": "manifest-declaration-coordinate-anchors",
+            "scope": "declaration coordinate anchors only; full source-map publication remains reserved",
+        },
+        "statement_level_stepping": {
+            "status": "reserved",
+            "support_class": "line-table-evidence-not-emitted",
+            "scope": "statement-level stepping remains fail-closed",
+        },
+        "full_source_map_publication": {
+            "status": "reserved",
+            "support_class": "full-source-map-evidence-not-emitted",
+            "scope": "full source-map publication remains fail-closed",
         },
         "async_task_inspection": {
             "status": "reserved",
             "support_class": "not-yet-in-runtime-debug-trace",
+            "scope": "reserved until task/executor runtime snapshots are emitted",
         },
         "error_unwind_trace": {
             "status": "reserved",
             "support_class": "not-yet-in-runtime-debug-trace",
+            "scope": "reserved until error bridge and unwind snapshots are emitted",
         },
         "lldb_plugin": {
             "status": "reserved",
             "support_class": "not-published",
+            "scope": "reserved until a checked-in LLDB plugin is published",
         },
     }
 
@@ -374,7 +389,7 @@ def _runtime_inspection_summary(runtime_inspector: dict[str, Any]) -> dict[str, 
     }
 
 
-def _support_handoff() -> dict[str, Any]:
+def _support_handoff(path_records: dict[str, dict[str, Any]]) -> dict[str, Any]:
     evidence_ids = [
         "OBJ3-NEXT-023.schema.runtime-debug-trace.v1",
         "OBJ3-NEXT-023.script.trace-runtime-debug",
@@ -382,32 +397,54 @@ def _support_handoff() -> dict[str, Any]:
         "OBJ3-NEXT-023.test.runtime-debug-trace-surface",
         "OBJ3-NEXT-023.command.trace-runtime-debug",
     ]
+    required_input_labels = [
+        "compile_stage_trace",
+        "debug_map",
+        "editor_surface",
+        "runtime_inspector",
+    ]
     return {
         "capability_rows": [
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace",
                 "status": "supported",
                 "evidence_ids": evidence_ids,
+                "required_input_labels": required_input_labels,
+                "required_inputs_available": all(
+                    path_records.get(label, {}).get("available") is True
+                    for label in required_input_labels
+                ),
+                "claim_boundary": "deterministic trace composition from runtime inspector, compile-stage trace, editor surface, and debug map inputs",
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.lldb_plugin",
                 "status": "reserved",
                 "evidence_ids": ["OBJ3-NEXT-023.schema.runtime-debug-trace.v1"],
+                "unpublished_reason": "no checked-in LLDB plugin is published by this slice",
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.statement_stepping",
                 "status": "reserved",
                 "evidence_ids": ["OBJ3-NEXT-023.fixture.runtime-debug-trace"],
+                "unpublished_reason": "native line-table evidence is not emitted on the canonical toolchain path",
+            },
+            {
+                "capability_id": "objc3c.behavior.runtime.debug_trace.full_source_map",
+                "status": "reserved",
+                "evidence_ids": ["OBJ3-NEXT-023.fixture.runtime-debug-trace"],
+                "unpublished_reason": "full source-map metadata is not emitted on the canonical toolchain path",
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.async_tasks",
                 "status": "reserved",
                 "evidence_ids": ["OBJ3-NEXT-023.schema.runtime-debug-trace.v1"],
+                "unpublished_reason": "task/executor runtime snapshots are not emitted in this trace",
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.error_unwind",
                 "status": "reserved",
                 "evidence_ids": ["OBJ3-NEXT-023.schema.runtime-debug-trace.v1"],
+                "unpublished_reason": "error bridge and unwind snapshots are not emitted in this trace",
             },
         ],
         "evidence_ids": evidence_ids,
@@ -507,6 +544,6 @@ def build_runtime_debug_trace_payload(
             runtime_inspector=runtime_inspector,
             debug_map_path=debug_map_path,
         ),
-        "support_handoff": _support_handoff(),
+        "support_handoff": _support_handoff(path_records),
         "steps": steps or [],
     }

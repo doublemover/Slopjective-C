@@ -51,6 +51,8 @@ The release-operations surface layers on top of:
 
 - release-foundation publication artifacts
 - portable archive, installer image, and offline-bundle package channels
+- package-ecosystem clean install evidence from
+  `npm run objc3c -- validate-package-install-distribution --from-nothing`
 
 Update and upgrade metadata are derived views over those existing outputs. The
 canonical payload remains the runnable toolchain package and its release-
@@ -104,6 +106,10 @@ Support publication for release operations must emit:
 - release evidence derived from checked manifests, channel policy, and
   release-foundation/package-channel outputs; generated reports may summarize
   that evidence but cannot become source truth
+- a clean package-install prerequisite for every channel; the prerequisite must
+  delete package-ecosystem owned temp roots first and publish
+  `tmp/reports/package-ecosystem/install-distribution-credibility-summary.json`
+  with a passing `from_nothing_probe`
 
 Warnings must be deterministic and derived from checked-in policy classes such
 as:
@@ -156,6 +162,13 @@ support summary, package archive pointers, or upgrade-support report contract is
 missing, the release-operations action fails closed with the owning public action
 named in the diagnostic. Public action names stay stable; the hard cutover is in
 the source and artifact contracts, not in a retired command bridge.
+
+Release operations may reference package-ecosystem install credibility only when
+the checked-in channel model requires `validate-package-install-distribution`
+with the `--from-nothing` flag. A preexisting package-ecosystem `tmp` summary is
+not source truth for channel closure unless its `from_nothing_probe` proves that
+the package-ecosystem owned temp roots were absent after cleanup and regenerated
+by the replay.
 
 ## Non-Goals
 

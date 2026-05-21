@@ -26,18 +26,29 @@ def load_json(path: Path) -> dict[str, object]:
 
 def fixture_payload() -> dict[str, object]:
     contract = load_json(FIXTURE_ROOT / "contract.json")
-    return build_runtime_debug_trace_payload(
+    return build_fixture_payload(
         source_path=str(contract["source_path"]),
-        runtime_inspector=load_json(FIXTURE_ROOT / "runtime-inspector.json"),
-        stage_trace=load_json(FIXTURE_ROOT / "compile-stage-trace.json"),
-        editor_surface=load_json(FIXTURE_ROOT / "editor-surface.json"),
-        debug_map=load_json(FIXTURE_ROOT / "debug-map.json"),
         input_paths={
             "runtime_inspector": FIXTURE_ROOT / "runtime-inspector.json",
             "compile_stage_trace": FIXTURE_ROOT / "compile-stage-trace.json",
             "editor_surface": FIXTURE_ROOT / "editor-surface.json",
             "debug_map": FIXTURE_ROOT / "debug-map.json",
         },
+    )
+
+
+def build_fixture_payload(
+    *,
+    source_path: str,
+    input_paths: dict[str, Path | str],
+) -> dict[str, object]:
+    return build_runtime_debug_trace_payload(
+        source_path=source_path,
+        runtime_inspector=load_json(FIXTURE_ROOT / "runtime-inspector.json"),
+        stage_trace=load_json(FIXTURE_ROOT / "compile-stage-trace.json"),
+        editor_surface=load_json(FIXTURE_ROOT / "editor-surface.json"),
+        debug_map=load_json(FIXTURE_ROOT / "debug-map.json"),
+        input_paths=input_paths,
         steps=[],
     )
 
@@ -71,6 +82,7 @@ def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None
         assert trace_lanes[lane]["status"] == "reserved"
     assert payload["support_boundary"]["debug_metadata_public_abi"] is False
     assert payload["support_boundary"]["statement_level_stepping"] is False
+    assert payload["source_mapping"]["full_source_map_status"] == "reserved"
     assert payload["inspection_commands"]["runtime_debug_trace"].startswith(
         "npm run objc3c -- trace-runtime-debug"
     )
@@ -83,9 +95,42 @@ def test_runtime_debug_trace_support_handoff_ids_are_explicit() -> None:
         row["capability_id"]
         for row in payload["support_handoff"]["capability_rows"]
     }
+    rows = {
+        row["capability_id"]: row
+        for row in payload["support_handoff"]["capability_rows"]
+    }
 
     assert set(contract["required_support_handoff_ids"]).issubset(handoff_ids)
     assert "OBJ3-NEXT-023.schema.runtime-debug-trace.v1" in payload["support_handoff"]["evidence_ids"]
+    assert rows["objc3c.behavior.runtime.debug_trace"]["required_inputs_available"] is True
+    assert rows["objc3c.behavior.runtime.debug_trace"]["required_input_labels"] == [
+        "compile_stage_trace",
+        "debug_map",
+        "editor_surface",
+        "runtime_inspector",
+    ]
+    for capability_id in contract["required_support_handoff_ids"]:
+        if capability_id == "objc3c.behavior.runtime.debug_trace":
+            continue
+        assert rows[capability_id]["status"] == "reserved"
+        assert rows[capability_id]["unpublished_reason"]
+
+
+def test_runtime_debug_trace_supported_row_fails_closed_without_replayable_inputs() -> None:
+    contract = load_json(FIXTURE_ROOT / "contract.json")
+    payload = build_fixture_payload(
+        source_path=str(contract["source_path"]),
+        input_paths={
+            "runtime_inspector": FIXTURE_ROOT / "runtime-inspector.json",
+            "compile_stage_trace": FIXTURE_ROOT / "compile-stage-trace.json",
+            "editor_surface": FIXTURE_ROOT / "editor-surface.json",
+            "debug_map": FIXTURE_ROOT / "missing-debug-map.json",
+        },
+    )
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert "supported runtime debug trace row has unavailable input: debug_map" in failures
 
 
 def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:

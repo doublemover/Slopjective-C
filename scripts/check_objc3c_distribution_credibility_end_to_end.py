@@ -29,6 +29,7 @@ TRUST_REPORT_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "r
 TRUST_REPORT_MD = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.md"
 DASHBOARD_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "dashboard" / "distribution-credibility-dashboard.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibility" / "artifact_surface.json"
+PACKAGE_INSTALL_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "end-to-end-summary.json"
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 
@@ -79,14 +80,59 @@ def validate_evidence_artifact(artifact: Any) -> str:
     return raw_path
 
 
+def validate_from_nothing_package_install_summary(payload: dict[str, Any]) -> None:
+    expect(
+        payload.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.summary.v1",
+        "package install distribution summary contract drifted",
+    )
+    expect(payload.get("status") == "PASS", "package install distribution summary did not pass")
+    probe = payload.get("from_nothing_probe")
+    expect(isinstance(probe, dict), "package install from-nothing probe drifted")
+    expect(probe.get("requested") is True, "package install was not requested from nothing")
+    expect(
+        probe.get("generated_from_clean_owned_outputs") is True,
+        "package install was not regenerated from clean owned outputs",
+    )
+    after_clean = probe.get("owned_outputs_exist_after_clean")
+    expect(isinstance(after_clean, dict), "package install owned-output clean probe drifted")
+    expect(
+        after_clean.get("tmp/artifacts/package-ecosystem") is False
+        and after_clean.get("tmp/reports/package-ecosystem") is False,
+        "package install owned temp roots were not clean before replay",
+    )
+
+
+def refresh_from_nothing_distribution_inputs() -> None:
+    steps = [
+        (
+            "package install distribution from nothing",
+            public_workflow_command("validate-package-install-distribution", "--from-nothing"),
+        ),
+        (
+            "distribution credibility dashboard rebuild",
+            public_workflow_command("build-distribution-credibility-dashboard"),
+        ),
+        (
+            "distribution credibility publication rebuild",
+            public_workflow_command("publish-distribution-credibility"),
+        ),
+    ]
+    for label, command in steps:
+        result = run_capture(command, capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"{label} failed")
+
+
 def main() -> int:
     result = run_capture(public_workflow_command("validate-distribution-credibility"))
     if result.returncode != 0:
         raise RuntimeError("validate-distribution-credibility failed")
+    refresh_from_nothing_distribution_inputs()
 
     trust_report = load_json(TRUST_REPORT_JSON)
     dashboard = load_json(DASHBOARD_JSON)
     artifact_surface = load_json(ARTIFACT_SURFACE)
+    package_install_summary = load_json(PACKAGE_INSTALL_SUMMARY)
     expect(TRUST_REPORT_MD.is_file(), "missing markdown trust report")
     expect(artifact_surface.get("trust_report_json") == repo_rel(TRUST_REPORT_JSON), "trust report JSON path drifted")
     expect(artifact_surface.get("trust_report_markdown") == repo_rel(TRUST_REPORT_MD), "trust report markdown path drifted")
@@ -98,6 +144,7 @@ def main() -> int:
     expect(trust_report.get("trust_signals") == dashboard.get("trust_signals"), "trust signal publication drifted")
     expect(trust_report.get("required_drill_steps") == dashboard.get("required_drill_steps"), "release drill publication drifted")
     expect(trust_report.get("operator_actions") == dashboard.get("operator_actions"), "operator action publication drifted")
+    validate_from_nothing_package_install_summary(package_install_summary)
     evidence_paths = trust_report.get("evidence_paths", [])
     expect(isinstance(evidence_paths, list) and len(evidence_paths) >= 5, "evidence paths drifted")
     evidence_artifacts = trust_report.get("evidence_artifacts", [])

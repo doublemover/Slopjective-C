@@ -23,7 +23,7 @@ The canonical upstream surfaces are:
 - release-foundation manifests, SBOMs, and provenance attestations
 - packaging-channel payloads, install receipts, and rollback proofs
 - package-ecosystem clean install evidence from
-  `npm run objc3c -- validate-package-install-distribution`
+  `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - release-operations update manifests, support-window reports, and rollback guidance
 - the existing release-evidence index from `npm run objc3c -- check-release-evidence`
 
@@ -41,6 +41,9 @@ The machine-owned distribution trust story is limited to:
 - install and rollback smoke over the packaged channels
 - clean local package install evidence with no network access and hosted registry
   support explicitly fail-closed
+- a package-ecosystem `from_nothing_probe` proving that
+  `tmp/artifacts/package-ecosystem` and `tmp/reports/package-ecosystem` were
+  removed before the install evidence was regenerated
 - update-manifest and support-window publication coherence
 - release-evidence gate coverage over the published conformance artifacts
 - explicit recovery and operator drill guidance for the live package surfaces
@@ -160,7 +163,10 @@ The integrated workflow steps are fixed:
 
 Integration and end-to-end summaries must prove that the dashboard artifact,
 trust report JSON, markdown report, trust signals, release drill steps, and
-operator actions all match the checked-in contract surfaces.
+operator actions all match the checked-in contract surfaces. They must also fail
+closed when the package-install summary was generated without the from-nothing
+probe; preexisting `tmp` package-ecosystem artifacts are replay outputs only, not
+distribution-credibility source truth.
 
 ## Non-Goals
 

@@ -92,31 +92,29 @@ def build_language_server_payload(
         diagnostic_entries or [],
     )
     code_action_available = int(diagnostic_transport["code_action_count"]) > 0
-    supported_capabilities = [
-        "publishDiagnostics",
-        "documentSymbol" if manifest_available else None,
-        "workspaceSymbol" if manifest_available and workspace_index_available else None,
-        "definition" if manifest_available and symbols else None,
-        "codeAction" if code_action_available else None,
-    ]
-    supported_capabilities = [capability for capability in supported_capabilities if capability is not None]
-    unpublished_capabilities = [
-        "references",
-        "rename",
-        "semanticTokens",
-        "codeAction" if not code_action_available else None,
-        "statementLevelStepping",
-    ]
-    unpublished_capabilities = [capability for capability in unpublished_capabilities if capability is not None]
+    capability_evidence = {
+        "publishDiagnostics": ["diagnostics-json"],
+        "documentSymbol": ["compile-manifest-declaration-coordinates"],
+        "workspaceSymbol": [
+            "compile-manifest-declaration-coordinates",
+            "workspace-semantic-index-guardrails",
+        ],
+        "definition": ["compile-manifest-declaration-coordinates"],
+        "codeAction": ["diagnostics-json-fixits"],
+    }
     capability_statuses = {
         "publishDiagnostics": {
             "supported": True,
             "support_class": "authoritative",
             "evidence": "diagnostics-json",
+            "evidence_ids": capability_evidence["publishDiagnostics"],
+            "fail_closed": False,
         },
         "documentSymbol": {
             "supported": manifest_available,
             "support_class": "manifest-backed" if manifest_available else "fail-closed",
+            "evidence_ids": capability_evidence["documentSymbol"] if manifest_available else [],
+            "fail_closed": not manifest_available,
             "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
         },
         "workspaceSymbol": {
@@ -124,6 +122,10 @@ def build_language_server_payload(
             "support_class": "workspace-index-backed"
             if manifest_available and workspace_index_available
             else "fail-closed",
+            "evidence_ids": capability_evidence["workspaceSymbol"]
+            if manifest_available and workspace_index_available
+            else [],
+            "fail_closed": not (manifest_available and workspace_index_available),
             "unpublished_reason": ""
             if manifest_available and workspace_index_available
             else "disabled until compile emits manifest declarations and workspace package index guardrails pass",
@@ -131,21 +133,29 @@ def build_language_server_payload(
         "definition": {
             "supported": manifest_available and bool(symbols),
             "support_class": "manifest-backed" if manifest_available and symbols else "fail-closed",
+            "evidence_ids": capability_evidence["definition"] if manifest_available and symbols else [],
+            "fail_closed": not (manifest_available and bool(symbols)),
             "unpublished_reason": "" if manifest_available and symbols else "disabled until compile emits declaration coordinates",
         },
         "references": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; use documentSymbol/workspaceSymbol and definition on compile-owned declarations",
         },
         "rename": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; canonical compile graph has no rename contract yet",
         },
         "semanticTokens": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; no semantic token contract is emitted on the canonical toolchain path",
         },
         "codeAction": {
@@ -154,22 +164,38 @@ def build_language_server_payload(
             if code_action_available
             else "fail-closed",
             "evidence": "diagnostics-json-fixits" if code_action_available else "",
+            "evidence_ids": capability_evidence["codeAction"] if code_action_available else [],
+            "fail_closed": not code_action_available,
             "unpublished_reason": ""
             if code_action_available
             else "disabled until diagnostics emit machine-applicable fix-its",
         },
         "statementLevelStepping": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; statement stepping remains fail-closed pending line-table evidence",
         },
     }
+    supported_capabilities = [
+        capability_id
+        for capability_id, status in capability_statuses.items()
+        if status["supported"] is True
+    ]
+    unpublished_capabilities = [
+        capability_id
+        for capability_id, status in capability_statuses.items()
+        if status["supported"] is False
+    ]
     return {
         "contract_id": "objc3c.developer.tooling.language.server.capability.surface.v1",
         "summary_status_name": summary.get("observability", {}).get("status_name", ""),
         "manifest_backed_navigation": manifest_available,
         "workspace_index_backed_navigation": workspace_index_available,
         "diagnostic_transport": diagnostic_transport,
+        "capability_evidence_roots": capability_evidence,
+        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
@@ -233,6 +259,9 @@ def build_debug_payload(
         for symbol in symbols
     ]
     supported = bool(object_path_text) or bool(declaration_breakpoints)
+    evidence_roots = ["compile-manifest-declaration-coordinates"] if declaration_breakpoints else []
+    if object_path_text and object_symbols:
+        evidence_roots.append("runtime-inspector-object-symbol-inventory")
     return {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": supported,
@@ -254,6 +283,21 @@ def build_debug_payload(
         "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
         "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
         "artifact_inspection_ready": bool(object_path_text and object_symbols),
+        "evidence_roots": evidence_roots,
+        "reserved_capability_rows": [
+            {
+                "capability_id": "statementLevelStepping",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "line-table evidence is not emitted on the canonical toolchain path",
+            },
+            {
+                "capability_id": "fullSourceMapPublication",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "full source-map metadata is not emitted on the canonical toolchain path",
+            },
+        ],
         "retired_route_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
     }
 

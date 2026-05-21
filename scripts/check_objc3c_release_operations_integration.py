@@ -12,6 +12,7 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-release-operations.json"
 WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "workflow_surface.json"
+CHANNEL_OPERATIONS_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "channel_operations_model.json"
 MANIFEST_SUMMARY = ROOT / "tmp" / "reports" / "release-operations" / "update-manifest-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "release-operations" / "publication-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "integration-summary.json"
@@ -30,15 +31,40 @@ def fail(message: str) -> int:
     return 1
 
 
+def clean_install_prerequisite_channels(channel_operations_model: dict[str, Any]) -> list[str]:
+    channels = channel_operations_model.get("channels", [])
+    if not isinstance(channels, list) or not channels:
+        raise RuntimeError("channel operations model missing channels")
+    channel_ids: list[str] = []
+    for channel in channels:
+        if not isinstance(channel, dict):
+            raise RuntimeError("channel operations model channel must be an object")
+        channel_id = str(channel.get("channel_id", ""))
+        prerequisite = channel.get("clean_install_prerequisite")
+        if not isinstance(prerequisite, dict):
+            raise RuntimeError(f"{channel_id} channel missing clean install prerequisite")
+        expected = {
+            "required_action": "validate-package-install-distribution",
+            "required_flag": "--from-nothing",
+            "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+            "blocks_publication_on_failure": True,
+        }
+        if prerequisite != expected:
+            raise RuntimeError(f"{channel_id} clean install prerequisite drifted")
+        channel_ids.append(channel_id)
+    return channel_ids
+
+
 
 
 def main() -> int:
-    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, MANIFEST_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, CHANNEL_OPERATIONS_MODEL, MANIFEST_SUMMARY, PUBLICATION_SUMMARY):
         if not path.is_file():
             return fail(f"missing required artifact {repo_rel(path)}")
 
     workflow_report = load_json(WORKFLOW_REPORT)
     workflow_surface = load_json(WORKFLOW_SURFACE)
+    channel_operations_model = load_json(CHANNEL_OPERATIONS_MODEL)
     manifest_summary = load_json(MANIFEST_SUMMARY)
     publication_summary = load_json(PUBLICATION_SUMMARY)
 
@@ -64,6 +90,10 @@ def main() -> int:
         return fail("upgrade support report path drifted between manifest and publication")
     if manifest_summary.get("release_channel_manifest") != publication_summary.get("release_channel_manifest"):
         return fail("release channel manifest path drifted between manifest and publication")
+    try:
+        clean_prerequisite_channels = clean_install_prerequisite_channels(channel_operations_model)
+    except RuntimeError as exc:
+        return fail(str(exc))
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -75,6 +105,7 @@ def main() -> int:
         "release_channel_manifest": publication_summary.get("release_channel_manifest"),
         "upgrade_support_report": publication_summary.get("upgrade_support_report"),
         "channel_catalog": publication_summary.get("channel_catalog"),
+        "clean_install_prerequisite_channels": clean_prerequisite_channels,
         "release_operations_owned_actions": workflow_surface.get("release_operations_owned_actions"),
     }
     write_json_file(SUMMARY_PATH, summary)

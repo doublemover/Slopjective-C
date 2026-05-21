@@ -121,6 +121,8 @@ def test_language_server_payload_advertises_code_actions_only_with_fixits() -> N
         "supported": True,
         "support_class": "diagnostics-fixit-backed",
         "evidence": "diagnostics-json-fixits",
+        "evidence_ids": ["diagnostics-json-fixits"],
+        "fail_closed": False,
         "unpublished_reason": "",
     }
     assert (
@@ -139,6 +141,64 @@ def test_language_server_payload_advertises_code_actions_only_with_fixits() -> N
     assert "codeAction" not in no_fixit_payload["supported_capability_ids"]
     assert "codeAction" in no_fixit_payload["unpublished_capability_ids"]
     assert no_fixit_payload["capability_statuses"]["codeAction"]["supported"] is False
+    assert no_fixit_payload["capability_statuses"]["codeAction"]["fail_closed"] is True
+
+
+def test_language_server_unpublished_rows_follow_actual_capability_statuses() -> None:
+    payload = build_language_server_payload(
+        {"observability": {"status_name": "OK"}},
+        None,
+        [],
+        {"available": False, "package_count": 0},
+        source_path="tests/tooling/fixtures/native/hello.objc3",
+        diagnostic_entries=[],
+    )
+
+    assert payload["supported_capability_ids"] == ["publishDiagnostics"]
+    assert {
+        "documentSymbol",
+        "workspaceSymbol",
+        "definition",
+        "references",
+        "rename",
+        "semanticTokens",
+        "codeAction",
+        "statementLevelStepping",
+    }.issubset(set(payload["unpublished_capability_ids"]))
+    for capability_id in payload["unpublished_capability_ids"]:
+        assert payload["capability_statuses"][capability_id]["supported"] is False
+        assert payload["capability_statuses"][capability_id]["fail_closed"] is True
+
+
+def test_language_server_rows_publish_evidence_or_fail_closed() -> None:
+    contract = load_json(CONTRACT_PATH)
+    diagnostics = load_contract_diagnostics(contract)
+    workspace_index = {
+        "available": True,
+        "package_count": 2,
+        "guardrails": {"ok": True},
+    }
+
+    payload = build_language_server_payload(
+        {"observability": {"status_name": "OK"}},
+        "tmp/artifacts/module.manifest.json",
+        [{"name": "main", "kind": "function", "line": 1, "column": 1}],
+        workspace_index,
+        source_path=str(contract["source_uri"]),
+        diagnostic_entries=diagnostics,
+    )
+
+    for capability_id in payload["supported_capability_ids"]:
+        status = payload["capability_statuses"][capability_id]
+        assert status["supported"] is True
+        assert status["fail_closed"] is False
+        assert status["evidence_ids"]
+    for capability_id in ("references", "rename", "semanticTokens", "statementLevelStepping"):
+        status = payload["capability_statuses"][capability_id]
+        assert status["supported"] is False
+        assert status["fail_closed"] is True
+        assert not status["evidence_ids"]
+        assert capability_id in payload["unpublished_capability_ids"]
 
 
 def test_language_server_policy_documents_fixit_backed_code_action_boundary() -> None:

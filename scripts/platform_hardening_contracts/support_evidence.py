@@ -25,6 +25,9 @@ REQUIRED_SUPPORTED_EVIDENCE_CLASSES: tuple[str, ...] = (
 CLEAN_INSTALL_SUMMARY_PATH = (
     "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
 )
+CLEAN_INSTALL_VERIFICATION_PATH = (
+    "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json"
+)
 CLEAN_INSTALL_CHECKER_PATH = (
     "scripts/check_objc3c_package_install_distribution_credibility.py"
 )
@@ -104,11 +107,8 @@ def _clean_room_record_proves_from_nothing_install(record: dict[str, Any]) -> No
     )
     expect(
         any(
-            (
-                "validate-package-install-distribution" in command
-                or CLEAN_INSTALL_CHECKER_PATH in command
-            )
-            and "--from-nothing" in command
+            "npm run objc3c -- validate-package-install-distribution --from-nothing"
+            in command
             for command in replay_commands
         ),
         f"{evidence_id} did not replay the from-nothing package install path",
@@ -116,6 +116,10 @@ def _clean_room_record_proves_from_nothing_install(record: dict[str, Any]) -> No
     expect(
         CLEAN_INSTALL_SUMMARY_PATH in generated_report_paths,
         f"{evidence_id} did not publish clean install summary evidence",
+    )
+    expect(
+        CLEAN_INSTALL_VERIFICATION_PATH in generated_report_paths,
+        f"{evidence_id} did not publish clean install verification evidence",
     )
 
 

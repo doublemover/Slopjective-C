@@ -78,10 +78,14 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         if record["evidence_id"] == "objc3c.evidence.clean-room.local-offline-install"
     )
     assert clean_room_record["replay_commands"] == [
-        "python scripts/check_objc3c_package_install_distribution_credibility.py --from-nothing"
+        "npm run objc3c -- validate-package-install-distribution --from-nothing"
     ]
     assert (
         "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+        in clean_room_record["generated_report_paths"]
+    )
+    assert (
+        "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json"
         in clean_room_record["generated_report_paths"]
     )
     assert {

@@ -283,7 +283,7 @@
         "scripts/package_objc3c_runnable_toolchain.ps1"
       ],
       "replay_commands": [
-        "python scripts/check_objc3c_package_install_distribution_credibility.py --from-nothing"
+        "npm run objc3c -- validate-package-install-distribution --from-nothing"
       ],
       "generated_report_paths": [
         "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",

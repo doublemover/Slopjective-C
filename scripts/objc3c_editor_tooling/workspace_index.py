@@ -344,11 +344,27 @@ def build_workspace_index(
         "edges": edges,
         "guardrail_checks": guardrails["checks"],
     }
+    evidence_roots = list(dict.fromkeys([
+        "stdlib/module_inventory.json",
+        "showcase/portfolio.json",
+        "showcase/demo_packages.json",
+        *guardrails["source_contracts"],
+    ]))
+    if manifest_path:
+        evidence_roots.append(manifest_path)
+    available = manifest_path is not None and guardrails["ok"]
     return {
         "contract_id": "objc3c.developer.tooling.workspace.semantic.index.v1",
-        "available": manifest_path is not None and guardrails["ok"],
+        "available": available,
         "index_model": "compile-manifest-plus-checked-in-package-workspace-surfaces",
         "source_truth_model": "checked-in-workspace-and-package-surfaces-plus-live-frontend-manifest",
+        "evidence_roots": evidence_roots,
+        "unsupported_surfaces": [
+            "network-backed workspace restore",
+            "tmp-only workspace source truth",
+            "workspace symbols without manifest-backed source coordinates",
+        ],
+        "fail_closed": not available,
         "package_count": len(packages),
         "cross_package_edge_count": len(edges),
         "packages": packages,
@@ -358,6 +374,10 @@ def build_workspace_index(
         "workspace_index_digest": stable_digest(digest_inputs),
         "deterministic_ordering": "package-id-then-source-path",
         "retired_route_reason": ""
-        if guardrails["ok"]
-        else "workspace package guardrails failed closed",
+        if available
+        else (
+            "compile produced no manifest-backed declaration surface"
+            if manifest_path is None
+            else "workspace package guardrails failed closed"
+        ),
     }

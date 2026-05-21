@@ -23,6 +23,9 @@ from scripts.objc3c_workflow.actions.release_governance_distribution_credibility
     DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS,
     require_distribution_credibility_owner_contract,
 )
+from scripts.check_objc3c_distribution_credibility_integration import (
+    package_install_summary_is_from_nothing,
+)
 
 
 OWNER_MODULES = (
@@ -150,6 +153,13 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
                 "build-distribution-credibility-dashboard",
                 "publish-distribution-credibility",
             ],
+            "from_nothing_evidence": {
+                "required_action": "validate-package-install-distribution",
+                "required_flag": "--from-nothing",
+                "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+                "stale_artifacts_allowed": False,
+                "dashboard_blocks_if_missing": True,
+            },
         },
         release_manifest={
             "contract_id": "objc3c.release.foundation.manifest.v1",
@@ -319,3 +329,38 @@ def test_distribution_credibility_fixtures_reject_evidence_log_trust_evidence() 
     assert claim_policy["evidence_log_allowed"] is False
     assert claim_policy["wrapper_only_allowed"] is False
     assert "release-drill" in claim_policy["trust_report_boundary"]
+
+    assert workflow_surface["from_nothing_evidence"] == {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "stale_artifacts_allowed": False,
+        "dashboard_blocks_if_missing": True,
+    }
+
+
+def test_distribution_credibility_integration_requires_from_nothing_package_summary() -> None:
+    valid_summary = {
+        "from_nothing_probe": {
+            "requested": True,
+            "generated_from_clean_owned_outputs": True,
+            "owned_outputs_exist_after_clean": {
+                "tmp/artifacts/package-ecosystem": False,
+                "tmp/reports/package-ecosystem": False,
+            },
+        }
+    }
+
+    assert package_install_summary_is_from_nothing(valid_summary)
+
+    stale_summary = {
+        "from_nothing_probe": {
+            "requested": False,
+            "generated_from_clean_owned_outputs": False,
+            "owned_outputs_exist_after_clean": {
+                "tmp/artifacts/package-ecosystem": True,
+                "tmp/reports/package-ecosystem": True,
+            },
+        }
+    }
+    assert not package_install_summary_is_from_nothing(stale_summary)

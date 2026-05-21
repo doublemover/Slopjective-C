@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
+CHANNEL_OPERATIONS_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "channel_operations_model.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
 
 
@@ -39,10 +40,43 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_clean_install_prerequisites(channel_operations_model: dict[str, Any]) -> list[str]:
+    channels = channel_operations_model.get("channels", [])
+    expect(isinstance(channels, list) and channels, "channel operations model missing channels")
+    channel_ids: list[str] = []
+    for channel in channels:
+        expect(isinstance(channel, dict), "channel operations model channel must be an object")
+        channel_id = str(channel.get("channel_id", ""))
+        expect(channel_id, "channel operations model channel missing channel_id")
+        prerequisite = channel.get("clean_install_prerequisite")
+        expect(isinstance(prerequisite, dict), f"{channel_id} channel missing clean install prerequisite")
+        expect(
+            prerequisite.get("required_action") == "validate-package-install-distribution",
+            f"{channel_id} clean install prerequisite action drifted",
+        )
+        expect(
+            prerequisite.get("required_flag") == "--from-nothing",
+            f"{channel_id} clean install prerequisite flag drifted",
+        )
+        expect(
+            prerequisite.get("required_summary")
+            == "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+            f"{channel_id} clean install prerequisite summary drifted",
+        )
+        expect(
+            prerequisite.get("blocks_publication_on_failure") is True,
+            f"{channel_id} clean install prerequisite must block publication",
+        )
+        channel_ids.append(channel_id)
+    return channel_ids
+
+
 def write_summary() -> None:
     update_manifest = load_json(UPDATE_MANIFEST)
     release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
     upgrade_support_report = load_json(UPGRADE_SUPPORT_REPORT)
+    channel_operations_model = load_json(CHANNEL_OPERATIONS_MODEL)
+    clean_install_prerequisite_channels = validate_clean_install_prerequisites(channel_operations_model)
 
     channel_ids = [entry.get("channel_id") for entry in update_manifest.get("channels", [])]
     expect(channel_ids == ["stable", "candidate", "nightly", "preview"], f"channel ids drifted: {channel_ids}")
@@ -136,6 +170,7 @@ def write_summary() -> None:
         "stable_gate_actions": stable_gates,
         "nightly_gate_actions": nightly_gates,
         "stable_artifacts": stable["artifacts"],
+        "clean_install_prerequisite_channels": clean_install_prerequisite_channels,
         "fail_closed_diagnostic_count": len(fail_closed),
         "rollback_diagnostic_count": len(rollback_diagnostics),
         "release_evidence_artifact_count": len(release_evidence.get("evidence_artifacts", [])),

@@ -31,6 +31,7 @@ from scripts.objc3c_workflow.action_catalog_package_integration import (  # noqa
 from scripts.objc3c_workflow.actions.ecosystem_publication_owner_contracts import (  # noqa: E402
     ecosystem_publication_owner_contract,
 )
+from scripts.objc3c_workflow.actions import ecosystem_publication_package  # noqa: E402
 from scripts.objc3c_workflow.actions.ecosystem_publication_package_contracts import (  # noqa: E402
     PACKAGE_INSTALL_DISTRIBUTION_PY,
     PACKAGE_PUBLICATION_ACTION_CONTRACTS,
@@ -160,6 +161,27 @@ def test_install_distribution_public_action_and_owner_contract_are_registered() 
     assert "install_distribution_credibility_contract.json" in " ".join(contract.source_contracts)
     assert not contract.evidence_log_allowed
     assert not contract.wrapper_only_allowed
+
+
+def test_install_distribution_public_action_passes_from_nothing_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_runner(action_name: str, rest: list[str] | None = None) -> int:
+        captured["action_name"] = action_name
+        captured["rest"] = list(rest or [])
+        return 0
+
+    monkeypatch.setattr(
+        ecosystem_publication_package,
+        "run_package_publication_action",
+        fake_runner,
+    )
+
+    assert ecosystem_publication_package.action_validate_package_install_distribution(["--from-nothing"]) == 0
+    assert captured == {
+        "action_name": "validate-package-install-distribution",
+        "rest": ["--from-nothing"],
+    }
 
 
 def test_install_distribution_verification_keeps_package_contract_boundary(install_summary: dict[str, Any]) -> None:
