@@ -728,6 +728,80 @@ def _check_advanced_runtime_reserved_umbrella(
     )
 
 
+def _support_claim_suffix(claim: str) -> str:
+    prefix = "objc3c.behavior."
+    if claim.startswith(prefix):
+        return claim[len(prefix) :]
+    return claim
+
+
+def _check_advanced_runtime_reserved_capabilities_fail_closed(
+    failures: list[str],
+    matrix_rows: dict[str, dict[str, Any]],
+    evidence_rows: list[dict[str, Any]],
+    manifest_claims: dict[str, dict[str, Any]],
+    catalog_rows: dict[str, dict[str, Any]],
+) -> None:
+    reserved_capability_ids = {
+        "language.advanced-runtime-closure",
+        *ADVANCED_RUNTIME_RESERVED_BOUNDARIES,
+    }
+
+    for capability_id in sorted(reserved_capability_ids):
+        matrix_row = matrix_rows.get(capability_id)
+        if matrix_row is not None:
+            _append(
+                failures,
+                matrix_row.get("state") in {"reserved", "internal", "rejected"},
+                f"{capability_id} must fail closed if a matrix row exists",
+            )
+            _append(
+                failures,
+                not matrix_row.get("support_claims"),
+                f"{capability_id} must not publish support_claims",
+            )
+
+    for row in evidence_rows:
+        capability_id = str(row.get("capability_id", ""))
+        support_claim = str(row.get("support_claim", ""))
+        _append(
+            failures,
+            capability_id not in reserved_capability_ids or not support_claim,
+            f"{capability_id} evidence row must stay non-claiming",
+        )
+        _append(
+            failures,
+            _support_claim_suffix(support_claim) not in reserved_capability_ids,
+            f"{support_claim} must not publish a reserved advanced-runtime capability",
+        )
+
+    for claim_id, row in manifest_claims.items():
+        capability_id = str(row.get("capability_id", ""))
+        _append(
+            failures,
+            _support_claim_suffix(claim_id) not in reserved_capability_ids,
+            f"{claim_id} must not publish a reserved advanced-runtime capability",
+        )
+        _append(
+            failures,
+            capability_id not in reserved_capability_ids,
+            f"{claim_id} must not map to reserved capability {capability_id}",
+        )
+
+    for support_claim, row in catalog_rows.items():
+        capability_id = str(row.get("capability_id", ""))
+        _append(
+            failures,
+            _support_claim_suffix(support_claim) not in reserved_capability_ids,
+            f"{support_claim} catalog row must not publish a reserved advanced-runtime capability",
+        )
+        _append(
+            failures,
+            capability_id not in reserved_capability_ids,
+            f"{support_claim} catalog row must not map to reserved capability {capability_id}",
+        )
+
+
 def validate_next_runtime_public_rows() -> dict[str, Any]:
     matrix = _load_json(MATRIX_PATH)
     evidence_map = _load_json(EVIDENCE_MAP_PATH)
@@ -782,6 +856,13 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
         failures,
         matrix_rows,
         evidence_dict_rows,
+    )
+    _check_advanced_runtime_reserved_capabilities_fail_closed(
+        failures,
+        matrix_rows,
+        evidence_dict_rows,
+        manifest_claims,
+        catalog_rows,
     )
 
     report = {

@@ -131,6 +131,65 @@ def _assert_object_model_support_contracts_are_source_derived(
     assert any("public capability truth" in scope for scope in covered_scopes)
 
 
+def _assert_advanced_runtime_support_contracts_are_source_derived(
+    contract: dict[str, Any],
+) -> None:
+    implemented_rows = {
+        row["capability_id"]: row for row in contract["implemented_rows"]
+    }
+    reserved_boundary_ids = {
+        boundary["boundary_id"] for boundary in contract["reserved_boundaries"]
+    }
+    support_contracts = contract.get("implemented_support_contracts")
+
+    assert isinstance(support_contracts, list)
+    assert len(support_contracts) == len(implemented_rows)
+
+    covered_capabilities = set()
+    covered_scopes = set()
+    covered_reserved_boundaries = set()
+    for support_contract in support_contracts:
+        capability_id = support_contract["capability_id"]
+        support_claim = support_contract["support_claim"]
+        implemented_row = implemented_rows[capability_id]
+
+        assert implemented_row["support_claim"] == support_claim
+        assert support_contract["contract_id"].startswith(
+            "objc3c.advanced-runtime.public-support."
+        )
+        assert support_contract["public_command"].startswith("npm run objc3c -- ")
+        assert "advanced-runtime-closure" not in support_claim
+        assert "full-language-closure" not in support_claim
+        assert "broad-runtime-closure" not in support_claim
+
+        source_truth = support_contract["source_truth"]
+        positive_evidence = support_contract["positive_evidence"]
+        negative_evidence = support_contract["negative_evidence"]
+        reserved_non_public = support_contract["reserved_non_public_capabilities"]
+        assert len(source_truth) >= 3
+        assert len(positive_evidence) >= 3
+        assert len(negative_evidence) >= 2
+        assert set(reserved_non_public) <= reserved_boundary_ids
+
+        for path in (*source_truth, *positive_evidence, *negative_evidence):
+            assert not str(path).startswith("tmp/")
+            assert (ROOT / path).exists(), path
+
+        covered_capabilities.add(capability_id)
+        covered_scopes.add(support_contract["contract_scope"])
+        covered_reserved_boundaries.update(reserved_non_public)
+
+    assert covered_capabilities == set(implemented_rows)
+    assert covered_reserved_boundaries == reserved_boundary_ids
+    assert any("block capture" in scope for scope in covered_scopes)
+    assert any("ARC cleanup" in scope for scope in covered_scopes)
+    assert any("NSError/status bridge" in scope for scope in covered_scopes)
+    assert any("task continuation" in scope for scope in covered_scopes)
+    assert any("actor mailbox" in scope for scope in covered_scopes)
+    assert any("macro host" in scope for scope in covered_scopes)
+    assert any("package loader" in scope for scope in covered_scopes)
+
+
 def test_object_model_public_capability_split_matches_capability_matrix() -> None:
     contract = build_object_model_capability_split_contract()
 
@@ -157,6 +216,13 @@ def test_advanced_runtime_public_capability_split_matches_capability_matrix() ->
 
     assert contract["issue"] == 8155
     _assert_split_contract_matches_source_truth(contract)
+
+
+def test_advanced_runtime_public_support_contracts_are_source_derived() -> None:
+    contract = build_advanced_runtime_capability_split_contract()
+
+    assert contract["issue"] == 8155
+    _assert_advanced_runtime_support_contracts_are_source_derived(contract)
 
 
 def test_advanced_runtime_reserved_boundaries_stay_non_claiming() -> None:

@@ -78,6 +78,335 @@ ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS: tuple[dict[str, str], ...] = (
     },
 )
 
+ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS: tuple[dict[str, object], ...] = (
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.blocks-escape-capture-legality.v1",
+        "capability_id": "language.blocks.escape-capture-legality",
+        "support_claim": "objc3c.behavior.language.blocks.escape-capture-legality",
+        "public_command": "npm run objc3c -- test-runtime-acceptance-block-arc",
+        "contract_scope": "block capture ownership legality, escaping capture rejection, and byref capture diagnostics",
+        "source_truth": (
+            "native/objc3c/src/parse/objc3_parser_core_block_literal_capture_list.inc",
+            "native/objc3c/src/sema/objc3_sema_pass_manager_async_block_message_validation_block_capture.inc",
+            "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3",
+            "tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json",
+            "scripts/objc3c_runtime_acceptance/domains/block_arc_surface_ownership_transfer.py",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.blocks.full-language-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.blocks-copy-dispose-invoke.v1",
+        "capability_id": "runtime.blocks.copy-dispose-invoke",
+        "support_claim": "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
+        "public_command": "npm run objc3c -- test-runtime-acceptance-block-arc",
+        "contract_scope": "runtime block promotion, copy/dispose helper traffic, invoke thunk behavior, and stale-handle rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_block_manifest.cpp",
+            "scripts/objc3c_runtime_acceptance/domains/block_arc_runtime_cases.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+            "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+            "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_negative.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.blocks.full-language-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.blocks-byref-forwarding.v1",
+        "capability_id": "runtime.blocks.byref-forwarding",
+        "support_claim": "objc3c.behavior.runtime.blocks.byref-forwarding",
+        "public_command": "npm run objc3c -- test-runtime-acceptance-block-arc",
+        "contract_scope": "byref cell forwarding, heap promotion, duplicate binding rejection, and missing identifier rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_block_ownership_manifest.cpp",
+            "scripts/objc3c_runtime_acceptance/domains/block_arc_runtime_abi_cases.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+            "tests/tooling/fixtures/native/execution/positive/byref_capture_argument_materialization.objc3",
+            "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/execution/negative/byref_capture_missing_identifier.objc3",
+            "tests/tooling/fixtures/native/execution/negative/byref_capture_duplicate_binding.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.blocks.full-language-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.arc-cleanup-integration.v1",
+        "capability_id": "language.arc-cleanup.integration",
+        "support_claim": "objc3c.behavior.arc-cleanup.integration",
+        "public_command": "npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration",
+        "contract_scope": "ARC cleanup ordering across errors, async cleanup, property interaction, and block escape failures",
+        "source_truth": (
+            "native/objc3c/src/runtime/memory/arc.cpp",
+            "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+            "tests/tooling/fixtures/arc_cleanup_integration/owner_contract.json",
+            "scripts/objc3c_runtime_acceptance/suite_catalog.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+            "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+            "tests/tooling/fixtures/native/async_cleanup_integration_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+            "tests/tooling/fixtures/native/non_async_task_runtime_rejected.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.arc.full-automation",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.error-live-bridge-cleanup.v1",
+        "capability_id": "runtime.errors.live-bridge-cleanup",
+        "support_claim": "objc3c.behavior.runtime.error-live-bridge-cleanup",
+        "public_command": "npm run objc3c -- validate-error-conformance",
+        "contract_scope": "live NSError/status bridge cleanup, runtime bridge helpers, and throwing-call fail-closed diagnostics",
+        "source_truth": (
+            "native/objc3c/src/runtime/errors/error_bridge.cpp",
+            "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+            "scripts/check_error_runtime_closure_semantics_bridge.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+            "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.errors.generalized-foreign-exception-abi",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.concurrency-task-continuation-lifecycle.v1",
+        "capability_id": "runtime.concurrency.task-continuation-lifecycle",
+        "support_claim": "objc3c.behavior.runtime.concurrency-task-continuation-lifecycle",
+        "public_command": "npm run objc3c -- validate-concurrency-conformance",
+        "contract_scope": "task continuation allocation, resume/handoff lifecycle, executor implementation, and non-async rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/concurrency/continuation_state.cpp",
+            "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+            "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+            "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/non_async_task_runtime_rejected.objc3",
+            "tests/tooling/fixtures/native/task_group_without_scope_rejected.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.concurrency.broad-async-actor-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.concurrency-actor-mailbox-isolation.v1",
+        "capability_id": "runtime.concurrency.actor-mailbox-isolation",
+        "support_claim": "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
+        "public_command": "npm run objc3c -- validate-concurrency-conformance",
+        "contract_scope": "actor mailbox enqueue/drain, executor isolation, and invalid actor-hop rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+            "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+            "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+            "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+            "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+            "tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/actor_nonisolated_executor_rejected.objc3",
+            "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.concurrency.broad-async-actor-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.metaprogramming-property-behavior-semantics.v1",
+        "capability_id": "language.metaprogramming.property-behavior-semantics",
+        "support_claim": "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
+        "public_command": "npm run objc3c -- test-runtime-acceptance",
+        "contract_scope": "property behavior semantic legality and runtime materialization boundary without unsupported combinations",
+        "source_truth": (
+            "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc",
+            "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json",
+            "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_cases.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+            "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json",
+            "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3",
+            "tests/tooling/fixtures/native/property_behavior_legality_negative_nonobject.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.metaprogramming-derive-expansion-inventory.v1",
+        "capability_id": "language.metaprogramming.derive-expansion-inventory",
+        "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+        "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+        "contract_scope": "derive expansion inventory, selector conflict rejection, and checked macro public-surface metadata",
+        "source_truth": (
+            "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+            "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_derive_inventory.inc",
+            "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+            "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+            "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+            "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.metaprogramming-macro-safety-sandbox-determinism.v1",
+        "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+        "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+        "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+        "contract_scope": "macro package provenance, sandbox metadata, deterministic cache key checks, and invalid package rejection",
+        "source_truth": (
+            "native/objc3c/src/parse/objc3_parser_attributes_callable_bridge_macro_profile_publication_cache_sandbox.inc",
+            "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_macro_safety.inc",
+            "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+            "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+            "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.metaprogramming-host-cache-boundary.v1",
+        "capability_id": "runtime.metaprogramming.host-cache-boundary",
+        "support_claim": "objc3c.behavior.runtime.metaprogramming.host-cache-boundary",
+        "public_command": "npm run objc3c -- test-runtime-acceptance",
+        "contract_scope": "macro host process cache boundary, cross-module cache replay, and cache metadata fail-closed checks",
+        "source_truth": (
+            "native/objc3c/src/driver/objc3_driver_metaprogramming_cache_publication.cpp",
+            "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
+            "tests/tooling/fixtures/metaprogramming_interop_closure/lowering_runtime_artifact_contract.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+            "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+            "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+            "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+            "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.interop-package-loader-bridge.v1",
+        "capability_id": "runtime.interop.package-loader-bridge",
+        "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+        "public_command": "npm run objc3c -- validate-interop-conformance",
+        "contract_scope": "package loader bridge metadata, header bridge generation, and tampered bridge rejection",
+        "source_truth": (
+            "native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp",
+            "native/objc3c/src/driver/objc3_driver_interop_artifact_publication.cpp",
+            "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+            "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+            "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",
+            "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/runtime/package_loader_fail_closed_diagnostics_probe.cpp",
+            "tests/tooling/fixtures/runtime_import_interop_bridge_metadata/tampered_bridge_surface.json",
+            "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.interop.broad-runtime-closure",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.interop-mixed-image-replay.v1",
+        "capability_id": "runtime.interop.mixed-image-replay",
+        "support_claim": "objc3c.behavior.runtime.interop.mixed-image-replay",
+        "public_command": "npm run objc3c -- validate-interop-conformance",
+        "contract_scope": "mixed-image runtime registration replay, package provider/consumer proof, and duplicate declaration rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/images/registration_api.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+            "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+            "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+            "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3",
+            "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.interop.broad-runtime-closure",
+        ),
+    },
+)
+
 ADVANCED_RUNTIME_RESERVED_BOUNDARIES: tuple[dict[str, str], ...] = (
     {
         "boundary_id": "runtime.blocks.full-language-closure",
@@ -124,12 +453,16 @@ def build_advanced_runtime_capability_split_contract() -> dict[str, Any]:
         "reserved_umbrella": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
         "source": ADVANCED_RUNTIME_CAPABILITY_SPLIT_SOURCE,
         "implemented_rows": list(ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS),
+        "implemented_support_contracts": list(
+            ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS
+        ),
         "reserved_boundaries": list(ADVANCED_RUNTIME_RESERVED_BOUNDARIES),
     }
 
 
 __all__ = [
     "ADVANCED_RUNTIME_CAPABILITY_SPLIT_SOURCE",
+    "ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS",
     "ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS",
     "ADVANCED_RUNTIME_RESERVED_BOUNDARIES",
     "ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID",
