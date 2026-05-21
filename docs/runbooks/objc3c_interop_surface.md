@@ -19,13 +19,13 @@ Related existing evidence:
 
 ## Supported Lanes
 
-| Lane | State | Scope |
-| --- | --- | --- |
-| `c.header-import-export` | supported | C header import/export and generated bridge metadata. |
-| `objc2.metadata-only-migration` | supported | Objective-C 2.0-adjacent migration and bridge metadata only. Retired Objective-C 2 source syntax is not accepted as Objective-C 3. |
-| `swift.annotation-metadata` | supported | `objc_swift_name` and `objc_swift_private` metadata preservation only. |
-| `cpp.annotation-metadata` | supported | `objc_cxx_name` and `objc_header_name` metadata preservation only. |
-| `package.mixed-image-loader-metadata` | supported | Local mixed-image package loader metadata with digest and payload drift checks. |
+| Lane                                  | State     | Scope                                                                                                                              |
+| ------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `c.header-import-export`              | supported | C header import/export and generated bridge metadata.                                                                              |
+| `objc2.metadata-only-migration`       | supported | Objective-C 2.0-adjacent migration and bridge metadata only. Retired Objective-C 2 source syntax is not accepted as Objective-C 3. |
+| `swift.annotation-metadata`           | supported | `objc_swift_name` and `objc_swift_private` metadata preservation only.                                                             |
+| `cpp.annotation-metadata`             | supported | `objc_cxx_name` and `objc_header_name` metadata preservation only.                                                                 |
+| `package.mixed-image-loader-metadata` | supported | Local mixed-image package loader metadata with digest and payload drift checks.                                                    |
 
 These lanes are claimable only through the existing public workflow evidence:
 
@@ -37,11 +37,11 @@ These lanes are claimable only through the existing public workflow evidence:
 
 ## Reserved Or Rejected
 
-| Lane | State | Diagnostic |
-| --- | --- | --- |
-| `swift.full-abi-callable-import` | reserved | `O3INT8166` |
-| `cpp.template-and-abi-import` | reserved | `O3INT8167` |
-| `objc2.retired-source-compatibility` | rejected | `O3INT8165` |
+| Lane                                       | State    | Diagnostic  |
+| ------------------------------------------ | -------- | ----------- |
+| `swift.full-abi-callable-import`           | reserved | `O3INT8166` |
+| `cpp.template-and-abi-import`              | reserved | `O3INT8167` |
+| `objc2.retired-source-compatibility`       | rejected | `O3INT8165` |
 | `package.unchecked-abi-alignment-fallback` | rejected | `O3PKG8052` |
 
 The policy does not claim complete Swift compatibility, complete C++
