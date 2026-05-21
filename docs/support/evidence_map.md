@@ -133,6 +133,35 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
+| `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/conformance/semantic/TYP-8013-15.json` |  |
+| `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3` |  |
+| `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3` |  |
+| `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc` |  |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3` |  |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/conformance/semantic/TYP-8013-12.json` |  |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/conformance/semantic/TYP-8013-13.json` |  |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3` |  |
+| `language.generics.variance-specialization` | `objc3c.behavior.language.generics.variance-specialization` | `source` | `native/objc3c/src/ir/objc3_ir_type_model.cpp` |  |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` |  |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/conformance/semantic/TYP-8013-17.json` |  |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json` |  |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `test` | `tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json` |  |
+| `runtime.generics.cross-module-metadata` | `objc3c.behavior.runtime.generics.cross-module-metadata` | `source` | `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.collections.array-slice-runtime-shape` | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/modules/objc3.core/module.json` |  |
+| `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
@@ -151,6 +180,63 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `stdlib/advanced_helper_package_surface.json` |  |
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp` |  |
 | `stdlib.concurrency.runtime-backed-v1` | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `source` | `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp` |  |
+| `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` |
+| `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json` |  |
+| `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3` |  |
+| `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3` |  |
+| `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_blocks.inc` |  |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `test` | `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `test` | `tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3` |  |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `test` | `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp` |  |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `test` | `tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp` |  |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `source` | `native/objc3c/src/runtime/blocks/block_invocation.cpp` |  |
+| `runtime.blocks.copy-dispose-invoke` | `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `source` | `native/objc3c/src/runtime/blocks/block_promotion.cpp` |  |
+| `runtime.blocks.byref-forwarding` | `objc3c.behavior.runtime.blocks.byref-forwarding` | `test` | `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` |
+| `runtime.blocks.byref-forwarding` | `objc3c.behavior.runtime.blocks.byref-forwarding` | `test` | `tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3` |  |
+| `runtime.blocks.byref-forwarding` | `objc3c.behavior.runtime.blocks.byref-forwarding` | `test` | `tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp` |  |
+| `runtime.blocks.byref-forwarding` | `objc3c.behavior.runtime.blocks.byref-forwarding` | `test` | `tests/tooling/fixtures/native/execution/negative/byref_capture_missing_identifier.objc3` |  |
+| `runtime.blocks.byref-forwarding` | `objc3c.behavior.runtime.blocks.byref-forwarding` | `source` | `native/objc3c/src/runtime/blocks/block_byref_cells.cpp` |  |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `test` | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` | `npm run objc3c -- validate-error-conformance` |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `test` | `tests/tooling/runtime/live_error_runtime_integration_probe.cpp` |  |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `test` | `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp` |  |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `test` | `tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json` |  |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `source` | `native/objc3c/src/runtime/errors/error_bridge_operations.cpp` |  |
+| `runtime.errors.live-bridge-cleanup` | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `source` | `native/objc3c/src/runtime/errors/error_bridge_catch_operations.cpp` |  |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `test` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `test` | `tests/tooling/runtime/continuation_runtime_helper_probe.cpp` |  |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `test` | `tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp` |  |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `test` | `tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp` |  |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `source` | `native/objc3c/src/runtime/concurrency/continuation_operations.cpp` |  |
+| `runtime.concurrency.task-continuation-lifecycle` | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `source` | `native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp` |  |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `test` | `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `test` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` |  |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `test` | `tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp` |  |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `test` | `tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp` |  |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `source` | `native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp` |  |
+| `runtime.concurrency.actor-mailbox-isolation` | `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `source` | `native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp` |  |
+| `language.metaprogramming.property-behavior-semantics` | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `test` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` |
+| `language.metaprogramming.property-behavior-semantics` | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `test` | `tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json` |  |
+| `language.metaprogramming.property-behavior-semantics` | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `test` | `tests/tooling/runtime/synthesized_accessor_probe.cpp` |  |
+| `language.metaprogramming.property-behavior-semantics` | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `test` | `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp` |  |
+| `language.metaprogramming.property-behavior-semantics` | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `source` | `native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc` |  |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/fixtures/native/macro_host_process_provider.objc3` |  |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/fixtures/native/macro_host_process_consumer.objc3` |  |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp` |  |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp` |  |
+| `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `source` | `native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp` |  |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3` |  |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp` |  |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/runtime/header_module_bridge_generation_probe.cpp` |  |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json` |  |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `source` | `native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp` |  |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `test` | `tests/tooling/fixtures/native/runtime_packaging_provider.objc3` |  |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `test` | `tests/tooling/runtime/import_module_execution_matrix_probe.cpp` |  |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `test` | `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp` |  |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `test` | `tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json` |  |
+| `runtime.interop.mixed-image-replay` | `objc3c.behavior.runtime.interop.mixed-image-replay` | `source` | `native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_6_ERRORS_RESULTS_THROWS.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md` |  |

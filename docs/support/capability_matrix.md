@@ -34,11 +34,24 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
 | `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
 | `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
+| `objc3c.behavior.language.blocks.escape-capture-legality` | `sema` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `language.blocks.escape-capture-legality` |
+| `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
+| `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
+| `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `sema` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `language.metaprogramming.property-behavior-semantics` |
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
 | `objc3c.behavior.parser.canonical-syntax` | `parser` | `tests/native/parser/positive/canonical_module_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.parser.core-declarations` |
+| `objc3c.behavior.runtime.blocks.byref-forwarding` | `runtime` | `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.byref-forwarding` |
+| `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `runtime` | `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.copy-dispose-invoke` |
+| `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `runtime` | `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.actor-mailbox-isolation` |
 | `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
+| `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `runtime` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.task-continuation-lifecycle` |
+| `objc3c.behavior.runtime.error-live-bridge-cleanup` | `runtime` | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` | `npm run objc3c -- validate-error-conformance` | `runtime.errors.live-bridge-cleanup` |
 | `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
+| `objc3c.behavior.runtime.generics.cross-module-metadata` | `runtime` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `runtime.generics.cross-module-metadata` |
+| `objc3c.behavior.runtime.interop.mixed-image-replay` | `runtime` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` | `runtime.interop.mixed-image-replay` |
+| `objc3c.behavior.runtime.interop.package-loader-bridge` | `runtime` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` | `runtime.interop.package-loader-bridge` |
+| `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `runtime` | `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `runtime.metaprogramming.host-cache-boundary` |
 | `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `runtime` | `tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.bounded-query-snapshots` |
 | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `runtime` | `tests/native/runtime/object_model/category_protocol_registration_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.category-protocol-registration` |
 | `objc3c.behavior.runtime.object-model-class-realization` | `runtime` | `tests/native/runtime/object_model/class_realization_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.class-realization` |
@@ -48,6 +61,8 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
 | `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
 | `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
+| `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.collections.array-slice-runtime-shape` |
+| `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.collections.map-entry-runtime-shape` |
 | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
 | `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
 
@@ -518,6 +533,97 @@ the canonical manifest fixture and public npm command above.
   - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
 
+### Protocol-qualified generic arguments
+
+- Capability ID: `language.generics.protocol-qualified-arguments`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.generics.protocol-qualified-arguments`
+- Summary: The public generic subset validates protocol-qualified type arguments and constrained calls through typed semantic fixtures, stable O3 diagnostics, and canonical type semantic conformance rows.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+  - `native/objc3c/src/ir/objc3_ir_type_model.cpp`
+  - `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/conformance/semantic/TYP-8013-15.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+
+### Generic variance and specialization policy
+
+- Capability ID: `language.generics.variance-specialization`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.generics.variance-specialization`
+- Summary: Generic variance and specialization are claimed for the checked-in invariant, nested, and substitution cases with O3S206/O3S216 rejection coverage for unsupported substitutions.
+- Owner modules:
+  - `native/objc3c/src/ir/objc3_ir_type_model.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+  - `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-12.json`
+  - test: `tests/conformance/semantic/TYP-8013-13.json`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3`
+  - source: `native/objc3c/src/ir/objc3_ir_type_model.cpp`
+
+### Cross-module generic metadata replay
+
+- Capability ID: `runtime.generics.cross-module-metadata`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.generics.cross-module-metadata`
+- Summary: Cross-module generic metadata is claimed for deterministic type identity preservation through runtime import artifacts and checked-in replay manifests, without claiming a broad generic collection ABI.
+- Owner modules:
+  - `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_runtime_import_imported_semantic_rules.cpp`
+  - `native/objc3c/src/driver/objc3_driver_cross_module_imported_input.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`
+  - test: `tests/conformance/semantic/TYP-8013-17.json`
+  - test: `tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json`
+  - test: `tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json`
+  - source: `native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp`
+
+### Runtime-backed array and slice helper shape
+
+- Capability ID: `stdlib.collections.array-slice-runtime-shape`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.collections.array-slice-runtime-shape`
+- Summary: The current collection support claim is limited to objc3.core array count and prefix/slice helper runtime shape, with literals, owned storage, mutation, iteration, and generic element typing reserved.
+- Owner modules:
+  - `stdlib/modules/objc3.core/module.json`
+  - `stdlib/modules/objc3.core/module.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json`
+  - test: `tests/tooling/runtime/stdlib_core_runtime_probe.cpp`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3`
+  - source: `stdlib/modules/objc3.core/module.json`
+  - source: `stdlib/semantic_policy.json`
+
+### Runtime-backed map entry helper shape
+
+- Capability ID: `stdlib.collections.map-entry-runtime-shape`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.collections.map-entry-runtime-shape`
+- Summary: The current map collection claim is limited to objc3.core entry-present and value-or helper runtime shape, with hashing, dictionary literals, owned storage, mutation, iteration, and generic key/value ABI reserved.
+- Owner modules:
+  - `stdlib/modules/objc3.core/module.json`
+  - `stdlib/modules/objc3.core/module.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json`
+  - test: `tests/tooling/runtime/stdlib_core_runtime_probe.cpp`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3`
+  - source: `stdlib/modules/objc3.core/module.json`
+  - source: `stdlib/semantic_policy.json`
+
 ### Runtime-backed core stdlib v1
 
 - Capability ID: `stdlib.core.runtime-backed-v1`
@@ -570,17 +676,201 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
   - source: `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
 
+### Escaping block capture legality
+
+- Capability ID: `language.blocks.escape-capture-legality`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.blocks.escape-capture-legality`
+- Summary: Escaping block capture legality is a public semantic claim with explicit retainable-family, byref, and capture-list rejection evidence before runtime helper lowering.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_blocks.inc`
+  - `native/objc3c/src/runtime/blocks/block_capture_storage.cpp`
+  - `native/objc3c/src/runtime/blocks/block_pointer_capture_storage.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` via `npm run objc3c -- test-runtime-acceptance-block-arc`
+  - test: `tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json`
+  - test: `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3`
+  - test: `tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_blocks.inc`
+
+### Block copy, dispose, and invoke runtime helpers
+
+- Capability ID: `runtime.blocks.copy-dispose-invoke`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.blocks.copy-dispose-invoke`
+- Summary: Block runtime helper support is claimed for executable copy, dispose, lifetime, and invoke-thunk behavior with stale-handle and conflicting-capture rejection evidence.
+- Owner modules:
+  - `native/objc3c/src/runtime/blocks/block_invocation.cpp`
+  - `native/objc3c/src/runtime/blocks/block_promotion.cpp`
+  - `native/objc3c/src/runtime/blocks/block_lifetime.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3` via `npm run objc3c -- test-runtime-acceptance-block-arc`
+  - test: `tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3`
+  - test: `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp`
+  - test: `tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp`
+  - source: `native/objc3c/src/runtime/blocks/block_invocation.cpp`
+  - source: `native/objc3c/src/runtime/blocks/block_promotion.cpp`
+
+### Block byref forwarding cells
+
+- Capability ID: `runtime.blocks.byref-forwarding`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.blocks.byref-forwarding`
+- Summary: Byref capture forwarding is claimed for heap-promoted shared cells, copy/dispose forwarding, and malformed explicit byref capture rejection.
+- Owner modules:
+  - `native/objc3c/src/runtime/blocks/block_byref_cells.cpp`
+  - `native/objc3c/src/runtime/blocks/block_pointer_capture_cells.h`
+  - `native/objc3c/src/runtime/blocks/block_promotion_plan.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3` via `npm run objc3c -- test-runtime-acceptance-block-arc`
+  - test: `tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3`
+  - test: `tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp`
+  - test: `tests/tooling/fixtures/native/execution/negative/byref_capture_missing_identifier.objc3`
+  - source: `native/objc3c/src/runtime/blocks/block_byref_cells.cpp`
+
+### Live error bridge cleanup
+
+- Capability ID: `runtime.errors.live-bridge-cleanup`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.error-live-bridge-cleanup`
+- Summary: Live NSError/status bridge cleanup is claimed for executable throw propagation, ARC cleanup interaction, and bridge helper state cleanup without claiming generalized foreign exception ABI.
+- Owner modules:
+  - `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`
+  - `native/objc3c/src/runtime/errors/error_bridge_catch_operations.cpp`
+  - `native/objc3c/src/runtime/errors/error_bridge_state.cpp`
+  - `native/objc3c/src/runtime/errors/catch_filter.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` via `npm run objc3c -- validate-error-conformance`
+  - test: `tests/tooling/runtime/live_error_runtime_integration_probe.cpp`
+  - test: `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
+  - test: `tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json`
+  - source: `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`
+  - source: `native/objc3c/src/runtime/errors/error_bridge_catch_operations.cpp`
+
+### Task continuation lifecycle runtime
+
+- Capability ID: `runtime.concurrency.task-continuation-lifecycle`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle`
+- Summary: Task continuation lifecycle support is claimed for live continuation helpers, task scheduler/executor integration, cancellation hardening, and strict rejected task-runtime misuse.
+- Owner modules:
+  - `native/objc3c/src/runtime/concurrency/continuation_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/continuation_resume_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_state.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` via `npm run objc3c -- validate-concurrency-conformance`
+  - test: `tests/tooling/runtime/continuation_runtime_helper_probe.cpp`
+  - test: `tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp`
+  - test: `tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/continuation_operations.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp`
+
+### Actor mailbox isolation runtime
+
+- Capability ID: `runtime.concurrency.actor-mailbox-isolation`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation`
+- Summary: Actor mailbox runtime support is claimed for live mailbox execution, executor contracts, actor isolation enforcement, and non-sendable/illegal-hop rejection evidence.
+- Owner modules:
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_guard_operations.cpp`
+  - `native/objc3c/src/runtime/concurrency/executor.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3` via `npm run objc3c -- validate-concurrency-conformance`
+  - test: `tests/native/runtime/concurrency/actor_executor_contract.objc3`
+  - test: `tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp`
+  - test: `tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp`
+
+### Property behavior semantic materialization
+
+- Capability ID: `language.metaprogramming.property-behavior-semantics`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.metaprogramming.property-behavior-semantics`
+- Summary: Property behavior support is claimed for legal behavior materialization, runtime semantic modeling, synthesized accessor evidence, and unsupported/non-object/protocol/projected-writable rejection.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc`
+  - `native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc`
+  - `native/objc3c/src/ir/objc3_ir_frontend_metadata_metaprogramming_property_behavior_model.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` via `npm run objc3c -- test-runtime-acceptance`
+  - test: `tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json`
+  - test: `tests/tooling/runtime/synthesized_accessor_probe.cpp`
+  - test: `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc`
+
+### Metaprogramming host cache boundary
+
+- Capability ID: `runtime.metaprogramming.host-cache-boundary`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.metaprogramming.host-cache-boundary`
+- Summary: Macro host/cache runtime support is claimed for expansion-host boundary enforcement, process cache replay, provider/consumer integration, and sandbox/cache-key/package rejection.
+- Owner modules:
+  - `native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp`
+  - `native/objc3c/src/driver/objc3_driver_metaprogramming_cache_publication.cpp`
+  - `native/objc3c/src/pipeline/source_closure/frontend_source_closure_replay_keys_metaprogramming_interop.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3` via `npm run objc3c -- test-runtime-acceptance`
+  - test: `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+  - test: `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
+  - test: `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
+  - test: `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+  - source: `native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp`
+
+### Interop package loader bridge
+
+- Capability ID: `runtime.interop.package-loader-bridge`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.interop.package-loader-bridge`
+- Summary: Package-loader interop bridge support is claimed for provider/consumer bridge metadata, package loading, header-module bridge probes, and tampered metadata rejection.
+- Owner modules:
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface_packaging_readiness.cpp`
+  - `native/objc3c/src/driver/objc3_driver_interop_artifact_publication.cpp`
+  - `native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` via `npm run objc3c -- validate-interop-conformance`
+  - test: `tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3`
+  - test: `tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp`
+  - test: `tests/tooling/runtime/header_module_bridge_generation_probe.cpp`
+  - test: `tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json`
+  - source: `native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp`
+
+### Mixed-image interop replay
+
+- Capability ID: `runtime.interop.mixed-image-replay`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.interop.mixed-image-replay`
+- Summary: Mixed-image interop replay is claimed for runtime package provider/consumer replay, import execution matrices, reset/replay probes, and fail-closed tamper checks.
+- Owner modules:
+  - `native/objc3c/src/pipeline/runtime_import_preservation.cpp`
+  - `native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp`
+  - `native/objc3c/src/driver/objc3_driver_cross_module_imported_input_interop.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_runtime_import_artifacts.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` via `npm run objc3c -- validate-interop-conformance`
+  - test: `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+  - test: `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
+  - test: `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp`
+  - test: `tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json`
+  - source: `native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp`
+
 ### Advanced runtime-backed language closure
 
 - Capability ID: `language.advanced-runtime-closure`
 - State: `reserved`
 - Support claims: None
-- Summary: Blocks, full ARC automation, throws/error propagation, metaprogramming/property behaviors, and broad interop closure remain unavailable as public support unless a narrower implemented capability row states otherwise.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, live error bridge cleanup, task continuations, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, object-model reflection/storage, and interop package/replay; remaining broad runtime closure stays reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
   - `native/objc3c/src/runtime/errors/`
   - `native/objc3c/src/runtime/concurrency/`
+  - `native/objc3c/src/runtime/storage/`
+  - `native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp`
+  - `native/objc3c/src/pipeline/runtime_import_preservation.cpp`
 - Evidence:
   - doc: `docs/support/hard_cutover_capability_truth.md`
   - doc: `spec/PART_6_ERRORS_RESULTS_THROWS.md`
