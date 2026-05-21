@@ -1031,6 +1031,38 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape",
+      "capability_id": "stdlib.collections.array-aggregate-runtime-shape",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json",
+      "traceability_fixture": "stdlib/modules/objc3.collections/module.json",
+      "runnable_command": "npm run objc3c -- validate-stdlib-foundation",
+      "runtime_acceptance_case": "stdlib-foundation-next-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+        "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Array aggregate runtime shape support is claimed by the dedicated objc3.collections module and collections runtime ABI, not by legacy objc3.core helper routing",
+        "Positive evidence must include concrete i32 array creation, checked sum aggregation, invalid-handle status, and runtime probe behavior through the stdlib foundation-next runtime probe",
+        "Invalid handles, checked i32 overflow, and ABI signature conflicts remain fail-closed evidence",
+        "Array literals, generic element typing, owned arbitrary-length array storage, higher-order reduce callbacks, and syntax-level for-in integration remain reserved"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
       "capability_id": "stdlib.collections.map-entry-runtime-shape",
       "owner_phase": "runtime",

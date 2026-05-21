@@ -48,6 +48,7 @@
     ],
     "objc3.collections": [
       "concrete-i32-array-storage",
+      "concrete-i32-array-aggregate",
       "concrete-i32-map-entry-storage",
       "concrete-i32-array-slice-storage",
       "concrete-i32-set-storage",
@@ -142,6 +143,7 @@
       "objc3_collections_array_count",
       "objc3_collections_array_get_or",
       "objc3_collections_array_prefix_count",
+      "objc3_collections_array_sum",
       "objc3_collections_array_slice",
       "objc3_collections_array_iterator",
       "objc3_collections_map_entry",
@@ -200,7 +202,7 @@
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and option-to-result shape diagnostics",
     "objc3.text": "runtime-backed UTF-8 text records with byte/unit counts, concatenation, prefix helpers, and fail-closed status reporting",
-    "objc3.collections": "runtime-backed concrete i32 arrays, slices, single-entry maps, sets, and iterators with explicit bounds, lookup, mutation, and iteration status reporting",
+    "objc3.collections": "runtime-backed concrete i32 arrays, array aggregation, slices, single-entry maps, sets, and iterators with explicit bounds, lookup, mutation, and iteration status reporting",
     "objc3.keypath": "typed key-path helpers that need text/data shape naming stability",
     "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the advanced stdlib contract",
     "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the advanced stdlib contract"

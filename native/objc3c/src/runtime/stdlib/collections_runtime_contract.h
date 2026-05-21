@@ -55,6 +55,7 @@ int objc3_runtime_stdlib_collections_array_get_or_i32(int handle,
                                                       int default_value);
 int objc3_runtime_stdlib_collections_array_prefix_count_i32(int handle,
                                                             int requested);
+int objc3_runtime_stdlib_collections_array_sum_i32(int handle);
 int objc3_runtime_stdlib_collections_array_slice_i32(int handle,
                                                      int start,
                                                      int count);

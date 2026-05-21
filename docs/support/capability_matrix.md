@@ -83,6 +83,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
 | `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
 | `objc3c.behavior.semantic_optimization_pipeline` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.semantic-preserving-pipeline` |
+| `objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-aggregate-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-slice-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.map-entry-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.set-iteration-runtime-shape` |
@@ -808,6 +809,31 @@ the canonical manifest fixture and public npm command above.
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.collections.array-slice-runtime-shape`
 - Summary: The objc3.collections module publishes runtime-owned concrete i32 array records, slice records, and deterministic array/slice iterators with count, get-or, prefix-count, range, end-of-iteration, and fail-closed status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and syntax-level for-in integration remain outside this claim.
+- Owner modules:
+  - `stdlib/modules/objc3.collections/module.json`
+  - `stdlib/modules/objc3.collections/module.objc3`
+  - `stdlib/modules/objc3.collections/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json`
+  - test: `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.collections/module.json`
+  - source: `stdlib/modules/objc3.collections/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+
+### Runtime-backed objc3.collections array aggregate shape
+
+- Capability ID: `stdlib.collections.array-aggregate-runtime-shape`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape`
+- Summary: The objc3.collections module publishes a checked concrete i32 array sum helper that aggregates runtime-owned array records through the runtime ABI and fails closed for invalid handles or i32 overflow. Generic reduce callbacks, arbitrary-length storage, array literals, mutation, and syntax-level for-in integration remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.collections/module.json`
   - `stdlib/modules/objc3.collections/module.objc3`

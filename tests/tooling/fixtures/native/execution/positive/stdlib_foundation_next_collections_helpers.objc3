@@ -5,6 +5,7 @@ extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, t
 extern fn objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_array_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_array_prefix_count_i32(handle: i32, requested: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array_sum_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_array_slice_i32(handle: i32, start: i32, count: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32;
@@ -37,6 +38,7 @@ fn main() -> i32 {
     + objc3_runtime_stdlib_collections_last_status_i32()
     - 30632
     + objc3_runtime_stdlib_collections_array_prefix_count_i32(array_handle, 2)
+    + objc3_runtime_stdlib_collections_array_sum_i32(array_handle)
     + slice_handle
     + objc3_runtime_stdlib_collections_slice_count_i32(slice_handle)
     + objc3_runtime_stdlib_collections_slice_get_or_i32(slice_handle, 1, 99)

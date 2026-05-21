@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <mutex>
 #include <vector>
 
@@ -152,6 +153,20 @@ std::vector<int> SliceValues(const ArrayRecord &record, int start, int count) {
   return values;
 }
 
+bool SumArrayFitsInt(const ArrayRecord &record, int *out) {
+  int sum = 0;
+  for (int index = 0; index < record.count; ++index) {
+    const int value = record.values[static_cast<std::size_t>(index)];
+    if ((value > 0 && sum > std::numeric_limits<int>::max() - value) ||
+        (value < 0 && sum < std::numeric_limits<int>::min() - value)) {
+      return false;
+    }
+    sum += value;
+  }
+  *out = sum;
+  return true;
+}
+
 }  // namespace
 
 namespace objc3c::runtime {
@@ -264,6 +279,26 @@ extern "C" int objc3_runtime_stdlib_collections_array_prefix_count_i32(
   }
   const int result = std::min(record->count, ClampToZero(requested));
   RecordCall(state, state.array_query_call_count, handle, requested, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, result);
+  return result;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_array_sum_i32(int handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  ArrayRecord *record = FindArray(state, handle);
+  if (record == nullptr) {
+    RecordCall(state, state.array_query_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE, 0);
+    return 0;
+  }
+  int result = 0;
+  if (!SumArrayFitsInt(*record, &result)) {
+    RecordCall(state, state.array_query_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT, 0);
+    return 0;
+  }
+  RecordCall(state, state.array_query_call_count, handle, handle, 0, 0,
              OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, result);
   return result;
 }

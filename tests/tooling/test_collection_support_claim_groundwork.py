@@ -152,6 +152,7 @@ def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> 
     ]
 
     assert {row["support_claim"] for row in collection_rows} == {
+        "objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape",
         "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
         "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
         "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",

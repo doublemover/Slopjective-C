@@ -72,6 +72,38 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape",
+      "capability_id": "stdlib.collections.array-aggregate-runtime-shape",
+      "module": "objc3.collections",
+      "api_family": "concrete-i32-array-aggregate",
+      "exports": [
+        "objc3_collections_array3",
+        "objc3_collections_array_sum",
+        "objc3_collections_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_collections_array3_i32",
+        "objc3_runtime_stdlib_collections_array_sum_i32",
+        "objc3_runtime_stdlib_collections_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "array3_record",
+        "array_sum"
+      ],
+      "supported_now": [
+        "runtime-owned concrete i32 array records expose checked sum aggregation through objc3_runtime_stdlib_collections_array_sum_i32",
+        "array sum returns zero with invalid-handle status for unknown handles",
+        "array sum returns zero with invalid-count status when the checked i32 aggregate would overflow"
+      ],
+      "reserved_until_runtime_storage": [
+        "array literals",
+        "generic element typing",
+        "owned arbitrary-length array storage",
+        "higher-order reduce callbacks",
+        "syntax-level for-in integration"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
       "capability_id": "stdlib.collections.map-entry-runtime-shape",
       "module": "objc3.collections",

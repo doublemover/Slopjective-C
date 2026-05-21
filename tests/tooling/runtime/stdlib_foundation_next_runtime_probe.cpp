@@ -74,6 +74,22 @@ int main() {
   if (objc3_runtime_stdlib_collections_array_prefix_count_i32(array, 2) != 2) {
     return Fail("array prefix helper drifted");
   }
+  if (objc3_runtime_stdlib_collections_array_sum_i32(array) != 15) {
+    return Fail("array sum helper drifted");
+  }
+  if (objc3_runtime_stdlib_collections_array_sum_i32(99) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE) {
+    return Fail("array sum invalid handle did not fail closed");
+  }
+  const int overflow_array =
+      objc3_runtime_stdlib_collections_array3_i32(2147483647, 1, 0, 2);
+  if (overflow_array <= 0 ||
+      objc3_runtime_stdlib_collections_array_sum_i32(overflow_array) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT) {
+    return Fail("array sum overflow did not fail closed");
+  }
   if (objc3_runtime_stdlib_collections_array3_i32(1, 2, 3, 4) != 0 ||
       objc3_runtime_stdlib_collections_last_status_i32() !=
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT) {
@@ -181,9 +197,9 @@ int main() {
           &collections_snapshot) != 0) {
     return Fail("collections snapshot copy failed");
   }
-  if (collections_snapshot.total_call_count != 44 ||
-      collections_snapshot.array_create_call_count != 2 ||
-      collections_snapshot.array_query_call_count != 4 ||
+  if (collections_snapshot.total_call_count != 50 ||
+      collections_snapshot.array_create_call_count != 3 ||
+      collections_snapshot.array_query_call_count != 7 ||
       collections_snapshot.map_create_call_count != 1 ||
       collections_snapshot.map_query_call_count != 5 ||
       collections_snapshot.set_create_call_count != 2 ||
@@ -193,8 +209,8 @@ int main() {
       collections_snapshot.slice_query_call_count != 3 ||
       collections_snapshot.iterator_create_call_count != 3 ||
       collections_snapshot.iterator_query_call_count != 8 ||
-      collections_snapshot.status_call_count != 10 ||
-      collections_snapshot.array_record_count != 1 ||
+      collections_snapshot.status_call_count != 12 ||
+      collections_snapshot.array_record_count != 2 ||
       collections_snapshot.map_record_count != 1 ||
       collections_snapshot.set_record_count != 1 ||
       collections_snapshot.slice_record_count != 1 ||

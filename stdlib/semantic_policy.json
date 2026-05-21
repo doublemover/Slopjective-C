@@ -89,6 +89,7 @@
     "array_count": "routes through objc3_runtime_stdlib_collections_array_count_i32 and returns 0 plus invalid-handle status for unknown handles",
     "array_get_or": "routes through objc3_runtime_stdlib_collections_array_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid indexes",
     "array_prefix_count": "routes through objc3_runtime_stdlib_collections_array_prefix_count_i32 and clamps requested elements to the runtime-owned array count with a zero floor",
+    "array_sum": "routes concrete i32 array aggregation through objc3_runtime_stdlib_collections_array_sum_i32, returns the checked sum of runtime-owned array elements, and fails closed for invalid handles or i32 overflow",
     "map_entry": "routes single-entry i32 map construction through objc3_runtime_stdlib_collections_map_entry_i32 and returns a runtime-owned handle",
     "map_lookup_or": "routes through objc3_runtime_stdlib_collections_map_lookup_or_i32 and returns the caller default while recording not-found status for missing keys",
     "array_slice": "routes concrete i32 array slicing through objc3_runtime_stdlib_collections_array_slice_i32 and returns a runtime-owned slice handle only for ranges inside the source array",
