@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "fixture": "stdlib_runtime_storage_substrate_handles.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

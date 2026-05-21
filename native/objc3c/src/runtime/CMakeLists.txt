@@ -286,6 +286,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   stdlib/collections_runtime_contract.h
   stdlib/core_runtime.cpp
   stdlib/core_runtime_contract.h
+  stdlib/stdlib_runtime_storage.h
   stdlib/text_runtime.cpp
   stdlib/text_runtime_contract.h
 )

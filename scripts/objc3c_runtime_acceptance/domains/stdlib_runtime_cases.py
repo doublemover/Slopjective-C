@@ -72,8 +72,8 @@ def check_stdlib_foundation_next_runtime_probe_case(
     payload = parse_json_output(
         run_probe(exe_path), "stdlib foundation-next runtime probe"
     )
-    expect_equal(payload.get("text_total_call_count"), 14, "stdlib text calls drifted")
-    expect_equal(payload.get("text_record_count"), 3, "stdlib text record count drifted")
+    expect_equal(payload.get("text_total_call_count"), 17, "stdlib text calls drifted")
+    expect_equal(payload.get("text_record_count"), 4, "stdlib text record count drifted")
     expect_equal(
         payload.get("collections_total_call_count"),
         59,
@@ -108,8 +108,17 @@ def check_stdlib_foundation_next_runtime_probe_case(
             "kind": "stdlib-foundation-next-runtime-backed-text-collections-probe",
             "runtime_abi": [
                 "objc3_runtime_stdlib_text_utf8_literal_i32",
+                "objc3_runtime_stdlib_text_utf8_storage_i32",
                 "objc3_runtime_stdlib_text_concat_i32",
+                "objc3_runtime_stdlib_text_builder_i32",
+                "objc3_runtime_stdlib_text_builder_append_utf8_i32",
+                "objc3_runtime_stdlib_text_builder_build_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_next_or_i32",
                 "objc3_runtime_stdlib_collections_array3_i32",
+                "objc3_runtime_stdlib_collections_array_storage_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_append_i32",
                 "objc3_runtime_stdlib_collections_array_get_or_i32",
                 "objc3_runtime_stdlib_collections_array_sum_i32",
                 "objc3_runtime_stdlib_collections_map_lookup_or_i32",
@@ -125,6 +134,101 @@ def check_stdlib_foundation_next_runtime_probe_case(
             "set_record_count": payload.get("set_record_count"),
             "slice_record_count": payload.get("slice_record_count"),
             "iterator_record_count": payload.get("iterator_record_count"),
+        },
+    )
+
+
+def check_stdlib_runtime_storage_substrate_probe_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "stdlib-runtime-storage-substrate-probe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "stdlib_runtime_storage_substrate_probe.cpp"
+    exe_path = case_dir / "stdlib_runtime_storage_substrate_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_json_output(run_probe(exe_path), "stdlib runtime storage substrate probe")
+    expect_equal(
+        payload.get("text_handle_generation"),
+        3,
+        "stdlib text handle generation drifted after reset",
+    )
+    expect_equal(
+        payload.get("text_cross_kind_failures"),
+        1,
+        "stdlib text cross-kind failures drifted",
+    )
+    expect_equal(
+        payload.get("text_stale_failures"),
+        1,
+        "stdlib text stale-handle failures drifted",
+    )
+    expect_equal(
+        payload.get("text_stale_record_count"),
+        1,
+        "stdlib text stale-record accounting drifted",
+    )
+    expect_equal(
+        payload.get("text_iterator_invalidations"),
+        1,
+        "stdlib text iterator invalidation count drifted",
+    )
+    expect_equal(
+        payload.get("collections_handle_generation"),
+        3,
+        "stdlib collection handle generation drifted after reset",
+    )
+    expect_equal(
+        payload.get("collections_cross_kind_failures"),
+        1,
+        "stdlib collection cross-kind failures drifted",
+    )
+    expect_equal(
+        payload.get("collections_stale_failures"),
+        1,
+        "stdlib collection stale-handle failures drifted",
+    )
+    expect_equal(
+        payload.get("collections_stale_record_count"),
+        1,
+        "stdlib collection stale-record accounting drifted",
+    )
+    expect_equal(
+        payload.get("collections_mutation_generation"),
+        3,
+        "stdlib collection mutation generation drifted",
+    )
+    expect_equal(
+        payload.get("collections_iterator_invalidations"),
+        1,
+        "stdlib collection iterator invalidation count drifted",
+    )
+    return CaseResult(
+        case_id="stdlib-runtime-storage-substrate-probe",
+        probe="tests/tooling/runtime/stdlib_runtime_storage_substrate_probe.cpp",
+        fixture="tests/tooling/fixtures/native/execution/positive/stdlib_runtime_storage_substrate_handles.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "kind": "stdlib-shared-runtime-storage-substrate-probe",
+            "runtime_abi": [
+                "objc3_runtime_stdlib_text_utf8_storage_i32",
+                "objc3_runtime_stdlib_text_builder_i32",
+                "objc3_runtime_stdlib_text_builder_append_utf8_i32",
+                "objc3_runtime_stdlib_text_builder_build_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_next_or_i32",
+                "objc3_runtime_stdlib_collections_array_storage_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_append_i32",
+            ],
+            "text_handle_generation": payload.get("text_handle_generation"),
+            "text_stale_record_count": payload.get("text_stale_record_count"),
+            "collections_handle_generation": payload.get("collections_handle_generation"),
+            "collections_mutation_generation": payload.get(
+                "collections_mutation_generation"
+            ),
+            "collections_stale_record_count": payload.get(
+                "collections_stale_record_count"
+            ),
         },
     )
 
@@ -270,5 +374,6 @@ def check_stdlib_concurrency_runtime_probe_case(
 __all__ = [
     "check_stdlib_core_runtime_probe_case",
     "check_stdlib_foundation_next_runtime_probe_case",
+    "check_stdlib_runtime_storage_substrate_probe_case",
     "check_stdlib_concurrency_runtime_probe_case",
 ]

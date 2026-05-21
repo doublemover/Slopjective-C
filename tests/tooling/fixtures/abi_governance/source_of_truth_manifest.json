@@ -74,12 +74,12 @@
       "kind": "c-header-public-symbols",
       "source_globs": [
         "native/objc3c/src/runtime/public/*.h",
-        "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
+        "native/objc3c/src/runtime/stdlib/*.h"
       ],
       "release_blocker": true,
       "output_policy": "generated-output-only",
-      "expected_count": 124,
-      "expected_digest": "sha256:49c7a0799962b942d9f5e53bea96da5a21ba33cb51e5b75e56df74d1882180ea"
+      "expected_count": 199,
+      "expected_digest": "sha256:b4f5d1c93c11db699978813a38f29318ca8a8fb4aeb1fdaec5b784201cb67f43"
     },
     {
       "extractor_id": "stdlib-module-abi-signatures",

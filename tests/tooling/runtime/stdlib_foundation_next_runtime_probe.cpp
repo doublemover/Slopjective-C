@@ -101,7 +101,7 @@ int main() {
   if (overflow_array <= 0 ||
       objc3_runtime_stdlib_collections_array_sum_i32(overflow_array) != 0 ||
       objc3_runtime_stdlib_collections_last_status_i32() !=
-          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT) {
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OVERFLOW) {
     return Fail("array sum overflow did not fail closed");
   }
   if (objc3_runtime_stdlib_collections_array3_i32(1, 2, 3, 4) != 0 ||

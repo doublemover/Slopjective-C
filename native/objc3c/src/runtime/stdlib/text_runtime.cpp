@@ -1,5 +1,7 @@
 #include "runtime/stdlib/text_runtime_contract.h"
 
+#include "runtime/stdlib/stdlib_runtime_storage.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -10,17 +12,25 @@
 
 namespace {
 
+namespace storage = objc3c::runtime::stdlib_runtime;
+
 struct TextRecord {
+  storage::RecordHeader header;
   int byte_count = 0;
   int unit_count = 0;
   bool valid_utf8 = false;
-  bool owns_utf8_storage = false;
   std::vector<unsigned char> utf8_bytes;
+  std::vector<int> scalar_values;
+  int iterator_position = 0;
+  int iterator_source_handle = 0;
+  storage::DescriptorKind iterator_source_kind =
+      storage::DescriptorKind::Unknown;
+  std::uint64_t expected_mutation_generation = 0;
 };
 
 struct RuntimeStdlibTextState {
   std::mutex mutex;
-  std::uint64_t reset_generation = 0;
+  storage::HandleTable<TextRecord> records{storage::HandleTableOwner::Text};
   std::uint64_t total_call_count = 0;
   std::uint64_t literal_call_count = 0;
   std::uint64_t query_call_count = 0;
@@ -28,7 +38,13 @@ struct RuntimeStdlibTextState {
   std::uint64_t storage_create_call_count = 0;
   std::uint64_t storage_query_call_count = 0;
   std::uint64_t status_call_count = 0;
-  std::vector<TextRecord> records;
+  std::uint64_t mutation_generation = 0;
+  std::uint64_t invalid_handle_failure_count = 0;
+  std::uint64_t cross_kind_handle_failure_count = 0;
+  std::uint64_t stale_handle_failure_count = 0;
+  std::uint64_t malformed_descriptor_failure_count = 0;
+  std::uint64_t capacity_failure_count = 0;
+  std::uint64_t iterator_invalidation_count = 0;
   int last_handle = 0;
   int last_input_a = 0;
   int last_input_b = 0;
@@ -40,6 +56,35 @@ struct RuntimeStdlibTextState {
 RuntimeStdlibTextState &State() {
   static RuntimeStdlibTextState state;
   return state;
+}
+
+bool IsContinuation(unsigned char byte) {
+  return byte >= 0x80 && byte <= 0xBF;
+}
+
+void RecordStatusCounter(RuntimeStdlibTextState &state, int status) {
+  switch (status) {
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE:
+      ++state.invalid_handle_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CROSS_KIND_HANDLE:
+      ++state.cross_kind_handle_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STALE_HANDLE:
+      ++state.stale_handle_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR:
+      ++state.malformed_descriptor_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED:
+      ++state.capacity_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MUTATED_DURING_ITERATION:
+      ++state.iterator_invalidation_count;
+      break;
+    default:
+      break;
+  }
 }
 
 void RecordCall(RuntimeStdlibTextState &state,
@@ -58,147 +103,184 @@ void RecordCall(RuntimeStdlibTextState &state,
   state.last_input_c = input_c;
   state.last_status = status;
   state.last_result = result;
+  RecordStatusCounter(state, status);
 }
 
-TextRecord *FindText(RuntimeStdlibTextState &state, int handle) {
-  if (handle <= 0 || handle > static_cast<int>(state.records.size())) {
-    return nullptr;
+int StatusForLookup(storage::LookupStatus status) {
+  switch (status) {
+    case storage::LookupStatus::Ok:
+      return OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK;
+    case storage::LookupStatus::CrossKind:
+      return OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CROSS_KIND_HANDLE;
+    case storage::LookupStatus::StaleHandle:
+      return OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STALE_HANDLE;
+    case storage::LookupStatus::InvalidHandle:
+    default:
+      return OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE;
   }
-  return &state.records[static_cast<std::size_t>(handle - 1)];
 }
 
 bool HasValidTextShape(int byte_count, int unit_count) {
   return byte_count >= 0 && unit_count >= 0 && unit_count <= byte_count;
 }
 
-bool SumFitsInt(int left, int right) {
-  return left <= std::numeric_limits<int>::max() - right;
-}
-
-bool IsContinuation(unsigned char byte) {
-  return byte >= 0x80 && byte <= 0xBF;
-}
-
-bool TryCountUtf8Scalars(const unsigned char *bytes,
-                         int byte_count,
-                         int &scalar_count) {
+bool TryDecodeUtf8Scalars(const unsigned char *bytes,
+                          int byte_count,
+                          int &scalar_count,
+                          std::vector<int> *scalars) {
   scalar_count = 0;
   if (byte_count < 0 || (bytes == nullptr && byte_count != 0)) {
     return false;
+  }
+  if (scalars != nullptr) {
+    scalars->clear();
   }
 
   int index = 0;
   while (index < byte_count) {
     const unsigned char first = bytes[index];
+    int width = 0;
+    int scalar = 0;
     if (first <= 0x7F) {
-      ++index;
-      ++scalar_count;
-      continue;
-    }
-    if (first >= 0xC2 && first <= 0xDF) {
+      width = 1;
+      scalar = first;
+    } else if (first >= 0xC2 && first <= 0xDF) {
       if (index + 1 >= byte_count || !IsContinuation(bytes[index + 1])) {
         return false;
       }
-      index += 2;
-      ++scalar_count;
-      continue;
-    }
-    if (first == 0xE0) {
+      width = 2;
+      scalar = ((first & 0x1F) << 6) | (bytes[index + 1] & 0x3F);
+    } else if (first == 0xE0) {
       if (index + 2 >= byte_count || bytes[index + 1] < 0xA0 ||
           bytes[index + 1] > 0xBF || !IsContinuation(bytes[index + 2])) {
         return false;
       }
-      index += 3;
-      ++scalar_count;
-      continue;
-    }
-    if ((first >= 0xE1 && first <= 0xEC) ||
-        (first >= 0xEE && first <= 0xEF)) {
+      width = 3;
+      scalar = ((first & 0x0F) << 12) | ((bytes[index + 1] & 0x3F) << 6) |
+               (bytes[index + 2] & 0x3F);
+    } else if ((first >= 0xE1 && first <= 0xEC) ||
+               (first >= 0xEE && first <= 0xEF)) {
       if (index + 2 >= byte_count || !IsContinuation(bytes[index + 1]) ||
           !IsContinuation(bytes[index + 2])) {
         return false;
       }
-      index += 3;
-      ++scalar_count;
-      continue;
-    }
-    if (first == 0xED) {
+      width = 3;
+      scalar = ((first & 0x0F) << 12) | ((bytes[index + 1] & 0x3F) << 6) |
+               (bytes[index + 2] & 0x3F);
+    } else if (first == 0xED) {
       if (index + 2 >= byte_count || bytes[index + 1] < 0x80 ||
           bytes[index + 1] > 0x9F || !IsContinuation(bytes[index + 2])) {
         return false;
       }
-      index += 3;
-      ++scalar_count;
-      continue;
-    }
-    if (first == 0xF0) {
+      width = 3;
+      scalar = ((first & 0x0F) << 12) | ((bytes[index + 1] & 0x3F) << 6) |
+               (bytes[index + 2] & 0x3F);
+    } else if (first == 0xF0) {
       if (index + 3 >= byte_count || bytes[index + 1] < 0x90 ||
           bytes[index + 1] > 0xBF || !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
         return false;
       }
-      index += 4;
-      ++scalar_count;
-      continue;
-    }
-    if (first >= 0xF1 && first <= 0xF3) {
+      width = 4;
+      scalar = ((first & 0x07) << 18) | ((bytes[index + 1] & 0x3F) << 12) |
+               ((bytes[index + 2] & 0x3F) << 6) |
+               (bytes[index + 3] & 0x3F);
+    } else if (first >= 0xF1 && first <= 0xF3) {
       if (index + 3 >= byte_count || !IsContinuation(bytes[index + 1]) ||
           !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
         return false;
       }
-      index += 4;
-      ++scalar_count;
-      continue;
-    }
-    if (first == 0xF4) {
+      width = 4;
+      scalar = ((first & 0x07) << 18) | ((bytes[index + 1] & 0x3F) << 12) |
+               ((bytes[index + 2] & 0x3F) << 6) |
+               (bytes[index + 3] & 0x3F);
+    } else if (first == 0xF4) {
       if (index + 3 >= byte_count || bytes[index + 1] < 0x80 ||
           bytes[index + 1] > 0x8F || !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
         return false;
       }
-      index += 4;
-      ++scalar_count;
-      continue;
+      width = 4;
+      scalar = ((first & 0x07) << 18) | ((bytes[index + 1] & 0x3F) << 12) |
+               ((bytes[index + 2] & 0x3F) << 6) |
+               (bytes[index + 3] & 0x3F);
+    } else {
+      return false;
     }
-    return false;
+    index += width;
+    ++scalar_count;
+    if (scalars != nullptr) {
+      scalars->push_back(scalar);
+    }
   }
   return true;
 }
 
+TextRecord MakeLiteralRecord(int byte_count, int unit_count) {
+  TextRecord record;
+  record.byte_count = byte_count;
+  record.unit_count = unit_count;
+  record.valid_utf8 = true;
+  return record;
+}
+
 TextRecord MakeOwnedUtf8Record(const unsigned char *bytes,
                                int byte_count,
-                               int scalar_count) {
+                               int scalar_count,
+                               std::vector<int> scalars) {
   TextRecord record;
   record.byte_count = byte_count;
   record.unit_count = scalar_count;
   record.valid_utf8 = true;
-  record.owns_utf8_storage = true;
+  record.scalar_values = std::move(scalars);
   if (byte_count > 0) {
     record.utf8_bytes.assign(bytes, bytes + byte_count);
   }
   return record;
 }
 
+TextRecord MakeBuilderRecord() {
+  TextRecord record;
+  record.valid_utf8 = true;
+  return record;
+}
+
+bool HasUtf8Storage(const TextRecord &record) {
+  return record.header.descriptor_kind == storage::DescriptorKind::TextOwnedUtf8 ||
+         record.header.descriptor_kind == storage::DescriptorKind::TextBuilder;
+}
+
 int CountOwnedStorageRecords(const RuntimeStdlibTextState &state) {
-  return static_cast<int>(std::count_if(
-      state.records.begin(), state.records.end(), [](const TextRecord &record) {
-        return record.owns_utf8_storage;
-      }));
+  return state.records.RecordCount(storage::DescriptorKind::TextOwnedUtf8);
 }
 
 int CountOwnedStorageBytes(const RuntimeStdlibTextState &state) {
-  int total = 0;
-  for (const TextRecord &record : state.records) {
-    if (!record.owns_utf8_storage) {
-      continue;
+  int byte_total = 0;
+  state.records.ForEachLiveRecord([&byte_total](const TextRecord &record) {
+    if (record.header.descriptor_kind ==
+        storage::DescriptorKind::TextOwnedUtf8) {
+      if (storage::AddWouldOverflowInt(byte_total, record.byte_count)) {
+        byte_total = std::numeric_limits<int>::max();
+        return;
+      }
+      byte_total += record.byte_count;
     }
-    if (!SumFitsInt(total, record.byte_count)) {
-      return std::numeric_limits<int>::max();
-    }
-    total += record.byte_count;
+  });
+  return byte_total;
+}
+
+int CreateOwnedText(RuntimeStdlibTextState &state,
+                    const unsigned char *bytes,
+                    int byte_count,
+                    int scalar_count,
+                    std::vector<int> scalars) {
+  if (!state.records.CanAllocate()) {
+    return 0;
   }
-  return total;
+  return state.records.Store(
+      storage::DescriptorKind::TextOwnedUtf8,
+      MakeOwnedUtf8Record(bytes, byte_count, scalar_count, std::move(scalars)));
 }
 
 }  // namespace
@@ -208,7 +290,6 @@ namespace objc3c::runtime {
 void ResetRuntimeStdlibTextStateForTesting() {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  const std::uint64_t next_reset_generation = state.reset_generation + 1;
   state.total_call_count = 0;
   state.literal_call_count = 0;
   state.query_call_count = 0;
@@ -216,14 +297,20 @@ void ResetRuntimeStdlibTextStateForTesting() {
   state.storage_create_call_count = 0;
   state.storage_query_call_count = 0;
   state.status_call_count = 0;
-  state.records.clear();
+  state.mutation_generation = 0;
+  state.invalid_handle_failure_count = 0;
+  state.cross_kind_handle_failure_count = 0;
+  state.stale_handle_failure_count = 0;
+  state.malformed_descriptor_failure_count = 0;
+  state.capacity_failure_count = 0;
+  state.iterator_invalidation_count = 0;
   state.last_handle = 0;
   state.last_input_a = 0;
   state.last_input_b = 0;
   state.last_input_c = 0;
   state.last_status = OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK;
   state.last_result = 0;
-  state.reset_generation = next_reset_generation;
+  state.records.Reset();
 }
 
 }  // namespace objc3c::runtime
@@ -244,12 +331,15 @@ extern "C" int objc3_runtime_stdlib_text_utf8_literal_i32(int byte_count,
                0);
     return 0;
   }
-  TextRecord record;
-  record.byte_count = byte_count;
-  record.unit_count = unit_count;
-  record.valid_utf8 = true;
-  state.records.push_back(std::move(record));
-  const int handle = static_cast<int>(state.records.size());
+  if (!state.records.CanAllocate()) {
+    RecordCall(state, state.literal_call_count, 0, byte_count, unit_count,
+               valid_utf8, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED,
+               0);
+    return 0;
+  }
+  const int handle = state.records.Store(
+      storage::DescriptorKind::TextLiteral,
+      MakeLiteralRecord(byte_count, unit_count));
   RecordCall(state, state.literal_call_count, handle, byte_count, unit_count,
              valid_utf8, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
   return handle;
@@ -260,22 +350,38 @@ extern "C" int objc3_runtime_stdlib_text_utf8_storage_i32(
     int byte_count) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  if (byte_count < 0 || (utf8_bytes == nullptr && byte_count != 0)) {
+  if (byte_count < 0) {
     RecordCall(state, state.storage_create_call_count, 0, byte_count, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
     return 0;
   }
+  if (storage::CountExceedsStorageCapacity(byte_count)) {
+    RecordCall(state, state.storage_create_call_count, 0, byte_count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  if (utf8_bytes == nullptr && byte_count != 0) {
+    RecordCall(state, state.storage_create_call_count, 0, byte_count, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR, 0);
+    return 0;
+  }
 
   int scalar_count = 0;
+  std::vector<int> scalars;
   const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
-  if (!TryCountUtf8Scalars(bytes, byte_count, scalar_count)) {
+  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars)) {
     RecordCall(state, state.storage_create_call_count, 0, byte_count, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
     return 0;
   }
-
-  state.records.push_back(MakeOwnedUtf8Record(bytes, byte_count, scalar_count));
-  const int handle = static_cast<int>(state.records.size());
+  const int handle =
+      CreateOwnedText(state, bytes, byte_count, scalar_count, std::move(scalars));
+  if (handle == 0) {
+    RecordCall(state, state.storage_create_call_count, 0, byte_count,
+               scalar_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
   RecordCall(state, state.storage_create_call_count, handle, byte_count,
              scalar_count, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
   return handle;
@@ -284,29 +390,35 @@ extern "C" int objc3_runtime_stdlib_text_utf8_storage_i32(
 extern "C" int objc3_runtime_stdlib_text_byte_count_i32(int handle) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
-    RecordCall(state, state.query_call_count, handle, handle, 0, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.query_call_count, handle, handle, 0, 0, status, 0);
     return 0;
   }
   RecordCall(state, state.query_call_count, handle, handle, 0, 0,
-             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, record->byte_count);
-  return record->byte_count;
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, lookup.record->byte_count);
+  return lookup.record->byte_count;
 }
 
 extern "C" int objc3_runtime_stdlib_text_unit_count_i32(int handle) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
-    RecordCall(state, state.query_call_count, handle, handle, 0, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.query_call_count, handle, handle, 0, 0, status, 0);
     return 0;
   }
   RecordCall(state, state.query_call_count, handle, handle, 0, 0,
-             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, record->unit_count);
-  return record->unit_count;
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, lookup.record->unit_count);
+  return lookup.record->unit_count;
 }
 
 extern "C" int objc3_runtime_stdlib_text_scalar_count_i32(int handle) {
@@ -316,13 +428,16 @@ extern "C" int objc3_runtime_stdlib_text_scalar_count_i32(int handle) {
 extern "C" int objc3_runtime_stdlib_text_is_valid_utf8_i32(int handle) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
-    RecordCall(state, state.query_call_count, handle, handle, 0, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.query_call_count, handle, handle, 0, 0, status, 0);
     return 0;
   }
-  const int result = record->valid_utf8 ? 1 : 0;
+  const int result = lookup.record->valid_utf8 ? 1 : 0;
   RecordCall(state, state.query_call_count, handle, handle, 0, 0,
              OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
@@ -333,28 +448,31 @@ extern "C" int objc3_runtime_stdlib_text_byte_at_or_i32(int handle,
                                                         int default_value) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
     RecordCall(state, state.storage_query_call_count, handle, byte_index,
-               default_value, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, default_value);
+               default_value, 0, status, default_value);
     return default_value;
   }
-  if (!record->owns_utf8_storage) {
+  if (!HasUtf8Storage(*lookup.record)) {
     RecordCall(state, state.storage_query_call_count, handle, byte_index,
                default_value, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE,
                default_value);
     return default_value;
   }
-  if (byte_index < 0 || byte_index >= record->byte_count) {
+  if (byte_index < 0 || byte_index >= lookup.record->byte_count) {
     RecordCall(state, state.storage_query_call_count, handle, byte_index,
                default_value, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS, default_value);
     return default_value;
   }
-  const int result =
-      static_cast<int>(record->utf8_bytes[static_cast<std::size_t>(byte_index)]);
+  const int result = static_cast<int>(
+      lookup.record->utf8_bytes[static_cast<std::size_t>(byte_index)]);
   RecordCall(state, state.storage_query_call_count, handle, byte_index,
              default_value, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
@@ -365,13 +483,18 @@ extern "C" int objc3_runtime_stdlib_text_prefix_units_i32(
     int requested_units) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
     RecordCall(state, state.query_call_count, handle, requested_units, 0, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+               status, 0);
     return 0;
   }
-  const int result = std::min(record->unit_count, std::max(requested_units, 0));
+  const int result =
+      std::min(lookup.record->unit_count, std::max(requested_units, 0));
   RecordCall(state, state.query_call_count, handle, requested_units, 0, 0,
              OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
@@ -381,36 +504,59 @@ extern "C" int objc3_runtime_stdlib_text_concat_i32(int left_handle,
                                                     int right_handle) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *left = FindText(state, left_handle);
-  TextRecord *right = FindText(state, right_handle);
-  if (left == nullptr || right == nullptr) {
+  auto left_lookup = state.records.Lookup(
+      left_handle, {storage::DescriptorKind::TextLiteral,
+                    storage::DescriptorKind::TextOwnedUtf8,
+                    storage::DescriptorKind::TextBuilder});
+  auto right_lookup = state.records.Lookup(
+      right_handle, {storage::DescriptorKind::TextLiteral,
+                     storage::DescriptorKind::TextOwnedUtf8,
+                     storage::DescriptorKind::TextBuilder});
+  if (left_lookup.status != storage::LookupStatus::Ok ||
+      right_lookup.status != storage::LookupStatus::Ok) {
+    const int status = left_lookup.status != storage::LookupStatus::Ok
+                           ? StatusForLookup(left_lookup.status)
+                           : StatusForLookup(right_lookup.status);
     RecordCall(state, state.concat_call_count, 0, left_handle, right_handle, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+               status, 0);
     return 0;
   }
-  if (!SumFitsInt(left->byte_count, right->byte_count) ||
-      !SumFitsInt(left->unit_count, right->unit_count)) {
+  if (storage::AddWouldOverflowInt(left_lookup.record->byte_count,
+                                   right_lookup.record->byte_count) ||
+      storage::AddWouldOverflowInt(left_lookup.record->unit_count,
+                                   right_lookup.record->unit_count)) {
     RecordCall(state, state.concat_call_count, 0, left_handle, right_handle, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OVERFLOW, 0);
     return 0;
   }
 
   TextRecord joined;
-  joined.byte_count = left->byte_count + right->byte_count;
-  joined.unit_count = left->unit_count + right->unit_count;
-  joined.valid_utf8 = left->valid_utf8 && right->valid_utf8;
-  joined.owns_utf8_storage =
-      left->owns_utf8_storage && right->owns_utf8_storage;
-  if (joined.owns_utf8_storage) {
-    joined.utf8_bytes.reserve(static_cast<std::size_t>(joined.byte_count));
-    joined.utf8_bytes.insert(joined.utf8_bytes.end(), left->utf8_bytes.begin(),
-                             left->utf8_bytes.end());
+  joined.byte_count =
+      left_lookup.record->byte_count + right_lookup.record->byte_count;
+  joined.unit_count =
+      left_lookup.record->unit_count + right_lookup.record->unit_count;
+  joined.valid_utf8 =
+      left_lookup.record->valid_utf8 && right_lookup.record->valid_utf8;
+  if (HasUtf8Storage(*left_lookup.record) && HasUtf8Storage(*right_lookup.record)) {
+    joined.utf8_bytes = left_lookup.record->utf8_bytes;
     joined.utf8_bytes.insert(joined.utf8_bytes.end(),
-                             right->utf8_bytes.begin(),
-                             right->utf8_bytes.end());
+                             right_lookup.record->utf8_bytes.begin(),
+                             right_lookup.record->utf8_bytes.end());
+    joined.scalar_values = left_lookup.record->scalar_values;
+    joined.scalar_values.insert(joined.scalar_values.end(),
+                                right_lookup.record->scalar_values.begin(),
+                                right_lookup.record->scalar_values.end());
   }
-  state.records.push_back(std::move(joined));
-  const int handle = static_cast<int>(state.records.size());
+  const storage::DescriptorKind kind =
+      joined.utf8_bytes.empty() && joined.byte_count != 0
+          ? storage::DescriptorKind::TextLiteral
+          : storage::DescriptorKind::TextOwnedUtf8;
+  const int handle = state.records.Store(kind, std::move(joined));
+  if (handle == 0) {
+    RecordCall(state, state.concat_call_count, 0, left_handle, right_handle, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
   RecordCall(state, state.concat_call_count, handle, left_handle, right_handle,
              0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
   return handle;
@@ -422,47 +568,260 @@ extern "C" int objc3_runtime_stdlib_text_append_utf8_storage_i32(
     int byte_count) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *base = FindText(state, handle);
-  if (base == nullptr) {
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
     RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+               status, 0);
     return 0;
   }
-  if (!base->owns_utf8_storage) {
-    RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
-    return 0;
-  }
-  if (byte_count < 0 || (utf8_bytes == nullptr && byte_count != 0) ||
-      !SumFitsInt(base->byte_count, byte_count)) {
+  if (byte_count < 0 ||
+      storage::AddWouldOverflowInt(lookup.record->byte_count, byte_count)) {
     RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
     return 0;
   }
+  if (storage::CountExceedsStorageCapacity(lookup.record->byte_count + byte_count)) {
+    RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  if (utf8_bytes == nullptr && byte_count != 0) {
+    RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR, 0);
+    return 0;
+  }
 
   int appended_scalar_count = 0;
+  std::vector<int> appended_scalars;
   const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
-  if (!TryCountUtf8Scalars(bytes, byte_count, appended_scalar_count) ||
-      !SumFitsInt(base->unit_count, appended_scalar_count)) {
+  if (!TryDecodeUtf8Scalars(bytes, byte_count, appended_scalar_count,
+                            &appended_scalars) ||
+      storage::AddWouldOverflowInt(lookup.record->unit_count,
+                                   appended_scalar_count)) {
     RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
     return 0;
   }
 
   TextRecord record;
-  record.byte_count = base->byte_count + byte_count;
-  record.unit_count = base->unit_count + appended_scalar_count;
+  record.byte_count = lookup.record->byte_count + byte_count;
+  record.unit_count = lookup.record->unit_count + appended_scalar_count;
   record.valid_utf8 = true;
-  record.owns_utf8_storage = true;
-  record.utf8_bytes = base->utf8_bytes;
+  record.utf8_bytes = lookup.record->utf8_bytes;
+  record.scalar_values = lookup.record->scalar_values;
   if (byte_count > 0) {
     record.utf8_bytes.insert(record.utf8_bytes.end(), bytes, bytes + byte_count);
+    record.scalar_values.insert(record.scalar_values.end(),
+                                appended_scalars.begin(),
+                                appended_scalars.end());
   }
-  state.records.push_back(std::move(record));
-  const int result = static_cast<int>(state.records.size());
+  const int result =
+      state.records.Store(storage::DescriptorKind::TextOwnedUtf8,
+                          std::move(record));
+  if (result == 0) {
+    RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
   RecordCall(state, state.storage_create_call_count, result, handle, byte_count,
              appended_scalar_count, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK,
              result);
+  return result;
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_i32(void) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const int handle =
+      state.records.Store(storage::DescriptorKind::TextBuilder,
+                          MakeBuilderRecord());
+  if (handle == 0) {
+    RecordCall(state, state.storage_create_call_count, 0, 0, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.storage_create_call_count, handle, 0, 0, 0,
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_append_utf8_i32(
+    int builder_handle,
+    const char *utf8_bytes,
+    int byte_count) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      builder_handle, {storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, byte_count, 0, status, 0);
+    return 0;
+  }
+  if (byte_count < 0 ||
+      storage::AddWouldOverflowInt(lookup.record->byte_count, byte_count)) {
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
+    return 0;
+  }
+  if (storage::CountExceedsStorageCapacity(lookup.record->byte_count + byte_count)) {
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  if (utf8_bytes == nullptr && byte_count != 0) {
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR, 0);
+    return 0;
+  }
+  int scalar_count = 0;
+  std::vector<int> scalars;
+  const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
+  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars) ||
+      storage::AddWouldOverflowInt(lookup.record->unit_count, scalar_count)) {
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, byte_count, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
+    return 0;
+  }
+  if (byte_count > 0) {
+    lookup.record->utf8_bytes.insert(lookup.record->utf8_bytes.end(), bytes,
+                                     bytes + byte_count);
+    lookup.record->scalar_values.insert(lookup.record->scalar_values.end(),
+                                        scalars.begin(), scalars.end());
+  }
+  lookup.record->byte_count += byte_count;
+  lookup.record->unit_count += scalar_count;
+  ++state.mutation_generation;
+  lookup.record->header.mutation_generation = state.mutation_generation;
+  RecordCall(state, state.storage_create_call_count, builder_handle,
+             builder_handle, byte_count, scalar_count,
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, lookup.record->byte_count);
+  return lookup.record->byte_count;
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_build_i32(
+    int builder_handle) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      builder_handle, {storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, 0, 0, status, 0);
+    return 0;
+  }
+  TextRecord record;
+  record.byte_count = lookup.record->byte_count;
+  record.unit_count = lookup.record->unit_count;
+  record.valid_utf8 = true;
+  record.utf8_bytes = lookup.record->utf8_bytes;
+  record.scalar_values = lookup.record->scalar_values;
+  const int handle =
+      state.records.Store(storage::DescriptorKind::TextOwnedUtf8,
+                          std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.storage_create_call_count, builder_handle,
+               builder_handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.storage_create_call_count, handle, builder_handle, 0,
+             0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_text_scalar_iterator_i32(int handle) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+               status, 0);
+    return 0;
+  }
+  if (!HasUtf8Storage(*lookup.record)) {
+    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
+    return 0;
+  }
+  TextRecord iterator;
+  iterator.scalar_values = lookup.record->scalar_values;
+  iterator.iterator_source_handle = handle;
+  iterator.iterator_source_kind = lookup.record->header.descriptor_kind;
+  iterator.expected_mutation_generation =
+      lookup.record->header.mutation_generation;
+  const int iterator_handle =
+      state.records.Store(storage::DescriptorKind::TextScalarIterator,
+                          std::move(iterator));
+  if (iterator_handle == 0) {
+    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.storage_query_call_count, iterator_handle, handle, 0,
+             0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, iterator_handle);
+  return iterator_handle;
+}
+
+extern "C" int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(
+    int iterator_handle,
+    int default_value) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto iterator_lookup = state.records.Lookup(
+      iterator_handle, {storage::DescriptorKind::TextScalarIterator});
+  if (iterator_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(iterator_lookup.status);
+    RecordCall(state, state.storage_query_call_count, iterator_handle,
+               default_value, 0, 0, status, default_value);
+    return default_value;
+  }
+  TextRecord &iterator = *iterator_lookup.record;
+  if (iterator.iterator_source_kind == storage::DescriptorKind::TextBuilder) {
+    auto source_lookup = state.records.Lookup(
+        iterator.iterator_source_handle,
+        {storage::DescriptorKind::TextBuilder});
+    if (source_lookup.status != storage::LookupStatus::Ok) {
+      const int status = StatusForLookup(source_lookup.status);
+      RecordCall(state, state.storage_query_call_count, iterator_handle,
+                 default_value, 0, 0, status, default_value);
+      return default_value;
+    }
+    if (source_lookup.record->header.mutation_generation !=
+        iterator.expected_mutation_generation) {
+      RecordCall(
+          state, state.storage_query_call_count, iterator_handle, default_value,
+          0, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MUTATED_DURING_ITERATION,
+          default_value);
+      return default_value;
+    }
+  }
+  if (iterator.iterator_position >=
+      static_cast<int>(iterator.scalar_values.size())) {
+    RecordCall(state, state.storage_query_call_count, iterator_handle,
+               default_value, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS, default_value);
+    return default_value;
+  }
+  const int result =
+      iterator.scalar_values[static_cast<std::size_t>(
+          iterator.iterator_position)];
+  ++iterator.iterator_position;
+  RecordCall(state, state.storage_query_call_count, iterator_handle,
+             default_value, 0, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
 }
 
@@ -470,21 +829,32 @@ extern "C" int objc3_runtime_stdlib_text_equal_i32(int left_handle,
                                                    int right_handle) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *left = FindText(state, left_handle);
-  TextRecord *right = FindText(state, right_handle);
-  if (left == nullptr || right == nullptr) {
+  auto left_lookup = state.records.Lookup(
+      left_handle, {storage::DescriptorKind::TextLiteral,
+                    storage::DescriptorKind::TextOwnedUtf8,
+                    storage::DescriptorKind::TextBuilder});
+  auto right_lookup = state.records.Lookup(
+      right_handle, {storage::DescriptorKind::TextLiteral,
+                     storage::DescriptorKind::TextOwnedUtf8,
+                     storage::DescriptorKind::TextBuilder});
+  if (left_lookup.status != storage::LookupStatus::Ok ||
+      right_lookup.status != storage::LookupStatus::Ok) {
+    const int status = left_lookup.status != storage::LookupStatus::Ok
+                           ? StatusForLookup(left_lookup.status)
+                           : StatusForLookup(right_lookup.status);
     RecordCall(state, state.storage_query_call_count, 0, left_handle,
-               right_handle, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+               right_handle, 0, status, 0);
     return 0;
   }
-  if (!left->owns_utf8_storage || !right->owns_utf8_storage) {
+  if (!HasUtf8Storage(*left_lookup.record) ||
+      !HasUtf8Storage(*right_lookup.record)) {
     RecordCall(state, state.storage_query_call_count, 0, left_handle,
                right_handle, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
     return 0;
   }
-  const int result = left->utf8_bytes == right->utf8_bytes ? 1 : 0;
+  const int result =
+      left_lookup.record->utf8_bytes == right_lookup.record->utf8_bytes ? 1 : 0;
   RecordCall(state, state.storage_query_call_count, left_handle, left_handle,
              right_handle, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
@@ -504,31 +874,35 @@ extern "C" int objc3_runtime_copy_stdlib_text_utf8_bytes_for_testing(
     int capacity) {
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  TextRecord *record = FindText(state, handle);
-  if (record == nullptr) {
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
     RecordCall(state, state.storage_query_call_count, handle, capacity, 0, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_HANDLE, 0);
+               status, 0);
     return 0;
   }
-  if (!record->owns_utf8_storage) {
+  if (!HasUtf8Storage(*lookup.record)) {
     RecordCall(state, state.storage_query_call_count, handle, capacity, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
     return 0;
   }
-  if (out == nullptr || capacity < record->byte_count) {
+  if (out == nullptr || capacity < lookup.record->byte_count) {
     RecordCall(state, state.storage_query_call_count, handle, capacity,
-               record->byte_count, 0,
+               lookup.record->byte_count, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUTPUT_TOO_SMALL, 0);
     return 0;
   }
-  if (record->byte_count > 0) {
-    std::memcpy(out, record->utf8_bytes.data(),
-                static_cast<std::size_t>(record->byte_count));
+  if (lookup.record->byte_count > 0) {
+    std::memcpy(out, lookup.record->utf8_bytes.data(),
+                static_cast<std::size_t>(lookup.record->byte_count));
   }
   RecordCall(state, state.storage_query_call_count, handle, capacity,
-             record->byte_count, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK,
-             record->byte_count);
-  return record->byte_count;
+             lookup.record->byte_count, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK,
+             lookup.record->byte_count);
+  return lookup.record->byte_count;
 }
 
 extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
@@ -538,7 +912,7 @@ extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
   }
   RuntimeStdlibTextState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  out->reset_generation = state.reset_generation;
+  out->reset_generation = state.records.reset_generation();
   out->total_call_count = state.total_call_count;
   out->literal_call_count = state.literal_call_count;
   out->query_call_count = state.query_call_count;
@@ -546,7 +920,7 @@ extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
   out->storage_create_call_count = state.storage_create_call_count;
   out->storage_query_call_count = state.storage_query_call_count;
   out->status_call_count = state.status_call_count;
-  out->text_record_count = static_cast<int>(state.records.size());
+  out->text_record_count = state.records.LiveRecordCount();
   out->owned_storage_record_count = CountOwnedStorageRecords(state);
   out->owned_storage_byte_count = CountOwnedStorageBytes(state);
   out->last_handle = state.last_handle;
@@ -555,5 +929,30 @@ extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
   out->last_input_c = state.last_input_c;
   out->last_status = state.last_status;
   out->last_result = state.last_result;
+  out->abi_version = storage::kStdlibRuntimeAbiVersion;
+  out->handle_generation = state.records.handle_generation();
+  out->mutation_generation = state.mutation_generation;
+  out->invalid_handle_failure_count = state.invalid_handle_failure_count;
+  out->cross_kind_handle_failure_count =
+      state.cross_kind_handle_failure_count;
+  out->stale_handle_failure_count = state.stale_handle_failure_count;
+  out->malformed_descriptor_failure_count =
+      state.malformed_descriptor_failure_count;
+  out->capacity_failure_count = state.capacity_failure_count;
+  out->iterator_invalidation_count = state.iterator_invalidation_count;
+  out->literal_record_count =
+      state.records.RecordCount(storage::DescriptorKind::TextLiteral);
+  out->builder_record_count =
+      state.records.RecordCount(storage::DescriptorKind::TextBuilder);
+  out->scalar_iterator_record_count =
+      state.records.RecordCount(storage::DescriptorKind::TextScalarIterator);
+  out->malformed_record_count =
+      state.records.RecordCount(storage::DescriptorKind::Malformed);
+  out->stale_record_count =
+      static_cast<int>(state.records.stale_record_count());
+  out->reserved_normalized_record_count =
+      state.records.RecordCount(storage::DescriptorKind::ReservedNormalizedText);
+  out->reserved_collated_record_count =
+      state.records.RecordCount(storage::DescriptorKind::ReservedCollatedText);
   return 0;
 }

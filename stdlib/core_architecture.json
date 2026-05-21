@@ -43,6 +43,7 @@
     "objc3.text": [
       "utf8-text-record",
       "text-length",
+      "text-byte-access",
       "text-concat",
       "text-status"
     ],
@@ -122,10 +123,13 @@
       "Objc3TextStatusInvalidHandle",
       "Objc3TextStatusInvalidShape",
       "Objc3TextStatusMalformedUtf8",
+      "Objc3TextStatusOutOfBounds",
+      "Objc3TextStatusStorageUnavailable",
       "objc3_text_utf8_literal",
       "objc3_text_byte_count",
       "objc3_text_unit_count",
       "objc3_text_is_valid_utf8",
+      "objc3_text_byte_at_or",
       "objc3_text_prefix_units",
       "objc3_text_concat",
       "objc3_text_last_status"

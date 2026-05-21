@@ -15,6 +15,11 @@ typedef enum objc3_runtime_stdlib_collections_status_i32 {
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_RANGE = 30635,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_ITERATION_END = 30636,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION = 30637,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CROSS_KIND_HANDLE = 30638,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_STALE_HANDLE = 30639,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR = 30640,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED = 30653,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OVERFLOW = 30654,
 } objc3_runtime_stdlib_collections_status_i32;
 
 typedef struct objc3_runtime_stdlib_collections_snapshot {
@@ -44,12 +49,30 @@ typedef struct objc3_runtime_stdlib_collections_snapshot {
   int last_status;
   int last_result;
   uint64_t map_mutation_call_count;
+  uint32_t abi_version;
+  uint32_t handle_generation;
+  uint64_t mutation_generation;
+  uint64_t invalid_handle_failure_count;
+  uint64_t cross_kind_handle_failure_count;
+  uint64_t stale_handle_failure_count;
+  uint64_t malformed_descriptor_failure_count;
+  uint64_t capacity_failure_count;
+  uint64_t iterator_invalidation_count;
+  int immutable_array_record_count;
+  int mutable_array_record_count;
+  int descriptor_record_count;
+  int stale_record_count;
 } objc3_runtime_stdlib_collections_snapshot;
 
 int objc3_runtime_stdlib_collections_array3_i32(int first,
                                                 int second,
                                                 int third,
                                                 int count);
+int objc3_runtime_stdlib_collections_array_storage_i32(const int *values,
+                                                       int count);
+int objc3_runtime_stdlib_collections_mutable_array_i32(void);
+int objc3_runtime_stdlib_collections_mutable_array_append_i32(int handle,
+                                                              int value);
 int objc3_runtime_stdlib_collections_array_count_i32(int handle);
 int objc3_runtime_stdlib_collections_array_get_or_i32(int handle,
                                                       int index,
