@@ -144,6 +144,30 @@ struct Objc3InteropLaneSurface {
   bool async_policy_explicit = true;
 };
 
+struct Objc3MacroMetaprogrammingSurface {
+  std::vector<std::string> support_claims_source_order;
+  std::string public_command =
+      "npm run objc3c -- validate-metaprogramming-conformance";
+  std::string contract_path =
+      "tests/tooling/fixtures/metaprogramming_public_surface/"
+      "macro_metaprogramming_public_surface_contract.json";
+  std::string derive_inventory_contract =
+      "objc3c.metaprogramming.derive.expansion.inventory.v1";
+  std::string macro_safety_contract =
+      "objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1";
+  std::vector<std::string> supported_derive_forms_lexicographic;
+  std::vector<std::string> required_metadata_fields_source_order;
+  std::vector<std::string> fail_closed_diagnostics_source_order;
+  Objc3PublicLanguageSemanticCapabilityState public_state =
+      Objc3PublicLanguageSemanticCapabilityState::kSupported;
+  bool deterministic_replay_required = true;
+  bool sandbox_deny_by_default = true;
+  bool generated_artifacts_are_support_authority = false;
+  bool arbitrary_host_execution_allowed = false;
+  bool network_access_allowed = false;
+  bool third_party_macro_ecosystem_claimed = false;
+};
+
 struct Objc3PublicLanguageSemanticsModelSummary {
   std::string contract_id = kObjc3PublicLanguageSemanticsModelContractId;
   std::string frontend_surface_path =
@@ -157,6 +181,7 @@ struct Objc3PublicLanguageSemanticsModelSummary {
   std::vector<Objc3ConcurrencyEffectSurface> concurrency_effects;
   std::vector<Objc3ModuleVisibilitySurface> module_visibility_surfaces;
   std::vector<Objc3InteropLaneSurface> interop_lane_surfaces;
+  std::vector<Objc3MacroMetaprogrammingSurface> macro_metaprogramming_surfaces;
   bool fail_closed = true;
   bool schema_fixture_published = false;
   bool typed_model_surface_published = true;
@@ -183,6 +208,7 @@ inline bool IsReadyObjc3PublicLanguageSemanticsModelSummary(
          !summary.concurrency_effects.empty() && summary.fail_closed &&
          !summary.module_visibility_surfaces.empty() &&
          !summary.interop_lane_surfaces.empty() &&
+         !summary.macro_metaprogramming_surfaces.empty() &&
          summary.schema_fixture_published &&
          summary.typed_model_surface_published &&
          summary.generic_constraints_bound_to_protocol_existentials &&

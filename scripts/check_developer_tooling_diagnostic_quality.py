@@ -27,6 +27,8 @@ EXPECTED_DIAGNOSTIC_HEADER_RE = re.compile(
 )
 DEFAULT_NATIVE_RECOVERY_FIXTURE_ROOT = "tests/tooling/fixtures/native/recovery/negative"
 ALLOWED_SEVERITIES = {"note", "warning", "error", "fatal"}
+ALLOWED_SUGGESTION_CONFIDENCE = {"high", "medium", "low"}
+ALLOWED_SUGGESTION_KINDS = {"nearest-symbol"}
 ALLOWED_PHASES = {
     "lex",
     "parse",
@@ -93,6 +95,60 @@ def valid_fixit(fixit: object) -> bool:
         and valid_range(fixit.get("range"))
         and isinstance(fixit.get("replacement"), str)
     )
+
+
+def valid_suggestion(
+    suggestion: object,
+    *,
+    case_source: object,
+    failures: list[str],
+    failure_prefix: str,
+) -> bool:
+    if not isinstance(suggestion, dict):
+        failures.append(f"{failure_prefix}: suggestion payload must be an object")
+        return False
+
+    ok = True
+    kind = suggestion.get("kind")
+    if not isinstance(kind, str) or kind not in ALLOWED_SUGGESTION_KINDS:
+        failures.append(f"{failure_prefix}: suggestion.kind is invalid")
+        ok = False
+
+    confidence = suggestion.get("confidence")
+    if (
+        not isinstance(confidence, str)
+        or confidence not in ALLOWED_SUGGESTION_CONFIDENCE
+    ):
+        failures.append(f"{failure_prefix}: suggestion.confidence is invalid")
+        ok = False
+
+    for field in ("symbol_kind", "target", "replacement", "explanation"):
+        if not isinstance(suggestion.get(field), str) or not suggestion[field].strip():
+            failures.append(f"{failure_prefix}: suggestion.{field} must be non-empty")
+            ok = False
+
+    if not valid_range(suggestion.get("range")):
+        failures.append(f"{failure_prefix}: suggestion.range is invalid")
+        ok = False
+
+    target = suggestion.get("target")
+    replacement = suggestion.get("replacement")
+    if isinstance(target, str) and isinstance(replacement, str) and target == replacement:
+        failures.append(f"{failure_prefix}: suggestion target and replacement must differ")
+        ok = False
+
+    if isinstance(case_source, str):
+        if isinstance(target, str) and target not in case_source:
+            failures.append(f"{failure_prefix}: suggestion target is absent from source")
+            ok = False
+        if isinstance(replacement, str) and replacement not in case_source:
+            failures.append(f"{failure_prefix}: suggestion replacement is absent from source")
+            ok = False
+    else:
+        failures.append(f"{failure_prefix}: suggestion case source is missing")
+        ok = False
+
+    return ok
 
 
 def path_is_relative_to(path: Path, root: Path) -> bool:
@@ -277,6 +333,12 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
     required_recovery_phases = set(
         str(phase) for phase in contract.get("required_recovery_phases", [])
     )
+    required_suggestion_case_ids = set(
+        str(case_id) for case_id in contract.get("required_suggestion_case_ids", [])
+    )
+    required_suggestion_kinds = set(
+        str(kind) for kind in contract.get("required_suggestion_kinds", [])
+    )
     native_recovery_fixture_root = (
         ROOT / str(contract.get("native_recovery_fixture_root", DEFAULT_NATIVE_RECOVERY_FIXTURE_ROOT))
     ).resolve()
@@ -287,7 +349,11 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
     observed_recovery_case_ids: set[str] = set()
     observed_recovery_phases: set[str] = set()
     observed_native_recovery_fixtures: set[str] = set()
+    observed_suggestion_case_ids: set[str] = set()
+    observed_suggestion_kinds: set[str] = set()
     recovery_diagnostic_count = 0
+    suggestion_diagnostic_count = 0
+    suggestion_count = 0
     native_recovery_fixture_count = 0
     native_recovery_fixture_within_root_count = 0
     native_recovery_fixture_source_match_count = 0
@@ -310,11 +376,30 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             message = diagnostic.get("message")
             span = diagnostic.get("span")
             fixits = diagnostic.get("fixits", [])
+            suggestions = diagnostic.get("suggestions", [])
             phase = diagnostic.get("phase")
             category = diagnostic.get("category")
             explanation = diagnostic.get("explanation")
             recovery = diagnostic.get("recovery")
             valid_fixits = [fixit for fixit in fixits if valid_fixit(fixit)] if isinstance(fixits, list) else []
+            suggestions_ok = isinstance(suggestions, list)
+            valid_suggestions: list[dict[str, Any]] = []
+            if isinstance(suggestions, list):
+                for suggestion_index, suggestion in enumerate(suggestions):
+                    suggestion_prefix = (
+                        f"{file_name}#{index}.suggestions[{suggestion_index}]"
+                    )
+                    if valid_suggestion(
+                        suggestion,
+                        case_source=case_payload.get("source"),
+                        failures=failures,
+                        failure_prefix=suggestion_prefix,
+                    ):
+                        valid_suggestions.append(suggestion)
+                    else:
+                        suggestions_ok = False
+            else:
+                failures.append(f"{file_name}#{index}: suggestions must be a list")
             entry_ok = (
                 valid_code(code)
                 and isinstance(severity, str)
@@ -324,14 +409,32 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
                 and valid_range(span)
                 and isinstance(fixits, list)
                 and len(valid_fixits) == len(fixits)
+                and suggestions_ok
             )
             code_text = str(code) if isinstance(code, str) else ""
             family = diagnostic_code_family(code_text)
             code_families[family] = code_families.get(family, 0) + 1
             fixit_count += len(fixits) if isinstance(fixits, list) else 0
             machine_applicable_fixit_count += len(valid_fixits)
+            if isinstance(suggestions, list):
+                suggestion_count += len(suggestions)
             if valid_fixits:
                 observed_fixit_codes.add(code_text)
+            requires_suggestion_payload = (
+                case_id in required_suggestion_case_ids
+                or bool(suggestions if isinstance(suggestions, list) else suggestions)
+            )
+            if requires_suggestion_payload:
+                suggestion_diagnostic_count += 1
+                if not isinstance(suggestions, list) or not suggestions:
+                    failures.append(f"{file_name}#{index}: missing suggestion payload")
+                    suggestions_ok = False
+                else:
+                    observed_suggestion_case_ids.add(case_id)
+                    for suggestion in valid_suggestions:
+                        kind = suggestion.get("kind")
+                        if isinstance(kind, str):
+                            observed_suggestion_kinds.add(kind)
             if not entry_ok:
                 failures.append(f"{file_name}#{index}: malformed diagnostic payload")
             requires_recovery_payload = (
@@ -385,8 +488,11 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
                     "family": family,
                     "fixit_count": len(fixits) if isinstance(fixits, list) else 0,
                     "machine_applicable_fixit_count": len(valid_fixits),
+                    "suggestion_count": len(suggestions) if isinstance(suggestions, list) else 0,
                     "phase": phase if isinstance(phase, str) else "",
                     "category": category if isinstance(category, str) else "",
+                    "has_suggestion": bool(valid_suggestions),
+                    "suggestions_ok": suggestions_ok,
                     "has_recovery": recovery is not None,
                     "recovery_ok": recovery_ok,
                     "ok": entry_ok,
@@ -399,6 +505,12 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
     )
     missing_required_recovery_phases = sorted(
         required_recovery_phases - observed_recovery_phases
+    )
+    missing_required_suggestion_case_ids = sorted(
+        required_suggestion_case_ids - observed_suggestion_case_ids
+    )
+    missing_required_suggestion_kinds = sorted(
+        required_suggestion_kinds - observed_suggestion_kinds
     )
     if missing_files:
         failures.extend(f"missing diagnostic fixture: {file_name}" for file_name in missing_files)
@@ -417,11 +529,24 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             "missing required recovery diagnostic phase(s): "
             + ", ".join(missing_required_recovery_phases)
         )
+    if missing_required_suggestion_case_ids:
+        failures.append(
+            "missing required suggestion diagnostic case(s): "
+            + ", ".join(missing_required_suggestion_case_ids)
+        )
+    if missing_required_suggestion_kinds:
+        failures.append(
+            "missing required suggestion kind(s): "
+            + ", ".join(missing_required_suggestion_kinds)
+        )
 
     min_diagnostic_count = int(contract["minimum_diagnostic_count"])
     min_fixit_count = int(contract["minimum_machine_applicable_fixit_count"])
     min_recovery_diagnostic_count = int(
         contract.get("minimum_recovery_diagnostic_count", 0)
+    )
+    min_suggestion_diagnostic_count = int(
+        contract.get("minimum_suggestion_diagnostic_count", 0)
     )
     if len(entries) < min_diagnostic_count:
         failures.append(
@@ -437,6 +562,11 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             "recovery diagnostic count "
             f"{recovery_diagnostic_count} below required {min_recovery_diagnostic_count}"
         )
+    if suggestion_diagnostic_count < min_suggestion_diagnostic_count:
+        failures.append(
+            "suggestion diagnostic count "
+            f"{suggestion_diagnostic_count} below required {min_suggestion_diagnostic_count}"
+        )
     if len(observed_native_recovery_fixtures) < minimum_native_recovery_fixture_count:
         failures.append(
             "native recovery fixture count "
@@ -449,6 +579,7 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "entries": entries,
         "code_families": dict(sorted(code_families.items())),
         "native_recovery_fixtures": sorted(observed_native_recovery_fixtures),
+        "suggestion_kinds": sorted(observed_suggestion_kinds),
     }
     deterministic_digest = hashlib.sha256(stable_json(digest_input).encode("utf-8")).hexdigest()
     checks = {
@@ -461,6 +592,16 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "minimum_recovery_diagnostic_count_met": recovery_diagnostic_count >= min_recovery_diagnostic_count,
         "required_recovery_case_ids_present": not missing_required_recovery_case_ids,
         "required_recovery_phases_present": not missing_required_recovery_phases,
+        "minimum_suggestion_diagnostic_count_met": (
+            suggestion_diagnostic_count >= min_suggestion_diagnostic_count
+        ),
+        "required_suggestion_case_ids_present": (
+            not missing_required_suggestion_case_ids
+        ),
+        "required_suggestion_kinds_present": not missing_required_suggestion_kinds,
+        "structured_suggestion_payloads_valid": not any(
+            entry["has_suggestion"] and not entry["suggestions_ok"] for entry in entries
+        ),
         "structured_recovery_payloads_valid": not any(
             entry["has_recovery"] and not entry["recovery_ok"] for entry in entries
         ),
@@ -486,6 +627,8 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "fixit_count": fixit_count,
         "machine_applicable_fixit_count": machine_applicable_fixit_count,
         "recovery_diagnostic_count": recovery_diagnostic_count,
+        "suggestion_diagnostic_count": suggestion_diagnostic_count,
+        "suggestion_count": suggestion_count,
         "native_recovery_fixture_count": native_recovery_fixture_count,
         "unique_native_recovery_fixture_count": len(observed_native_recovery_fixtures),
         "native_recovery_fixture_root": display_path(native_recovery_fixture_root),
@@ -499,6 +642,11 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "missing_required_recovery_case_ids": missing_required_recovery_case_ids,
         "required_recovery_phases": sorted(required_recovery_phases),
         "missing_required_recovery_phases": missing_required_recovery_phases,
+        "minimum_suggestion_diagnostic_count": min_suggestion_diagnostic_count,
+        "required_suggestion_case_ids": sorted(required_suggestion_case_ids),
+        "missing_required_suggestion_case_ids": missing_required_suggestion_case_ids,
+        "required_suggestion_kinds": sorted(required_suggestion_kinds),
+        "missing_required_suggestion_kinds": missing_required_suggestion_kinds,
         "deterministic_digest": deterministic_digest,
         "checks": checks,
         "failures": failures,
@@ -520,6 +668,7 @@ def main() -> int:
         f"- Code families: `{summary['code_family_count']}`\n"
         f"- Machine-applicable fix-its: `{summary['machine_applicable_fixit_count']}`\n"
         f"- Recovery diagnostics: `{summary['recovery_diagnostic_count']}`\n"
+        f"- Suggestion diagnostics: `{summary['suggestion_diagnostic_count']}`\n"
         f"- Native recovery fixtures: `{summary['unique_native_recovery_fixture_count']}`\n"
         f"- Status: `{summary['status']}`\n",
         encoding="utf-8",

@@ -140,9 +140,14 @@ Clean install distribution validation additionally writes a from-nothing install
 proof under `tmp/artifacts/package-ecosystem/install-validation`. The proof
 manifest and per-package local artifact envelopes are generated artifacts, not
 reports: they bind each installed package to its source manifest, installed
-manifest, lock manifest digest, and trust signature. Release credibility may
-consume those artifact records, while `tmp/reports/package-ecosystem` remains a
-summary-output root and cannot become release manifest source truth.
+manifest, lock manifest digest, and trust signature. The same clean root also
+publishes deterministic update and uninstall operation receipts under
+`tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts`.
+Update receipts preserve the locked dependency-first install order; uninstall
+receipts reverse that order so consumers are planned for removal before their
+dependencies. Release credibility may consume those artifact records, while
+`tmp/reports/package-ecosystem` remains a summary-output root and cannot become
+release manifest source truth.
 
 ## Registry And Publication Semantics
 

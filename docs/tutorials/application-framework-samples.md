@@ -49,8 +49,8 @@ npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/async
 ## Validate
 
 The focused checker validates the manifest, workspace manifests,
-`replay-contract.json` files, tutorial routes, package edges, clean artifact
-roots, and sample compile outputs:
+`replay-contract.json` files, tutorial routes, package edges,
+`dependency-evidence.json`, clean artifact roots, and sample compile outputs:
 
 ```powershell
 npm run objc3c -- validate-application-framework-samples
@@ -64,6 +64,12 @@ compiling a sample, inspect the emitted `module.ll`,
 `module.manifest.json`, `module.compile-provenance.json`, and
 `module.runtime-registration-manifest.json` files under that sample's
 `tmp/artifacts/application-framework-samples/<sample-id>` directory.
+
+The portfolio dependency map lives in
+`showcase/applicationFrameworkSamples/dependency-evidence.json`. A sample may
+claim only checked `stdlib:` or `showcase-framework:` dependencies, and each
+claimed dependency must appear in `workspace.json`, `replay-contract.json`, the
+manifest edge table, and a source-level term in `main.objc3`.
 
 Modify a sample by editing its `main.objc3` source and, when package metadata
 changes, the adjacent `workspace.json` and `replay-contract.json`. Re-run the

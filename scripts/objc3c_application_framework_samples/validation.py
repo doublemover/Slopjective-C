@@ -341,6 +341,141 @@ def _validate_package_edges(
     return failures
 
 
+def _manifest_edge_index(manifest: dict[str, Any]) -> dict[tuple[str, str], str]:
+    package_edges = manifest.get("package_edges", [])
+    if not isinstance(package_edges, list):
+        return {}
+    edge_index: dict[tuple[str, str], str] = {}
+    for edge in package_edges:
+        if not isinstance(edge, dict):
+            continue
+        edge_index[(str(edge.get("from", "")), str(edge.get("to", "")))] = str(
+            edge.get("relationship", "")
+        )
+    return edge_index
+
+
+def validate_dependency_evidence(
+    *,
+    root: Path,
+    samples: list[FrameworkSample],
+    manifest: dict[str, Any],
+    contract: dict[str, Any],
+) -> list[str]:
+    failures: list[str] = []
+    dependency_evidence_path = manifest.get("dependency_evidence")
+    if dependency_evidence_path != contract.get("dependency_evidence"):
+        failures.append("dependency evidence path drifted between manifest and contract")
+    if not isinstance(dependency_evidence_path, str) or not dependency_evidence_path:
+        return [*failures, "manifest dependency_evidence must be a path"]
+    if not dependency_evidence_path.startswith("showcase/applicationFrameworkSamples/"):
+        failures.append("manifest dependency_evidence escaped application framework sample root")
+    evidence_path = root / dependency_evidence_path
+    if not evidence_path.is_file():
+        return [*failures, f"dependency evidence missing: {dependency_evidence_path}"]
+
+    evidence = load_json(evidence_path)
+    if evidence.get("contract_id") != "objc3c.application_framework_samples.dependency_evidence.v1":
+        failures.append("dependency evidence contract_id drifted")
+    if evidence.get("schema_version") != 1:
+        failures.append("dependency evidence schema_version drifted")
+    if evidence.get("issue") != 8178:
+        failures.append("dependency evidence issue drifted")
+    if evidence.get("manifest") != "showcase/applicationFrameworkSamples/manifest.json":
+        failures.append("dependency evidence manifest path drifted")
+    clean_policy = evidence.get("clean_root_replay_policy")
+    if clean_policy != {
+        "artifact_root_must_be_removed_before_compile": True,
+        "stale_artifacts_allowed": False,
+        "generated_outputs_are_source_truth": False,
+    }:
+        failures.append("dependency evidence clean-root replay policy drifted")
+
+    forbidden_prefixes = evidence.get("forbidden_dependency_prefixes", [])
+    if not isinstance(forbidden_prefixes, list) or not forbidden_prefixes:
+        failures.append("dependency evidence must list forbidden dependency prefixes")
+        forbidden_prefixes = []
+    fail_closed_rules = evidence.get("fail_closed_rules", [])
+    if not isinstance(fail_closed_rules, list) or not fail_closed_rules:
+        failures.append("dependency evidence must declare fail-closed rules")
+    else:
+        for rule in fail_closed_rules:
+            if not isinstance(rule, dict) or rule.get("blocks_sample_claim") is not True:
+                failures.append("dependency evidence fail-closed rule must block sample claims")
+
+    records = evidence.get("sample_dependency_evidence", [])
+    if not isinstance(records, list):
+        return [*failures, "dependency evidence sample_dependency_evidence must be a list"]
+    evidence_by_sample: dict[str, dict[str, Any]] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            failures.append("dependency evidence sample record must be an object")
+            continue
+        sample_id = str(record.get("sample_id", ""))
+        if not sample_id:
+            failures.append("dependency evidence sample record missing sample_id")
+            continue
+        if sample_id in evidence_by_sample:
+            failures.append(f"duplicate dependency evidence sample id {sample_id}")
+        evidence_by_sample[sample_id] = record
+
+    edge_index = _manifest_edge_index(manifest)
+    sample_package_ids = {sample.package_id for sample in samples}
+    known_package_ids = sample_package_ids | STDLIB_PACKAGE_IDS
+    for sample in samples:
+        record = evidence_by_sample.get(sample.sample_id)
+        if record is None:
+            failures.append(f"{sample.sample_id}: missing dependency evidence record")
+            continue
+        if record.get("package_id") != sample.package_id:
+            failures.append(f"{sample.sample_id}: dependency evidence package id drifted")
+        dependencies = record.get("dependencies", [])
+        if not isinstance(dependencies, list):
+            failures.append(f"{sample.sample_id}: dependency evidence dependencies must be a list")
+            continue
+        dependency_ids = [str(dependency.get("package_id", "")) for dependency in dependencies if isinstance(dependency, dict)]
+        if tuple(dependency_ids) != sample.package_dependencies:
+            failures.append(f"{sample.sample_id}: dependency evidence dependency list drifted")
+
+        workspace = load_json(sample.workspace_path(root))
+        replay_contract = load_json(sample.replay_contract_path(root))
+        workspace_dependencies = {str(item) for item in workspace.get("package_dependencies", [])}
+        replay_dependencies = {str(item) for item in replay_contract.get("package_dependencies", [])}
+        source_text = sample.source_path(root).read_text(encoding="utf-8")
+
+        for dependency in dependencies:
+            if not isinstance(dependency, dict):
+                failures.append(f"{sample.sample_id}: dependency evidence entry must be an object")
+                continue
+            package_id = str(dependency.get("package_id", ""))
+            for prefix in forbidden_prefixes:
+                if package_id.startswith(str(prefix)):
+                    failures.append(f"{sample.sample_id}: unsupported dependency boundary {package_id}")
+            if package_id not in known_package_ids:
+                failures.append(f"{sample.sample_id}: dependency evidence references unknown package {package_id}")
+            if package_id not in workspace_dependencies:
+                failures.append(f"{sample.sample_id}: dependency {package_id} missing from workspace")
+            if package_id not in replay_dependencies:
+                failures.append(f"{sample.sample_id}: dependency {package_id} missing from replay contract")
+            if dependency.get("requires_manifest_edge") is True:
+                edge_key = (sample.package_id, package_id)
+                relationship = edge_index.get(edge_key)
+                if relationship is None:
+                    failures.append(f"{sample.sample_id}: dependency {package_id} missing manifest edge")
+                elif relationship != dependency.get("relationship"):
+                    failures.append(f"{sample.sample_id}: dependency {package_id} relationship drifted")
+            source_terms = dependency.get("source_terms", [])
+            if not isinstance(source_terms, list) or not source_terms:
+                failures.append(f"{sample.sample_id}: dependency {package_id} missing source terms")
+                continue
+            for term in source_terms:
+                if str(term) not in source_text:
+                    failures.append(
+                        f"{sample.sample_id}: dependency {package_id} source term missing: {term}"
+                    )
+    return failures
+
+
 def validate_manifest(
     *,
     root: Path,
@@ -482,5 +617,13 @@ def validate_manifest(
 
     failures.extend(
         _validate_package_edges(samples=samples, manifest=manifest, contract=contract)
+    )
+    failures.extend(
+        validate_dependency_evidence(
+            root=root,
+            samples=samples,
+            manifest=manifest,
+            contract=contract,
+        )
     )
     return samples, failures

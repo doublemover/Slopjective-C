@@ -59,12 +59,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_PREFIX = "npm run objc3c -- "
-ACTION_PROFILES = {
-    "validate-conformance-corpus": {"core"},
-    "validate-interop-conformance": {"stdlib-package"},
-    "validate-release-candidate-conformance": {"release-candidate"},
-    "validate-public-conformance-suite": {"core", "stdlib-package", "release-candidate"},
-}
 
 
 def load_json(path: Path) -> dict:
@@ -93,17 +87,31 @@ def fail(message: str) -> int:
     return 1
 
 
+def action_profiles(manifest: dict, action: str) -> set[str] | None:
+    requirements = manifest.get("replay_requirements", {})
+    for entry in requirements.get("required_actions", []):
+        if entry.get("action") == action:
+            return set(entry.get("profile_ids", []))
+    return None
+
+
 def main(argv: list[str]) -> int:
     action = argv[0] if argv else "validate-public-conformance-suite"
-    profiles = ACTION_PROFILES.get(action)
-    if profiles is None:
-        return fail(f"unsupported packaged public conformance action: {action}")
-
     manifest = load_json(ROOT / "package-manifest.json")
     if manifest.get("contract_id") != "objc3c.public_conformance_suite.package_manifest.v1":
         return fail("package-manifest contract_id drifted")
+    profiles = action_profiles(manifest, action)
+    if profiles is None:
+        return fail(f"unsupported packaged public conformance action: {action}")
     if manifest.get("source_truth_policy", {}).get("tmp_source_truth_allowed") is not False:
         return fail("package manifest permits tmp source truth")
+    requirements = manifest.get("replay_requirements", {})
+    if requirements.get("package_manifest_contract") != manifest.get("contract_id"):
+        return fail("package replay requirements contract drifted from package manifest")
+    if requirements.get("source_hash_algorithm") != "sha256":
+        return fail("package replay requirements lost sha256 source hash policy")
+    if requirements.get("selected_case_policy") != "profile-intersection":
+        return fail("package replay requirements selected case policy drifted")
     artifact_contract = manifest.get("artifact_contract", {})
     generated_policy = artifact_contract.get("generated_output_policy", {})
     if generated_policy.get("generated_outputs_committable") is not False:
@@ -116,6 +124,11 @@ def main(argv: list[str]) -> int:
     public_commands = manifest.get("public_commands", [])
     if not all(isinstance(command, str) and command.startswith(PUBLIC_PREFIX) for command in public_commands):
         return fail("package manifest contains a non-public command")
+
+    for package_file in requirements.get("required_package_files", []):
+        package_path = ROOT / package_file
+        if not package_path.exists():
+            return fail(f"missing required package file: {package_file}")
 
     source_count = 0
     for source in manifest.get("source_files", []):
@@ -222,6 +235,94 @@ def require_public_command(command: str, *, field: str) -> None:
         raise RuntimeError(f"{field} is not public: {command}")
 
 
+def require_package_replay_requirements(
+    replay_evidence: dict[str, Any],
+    package_contract: dict[str, Any],
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    requirements = require_object(
+        replay_evidence.get("package_manifest_replay"),
+        field="package_manifest_replay",
+    )
+    expected_contracts = {
+        "package_manifest_contract": PACKAGE_MANIFEST_CONTRACT_ID,
+        "case_manifest_contract": PACKAGE_CASE_CONTRACT_ID,
+        "replay_plan_contract": "objc3c.public_conformance_suite.replay_plan.v1",
+        "packaged_replay_summary_contract": "objc3c.public_conformance_suite.packaged_replay.v1",
+    }
+    for field, expected in expected_contracts.items():
+        if requirements.get(field) != expected:
+            raise RuntimeError(f"package_manifest_replay.{field} drifted")
+    if requirements.get("package_json_script") != PACKAGE_JSON["scripts"]["objc3c"]:
+        raise RuntimeError("package_manifest_replay.package_json_script drifted")
+    if requirements.get("replay_tool") != "tools/replay_public_conformance_suite.py":
+        raise RuntimeError("package_manifest_replay.replay_tool drifted")
+    if requirements.get("source_hash_algorithm") != "sha256":
+        raise RuntimeError("package_manifest_replay.source_hash_algorithm must be sha256")
+    if requirements.get("selected_case_policy") != "profile-intersection":
+        raise RuntimeError("package_manifest_replay.selected_case_policy drifted")
+    if requirements.get("requires_all_public_stable_cases_for_release_candidate") is not True:
+        raise RuntimeError("package_manifest_replay must require all public-stable release-candidate cases")
+
+    required_package_files = [
+        normalized_repo_path(str(path))
+        for path in require_list(
+            requirements.get("required_package_files"),
+            field="package_manifest_replay.required_package_files",
+        )
+    ]
+    contract_outputs = [
+        normalized_repo_path(str(path))
+        for path in require_list(
+            package_contract.get("required_package_outputs"),
+            field="package_contract.required_package_outputs",
+        )
+    ]
+    if required_package_files != contract_outputs:
+        raise RuntimeError("package_manifest_replay required files drifted from package contract")
+
+    profile_ids = {
+        str(profile["profile_id"])
+        for profile in require_list(manifest.get("public_profiles"), field="public_profiles")
+    }
+    action_profiles: dict[str, tuple[str, ...]] = {}
+    for raw_action in require_list(
+        requirements.get("required_actions"),
+        field="package_manifest_replay.required_actions",
+    ):
+        action = require_object(raw_action, field="package replay action")
+        action_name = str(action.get("action", ""))
+        profiles = tuple(
+            str(profile)
+            for profile in require_list(action.get("profile_ids"), field=f"{action_name}.profile_ids")
+        )
+        if action_name in action_profiles:
+            raise RuntimeError(f"package_manifest_replay duplicated action {action_name}")
+        unknown_profiles = sorted(set(profiles) - profile_ids)
+        if unknown_profiles:
+            raise RuntimeError(
+                f"package_manifest_replay action {action_name} references unknown profiles: "
+                + ", ".join(unknown_profiles)
+            )
+        action_profiles[action_name] = profiles
+
+    required_actions = {
+        "validate-conformance-corpus",
+        "validate-interop-conformance",
+        "validate-release-candidate-conformance",
+        "validate-public-conformance-suite",
+    }
+    missing_actions = sorted(required_actions - set(action_profiles))
+    if missing_actions:
+        raise RuntimeError("package_manifest_replay missing required actions: " + ", ".join(missing_actions))
+    if set(action_profiles["validate-public-conformance-suite"]) != profile_ids:
+        raise RuntimeError("validate-public-conformance-suite must cover every public profile")
+    if action_profiles["validate-release-candidate-conformance"] != ("release-candidate",):
+        raise RuntimeError("validate-release-candidate-conformance must be release-candidate only")
+
+    return requirements
+
+
 def require_fixture_provenance(case: dict[str, Any], *, field: str) -> dict[str, Any]:
     provenance = require_object(case.get("fixture_provenance"), field=field)
     if provenance.get("origin") != "checked-in-public-suite":
@@ -317,6 +418,7 @@ def validate_package_contract(
             raise RuntimeError(f"{entry_object.get('profile_id')} must not require a repo checkout")
         if entry_object.get("requires_network") is not False:
             raise RuntimeError(f"{entry_object.get('profile_id')} must not require network access")
+    require_package_replay_requirements(replay_evidence, package_contract, manifest)
 
     required_fail_closed = {
         "tmp artifacts are never source truth",
@@ -447,6 +549,11 @@ def build_package(
 ) -> dict[str, Any]:
     manifest, replay_evidence, package_contract = load_suite_inputs()
     validate_package_contract(manifest, replay_evidence, package_contract)
+    replay_requirements = require_package_replay_requirements(
+        replay_evidence,
+        package_contract,
+        manifest,
+    )
     source_paths = collect_source_files(manifest, replay_evidence, package_contract)
     clean_package_root(package_root)
     copied_sources = copy_sources(package_root, source_paths)
@@ -514,6 +621,7 @@ def build_package(
             "tmp_source_truth_allowed": False,
             "generated_reports_are_evidence_only": True,
         },
+        "replay_requirements": replay_requirements,
         "artifact_contract": manifest["artifact_contract"],
         "offline_compatible": True,
         "profile_commands": profile_commands,
@@ -530,11 +638,12 @@ def build_package(
     write_json_file(
         package_root / "replay-plan.json",
         {
-            "contract_id": "objc3c.public_conformance_suite.replay_plan.v1",
+            "contract_id": replay_requirements["replay_plan_contract"],
             "schema_version": 1,
             "suite_id": manifest["suite_id"],
             "suite_version": manifest["suite_version"],
             "entrypoints": replay_evidence["packaged_entrypoints"],
+            "required_actions": replay_requirements["required_actions"],
             "fail_closed_checks": package_contract["fail_closed_invariants"],
         },
     )
@@ -551,6 +660,27 @@ def verify_package(package_root: Path) -> dict[str, Any]:
         raise RuntimeError("package manifest contract_id drifted")
     if package_manifest.get("source_truth_policy", {}).get("tmp_source_truth_allowed") is not False:
         raise RuntimeError("package manifest permits tmp source truth")
+    replay_requirements = require_object(
+        package_manifest.get("replay_requirements"),
+        field="package replay requirements",
+    )
+    if replay_requirements.get("package_manifest_contract") != PACKAGE_MANIFEST_CONTRACT_ID:
+        raise RuntimeError("package replay requirements contract drifted")
+    if replay_requirements.get("source_hash_algorithm") != "sha256":
+        raise RuntimeError("package replay requirements source_hash_algorithm drifted")
+    package_json = load_json(package_root / "package.json")
+    if package_json.get("scripts", {}).get("objc3c") != replay_requirements.get("package_json_script"):
+        raise RuntimeError("package.json objc3c script drifted from replay requirements")
+    replay_plan = load_json(package_root / "replay-plan.json")
+    if replay_plan.get("contract_id") != replay_requirements.get("replay_plan_contract"):
+        raise RuntimeError("replay plan contract drifted from replay requirements")
+    for package_file in require_list(
+        replay_requirements.get("required_package_files"),
+        field="package replay requirements required_package_files",
+    ):
+        package_path = package_root / str(package_file)
+        if not package_path.exists():
+            raise RuntimeError(f"missing required package file: {package_file}")
     for command in require_list(package_manifest.get("public_commands"), field="package public_commands"):
         require_public_command(str(command), field="package public command")
 
@@ -612,6 +742,12 @@ def build_summary(package_manifest: dict[str, Any], verification: dict[str, Any]
             "generated_reports_are_evidence_only"
         ],
         "source_owned_contract_count": len(package_manifest["artifact_contract"]["source_owned_contracts"]),
+        "package_manifest_replay_action_count": len(
+            package_manifest["replay_requirements"]["required_actions"]
+        ),
+        "package_manifest_source_hash_algorithm": package_manifest["replay_requirements"][
+            "source_hash_algorithm"
+        ],
         "generated_output_roots": package_manifest["artifact_contract"]["generated_output_policy"][
             "allowed_generated_roots"
         ],

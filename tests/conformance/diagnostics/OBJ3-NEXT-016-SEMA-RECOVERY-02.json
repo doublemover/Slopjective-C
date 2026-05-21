@@ -23,6 +23,20 @@
         "message": "unknown function 'known_vaule'",
         "explanation": "The unresolved callee remains a semantic rejection with stable source span and recovery metadata.",
         "fixits": [],
+        "suggestions": [
+          {
+            "kind": "nearest-symbol",
+            "symbol_kind": "function",
+            "target": "known_vaule",
+            "replacement": "known_value",
+            "confidence": "high",
+            "range": {
+              "start": { "line": 8, "column": 10 },
+              "end": { "line": 8, "column": 20 }
+            },
+            "explanation": "The only in-scope callable at edit distance two is 'known_value', so tooling can surface it as a nearest-symbol suggestion without accepting the misspelled call."
+          }
+        ],
         "recovery": {
           "strategy": "semantic-symbol-resolution-boundary",
           "boundary": "unresolved callee",

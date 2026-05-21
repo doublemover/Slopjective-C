@@ -15,6 +15,7 @@
   "minimum_machine_applicable_fixit_count": 20,
   "minimum_recovery_diagnostic_count": 4,
   "minimum_native_recovery_fixture_count": 4,
+  "minimum_suggestion_diagnostic_count": 1,
   "required_fixit_codes": [
     "OBJC3-D-CONC-MISSING-AWAIT",
     "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
@@ -27,6 +28,12 @@
     "OBJ3-NEXT-016-PARSE-FIXIT-01",
     "OBJ3-NEXT-016-SEMA-RECOVERY-01",
     "OBJ3-NEXT-016-SEMA-RECOVERY-02"
+  ],
+  "required_suggestion_case_ids": [
+    "OBJ3-NEXT-016-SEMA-RECOVERY-02"
+  ],
+  "required_suggestion_kinds": [
+    "nearest-symbol"
   ],
   "required_recovery_phases": [
     "parse",

@@ -79,7 +79,8 @@
         "ownership_memory_model",
         "concurrency_usability_model",
         "module_identity_visibility_model",
-        "interop_bridge_model"
+        "interop_bridge_model",
+        "macro_metaprogramming_public_surface"
       ],
       "additionalProperties": false,
       "properties": {
@@ -88,7 +89,8 @@
         "ownership_memory_model": { "$ref": "#/$defs/ownership_memory_model" },
         "concurrency_usability_model": { "$ref": "#/$defs/concurrency_usability_model" },
         "module_identity_visibility_model": { "$ref": "#/$defs/module_identity_visibility_model" },
-        "interop_bridge_model": { "$ref": "#/$defs/interop_bridge_model" }
+        "interop_bridge_model": { "$ref": "#/$defs/interop_bridge_model" },
+        "macro_metaprogramming_public_surface": { "$ref": "#/$defs/macro_metaprogramming_public_surface" }
       }
     },
     "cross_issue_handoffs": {
@@ -149,7 +151,7 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "support_claim": { "const": "objc3c.behavior.language.generics.public-type-parameters" },
+        "support_claim": { "const": "objc3c.behavior.language.generics.protocol-qualified-arguments" },
         "type_parameters": {
           "type": "array",
           "items": { "$ref": "#/$defs/type_parameter" },
@@ -338,7 +340,7 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "support_claim": { "const": "objc3c.behavior.language.ownership.memory-model" },
+        "support_claim": { "const": "objc3c.behavior.language.ownership-memory-model" },
         "qualifier_flows": {
           "type": "array",
           "items": { "$ref": "#/$defs/qualifier_flow" },
@@ -468,7 +470,7 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "support_claim": { "const": "objc3c.behavior.language.modules.visibility-rebuild-contract" },
+        "support_claim": { "const": "objc3c.behavior.modules.visibility-reexport-rebuild-contract" },
         "module_identity_key_fields": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
@@ -526,7 +528,7 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "support_claim": { "const": "objc3c.behavior.language.interop.foreign-surface-contract" },
+        "support_claim": { "const": "objc3c.behavior.runtime.interop.package-loader-bridge" },
         "lanes": {
           "type": "array",
           "items": { "$ref": "#/$defs/interop_lane" },
@@ -569,6 +571,118 @@
         "swift_abi_import": { "enum": ["reserved"] },
         "cpp_template_instantiation_import": { "enum": ["reserved"] },
         "objc2_retired_source_syntax": { "enum": ["rejected"] }
+      }
+    },
+    "macro_metaprogramming_public_surface": {
+      "type": "object",
+      "required": [
+        "support_claims",
+        "public_command",
+        "contract_path",
+        "derive_model",
+        "macro_safety_model",
+        "artifact_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claims": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+              "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+            ]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "public_command": {
+          "const": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        "contract_path": {
+          "const": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json"
+        },
+        "derive_model": { "$ref": "#/$defs/macro_derive_model" },
+        "macro_safety_model": { "$ref": "#/$defs/macro_safety_model" },
+        "artifact_policy": { "$ref": "#/$defs/macro_artifact_policy" }
+      }
+    },
+    "macro_derive_model": {
+      "type": "object",
+      "required": ["supported_forms", "reserved_forms", "runtime_materialization"],
+      "additionalProperties": false,
+      "properties": {
+        "supported_forms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "reserved_forms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "runtime_materialization": { "enum": ["deferred"] }
+      }
+    },
+    "macro_safety_model": {
+      "type": "object",
+      "required": [
+        "required_metadata_fields",
+        "required_negative_case_ids",
+        "required_diagnostic_codes",
+        "denial_case_ids",
+        "fail_closed_before_expansion",
+        "arbitrary_host_execution_allowed",
+        "network_access_allowed",
+        "deterministic_replay_required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "required_metadata_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 6,
+          "uniqueItems": true
+        },
+        "required_negative_case_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "required_diagnostic_codes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "denial_case_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "fail_closed_before_expansion": { "const": true },
+        "arbitrary_host_execution_allowed": { "const": false },
+        "network_access_allowed": { "const": false },
+        "deterministic_replay_required": { "const": true }
+      }
+    },
+    "macro_artifact_policy": {
+      "type": "object",
+      "required": [
+        "generated_artifacts_are_support_authority",
+        "tmp_report_source_truth_allowed",
+        "third_party_macro_ecosystem_claimed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generated_artifacts_are_support_authority": { "const": false },
+        "tmp_report_source_truth_allowed": { "const": false },
+        "third_party_macro_ecosystem_claimed": { "const": false }
       }
     }
   }

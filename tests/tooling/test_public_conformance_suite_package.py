@@ -46,6 +46,8 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
     assert summary["tmp_source_truth_allowed"] is False
     assert summary["generated_reports_are_evidence_only"] is True
     assert summary["source_owned_contract_count"] == 3
+    assert summary["package_manifest_replay_action_count"] == 4
+    assert summary["package_manifest_source_hash_algorithm"] == "sha256"
     assert summary["generated_output_roots"] == [
         "tmp/reports/conformance",
         "tmp/artifacts/public-conformance/suite",
@@ -64,6 +66,19 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
         "generated_reports_are_evidence_only": True,
     }
     assert package_manifest["artifact_contract"]["issue_id"] == "OBJ3-NEXT-018"
+    assert package_manifest["replay_requirements"]["package_manifest_contract"] == (
+        "objc3c.public_conformance_suite.package_manifest.v1"
+    )
+    assert package_manifest["replay_requirements"]["source_hash_algorithm"] == "sha256"
+    assert {
+        action["action"]: tuple(action["profile_ids"])
+        for action in package_manifest["replay_requirements"]["required_actions"]
+    } == {
+        "validate-conformance-corpus": ("core",),
+        "validate-interop-conformance": ("stdlib-package",),
+        "validate-release-candidate-conformance": ("release-candidate",),
+        "validate-public-conformance-suite": ("core", "stdlib-package", "release-candidate"),
+    }
     assert package_manifest["artifact_contract"]["package_replay_boundary"]["public_commands_only"] is True
     assert package_manifest["case_count"] == len(package_manifest["cases"]) == 10
     assert all(case["release_gate"] is True for case in package_manifest["cases"])
@@ -111,6 +126,24 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
     assert replay_summary["case_count"] == 10
     assert replay_summary["generated_reports_are_evidence_only"] is True
 
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(package_root / "tools" / "replay_public_conformance_suite.py"),
+            "validate-public-conformance-suite",
+        ],
+        cwd=package_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    replay_summary = load_json_object(
+        package_root / "tmp" / "reports" / "conformance" / "validate-public-conformance-suite.json"
+    )
+    assert replay_summary["contract_id"] == "objc3c.public_conformance_suite.packaged_replay.v1"
+    assert replay_summary["case_count"] == 10
+
 
 def test_public_conformance_suite_package_contract_is_checked_source_truth() -> None:
     contract = load_json_object(
@@ -134,6 +167,14 @@ def test_public_conformance_suite_package_contract_is_checked_source_truth() -> 
         "generated_outputs_committable": False,
         "generated_outputs_can_define_support": False,
     }
+    assert contract["required_package_outputs"] == [
+        "package-manifest.json",
+        "package.json",
+        "replay-plan.json",
+        "README.md",
+        "tools/replay_public_conformance_suite.py",
+        "cases",
+    ]
     assert "tmp artifacts are never source truth" in contract["fail_closed_invariants"]
     assert "unsupported claims cannot be promoted by packaged replay" in contract["fail_closed_invariants"]
     assert "every public-stable case carries source-owned fixture provenance" in contract["fail_closed_invariants"]

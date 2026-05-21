@@ -11,9 +11,9 @@
     "frozen_semantic_models:runtime-owned-realized-object-graph-is-the-only-truth-surface",
     "frozen_semantic_models:aggregate-object-model-query-must-agree-with-live-dispatch-and-property-lookups",
     "frozen_semantic_models:reflection-coherence-is-defined-against-observed-runtime-behavior",
-    "claim_narrowing_constraints:no-public-reflection-abi-claim",
+    "claim_narrowing_constraints:public-reflection-abi-is-bounded-to-realized-runtime-state",
     "claim_narrowing_constraints:no-source-only-metadata-equals-runtime-truth-claim"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "source-only metadata equality, probe-local reflection truth, public reflection ABI claims, universal selector success claims, compatibility gates, old-mode object identity claims, and retired-route-positive semantic claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "source-only metadata equality, probe-local reflection truth, unsupported public reflection ABI widening, universal selector success claims, compatibility gates, old-mode object identity claims, and retired-route-positive semantic claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

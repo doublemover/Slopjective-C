@@ -25,7 +25,21 @@
     "objc3_runtime_register_image",
     "objc3_runtime_lookup_selector",
     "objc3_runtime_dispatch_i32",
-    "objc3_runtime_reset_for_testing"
+    "objc3_runtime_reset_for_testing",
+    "objc3_runtime_copy_reflection_state",
+    "objc3_runtime_copy_reflection_class",
+    "objc3_runtime_copy_reflection_class_at",
+    "objc3_runtime_copy_reflection_property",
+    "objc3_runtime_copy_reflection_property_at",
+    "objc3_runtime_copy_reflection_method",
+    "objc3_runtime_copy_reflection_method_at",
+    "objc3_runtime_copy_reflection_protocol",
+    "objc3_runtime_copy_reflection_protocol_at",
+    "objc3_runtime_copy_reflection_protocol_conformance",
+    "objc3_runtime_copy_reflection_category",
+    "objc3_runtime_copy_reflection_category_at",
+    "objc3_runtime_copy_reflection_selector",
+    "objc3_runtime_copy_reflection_selector_at"
   ],
   "private_runtime_query_symbols": [
     "objc3_runtime_copy_realized_class_graph_state_for_testing",
@@ -54,8 +68,8 @@
       "summary": "Property and ivar reflection is only correct when selectors, owner identities, slot/layout facts, and ownership profiles match live runtime-backed execution."
     },
     {
-      "semantic_id": "private-query-surface-is-supported-without-public-abi-widening",
-      "summary": "The supported closure path keeps reflection and aggregate object-model answers on the private runtime-owned query surface instead of widening the public ABI."
+      "semantic_id": "bounded-public-reflection-abi-is-realized-state-only",
+      "summary": "The supported public reflection ABI is bounded to realized runtime state, caller-owned snapshots, borrowed runtime strings, typed status codes, deterministic indexed enumeration, and fail-closed malformed metadata handling."
     },
     {
       "semantic_id": "unresolved-dispatch-miss-retired-route-is-outside-supported-closure-claims",
@@ -63,7 +77,7 @@
     }
   ],
   "claim_narrowing_constraints": [
-    "no-public-reflection-abi-claim",
+    "public-reflection-abi-is-bounded-to-realized-runtime-state",
     "no-universal-selector-success-claim",
     "no-source-only-metadata-equals-runtime-truth-claim",
     "object-identity-property-synthesis-ivar-layout-runtime-metadata-and-private-query-snapshot-rows-are-provenance-until-claimed-by-canonical-behavior-owners"

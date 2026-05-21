@@ -72,6 +72,10 @@ SUPPORTED_METADATA_KINDS = {
     "annotation-metadata",
     "package-loader-metadata",
 }
+SUPPORTED_SUPPORT_CLAIMS = {
+    "objc3c.behavior.runtime.interop.package-loader-bridge",
+    "objc3c.behavior.runtime.interop.mixed-image-replay",
+}
 REQUIRED_PUBLIC_COMMANDS = {
     "npm run objc3c -- validate-module-interop-contracts",
     "npm run objc3c -- validate-interop-conformance",
@@ -148,7 +152,7 @@ def _validate_lanes(payload: dict[str, Any], failures: list[str]) -> None:
         if lane_id in SUPPORTED_LANE_IDS:
             expect(state == "supported", f"{lane_id} must remain supported", failures)
             expect(kind in SUPPORTED_METADATA_KINDS, f"{lane_id} support is wider than the metadata/header/package slice", failures)
-            expect(support_claim.startswith("objc3c.behavior."), f"{lane_id} supported lane needs a behavior support claim", failures)
+            expect(support_claim in SUPPORTED_SUPPORT_CLAIMS, f"{lane_id} supported lane must use a supported runtime interop claim", failures)
             expect(_as_list(lane.get("public_commands")) != [], f"{lane_id} supported lane needs replayable public command evidence", failures)
             expect(_as_list(lane.get("evidence_anchors")) != [], f"{lane_id} supported lane needs checked evidence anchors", failures)
             for raw_path in _as_list(lane.get("evidence_anchors")):

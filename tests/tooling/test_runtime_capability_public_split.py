@@ -14,6 +14,16 @@ from scripts.objc3c_runtime_acceptance.domains.object_model_capability_split imp
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
+ADVANCED_RUNTIME_FEATURE_FAMILIES = {
+    "arc",
+    "blocks",
+    "concurrency",
+    "errors",
+    "interop",
+    "metaprogramming",
+    "property",
+}
+ADVANCED_RUNTIME_PUBLIC_STATUSES = {"implemented", "reserved", "rejected", "internal"}
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -190,6 +200,66 @@ def _assert_advanced_runtime_support_contracts_are_source_derived(
     assert any("package loader" in scope for scope in covered_scopes)
 
 
+def _assert_advanced_runtime_feature_taxonomy_is_precise(
+    contract: dict[str, Any],
+) -> None:
+    rows = _matrix_rows()
+    taxonomy = contract.get("feature_taxonomy")
+    reserved_boundary_ids = {
+        boundary["boundary_id"] for boundary in contract["reserved_boundaries"]
+    }
+
+    assert isinstance(taxonomy, list)
+    assert taxonomy
+
+    covered_families = set()
+    implemented_capabilities = set()
+    explicit_statuses = set()
+    for feature in taxonomy:
+        feature_id = feature["feature_id"]
+        family = feature["family"]
+        status = feature["public_status"]
+        evidence = feature["evidence"]
+
+        assert family in ADVANCED_RUNTIME_FEATURE_FAMILIES
+        assert status in ADVANCED_RUNTIME_PUBLIC_STATUSES
+        assert isinstance(evidence, tuple)
+        assert evidence
+
+        covered_families.add(family)
+        explicit_statuses.add(status)
+
+        for path in evidence:
+            assert not str(path).startswith("tmp/")
+            assert (ROOT / path).exists(), path
+
+        if status == "implemented":
+            capability_id = feature["capability_id"]
+            support_claim = feature["support_claim"]
+            row = rows[capability_id]
+
+            assert row["state"] == "implemented", feature_id
+            assert row["support_claims"] == [support_claim], feature_id
+            assert support_claim != "objc3c.behavior.language.advanced-runtime-closure"
+            assert "advanced-runtime-closure" not in support_claim
+            implemented_capabilities.add(capability_id)
+            continue
+
+        assert "support_claim" not in feature, feature_id
+        if status == "reserved":
+            assert feature["matrix_owner"] == contract["reserved_umbrella"]
+            assert feature["reserved_boundary_id"] in reserved_boundary_ids
+        elif status == "rejected":
+            assert feature["diagnostic_behavior"], feature_id
+        elif status == "internal":
+            assert "capability_id" not in feature, feature_id
+
+    contract_capabilities = {row["capability_id"] for row in contract["implemented_rows"]}
+    assert contract_capabilities == implemented_capabilities
+    assert ADVANCED_RUNTIME_FEATURE_FAMILIES == covered_families
+    assert ADVANCED_RUNTIME_PUBLIC_STATUSES == explicit_statuses
+
+
 def test_object_model_public_capability_split_matches_capability_matrix() -> None:
     contract = build_object_model_capability_split_contract()
 
@@ -223,6 +293,13 @@ def test_advanced_runtime_public_support_contracts_are_source_derived() -> None:
 
     assert contract["issue"] == 8155
     _assert_advanced_runtime_support_contracts_are_source_derived(contract)
+
+
+def test_advanced_runtime_feature_taxonomy_is_precise() -> None:
+    contract = build_advanced_runtime_capability_split_contract()
+
+    assert contract["issue"] == 8155
+    _assert_advanced_runtime_feature_taxonomy_is_precise(contract)
 
 
 def test_advanced_runtime_reserved_boundaries_stay_non_claiming() -> None:

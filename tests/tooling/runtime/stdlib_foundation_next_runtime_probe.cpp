@@ -148,14 +148,28 @@ int main() {
     return Fail("map handle was not a runtime-owned positive id");
   }
   if (objc3_runtime_stdlib_collections_map_count_i32(map) != 1 ||
+      objc3_runtime_stdlib_collections_map_insert_i32(map, 8, 64) != 2 ||
+      objc3_runtime_stdlib_collections_map_count_i32(map) != 2 ||
       objc3_runtime_stdlib_collections_map_contains_i32(map, 7) != 1 ||
-      objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 7, 9) != 42) {
+      objc3_runtime_stdlib_collections_map_contains_i32(map, 8) != 1 ||
+      objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 7, 9) != 42 ||
+      objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 8, 9) != 64) {
     return Fail("map hit helpers drifted");
   }
-  if (objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 8, 9) != 9 ||
+  if (objc3_runtime_stdlib_collections_map_insert_i32(map, 7, 45) != 2 ||
+      objc3_runtime_stdlib_collections_map_count_i32(map) != 2 ||
+      objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 7, 9) != 45) {
+    return Fail("map replacement helpers drifted");
+  }
+  if (objc3_runtime_stdlib_collections_map_lookup_or_i32(map, 10, 9) != 9 ||
       objc3_runtime_stdlib_collections_last_status_i32() !=
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
     return Fail("map missing-key failure was not explicit");
+  }
+  if (objc3_runtime_stdlib_collections_map_insert_i32(99, 8, 64) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE) {
+    return Fail("map insert invalid handle did not fail closed");
   }
   if (objc3_runtime_stdlib_collections_map_count_i32(99) != 0 ||
       objc3_runtime_stdlib_collections_last_status_i32() !=
@@ -197,11 +211,12 @@ int main() {
           &collections_snapshot) != 0) {
     return Fail("collections snapshot copy failed");
   }
-  if (collections_snapshot.total_call_count != 50 ||
+  if (collections_snapshot.total_call_count != 59 ||
       collections_snapshot.array_create_call_count != 3 ||
       collections_snapshot.array_query_call_count != 7 ||
       collections_snapshot.map_create_call_count != 1 ||
-      collections_snapshot.map_query_call_count != 5 ||
+      collections_snapshot.map_query_call_count != 10 ||
+      collections_snapshot.map_mutation_call_count != 3 ||
       collections_snapshot.set_create_call_count != 2 ||
       collections_snapshot.set_query_call_count != 3 ||
       collections_snapshot.set_mutation_call_count != 1 ||
@@ -209,7 +224,7 @@ int main() {
       collections_snapshot.slice_query_call_count != 3 ||
       collections_snapshot.iterator_create_call_count != 3 ||
       collections_snapshot.iterator_query_call_count != 8 ||
-      collections_snapshot.status_call_count != 12 ||
+      collections_snapshot.status_call_count != 13 ||
       collections_snapshot.array_record_count != 2 ||
       collections_snapshot.map_record_count != 1 ||
       collections_snapshot.set_record_count != 1 ||
@@ -228,6 +243,8 @@ int main() {
             << collections_snapshot.array_record_count
             << ",\"map_record_count\":"
             << collections_snapshot.map_record_count
+            << ",\"map_mutation_call_count\":"
+            << collections_snapshot.map_mutation_call_count
             << ",\"set_record_count\":"
             << collections_snapshot.set_record_count
             << ",\"slice_record_count\":"

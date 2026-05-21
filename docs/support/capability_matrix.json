@@ -1692,7 +1692,7 @@
       "id": "stdlib.collections.map-entry-runtime-shape",
       "title": "Runtime-backed objc3.collections map-entry shape",
       "state": "implemented",
-      "summary": "The objc3.collections module publishes runtime-owned single-entry i32 map records with count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, multi-entry storage, mutation, iteration, and Foundation bridging remain outside this claim.",
+      "summary": "The objc3.collections module publishes runtime-owned i32 map records with insert/update mutation, count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, non-i32 hashing, map iteration, and Foundation bridging remain outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.collections.map-entry-runtime-shape"
       ],
@@ -2750,7 +2750,7 @@
       "id": "language.advanced-runtime-closure",
       "title": "Advanced runtime-backed language closure",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, live error bridge cleanup, task continuations, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, object-model reflection/storage, and interop package/replay; remaining broad runtime closure stays reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay; remaining broad runtime closure stays reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/blocks/",
         "native/objc3c/src/runtime/memory/",
@@ -3352,9 +3352,21 @@
         "scripts/objc3c_editor_tooling/model.py",
         "scripts/objc3c_editor_tooling/workspace_index.py",
         "scripts/check_developer_tooling_language_server_navigation.py",
-        "scripts/check_developer_tooling_workspace_integration.py"
+        "scripts/check_developer_tooling_workspace_integration.py",
+        "scripts/check_developer_tooling_editor_source_truth.py",
+        "scripts/check_developer_tooling_product_workflow_source_truth.py"
       ],
       "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+        },
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
@@ -3395,6 +3407,15 @@
         {
           "kind": "source",
           "path": "scripts/format_objc3c_source.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_developer_tooling_product_workflow_source_truth.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_developer_tooling_editor_source_truth.py",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
         }
       ]
     },
@@ -3613,7 +3634,7 @@
       "id": "ecosystem.package-install.clean-distribution",
       "title": "Clean package install distribution",
       "state": "implemented",
-      "summary": "The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, and machine-owned install receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.",
+      "summary": "The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, and deterministic update/uninstall operation receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.",
       "support_claims": [
         "objc3c.behavior.package.install-clean-distribution"
       ],
@@ -3782,7 +3803,7 @@
       "id": "runtime.public-api.reflection",
       "title": "Public runtime reflection C API",
       "state": "implemented",
-      "summary": "The runtime now exposes a bounded public C reflection ABI for state, class, property, method, protocol, conformance, category, and selector snapshots. The API uses caller-owned snapshots, runtime-owned borrowed strings, typed status codes, null-output checks, invalid-query checks, and realized runtime state rather than private testing projections.",
+      "summary": "The runtime now exposes a bounded public C reflection ABI for state, class, property, method, protocol, conformance, category, and selector snapshots, including deterministic indexed enumeration for realized classes, direct properties, direct methods, concrete protocols, attached categories, and selectors. The API uses caller-owned snapshots, runtime-owned borrowed strings, typed status codes, null-output checks, invalid-query checks, and realized runtime state rather than private testing projections.",
       "support_claims": [
         "objc3c.behavior.runtime.public-reflection-api"
       ],
@@ -3917,12 +3938,12 @@
       "state": "reserved",
       "summary": "Method inlining is reserved until ownership, source-map, and side-effect replay proofs exist. The semantic optimization registry records the lane as reserved and prevents success claims.",
       "owner_modules": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
       ],
       "evidence": [
         {
           "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
         },
         {
           "kind": "doc",
@@ -3936,12 +3957,12 @@
       "state": "reserved",
       "summary": "Cache-aware dispatch remains reserved behind runtime-owned cache invalidation and ABI-stable helper contracts. The compiler pipeline preserves runtime dispatch semantics and does not materialize private selector-cache helpers in IR.",
       "owner_modules": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
       ],
       "evidence": [
         {
           "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
         },
         {
           "kind": "doc",

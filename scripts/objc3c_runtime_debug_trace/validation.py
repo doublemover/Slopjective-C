@@ -22,6 +22,7 @@ _REQUIRED_TOP_LEVEL_FIELDS = {
     "inputs",
     "artifacts",
     "source_mapping",
+    "source_span_evidence",
     "runtime_inspection",
     "runtime_trace_contracts",
     "trace_lanes",
@@ -196,6 +197,101 @@ def _validate_runtime_trace_source_contracts(
     return source_anchors, lane_ids
 
 
+def _validate_source_span_evidence(
+    payload: dict[str, Any],
+    failures: list[str],
+) -> set[str]:
+    spans = payload.get("source_span_evidence", [])
+    if not isinstance(spans, list):
+        failures.append("source span evidence must be a list")
+        return set()
+    span_ids: set[str] = set()
+    for index, span_value in enumerate(spans):
+        span = _object(span_value)
+        span_id = str(span.get("span_id", "") or "")
+        span_ids.add(span_id)
+        _expect(bool(span_id), f"source span evidence missing span id: {index}", failures)
+        _expect(
+            span.get("status") == "supported",
+            f"source span evidence must be supported: {span_id}",
+            failures,
+        )
+        _expect(
+            bool(str(span.get("source_path", "") or "")),
+            f"source span evidence missing source path: {span_id}",
+            failures,
+        )
+        _expect(
+            bool(str(span.get("artifact_path", "") or "")),
+            f"source span evidence missing artifact path: {span_id}",
+            failures,
+        )
+        _expect(
+            str(span.get("public_command", "") or "").startswith("npm run objc3c -- "),
+            f"source span evidence lacks public command: {span_id}",
+            failures,
+        )
+        compiler_range = _object(span.get("compiler_range"))
+        lsp_range = _object(span.get("lsp_range"))
+        line = int(compiler_range.get("line", 0) or 0)
+        column = int(compiler_range.get("column", 0) or 0)
+        end_line = int(compiler_range.get("end_line", 0) or 0)
+        end_column = int(compiler_range.get("end_column", 0) or 0)
+        _expect(line >= 1, f"source span evidence has invalid line: {span_id}", failures)
+        _expect(column >= 1, f"source span evidence has invalid column: {span_id}", failures)
+        _expect(end_line >= line, f"source span evidence has invalid end line: {span_id}", failures)
+        _expect(
+            end_column > column,
+            f"source span evidence has invalid end column: {span_id}",
+            failures,
+        )
+        _expect(
+            _object(lsp_range.get("start")).get("line") == line - 1,
+            f"source span evidence LSP start line drifted: {span_id}",
+            failures,
+        )
+        _expect(
+            _object(lsp_range.get("start")).get("character") == column - 1,
+            f"source span evidence LSP start column drifted: {span_id}",
+            failures,
+        )
+        evidence_input_labels = span.get("evidence_input_labels", [])
+        _expect(
+            isinstance(evidence_input_labels, list)
+            and {"debug_map", "runtime_inspector"}.issubset(
+                {str(label) for label in evidence_input_labels}
+            ),
+            f"source span evidence missing required input labels: {span_id}",
+            failures,
+        )
+        unsupported_expansion = span.get("unsupported_expansion", [])
+        _expect(
+            isinstance(unsupported_expansion, list)
+            and "statement-level stepping" in unsupported_expansion,
+            f"source span evidence must preserve stepping boundary: {span_id}",
+            failures,
+        )
+    source_mapping = payload.get("source_mapping", {})
+    if isinstance(source_mapping, dict):
+        mapped_span_ids = {
+            str(value)
+            for value in _list(source_mapping.get("span_evidence_ids"))
+            if str(value)
+        }
+        _expect(
+            mapped_span_ids == {span_id for span_id in span_ids if span_id},
+            "source mapping span evidence ids drifted",
+            failures,
+        )
+        _expect(
+            int(source_mapping.get("span_evidence_count", -1) or -1)
+            == len([span_id for span_id in span_ids if span_id]),
+            "source mapping span evidence count drifted",
+            failures,
+        )
+    return {span_id for span_id in span_ids if span_id}
+
+
 def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     for field in sorted(_REQUIRED_TOP_LEVEL_FIELDS):
@@ -234,6 +330,7 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
         payload,
         failures,
     )
+    source_span_ids = _validate_source_span_evidence(payload, failures)
     _validate_input_evidence(payload, failures)
     for event_kind in [
         "runtime-actor-snapshot",
@@ -367,6 +464,11 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             if status == "supported":
                 public_command = str(query.get("public_command", "") or "")
                 evidence_input_labels = query.get("evidence_input_labels", [])
+                query_source_span_ids = [
+                    str(value)
+                    for value in _list(query.get("source_span_ids"))
+                    if str(value)
+                ]
                 _expect(
                     public_command.startswith("npm run objc3c -- "),
                     f"supported inspection query lacks public command: {query_id}",
@@ -382,6 +484,21 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
                     f"supported inspection query lacks result path: {query_id}",
                     failures,
                 )
+                if query.get("surface") in {
+                    "source_to_artifact_mapping",
+                    "runtime_debug_trace",
+                }:
+                    _expect(
+                        bool(query_source_span_ids),
+                        f"supported source/artifact inspection query lacks source span evidence: {query_id}",
+                        failures,
+                    )
+                for source_span_id in query_source_span_ids:
+                    _expect(
+                        source_span_id in source_span_ids,
+                        f"supported inspection query references stale source span: {query_id}",
+                        failures,
+                    )
             if status == "reserved":
                 _expect(
                     bool(str(query.get("unpublished_reason", "") or "")),

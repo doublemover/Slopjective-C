@@ -514,6 +514,7 @@ def _supported_query(
     result_path: str,
     artifact_path: str = "",
     schema_path: str = "",
+    source_span_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "query_id": query_id,
@@ -525,6 +526,7 @@ def _supported_query(
         "result_path": result_path,
         "artifact_path": artifact_path,
         "schema_path": schema_path,
+        "source_span_ids": source_span_ids or [],
         "unpublished_reason": "",
     }
 
@@ -547,8 +549,93 @@ def _reserved_query(
         "result_path": "",
         "artifact_path": "",
         "schema_path": "",
+        "source_span_ids": [],
         "unpublished_reason": unpublished_reason,
     }
+
+
+def _anchor_span_id(anchor: dict[str, Any]) -> str:
+    return (
+        "source-span."
+        f"{_sanitize_event_id(anchor.get('kind'))}."
+        f"{_sanitize_event_id(anchor.get('symbol'))}."
+        f"{int(anchor.get('line', 0) or 0)}."
+        f"{int(anchor.get('column', 0) or 0)}"
+    )
+
+
+def _compiler_range_for_anchor(anchor: dict[str, Any]) -> dict[str, int]:
+    line = int(anchor.get("line", 0) or 0)
+    column = int(anchor.get("column", 0) or 0)
+    symbol = str(anchor.get("symbol", "") or "")
+    end_column = column + max(len(symbol), 1)
+    return {
+        "line": line,
+        "column": column,
+        "end_line": line,
+        "end_column": end_column,
+    }
+
+
+def _lsp_range_for_compiler_range(compiler_range: dict[str, int]) -> dict[str, Any]:
+    line = max(int(compiler_range.get("line", 0) or 0) - 1, 0)
+    column = max(int(compiler_range.get("column", 0) or 0) - 1, 0)
+    end_line = max(int(compiler_range.get("end_line", 0) or 0) - 1, line)
+    end_column = max(int(compiler_range.get("end_column", 0) or 0) - 1, column)
+    return {
+        "start": {"line": line, "character": column},
+        "end": {"line": end_line, "character": end_column},
+    }
+
+
+def _source_span_evidence(
+    *,
+    source_path: str,
+    debug_map: dict[str, Any],
+    runtime_inspector: dict[str, Any],
+    debug_map_path: str,
+) -> list[dict[str, Any]]:
+    anchors = [
+        _object_payload(anchor)
+        for anchor in _list_payload(debug_map.get("declaration_breakpoints"))
+    ]
+    anchors = sorted(
+        anchors,
+        key=lambda anchor: (
+            int(anchor.get("line", 0) or 0),
+            int(anchor.get("column", 0) or 0),
+            str(anchor.get("kind", "")),
+            str(anchor.get("symbol", "")),
+        ),
+    )
+    object_path = str(runtime_inspector.get("object_path", "") or "")
+    object_command = str(
+        _object_payload(runtime_inspector.get("dump_commands")).get("object_symbols", "")
+        or ""
+    )
+    return [
+        {
+            "span_id": _anchor_span_id(anchor),
+            "status": "supported",
+            "source_path": source_path,
+            "symbol": str(anchor.get("symbol", "") or ""),
+            "kind": str(anchor.get("kind", "") or ""),
+            "compiler_range": (compiler_range := _compiler_range_for_anchor(anchor)),
+            "lsp_range": _lsp_range_for_compiler_range(compiler_range),
+            "range_model": "compiler-1-based-plus-lsp-zero-based",
+            "artifact_path": object_path,
+            "artifact_query_command": object_command,
+            "evidence_input_labels": ["debug_map", "runtime_inspector"],
+            "source_record_path": debug_map_path,
+            "public_command": f"npm run objc3c -- {TRACE_ACTION} {source_path}",
+            "unsupported_expansion": [
+                "statement-level stepping",
+                "full source-map publication",
+                "LLDB plugin breakpoint synchronization",
+            ],
+        }
+        for anchor in anchors
+    ]
 
 
 def _inspection_queries(
@@ -557,6 +644,7 @@ def _inspection_queries(
     runtime_inspector: dict[str, Any],
     path_records: dict[str, dict[str, Any]],
     runtime_trace_contracts: dict[str, Any],
+    source_span_evidence: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     runtime_inspector_path = str(
         path_records.get("runtime_inspector", {}).get("path", "") or ""
@@ -566,6 +654,11 @@ def _inspection_queries(
     object_path = str(runtime_inspector.get("object_path", "") or "")
     schema_path = display_path(RUNTIME_DEBUG_TRACE_SCHEMA_PATH)
     source_contract_path = str(runtime_trace_contracts.get("source_path", "") or "")
+    source_span_ids = [
+        str(span.get("span_id", "") or "")
+        for span in source_span_evidence
+        if str(span.get("span_id", "") or "")
+    ]
     return [
         _supported_query(
             query_id="debug.source-to-artifact.declaration-anchors",
@@ -575,6 +668,7 @@ def _inspection_queries(
             evidence_input_labels=["debug_map", "editor_surface"],
             result_path=debug_map_path,
             artifact_path=object_path,
+            source_span_ids=source_span_ids,
         ),
         _supported_query(
             query_id="runtime.object-inspection.object-symbols",
@@ -607,6 +701,7 @@ def _inspection_queries(
             ],
             result_path=trace_path,
             schema_path=schema_path,
+            source_span_ids=source_span_ids,
         ),
         _supported_query(
             query_id="runtime.source-owned-trace-contracts",
@@ -666,11 +761,17 @@ def _inspection_queries(
 
 def _source_mapping(debug_map: dict[str, Any]) -> dict[str, Any]:
     anchors = _list_payload(debug_map.get("declaration_breakpoints"))
+    span_ids = [
+        _anchor_span_id(_object_payload(anchor))
+        for anchor in anchors
+    ]
     return {
         "model": "manifest-declaration-coordinate-anchors",
         "full_source_map_status": "reserved",
         "statement_level_stepping": debug_map.get("statement_level_stepping") is True,
         "declaration_anchor_count": len(anchors),
+        "span_evidence_count": len(span_ids),
+        "span_evidence_ids": span_ids,
         "anchors": anchors,
     }
 
@@ -859,6 +960,12 @@ def build_runtime_debug_trace_payload(
         for label, path in sorted(input_paths.items())
     }
     debug_map_path = str(path_records.get("debug_map", {}).get("path", "") or "")
+    source_span_evidence = _source_span_evidence(
+        source_path=source_path,
+        debug_map=debug_map,
+        runtime_inspector=runtime_inspector,
+        debug_map_path=debug_map_path,
+    )
     return {
         "contract_id": RUNTIME_DEBUG_TRACE_CONTRACT_ID,
         "schema_id": RUNTIME_DEBUG_TRACE_SCHEMA_ID,
@@ -877,6 +984,7 @@ def build_runtime_debug_trace_payload(
             "debug_map_contract_id": str(debug_map.get("contract_id", "") or ""),
         },
         "source_mapping": _source_mapping(debug_map),
+        "source_span_evidence": source_span_evidence,
         "runtime_inspection": _runtime_inspection_summary(runtime_inspector),
         "runtime_trace_contracts": source_contracts,
         "trace_lanes": _trace_lanes(runtime_inspector, debug_map, source_contracts),
@@ -885,6 +993,7 @@ def build_runtime_debug_trace_payload(
             runtime_inspector=runtime_inspector,
             path_records=path_records,
             runtime_trace_contracts=source_contracts,
+            source_span_evidence=source_span_evidence,
         ),
         "support_boundary": _support_boundary(debug_map),
         "event_sequence": events,

@@ -194,7 +194,8 @@ function Invoke-RunnableToolchainPackageBuild {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
-    [Parameter(Mandatory = $true)][string]$BuildScript
+    [Parameter(Mandatory = $true)][string]$BuildScript,
+    [int]$Parallelism = 0
   )
 
   $privateBuildRoot = Get-RunnableToolchainPackagePrivateBuildRoot `
@@ -215,7 +216,8 @@ function Invoke-RunnableToolchainPackageBuild {
     -RuntimeOutputDir $runtimeOutputDir `
     -LibraryOutputDir $libraryOutputDir `
     -FrontendArtifactRoot $frontendArtifactRoot `
-    -SummaryPath $summaryPath |
+    -SummaryPath $summaryPath `
+    -Parallelism $Parallelism |
     ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
@@ -429,14 +431,16 @@ function Invoke-RunnableToolchainPackageStaging {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
-    [Parameter(Mandatory = $true)][string]$BuildScript
+    [Parameter(Mandatory = $true)][string]$BuildScript,
+    [int]$Parallelism = 0
   )
 
   Initialize-RunnableToolchainPackageRoot -RepoRoot $RepoRoot -PackageRoot $PackageRoot
   Invoke-RunnableToolchainPackageBuild `
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
-    -BuildScript $BuildScript
+    -BuildScript $BuildScript `
+    -Parallelism $Parallelism
   $inputFiles = @(Get-RunnableToolchainPackageInputFiles -RepoRoot $RepoRoot)
   $copiedRelativePaths = @(Copy-RunnableToolchainPackageInputs `
     -RepoRoot $RepoRoot `

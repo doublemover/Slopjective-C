@@ -194,6 +194,7 @@ def run_framework_sample_validation(
         "status": "PASS" if not failures else "FAIL",
         "manifest": repo_rel(manifest_path, root=root),
         "contract": repo_rel(contract_path, root=root),
+        "dependency_evidence": manifest.get("dependency_evidence"),
         "selected_sample_ids": [sample.sample_id for sample in selected_samples],
         "sample_count": len(samples),
         "compiled_sample_count": len(compile_results),

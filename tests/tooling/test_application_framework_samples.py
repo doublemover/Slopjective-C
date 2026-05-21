@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from scripts.objc3c_application_framework_samples.constants import (
@@ -12,8 +13,10 @@ from scripts.objc3c_application_framework_samples.validation import (
     build_compile_command,
     build_public_compile_command_text,
     load_json,
+    validate_dependency_evidence,
     validate_manifest,
 )
+from scripts.objc3c_application_framework_samples.models import FrameworkSample
 from scripts.objc3c_application_framework_samples.runner import (
     run_framework_sample_validation,
 )
@@ -38,6 +41,10 @@ def test_application_framework_sample_manifest_is_real_source_backed() -> None:
     assert all((ROOT / sample.workspace_manifest).is_file() for sample in samples)
     assert all((ROOT / sample.replay_contract).is_file() for sample in samples)
     assert all((ROOT / sample.tutorial).is_file() for sample in samples)
+    assert manifest["dependency_evidence"] == (
+        "showcase/applicationFrameworkSamples/dependency-evidence.json"
+    )
+    assert (ROOT / manifest["dependency_evidence"]).is_file()
 
 
 def test_application_framework_sample_compile_commands_use_public_bridge() -> None:
@@ -62,6 +69,10 @@ def test_application_framework_sample_compile_commands_use_public_bridge() -> No
 def test_application_framework_contract_has_no_generated_source_roots() -> None:
     manifest_payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
+    assert manifest_payload["dependency_evidence"].startswith(
+        "showcase/applicationFrameworkSamples/"
+    )
+    assert not manifest_payload["dependency_evidence"].startswith(("tmp/", "artifacts/"))
     for sample in manifest_payload["samples"]:
         assert sample["source"].startswith("showcase/applicationFrameworkSamples/")
         assert not sample["source"].startswith(("tmp/", "artifacts/"))
@@ -74,6 +85,34 @@ def test_application_framework_contract_has_no_generated_source_roots() -> None:
     for edge in manifest_payload["package_edges"]:
         assert edge["from"].startswith("showcase-framework:")
         assert edge["to"].startswith(("showcase-framework:", "stdlib:"))
+
+
+def test_application_framework_dependency_evidence_fails_without_source_term(tmp_path: Path) -> None:
+    sample_root = tmp_path / "showcase" / "applicationFrameworkSamples"
+    sample_root.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(ROOT / "showcase" / "applicationFrameworkSamples", sample_root)
+
+    manifest = load_json(MANIFEST_PATH)
+    contract = load_json(CONTRACT_PATH)
+    samples = [FrameworkSample.from_payload(sample) for sample in manifest["samples"]]
+    evidence_path = sample_root / "dependency-evidence.json"
+    evidence = load_json(evidence_path)
+    for record in evidence["sample_dependency_evidence"]:
+        if record["sample_id"] == "workflowStdlibCLI":
+            record["dependencies"][1]["source_terms"] = ["missing_route_model_dependency_term"]
+    evidence_path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+
+    failures = validate_dependency_evidence(
+        root=tmp_path,
+        samples=samples,
+        manifest=manifest,
+        contract=contract,
+    )
+
+    assert (
+        "workflowStdlibCLI: dependency showcase-framework:routeModelKit source term "
+        "missing: missing_route_model_dependency_term"
+    ) in failures
 
 
 def _sample_payload_by_source(source: str) -> dict[str, object]:

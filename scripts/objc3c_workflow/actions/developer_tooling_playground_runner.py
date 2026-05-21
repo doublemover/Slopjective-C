@@ -11,6 +11,7 @@ from ..commands import run
 from ..environment import ROOT
 from .developer_tooling_paths import (
     CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY,
+    CHECK_DEVELOPER_TOOLING_EDITOR_SOURCE_TRUTH_PY,
     EDITOR_TOOLING_SURFACE_PY,
     FORMAT_OBJC3C_SOURCE_PY,
     FRONTEND_C_API_RUNNER_EXE,
@@ -92,3 +93,7 @@ def action_rewrite_objc3c_source(rest: list[str]) -> int:
 
 def action_check_developer_diagnostic_quality(_: list[str]) -> int:
     return run([sys.executable, str(CHECK_DEVELOPER_TOOLING_DIAGNOSTIC_QUALITY_PY)])
+
+
+def action_check_developer_tooling_editor_source_truth(_: list[str]) -> int:
+    return run([sys.executable, str(CHECK_DEVELOPER_TOOLING_EDITOR_SOURCE_TRUTH_PY)])

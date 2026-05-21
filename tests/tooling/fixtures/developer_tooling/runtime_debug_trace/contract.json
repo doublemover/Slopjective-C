@@ -44,6 +44,11 @@
     "runtime.error-unwind-trace.snapshots",
     "debug.lldb-plugin.integration"
   ],
+  "expected_source_span_evidence_count": 3,
+  "expected_source_span_query_ids": [
+    "debug.source-to-artifact.declaration-anchors",
+    "debug.runtime-trace.composed-event-sequence"
+  ],
   "required_support_handoff_ids": [
     "objc3c.behavior.runtime.debug_trace",
     "objc3c.behavior.runtime.debug_trace.lldb_plugin",

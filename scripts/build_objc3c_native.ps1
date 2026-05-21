@@ -251,6 +251,12 @@ if ($Parallelism -eq 0 -and ![string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_BUI
   }
   $Parallelism = $parsedParallelism
 }
+if ($Parallelism -eq 0) {
+  $Parallelism = 4
+}
+if ($Parallelism -lt 1) {
+  throw "native build parallelism must be a positive integer"
+}
 
 $modeRunsNativeBuild = Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode
 if ($modeRunsNativeBuild) {

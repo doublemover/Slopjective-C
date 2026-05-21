@@ -103,6 +103,39 @@ def test_obj3next016_recovery_fixtures_cover_parser_then_sema_followup() -> None
     assert "Expected diagnostic" not in positive
 
 
+def test_obj3next016_unknown_symbol_fixture_requires_nearest_symbol_suggestion() -> None:
+    case_path = (
+        ROOT
+        / "tests"
+        / "conformance"
+        / "diagnostics"
+        / "OBJ3-NEXT-016-SEMA-RECOVERY-02.json"
+    )
+    case = json.loads(read(case_path))
+    diagnostic = case["expect"]["diagnostics"][0]
+
+    assert diagnostic["code"] == "O3S203"
+    assert diagnostic["message"] == "unknown function 'known_vaule'"
+    assert diagnostic["suggestions"] == [
+        {
+            "kind": "nearest-symbol",
+            "symbol_kind": "function",
+            "target": "known_vaule",
+            "replacement": "known_value",
+            "confidence": "high",
+            "range": {
+                "start": {"line": 8, "column": 10},
+                "end": {"line": 8, "column": 20},
+            },
+            "explanation": (
+                "The only in-scope callable at edit distance two is 'known_value', "
+                "so tooling can surface it as a nearest-symbol suggestion without "
+                "accepting the misspelled call."
+            ),
+        }
+    ]
+
+
 def test_native_diagnostics_json_promotes_fixit_metadata_out_of_message(
     tmp_path: Path,
 ) -> None:

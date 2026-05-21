@@ -25,6 +25,8 @@
     "clean_install_root": "tmp/artifacts/package-ecosystem/install-validation/clean-root",
     "clean_install_home": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c",
     "install_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+    "update_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json",
+    "uninstall_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json",
     "install_verification": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json",
     "local_package_artifact_root": "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
     "install_proof_manifest": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
@@ -66,10 +68,16 @@
     "install_command",
     "installed_at_utc"
   ],
+  "required_operation_receipts": [
+    "update",
+    "uninstall"
+  ],
   "model_rules": [
     "clean install validation must remove its owned install root before materializing package evidence",
     "installed package manifests must byte-equivalently project from generated package manifests and keep lock manifest digests",
     "installed package order must preserve the dependency-first resolution plan from the generated package lock",
+    "update and uninstall operation receipts must be deterministic, digest-bound to the locked package graph, and stored under the clean install receipt root",
+    "update receipts preserve dependency-first package order while uninstall receipts use reverse dependency order",
     "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
     "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
     "installed package sources, lock entries, mirror entries, local registry entries, publication metadata, and restore receipt counts must agree",

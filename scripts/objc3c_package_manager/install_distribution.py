@@ -31,6 +31,13 @@ INSTALL_VALIDATION_ROOT_REL = "tmp/artifacts/package-ecosystem/install-validatio
 INSTALL_ROOT_REL = f"{INSTALL_VALIDATION_ROOT_REL}/clean-root"
 INSTALL_HOME_REL = f"{INSTALL_ROOT_REL}/objc3c"
 INSTALL_RECEIPT_REL = f"{INSTALL_ROOT_REL}/objc3c-install-receipt.json"
+PACKAGE_RECEIPT_ROOT_REL = f"{INSTALL_HOME_REL}/receipts"
+PACKAGE_UPDATE_RECEIPT_REL = (
+    f"{PACKAGE_RECEIPT_ROOT_REL}/objc3c-update-plan-receipt.json"
+)
+PACKAGE_UNINSTALL_RECEIPT_REL = (
+    f"{PACKAGE_RECEIPT_ROOT_REL}/objc3c-uninstall-plan-receipt.json"
+)
 INSTALL_VERIFICATION_REL = (
     f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-distribution-verification.json"
 )
@@ -39,6 +46,9 @@ INSTALL_PROOF_MANIFEST_REL = f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-proo
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
 INSTALL_PACKAGE_BRIDGE = "objc3c"
 INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
+PACKAGE_OPERATION_RECEIPT_CONTRACT_ID = (
+    "objc3c.package_ecosystem.operation_receipt.v1"
+)
 INSTALL_PROOF_CONTRACT_ID = "objc3c.package_ecosystem.from_nothing_install_proof.v1"
 NO_NETWORK_POLICY = "no-network-during-validation"
 HOSTED_REGISTRY_FAIL_CLOSED = "unsupported-fail-closed-if-claimed"
@@ -119,6 +129,63 @@ def install_receipt_payload(root: Path) -> dict[str, str]:
     }
 
 
+def package_operation_receipt_payload(
+    *,
+    root: Path,
+    lock: dict[str, Any],
+    operation: str,
+    package_order: list[str],
+) -> dict[str, Any]:
+    packages_by_id = {
+        str(entry.get("package_id")): entry
+        for entry in lock.get("packages", [])
+        if isinstance(entry, dict)
+    }
+    package_digests: list[dict[str, str]] = []
+    for package_id in package_order:
+        package = packages_by_id.get(package_id, {})
+        manifest = package.get("package_manifest", {})
+        if not isinstance(manifest, dict):
+            manifest = {}
+        trust = package.get("trust", {})
+        if not isinstance(trust, dict):
+            trust = {}
+        package_digests.append(
+            {
+                "package_id": package_id,
+                "source_digest": str(package.get("source_digest", "")),
+                "manifest_digest": str(manifest.get("digest", "")),
+                "trust_signature": str(trust.get("signature", "")),
+            }
+        )
+    operation_mode = (
+        "locked-local-update-noop"
+        if operation == "update"
+        else "reverse-dependency-order-uninstall-plan"
+    )
+    action = "validate-package-install-distribution --from-nothing"
+    return {
+        "contract_id": PACKAGE_OPERATION_RECEIPT_CONTRACT_ID,
+        "operation": operation,
+        "operation_mode": operation_mode,
+        "install_root": repo_rel(root / INSTALL_ROOT_REL),
+        "install_home": repo_rel(root / INSTALL_HOME_REL),
+        "receipt_root": PACKAGE_RECEIPT_ROOT_REL,
+        "package_bridge": INSTALL_PACKAGE_BRIDGE,
+        "command": f"npm run objc3c -- {action}",
+        "network_policy": NO_NETWORK_POLICY,
+        "hosted_registry_support": HOSTED_REGISTRY_FAIL_CLOSED,
+        "language_version": lock.get("package_manager", {}).get("language_version"),
+        "abi_identity": lock.get("package_manager", {}).get("abi_identity"),
+        "selection_policy": "exact-locked-version-only",
+        "state_mutation": "record-only-deterministic-plan",
+        "timestamp": "omitted-for-deterministic-replay",
+        "package_count": len(package_order),
+        "package_order": package_order,
+        "package_digests": package_digests,
+    }
+
+
 def bridge_payload(contract: dict[str, Any]) -> dict[str, Any]:
     actions = [
         str(action)
@@ -165,6 +232,8 @@ def install_proof_payload(
     release_input_paths = sorted(
         [
             INSTALL_RECEIPT_REL,
+            PACKAGE_UPDATE_RECEIPT_REL,
+            PACKAGE_UNINSTALL_RECEIPT_REL,
             repo_rel(bridge_path),
             repo_rel(registry_copy),
             repo_rel(publication_copy),
@@ -321,6 +390,26 @@ def materialize_clean_distribution_install(
     write_json_file(bridge_path, bridge_payload(contract))
     install_receipt_path = root / INSTALL_RECEIPT_REL
     write_json_file(install_receipt_path, install_receipt_payload(root))
+    update_receipt_path = root / PACKAGE_UPDATE_RECEIPT_REL
+    uninstall_receipt_path = root / PACKAGE_UNINSTALL_RECEIPT_REL
+    write_json_file(
+        update_receipt_path,
+        package_operation_receipt_payload(
+            root=root,
+            lock=lock,
+            operation="update",
+            package_order=install_order,
+        ),
+    )
+    write_json_file(
+        uninstall_receipt_path,
+        package_operation_receipt_payload(
+            root=root,
+            lock=lock,
+            operation="uninstall",
+            package_order=list(reversed(install_order)),
+        ),
+    )
     install_proof_path = root / INSTALL_PROOF_MANIFEST_REL
     install_proof = install_proof_payload(
         root=root,
@@ -338,6 +427,8 @@ def materialize_clean_distribution_install(
         repo_rel(root / INSTALL_ROOT_REL),
         repo_rel(install_home),
         repo_rel(install_receipt_path),
+        repo_rel(update_receipt_path),
+        repo_rel(uninstall_receipt_path),
         repo_rel(install_proof_path),
         repo_rel(artifact_root),
         repo_rel(bootstrap_path),
@@ -362,6 +453,8 @@ def materialize_clean_distribution_install(
         "install_root": repo_rel(root / INSTALL_ROOT_REL),
         "install_home": repo_rel(install_home),
         "install_receipt": repo_rel(install_receipt_path),
+        "update_receipt": repo_rel(update_receipt_path),
+        "uninstall_receipt": repo_rel(uninstall_receipt_path),
         "install_proof_manifest": repo_rel(install_proof_path),
         "local_package_artifact_root": INSTALL_LOCAL_ARTIFACT_ROOT_REL,
         "bootstrap_entrypoint": INSTALL_BOOTSTRAP_ENTRYPOINT,
@@ -392,6 +485,8 @@ def materialize_clean_distribution_install(
         if isinstance(lock.get("dependencies"), list)
         else 0,
         "install_order": install_order,
+        "update_plan_order": install_order,
+        "uninstall_plan_order": list(reversed(install_order)),
         "manifest_count": len(installed_packages),
         "cache_entry_count": restore_receipt.get("cache_entry_count"),
         "installed_packages": installed_packages,
@@ -549,6 +644,29 @@ def collect_install_distribution_failures(
         if receipt != expected_receipt:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install receipt payload drifted")
 
+    update_receipt_path = root / str(verification.get("update_receipt", ""))
+    uninstall_receipt_path = root / str(verification.get("uninstall_receipt", ""))
+    failures.extend(
+        collect_package_operation_receipt_failures(
+            root=root,
+            lock=lock,
+            verification=verification,
+            receipt_path=update_receipt_path,
+            operation="update",
+            expected_order=expected_install_order,
+        )
+    )
+    failures.extend(
+        collect_package_operation_receipt_failures(
+            root=root,
+            lock=lock,
+            verification=verification,
+            receipt_path=uninstall_receipt_path,
+            operation="uninstall",
+            expected_order=list(reversed(expected_install_order)),
+        )
+    )
+
     proof_path = root / str(verification.get("install_proof_manifest", ""))
     if not proof_path.is_file():
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing from-nothing install proof manifest")
@@ -587,6 +705,65 @@ def collect_install_distribution_failures(
             f"{PACKAGE_MANAGER_TAMPER_CODE}: install bridge missing actions: {', '.join(missing_actions)}"
         )
     failures.extend(collect_lock_model_failures(lock, root=root))
+    return failures
+
+
+def collect_package_operation_receipt_failures(
+    *,
+    root: Path,
+    lock: dict[str, Any],
+    verification: dict[str, Any],
+    receipt_path: Path,
+    operation: str,
+    expected_order: list[str],
+) -> list[str]:
+    failures: list[str] = []
+    if not receipt_path.is_file():
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing {operation} receipt")
+        return failures
+
+    receipt = load_json(receipt_path)
+    expected_receipt = package_operation_receipt_payload(
+        root=root,
+        lock=lock,
+        operation=operation,
+        package_order=expected_order,
+    )
+    if receipt != expected_receipt:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt payload drifted")
+    if receipt.get("contract_id") != PACKAGE_OPERATION_RECEIPT_CONTRACT_ID:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt contract drifted")
+    if receipt.get("network_policy") != NO_NETWORK_POLICY:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt network policy drifted")
+    if receipt.get("hosted_registry_support") != HOSTED_REGISTRY_FAIL_CLOSED:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt hosted registry widened")
+    if receipt.get("package_bridge") != INSTALL_PACKAGE_BRIDGE:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt package bridge drifted")
+    if receipt.get("language_version") != LOCAL_PACKAGE_LANGUAGE_VERSION:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt language drifted")
+    if receipt.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt ABI drifted")
+    if receipt.get("selection_policy") != "exact-locked-version-only":
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt selection policy drifted")
+    if receipt.get("package_order") != expected_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt package order drifted")
+    if receipt.get("package_count") != len(expected_order):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt package count drifted")
+    package_digests = receipt.get("package_digests", [])
+    if not isinstance(package_digests, list):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt package digests missing")
+        return failures
+    digest_ids = [
+        str(entry.get("package_id"))
+        for entry in package_digests
+        if isinstance(entry, dict)
+    ]
+    if digest_ids != expected_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: {operation} receipt digest order drifted")
+    if operation == "update" and verification.get("update_plan_order") != expected_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: update plan order drifted")
+    if operation == "uninstall" and verification.get("uninstall_plan_order") != expected_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: uninstall plan order drifted")
     return failures
 
 
@@ -706,10 +883,16 @@ __all__ = [
     "INSTALL_VALIDATION_ROOT_REL",
     "INSTALL_VERIFICATION_REL",
     "NO_NETWORK_POLICY",
+    "PACKAGE_OPERATION_RECEIPT_CONTRACT_ID",
+    "PACKAGE_RECEIPT_ROOT_REL",
+    "PACKAGE_UNINSTALL_RECEIPT_REL",
+    "PACKAGE_UPDATE_RECEIPT_REL",
     "collect_install_distribution_failures",
     "collect_install_proof_failures",
+    "collect_package_operation_receipt_failures",
     "install_receipt_payload",
     "materialize_clean_distribution_install",
+    "package_operation_receipt_payload",
     "package_ids",
     "package_manifest_digest",
     "reset_clean_install_root",

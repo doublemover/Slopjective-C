@@ -17,6 +17,7 @@
   "required_source_terms": [
     "objc3_runtime_stdlib_core_count_i32",
     "objc3_runtime_stdlib_core_prefix_count_i32",
+    "route_model_keypath_token",
     "workflowMapValue",
     "fn main() -> i32"
   ],
@@ -26,6 +27,7 @@
       "objc3_runtime_stdlib_core_prefix_count_i32",
       "objc3_runtime_stdlib_core_map_entry_present_i32",
       "objc3_runtime_stdlib_core_map_entry_value_or_i32",
+      "route_model_keypath_token",
       "stringViewUnits",
       "byteSpanPrefix",
       "workflowItemWindow",

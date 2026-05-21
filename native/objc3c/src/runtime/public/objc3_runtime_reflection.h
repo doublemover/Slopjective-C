@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u
+#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u
 
 typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_OK = 0,
@@ -252,9 +252,14 @@ int objc3_runtime_copy_reflection_property_at(
 int objc3_runtime_copy_reflection_method(
     const char *class_name, const char *selector, int family,
     objc3_runtime_reflection_method_snapshot *snapshot);
+int objc3_runtime_copy_reflection_method_at(
+    const char *class_name, uint64_t index, int family,
+    objc3_runtime_reflection_method_snapshot *snapshot);
 int objc3_runtime_copy_reflection_protocol(
     const char *protocol_name,
     objc3_runtime_reflection_protocol_snapshot *snapshot);
+int objc3_runtime_copy_reflection_protocol_at(
+    uint64_t index, objc3_runtime_reflection_protocol_snapshot *snapshot);
 int objc3_runtime_copy_reflection_protocol_conformance(
     const char *class_name, const char *protocol_name,
     objc3_runtime_reflection_protocol_conformance_snapshot *snapshot);

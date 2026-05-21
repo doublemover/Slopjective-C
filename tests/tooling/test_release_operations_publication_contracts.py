@@ -15,6 +15,23 @@ from release_operations_publication_contracts import (  # noqa: E402
 
 
 def _publication_payloads():
+    package_channel_freshness = {
+        "timestamp_sources": [
+            "package_channels_summary.generated_at_utc",
+            "package_channels_manifest.generated_at_utc",
+            "platform_support_matrix.generated_at_utc",
+        ],
+        "generated_at_utc": {
+            "package_channels_summary.generated_at_utc": "2026-05-21T10:00:00Z",
+            "package_channels_manifest.generated_at_utc": "2026-05-21T10:10:00Z",
+            "platform_support_matrix.generated_at_utc": "2026-05-21T10:30:00Z",
+        },
+        "artifact_skew_hours": 0.5,
+        "channel_max_artifact_skew_hours": {"stable": 6, "nightly": 6},
+        "stale_behavior": "fail-closed",
+        "refresh_command": "npm run objc3c -- build-package-channels",
+        "blocks_publication_on_stale": True,
+    }
     update_manifest = {
         "current_version": "3.0.0",
         "default_channel": "stable",
@@ -64,6 +81,7 @@ def _publication_payloads():
                     "validate-release-operations-end-to-end",
                 ],
                 "artifact_refs": {"portable_archive": "tmp/pkg/stable.zip"},
+                "package_channel_freshness": package_channel_freshness,
                 "rollback_safety": {
                     "rollback_channel": "local-installer",
                     "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
@@ -83,6 +101,7 @@ def _publication_payloads():
                 "update_manifest_channel": "nightly",
                 "release_gate_actions": ["test-nightly", "validate-release-operations"],
                 "artifact_refs": {"portable_archive": "tmp/pkg/nightly.zip"},
+                "package_channel_freshness": package_channel_freshness,
                 "rollback_safety": {
                     "rollback_channel": "offline-bundle",
                     "operator_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
@@ -161,6 +180,9 @@ def test_release_operations_publication_emits_source_derived_release_notes() -> 
         "nightly",
     ]
     assert release_notes["channels"][0]["rollback_channel"] == "local-installer"
+    assert release_notes["channels"][0]["package_channel_freshness"]["stale_behavior"] == (
+        "fail-closed"
+    )
 
 
 def test_release_operations_publication_emits_public_changelog_from_release_notes() -> None:
@@ -190,3 +212,4 @@ def test_release_operations_publication_emits_public_changelog_from_release_note
     assert payloads.summary["public_changelog"] == (
         "tmp/artifacts/release-operations/public-changelog.json"
     )
+    assert payloads.summary["package_channel_freshness_channel_count"] == 2

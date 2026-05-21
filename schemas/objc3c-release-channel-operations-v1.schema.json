@@ -89,6 +89,7 @@
         "update_manifest_channel",
         "release_gate_actions",
         "artifact_refs",
+        "package_channel_freshness",
         "rollback_safety",
         "release_notes_policy",
         "release_evidence"
@@ -110,9 +111,48 @@
           "minItems": 1
         },
         "artifact_refs": { "$ref": "#/$defs/artifactRefs" },
+        "package_channel_freshness": { "$ref": "#/$defs/packageChannelFreshness" },
         "rollback_safety": { "$ref": "#/$defs/rollbackSafety" },
         "release_notes_policy": { "$ref": "#/$defs/releaseNotesPolicy" },
         "release_evidence": { "$ref": "#/$defs/channelReleaseEvidence" }
+      }
+    },
+    "packageChannelFreshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp_sources",
+        "generated_at_utc",
+        "artifact_skew_hours",
+        "channel_max_artifact_skew_hours",
+        "stale_behavior",
+        "refresh_command",
+        "blocks_publication_on_stale"
+      ],
+      "properties": {
+        "timestamp_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "generated_at_utc": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "artifact_skew_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "channel_max_artifact_skew_hours": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "stale_behavior": { "const": "fail-closed" },
+        "refresh_command": { "const": "npm run objc3c -- build-package-channels" },
+        "blocks_publication_on_stale": { "const": true }
       }
     },
     "artifactRefs": {

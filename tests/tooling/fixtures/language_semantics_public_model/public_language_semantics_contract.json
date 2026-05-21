@@ -1,14 +1,19 @@
 {
   "contract_id": "objc3c.language.semantics.public-model.v1",
   "issue_mapping": {
-    "primary_issues": [8160, 8163, 8164, 8165, 8166, 8167],
+    "primary_issues": [8160, 8163, 8164, 8165, 8166, 8167, 8168],
     "support_claims": [
-      "objc3c.behavior.language.generics.public-type-parameters",
-      "objc3c.behavior.language.modules.visibility-rebuild-contract",
+      "objc3c.behavior.language.generics.protocol-qualified-arguments",
+      "objc3c.behavior.language.generics.callable-type-parameters",
+      "objc3c.behavior.language.generics.variance-specialization",
+      "objc3c.behavior.runtime.generics.cross-module-metadata",
+      "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
       "objc3c.behavior.language.protocols.existential-witness-model",
-      "objc3c.behavior.language.interop.foreign-surface-contract",
-      "objc3c.behavior.language.ownership.memory-model",
-      "objc3c.behavior.language.concurrency.public-usability-model"
+      "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "objc3c.behavior.language.ownership-memory-model",
+      "objc3c.behavior.language.concurrency.public-usability-model",
+      "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
     ],
     "evidence_ids_required": [
       "objc3c.evidence.language_semantics.public_model.fixture",
@@ -16,7 +21,9 @@
       "objc3c.evidence.language_semantics.public_model.sema_header",
       "objc3c.evidence.language_semantics.public_model.validator",
       "objc3c.evidence.language_semantics.module_interop.fixture",
-      "objc3c.evidence.language_semantics.module_interop.validator"
+      "objc3c.evidence.language_semantics.module_interop.validator",
+      "objc3c.evidence.language_semantics.metaprogramming.fixture",
+      "objc3c.evidence.language_semantics.metaprogramming.validator"
     ]
   },
   "source_truth": {
@@ -33,6 +40,7 @@
           "Objc3ConcurrencyEffectSurface",
           "Objc3ModuleVisibilitySurface",
           "Objc3InteropLaneSurface",
+          "Objc3MacroMetaprogrammingSurface",
           "IsReadyObjc3PublicLanguageSemanticsModelSummary"
         ]
       },
@@ -97,12 +105,28 @@
           "actor_mailbox_enqueue",
           "kObjc3RuntimeExecutorHopI32Symbol"
         ]
+      },
+      {
+        "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        "tokens": [
+          "\"issue_ref\": 8168",
+          "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+          "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+        "tokens": [
+          "Objc3MetaprogrammingDeriveExpansionInventorySummary",
+          "Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary",
+          "kObjc3MetaprogrammingMacroSafetySandboxDeterminismContractId"
+        ]
       }
     ]
   },
   "typed_model_surfaces": {
     "generic_type_system": {
-      "support_claim": "objc3c.behavior.language.generics.public-type-parameters",
+      "support_claim": "objc3c.behavior.language.generics.protocol-qualified-arguments",
       "type_parameters": [
         {
           "name": "Element",
@@ -146,7 +170,7 @@
       ]
     },
     "module_identity_visibility_model": {
-      "support_claim": "objc3c.behavior.language.modules.visibility-rebuild-contract",
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
       "module_identity_key_fields": [
         "module_name",
         "metadata_version",
@@ -243,7 +267,7 @@
       ]
     },
     "interop_bridge_model": {
-      "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
       "lanes": [
         {
           "language": "c",
@@ -287,7 +311,7 @@
       }
     },
     "ownership_memory_model": {
-      "support_claim": "objc3c.behavior.language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "qualifier_flows": [
         {
           "qualifier": "strong",
@@ -386,6 +410,80 @@
         "stale_task_resume": "rejected",
         "ownership_handoff": "uses-ownership-memory-model"
       }
+    },
+    "macro_metaprogramming_public_surface": {
+      "support_claims": [
+        "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+        "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+      ],
+      "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+      "contract_path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+      "derive_model": {
+        "supported_forms": [
+          "DebugDescription",
+          "Equality",
+          "Equatable",
+          "Hash"
+        ],
+        "reserved_forms": [
+          "custom-user-provided-derive-plugins",
+          "ordering",
+          "reflection",
+          "serialization"
+        ],
+        "runtime_materialization": "deferred"
+      },
+      "macro_safety_model": {
+        "required_metadata_fields": [
+          "cache_key",
+          "deterministic",
+          "macro",
+          "manifest_digest",
+          "package",
+          "provenance",
+          "replay_metadata",
+          "sandbox_policy",
+          "signature_digest",
+          "signer_key_id"
+        ],
+        "required_negative_case_ids": [
+          "invalid_package",
+          "invalid_provenance",
+          "method_topology",
+          "missing_cache_key",
+          "missing_metadata",
+          "missing_sandbox_policy",
+          "nonpure_callable",
+          "orphan_metadata"
+        ],
+        "required_diagnostic_codes": [
+          "O3S320",
+          "O3S321",
+          "O3S322",
+          "O3S323",
+          "O3S324",
+          "O3S325",
+          "O3S331",
+          "O3S332"
+        ],
+        "denial_case_ids": [
+          "missing-replay-metadata-denied",
+          "revoked-provenance-denied",
+          "sandbox-network-denied",
+          "unknown-package-denied",
+          "unsigned-provenance-denied",
+          "untrusted-signer-denied"
+        ],
+        "fail_closed_before_expansion": true,
+        "arbitrary_host_execution_allowed": false,
+        "network_access_allowed": false,
+        "deterministic_replay_required": true
+      },
+      "artifact_policy": {
+        "generated_artifacts_are_support_authority": false,
+        "tmp_report_source_truth_allowed": false,
+        "third_party_macro_ecosystem_claimed": false
+      }
     }
   },
   "cross_issue_handoffs": [
@@ -418,6 +516,16 @@
       "from_issue": 8167,
       "to_issue": 8166,
       "semantic_contract": "actor, executor, and task-group crossings reject unsafe ownership escapes"
+    },
+    {
+      "from_issue": 8168,
+      "to_issue": 8160,
+      "semantic_contract": "macro expansion output must re-enter the same typed generic and protocol semantic checks as hand-authored source"
+    },
+    {
+      "from_issue": 8160,
+      "to_issue": 8168,
+      "semantic_contract": "generic and protocol metadata used by macro-generated declarations must be deterministic replay data, not generated-only support authority"
     }
   ],
   "unsupported_policy": {

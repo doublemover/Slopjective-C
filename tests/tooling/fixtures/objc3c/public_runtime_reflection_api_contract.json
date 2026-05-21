@@ -18,7 +18,9 @@
     "objc3_runtime_copy_reflection_property",
     "objc3_runtime_copy_reflection_property_at",
     "objc3_runtime_copy_reflection_method",
+    "objc3_runtime_copy_reflection_method_at",
     "objc3_runtime_copy_reflection_protocol",
+    "objc3_runtime_copy_reflection_protocol_at",
     "objc3_runtime_copy_reflection_protocol_conformance",
     "objc3_runtime_copy_reflection_category",
     "objc3_runtime_copy_reflection_category_at",
@@ -52,6 +54,8 @@
   "deterministic_enumeration": [
     "objc3_runtime_copy_reflection_class_at enumerates realized classes in runtime registration order",
     "objc3_runtime_copy_reflection_property_at enumerates direct realized property accessors in class-local layout order",
+    "objc3_runtime_copy_reflection_method_at enumerates direct realized methods in class-local declaration order for the requested method family",
+    "objc3_runtime_copy_reflection_protocol_at enumerates concrete protocols in runtime image registration order",
     "objc3_runtime_copy_reflection_category_at enumerates attached categories in runtime attachment order",
     "objc3_runtime_copy_reflection_selector_at enumerates registered selectors in selector table insertion order"
   ],

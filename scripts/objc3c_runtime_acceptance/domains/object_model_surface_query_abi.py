@@ -75,7 +75,7 @@ def build_runtime_object_model_abi_query_surface(
             "objc3_runtime_copy_dispatch_state_for_testing",
         ],
         "object_model_query_boundary_model": (
-            "public-runtime-header-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface-without-widening-the-public-abi"
+            "bounded-public-reflection-api-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface"
         ),
         "authoritative_case_ids": authoritative_case_ids(
             results,

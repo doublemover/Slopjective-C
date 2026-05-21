@@ -65,11 +65,13 @@ constexpr PublicRuntimeReflectionSurfaceRecord kPublicReflectionSurfaces[] = {
      "objc3_runtime_copy_reflection_method",
      "objc3_runtime_reflection_method_snapshot",
      "FindSelectorSlotByCanonicalSpellingUnlocked",
-     "realized class method list by selector and method family"},
+     "realized class method list by selector/family or deterministic direct "
+     "class-local method index"},
     {OBJC3_RUNTIME_REFLECTION_SURFACE_PROTOCOL, "protocol",
      "objc3_runtime_copy_reflection_protocol",
      "objc3_runtime_reflection_protocol_snapshot", "OrderedClassGraphImages",
-     "concrete protocol descriptor by protocol name"},
+     "concrete protocol descriptor by protocol name or deterministic concrete "
+     "protocol index"},
     {OBJC3_RUNTIME_REFLECTION_SURFACE_PROTOCOL_CONFORMANCE,
      "protocol-conformance",
      "objc3_runtime_copy_reflection_protocol_conformance",
@@ -512,7 +514,8 @@ bool MethodListIsMalformed(const EmittedMethodListRef *method_list_ref) {
   }
   for (std::uint64_t index = 0; index < header->count; ++index) {
     const EmittedMethodListEntry &entry = entries[index];
-    if (entry.selector == nullptr || entry.return_type_name == nullptr) {
+    if (entry.selector == nullptr || entry.owner_identity == nullptr ||
+        entry.return_type_name == nullptr) {
       return true;
     }
   }
@@ -609,6 +612,61 @@ bool PopulateReflectionMethodUnlocked(
   return false;
 }
 
+bool PopulateReflectionMethodAtUnlocked(
+    RuntimeState &state, const RealizedClassNode &node, std::uint64_t index,
+    DispatchFamily family, objc3_runtime_reflection_method_snapshot &snapshot) {
+  if (node.bundle == nullptr || node.image == nullptr) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  const EmittedClassRecord &class_record =
+      family == DispatchFamily::Class ? node.bundle->metaclass_record
+                                      : node.bundle->class_record;
+  if (MethodListIsMalformed(class_record.method_list_ref)) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  if (class_record.method_list_ref == nullptr ||
+      index >= class_record.method_list_ref->count) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+    return false;
+  }
+  const auto *header = static_cast<const EmittedMethodListHeader *>(
+      class_record.method_list_ref->method_list);
+  if (header == nullptr ||
+      header->count != class_record.method_list_ref->count) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  const EmittedMethodListEntry *entries = RuntimeMethodListEntries(header);
+  if (entries == nullptr) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  const EmittedMethodListEntry &entry =
+      entries[static_cast<std::size_t>(index)];
+  if (entry.selector == nullptr || entry.owner_identity == nullptr ||
+      entry.return_type_name == nullptr) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  const char *canonical_selector =
+      NormalizeRuntimeSelectorSpelling(entry.selector);
+  if (canonical_selector == nullptr) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  const SelectorSlot *selector_slot =
+      FindSelectorSlotByCanonicalSpellingUnlocked(state, canonical_selector);
+  if (selector_slot == nullptr) {
+    snapshot.status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+    return false;
+  }
+  return TryPopulateReflectionMethodFromEntry(
+      node, node, entry, nullptr, selector_slot->handle, family, 0, 0,
+      snapshot);
+}
+
 const EmittedProtocolRecord *
 FindConcreteProtocolRecordUnlocked(const RuntimeState &state,
                                    const char *protocol_name, int &status) {
@@ -655,6 +713,40 @@ FindConcreteProtocolRecordUnlocked(const RuntimeState &state,
     }
   }
   return matched_record;
+}
+
+const EmittedProtocolRecord *
+FindConcreteProtocolRecordAtUnlocked(const RuntimeState &state,
+                                     std::uint64_t target_index, int &status) {
+  status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  std::uint64_t concrete_index = 0;
+  for (const RegisteredImageMetadata *image : OrderedClassGraphImages(state)) {
+    if (image == nullptr) {
+      continue;
+    }
+    for (std::uint64_t index = 0; index < image->protocol_descriptor_count;
+         ++index) {
+      const auto *record = static_cast<const EmittedProtocolRecord *>(
+          RuntimeAggregateEntry(image->protocol_descriptor_root, index));
+      if (record == nullptr || record->protocol_name == nullptr) {
+        status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+        return nullptr;
+      }
+      if (record->is_forward_declaration) {
+        continue;
+      }
+      if (record->owner_identity == nullptr) {
+        status = OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA;
+        return nullptr;
+      }
+      if (concrete_index == target_index) {
+        status = OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+        return record;
+      }
+      ++concrete_index;
+    }
+  }
+  return nullptr;
 }
 
 void PopulateReflectionProtocolSnapshot(
@@ -950,6 +1042,39 @@ extern "C" int objc3_runtime_copy_reflection_method(
   return snapshot->status;
 }
 
+extern "C" int objc3_runtime_copy_reflection_method_at(
+    const char *class_name, uint64_t index, int family,
+    objc3_runtime_reflection_method_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionMethodSnapshot(*snapshot);
+  if (!objc3c::runtime::RuntimeReflectionCStringPresent(class_name)) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY, &snapshot->status);
+  }
+  const objc3c::runtime::DispatchFamily dispatch_family =
+      objc3c::runtime::ReflectionDispatchFamily(family);
+  if (!objc3c::runtime::RuntimeDispatchFamilyIsValid(dispatch_family)) {
+    return objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY, &snapshot->status);
+  }
+  snapshot->family = family;
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  const objc3c::runtime::RealizedClassNode *node =
+      objc3c::runtime::FindUniqueRealizedClassNodeUnlocked(state, class_name,
+                                                           status);
+  if (node == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(status, &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionMethodAtUnlocked(
+      state, *node, index, dispatch_family, *snapshot);
+  return snapshot->status;
+}
+
 extern "C" int objc3_runtime_copy_reflection_protocol(
     const char *protocol_name,
     objc3_runtime_reflection_protocol_snapshot *snapshot) {
@@ -964,6 +1089,26 @@ extern "C" int objc3_runtime_copy_reflection_protocol(
   const objc3c::runtime::EmittedProtocolRecord *record =
       objc3c::runtime::FindConcreteProtocolRecordUnlocked(state, protocol_name,
                                                           status);
+  if (record == nullptr) {
+    return objc3c::runtime::PublishReflectionStatus(status, &snapshot->status);
+  }
+  objc3c::runtime::PopulateReflectionProtocolSnapshot(*record, *snapshot);
+  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+}
+
+extern "C" int objc3_runtime_copy_reflection_protocol_at(
+    uint64_t index, objc3_runtime_reflection_protocol_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  objc3c::runtime::InitializeReflectionProtocolSnapshot(*snapshot);
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  const objc3c::runtime::EmittedProtocolRecord *record =
+      objc3c::runtime::FindConcreteProtocolRecordAtUnlocked(state, index,
+                                                            status);
   if (record == nullptr) {
     return objc3c::runtime::PublishReflectionStatus(status, &snapshot->status);
   }

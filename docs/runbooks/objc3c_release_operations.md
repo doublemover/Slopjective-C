@@ -118,6 +118,11 @@ Support publication for release operations must emit:
   delete package-ecosystem owned temp roots first and publish
   `tmp/reports/package-ecosystem/install-distribution-credibility-summary.json`
   with a passing `from_nothing_probe`
+- package-channel freshness provenance for every channel; the release-channel
+  manifest must record `generated_at_utc` from the package-channel summary,
+  package-channel manifest, and platform support matrix, and publication must
+  fail closed if those machine-owned artifacts drift beyond the checked
+  `max_artifact_skew_hours` policy
 
 Warnings must be deterministic and derived from checked-in policy classes such
 as:
@@ -174,6 +179,13 @@ support summary, package archive pointers, or upgrade-support report contract is
 missing, the release-operations action fails closed with the owning public action
 named in the diagnostic. Public action names stay stable; the hard cutover is in
 the source and artifact contracts, not in a retired command bridge.
+
+Release operations also fail closed when package-channel freshness cannot be
+proved. The checked-in channel model requires the package-channel summary,
+package-channel manifest, and platform support matrix timestamps to stay within
+six hours of each other. If they do not, operators must refresh the package
+channels through `npm run objc3c -- build-package-channels` before publishing
+update, rollback, or release-channel metadata.
 
 Release operations may reference package-ecosystem install credibility only when
 the checked-in channel model requires `validate-package-install-distribution`

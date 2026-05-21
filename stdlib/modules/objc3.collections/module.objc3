@@ -10,6 +10,7 @@ extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i3
 extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_map_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_map_contains_i32(handle: i32, key: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_insert_i32(handle: i32, key: i32, value: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_set3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
 extern fn objc3_runtime_stdlib_collections_set_count_i32(handle: i32) -> i32;
@@ -69,6 +70,10 @@ fn objc3_collections_map_count(handle: i32) {
 
 fn objc3_collections_map_contains(handle: i32, key: i32) {
   return objc3_runtime_stdlib_collections_map_contains_i32(handle, key);
+}
+
+fn objc3_collections_map_insert(handle: i32, key: i32, value: i32) {
+  return objc3_runtime_stdlib_collections_map_insert_i32(handle, key, value);
 }
 
 fn objc3_collections_map_lookup_or(handle: i32, key: i32, default_value: i32) {

@@ -522,6 +522,8 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json` | `npm run objc3c -- validate-developer-tooling` |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json` | `npm run objc3c -- check-developer-tooling-editor-source-truth` |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json` | `npm run objc3c -- validate-developer-tooling` |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json` | `npm run objc3c -- validate-developer-tooling` |
@@ -531,6 +533,8 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/objc3c_editor_tooling/workspace_index.py` |  |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/objc3c_editor_tooling/diagnostic_bridge.py` |  |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/format_objc3c_source.py` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/check_developer_tooling_product_workflow_source_truth.py` |  |
+| `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `source` | `scripts/check_developer_tooling_editor_source_truth.py` | `npm run objc3c -- check-developer-tooling-editor-source-truth` |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json` | `npm run objc3c -- validate-getting-started` |
 | `tooling.developer-experience.first-run-product-path` | `objc3c.behavior.tooling.first-run-product-path` | `test` | `tests/tooling/test_getting_started_surface_command_parity.py` | `npm run objc3c -- validate-getting-started` |
@@ -604,9 +608,9 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.semantic-pass-registry` |  | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `compiler.optimization.devirtualization` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
 | `compiler.optimization.devirtualization` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
-| `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
+| `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json` |  |
 | `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
-| `runtime.optimization.cache-aware-dispatch` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
+| `runtime.optimization.cache-aware-dispatch` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json` |  |
 | `runtime.optimization.cache-aware-dispatch` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |

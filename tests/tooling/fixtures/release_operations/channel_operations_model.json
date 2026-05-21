@@ -88,6 +88,17 @@
         "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
         "blocks_publication_on_failure": true
       },
+      "package_channel_freshness": {
+        "timestamp_sources": [
+          "package_channels_summary.generated_at_utc",
+          "package_channels_manifest.generated_at_utc",
+          "platform_support_matrix.generated_at_utc"
+        ],
+        "max_artifact_skew_hours": 6,
+        "stale_behavior": "fail-closed",
+        "refresh_command": "npm run objc3c -- build-package-channels",
+        "blocks_publication_on_stale": true
+      },
       "release_notes_policy": {
         "source_mode": "source-derived",
         "required_sources": [
@@ -128,6 +139,17 @@
         "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
         "blocks_publication_on_failure": true
       },
+      "package_channel_freshness": {
+        "timestamp_sources": [
+          "package_channels_summary.generated_at_utc",
+          "package_channels_manifest.generated_at_utc",
+          "platform_support_matrix.generated_at_utc"
+        ],
+        "max_artifact_skew_hours": 6,
+        "stale_behavior": "fail-closed",
+        "refresh_command": "npm run objc3c -- build-package-channels",
+        "blocks_publication_on_stale": true
+      },
       "release_notes_policy": {
         "source_mode": "source-derived",
         "required_sources": [
@@ -167,6 +189,17 @@
         "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
         "blocks_publication_on_failure": true
       },
+      "package_channel_freshness": {
+        "timestamp_sources": [
+          "package_channels_summary.generated_at_utc",
+          "package_channels_manifest.generated_at_utc",
+          "platform_support_matrix.generated_at_utc"
+        ],
+        "max_artifact_skew_hours": 6,
+        "stale_behavior": "fail-closed",
+        "refresh_command": "npm run objc3c -- build-package-channels",
+        "blocks_publication_on_stale": true
+      },
       "release_notes_policy": {
         "source_mode": "source-derived",
         "required_sources": [
@@ -205,6 +238,17 @@
         "required_flag": "--from-nothing",
         "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
         "blocks_publication_on_failure": true
+      },
+      "package_channel_freshness": {
+        "timestamp_sources": [
+          "package_channels_summary.generated_at_utc",
+          "package_channels_manifest.generated_at_utc",
+          "platform_support_matrix.generated_at_utc"
+        ],
+        "max_artifact_skew_hours": 6,
+        "stale_behavior": "fail-closed",
+        "refresh_command": "npm run objc3c -- build-package-channels",
+        "blocks_publication_on_stale": true
       },
       "release_notes_policy": {
         "source_mode": "source-derived",

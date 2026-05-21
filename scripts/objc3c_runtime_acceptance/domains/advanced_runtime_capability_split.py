@@ -32,9 +32,29 @@ ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS: tuple[dict[str, str], ...] = (
         "behavior_fixture": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
     },
     {
+        "capability_id": "language.errors.try-catch-semantics",
+        "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+        "behavior_fixture": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+    },
+    {
+        "capability_id": "compiler.lowering.error-unwind-cleanup",
+        "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+        "behavior_fixture": "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py",
+    },
+    {
+        "capability_id": "runtime.errors.nserror-status-bridge",
+        "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+        "behavior_fixture": "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    },
+    {
         "capability_id": "runtime.errors.live-bridge-cleanup",
         "support_claim": "objc3c.behavior.runtime.error-live-bridge-cleanup",
         "behavior_fixture": "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    },
+    {
+        "capability_id": "runtime.concurrency.async-actors",
+        "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+        "behavior_fixture": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
     },
     {
         "capability_id": "runtime.concurrency.task-continuation-lifecycle",
@@ -75,6 +95,276 @@ ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS: tuple[dict[str, str], ...] = (
         "capability_id": "runtime.interop.mixed-image-replay",
         "support_claim": "objc3c.behavior.runtime.interop.mixed-image-replay",
         "behavior_fixture": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+    },
+)
+
+ADVANCED_RUNTIME_FEATURE_TAXONOMY: tuple[dict[str, object], ...] = (
+    {
+        "feature_id": "blocks.escape-capture-legality",
+        "family": "blocks",
+        "public_status": "implemented",
+        "capability_id": "language.blocks.escape-capture-legality",
+        "support_claim": "objc3c.behavior.language.blocks.escape-capture-legality",
+        "evidence": (
+            "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "blocks.copy-dispose-invoke",
+        "family": "blocks",
+        "public_status": "implemented",
+        "capability_id": "runtime.blocks.copy-dispose-invoke",
+        "support_claim": "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
+        "evidence": (
+            "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+        ),
+    },
+    {
+        "feature_id": "blocks.byref-forwarding",
+        "family": "blocks",
+        "public_status": "implemented",
+        "capability_id": "runtime.blocks.byref-forwarding",
+        "support_claim": "objc3c.behavior.runtime.blocks.byref-forwarding",
+        "evidence": (
+            "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+        ),
+    },
+    {
+        "feature_id": "blocks.full-language-closure",
+        "family": "blocks",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.blocks.full-language-closure",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "blocks.conflicting-owned-capture",
+        "family": "blocks",
+        "public_status": "rejected",
+        "diagnostic_behavior": "conflicting escaping block capture ownership is rejected by checked negative fixture diagnostics",
+        "evidence": (
+            "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
+        ),
+    },
+    {
+        "feature_id": "blocks.helper-abi",
+        "family": "blocks",
+        "public_status": "internal",
+        "evidence": ("native/objc3c/src/runtime/blocks/block_runtime_api.cpp",),
+    },
+    {
+        "feature_id": "arc.cleanup-integration",
+        "family": "arc",
+        "public_status": "implemented",
+        "capability_id": "language.arc-cleanup.integration",
+        "support_claim": "objc3c.behavior.arc-cleanup.integration",
+        "evidence": (
+            "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "arc.full-automation",
+        "family": "arc",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.arc.full-automation",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "errors.try-catch-semantics",
+        "family": "errors",
+        "public_status": "implemented",
+        "capability_id": "language.errors.try-catch-semantics",
+        "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+        "evidence": (
+            "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "errors.unwind-cleanup-lowering",
+        "family": "errors",
+        "public_status": "implemented",
+        "capability_id": "compiler.lowering.error-unwind-cleanup",
+        "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+        "evidence": (
+            "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py",
+        ),
+    },
+    {
+        "feature_id": "errors.nserror-status-bridge",
+        "family": "errors",
+        "public_status": "implemented",
+        "capability_id": "runtime.errors.nserror-status-bridge",
+        "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+        "evidence": (
+            "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "errors.live-bridge-cleanup",
+        "family": "errors",
+        "public_status": "implemented",
+        "capability_id": "runtime.errors.live-bridge-cleanup",
+        "support_claim": "objc3c.behavior.runtime.error-live-bridge-cleanup",
+        "evidence": (
+            "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+        ),
+    },
+    {
+        "feature_id": "errors.generalized-foreign-exception-abi",
+        "family": "errors",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.errors.generalized-foreign-exception-abi",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "errors.throwing-call-without-try",
+        "family": "errors",
+        "public_status": "rejected",
+        "diagnostic_behavior": "throwing calls outside a try/local handler fail closed in semantic diagnostics",
+        "evidence": (
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+        ),
+    },
+    {
+        "feature_id": "errors.bridge-helper-state",
+        "family": "errors",
+        "public_status": "internal",
+        "evidence": ("native/objc3c/src/runtime/errors/error_bridge.cpp",),
+    },
+    {
+        "feature_id": "concurrency.async-actors",
+        "family": "concurrency",
+        "public_status": "implemented",
+        "capability_id": "runtime.concurrency.async-actors",
+        "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+        "evidence": ("tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",),
+    },
+    {
+        "feature_id": "concurrency.task-continuation-lifecycle",
+        "family": "concurrency",
+        "public_status": "implemented",
+        "capability_id": "runtime.concurrency.task-continuation-lifecycle",
+        "support_claim": "objc3c.behavior.runtime.concurrency-task-continuation-lifecycle",
+        "evidence": (
+            "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+        ),
+    },
+    {
+        "feature_id": "concurrency.actor-mailbox-isolation",
+        "family": "concurrency",
+        "public_status": "implemented",
+        "capability_id": "runtime.concurrency.actor-mailbox-isolation",
+        "support_claim": "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
+        "evidence": ("tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp",),
+    },
+    {
+        "feature_id": "concurrency.broad-async-actor-closure",
+        "family": "concurrency",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.concurrency.broad-async-actor-closure",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "concurrency.non-async-task-runtime-use",
+        "family": "concurrency",
+        "public_status": "rejected",
+        "diagnostic_behavior": "task runtime helpers are rejected from non-async source contexts",
+        "evidence": ("tests/tooling/fixtures/native/non_async_task_runtime_rejected.objc3",),
+    },
+    {
+        "feature_id": "concurrency.executor-helper-state",
+        "family": "concurrency",
+        "public_status": "internal",
+        "evidence": ("native/objc3c/src/runtime/concurrency/executor.cpp",),
+    },
+    {
+        "feature_id": "property.behavior-semantics",
+        "family": "property",
+        "public_status": "implemented",
+        "capability_id": "language.metaprogramming.property-behavior-semantics",
+        "support_claim": "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
+        "evidence": (
+            "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "property.unsupported-combinations",
+        "family": "property",
+        "public_status": "rejected",
+        "diagnostic_behavior": "unsupported property behavior combinations fail closed before runtime materialization",
+        "evidence": (
+            "tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3",
+        ),
+    },
+    {
+        "feature_id": "metaprogramming.derive-expansion-inventory",
+        "family": "metaprogramming",
+        "public_status": "implemented",
+        "capability_id": "language.metaprogramming.derive-expansion-inventory",
+        "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+        "evidence": (
+            "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+        ),
+    },
+    {
+        "feature_id": "metaprogramming.macro-safety-sandbox-determinism",
+        "family": "metaprogramming",
+        "public_status": "implemented",
+        "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+        "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+        "evidence": ("tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",),
+    },
+    {
+        "feature_id": "metaprogramming.host-cache-boundary",
+        "family": "metaprogramming",
+        "public_status": "implemented",
+        "capability_id": "runtime.metaprogramming.host-cache-boundary",
+        "support_claim": "objc3c.behavior.runtime.metaprogramming.host-cache-boundary",
+        "evidence": ("tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",),
+    },
+    {
+        "feature_id": "metaprogramming.arbitrary-macro-ecosystem",
+        "family": "metaprogramming",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "interop.package-loader-bridge",
+        "family": "interop",
+        "public_status": "implemented",
+        "capability_id": "runtime.interop.package-loader-bridge",
+        "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+        "evidence": ("tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",),
+    },
+    {
+        "feature_id": "interop.mixed-image-replay",
+        "family": "interop",
+        "public_status": "implemented",
+        "capability_id": "runtime.interop.mixed-image-replay",
+        "support_claim": "objc3c.behavior.runtime.interop.mixed-image-replay",
+        "evidence": ("tests/tooling/runtime/import_module_execution_matrix_probe.cpp",),
+    },
+    {
+        "feature_id": "interop.broad-runtime-closure",
+        "family": "interop",
+        "public_status": "reserved",
+        "reserved_boundary_id": "runtime.interop.broad-runtime-closure",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "evidence": ("docs/support/hard_cutover_capability_truth.md",),
+    },
+    {
+        "feature_id": "interop.conflicting-bridge-metadata",
+        "family": "interop",
+        "public_status": "rejected",
+        "diagnostic_behavior": "conflicting ObjC++/Swift bridge metadata is rejected by recovery diagnostics",
+        "evidence": (
+            "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3",
+        ),
     },
 )
 
@@ -181,6 +471,78 @@ ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS: tuple[dict[str, object], ...] = 
         ),
     },
     {
+        "contract_id": "objc3c.advanced-runtime.public-support.errors-try-catch-semantics.v1",
+        "capability_id": "language.errors.try-catch-semantics",
+        "support_claim": "objc3c.behavior.errors.try-catch-semantics",
+        "public_command": "npm run objc3c -- validate-error-conformance",
+        "contract_scope": "try/catch semantics, local handler requirement, rethrow diagnostics, and fail-closed unsupported throw contexts",
+        "source_truth": (
+            "native/objc3c/src/artifacts/objc3_frontend_error_semantic_json.cpp",
+            "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h",
+            "scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+            "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
+            "scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+            "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.errors.generalized-foreign-exception-abi",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.error-unwind-cleanup.v1",
+        "capability_id": "compiler.lowering.error-unwind-cleanup",
+        "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
+        "public_command": "npm run objc3c -- validate-error-conformance",
+        "contract_scope": "error unwind cleanup lowering, cleanup resume metadata, autoreleasepool unwind probes, and bridged cleanup ordering",
+        "source_truth": (
+            "native/objc3c/src/artifacts/objc3_frontend_artifact_error_lowering_plan.cpp",
+            "native/objc3c/src/lower/contracts/error_handling_lowering_contracts.h",
+            "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+            "scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py",
+            "tests/tooling/runtime/cleanup_unwind_autoreleasepool_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+            "tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.errors.generalized-foreign-exception-abi",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.errors-nserror-status-bridge.v1",
+        "capability_id": "runtime.errors.nserror-status-bridge",
+        "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
+        "public_command": "npm run objc3c -- validate-error-conformance",
+        "contract_scope": "NSError/status bridge helper metadata, bridge-state runtime helper behavior, and missing-out-parameter diagnostics",
+        "source_truth": (
+            "native/objc3c/src/runtime/errors/error_bridge_state.cpp",
+            "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+            "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json",
+        ),
+        "positive_evidence": (
+            "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+            "tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3",
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.errors.generalized-foreign-exception-abi",
+        ),
+    },
+    {
         "contract_id": "objc3c.advanced-runtime.public-support.error-live-bridge-cleanup.v1",
         "capability_id": "runtime.errors.live-bridge-cleanup",
         "support_claim": "objc3c.behavior.runtime.error-live-bridge-cleanup",
@@ -203,6 +565,30 @@ ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS: tuple[dict[str, object], ...] = 
         ),
         "reserved_non_public_capabilities": (
             "runtime.errors.generalized-foreign-exception-abi",
+        ),
+    },
+    {
+        "contract_id": "objc3c.advanced-runtime.public-support.concurrency-async-actors.v1",
+        "capability_id": "runtime.concurrency.async-actors",
+        "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+        "public_command": "npm run objc3c -- validate-concurrency-conformance",
+        "contract_scope": "async actor runtime executor binding, actor mailbox scheduling, live task runtime integration, and invalid actor-handle rejection",
+        "source_truth": (
+            "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+            "native/objc3c/src/runtime/concurrency/executor.cpp",
+            "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+        ),
+        "positive_evidence": (
+            "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+            "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+            "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+        ),
+        "negative_evidence": (
+            "tests/tooling/fixtures/native/actor_nonisolated_executor_rejected.objc3",
+            "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+        ),
+        "reserved_non_public_capabilities": (
+            "runtime.concurrency.broad-async-actor-closure",
         ),
     },
     {
@@ -456,12 +842,14 @@ def build_advanced_runtime_capability_split_contract() -> dict[str, Any]:
         "implemented_support_contracts": list(
             ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS
         ),
+        "feature_taxonomy": list(ADVANCED_RUNTIME_FEATURE_TAXONOMY),
         "reserved_boundaries": list(ADVANCED_RUNTIME_RESERVED_BOUNDARIES),
     }
 
 
 __all__ = [
     "ADVANCED_RUNTIME_CAPABILITY_SPLIT_SOURCE",
+    "ADVANCED_RUNTIME_FEATURE_TAXONOMY",
     "ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS",
     "ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS",
     "ADVANCED_RUNTIME_RESERVED_BOUNDARIES",

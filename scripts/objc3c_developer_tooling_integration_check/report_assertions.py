@@ -23,6 +23,8 @@ def assert_editor_tooling_reports(
     formatter_debug_summary: dict[str, Any],
     formatter_rewrite_summary: dict[str, Any],
     diagnostic_quality_summary: dict[str, Any],
+    editor_tooling_source_truth_summary: dict[str, Any],
+    product_workflow_source_truth_summary: dict[str, Any],
     workspace_integration_summary: dict[str, Any],
     failures: list[str],
 ) -> None:
@@ -37,6 +39,10 @@ def assert_editor_tooling_reports(
     expect(formatter_debug_summary.get("ok") is True, "expected formatter/debug surface validation ok=true", failures)
     expect(formatter_rewrite_summary.get("ok") is True, "expected formatter/rewrite surface validation ok=true", failures)
     expect(diagnostic_quality_summary.get("ok") is True, "expected diagnostic quality validation ok=true", failures)
+    expect(editor_tooling_source_truth_summary.get("ok") is True, "expected editor tooling source truth ok=true", failures)
+    expect(int(editor_tooling_source_truth_summary.get("source_truth_row_count", 0)) >= 5, "expected editor tooling source truth rows for formatter/LSP/workspace/artifact-inspector/validator", failures)
+    expect(product_workflow_source_truth_summary.get("ok") is True, "expected product workflow source truth ok=true", failures)
+    expect(int(product_workflow_source_truth_summary.get("workflow_row_count", 0)) >= 6, "expected product workflow source truth rows for all owned issues", failures)
     expect(workspace_integration_summary.get("ok") is True, "expected workspace editor/debug integration ok=true", failures)
 
 
@@ -89,6 +95,8 @@ def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
         reports["formatter_debug_summary"],
         reports["formatter_rewrite_summary"],
         reports["diagnostic_quality_summary"],
+        reports["editor_tooling_source_truth_summary"],
+        reports["product_workflow_source_truth_summary"],
         reports["workspace_integration_summary"],
         failures,
     )

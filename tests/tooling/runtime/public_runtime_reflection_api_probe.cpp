@@ -230,7 +230,9 @@ int main() {
   objc3_runtime_reflection_property_snapshot value_property{};
   objc3_runtime_reflection_property_snapshot indexed_property{};
   objc3_runtime_reflection_method_snapshot count_method{};
+  objc3_runtime_reflection_method_snapshot indexed_method{};
   objc3_runtime_reflection_protocol_snapshot tracer_protocol{};
+  objc3_runtime_reflection_protocol_snapshot indexed_protocol{};
   objc3_runtime_reflection_protocol_conformance_snapshot tracer_conformance{};
   objc3_runtime_reflection_category_snapshot category{};
   objc3_runtime_reflection_category_snapshot indexed_category{};
@@ -267,8 +269,13 @@ int main() {
   const int method_status = objc3_runtime_copy_reflection_method(
       kWidgetClassName, kValuePropertyName,
       OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE, &count_method);
+  const int indexed_method_status = objc3_runtime_copy_reflection_method_at(
+      kWidgetClassName, 0u, OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE,
+      &indexed_method);
   const int protocol_status = objc3_runtime_copy_reflection_protocol(
       kTracerProtocolName, &tracer_protocol);
+  const int indexed_protocol_status =
+      objc3_runtime_copy_reflection_protocol_at(0u, &indexed_protocol);
   const int conformance_status =
       objc3_runtime_copy_reflection_protocol_conformance(
           kWidgetClassName, kTracerProtocolName, &tracer_conformance);
@@ -322,8 +329,14 @@ int main() {
   if (method_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection method status drifted");
   }
+  if (indexed_method_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed method status drifted");
+  }
   if (protocol_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection protocol status drifted");
+  }
+  if (indexed_protocol_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed protocol status drifted");
   }
   if (conformance_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection conformance status drifted");
@@ -349,7 +362,8 @@ int main() {
   if (widget_class.found != 1 || indexed_class.found != 1 ||
       count_property.found != 1 || value_property.found != 1 ||
       indexed_property.found != 1 || count_method.found != 1 ||
-      tracer_protocol.found != 1 || tracer_conformance.conforms != 1 ||
+      indexed_method.found != 1 || tracer_protocol.found != 1 ||
+      indexed_protocol.found != 1 || tracer_conformance.conforms != 1 ||
       category.found != 1 || indexed_category.found != 1 ||
       selector.found != 1 || indexed_selector.found != 1) {
     return Fail("public reflection realized-state lookup drifted");
@@ -358,6 +372,10 @@ int main() {
       std::strcmp(indexed_property.property_name, kValuePropertyName) != 0 ||
       indexed_category.category_name == nullptr ||
       std::strcmp(indexed_category.category_name, kTracingCategoryName) != 0 ||
+      indexed_method.selector == nullptr ||
+      std::strcmp(indexed_method.selector, kValuePropertyName) != 0 ||
+      indexed_protocol.protocol_name == nullptr ||
+      std::strcmp(indexed_protocol.protocol_name, kTracerProtocolName) != 0 ||
       indexed_selector.canonical_selector == nullptr ||
       std::strcmp(indexed_selector.canonical_selector, kValuePropertyName) !=
           0) {
@@ -399,7 +417,9 @@ int main() {
   std::printf("\"missing_indexed_property_status\":%d,",
               missing_indexed_property_status);
   std::printf("\"method_status\":%d,", method_status);
+  std::printf("\"indexed_method_status\":%d,", indexed_method_status);
   std::printf("\"protocol_status\":%d,", protocol_status);
+  std::printf("\"indexed_protocol_status\":%d,", indexed_protocol_status);
   std::printf("\"conformance_status\":%d,", conformance_status);
   std::printf("\"category_status\":%d,", category_status);
   std::printf("\"indexed_category_status\":%d,", indexed_category_status);
@@ -413,7 +433,9 @@ int main() {
   std::printf("\"value_property_found\":%d,", value_property.found);
   std::printf("\"indexed_property_found\":%d,", indexed_property.found);
   std::printf("\"method_found\":%d,", count_method.found);
+  std::printf("\"indexed_method_found\":%d,", indexed_method.found);
   std::printf("\"protocol_found\":%d,", tracer_protocol.found);
+  std::printf("\"indexed_protocol_found\":%d,", indexed_protocol.found);
   std::printf("\"conforms\":%d,", tracer_conformance.conforms);
   std::printf("\"category_found\":%d,", category.found);
   std::printf("\"indexed_category_found\":%d,", indexed_category.found);

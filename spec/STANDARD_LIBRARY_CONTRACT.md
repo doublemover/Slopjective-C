@@ -94,14 +94,15 @@ Minimum semantic guarantees:
 
 - concrete `i32` array record construction for bounded runtime-backed examples,
 - array count, index-with-default, and prefix-count helpers,
-- concrete `i32` single-entry map construction,
-- map count, contains, and lookup-with-default helpers,
+- concrete `i32` map construction with runtime-backed insert/update mutation,
+- map count, contains, insert, and lookup-with-default helpers,
 - structured status codes for invalid handles, invalid counts, out-of-bounds indexes, and missing keys.
 
 Minimum semantic guarantees:
 
 - array and map handles are runtime-owned and deterministic within a reset generation,
 - out-of-bounds array access returns the caller default and records an out-of-bounds status,
+- map insert appends new keys or replaces existing keys and returns the current entry count,
 - missing map keys return the caller default and record a not-found status.
 
 ### S.2.5 `objc3.concurrency` {#s-2-5}

@@ -176,6 +176,66 @@
       "visibility-surface-drift",
       "bridge-metadata-digest-drift"
     ],
+    "invalidation_cases": [
+      {
+        "condition": "source-digest-drift",
+        "mutated_surface": "module_identity.source_digest",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link",
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "imported-module-abi-identity-drift",
+        "mutated_surface": "imports[].abi_identity",
+        "diagnostic": "O3MOD8166",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link",
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "package-lock-module-identity-drift",
+        "mutated_surface": "package_metadata.package_lock_module_identity",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "visibility-surface-drift",
+        "mutated_surface": "visibility_access_cases[].allowed",
+        "diagnostic": "O3MOD8165",
+        "rebuild_affects": [
+          "semantic"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "bridge-metadata-digest-drift",
+        "mutated_surface": "interop.bridge_metadata_digest",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      }
+    ],
     "stale_metadata_diagnostic": "O3MOD8163",
     "abi_mismatch_diagnostic": "O3MOD8166",
     "replay_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;source_digest=00cfd35af985117b0a23620136572995d8502d1d85933f698cdab98b2f7dd75b;package=module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;imports=[FoundationCore@1.0.0:objc3c.foundation-core.abi.v1:public:reexport,FoundationPrivateShims@1.0.0:objc3c.foundation-private-shims.abi.v1:private:import,FoundationText@1.0.0:objc3c.foundation-text.abi.v1:public:import];exports=[FNBridgeString,FNBridgeToken,FNMakeOpaqueHandle];bridge_metadata_digest=485d69d649d515ae6f67893a7fcd8d1bb813727dfcb6b16b14a767a030a2ee77;mixed_image_loader_metadata_digest=a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003;foreign=[c:c.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,cpp:cpp.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:16:reserved,objc2:objc2.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,swift:swift.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:reserved]"

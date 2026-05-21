@@ -3001,6 +3001,20 @@
       "capability_id": "tooling.editor.formatter-lsp-workspace",
       "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json",
+      "command": "npm run objc3c -- validate-developer-tooling"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json",
+      "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
       "command": "npm run objc3c -- validate-developer-tooling"
     },
@@ -3055,6 +3069,19 @@
       "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
       "evidence_kind": "source",
       "path": "scripts/format_objc3c_source.py"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "source",
+      "path": "scripts/check_developer_tooling_product_workflow_source_truth.py"
+    },
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "evidence_kind": "source",
+      "path": "scripts/check_developer_tooling_editor_source_truth.py",
+      "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
     },
     {
       "capability_id": "tooling.developer-experience.first-run-product-path",
@@ -3522,7 +3549,7 @@
     {
       "capability_id": "compiler.optimization.method-inlining",
       "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
@@ -3532,7 +3559,7 @@
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
       "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
     },
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",

@@ -14,9 +14,13 @@ struct ArrayRecord {
   int count = 0;
 };
 
-struct MapRecord {
+struct MapEntry {
   int key = 0;
   int value = 0;
+};
+
+struct MapRecord {
+  std::vector<MapEntry> entries;
 };
 
 struct SetRecord {
@@ -45,6 +49,7 @@ struct RuntimeStdlibCollectionsState {
   std::uint64_t array_query_call_count = 0;
   std::uint64_t map_create_call_count = 0;
   std::uint64_t map_query_call_count = 0;
+  std::uint64_t map_mutation_call_count = 0;
   std::uint64_t set_create_call_count = 0;
   std::uint64_t set_query_call_count = 0;
   std::uint64_t set_mutation_call_count = 0;
@@ -103,6 +108,17 @@ MapRecord *FindMap(RuntimeStdlibCollectionsState &state, int handle) {
     return nullptr;
   }
   return &state.maps[static_cast<std::size_t>(handle - 1)];
+}
+
+MapEntry *FindMapEntry(MapRecord &record, int key) {
+  auto iterator = std::find_if(record.entries.begin(), record.entries.end(),
+                               [key](const MapEntry &entry) {
+                                 return entry.key == key;
+                               });
+  if (iterator == record.entries.end()) {
+    return nullptr;
+  }
+  return &(*iterator);
 }
 
 SetRecord *FindSet(RuntimeStdlibCollectionsState &state, int handle) {
@@ -180,6 +196,7 @@ void ResetRuntimeStdlibCollectionsStateForTesting() {
   state.array_query_call_count = 0;
   state.map_create_call_count = 0;
   state.map_query_call_count = 0;
+  state.map_mutation_call_count = 0;
   state.set_create_call_count = 0;
   state.set_query_call_count = 0;
   state.set_mutation_call_count = 0;
@@ -350,7 +367,9 @@ extern "C" int objc3_runtime_stdlib_collections_map_entry_i32(int key,
                                                               int value) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  state.maps.push_back(MapRecord{key, value});
+  MapRecord record{};
+  record.entries.push_back(MapEntry{key, value});
+  state.maps.push_back(record);
   const int handle = static_cast<int>(state.maps.size());
   RecordCall(state, state.map_create_call_count, handle, key, value, 0,
              OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
@@ -361,7 +380,8 @@ extern "C" int objc3_runtime_stdlib_collections_map_count_i32(int handle) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   MapRecord *record = FindMap(state, handle);
-  const int result = record == nullptr ? 0 : 1;
+  const int result =
+      record == nullptr ? 0 : static_cast<int>(record->entries.size());
   const int status = record == nullptr
                          ? OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE
                          : OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK;
@@ -380,12 +400,35 @@ extern "C" int objc3_runtime_stdlib_collections_map_contains_i32(int handle,
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE, 0);
     return 0;
   }
-  const bool found = record->key == key;
+  const bool found = FindMapEntry(*record, key) != nullptr;
   RecordCall(state, state.map_query_call_count, handle, key, 0, 0,
              found ? OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK
                    : OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND,
              found ? 1 : 0);
   return found ? 1 : 0;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_map_insert_i32(int handle,
+                                                               int key,
+                                                               int value) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  MapRecord *record = FindMap(state, handle);
+  if (record == nullptr) {
+    RecordCall(state, state.map_mutation_call_count, handle, key, value, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE, 0);
+    return 0;
+  }
+  MapEntry *entry = FindMapEntry(*record, key);
+  if (entry == nullptr) {
+    record->entries.push_back(MapEntry{key, value});
+  } else {
+    entry->value = value;
+  }
+  const int result = static_cast<int>(record->entries.size());
+  RecordCall(state, state.map_mutation_call_count, handle, key, value, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, result);
+  return result;
 }
 
 extern "C" int objc3_runtime_stdlib_collections_map_lookup_or_i32(
@@ -401,15 +444,16 @@ extern "C" int objc3_runtime_stdlib_collections_map_lookup_or_i32(
                default_value);
     return default_value;
   }
-  if (record->key != key) {
+  MapEntry *entry = FindMapEntry(*record, key);
+  if (entry == nullptr) {
     RecordCall(state, state.map_query_call_count, handle, key, default_value, 0,
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND,
                default_value);
     return default_value;
   }
   RecordCall(state, state.map_query_call_count, handle, key, default_value, 0,
-             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, record->value);
-  return record->value;
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, entry->value);
+  return entry->value;
 }
 
 extern "C" int objc3_runtime_stdlib_collections_set3_i32(int first,
@@ -647,6 +691,7 @@ extern "C" int objc3_runtime_copy_stdlib_collections_state_for_testing(
   out->array_query_call_count = state.array_query_call_count;
   out->map_create_call_count = state.map_create_call_count;
   out->map_query_call_count = state.map_query_call_count;
+  out->map_mutation_call_count = state.map_mutation_call_count;
   out->set_create_call_count = state.set_create_call_count;
   out->set_query_call_count = state.set_query_call_count;
   out->set_mutation_call_count = state.set_mutation_call_count;

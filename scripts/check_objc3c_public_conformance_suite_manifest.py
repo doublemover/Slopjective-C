@@ -50,6 +50,17 @@ REQUIRED_SOURCE_OWNED_CONTRACTS = {
         "objc3c.public_conformance_suite.package_contract.v1",
     ),
 }
+PACKAGE_MANIFEST_CONTRACT_ID = "objc3c.public_conformance_suite.package_manifest.v1"
+PACKAGE_CASE_CONTRACT_ID = "objc3c.public_conformance_suite.case.v1"
+PACKAGE_REPLAY_PLAN_CONTRACT_ID = "objc3c.public_conformance_suite.replay_plan.v1"
+PACKAGED_REPLAY_SUMMARY_CONTRACT_ID = "objc3c.public_conformance_suite.packaged_replay.v1"
+PACKAGE_JSON_SCRIPT = "python tools/replay_public_conformance_suite.py"
+REQUIRED_PACKAGE_ACTIONS = {
+    "validate-conformance-corpus",
+    "validate-interop-conformance",
+    "validate-release-candidate-conformance",
+    "validate-public-conformance-suite",
+}
 
 
 def fail(message: str) -> int:
@@ -270,6 +281,114 @@ def validate_artifact_contract(manifest: dict[str, Any]) -> dict[str, Any]:
         "allowed_generated_roots": allowed_generated_roots,
         "outside_repo_replay_required": boundary["outside_repo_replay_required"],
         "public_commands_only": boundary["public_commands_only"],
+    }
+
+
+def validate_package_manifest_replay_source_truth(manifest: dict[str, Any]) -> dict[str, Any]:
+    replay_evidence = load_json(PACKAGE_REPLAY_EVIDENCE_PATH)
+    if replay_evidence.get("contract_id") != "objc3c.public_conformance_suite.package_replay_evidence.v1":
+        raise RuntimeError("package replay evidence contract_id drifted")
+    if replay_evidence.get("source_manifest") != repo_rel(MANIFEST_PATH):
+        raise RuntimeError("package replay evidence source_manifest drifted")
+    if replay_evidence.get("package_stage_root") != manifest["package_surface"]["package_stage_root"]:
+        raise RuntimeError("package replay evidence package_stage_root drifted from manifest")
+
+    requirements = require_object(
+        replay_evidence.get("package_manifest_replay"),
+        field="package_manifest_replay",
+    )
+    expected_contracts = {
+        "package_manifest_contract": PACKAGE_MANIFEST_CONTRACT_ID,
+        "case_manifest_contract": "objc3c.public_conformance_suite.case.v1",
+        "replay_plan_contract": PACKAGE_REPLAY_PLAN_CONTRACT_ID,
+        "packaged_replay_summary_contract": PACKAGED_REPLAY_SUMMARY_CONTRACT_ID,
+    }
+    for field, expected in expected_contracts.items():
+        if requirements.get(field) != expected:
+            raise RuntimeError(f"package_manifest_replay.{field} drifted")
+    if requirements.get("package_json_script") != PACKAGE_JSON_SCRIPT:
+        raise RuntimeError("package_manifest_replay.package_json_script drifted")
+    if requirements.get("replay_tool") != "tools/replay_public_conformance_suite.py":
+        raise RuntimeError("package_manifest_replay.replay_tool drifted")
+    if requirements.get("source_hash_algorithm") != "sha256":
+        raise RuntimeError("package_manifest_replay.source_hash_algorithm must be sha256")
+    if requirements.get("selected_case_policy") != "profile-intersection":
+        raise RuntimeError("package_manifest_replay.selected_case_policy drifted")
+    if requirements.get("requires_all_public_stable_cases_for_release_candidate") is not True:
+        raise RuntimeError("package_manifest_replay must require all public-stable release-candidate cases")
+
+    package_contract = load_json(PACKAGE_CONTRACT_PATH)
+    required_package_files = [
+        normalized_repo_path(str(path))
+        for path in require_list(
+            requirements.get("required_package_files"),
+            field="package_manifest_replay.required_package_files",
+        )
+    ]
+    if required_package_files != [
+        normalized_repo_path(str(path))
+        for path in require_list(
+            package_contract.get("required_package_outputs"),
+            field="package_contract.required_package_outputs",
+        )
+    ]:
+        raise RuntimeError("package manifest replay required files drifted from package contract")
+    if "package-manifest.json" not in required_package_files:
+        raise RuntimeError("package manifest replay required files missing package-manifest.json")
+    if "tools/replay_public_conformance_suite.py" not in required_package_files:
+        raise RuntimeError("package manifest replay required files missing replay tool")
+
+    profile_ids = {
+        str(require_object(profile, field="public profile")["profile_id"])
+        for profile in require_list(manifest.get("public_profiles"), field="public_profiles")
+    }
+    action_profiles: dict[str, tuple[str, ...]] = {}
+    for raw_action in require_list(
+        requirements.get("required_actions"),
+        field="package_manifest_replay.required_actions",
+    ):
+        action = require_object(raw_action, field="package replay action")
+        action_name = str(action.get("action", ""))
+        if action_name in action_profiles:
+            raise RuntimeError(f"package_manifest_replay duplicated action {action_name}")
+        profiles = tuple(
+            str(profile_id)
+            for profile_id in require_list(action.get("profile_ids"), field=f"{action_name}.profile_ids")
+        )
+        if not profiles:
+            raise RuntimeError(f"package_manifest_replay action {action_name} has no profiles")
+        unknown_profiles = sorted(set(profiles) - profile_ids)
+        if unknown_profiles:
+            raise RuntimeError(
+                f"package_manifest_replay action {action_name} references unknown profiles: "
+                + ", ".join(unknown_profiles)
+            )
+        action_profiles[action_name] = profiles
+    missing_actions = sorted(REQUIRED_PACKAGE_ACTIONS - set(action_profiles))
+    if missing_actions:
+        raise RuntimeError("package_manifest_replay missing required actions: " + ", ".join(missing_actions))
+
+    entrypoint_actions = {
+        str(entry["command"])[len(PUBLIC_COMMAND_PREFIX):]
+        for entry in require_list(replay_evidence.get("packaged_entrypoints"), field="packaged_entrypoints")
+        if isinstance(entry, dict) and str(entry.get("command", "")).startswith(PUBLIC_COMMAND_PREFIX)
+    }
+    missing_entrypoint_actions = sorted(entrypoint_actions - set(action_profiles))
+    if missing_entrypoint_actions:
+        raise RuntimeError(
+            "package_manifest_replay missing packaged entrypoint actions: "
+            + ", ".join(missing_entrypoint_actions)
+        )
+    if set(action_profiles["validate-public-conformance-suite"]) != profile_ids:
+        raise RuntimeError("validate-public-conformance-suite package replay action must cover every public profile")
+    if action_profiles["validate-release-candidate-conformance"] != ("release-candidate",):
+        raise RuntimeError("validate-release-candidate-conformance package replay action must be release-candidate only")
+
+    return {
+        "package_manifest_replay_contract": requirements["package_manifest_contract"],
+        "package_manifest_replay_action_count": len(action_profiles),
+        "package_manifest_required_file_count": len(required_package_files),
+        "package_manifest_source_hash_algorithm": requirements["source_hash_algorithm"],
     }
 
 
@@ -760,6 +879,7 @@ def main() -> int:
         matrix_pairs, evidence_pairs, catalog_claims = validate_source_truth(manifest)
         validate_package_surface(manifest)
         artifact_contract_summary = validate_artifact_contract(manifest)
+        package_manifest_replay_summary = validate_package_manifest_replay_source_truth(manifest)
         allowed_fixture_origins = validate_fixture_provenance_policy(manifest)
         fixture_boundary = validate_fixture_boundary(manifest)
         external_validation_summary = validate_external_validation_policy(manifest)
@@ -803,6 +923,7 @@ def main() -> int:
             ],
         },
         **artifact_contract_summary,
+        **package_manifest_replay_summary,
         **external_validation_summary,
         **release_candidate_summary,
         **case_summary,

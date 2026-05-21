@@ -24,6 +24,17 @@ REQUIRED_STEPS = [
     "build-update-manifest",
     "publish-release-operations",
 ]
+PACKAGE_CHANNEL_FRESHNESS = {
+    "timestamp_sources": [
+        "package_channels_summary.generated_at_utc",
+        "package_channels_manifest.generated_at_utc",
+        "platform_support_matrix.generated_at_utc",
+    ],
+    "max_artifact_skew_hours": 6,
+    "stale_behavior": "fail-closed",
+    "refresh_command": "npm run objc3c -- build-package-channels",
+    "blocks_publication_on_stale": True,
+}
 
 
 def fail(message: str) -> int:
@@ -51,31 +62,44 @@ def clean_install_prerequisite_channels(channel_operations_model: dict[str, Any]
         }
         if prerequisite != expected:
             raise RuntimeError(f"{channel_id} clean install prerequisite drifted")
+        if channel.get("package_channel_freshness") != PACKAGE_CHANNEL_FRESHNESS:
+            raise RuntimeError(f"{channel_id} package freshness policy drifted")
         channel_ids.append(channel_id)
     return channel_ids
 
 
 
 
-def main() -> int:
-    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, CHANNEL_OPERATIONS_MODEL, MANIFEST_SUMMARY, PUBLICATION_SUMMARY):
+def main(argv: list[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    skip_workflow_report = False
+    if args == ["--skip-workflow-report"]:
+        skip_workflow_report = True
+    elif args:
+        raise RuntimeError(f"unexpected arguments: {args}")
+
+    required_paths = [WORKFLOW_SURFACE, CHANNEL_OPERATIONS_MODEL, MANIFEST_SUMMARY, PUBLICATION_SUMMARY]
+    if not skip_workflow_report:
+        required_paths.insert(0, WORKFLOW_REPORT)
+    for path in required_paths:
         if not path.is_file():
             return fail(f"missing required artifact {repo_rel(path)}")
 
-    workflow_report = load_json(WORKFLOW_REPORT)
+    workflow_report = load_json(WORKFLOW_REPORT) if not skip_workflow_report else {}
     workflow_surface = load_json(WORKFLOW_SURFACE)
     channel_operations_model = load_json(CHANNEL_OPERATIONS_MODEL)
     manifest_summary = load_json(MANIFEST_SUMMARY)
     publication_summary = load_json(PUBLICATION_SUMMARY)
 
-    if workflow_report.get("status") != "PASS":
+    if not skip_workflow_report and workflow_report.get("status") != "PASS":
         return fail("workflow report did not pass")
-    steps = workflow_report.get("steps")
-    if not isinstance(steps, list):
-        return fail("workflow report was missing steps")
-    step_actions = [step.get("action") for step in steps if isinstance(step, dict)]
-    if step_actions != REQUIRED_STEPS:
-        return fail(f"workflow steps drifted: {step_actions}")
+    if not skip_workflow_report:
+        steps = workflow_report.get("steps")
+        if not isinstance(steps, list):
+            return fail("workflow report was missing steps")
+        step_actions = [step.get("action") for step in steps if isinstance(step, dict)]
+        if step_actions != REQUIRED_STEPS:
+            return fail(f"workflow steps drifted: {step_actions}")
     if workflow_surface.get("validate_action") != "validate-release-operations":
         return fail("workflow surface drifted from validate-release-operations")
     if workflow_surface.get("workflow_child_actions") != REQUIRED_STEPS:
@@ -99,13 +123,16 @@ def main() -> int:
     summary = {
         "contract_id": "objc3c.release.operations.integration.summary.v1",
         "status": "PASS",
-        "workflow_report": repo_rel(WORKFLOW_REPORT),
-        "validated_steps": REQUIRED_STEPS,
+        "workflow_report": repo_rel(WORKFLOW_REPORT) if not skip_workflow_report else None,
+        "workflow_report_required": not skip_workflow_report,
+        "validated_steps": REQUIRED_STEPS if not skip_workflow_report else [],
+        "validated_source_artifacts": [repo_rel(path) for path in required_paths],
         "update_manifest_path": manifest_summary.get("update_manifest_path"),
         "release_channel_manifest": publication_summary.get("release_channel_manifest"),
         "upgrade_support_report": publication_summary.get("upgrade_support_report"),
         "channel_catalog": publication_summary.get("channel_catalog"),
         "clean_install_prerequisite_channels": clean_prerequisite_channels,
+        "package_channel_freshness": PACKAGE_CHANNEL_FRESHNESS,
         "release_operations_owned_actions": workflow_surface.get("release_operations_owned_actions"),
     }
     write_json_file(SUMMARY_PATH, summary)

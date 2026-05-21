@@ -3,6 +3,7 @@
   "schema_version": 1,
   "issue": 8178,
   "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+  "dependency_evidence": "showcase/applicationFrameworkSamples/dependency-evidence.json",
   "required_sample_kinds": [
     "library",
     "cli-application",

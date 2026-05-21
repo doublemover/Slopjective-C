@@ -53,6 +53,28 @@ REQUIRED_INVALIDATION_CONDITIONS = {
     "visibility-surface-drift",
     "bridge-metadata-digest-drift",
 }
+REQUIRED_INVALIDATION_CASES = {
+    "source-digest-drift": {
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": {"semantic", "abi", "link", "package-lock"},
+    },
+    "imported-module-abi-identity-drift": {
+        "diagnostic": "O3MOD8166",
+        "rebuild_affects": {"semantic", "abi", "link", "package-lock"},
+    },
+    "package-lock-module-identity-drift": {
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": {"package-lock"},
+    },
+    "visibility-surface-drift": {
+        "diagnostic": "O3MOD8165",
+        "rebuild_affects": {"semantic"},
+    },
+    "bridge-metadata-digest-drift": {
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": {"semantic", "abi", "link"},
+    },
+}
 REQUIRED_UNSUPPORTED_SURFACES = {
     "objc2-retired-source-syntax",
     "swift-unstable-abi-shape",
@@ -392,6 +414,9 @@ def _validate_visibility_access(payload: dict[str, Any], failures: list[str]) ->
 
 def _validate_rebuild(payload: dict[str, Any], failures: list[str]) -> None:
     rebuild = _as_object(payload.get("incremental_rebuild"))
+    invalidation_conditions = {
+        str(value) for value in _as_list(rebuild.get("invalidation_conditions"))
+    }
     expect(rebuild.get("deterministic") is True, "incremental rebuild identity must be deterministic", failures)
     expect(
         rebuild.get("stale_metadata_diagnostic") == REQUIRED_MODULE_DIAGNOSTICS["stale-metadata"],
@@ -409,12 +434,60 @@ def _validate_rebuild(payload: dict[str, Any], failures: list[str]) -> None:
         failures,
     )
     expect(
-        REQUIRED_INVALIDATION_CONDITIONS <= {
-            str(value) for value in _as_list(rebuild.get("invalidation_conditions"))
-        },
+        REQUIRED_INVALIDATION_CONDITIONS <= invalidation_conditions,
         "incremental rebuild invalidation conditions are incomplete",
         failures,
     )
+    invalidation_cases = [
+        _as_object(entry)
+        for entry in _as_list(rebuild.get("invalidation_cases"))
+        if isinstance(entry, dict)
+    ]
+    cases_by_condition: dict[str, dict[str, Any]] = {}
+    for entry in invalidation_cases:
+        condition = str(entry.get("condition"))
+        expect(
+            condition not in cases_by_condition,
+            f"incremental rebuild invalidation case is duplicated: {condition}",
+            failures,
+        )
+        cases_by_condition[condition] = entry
+
+    expect(
+        set(REQUIRED_INVALIDATION_CASES) <= set(cases_by_condition),
+        "incremental rebuild invalidation cases are incomplete",
+        failures,
+    )
+    expect(
+        set(cases_by_condition) <= invalidation_conditions,
+        "incremental rebuild invalidation cases reference unknown conditions",
+        failures,
+    )
+    for condition, expected in REQUIRED_INVALIDATION_CASES.items():
+        entry = cases_by_condition.get(condition)
+        if entry is None:
+            continue
+        rebuild_affects = {str(value) for value in _as_list(entry.get("rebuild_affects"))}
+        expect(
+            entry.get("diagnostic") == expected["diagnostic"],
+            f"incremental rebuild invalidation diagnostic drifted for {condition}",
+            failures,
+        )
+        expect(
+            rebuild_affects == expected["rebuild_affects"],
+            f"incremental rebuild invalidation scope drifted for {condition}",
+            failures,
+        )
+        expect(
+            entry.get("fail_closed") is True and entry.get("deterministic") is True,
+            f"incremental rebuild invalidation must fail closed deterministically for {condition}",
+            failures,
+        )
+        expect(
+            isinstance(entry.get("mutated_surface"), str) and entry["mutated_surface"],
+            f"incremental rebuild invalidation must name mutated surface for {condition}",
+            failures,
+        )
     expect(
         rebuild.get("replay_key") == replay_key_for_contract(payload),
         "deterministic rebuild replay key drifted",
@@ -605,6 +678,9 @@ def build_summary(path: Path = CONTRACT_PATH) -> dict[str, Any]:
         "bridge_surface_count": package_metadata.get("bridge_surface_count"),
         "supported_bridge_surface_count": package_metadata.get("supported_bridge_surface_count"),
         "reserved_bridge_surface_count": package_metadata.get("reserved_bridge_surface_count"),
+        "invalidation_case_count": len(
+            _as_list(_as_object(payload.get("incremental_rebuild")).get("invalidation_cases"))
+        ),
         "deterministic_replay_key": replay_key_for_contract(payload),
         "native_checks": native_checks,
         "failures": failures,

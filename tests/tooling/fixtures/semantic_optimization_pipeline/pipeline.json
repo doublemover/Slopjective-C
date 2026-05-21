@@ -267,7 +267,7 @@
         "method inlining is reserved until ownership and source-map proofs exist"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
       ]
     },
     {
@@ -291,7 +291,7 @@
         "cache-aware dispatch is reserved behind the runtime cache contract"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
       ]
     },
     {

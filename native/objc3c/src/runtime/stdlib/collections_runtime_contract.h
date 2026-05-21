@@ -43,6 +43,7 @@ typedef struct objc3_runtime_stdlib_collections_snapshot {
   int last_input_c;
   int last_status;
   int last_result;
+  uint64_t map_mutation_call_count;
 } objc3_runtime_stdlib_collections_snapshot;
 
 int objc3_runtime_stdlib_collections_array3_i32(int first,
@@ -63,6 +64,9 @@ int objc3_runtime_stdlib_collections_array_iterator_i32(int handle);
 int objc3_runtime_stdlib_collections_map_entry_i32(int key, int value);
 int objc3_runtime_stdlib_collections_map_count_i32(int handle);
 int objc3_runtime_stdlib_collections_map_contains_i32(int handle, int key);
+int objc3_runtime_stdlib_collections_map_insert_i32(int handle,
+                                                    int key,
+                                                    int value);
 int objc3_runtime_stdlib_collections_map_lookup_or_i32(int handle,
                                                        int key,
                                                        int default_value);

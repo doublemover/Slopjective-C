@@ -3,6 +3,7 @@
   "schema_version": 1,
   "issue": 8178,
   "source_root": "showcase/applicationFrameworkSamples",
+  "dependency_evidence": "showcase/applicationFrameworkSamples/dependency-evidence.json",
   "artifact_root": "tmp/artifacts/application-framework-samples",
   "report_root": "tmp/reports/application-framework-samples",
   "public_command_model": {

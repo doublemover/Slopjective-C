@@ -58,6 +58,7 @@ def test_foundation_next_stdlib_runtime_contracts_are_public_umbrella_exports() 
         "runtime/stdlib/collections_runtime_contract.h": (
             "objc3_runtime_stdlib_collections_array3_i32",
             "objc3_runtime_stdlib_collections_map_lookup_or_i32",
+            "objc3_runtime_stdlib_collections_map_insert_i32",
             "objc3_runtime_stdlib_collections_set3_i32",
             "objc3_runtime_stdlib_collections_array_slice_i32",
             "objc3_runtime_stdlib_collections_iterator_next_or_i32",

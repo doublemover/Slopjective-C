@@ -45,11 +45,12 @@ def test_abi_governance_accepts_checked_in_manifest(tmp_path: Path) -> None:
     assert summary["diagnostic_code"] == "O3ABI8173"
     assert summary["governed_surface_count"] == 3
     assert summary["surface_extractor_count"] == 3
+    assert summary["compatibility_case_count"] == 4
     observed = {
         item["extractor_id"]: item for item in summary["surface_extractors"]  # type: ignore[index]
     }
-    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 122
-    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 147
+    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 124
+    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 149
     assert observed["package-lock-abi-identity-schema"]["observed_count"] == 3
     assert summary["release_blocker_issue_refs"] == ["#8173"]
 
@@ -197,6 +198,61 @@ def test_abi_governance_rejects_release_governance_lost_blocked_transition(
     assert rc == 1
     assert any(
         "release ABI/API governance lost release blockers: unsupported-downgrade-route"
+        in failure
+        for failure in summary["failures"]  # type: ignore[index]
+    )
+
+
+def test_abi_governance_rejects_compatibility_case_that_no_longer_blocks_release(
+    tmp_path: Path,
+) -> None:
+    manifest = _manifest()
+    blocked = manifest["release_blocked_transitions"]  # type: ignore[index]
+    blocked.remove("package-abi-identity-drift")
+
+    rc, summary = _run_manifest(tmp_path, manifest)
+
+    assert rc == 1
+    assert any(
+        "compatibility evidence case package-lockfile-abi-identity-drift transition is not release-blocked"
+        in failure
+        for failure in summary["failures"]  # type: ignore[index]
+    )
+
+
+def test_abi_governance_rejects_missing_required_compatibility_case(
+    tmp_path: Path,
+) -> None:
+    manifest = _manifest()
+    evidence = manifest["compatibility_evidence"]  # type: ignore[index]
+    evidence["cases"] = [
+        case
+        for case in evidence["cases"]
+        if case["transition"] != "signature-change-without-major-line"
+    ]
+
+    rc, summary = _run_manifest(tmp_path, manifest)
+
+    assert rc == 1
+    assert any(
+        "compatibility evidence lost required blocked cases: signature-change-without-major-line"
+        in failure
+        for failure in summary["failures"]  # type: ignore[index]
+    )
+
+
+def test_abi_governance_rejects_compatibility_case_unknown_surface(
+    tmp_path: Path,
+) -> None:
+    manifest = _manifest()
+    evidence = manifest["compatibility_evidence"]  # type: ignore[index]
+    evidence["cases"][0]["surface_id"] = "tmp-generated-public-symbol-report"
+
+    rc, summary = _run_manifest(tmp_path, manifest)
+
+    assert rc == 1
+    assert any(
+        "compatibility evidence case stable-public-api-removal-without-window references unknown surface"
         in failure
         for failure in summary["failures"]  # type: ignore[index]
     )

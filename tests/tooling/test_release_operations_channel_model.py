@@ -13,6 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from scripts.build_objc3c_update_manifest import (
     release_evidence_payload,
+    validate_package_channel_freshness,
     validate_channel_operations_model,
 )
 
@@ -90,6 +91,63 @@ def test_release_operations_channels_require_from_nothing_clean_install() -> Non
             "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
             "blocks_publication_on_failure": True,
         }
+
+
+def test_release_operations_channels_require_package_channel_freshness() -> None:
+    model = load_channel_model()
+
+    for channel in model["channels"]:
+        assert channel["package_channel_freshness"] == {
+            "timestamp_sources": [
+                "package_channels_summary.generated_at_utc",
+                "package_channels_manifest.generated_at_utc",
+                "platform_support_matrix.generated_at_utc",
+            ],
+            "max_artifact_skew_hours": 6,
+            "stale_behavior": "fail-closed",
+            "refresh_command": "npm run objc3c -- build-package-channels",
+            "blocks_publication_on_stale": True,
+        }
+
+
+def test_release_operations_package_channel_freshness_accepts_coherent_artifacts() -> None:
+    model = load_channel_model()
+    channel_by_id = validate_channel_operations_model(
+        channel_operations_model=model,
+        update_channel_policy=update_channel_policy_for(model),
+    )
+
+    payload = validate_package_channel_freshness(
+        package_channels_summary={"generated_at_utc": "2026-05-21T10:00:00Z"},
+        package_channels_manifest={"generated_at_utc": "2026-05-21T10:20:00Z"},
+        platform_support_matrix={"generated_at_utc": "2026-05-21T11:00:00Z"},
+        channel_operations_by_id=channel_by_id,
+    )
+
+    assert payload["stale_behavior"] == "fail-closed"
+    assert payload["artifact_skew_hours"] == 1.0
+    assert payload["channel_max_artifact_skew_hours"] == {
+        "stable": 6,
+        "candidate": 6,
+        "nightly": 6,
+        "preview": 6,
+    }
+
+
+def test_release_operations_package_channel_freshness_fails_closed_on_stale_artifacts() -> None:
+    model = load_channel_model()
+    channel_by_id = validate_channel_operations_model(
+        channel_operations_model=model,
+        update_channel_policy=update_channel_policy_for(model),
+    )
+
+    with pytest.raises(RuntimeError, match="package channel evidence is stale"):
+        validate_package_channel_freshness(
+            package_channels_summary={"generated_at_utc": "2026-05-21T00:00:00Z"},
+            package_channels_manifest={"generated_at_utc": "2026-05-21T01:00:00Z"},
+            platform_support_matrix={"generated_at_utc": "2026-05-21T12:00:00Z"},
+            channel_operations_by_id=channel_by_id,
+        )
 
 
 def test_update_manifest_channel_validation_accepts_source_model() -> None:

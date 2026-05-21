@@ -23,6 +23,11 @@ RELEASE_NOTES = ROOT / "tmp" / "artifacts" / "release-operations" / "publication
 PUBLIC_CHANGELOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-public-changelog.json"
 CHANNEL_OPERATIONS_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "channel_operations_model.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
+PACKAGE_CHANNEL_FRESHNESS_TIMESTAMP_SOURCES = [
+    "package_channels_summary.generated_at_utc",
+    "package_channels_manifest.generated_at_utc",
+    "platform_support_matrix.generated_at_utc",
+]
 
 
 
@@ -73,6 +78,45 @@ def validate_clean_install_prerequisites(channel_operations_model: dict[str, Any
     return channel_ids
 
 
+def validate_package_channel_freshness(
+    release_channel_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    channel_manifests = release_channel_manifest.get("channel_manifests", [])
+    expect(isinstance(channel_manifests, list) and channel_manifests, "channel manifests missing")
+    freshness_by_channel: dict[str, Any] = {}
+    for channel in channel_manifests:
+        expect(isinstance(channel, dict), "channel manifest must be an object")
+        channel_id = str(channel.get("channel_id", ""))
+        freshness = channel.get("package_channel_freshness")
+        expect(isinstance(freshness, dict), f"{channel_id} missing package channel freshness")
+        expect(
+            freshness.get("timestamp_sources") == PACKAGE_CHANNEL_FRESHNESS_TIMESTAMP_SOURCES,
+            f"{channel_id} freshness timestamp sources drifted",
+        )
+        expect(
+            freshness.get("stale_behavior") == "fail-closed",
+            f"{channel_id} freshness must fail closed",
+        )
+        expect(
+            freshness.get("refresh_command") == "npm run objc3c -- build-package-channels",
+            f"{channel_id} freshness refresh command drifted",
+        )
+        expect(
+            freshness.get("blocks_publication_on_stale") is True,
+            f"{channel_id} freshness must block stale publication",
+        )
+        skew = freshness.get("artifact_skew_hours")
+        limits = freshness.get("channel_max_artifact_skew_hours")
+        expect(isinstance(skew, (int, float)) and skew >= 0, f"{channel_id} freshness skew missing")
+        expect(isinstance(limits, dict), f"{channel_id} freshness channel limits missing")
+        expect(
+            all(skew <= limit for limit in limits.values() if isinstance(limit, int)),
+            f"{channel_id} package-channel freshness exceeded a channel limit",
+        )
+        freshness_by_channel[channel_id] = freshness
+    return freshness_by_channel
+
+
 def write_summary() -> None:
     update_manifest = load_json(UPDATE_MANIFEST)
     release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
@@ -81,6 +125,7 @@ def write_summary() -> None:
     public_changelog = load_json(PUBLIC_CHANGELOG)
     channel_operations_model = load_json(CHANNEL_OPERATIONS_MODEL)
     clean_install_prerequisite_channels = validate_clean_install_prerequisites(channel_operations_model)
+    package_channel_freshness = validate_package_channel_freshness(release_channel_manifest)
 
     channel_ids = [entry.get("channel_id") for entry in update_manifest.get("channels", [])]
     expect(channel_ids == ["stable", "candidate", "nightly", "preview"], f"channel ids drifted: {channel_ids}")
@@ -229,6 +274,8 @@ def write_summary() -> None:
         "nightly_gate_actions": nightly_gates,
         "stable_artifacts": stable["artifacts"],
         "clean_install_prerequisite_channels": clean_install_prerequisite_channels,
+        "package_channel_freshness_channels": sorted(package_channel_freshness),
+        "package_channel_freshness": next(iter(package_channel_freshness.values())),
         "fail_closed_diagnostic_count": len(fail_closed),
         "rollback_diagnostic_count": len(rollback_diagnostics),
         "release_note_channel_count": len(release_notes.get("channels", [])),

@@ -65,6 +65,53 @@ def test_module_interop_rebuild_key_rejects_bridge_metadata_digest_drift() -> No
     assert "deterministic rebuild replay key drifted" in failures
 
 
+def test_module_interop_requires_complete_rebuild_invalidation_cases() -> None:
+    payload = deepcopy(_contract())
+    rebuild = payload["incremental_rebuild"]
+    assert isinstance(rebuild, dict)
+    rebuild["invalidation_cases"] = [
+        case
+        for case in rebuild["invalidation_cases"]
+        if case["condition"] != "visibility-surface-drift"
+    ]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert "incremental rebuild invalidation cases are incomplete" in failures
+
+
+def test_module_interop_rejects_invalidation_diagnostic_drift() -> None:
+    payload = deepcopy(_contract())
+    rebuild = payload["incremental_rebuild"]
+    assert isinstance(rebuild, dict)
+    for case in rebuild["invalidation_cases"]:
+        if case["condition"] == "imported-module-abi-identity-drift":
+            case["diagnostic"] = "O3MOD8163"
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "incremental rebuild invalidation diagnostic drifted for imported-module-abi-identity-drift"
+        in failures
+    )
+
+
+def test_module_interop_rejects_invalidation_scope_drift() -> None:
+    payload = deepcopy(_contract())
+    rebuild = payload["incremental_rebuild"]
+    assert isinstance(rebuild, dict)
+    for case in rebuild["invalidation_cases"]:
+        if case["condition"] == "bridge-metadata-digest-drift":
+            case["rebuild_affects"] = ["semantic"]
+
+    failures, _ = validate_contract_payload(payload)
+
+    assert (
+        "incremental rebuild invalidation scope drifted for bridge-metadata-digest-drift"
+        in failures
+    )
+
+
 def test_module_interop_rejects_mixed_image_loader_metadata_digest_drift() -> None:
     payload = deepcopy(_contract())
     package_metadata = payload["package_metadata"]

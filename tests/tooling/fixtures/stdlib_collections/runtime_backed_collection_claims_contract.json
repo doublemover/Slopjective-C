@@ -112,6 +112,7 @@
         "objc3_collections_map_entry",
         "objc3_collections_map_count",
         "objc3_collections_map_contains",
+        "objc3_collections_map_insert",
         "objc3_collections_map_lookup_or",
         "objc3_collections_last_status"
       ],
@@ -119,24 +120,25 @@
         "objc3_runtime_stdlib_collections_map_entry_i32",
         "objc3_runtime_stdlib_collections_map_count_i32",
         "objc3_runtime_stdlib_collections_map_contains_i32",
+        "objc3_runtime_stdlib_collections_map_insert_i32",
         "objc3_runtime_stdlib_collections_map_lookup_or_i32",
         "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
         "map_entry",
+        "map_insert",
         "map_lookup_or"
       ],
       "supported_now": [
-        "single-entry i32 map records are runtime-owned handles created through objc3_runtime_stdlib_collections_map_entry_i32",
-        "map count, contains, lookup-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "i32 map records are runtime-owned handles created through objc3_runtime_stdlib_collections_map_entry_i32 and widened by objc3_runtime_stdlib_collections_map_insert_i32",
+        "map count, contains, insert, lookup-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "new keys append deterministic entries, existing keys are replaced in place, and current entry count is returned after mutation",
         "invalid handles and missing keys fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
         "dictionary literals",
         "generic key or value typing",
-        "key hashing beyond the current single-entry i32 key equality record",
-        "owned multi-entry map storage",
-        "map mutation",
+        "key hashing beyond concrete i32 key equality",
         "map iteration protocol"
       ]
     },

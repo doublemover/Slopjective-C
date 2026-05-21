@@ -6,6 +6,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from objc3c_runtime_acceptance.native_binaries import resolve_native_binary_set
+from objc3c_runtime_acceptance.probes import compile_probe, parse_json_output, run_probe
 from objc3c_tooling.json_io import require_json_object, write_json_file
 from objc3c_tooling.paths import ROOT, repo_rel
 
@@ -32,6 +34,41 @@ IMPLEMENTATION_PATH = HEADER_PATH.with_suffix(".cpp")
 CMAKE_PATH = ROOT / "native" / "objc3c" / "src" / "runtime" / "CMakeLists.txt"
 PROBE_PATH = ROOT / "tests" / "tooling" / "runtime" / "public_runtime_reflection_api_probe.cpp"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api.json"
+PROBE_RUN_DIR = ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api-probe"
+
+
+def _execute_public_reflection_probe(failures: list[str]) -> dict[str, Any]:
+    PROBE_RUN_DIR.mkdir(parents=True, exist_ok=True)
+    exe_path = PROBE_RUN_DIR / "public_runtime_reflection_api_probe.exe"
+    try:
+        native = resolve_native_binary_set()
+        compile_probe(native.clangxx, PROBE_PATH, exe_path, [])
+        payload = parse_json_output(
+            run_probe(exe_path),
+            "public runtime reflection API probe",
+        )
+    except Exception as exc:  # pragma: no cover - exercised by workflow failure output.
+        failures.append(f"public runtime reflection probe execution failed: {exc}")
+        return {"ok": False, "exe_path": repo_rel(exe_path)}
+
+    for field in (
+        "indexed_method_status",
+        "indexed_protocol_status",
+        "indexed_method_found",
+        "indexed_protocol_found",
+    ):
+        if payload.get(field) != 0 and field.endswith("_status"):
+            failures.append(f"public runtime reflection probe status drifted: {field}")
+        if payload.get(field) != 1 and field.endswith("_found"):
+            failures.append(f"public runtime reflection probe lookup drifted: {field}")
+    return {
+        "ok": True,
+        "exe_path": repo_rel(exe_path),
+        "indexed_method_status": payload.get("indexed_method_status"),
+        "indexed_protocol_status": payload.get("indexed_protocol_status"),
+        "indexed_method_found": payload.get("indexed_method_found"),
+        "indexed_protocol_found": payload.get("indexed_protocol_found"),
+    }
 
 
 def _read(path: Path) -> str:
@@ -144,7 +181,7 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
     deterministic_enumeration = contract.get("deterministic_enumeration", [])
     if (
         not isinstance(deterministic_enumeration, list)
-        or len(deterministic_enumeration) != 4
+        or len(deterministic_enumeration) != 6
     ):
         failures.append(
             "public runtime reflection deterministic enumeration contract drifted"
@@ -153,7 +190,7 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
         failures,
         repo_rel(HEADER_PATH),
         header,
-        "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u",
+        "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u",
     )
 
     for raw_symbol in contract.get("forbidden_public_symbols", []):
@@ -207,6 +244,7 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
         '#include "runtime/public/objc3_runtime_api.h"',
     )
     _require_absent(failures, repo_rel(PROBE_PATH), probe, "_for_testing")
+    probe_execution = _execute_public_reflection_probe(failures)
 
     return {
         "contract_id": "objc3c.runtime.public.reflection.api.validation.v1",
@@ -219,6 +257,7 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
         "entrypoint_count": len(entrypoints),
         "snapshot_type_count": len(snapshot_types),
         "status_code_count": len(status_codes),
+        "probe_execution": probe_execution,
         "failures": failures,
     }
 

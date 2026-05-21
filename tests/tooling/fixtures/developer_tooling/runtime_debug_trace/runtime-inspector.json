@@ -18,7 +18,7 @@
   "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
   "object_model_query_state_snapshot_symbol": "objc3_runtime_copy_object_model_query_state_for_testing",
   "arc_debug_state_snapshot_symbol": "objc3_runtime_copy_arc_debug_state_for_testing",
-  "object_model_private_snapshot_boundary": "runtime-owned-private-testing-snapshots-no-public-reflection-abi",
+  "object_model_private_snapshot_boundary": "bounded-public-reflection-api-plus-runtime-owned-private-testing-snapshots",
   "object_identity_model": "stable-base-identity-plus-instance-and-class-receiver-identities",
   "instance_allocation_model": "runtime-owned-allocation-ordinal-and-zero-initialized-storage-record",
   "dispatch_cache_observability_model": "strict-cache-hit-validation-with-stale-diagnostic-and-snapshots",
@@ -27,7 +27,7 @@
   "block_descriptor_model": "descriptor-backed-block-captures",
   "block_invoke_thunk_model": "typed-block-invoke-thunks",
   "arc_runtime_model": "arc-debug-state-snapshots",
-  "fail_closed_model": "runtime-inspector-does-not-publish-public-reflection-abi",
+  "fail_closed_model": "runtime-inspector-does-not-widen-beyond-bounded-public-reflection-abi",
   "dump_commands": {
     "object_sections": "llvm-objdump -h tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
     "object_symbols": "llvm-nm tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj"

@@ -1,0 +1,13 @@
+{
+  "contract_id": "objc3c.optimization.semantic.pipeline.reserved.skip.v1",
+  "pass_id": "method-inlining",
+  "status": "SKIPPED_FAIL_CLOSED",
+  "success_claim": false,
+  "diagnostic": "method inlining is reserved until ownership and source-map proofs exist",
+  "diagnostic_code": "O3OPT8175",
+  "required_missing_proofs": [
+    "callee body is available",
+    "ownership effects are replayable",
+    "debug and diagnostic source mapping are preserved"
+  ]
+}

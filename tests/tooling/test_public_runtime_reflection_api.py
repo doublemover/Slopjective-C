@@ -74,8 +74,8 @@ def test_public_runtime_reflection_contract_fixture_matches_sources() -> None:
 
     deterministic_enumeration = contract["deterministic_enumeration"]
     assert isinstance(deterministic_enumeration, list)
-    assert len(deterministic_enumeration) == 4
-    assert "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 3u" in header
+    assert len(deterministic_enumeration) == 6
+    assert "OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u" in header
 
 
 def test_public_runtime_reflection_uses_realized_state_and_fail_closed_statuses() -> None:
@@ -127,6 +127,9 @@ def test_public_runtime_reflection_probe_uses_public_surface() -> None:
     assert "objc3_runtime_copy_reflection_property" in probe
     assert "objc3_runtime_copy_reflection_property_at" in probe
     assert "objc3_runtime_copy_reflection_method" in probe
+    assert "objc3_runtime_copy_reflection_method_at" in probe
+    assert "objc3_runtime_copy_reflection_protocol" in probe
+    assert "objc3_runtime_copy_reflection_protocol_at" in probe
     assert "objc3_runtime_copy_reflection_protocol_conformance" in probe
     assert "objc3_runtime_copy_reflection_selector" in probe
     assert "objc3_runtime_copy_reflection_selector_at" in probe
@@ -184,7 +187,10 @@ def test_public_runtime_reflection_header_compiles_from_c_when_available(
                 '  (void)objc3_runtime_copy_reflection_property_at("Widget", 0u, &property);',
                 "  (void)objc3_runtime_copy_reflection_method(",
                 '      "Widget", "count", OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE, &method);',
+                "  (void)objc3_runtime_copy_reflection_method_at(",
+                '      "Widget", 0u, OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE, &method);',
                 '  (void)objc3_runtime_copy_reflection_protocol("Tracer", &protocol);',
+                "  (void)objc3_runtime_copy_reflection_protocol_at(0u, &protocol);",
                 '  (void)objc3_runtime_copy_reflection_protocol_conformance("Widget", "Tracer", &conf);',
                 '  (void)objc3_runtime_copy_reflection_category("Widget", "Tracing", &category);',
                 '  (void)objc3_runtime_copy_reflection_category_at("Widget", 0u, &category);',

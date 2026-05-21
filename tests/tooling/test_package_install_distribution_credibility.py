@@ -23,8 +23,12 @@ from objc3c_package_manager.install_distribution import (  # noqa: E402
     INSTALL_ROOT_REL,
     INSTALL_VALIDATION_ROOT_REL,
     INSTALL_VERIFICATION_REL,
+    PACKAGE_OPERATION_RECEIPT_CONTRACT_ID,
+    PACKAGE_UNINSTALL_RECEIPT_REL,
+    PACKAGE_UPDATE_RECEIPT_REL,
     collect_install_distribution_failures,
     collect_install_proof_failures,
+    collect_package_operation_receipt_failures,
 )
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
@@ -91,6 +95,8 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
     assert install_summary["network_policy"] == "no-network-during-validation"
     assert install_summary["hosted_registry_support"] == "unsupported-fail-closed-if-claimed"
     assert install_summary["install_receipt"] == INSTALL_RECEIPT_REL
+    assert install_summary["update_receipt"] == PACKAGE_UPDATE_RECEIPT_REL
+    assert install_summary["uninstall_receipt"] == PACKAGE_UNINSTALL_RECEIPT_REL
     from_nothing = install_summary["from_nothing_probe"]
     assert from_nothing["requested"] is True
     assert from_nothing["generated_from_clean_owned_outputs"] is True
@@ -101,6 +107,8 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
     assert (ROOT / INSTALL_ROOT_REL).is_dir()
     assert (ROOT / INSTALL_HOME_REL / "Bootstrap-objc3cEnvironment.ps1").is_file()
     assert (ROOT / INSTALL_RECEIPT_REL).is_file()
+    assert (ROOT / PACKAGE_UPDATE_RECEIPT_REL).is_file()
+    assert (ROOT / PACKAGE_UNINSTALL_RECEIPT_REL).is_file()
     assert (ROOT / INSTALL_VERIFICATION_REL).is_file()
     assert (ROOT / INSTALL_PROOF_MANIFEST_REL).is_file()
     assert (ROOT / INSTALL_LOCAL_ARTIFACT_ROOT_REL).is_dir()
@@ -115,6 +123,36 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
         package["package_id"]
         for package in verification["installed_packages"]
     ] == lock["resolution_plan"]["install_order"]
+    assert verification["update_plan_order"] == lock["resolution_plan"]["install_order"]
+    assert verification["uninstall_plan_order"] == list(
+        reversed(lock["resolution_plan"]["install_order"])
+    )
+
+
+def test_install_distribution_operation_receipts_bind_update_and_uninstall_plans(
+    install_summary: dict[str, Any],
+) -> None:
+    assert install_summary["status"] == "PASS"
+    lock = load_json(LOCK_PATH)
+    verification = load_json(VERIFICATION_PATH)
+    update_receipt = load_json(ROOT / PACKAGE_UPDATE_RECEIPT_REL)
+    uninstall_receipt = load_json(ROOT / PACKAGE_UNINSTALL_RECEIPT_REL)
+    install_order = lock["resolution_plan"]["install_order"]
+
+    assert update_receipt["contract_id"] == PACKAGE_OPERATION_RECEIPT_CONTRACT_ID
+    assert uninstall_receipt["contract_id"] == PACKAGE_OPERATION_RECEIPT_CONTRACT_ID
+    assert update_receipt["operation"] == "update"
+    assert uninstall_receipt["operation"] == "uninstall"
+    assert update_receipt["package_order"] == install_order
+    assert uninstall_receipt["package_order"] == list(reversed(install_order))
+    assert update_receipt["network_policy"] == "no-network-during-validation"
+    assert uninstall_receipt["hosted_registry_support"] == "unsupported-fail-closed-if-claimed"
+    assert update_receipt["package_count"] == verification["manifest_count"]
+    assert uninstall_receipt["package_count"] == verification["manifest_count"]
+    assert [entry["package_id"] for entry in update_receipt["package_digests"]] == install_order
+    assert [entry["package_id"] for entry in uninstall_receipt["package_digests"]] == list(
+        reversed(install_order)
+    )
 
 
 def test_install_distribution_contract_fails_on_manifest_digest_drift(install_summary: dict[str, Any]) -> None:
@@ -180,6 +218,8 @@ def test_install_distribution_proof_manifest_excludes_generated_reports(
     )
     assert proof["local_package_artifacts"]
     assert len(proof["local_package_artifacts"]) == verification["manifest_count"]
+    assert PACKAGE_UPDATE_RECEIPT_REL in release_validation["release_manifest_input_paths"]
+    assert PACKAGE_UNINSTALL_RECEIPT_REL in release_validation["release_manifest_input_paths"]
 
 
 def test_install_distribution_proof_rejects_report_release_input(
@@ -231,6 +271,28 @@ def test_install_distribution_proof_rejects_local_artifact_digest_drift(
     assert (
         f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact digest drifted for {package_id}"
     ) in failures
+
+
+def test_install_distribution_rejects_operation_receipt_order_drift(
+    install_summary: dict[str, Any],
+) -> None:
+    assert install_summary["status"] == "PASS"
+    lock = load_json(LOCK_PATH)
+    verification = load_json(VERIFICATION_PATH)
+    expected_order = lock["resolution_plan"]["install_order"]
+    drifted_verification = deepcopy(verification)
+    drifted_verification["update_plan_order"] = list(reversed(expected_order))
+
+    failures = collect_package_operation_receipt_failures(
+        root=ROOT,
+        lock=lock,
+        verification=drifted_verification,
+        receipt_path=ROOT / PACKAGE_UPDATE_RECEIPT_REL,
+        operation="update",
+        expected_order=expected_order,
+    )
+
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: update plan order drifted" in failures
 
 
 def test_install_distribution_public_action_and_owner_contract_are_registered() -> None:

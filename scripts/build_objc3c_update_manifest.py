@@ -25,6 +25,12 @@ PACKAGE_CHANNELS_SUMMARY = ROOT / "tmp" / "reports" / "package-channels" / "pack
 RELEASE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
 PLATFORM_SUPPORT_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-matrix-summary.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
+PACKAGE_FRESHNESS_TIMESTAMP_SOURCES = [
+    "package_channels_summary.generated_at_utc",
+    "package_channels_manifest.generated_at_utc",
+    "platform_support_matrix.generated_at_utc",
+]
+PACKAGE_FRESHNESS_REFRESH_COMMAND = "npm run objc3c -- build-package-channels"
 
 
 def require_file(path: Path, owner_action: str) -> None:
@@ -53,6 +59,89 @@ def sha256_file(path: Path) -> str:
 
 def workflow_command(action: str) -> str:
     return f"npm run objc3c -- {action}"
+
+
+def parse_generated_at(value: Any, source_name: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise RuntimeError(f"{source_name} missing generated_at_utc")
+    timestamp = value
+    if timestamp.endswith("Z"):
+        timestamp = timestamp[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(timestamp)
+    except ValueError as exc:
+        raise RuntimeError(f"{source_name} generated_at_utc is not ISO-8601: {value}") from exc
+    if parsed.tzinfo is None:
+        raise RuntimeError(f"{source_name} generated_at_utc must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def validate_package_channel_freshness_policy(channel: Mapping[str, Any]) -> Mapping[str, Any]:
+    channel_id = str(channel.get("channel_id", ""))
+    policy = channel.get("package_channel_freshness")
+    if not isinstance(policy, dict):
+        raise RuntimeError(f"{channel_id} channel missing package channel freshness policy")
+    if policy.get("timestamp_sources") != PACKAGE_FRESHNESS_TIMESTAMP_SOURCES:
+        raise RuntimeError(f"{channel_id} package channel freshness timestamp sources drifted")
+    max_skew = policy.get("max_artifact_skew_hours")
+    if not isinstance(max_skew, int) or max_skew <= 0:
+        raise RuntimeError(f"{channel_id} package channel freshness skew must be a positive hour count")
+    if policy.get("stale_behavior") != "fail-closed":
+        raise RuntimeError(f"{channel_id} package channel freshness must fail closed")
+    if policy.get("refresh_command") != PACKAGE_FRESHNESS_REFRESH_COMMAND:
+        raise RuntimeError(f"{channel_id} package channel freshness refresh command drifted")
+    if policy.get("blocks_publication_on_stale") is not True:
+        raise RuntimeError(f"{channel_id} package channel freshness must block publication when stale")
+    return policy
+
+
+def validate_package_channel_freshness(
+    *,
+    package_channels_summary: Mapping[str, Any],
+    package_channels_manifest: Mapping[str, Any],
+    platform_support_matrix: Mapping[str, Any],
+    channel_operations_by_id: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    timestamps = {
+        "package_channels_summary.generated_at_utc": parse_generated_at(
+            package_channels_summary.get("generated_at_utc"),
+            "package channels summary",
+        ),
+        "package_channels_manifest.generated_at_utc": parse_generated_at(
+            package_channels_manifest.get("generated_at_utc"),
+            "package channels manifest",
+        ),
+        "platform_support_matrix.generated_at_utc": parse_generated_at(
+            platform_support_matrix.get("generated_at_utc"),
+            "platform support matrix",
+        ),
+    }
+    oldest = min(timestamps.values())
+    newest = max(timestamps.values())
+    skew_hours = (newest - oldest).total_seconds() / 3600
+    channel_limits: dict[str, int] = {}
+    for channel_id, channel in channel_operations_by_id.items():
+        policy = validate_package_channel_freshness_policy(channel)
+        max_skew = int(policy["max_artifact_skew_hours"])
+        channel_limits[channel_id] = max_skew
+        if skew_hours > max_skew:
+            raise RuntimeError(
+                f"{channel_id} package channel evidence is stale: "
+                f"{skew_hours:.2f}h artifact skew exceeds {max_skew}h; "
+                f"run {PACKAGE_FRESHNESS_REFRESH_COMMAND}"
+            )
+    return {
+        "timestamp_sources": PACKAGE_FRESHNESS_TIMESTAMP_SOURCES,
+        "generated_at_utc": {
+            key: value.isoformat().replace("+00:00", "Z")
+            for key, value in timestamps.items()
+        },
+        "artifact_skew_hours": round(skew_hours, 6),
+        "channel_max_artifact_skew_hours": channel_limits,
+        "stale_behavior": "fail-closed",
+        "refresh_command": PACKAGE_FRESHNESS_REFRESH_COMMAND,
+        "blocks_publication_on_stale": True,
+    }
 
 
 def validate_channel_operations_model(
@@ -112,6 +201,8 @@ def validate_channel_operations_model(
         raise RuntimeError("nightly channel gate must require the nightly workflow")
     if set(stable_gates) == set(nightly_gates):
         raise RuntimeError("stable and nightly release gates must differ")
+    for channel in channel_by_id.values():
+        validate_package_channel_freshness_policy(channel)
 
     return channel_by_id
 
@@ -164,6 +255,7 @@ def main() -> int:
     require_file(PLATFORM_SUPPORT_SUMMARY, "build-platform-support-matrix")
 
     release_manifest = load_json(RELEASE_MANIFEST)
+    package_channels_manifest_payload = load_json(package_channels_manifest)
     platform_support_matrix_payload = load_json(platform_support_matrix)
     archive_digests = package_channels_summary.get("archive_digests")
     if not isinstance(archive_digests, dict) or not archive_digests:
@@ -213,6 +305,12 @@ def main() -> int:
         channel_operations_model=channel_operations_model,
         update_channel_policy=update_channel_policy,
     )
+    package_channel_freshness = validate_package_channel_freshness(
+        package_channels_summary=package_channels_summary,
+        package_channels_manifest=package_channels_manifest_payload,
+        platform_support_matrix=platform_support_matrix_payload,
+        channel_operations_by_id=channel_operations_by_id,
+    )
     if sorted(channel_order) != sorted(channel_by_id):
         raise RuntimeError("update channel policy channel_order drifted from channel definitions")
     if update_channel_policy["default_channel"] not in channel_by_id:
@@ -259,6 +357,7 @@ def main() -> int:
             "update_manifest_channel": channel_operations["update_manifest_channel"],
             "release_gate_actions": release_gate_actions,
             "artifact_refs": artifacts,
+            "package_channel_freshness": package_channel_freshness,
             "rollback_safety": rollback_safety,
             "release_notes_policy": release_notes_policy,
             "release_evidence": {

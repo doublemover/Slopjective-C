@@ -9,7 +9,6 @@ from objc3c_tooling.paths import repo_rel
 from platform_hardening_contracts import (
     BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT,
     CHANNEL_CATALOG_PATH,
-    PUBLICATION_SURFACE,
     RELEASE_PUBLICATION_SUMMARY_PATH,
     ROOT,
     SUPPORT_MATRIX_ARTIFACT_PATH,
@@ -27,12 +26,44 @@ from platform_hardening_contracts import (
 
 PROBE_SCRIPT = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 RELEASE_OPERATIONS_INTEGRATION_SCRIPT = ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
+RELEASE_OPERATIONS_SOURCE_SURFACE_SCRIPT = ROOT / "scripts" / "check_release_operations_source_surface.py"
+RELEASE_OPERATIONS_SCHEMA_SURFACE_SCRIPT = ROOT / "scripts" / "check_release_operations_schema_surface.py"
+BUILD_UPDATE_MANIFEST_SCRIPT = ROOT / "scripts" / "build_objc3c_update_manifest.py"
+PUBLISH_RELEASE_OPERATIONS_SCRIPT = ROOT / "scripts" / "publish_objc3c_release_operations_metadata.py"
+RELEASE_OPERATIONS_END_TO_END_SCRIPT = ROOT / "scripts" / "check_objc3c_release_operations_end_to_end.py"
 
 
 def run(command: list[str]) -> None:
     result = run_completed(command, cwd=ROOT, capture_output=False)
     if result.returncode != 0:
         raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
+
+
+def run_refresh_step(step: str, command: list[str]) -> dict[str, Any]:
+    run(command)
+    return {"step": step, "command": command, "status": "PASS"}
+
+
+def refresh_release_operations_metadata() -> list[dict[str, Any]]:
+    return [
+        run_refresh_step(
+            "validate-packaging-channels",
+            public_workflow_command("validate-packaging-channels"),
+        ),
+        run_refresh_step(
+            "check-release-operations-surface",
+            python_script_command(RELEASE_OPERATIONS_SOURCE_SURFACE_SCRIPT),
+        ),
+        run_refresh_step(
+            "check-release-operations-schema-surface",
+            python_script_command(RELEASE_OPERATIONS_SCHEMA_SURFACE_SCRIPT),
+        ),
+        run_refresh_step("build-update-manifest", python_script_command(BUILD_UPDATE_MANIFEST_SCRIPT)),
+        run_refresh_step(
+            "publish-release-operations",
+            python_script_command(PUBLISH_RELEASE_OPERATIONS_SCRIPT),
+        ),
+    ]
 
 
 def main() -> int:
@@ -47,10 +78,15 @@ def main() -> int:
 
     run(python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT))
     run(python_script_command(PROBE_SCRIPT, "--summary-out", repo_rel(probe_summary)))
+    release_operations_refresh_steps = refresh_release_operations_metadata()
     step_commands = {
-        "check-release-operations-integration": python_script_command(RELEASE_OPERATIONS_INTEGRATION_SCRIPT),
-        "check-release-operations-end-to-end": public_workflow_command(
-            PUBLICATION_SURFACE["release_operations_end_to_end_command"]
+        "check-release-operations-integration": python_script_command(
+            RELEASE_OPERATIONS_INTEGRATION_SCRIPT,
+            "--skip-workflow-report",
+        ),
+        "check-release-operations-end-to-end": python_script_command(
+            RELEASE_OPERATIONS_END_TO_END_SCRIPT,
+            "--skip-upstream",
         ),
     }
     step_results: list[dict[str, Any]] = [
@@ -103,6 +139,7 @@ def main() -> int:
         "release_operations_upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT_PATH),
         "release_operations_channel_catalog": repo_rel(CHANNEL_CATALOG_PATH),
         "required_toolchain_claims": contract["required_toolchain_claims"],
+        "release_operations_refresh_steps": release_operations_refresh_steps,
         "required_steps": step_results,
         "checks": checks,
     }

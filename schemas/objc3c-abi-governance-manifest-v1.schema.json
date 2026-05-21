@@ -12,6 +12,7 @@
     "governance_posture",
     "governed_surfaces",
     "surface_extractors",
+    "compatibility_evidence",
     "release_blocked_transitions",
     "compatibility_policy",
     "summary_contract"
@@ -87,6 +88,24 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/surfaceExtractor" }
+    },
+    "compatibility_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_source",
+        "case_contract",
+        "cases"
+      ],
+      "properties": {
+        "evidence_source": { "const": "checked-source-of-truth-manifest" },
+        "case_contract": { "const": "objc3c.abi_governance.compatibility_case.v1" },
+        "cases": {
+          "type": "array",
+          "minItems": 4,
+          "items": { "$ref": "#/$defs/compatibilityCase" }
+        }
+      }
     },
     "release_blocked_transitions": {
       "type": "array",
@@ -197,6 +216,49 @@
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         }
+      }
+    },
+    "compatibilityCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "surface_id",
+        "compatibility_class",
+        "transition",
+        "before",
+        "after",
+        "expected_decision",
+        "release_blocker_issue_ref"
+      ],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "surface_id": { "type": "string", "minLength": 1 },
+        "compatibility_class": {
+          "enum": [
+            "stable-public-api",
+            "stable-runtime-abi",
+            "frontend-c-api-exact-abi",
+            "governed-artifact-schema",
+            "package-lockfile-abi"
+          ]
+        },
+        "transition": {
+          "enum": [
+            "public-symbol-removal-without-deprecation-window",
+            "runtime-symbol-removal-without-deprecation-window",
+            "signature-change-without-major-line",
+            "private-helper-graduation-without-policy",
+            "unsupported-upgrade-route",
+            "unsupported-downgrade-route",
+            "package-abi-identity-drift",
+            "schema-breaking-change-without-major-line"
+          ]
+        },
+        "before": { "type": "string", "minLength": 1 },
+        "after": { "type": "string", "minLength": 1 },
+        "expected_decision": { "const": "block-release" },
+        "release_blocker_issue_ref": { "const": "#8173" }
       }
     }
   }

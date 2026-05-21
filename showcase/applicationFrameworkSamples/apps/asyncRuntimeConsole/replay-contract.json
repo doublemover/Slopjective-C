@@ -19,6 +19,8 @@
     "async fn refreshRuntimeStatus",
     "objc_executor(global)",
     "objc3_runtime_spawn_task_i32",
+    "route_model_keypath_token",
+    "adapterMacroValue",
     "await refreshRuntimeStatus(seed)"
   ],
   "expected_symbols": {
@@ -27,6 +29,8 @@
       "objc3_runtime_executor_hop_i32",
       "objc3_runtime_task_is_cancelled_i32",
       "objc3_runtime_task_on_cancel_i32",
+      "route_model_keypath_token",
+      "adapterMacroValue",
       "refreshRuntimeStatus",
       "main"
     ],

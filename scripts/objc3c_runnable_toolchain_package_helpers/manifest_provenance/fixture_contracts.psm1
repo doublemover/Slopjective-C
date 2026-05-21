@@ -3,6 +3,7 @@ Set-StrictMode -Version Latest
 function Get-ManifestProvenanceFixtureContractFiles {
   return @(
     "tests/tooling/fixtures/developer_tooling/boundary_inventory.json",
+    "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json",
     "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
     "tests/tooling/fixtures/developer_tooling/workspace_semantic_navigation_contract.json",
     "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json",

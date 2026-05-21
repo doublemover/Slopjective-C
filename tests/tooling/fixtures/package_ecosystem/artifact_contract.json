@@ -56,6 +56,7 @@
     "offline mirror cache entries and restore receipts must be generated from the same lock-derived mirror index",
     "clean install validation roots must be re-created before package install credibility is claimed",
     "install receipts must be generated from lock, mirror, local registry, publication, and restore metadata that agree",
+    "package update and uninstall operation receipts must be deterministic artifact inputs and must preserve locked dependency ordering semantics",
     "mixed-image interop package metadata must be digest-checked across lock, mirror, and local registry artifacts",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
@@ -124,7 +125,7 @@
       "schema missing for package publication artifact",
       "generated package evidence outside package ecosystem artifact root",
       "offline restore receipt missing cache digest evidence",
-      "clean install receipt missing or package metadata disagrees with lock-derived artifacts",
+      "clean install, update, or uninstall receipt missing or package metadata disagrees with lock-derived artifacts",
       "hosted registry claim without local package evidence",
       "package publication action has no owner contract",
       "package publication action is wrapper-only"

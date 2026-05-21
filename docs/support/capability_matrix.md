@@ -908,7 +908,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `stdlib.collections.map-entry-runtime-shape`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.collections.map-entry-runtime-shape`
-- Summary: The objc3.collections module publishes runtime-owned single-entry i32 map records with count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, multi-entry storage, mutation, iteration, and Foundation bridging remain outside this claim.
+- Summary: The objc3.collections module publishes runtime-owned i32 map records with insert/update mutation, count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, non-i32 hashing, map iteration, and Foundation bridging remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.collections/module.json`
   - `stdlib/modules/objc3.collections/module.objc3`
@@ -1373,7 +1373,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.advanced-runtime-closure`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, live error bridge cleanup, task continuations, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, object-model reflection/storage, and interop package/replay; remaining broad runtime closure stays reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay; remaining broad runtime closure stays reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
@@ -1633,7 +1633,11 @@ the canonical manifest fixture and public npm command above.
   - `scripts/objc3c_editor_tooling/workspace_index.py`
   - `scripts/check_developer_tooling_language_server_navigation.py`
   - `scripts/check_developer_tooling_workspace_integration.py`
+  - `scripts/check_developer_tooling_editor_source_truth.py`
+  - `scripts/check_developer_tooling_product_workflow_source_truth.py`
 - Evidence:
+  - test: `tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json` via `npm run objc3c -- validate-developer-tooling`
+  - test: `tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json` via `npm run objc3c -- check-developer-tooling-editor-source-truth`
   - test: `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` via `npm run objc3c -- validate-developer-tooling`
   - test: `tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json` via `npm run objc3c -- validate-developer-tooling`
   - test: `tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json` via `npm run objc3c -- validate-developer-tooling`
@@ -1643,6 +1647,8 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_editor_tooling/workspace_index.py`
   - source: `scripts/objc3c_editor_tooling/diagnostic_bridge.py`
   - source: `scripts/format_objc3c_source.py`
+  - source: `scripts/check_developer_tooling_product_workflow_source_truth.py`
+  - source: `scripts/check_developer_tooling_editor_source_truth.py` via `npm run objc3c -- check-developer-tooling-editor-source-truth`
 
 ### First-run developer product path
 
@@ -1731,7 +1737,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-install.clean-distribution`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.install-clean-distribution`
-- Summary: The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, and machine-owned install receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
+- Summary: The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, and deterministic update/uninstall operation receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
 - Owner modules:
   - `scripts/objc3c_package_manager/install_distribution.py`
   - `scripts/check_objc3c_package_install_distribution_credibility.py`
@@ -1809,7 +1815,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.public-api.reflection`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.public-reflection-api`
-- Summary: The runtime now exposes a bounded public C reflection ABI for state, class, property, method, protocol, conformance, category, and selector snapshots. The API uses caller-owned snapshots, runtime-owned borrowed strings, typed status codes, null-output checks, invalid-query checks, and realized runtime state rather than private testing projections.
+- Summary: The runtime now exposes a bounded public C reflection ABI for state, class, property, method, protocol, conformance, category, and selector snapshots, including deterministic indexed enumeration for realized classes, direct properties, direct methods, concrete protocols, attached categories, and selectors. The API uses caller-owned snapshots, runtime-owned borrowed strings, typed status codes, null-output checks, invalid-query checks, and realized runtime state rather than private testing projections.
 - Owner modules:
   - `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
   - `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
@@ -1877,9 +1883,9 @@ the canonical manifest fixture and public npm command above.
 - Support claims: None
 - Summary: Method inlining is reserved until ownership, source-map, and side-effect replay proofs exist. The semantic optimization registry records the lane as reserved and prevents success claims.
 - Owner modules:
-  - `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json`
+  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 
 ### Cache-aware dispatch optimization lane
@@ -1889,9 +1895,9 @@ the canonical manifest fixture and public npm command above.
 - Support claims: None
 - Summary: Cache-aware dispatch remains reserved behind runtime-owned cache invalidation and ABI-stable helper contracts. The compiler pipeline preserves runtime dispatch semantics and does not materialize private selector-cache helpers in IR.
 - Owner modules:
-  - `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json`
+  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 
 ### Structured runtime debug trace

@@ -40,6 +40,8 @@ def test_clean_room_roots_route_native_and_frontend_outputs() -> None:
     assert "[string]$LibraryOutputDir = \"\"" in build_script
     assert "[string]$FrontendArtifactRoot = \"\"" in build_script
     assert "[int]$Parallelism = 0" in build_script
+    assert "if ($Parallelism -eq 0) {" in build_script
+    assert "$Parallelism = 4" in build_script
     assert "-CleanRoomRoot $resolvedCleanRoomRoot `" in build_script
     assert "-BuildDir $BuildDir `" in build_script
     assert "-RuntimeOutputDir $RuntimeOutputDir `" in build_script
@@ -99,6 +101,9 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "reproducible_build = $true" in fingerprint_module
     assert "source_date_epoch = $SourceDateEpoch" in fingerprint_module
     assert "cmake_build_parallelism=" in (
+        ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
+    ).read_text(encoding="utf-8")
+    assert "--parallel --target" not in (
         ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
     ).read_text(encoding="utf-8")
 

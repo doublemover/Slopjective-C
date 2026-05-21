@@ -81,6 +81,8 @@ def test_runtime_debug_trace_fixture_builds_deterministic_payload() -> None:
         range(len(payload["event_sequence"]))
     )
     assert all(event["deterministic"] is True for event in payload["event_sequence"])
+    assert payload["source_mapping"]["span_evidence_count"] == contract["expected_source_span_evidence_count"]
+    assert len(payload["source_span_evidence"]) == contract["expected_source_span_evidence_count"]
 
 
 def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None:
@@ -129,6 +131,36 @@ def test_runtime_debug_trace_inspection_queries_are_public_and_fail_closed() -> 
         queries["runtime.source-owned-trace-contracts"]["artifact_path"]
         == "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
     )
+    source_span_ids = {span["span_id"] for span in payload["source_span_evidence"]}
+    for query_id in contract["expected_source_span_query_ids"]:
+        assert set(queries[query_id]["source_span_ids"]) == source_span_ids
+
+
+def test_runtime_debug_trace_source_span_evidence_binds_ranges_to_artifacts() -> None:
+    payload = fixture_payload()
+    spans = {
+        span["symbol"]: span
+        for span in payload["source_span_evidence"]
+    }
+
+    assert set(spans) == {"ArtifactWidget", "globalCounter", "main"}
+    assert spans["main"]["compiler_range"] == {
+        "line": 9,
+        "column": 1,
+        "end_line": 9,
+        "end_column": 5,
+    }
+    assert spans["main"]["lsp_range"] == {
+        "start": {"line": 8, "character": 0},
+        "end": {"line": 8, "character": 4},
+    }
+    for span in spans.values():
+        assert span["status"] == "supported"
+        assert span["artifact_path"].endswith("module.obj")
+        assert span["artifact_query_command"].startswith("llvm-nm ")
+        assert span["public_command"].startswith("npm run objc3c -- trace-runtime-debug")
+        assert {"debug_map", "runtime_inspector"}.issubset(span["evidence_input_labels"])
+        assert "statement-level stepping" in span["unsupported_expansion"]
 
 
 def test_runtime_debug_trace_support_handoff_ids_are_explicit() -> None:
@@ -195,6 +227,35 @@ def test_runtime_debug_trace_query_validation_rejects_private_supported_commands
     assert (
         "supported inspection query lacks public command: "
         "debug.runtime-trace.composed-event-sequence"
+    ) in failures
+
+
+def test_runtime_debug_trace_query_validation_rejects_missing_source_span_evidence() -> None:
+    payload = fixture_payload()
+    query = next(
+        query
+        for query in payload["inspection_queries"]
+        if query["query_id"] == "debug.source-to-artifact.declaration-anchors"
+    )
+    query["source_span_ids"] = []
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert (
+        "supported source/artifact inspection query lacks source span evidence: "
+        "debug.source-to-artifact.declaration-anchors"
+    ) in failures
+
+
+def test_runtime_debug_trace_validation_rejects_invalid_source_span_range() -> None:
+    payload = fixture_payload()
+    payload["source_span_evidence"][0]["compiler_range"]["line"] = 0
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert (
+        "source span evidence has invalid line: "
+        f"{payload['source_span_evidence'][0]['span_id']}"
     ) in failures
 
 

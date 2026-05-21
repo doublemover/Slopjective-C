@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .developer_tooling_playground_runner import (
     action_check_developer_diagnostic_quality,
+    action_check_developer_tooling_editor_source_truth,
     action_format_objc3c,
     action_inspect_editor_tooling,
     action_rewrite_objc3c_source,

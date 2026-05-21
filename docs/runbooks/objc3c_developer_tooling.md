@@ -15,6 +15,7 @@ inspection flows.
 Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/developer_tooling/boundary_inventory.json`
+- `tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json`
 
 Replayable public workflow actions:
 
@@ -381,6 +382,13 @@ The generated developer-tooling surface must group:
 
 The developer-tooling report family is transient output produced by the public
 runner plus replayable checked-in scripts. It does not own capability claims.
+
+The product workflow source-truth contract ties the normal-developer,
+diagnostics, formatter/LSP/workspace, public conformance, package manager, and
+application sample paths back to their capability rows, evidence-map rows, and
+public commands. It is validated inside `npm run objc3c --
+validate-developer-tooling`; generated `tmp/` reports remain replay evidence
+only.
 
 The current generator for the combined surface is reached through:
 

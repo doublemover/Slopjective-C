@@ -1,0 +1,13 @@
+{
+  "contract_id": "objc3c.optimization.semantic.pipeline.reserved.skip.v1",
+  "pass_id": "cache-aware-dispatch",
+  "status": "SKIPPED_FAIL_CLOSED",
+  "success_claim": false,
+  "diagnostic": "cache-aware dispatch is reserved behind the runtime cache contract",
+  "diagnostic_code": "O3OPT8175",
+  "required_missing_proofs": [
+    "runtime cache invalidation semantics are public",
+    "ABI-stable helper symbol exists",
+    "semantic replay preserves dispatch miss behavior"
+  ]
+}

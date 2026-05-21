@@ -10,6 +10,8 @@ from scripts.objc3c_semantic_optimization_pipeline import (
     REQUIRED_CAPABILITY_ROWS,
     REQUIRED_EVIDENCE_IDS,
     REQUIRED_PASS_ORDER,
+    REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE,
+    RESERVED_SKIP_CONTRACT_ID,
     validate_pipeline,
 )
 from scripts.objc3c_workflow.public_command_api import (
@@ -52,6 +54,14 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
     )
     assert result.payload["enabled_pass_count"] >= 3
     assert result.payload["reserved_pass_count"] == 3
+    assert result.payload["reserved_skip_fixture_count"] == (
+        result.payload["reserved_pass_count"]
+    )
+    assert result.payload["reserved_skip_passes"] == [
+        "cache-aware-dispatch",
+        "devirtualization",
+        "method-inlining",
+    ]
     assert set(result.payload["capability_rows_required"]) >= REQUIRED_CAPABILITY_ROWS
     assert set(result.payload["evidence_ids_required"]) >= REQUIRED_EVIDENCE_IDS
 
@@ -128,3 +138,52 @@ def test_semantic_optimization_pipeline_rejects_reserved_success_claim(tmp_path:
     assert any(
         "allows skip success claim" in failure for failure in result.failures
     )
+
+
+def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fixture(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    for pass_row in payload["pass_registry"]:
+        if pass_row["pass_id"] == "method-inlining":
+            pass_row["fixtures"] = [
+                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+            ]
+            break
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "skip fixture pass_id mismatch for method-inlining" in failure
+        for failure in result.failures
+    )
+    assert any(
+        "missing proofs drift from preservation contract: method-inlining" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_reserved_skip_fixtures_link_diagnostics() -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    reserved_passes = {
+        pass_row["pass_id"]: pass_row
+        for pass_row in payload["pass_registry"]
+        if pass_row["mode"] == "reserved"
+    }
+    contracts = {
+        contract["pass_id"]: contract
+        for contract in payload["semantic_preservation_contracts"]
+    }
+
+    for pass_id, pass_row in reserved_passes.items():
+        assert len(pass_row["fixtures"]) == 1
+        fixture = json.loads((ROOT / pass_row["fixtures"][0]).read_text(encoding="utf-8"))
+
+        assert fixture["contract_id"] == RESERVED_SKIP_CONTRACT_ID
+        assert fixture["pass_id"] == pass_id
+        assert fixture["status"] == "SKIPPED_FAIL_CLOSED"
+        assert fixture["success_claim"] is False
+        assert fixture["diagnostic_code"] == REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE
+        assert fixture["diagnostic"] in pass_row["fail_closed_diagnostics"]
+        assert fixture["required_missing_proofs"] == contracts[pass_id]["required_proofs"]

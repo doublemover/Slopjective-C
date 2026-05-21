@@ -33,6 +33,53 @@
       "requires_network": false
     }
   ],
+  "package_manifest_replay": {
+    "package_manifest_contract": "objc3c.public_conformance_suite.package_manifest.v1",
+    "case_manifest_contract": "objc3c.public_conformance_suite.case.v1",
+    "replay_plan_contract": "objc3c.public_conformance_suite.replay_plan.v1",
+    "packaged_replay_summary_contract": "objc3c.public_conformance_suite.packaged_replay.v1",
+    "package_json_script": "python tools/replay_public_conformance_suite.py",
+    "replay_tool": "tools/replay_public_conformance_suite.py",
+    "source_hash_algorithm": "sha256",
+    "selected_case_policy": "profile-intersection",
+    "requires_all_public_stable_cases_for_release_candidate": true,
+    "required_package_files": [
+      "package-manifest.json",
+      "package.json",
+      "replay-plan.json",
+      "README.md",
+      "tools/replay_public_conformance_suite.py",
+      "cases"
+    ],
+    "required_actions": [
+      {
+        "action": "validate-conformance-corpus",
+        "profile_ids": [
+          "core"
+        ]
+      },
+      {
+        "action": "validate-interop-conformance",
+        "profile_ids": [
+          "stdlib-package"
+        ]
+      },
+      {
+        "action": "validate-release-candidate-conformance",
+        "profile_ids": [
+          "release-candidate"
+        ]
+      },
+      {
+        "action": "validate-public-conformance-suite",
+        "profile_ids": [
+          "core",
+          "stdlib-package",
+          "release-candidate"
+        ]
+      }
+    ]
+  },
   "required_packaged_inputs": [
     "tests/conformance/public_suite_manifest.json",
     "tests/conformance/corpus_surface.json",

@@ -113,7 +113,7 @@
     "checked-in stdlib workspace and package surfaces",
     "dependency-resolution, lockfile, and package-authoring semantics generated from checked-in contracts",
     "offline mirror and registry metadata modeled as local replayable artifacts before any hosted service claim",
-    "clean local install validation modeled from package manifests, lock, mirror, registry, restore receipt, and install receipt agreement",
+    "clean local install validation modeled from package manifests, lock, mirror, registry, restore receipt, install receipt, update receipt, and uninstall receipt agreement",
     "canonical application and template pressure through the objc3c package bridge and workflow action registry",
     "runnable package, package-channel, release-manifest, and update-manifest integration through public objc3c workflow actions"
   ],

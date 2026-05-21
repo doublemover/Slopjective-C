@@ -62,6 +62,8 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
     "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
 }
+RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
+REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
 
 
 @dataclass(frozen=True)
@@ -332,18 +334,67 @@ def _validate_direct_dispatch_fixture(failures: list[str]) -> None:
         failures.append("direct dispatch after fixture missing")
 
 
-def _validate_reserved_skip_fixture(failures: list[str]) -> None:
-    path = ROOT / "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
-    if not path.is_file():
-        failures.append("reserved devirtualization skip fixture missing")
-        return
-    payload = require_json_object(path)
-    if payload.get("status") != "SKIPPED_FAIL_CLOSED":
-        failures.append("reserved devirtualization skip fixture must be SKIPPED_FAIL_CLOSED")
-    if payload.get("success_claim") is not False:
-        failures.append("reserved devirtualization skip fixture must not emit success claim")
-    if not _as_list(payload.get("required_missing_proofs")):
-        failures.append("reserved devirtualization skip fixture must list missing proofs")
+def _validate_reserved_skip_fixtures(
+    pass_by_id: dict[str, dict[str, Any]],
+    preservation_contracts: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> int:
+    fixture_count = 0
+    for pass_id, pass_row in pass_by_id.items():
+        if pass_row.get("mode") != "reserved":
+            continue
+
+        fixture_paths = [
+            fixture
+            for fixture in _as_list(pass_row.get("fixtures"))
+            if isinstance(fixture, str)
+        ]
+        if len(fixture_paths) != 1:
+            failures.append(f"reserved optimization pass must have exactly one skip fixture: {pass_id}")
+            continue
+
+        fixture_path = fixture_paths[0]
+        path = ROOT / fixture_path
+        if not path.is_file():
+            failures.append(f"reserved optimization skip fixture missing for {pass_id}: {fixture_path}")
+            continue
+
+        fixture_count += 1
+        payload = require_json_object(path)
+        if payload.get("contract_id") != RESERVED_SKIP_CONTRACT_ID:
+            failures.append(f"reserved optimization skip fixture contract drifted: {fixture_path}")
+        if payload.get("pass_id") != pass_id:
+            failures.append(
+                f"reserved optimization skip fixture pass_id mismatch for {pass_id}: {fixture_path}"
+            )
+        if payload.get("status") != "SKIPPED_FAIL_CLOSED":
+            failures.append(f"reserved optimization skip fixture must be SKIPPED_FAIL_CLOSED: {pass_id}")
+        if payload.get("success_claim") is not False:
+            failures.append(f"reserved optimization skip fixture must not emit success claim: {pass_id}")
+        if payload.get("diagnostic_code") != REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE:
+            failures.append(f"reserved optimization skip fixture diagnostic code drifted: {pass_id}")
+
+        diagnostics = {str(value) for value in _as_list(pass_row.get("fail_closed_diagnostics"))}
+        if str(payload.get("diagnostic", "")) not in diagnostics:
+            failures.append(
+                f"reserved optimization skip fixture diagnostic is not registered on pass: {pass_id}"
+            )
+
+        expected_proofs = [
+            str(proof)
+            for proof in _as_list(
+                preservation_contracts.get(pass_id, {}).get("required_proofs")
+            )
+        ]
+        actual_proofs = [str(proof) for proof in _as_list(payload.get("required_missing_proofs"))]
+        if not actual_proofs:
+            failures.append(f"reserved optimization skip fixture must list missing proofs: {pass_id}")
+        if actual_proofs != expected_proofs:
+            failures.append(
+                f"reserved optimization skip fixture missing proofs drift from preservation contract: {pass_id}"
+            )
+
+    return fixture_count
 
 
 def validate_pipeline(
@@ -419,7 +470,11 @@ def validate_pipeline(
             failures.append(f"unsupported policy must keep {field}=false")
 
     _validate_direct_dispatch_fixture(failures)
-    _validate_reserved_skip_fixture(failures)
+    reserved_skip_fixture_count = _validate_reserved_skip_fixtures(
+        pass_by_id,
+        preservation_contracts,
+        failures,
+    )
 
     payload: dict[str, Any] = {
         "contract_id": "objc3c.optimization.semantic.pipeline.validation.v1",
@@ -437,6 +492,10 @@ def validate_pipeline(
         "semantic_preservation_contract_count": len(preservation_contracts),
         "enabled_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "enabled"),
         "reserved_pass_count": sum(1 for row in pass_by_id.values() if row.get("mode") == "reserved"),
+        "reserved_skip_fixture_count": reserved_skip_fixture_count,
+        "reserved_skip_passes": sorted(
+            pass_id for pass_id, row in pass_by_id.items() if row.get("mode") == "reserved"
+        ),
         "verifier_only_pass_count": sum(
             1 for row in pass_by_id.values() if row.get("mode") == "verifier-only"
         ),
@@ -453,9 +512,11 @@ __all__ = [
     "CONTRACT_ID",
     "PIPELINE_PATH",
     "REPORT_PATH",
+    "RESERVED_SKIP_CONTRACT_ID",
     "REQUIRED_EVIDENCE_IDS",
     "REQUIRED_CAPABILITY_ROWS",
     "REQUIRED_PASS_ORDER",
+    "REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE",
     "SemanticOptimizationPipelineValidationResult",
     "validate_pipeline",
 ]

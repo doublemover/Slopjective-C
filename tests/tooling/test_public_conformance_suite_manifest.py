@@ -63,6 +63,10 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
     assert summary["packageable"] is True
     assert summary["artifact_contract_issue_id"] == "OBJ3-NEXT-018"
     assert summary["source_owned_contract_count"] == 3
+    assert summary["package_manifest_replay_contract"] == "objc3c.public_conformance_suite.package_manifest.v1"
+    assert summary["package_manifest_replay_action_count"] == 4
+    assert summary["package_manifest_required_file_count"] == 6
+    assert summary["package_manifest_source_hash_algorithm"] == "sha256"
     assert summary["source_owned_case_count"] == 10
     assert summary["fixture_provenance_allowed_origins"] == ["checked-in-public-suite"]
     assert summary["fixture_provenance_origin_counts"] == {"checked-in-public-suite": 10}
@@ -135,6 +139,22 @@ def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_ev
     } == {entry["profile_id"] for entry in evidence["packaged_entrypoints"]}
     assert "tmp/pkg/objc3-public-conformance-suite/package-manifest.json" in evidence["required_replay_outputs"]
     assert evidence["source_manifest"] == "tests/conformance/public_suite_manifest.json"
+    assert evidence["package_manifest_replay"]["package_manifest_contract"] == (
+        "objc3c.public_conformance_suite.package_manifest.v1"
+    )
+    assert evidence["package_manifest_replay"]["package_json_script"] == (
+        "python tools/replay_public_conformance_suite.py"
+    )
+    assert evidence["package_manifest_replay"]["source_hash_algorithm"] == "sha256"
+    assert {
+        entry["action"]: tuple(entry["profile_ids"])
+        for entry in evidence["package_manifest_replay"]["required_actions"]
+    } == {
+        "validate-conformance-corpus": ("core",),
+        "validate-interop-conformance": ("stdlib-package",),
+        "validate-release-candidate-conformance": ("release-candidate",),
+        "validate-public-conformance-suite": ("core", "stdlib-package", "release-candidate"),
+    }
 
 
 def test_public_conformance_suite_manifest_declares_external_validation_intake_policy() -> None:
@@ -351,3 +371,25 @@ def test_public_conformance_suite_manifest_rejects_nonpublic_command(
 
     assert checker.main() == 1
     assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_missing_package_replay_action(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    replay_evidence = load_json_object(ROOT / "tests" / "conformance" / "public_suite_package_replay_evidence.json")
+    replay_evidence["package_manifest_replay"]["required_actions"] = [
+        action
+        for action in replay_evidence["package_manifest_replay"]["required_actions"]
+        if action["action"] != "validate-public-conformance-suite"
+    ]
+
+    checker.PACKAGE_REPLAY_EVIDENCE_PATH = tmp_path / "public_suite_package_replay_evidence.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_json_file(checker.PACKAGE_REPLAY_EVIDENCE_PATH, replay_evidence, sort_keys=False)
+
+    try:
+        assert checker.main() == 1
+        assert not checker.SUMMARY_PATH.exists()
+    finally:
+        checker.PACKAGE_REPLAY_EVIDENCE_PATH = ROOT / "tests" / "conformance" / "public_suite_package_replay_evidence.json"

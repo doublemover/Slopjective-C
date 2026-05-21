@@ -40,6 +40,12 @@ REQUIRED_UNSUPPORTED_CLAIMS = {
     "compatibility shim support",
     "fallback downgrade route",
 }
+REQUIRED_COMPATIBILITY_CASE_TRANSITIONS = {
+    "public-symbol-removal-without-deprecation-window",
+    "signature-change-without-major-line",
+    "package-abi-identity-drift",
+    "unsupported-downgrade-route",
+}
 SUPPORTED_EXTRACTOR_KINDS = {
     "c-header-public-symbols",
     "stdlib-module-abi-signatures",
@@ -305,6 +311,89 @@ def _validate_surface_extractors(manifest: dict[str, Any], failures: list[str]) 
     return observations
 
 
+def _validate_compatibility_evidence(manifest: dict[str, Any], failures: list[str]) -> int:
+    evidence = manifest.get("compatibility_evidence")
+    if not isinstance(evidence, dict):
+        failures.append(_failure("compatibility_evidence must be an object"))
+        return 0
+    if evidence.get("evidence_source") != "checked-source-of-truth-manifest":
+        failures.append(_failure("compatibility evidence must be checked source truth"))
+    if evidence.get("case_contract") != "objc3c.abi_governance.compatibility_case.v1":
+        failures.append(_failure("compatibility evidence case contract drifted"))
+
+    known_surfaces = {
+        surface.get("surface_id")
+        for surface in manifest.get("governed_surfaces", [])
+        if isinstance(surface, dict) and isinstance(surface.get("surface_id"), str)
+    }
+    known_surfaces.update(
+        extractor.get("extractor_id")
+        for extractor in manifest.get("surface_extractors", [])
+        if isinstance(extractor, dict) and isinstance(extractor.get("extractor_id"), str)
+    )
+    blocked_transitions = {
+        value
+        for value in manifest.get("release_blocked_transitions", [])
+        if isinstance(value, str)
+    }
+    cases = evidence.get("cases")
+    if not isinstance(cases, list) or not cases:
+        failures.append(_failure("compatibility_evidence.cases must be a non-empty list"))
+        return 0
+
+    seen_cases: set[str] = set()
+    observed_transitions: set[str] = set()
+    for case in cases:
+        if not isinstance(case, dict):
+            failures.append(_failure("compatibility evidence case is malformed"))
+            continue
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id:
+            failures.append(_failure("compatibility evidence case missing case_id"))
+            continue
+        if case_id in seen_cases:
+            failures.append(_failure(f"compatibility evidence case duplicated {case_id}"))
+            continue
+        seen_cases.add(case_id)
+        surface_id = case.get("surface_id")
+        if not isinstance(surface_id, str) or surface_id not in known_surfaces:
+            failures.append(
+                _failure(
+                    f"compatibility evidence case {case_id} "
+                    f"references unknown surface {surface_id!r}"
+                )
+            )
+        transition = case.get("transition")
+        if not isinstance(transition, str) or not transition:
+            failures.append(_failure(f"compatibility evidence case {case_id} missing transition"))
+            continue
+        observed_transitions.add(transition)
+        if transition not in blocked_transitions:
+            failures.append(
+                _failure(
+                    f"compatibility evidence case {case_id} "
+                    f"transition is not release-blocked: {transition}"
+                )
+            )
+        if case.get("expected_decision") != "block-release":
+            failures.append(_failure(f"compatibility evidence case {case_id} must block release"))
+        if case.get("release_blocker_issue_ref") != "#8173":
+            failures.append(_failure(f"compatibility evidence case {case_id} must be tied to #8173"))
+        before = case.get("before")
+        after = case.get("after")
+        if not isinstance(before, str) or not before.strip():
+            failures.append(_failure(f"compatibility evidence case {case_id} missing before state"))
+        if not isinstance(after, str) or not after.strip():
+            failures.append(_failure(f"compatibility evidence case {case_id} missing after state"))
+        if before == after:
+            failures.append(_failure(f"compatibility evidence case {case_id} before/after states must differ"))
+
+    missing = sorted(REQUIRED_COMPATIBILITY_CASE_TRANSITIONS - observed_transitions)
+    if missing:
+        failures.append(_failure("compatibility evidence lost required blocked cases: " + ", ".join(missing)))
+    return len(seen_cases)
+
+
 def _validate_source_of_truth(manifest: dict[str, Any], failures: list[str]) -> None:
     source = manifest.get("source_of_truth")
     if not isinstance(source, dict):
@@ -500,10 +589,12 @@ def run_check(
         _validate_posture(manifest, failures)
         governed_surface_count = _validate_governed_surfaces(manifest, failures)
         surface_extractor_observations = _validate_surface_extractors(manifest, failures)
+        compatibility_case_count = _validate_compatibility_evidence(manifest, failures)
         _validate_compatibility_policy(manifest, failures)
         _validate_release_governance(manifest, failures, release_governance_override)
     else:
         surface_extractor_observations = []
+        compatibility_case_count = 0
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -515,6 +606,7 @@ def run_check(
         "governed_surface_count": governed_surface_count,
         "surface_extractor_count": len(surface_extractor_observations),
         "surface_extractors": surface_extractor_observations,
+        "compatibility_case_count": compatibility_case_count,
         "failure_count": len(failures),
         "failures": failures,
     }

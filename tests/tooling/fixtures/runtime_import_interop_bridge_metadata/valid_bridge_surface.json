@@ -54,7 +54,7 @@
           "module_artifact": "module.interop-bridge.modulemap"
         },
         "evidence_contract": {
-          "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+          "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
           "anchors": [
             "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
           ],
@@ -91,7 +91,7 @@
           "module_artifact": "module.interop-bridge.modulemap"
         },
         "evidence_contract": {
-          "support_claim": "objc3c.behavior.language.interop.foreign-surface-contract",
+          "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
           "anchors": [
             "tests/tooling/fixtures/native/bridge_legality_positive.objc3"
           ],

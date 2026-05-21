@@ -41,6 +41,17 @@ CLEAN_INSTALL_PREREQUISITE = {
     "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
     "blocks_publication_on_failure": True,
 }
+PACKAGE_CHANNEL_FRESHNESS = {
+    "timestamp_sources": [
+        "package_channels_summary.generated_at_utc",
+        "package_channels_manifest.generated_at_utc",
+        "platform_support_matrix.generated_at_utc",
+    ],
+    "max_artifact_skew_hours": 6,
+    "stale_behavior": "fail-closed",
+    "refresh_command": "npm run objc3c -- build-package-channels",
+    "blocks_publication_on_stale": True,
+}
 
 
 def fail(message: str) -> int:
@@ -61,6 +72,9 @@ def clean_install_prerequisite_failures(channel_operations_model: dict) -> list[
         prerequisite = channel.get("clean_install_prerequisite")
         if prerequisite != CLEAN_INSTALL_PREREQUISITE:
             failures.append(f"{channel_id} channel clean install prerequisite drifted")
+        freshness = channel.get("package_channel_freshness")
+        if freshness != PACKAGE_CHANNEL_FRESHNESS:
+            failures.append(f"{channel_id} channel package freshness policy drifted")
     return failures
 
 
@@ -141,6 +155,7 @@ def main() -> int:
         "checked_paths": sorted(set(checked_paths)),
         "release_operations_owned_actions": RELEASE_OPERATIONS_ACTIONS,
         "clean_install_prerequisite": CLEAN_INSTALL_PREREQUISITE,
+        "package_channel_freshness": PACKAGE_CHANNEL_FRESHNESS,
         "missing_artifact_behavior": hard_cutover_policy["missing_artifact_behavior"],
     }
     write_report_json(SUMMARY_PATH, summary, sort_keys=False)

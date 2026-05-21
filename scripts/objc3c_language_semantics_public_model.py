@@ -31,14 +31,19 @@ SCHEMA_PATH = ROOT / "schemas" / "objc3c-language-semantics-public-model-v1.sche
 MODEL_HEADER_PATH = ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "language_semantics_public_model.h"
 REPORT_PATH = ROOT / "tmp" / "reports" / "language-semantics-public-model.json"
 
-REQUIRED_ISSUES = {8160, 8163, 8164, 8165, 8166, 8167}
+REQUIRED_ISSUES = {8160, 8163, 8164, 8165, 8166, 8167, 8168}
 REQUIRED_SUPPORT_CLAIMS = {
-    "objc3c.behavior.language.generics.public-type-parameters",
-    "objc3c.behavior.language.modules.visibility-rebuild-contract",
+    "objc3c.behavior.language.generics.protocol-qualified-arguments",
+    "objc3c.behavior.language.generics.callable-type-parameters",
+    "objc3c.behavior.language.generics.variance-specialization",
+    "objc3c.behavior.runtime.generics.cross-module-metadata",
+    "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
     "objc3c.behavior.language.protocols.existential-witness-model",
-    "objc3c.behavior.language.interop.foreign-surface-contract",
-    "objc3c.behavior.language.ownership.memory-model",
+    "objc3c.behavior.runtime.interop.package-loader-bridge",
+    "objc3c.behavior.language.ownership-memory-model",
     "objc3c.behavior.language.concurrency.public-usability-model",
+    "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+    "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
 }
 REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.language_semantics.public_model.fixture",
@@ -47,6 +52,8 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.language_semantics.public_model.validator",
     "objc3c.evidence.language_semantics.module_interop.fixture",
     "objc3c.evidence.language_semantics.module_interop.validator",
+    "objc3c.evidence.language_semantics.metaprogramming.fixture",
+    "objc3c.evidence.language_semantics.metaprogramming.validator",
 }
 REQUIRED_SURFACES = {
     "generic_type_system",
@@ -55,6 +62,7 @@ REQUIRED_SURFACES = {
     "interop_bridge_model",
     "ownership_memory_model",
     "concurrency_usability_model",
+    "macro_metaprogramming_public_surface",
 }
 FALSE_UNSUPPORTED_POLICY_FIELDS = {
     "fallback_or_compatibility_shim_allowed",
@@ -112,7 +120,7 @@ def _validate_issue_mapping(contract: dict[str, Any], failures: list[str]) -> di
     evidence_ids = {str(evidence_id) for evidence_id in _as_list(mapping.get("evidence_ids_required"))}
 
     if not REQUIRED_ISSUES.issubset(issues):
-        failures.append("language semantics public model must map issues #8160, #8163, #8164, #8165, #8166, and #8167")
+        failures.append("language semantics public model must map issues #8160, #8163, #8164, #8165, #8166, #8167, and #8168")
     if not REQUIRED_SUPPORT_CLAIMS.issubset(support_claims):
         failures.append("language semantics public model support claims are incomplete")
     if not REQUIRED_EVIDENCE_IDS.issubset(evidence_ids):
@@ -336,6 +344,60 @@ def _validate_concurrency_surface(surface: dict[str, Any], failures: list[str]) 
         failures.append("continuation policy must consume the ownership memory model")
 
 
+def _validate_macro_metaprogramming_surface(surface: dict[str, Any], failures: list[str]) -> None:
+    claims = {str(claim) for claim in _as_list(surface.get("support_claims"))}
+    required_claims = {
+        "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+        "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+    }
+    if not required_claims.issubset(claims):
+        failures.append("macro metaprogramming surface must include derive inventory and macro safety support claims")
+    if surface.get("public_command") != "npm run objc3c -- validate-metaprogramming-conformance":
+        failures.append("macro metaprogramming surface must use the public metaprogramming conformance command")
+    contract_path = str(surface.get("contract_path", ""))
+    if contract_path != "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json":
+        failures.append("macro metaprogramming surface contract path drifted")
+    elif not (ROOT / contract_path).is_file():
+        failures.append("macro metaprogramming public surface contract is missing")
+
+    derive_model = _as_dict(surface.get("derive_model"))
+    supported_forms = {str(value) for value in _as_list(derive_model.get("supported_forms"))}
+    if not {"Equality", "Equatable", "Hash", "DebugDescription"}.issubset(supported_forms):
+        failures.append("macro derive model must publish Equality, Equatable, Hash, and DebugDescription forms")
+    if derive_model.get("runtime_materialization") != "deferred":
+        failures.append("macro derive model must keep runtime materialization deferred")
+
+    safety_model = _as_dict(surface.get("macro_safety_model"))
+    metadata_fields = {
+        str(value) for value in _as_list(safety_model.get("required_metadata_fields"))
+    }
+    for field in ("package", "macro", "provenance", "cache_key", "sandbox_policy", "signer_key_id", "manifest_digest", "signature_digest", "replay_metadata", "deterministic"):
+        if field not in metadata_fields:
+            failures.append(f"macro safety metadata field missing: {field}")
+    diagnostic_codes = {
+        str(value) for value in _as_list(safety_model.get("required_diagnostic_codes"))
+    }
+    if not {"O3S320", "O3S321", "O3S322", "O3S323", "O3S324", "O3S325", "O3S331", "O3S332"}.issubset(diagnostic_codes):
+        failures.append("macro safety model diagnostic coverage is incomplete")
+    if safety_model.get("fail_closed_before_expansion") is not True:
+        failures.append("macro safety model must fail closed before expansion")
+    if safety_model.get("arbitrary_host_execution_allowed") is not False:
+        failures.append("macro safety model must reject arbitrary host execution")
+    if safety_model.get("network_access_allowed") is not False:
+        failures.append("macro safety model must reject network access")
+    if safety_model.get("deterministic_replay_required") is not True:
+        failures.append("macro safety model must require deterministic replay")
+
+    artifact_policy = _as_dict(surface.get("artifact_policy"))
+    for field in (
+        "generated_artifacts_are_support_authority",
+        "tmp_report_source_truth_allowed",
+        "third_party_macro_ecosystem_claimed",
+    ):
+        if artifact_policy.get(field) is not False:
+            failures.append(f"macro artifact policy must keep {field}=false")
+
+
 def _validate_surfaces(contract: dict[str, Any], failures: list[str]) -> dict[str, Any]:
     surfaces = _as_dict(contract.get("typed_model_surfaces"))
     surface_names = set(surfaces)
@@ -348,12 +410,16 @@ def _validate_surfaces(contract: dict[str, Any], failures: list[str]) -> dict[st
     _validate_interop_surface(_as_dict(surfaces.get("interop_bridge_model")), failures)
     _validate_ownership_surface(_as_dict(surfaces.get("ownership_memory_model")), failures)
     _validate_concurrency_surface(_as_dict(surfaces.get("concurrency_usability_model")), failures)
+    _validate_macro_metaprogramming_surface(
+        _as_dict(surfaces.get("macro_metaprogramming_public_surface")), failures
+    )
 
     return {
         "surface_names": sorted(surface_names),
         "generic_type_parameter_count": len(_as_list(_as_dict(surfaces.get("generic_type_system")).get("type_parameters"))),
         "ownership_qualifier_count": len(_as_list(_as_dict(surfaces.get("ownership_memory_model")).get("qualifier_flows"))),
         "concurrency_effect_count": len(_as_list(_as_dict(surfaces.get("concurrency_usability_model")).get("public_effects"))),
+        "macro_support_claim_count": len(_as_list(_as_dict(surfaces.get("macro_metaprogramming_public_surface")).get("support_claims"))),
     }
 
 

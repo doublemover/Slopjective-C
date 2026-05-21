@@ -148,7 +148,9 @@
         "release_gate_actions",
         "rollback_channel",
         "rollback_command",
-        "blocks_publication_on_rollback_failure"
+        "blocks_publication_on_rollback_failure",
+        "package_channel_freshness",
+        "blocks_publication_on_stale_package_channel"
       ],
       "properties": {
         "channel_id": { "type": "string", "minLength": 1 },
@@ -164,7 +166,47 @@
         },
         "rollback_channel": { "type": "string", "minLength": 1 },
         "rollback_command": { "type": "string", "minLength": 1 },
-        "blocks_publication_on_rollback_failure": { "type": "boolean" }
+        "blocks_publication_on_rollback_failure": { "type": "boolean" },
+        "package_channel_freshness": { "$ref": "#/$defs/packageChannelFreshness" },
+        "blocks_publication_on_stale_package_channel": { "const": true }
+      }
+    },
+    "packageChannelFreshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp_sources",
+        "generated_at_utc",
+        "artifact_skew_hours",
+        "channel_max_artifact_skew_hours",
+        "stale_behavior",
+        "refresh_command",
+        "blocks_publication_on_stale"
+      ],
+      "properties": {
+        "timestamp_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "generated_at_utc": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "artifact_skew_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "channel_max_artifact_skew_hours": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "stale_behavior": { "const": "fail-closed" },
+        "refresh_command": { "const": "npm run objc3c -- build-package-channels" },
+        "blocks_publication_on_stale": { "const": true }
       }
     },
     "reportWarning": {

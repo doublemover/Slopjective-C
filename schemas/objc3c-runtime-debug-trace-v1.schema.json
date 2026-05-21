@@ -15,6 +15,7 @@
     "inputs",
     "artifacts",
     "source_mapping",
+    "source_span_evidence",
     "runtime_inspection",
     "runtime_trace_contracts",
     "trace_lanes",
@@ -59,6 +60,8 @@
         "full_source_map_status",
         "statement_level_stepping",
         "declaration_anchor_count",
+        "span_evidence_count",
+        "span_evidence_ids",
         "anchors"
       ],
       "properties": {
@@ -66,9 +69,84 @@
         "full_source_map_status": {"type": "string"},
         "statement_level_stepping": {"type": "boolean"},
         "declaration_anchor_count": {"type": "integer", "minimum": 0},
+        "span_evidence_count": {"type": "integer", "minimum": 0},
+        "span_evidence_ids": {"type": "array", "items": {"type": "string"}},
         "anchors": {"type": "array", "items": {"type": "object"}}
       },
       "additionalProperties": false
+    },
+    "source_span_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "span_id",
+          "status",
+          "source_path",
+          "symbol",
+          "kind",
+          "compiler_range",
+          "lsp_range",
+          "range_model",
+          "artifact_path",
+          "artifact_query_command",
+          "evidence_input_labels",
+          "source_record_path",
+          "public_command",
+          "unsupported_expansion"
+        ],
+        "properties": {
+          "span_id": {"type": "string"},
+          "status": {"const": "supported"},
+          "source_path": {"type": "string"},
+          "symbol": {"type": "string"},
+          "kind": {"type": "string"},
+          "compiler_range": {
+            "type": "object",
+            "required": ["line", "column", "end_line", "end_column"],
+            "properties": {
+              "line": {"type": "integer", "minimum": 1},
+              "column": {"type": "integer", "minimum": 1},
+              "end_line": {"type": "integer", "minimum": 1},
+              "end_column": {"type": "integer", "minimum": 1}
+            },
+            "additionalProperties": false
+          },
+          "lsp_range": {
+            "type": "object",
+            "required": ["start", "end"],
+            "properties": {
+              "start": {
+                "type": "object",
+                "required": ["line", "character"],
+                "properties": {
+                  "line": {"type": "integer", "minimum": 0},
+                  "character": {"type": "integer", "minimum": 0}
+                },
+                "additionalProperties": false
+              },
+              "end": {
+                "type": "object",
+                "required": ["line", "character"],
+                "properties": {
+                  "line": {"type": "integer", "minimum": 0},
+                  "character": {"type": "integer", "minimum": 0}
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "range_model": {"const": "compiler-1-based-plus-lsp-zero-based"},
+          "artifact_path": {"type": "string"},
+          "artifact_query_command": {"type": "string"},
+          "evidence_input_labels": {"type": "array", "items": {"type": "string"}},
+          "source_record_path": {"type": "string"},
+          "public_command": {"type": "string"},
+          "unsupported_expansion": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
     },
     "runtime_inspection": {"type": "object"},
     "runtime_trace_contracts": {
@@ -179,6 +257,7 @@
           "result_path",
           "artifact_path",
           "schema_path",
+          "source_span_ids",
           "unpublished_reason"
         ],
         "properties": {
@@ -191,6 +270,7 @@
           "result_path": {"type": "string"},
           "artifact_path": {"type": "string"},
           "schema_path": {"type": "string"},
+          "source_span_ids": {"type": "array", "items": {"type": "string"}},
           "unpublished_reason": {"type": "string"}
         },
         "additionalProperties": false

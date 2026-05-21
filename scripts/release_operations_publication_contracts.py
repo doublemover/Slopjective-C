@@ -127,6 +127,7 @@ def _channel_operation_payloads(
     channel_operations: list[JsonObject] = []
     for channel in release_channel_manifest["channel_manifests"]:
         rollback_safety = channel["rollback_safety"]
+        package_freshness = channel["package_channel_freshness"]
         channel_operations.append(
             {
                 "channel_id": channel["channel_id"],
@@ -137,6 +138,8 @@ def _channel_operation_payloads(
                 "rollback_channel": rollback_safety["rollback_channel"],
                 "rollback_command": rollback_safety["operator_command"],
                 "blocks_publication_on_rollback_failure": rollback_safety["blocks_publication_on_failure"],
+                "package_channel_freshness": package_freshness,
+                "blocks_publication_on_stale_package_channel": package_freshness["blocks_publication_on_stale"],
             }
         )
     return channel_operations
@@ -180,6 +183,7 @@ def _release_note_channel_payloads(
                 "release_gate_actions": channel["release_gate_actions"],
                 "rollback_channel": channel["rollback_safety"]["rollback_channel"],
                 "rollback_command": channel["rollback_safety"]["operator_command"],
+                "package_channel_freshness": channel["package_channel_freshness"],
                 "artifact_refs": channel["artifact_refs"],
                 "warning_classes": update_channel.get("warning_classes", []),
                 "upgrade_targets": update_channel.get("upgrade_targets", []),
@@ -236,6 +240,7 @@ def _build_public_changelog_payload(
                 ),
                 "gate_actions": channel["release_gate_actions"],
                 "rollback_channel": channel["rollback_safety"]["rollback_channel"],
+                "package_channel_freshness": channel["package_channel_freshness"],
             }
         )
     return {
@@ -342,6 +347,11 @@ def build_release_operations_publication_payloads(
         "warning_count": len(warnings),
         "rollback_diagnostic_count": len(rollback_diagnostics),
         "channel_operation_count": len(channel_operations),
+        "package_channel_freshness_channel_count": sum(
+            1
+            for channel in channel_operations
+            if channel.get("blocks_publication_on_stale_package_channel") is True
+        ),
         "release_note_channel_count": len(release_notes["channels"]),
         "public_changelog_entry_count": len(public_changelog["entries"]),
         "claim_class_count": len(claim_policy["upgrade_claim_classes"]),

@@ -28,7 +28,7 @@
   "surface_rows": [
     {
       "issue": 8160,
-      "support_claim": "objc3c.behavior.language.generics.public-type-parameters",
+      "support_claim": "objc3c.behavior.runtime.generics.cross-module-metadata",
       "semantic_surface": "generic-runtime-identity-record",
       "metadata_key": "generic-specialization-metadata",
       "runtime_anchor": "EmittedKeyPathDescriptor::generic_metadata_replay_key",
@@ -54,7 +54,7 @@
     },
     {
       "issue": 8166,
-      "support_claim": "objc3c.behavior.language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "semantic_surface": "ownership-runtime-edge",
       "metadata_key": "ownership-cleanup-transfer-metadata",
       "runtime_anchor": "RuntimeResultFailClosedOwnershipModel",
