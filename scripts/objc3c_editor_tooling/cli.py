@@ -21,6 +21,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="publish the editor tooling surface and print only the source graph artifact path",
     )
+    parser.add_argument(
+        "--artifact-inspector-only",
+        action="store_true",
+        help="publish the editor tooling surface and print only the artifact inspector path",
+    )
     parser.add_argument("source", nargs="?", default=default_source_argument())
     return parser.parse_args()
 
@@ -46,6 +51,21 @@ def main() -> int:
     if args.source_graph_only:
         print(f"summary_path: {published.summary_path}")
         print(f"source_graph_path: {published.source_graph_path}")
+        return 0
+    if args.artifact_inspector_only:
+        artifact = model.artifact_inspector
+        inventory = artifact.get("inventory_validation", {})
+        object_inventory = artifact.get("object", {})
+        runtime_inventory = artifact.get("runtime_inventory", {})
+        package_inventory = artifact.get("package_inventory", {})
+        print(f"summary_path: {published.summary_path}")
+        print(f"artifact_inspector_path: {published.artifact_inspector_path}")
+        print(f"inventory_ready: {str(inventory.get('inventory_ready') is True).lower()}")
+        print(f"fail_closed: {str(inventory.get('fail_closed') is True).lower()}")
+        print(f"object_format: {object_inventory.get('object_format', '')}")
+        print(f"symbol_count: {object_inventory.get('symbol_count', 0)}")
+        print(f"runtime_class_records: {runtime_inventory.get('class_record_count', 0)}")
+        print(f"package_identity: {package_inventory.get('package_identity', '')}")
         return 0
 
     print(f"summary_path: {published.summary_path}")

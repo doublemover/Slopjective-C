@@ -84,6 +84,13 @@ def action_inspect_editor_tooling(rest: list[str]) -> int:
     return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
 
 
+def action_inspect_artifact(rest: list[str]) -> int:
+    rc = ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), "--artifact-inspector-only", *rest])
+
+
 def action_inspect_source_graph(rest: list[str]) -> int:
     rc = ensure_frontend_runner_ready()
     if rc != 0:

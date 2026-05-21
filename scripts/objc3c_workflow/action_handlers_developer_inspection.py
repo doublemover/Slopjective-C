@@ -15,6 +15,7 @@ DEVELOPER_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-playground-repro": developer_tooling_playground.action_inspect_playground_repro,
     "inspect-compile-observability": developer_tooling_dump_actions.action_inspect_compile_observability,
     "inspect-runtime-inspector": developer_tooling_dump_actions.action_inspect_runtime_inspector,
+    "inspect-artifact": developer_tooling_playground.action_inspect_artifact,
     "inspect-editor-tooling": developer_tooling_playground.action_inspect_editor_tooling,
     "inspect-source-graph": developer_tooling_playground.action_inspect_source_graph,
     "inspect-language-service": developer_tooling_playground.action_inspect_language_service,
