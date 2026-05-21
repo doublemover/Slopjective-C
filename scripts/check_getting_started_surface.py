@@ -241,6 +241,14 @@ def _record_lookup(records: Sequence[PublicCommandRecord]) -> set[tuple[str, str
     return {(record.source_path, record.command) for record in records}
 
 
+def _record_line_lookup(records: Sequence[PublicCommandRecord]) -> dict[tuple[str, str], int]:
+    return {
+        (record.source_path, record.command): int(record.line)
+        for record in records
+        if isinstance(record.line, int)
+    }
+
+
 def _repo_file(path_text: str, *, root: Path, label: str) -> Path:
     path = root / path_text
     expect(path.is_file(), f"{label} is missing: {path_text}")
@@ -575,6 +583,103 @@ def _validate_diagnostic_fixit_metadata(diagnostic_metadata: Any, *, root: Path)
     }
 
 
+def _validate_onboarding_command_map(
+    onboarding_map: Any,
+    *,
+    public_command_records: Sequence[PublicCommandRecord],
+    registered_actions: set[str],
+    root: Path,
+) -> dict[str, Any]:
+    expect(isinstance(onboarding_map, dict), "onboarding_command_map must be an object")
+    expect(
+        onboarding_map.get("support_claim") == "objc3c.behavior.tooling.first-run-product-path",
+        "onboarding command map support claim drifted",
+    )
+    doc_surface = str(onboarding_map.get("doc_surface", ""))
+    _repo_file(doc_surface, root=root, label="onboarding command map doc_surface")
+    source_truth_rule = str(onboarding_map.get("source_truth_rule", ""))
+    expect("tmp" in source_truth_rule and "source-truth" in source_truth_rule, "onboarding command map must reject tmp source truth")
+
+    forbidden_primary_actions = set(
+        _require_string_list(
+            onboarding_map.get("forbidden_primary_actions"),
+            "onboarding_command_map.forbidden_primary_actions",
+        )
+    )
+    required_stage_ids = _require_string_list(
+        onboarding_map.get("required_stage_ids"),
+        "onboarding_command_map.required_stage_ids",
+    )
+    stages = onboarding_map.get("stages")
+    expect(isinstance(stages, list), "onboarding_command_map.stages must be a list")
+    expect(len(stages) == len(required_stage_ids), "onboarding command map stage count drifted")
+
+    record_lookup = _record_lookup(public_command_records)
+    line_lookup = _record_line_lookup(public_command_records)
+    observed_stage_ids: list[str] = []
+    observed_actions: list[str] = []
+    observed_lines: list[int] = []
+    output_paths: list[str] = []
+
+    for index, stage in enumerate(stages):
+        expect(isinstance(stage, dict), f"onboarding command stage {index} must be an object")
+        stage_id = str(stage.get("id", ""))
+        observed_stage_ids.append(stage_id)
+        intent = str(stage.get("intent", ""))
+        command = str(stage.get("command", ""))
+        public_doc = str(stage.get("public_doc", ""))
+        failure_policy = str(stage.get("failure_policy", ""))
+        expect(intent != "", f"onboarding command stage {stage_id} is missing intent")
+        expect(public_doc == doc_surface, f"onboarding command stage {stage_id} drifted from the doc surface")
+        expect(failure_policy.startswith("stop"), f"onboarding command stage {stage_id} must fail closed")
+
+        action, _tokens = _parse_public_command_with_context(
+            command,
+            f"onboarding command stage {stage_id}",
+        )
+        expect(action in registered_actions, f"onboarding command stage {stage_id} action is not public: {action}")
+        expect(action not in forbidden_primary_actions, f"onboarding command stage {stage_id} uses a forbidden primary action")
+        expect((public_doc, command) in record_lookup, f"onboarding command stage {stage_id} is missing from docs")
+        line = line_lookup.get((public_doc, command))
+        expect(line is not None, f"onboarding command stage {stage_id} must be in a fenced doc block")
+        observed_lines.append(line)
+        observed_actions.append(action)
+
+        source_path = stage.get("source_path")
+        if isinstance(source_path, str) and source_path:
+            _repo_file(source_path, root=root, label=f"onboarding command stage {stage_id} source_path")
+
+        stage_output_paths = _require_string_list(
+            stage.get("output_paths", []),
+            f"onboarding_command_map.stages[{index}].output_paths",
+        )
+        for output_path in stage_output_paths:
+            expect(
+                output_path.startswith("tmp/"),
+                f"onboarding command stage {stage_id} output path must stay under tmp/: {output_path}",
+            )
+            output_paths.append(output_path)
+
+        prior_stage = stage.get("requires_prior_stage")
+        if isinstance(prior_stage, str) and prior_stage:
+            expect(prior_stage in observed_stage_ids[:-1], f"onboarding command stage {stage_id} has an unknown prior stage")
+
+    expect(observed_stage_ids == required_stage_ids, "onboarding command map stage order drifted")
+    expect(observed_lines == sorted(observed_lines), "onboarding command map docs are not in contract order")
+    expect(
+        {"build-native-binaries", "compile-objc3c", "inspect-compile-observability", "materialize-project-template", "validate-getting-started"}.issubset(set(observed_actions)),
+        "onboarding command map no longer covers build, compile, inspect, template, and validation",
+    )
+
+    return {
+        "support_claim": onboarding_map["support_claim"],
+        "doc_surface": doc_surface,
+        "stage_ids": observed_stage_ids,
+        "actions": observed_actions,
+        "output_paths": output_paths,
+    }
+
+
 def validate_developer_experience_completion_contract(
     *,
     contract: dict[str, Any],
@@ -606,6 +711,12 @@ def validate_developer_experience_completion_contract(
         ),
         "diagnostic_fixit_metadata": _validate_diagnostic_fixit_metadata(
             contract.get("diagnostic_fixit_metadata"),
+            root=root,
+        ),
+        "onboarding_command_map": _validate_onboarding_command_map(
+            contract.get("onboarding_command_map"),
+            public_command_records=public_command_records,
+            registered_actions=registered_actions,
             root=root,
         ),
     }
