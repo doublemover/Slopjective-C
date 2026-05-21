@@ -1,0 +1,161 @@
+{
+  "contract_id": "objc3c.runtime.performance.scale.scenario.contract.v1",
+  "schema_version": 1,
+  "contract_kind": "source-derived-runtime-scale-scenarios",
+  "source_contracts": [
+    "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+    "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json"
+  ],
+  "validation_action_contracts": [
+    {
+      "action_id": "benchmark-runtime-performance",
+      "backend_kind": "python",
+      "script_path": "scripts/benchmark_objc3c_runtime_performance.py",
+      "handler_required": true,
+      "pass_through_args_required": true
+    },
+    {
+      "action_id": "validate-runtime-performance",
+      "backend_kind": "python",
+      "script_path": "scripts/check_objc3c_runtime_performance_integration.py",
+      "handler_required": true,
+      "pass_through_args_required": false
+    },
+    {
+      "action_id": "test-fuzz-safety",
+      "backend_kind": "python",
+      "script_path": "scripts/run_objc3c_fuzz_safety.py",
+      "handler_required": true,
+      "pass_through_args_required": true
+    },
+    {
+      "action_id": "test-lowering-runtime-stress",
+      "backend_kind": "python",
+      "script_path": "scripts/run_objc3c_lowering_runtime_stress.py",
+      "handler_required": true,
+      "pass_through_args_required": true
+    },
+    {
+      "action_id": "validate-stress",
+      "backend_kind": "runner-internal",
+      "child_actions": [
+        "check-stress-surface",
+        "test-fuzz-safety",
+        "test-lowering-runtime-stress",
+        "test-mixed-module-differential",
+        "test-stress-minimization",
+        "test-stress-crash-triage"
+      ],
+      "handler_required": true,
+      "pass_through_args_required": false
+    }
+  ],
+  "scenario_defaults": {
+    "support_authority": false,
+    "generated_report_allowed": false,
+    "output_report_root": "tmp/reports/runtime-performance",
+    "deterministic_metadata_fields": [
+      "evidence_kind",
+      "scenario_id",
+      "workload_id",
+      "fixture_sha256",
+      "probe_sha256",
+      "budget_metric_id",
+      "scale_axis",
+      "action_ids"
+    ]
+  },
+  "scale_scenarios": [
+    {
+      "scenario_id": "dispatch-cache-fuzz-sanitized-scale",
+      "workload_id": "dispatch-cache",
+      "stress_id": "dispatch-cache-replay-scale",
+      "sanitizer_id": "dispatch-cache-asan-ubsan",
+      "metadata_fuzz_id": "runtime-performance-negative-metadata-corpus",
+      "parser_sema_case_ids": [
+        "parser_message_receiver_qualifier_extern"
+      ],
+      "lowering_runtime_case_paths": [
+        "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
+      ],
+      "required_action_ids": [
+        "benchmark-runtime-performance",
+        "validate-runtime-performance",
+        "test-fuzz-safety"
+      ],
+      "exact_replay_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id dispatch-cache --warmup-runs 0 --measured-runs 3",
+      "support_authority": false,
+      "generated_report_allowed": false,
+      "output_report_root": "tmp/reports/runtime-performance"
+    },
+    {
+      "scenario_id": "registration-replay-runtime-scale",
+      "workload_id": "registration-replay",
+      "stress_id": "registration-replay-scale",
+      "parser_sema_case_ids": [
+        "parser_reject_post_comma_nondecl"
+      ],
+      "lowering_runtime_case_paths": [
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3"
+      ],
+      "required_action_ids": [
+        "benchmark-runtime-performance",
+        "validate-runtime-performance",
+        "test-lowering-runtime-stress"
+      ],
+      "exact_replay_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id registration-replay --warmup-runs 0 --measured-runs 3",
+      "support_authority": false,
+      "generated_report_allowed": false,
+      "output_report_root": "tmp/reports/runtime-performance"
+    },
+    {
+      "scenario_id": "block-arc-lifetime-sanitized-scale",
+      "workload_id": "block-arc-runtime",
+      "stress_id": "block-arc-lifetime-scale",
+      "sanitizer_id": "block-arc-runtime-asan-ubsan",
+      "parser_sema_case_ids": [
+        "sema_guard_binding_missing_exit"
+      ],
+      "lowering_runtime_case_paths": [
+        "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3"
+      ],
+      "required_action_ids": [
+        "benchmark-runtime-performance",
+        "validate-runtime-performance",
+        "test-lowering-runtime-stress"
+      ],
+      "exact_replay_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id block-arc-runtime --warmup-runs 0 --measured-runs 3",
+      "support_authority": false,
+      "generated_report_allowed": false,
+      "output_report_root": "tmp/reports/runtime-performance"
+    },
+    {
+      "scenario_id": "live-concurrency-runtime-thread-scale",
+      "workload_id": "live-concurrency-runtime",
+      "stress_id": "live-concurrency-runtime-scale",
+      "sanitizer_id": "live-concurrency-runtime-thread-sanitizer",
+      "parser_sema_case_ids": [
+        "sema_continue_outside_loop"
+      ],
+      "lowering_runtime_case_paths": [
+        "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3"
+      ],
+      "required_action_ids": [
+        "benchmark-runtime-performance",
+        "validate-runtime-performance",
+        "validate-stress"
+      ],
+      "exact_replay_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id live-concurrency-runtime --warmup-runs 0 --measured-runs 3",
+      "support_authority": false,
+      "generated_report_allowed": false,
+      "output_report_root": "tmp/reports/runtime-performance"
+    }
+  ]
+}

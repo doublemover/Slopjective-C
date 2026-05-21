@@ -21,6 +21,7 @@ Authoritative workload inventory:
 - `workload_replay_contract.json`
 - `metadata_resilience_contract.json`
 - `stress_sanitizer_contract.json`
+- `scale_scenario_contract.json`
 
 What does not count:
 

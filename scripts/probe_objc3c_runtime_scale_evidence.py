@@ -15,6 +15,15 @@ from objc3c_tooling.paths import repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.objc3c_workflow.action_catalog_performance_benchmarks import (  # noqa: E402
+    PERFORMANCE_BENCHMARK_ACTION_SPECS,
+)
+from scripts.objc3c_workflow.action_catalog_stress import STRESS_ACTION_SPECS  # noqa: E402
+from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS  # noqa: E402
+
 RUNTIME_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance"
 STRESS_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "stress"
 PERFORMANCE_GOVERNANCE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance"
@@ -23,6 +32,7 @@ WORKLOAD_MANIFEST = RUNTIME_ROOT / "workload_manifest.json"
 REPLAY_CONTRACT = RUNTIME_ROOT / "workload_replay_contract.json"
 METADATA_RESILIENCE_CONTRACT = RUNTIME_ROOT / "metadata_resilience_contract.json"
 STRESS_SANITIZER_CONTRACT = RUNTIME_ROOT / "stress_sanitizer_contract.json"
+SCALE_SCENARIO_CONTRACT = RUNTIME_ROOT / "scale_scenario_contract.json"
 BUDGET_MODEL = PERFORMANCE_GOVERNANCE_ROOT / "budget_model.json"
 PARSER_SEMA_FUZZ_MANIFEST = STRESS_ROOT / "parser_sema_fuzz_manifest.json"
 LOWERING_RUNTIME_STRESS_MANIFEST = STRESS_ROOT / "lowering_runtime_stress_manifest.json"
@@ -39,6 +49,14 @@ def _require_list(payload: dict[str, Any], key: str, owner: str, failures: list[
     if not isinstance(value, list):
         failures.append(f"{owner} missing array field {key}")
         return []
+    return value
+
+
+def _require_dict(payload: dict[str, Any], key: str, owner: str, failures: list[str]) -> dict[str, Any]:
+    value = payload.get(key)
+    if not isinstance(value, dict):
+        failures.append(f"{owner} missing object field {key}")
+        return {}
     return value
 
 
@@ -97,6 +115,52 @@ def _budget_links(budget_model: dict[str, Any]) -> dict[str, str]:
         if isinstance(row, dict) and row.get("workload_id") and row.get("metric_id"):
             links[str(row["workload_id"])] = str(row["metric_id"])
     return links
+
+
+def _parser_sema_case_paths(parser_sema_fuzz_manifest: dict[str, Any]) -> dict[str, str]:
+    return {
+        str(row["case_id"]): str(row["source_path"])
+        for row in parser_sema_fuzz_manifest.get("cases", [])
+        if isinstance(row, dict) and row.get("case_id") and row.get("source_path")
+    }
+
+
+def _stress_scale_contracts(stress_sanitizer_contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(row["stress_id"]): row
+        for row in stress_sanitizer_contract.get("stress_scale_contracts", [])
+        if isinstance(row, dict) and row.get("stress_id")
+    }
+
+
+def _sanitizer_contracts(stress_sanitizer_contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(row["sanitizer_id"]): row
+        for row in stress_sanitizer_contract.get("sanitizer_contracts", [])
+        if isinstance(row, dict) and row.get("sanitizer_id")
+    }
+
+
+def _metadata_fuzz_contracts(metadata_resilience_contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(row["fuzz_id"]): row
+        for row in metadata_resilience_contract.get("metadata_fuzz_contracts", [])
+        if isinstance(row, dict) and row.get("fuzz_id")
+    }
+
+
+def _available_action_specs() -> dict[str, Any]:
+    return {
+        **PERFORMANCE_BENCHMARK_ACTION_SPECS,
+        **STRESS_ACTION_SPECS,
+    }
+
+
+def _python_backend_script(backend: str) -> str:
+    prefix = "python:"
+    if not backend.startswith(prefix):
+        return ""
+    return backend.removeprefix(prefix)
 
 
 def _workload_artifacts(
@@ -355,12 +419,257 @@ def _lowering_runtime_stress_summary(
     return summary
 
 
+def _validate_scale_scenario_actions(
+    scale_scenario_contract: dict[str, Any],
+    *,
+    failures: list[str],
+) -> dict[str, dict[str, Any]]:
+    action_specs = _available_action_specs()
+    validated: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
+    for row in _require_list(
+        scale_scenario_contract,
+        "validation_action_contracts",
+        "scale scenario contract",
+        failures,
+    ):
+        if not isinstance(row, dict):
+            failures.append("scale scenario validation action contains a non-object row")
+            continue
+        action_id = str(row.get("action_id", ""))
+        backend_kind = str(row.get("backend_kind", ""))
+        _expect(bool(action_id), "scale scenario validation action missing action_id", failures)
+        _expect(action_id not in seen, f"duplicate scale scenario validation action {action_id}", failures)
+        seen.add(action_id)
+        spec = action_specs.get(action_id)
+        _expect(spec is not None, f"scale scenario action {action_id} missing action spec", failures)
+        if row.get("handler_required") is True:
+            _expect(action_id in ACTION_HANDLERS, f"scale scenario action {action_id} missing workflow handler", failures)
+        if spec is not None:
+            expected_pass_through = row.get("pass_through_args_required")
+            if isinstance(expected_pass_through, bool):
+                _expect(
+                    spec.pass_through_args is expected_pass_through,
+                    f"scale scenario action {action_id} pass-through contract drifted",
+                    failures,
+                )
+            if backend_kind == "python":
+                script_path = str(row.get("script_path", ""))
+                _expect(bool(script_path), f"scale scenario action {action_id} missing script_path", failures)
+                _expect(
+                    _python_backend_script(spec.backend) == script_path,
+                    f"scale scenario action {action_id} backend script drifted",
+                    failures,
+                )
+                _repo_file(script_path, failures=failures, owner=f"{action_id} script")
+            elif backend_kind == "runner-internal":
+                _expect(
+                    spec.backend.startswith("runner-internal"),
+                    f"scale scenario action {action_id} must stay runner-internal",
+                    failures,
+                )
+                for child_action in row.get("child_actions", []):
+                    child = str(child_action)
+                    _expect(child in action_specs, f"{action_id} child action {child} missing action spec", failures)
+                    _expect(child in ACTION_HANDLERS, f"{action_id} child action {child} missing workflow handler", failures)
+            else:
+                failures.append(f"scale scenario action {action_id} has unsupported backend_kind {backend_kind}")
+        validated[action_id] = row
+    return validated
+
+
+def _scale_scenario_rows(
+    scale_scenario_contract: dict[str, Any],
+    *,
+    workload_rows: dict[str, dict[str, Any]],
+    replay_rows: dict[str, dict[str, Any]],
+    budget_links: dict[str, str],
+    stress_sanitizer_contract: dict[str, Any],
+    metadata_resilience_contract: dict[str, Any],
+    parser_sema_fuzz_manifest: dict[str, Any],
+    lowering_runtime_stress_manifest: dict[str, Any],
+    failures: list[str],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    if scale_scenario_contract.get("contract_id") != "objc3c.runtime.performance.scale.scenario.contract.v1":
+        failures.append("scale scenario contract_id drifted")
+    if scale_scenario_contract.get("schema_version") != 1:
+        failures.append("scale scenario contract schema_version drifted")
+
+    for source_contract in _require_list(
+        scale_scenario_contract,
+        "source_contracts",
+        "scale scenario contract",
+        failures,
+    ):
+        _repo_file(str(source_contract), failures=failures, owner="scale scenario source contract")
+
+    actions = _validate_scale_scenario_actions(scale_scenario_contract, failures=failures)
+    defaults = _require_dict(scale_scenario_contract, "scenario_defaults", "scale scenario contract", failures)
+    required_metadata_fields = {
+        "evidence_kind",
+        "scenario_id",
+        "workload_id",
+        "fixture_sha256",
+        "probe_sha256",
+        "budget_metric_id",
+        "scale_axis",
+        "action_ids",
+    }
+    default_metadata_fields = {str(value) for value in defaults.get("deterministic_metadata_fields", [])}
+    _expect(
+        required_metadata_fields.issubset(default_metadata_fields),
+        "scale scenario defaults do not lock deterministic metadata fields",
+        failures,
+    )
+    _expect(defaults.get("support_authority") is False, "scale scenario defaults must be provenance-only", failures)
+    _expect(
+        defaults.get("generated_report_allowed") is False,
+        "scale scenario defaults must reject generated report authority",
+        failures,
+    )
+    output_report_root = str(defaults.get("output_report_root", ""))
+    _expect(
+        output_report_root.startswith("tmp/reports/runtime-performance"),
+        "scale scenario default report root must stay under tmp runtime-performance reports",
+        failures,
+    )
+
+    stress_contracts = _stress_scale_contracts(stress_sanitizer_contract)
+    sanitizer_contracts = _sanitizer_contracts(stress_sanitizer_contract)
+    metadata_fuzz_contracts = _metadata_fuzz_contracts(metadata_resilience_contract)
+    parser_case_paths = _parser_sema_case_paths(parser_sema_fuzz_manifest)
+    lowering_paths = {
+        str(path)
+        for key in ("compile_cases", "execution_cases", "semantic_provenance_cases")
+        for path in lowering_runtime_stress_manifest.get(key, [])
+    }
+
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for scenario in _require_list(scale_scenario_contract, "scale_scenarios", "scale scenario contract", failures):
+        if not isinstance(scenario, dict):
+            failures.append("scale scenario contract contains a non-object scenario")
+            continue
+        scenario_id = str(scenario.get("scenario_id", ""))
+        workload_id = str(scenario.get("workload_id", ""))
+        stress_id = str(scenario.get("stress_id", ""))
+        _expect(bool(scenario_id), "scale scenario missing scenario_id", failures)
+        _expect(scenario_id not in seen, f"duplicate scale scenario id {scenario_id}", failures)
+        seen.add(scenario_id)
+        _expect(scenario.get("support_authority") is False, f"{scenario_id} must be provenance-only", failures)
+        _expect(
+            scenario.get("generated_report_allowed") is False,
+            f"{scenario_id} must not promote generated reports",
+            failures,
+        )
+        _expect(
+            str(scenario.get("output_report_root", "")).startswith("tmp/reports/runtime-performance"),
+            f"{scenario_id} report root must stay under tmp runtime-performance reports",
+            failures,
+        )
+
+        stress = stress_contracts.get(stress_id)
+        _expect(stress is not None, f"{scenario_id} references unknown stress_id {stress_id}", failures)
+        if stress is not None:
+            _expect(
+                str(stress.get("workload_id", "")) == workload_id,
+                f"{scenario_id} stress workload drifted from scenario workload",
+                failures,
+            )
+        sanitizer_id = scenario.get("sanitizer_id")
+        sanitizer_modes: list[str] = []
+        if isinstance(sanitizer_id, str) and sanitizer_id:
+            sanitizer = sanitizer_contracts.get(sanitizer_id)
+            _expect(sanitizer is not None, f"{scenario_id} references unknown sanitizer_id {sanitizer_id}", failures)
+            if sanitizer is not None:
+                _expect(
+                    str(sanitizer.get("workload_id", "")) == workload_id,
+                    f"{scenario_id} sanitizer workload drifted from scenario workload",
+                    failures,
+                )
+                sanitizer_modes = [str(value) for value in sanitizer.get("sanitizer_modes", [])]
+
+        fuzz_id = scenario.get("metadata_fuzz_id")
+        corpus_paths: list[str] = []
+        if isinstance(fuzz_id, str) and fuzz_id:
+            fuzz = metadata_fuzz_contracts.get(fuzz_id)
+            _expect(fuzz is not None, f"{scenario_id} references unknown metadata_fuzz_id {fuzz_id}", failures)
+            if fuzz is not None:
+                _expect(
+                    str(fuzz.get("workload_id", "")) == workload_id,
+                    f"{scenario_id} metadata fuzz workload drifted from scenario workload",
+                    failures,
+                )
+                corpus_paths = [str(path) for path in fuzz.get("corpus_paths", [])]
+
+        parser_case_ids = [str(case_id) for case_id in scenario.get("parser_sema_case_ids", [])]
+        _expect(bool(parser_case_ids), f"{scenario_id} must cite parser/sema fuzz cases", failures)
+        for case_id in parser_case_ids:
+            source_path = parser_case_paths.get(case_id)
+            _expect(source_path is not None, f"{scenario_id} references unknown parser/sema fuzz case {case_id}", failures)
+            if source_path is not None:
+                _repo_file(source_path, failures=failures, owner=f"{scenario_id} parser/sema source")
+
+        scenario_lowering_paths = [str(path) for path in scenario.get("lowering_runtime_case_paths", [])]
+        _expect(bool(scenario_lowering_paths), f"{scenario_id} must cite lowering/runtime stress cases", failures)
+        for path in scenario_lowering_paths:
+            _expect(path in lowering_paths, f"{scenario_id} lowering/runtime case is not in stress manifest: {path}", failures)
+            _repo_file(path, failures=failures, owner=f"{scenario_id} lowering/runtime source")
+
+        required_action_ids = [str(action_id) for action_id in scenario.get("required_action_ids", [])]
+        _expect(bool(required_action_ids), f"{scenario_id} must cite validation actions", failures)
+        for action_id in required_action_ids:
+            _expect(action_id in actions, f"{scenario_id} references undeclared validation action {action_id}", failures)
+
+        exact_replay_command = str(scenario.get("exact_replay_command", ""))
+        expected_prefix = f"npm run objc3c -- benchmark-runtime-performance -- --workload-id {workload_id} "
+        _expect(
+            exact_replay_command.startswith(expected_prefix),
+            f"{scenario_id} exact replay command is not workload-targeted",
+            failures,
+        )
+        _expect(
+            "--warmup-runs 0" in exact_replay_command and "--measured-runs 3" in exact_replay_command,
+            f"{scenario_id} exact replay command must stay bounded and deterministic",
+            failures,
+        )
+
+        rows.append(
+            _row_with_probe_id(
+                {
+                    "evidence_kind": "scale-scenario",
+                    "scenario_id": scenario_id,
+                    "stress_id": stress_id,
+                    "sanitizer_id": sanitizer_id or "",
+                    "sanitizer_modes": sanitizer_modes,
+                    "metadata_fuzz_id": fuzz_id or "",
+                    "metadata_fuzz_corpus": corpus_paths,
+                    "parser_sema_case_ids": parser_case_ids,
+                    "lowering_runtime_case_paths": scenario_lowering_paths,
+                    "action_ids": required_action_ids,
+                    "exact_replay_command": exact_replay_command,
+                    "scale_axis": str(stress.get("scale_axis", "")) if stress is not None else "",
+                    "support_authority": False,
+                    **_workload_artifacts(
+                        workload_id,
+                        workload_rows=workload_rows,
+                        replay_rows=replay_rows,
+                        budget_links=budget_links,
+                        failures=failures,
+                    ),
+                }
+            )
+        )
+    return rows, actions
+
+
 def build_scale_evidence_summary(
     *,
     workload_manifest: dict[str, Any],
     replay_contract: dict[str, Any],
     metadata_resilience_contract: dict[str, Any],
     stress_sanitizer_contract: dict[str, Any],
+    scale_scenario_contract: dict[str, Any],
     budget_model: dict[str, Any],
     parser_sema_fuzz_manifest: dict[str, Any],
     lowering_runtime_stress_manifest: dict[str, Any],
@@ -387,7 +696,18 @@ def build_scale_evidence_summary(
     metadata_fuzz_rows = _metadata_fuzz_rows(metadata_resilience_contract, failures=failures)
     parser_sema_fuzz = _parser_sema_fuzz_summary(parser_sema_fuzz_manifest, failures=failures)
     lowering_runtime_stress = _lowering_runtime_stress_summary(lowering_runtime_stress_manifest, failures=failures)
-    evidence_rows = stress_scale_rows + sanitizer_rows + metadata_fuzz_rows
+    scale_scenario_rows, validation_actions = _scale_scenario_rows(
+        scale_scenario_contract,
+        workload_rows=workloads,
+        replay_rows=replay,
+        budget_links=budget,
+        stress_sanitizer_contract=stress_sanitizer_contract,
+        metadata_resilience_contract=metadata_resilience_contract,
+        parser_sema_fuzz_manifest=parser_sema_fuzz_manifest,
+        lowering_runtime_stress_manifest=lowering_runtime_stress_manifest,
+        failures=failures,
+    )
+    evidence_rows = stress_scale_rows + sanitizer_rows + metadata_fuzz_rows + scale_scenario_rows
 
     return {
         "contract_id": "objc3c.runtime.performance.scale.evidence.summary.v1",
@@ -399,6 +719,7 @@ def build_scale_evidence_summary(
             repo_rel(REPLAY_CONTRACT),
             repo_rel(METADATA_RESILIENCE_CONTRACT),
             repo_rel(STRESS_SANITIZER_CONTRACT),
+            repo_rel(SCALE_SCENARIO_CONTRACT),
             repo_rel(BUDGET_MODEL),
             repo_rel(PARSER_SEMA_FUZZ_MANIFEST),
             repo_rel(LOWERING_RUNTIME_STRESS_MANIFEST),
@@ -407,12 +728,19 @@ def build_scale_evidence_summary(
             "stress_scale": len(stress_scale_rows),
             "sanitizer": len(sanitizer_rows),
             "metadata_fuzz": len(metadata_fuzz_rows),
+            "scale_scenarios": len(scale_scenario_rows),
+            "validation_actions": len(validation_actions),
             "parser_sema_fuzz_cases": parser_sema_fuzz["case_count"],
             "lowering_runtime_compile_cases": lowering_runtime_stress["compile_cases_count"],
             "lowering_runtime_execution_cases": lowering_runtime_stress["execution_cases_count"],
             "lowering_runtime_semantic_provenance_cases": lowering_runtime_stress[
                 "semantic_provenance_cases_count"
             ],
+        },
+        "scale_scenario_contract": {
+            "path": repo_rel(SCALE_SCENARIO_CONTRACT),
+            "contract_id": scale_scenario_contract.get("contract_id"),
+            "validation_action_ids": sorted(validation_actions),
         },
         "parser_sema_fuzz": parser_sema_fuzz,
         "lowering_runtime_stress": lowering_runtime_stress,
@@ -434,6 +762,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         replay_contract=load_json(REPLAY_CONTRACT),
         metadata_resilience_contract=load_json(METADATA_RESILIENCE_CONTRACT),
         stress_sanitizer_contract=load_json(STRESS_SANITIZER_CONTRACT),
+        scale_scenario_contract=load_json(SCALE_SCENARIO_CONTRACT),
         budget_model=load_json(BUDGET_MODEL),
         parser_sema_fuzz_manifest=load_json(PARSER_SEMA_FUZZ_MANIFEST),
         lowering_runtime_stress_manifest=load_json(LOWERING_RUNTIME_STRESS_MANIFEST),

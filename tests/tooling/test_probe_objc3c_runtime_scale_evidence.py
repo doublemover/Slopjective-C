@@ -28,6 +28,7 @@ def _checked_in_summary() -> dict[str, object]:
         replay_contract=probe.load_json(probe.REPLAY_CONTRACT),
         metadata_resilience_contract=probe.load_json(probe.METADATA_RESILIENCE_CONTRACT),
         stress_sanitizer_contract=probe.load_json(probe.STRESS_SANITIZER_CONTRACT),
+        scale_scenario_contract=probe.load_json(probe.SCALE_SCENARIO_CONTRACT),
         budget_model=probe.load_json(probe.BUDGET_MODEL),
         parser_sema_fuzz_manifest=probe.load_json(probe.PARSER_SEMA_FUZZ_MANIFEST),
         lowering_runtime_stress_manifest=probe.load_json(probe.LOWERING_RUNTIME_STRESS_MANIFEST),
@@ -45,6 +46,8 @@ def test_runtime_scale_evidence_summary_is_deterministic_for_checked_in_contract
         "stress_scale": 8,
         "sanitizer": 4,
         "metadata_fuzz": 1,
+        "scale_scenarios": 4,
+        "validation_actions": 5,
         "parser_sema_fuzz_cases": 7,
         "lowering_runtime_compile_cases": 15,
         "lowering_runtime_execution_cases": 3,
@@ -53,10 +56,24 @@ def test_runtime_scale_evidence_summary_is_deterministic_for_checked_in_contract
 
     rows = first["evidence_rows"]
     assert isinstance(rows, list)
-    assert len(rows) == 13
+    assert len(rows) == 17
     probe_ids = [row["deterministic_probe_id"] for row in rows if isinstance(row, dict)]
     assert len(probe_ids) == len(set(probe_ids))
     assert all(row["support_authority"] is False for row in rows if isinstance(row, dict))
+    scenario_rows = [row for row in rows if isinstance(row, dict) and row.get("evidence_kind") == "scale-scenario"]
+    assert {row["scenario_id"] for row in scenario_rows} == {
+        "dispatch-cache-fuzz-sanitized-scale",
+        "registration-replay-runtime-scale",
+        "block-arc-lifetime-sanitized-scale",
+        "live-concurrency-runtime-thread-scale",
+    }
+    assert first["scale_scenario_contract"]["validation_action_ids"] == [
+        "benchmark-runtime-performance",
+        "test-fuzz-safety",
+        "test-lowering-runtime-stress",
+        "validate-runtime-performance",
+        "validate-stress",
+    ]
     dispatch_row = next(
         row
         for row in rows
@@ -76,6 +93,7 @@ def test_runtime_scale_evidence_rejects_support_authority_overclaim() -> None:
         replay_contract=probe.load_json(probe.REPLAY_CONTRACT),
         metadata_resilience_contract=probe.load_json(probe.METADATA_RESILIENCE_CONTRACT),
         stress_sanitizer_contract=stress_contract,
+        scale_scenario_contract=probe.load_json(probe.SCALE_SCENARIO_CONTRACT),
         budget_model=probe.load_json(probe.BUDGET_MODEL),
         parser_sema_fuzz_manifest=probe.load_json(probe.PARSER_SEMA_FUZZ_MANIFEST),
         lowering_runtime_stress_manifest=probe.load_json(probe.LOWERING_RUNTIME_STRESS_MANIFEST),
@@ -97,6 +115,7 @@ def test_runtime_scale_evidence_rejects_missing_budget_link() -> None:
         replay_contract=probe.load_json(probe.REPLAY_CONTRACT),
         metadata_resilience_contract=probe.load_json(probe.METADATA_RESILIENCE_CONTRACT),
         stress_sanitizer_contract=probe.load_json(probe.STRESS_SANITIZER_CONTRACT),
+        scale_scenario_contract=probe.load_json(probe.SCALE_SCENARIO_CONTRACT),
         budget_model=budget_model,
         parser_sema_fuzz_manifest=probe.load_json(probe.PARSER_SEMA_FUZZ_MANIFEST),
         lowering_runtime_stress_manifest=probe.load_json(probe.LOWERING_RUNTIME_STRESS_MANIFEST),
@@ -104,6 +123,45 @@ def test_runtime_scale_evidence_rejects_missing_budget_link() -> None:
 
     assert summary["status"] == "FAIL"
     assert any("dispatch-cache missing budget metric link" in failure for failure in summary["failures"])
+
+
+def test_runtime_scale_evidence_rejects_unregistered_validation_action() -> None:
+    scale_contract = copy.deepcopy(probe.load_json(probe.SCALE_SCENARIO_CONTRACT))
+    scale_contract["validation_action_contracts"][0]["action_id"] = "missing-runtime-scale-action"
+
+    summary = probe.build_scale_evidence_summary(
+        workload_manifest=probe.load_json(probe.WORKLOAD_MANIFEST),
+        replay_contract=probe.load_json(probe.REPLAY_CONTRACT),
+        metadata_resilience_contract=probe.load_json(probe.METADATA_RESILIENCE_CONTRACT),
+        stress_sanitizer_contract=probe.load_json(probe.STRESS_SANITIZER_CONTRACT),
+        scale_scenario_contract=scale_contract,
+        budget_model=probe.load_json(probe.BUDGET_MODEL),
+        parser_sema_fuzz_manifest=probe.load_json(probe.PARSER_SEMA_FUZZ_MANIFEST),
+        lowering_runtime_stress_manifest=probe.load_json(probe.LOWERING_RUNTIME_STRESS_MANIFEST),
+    )
+
+    assert summary["status"] == "FAIL"
+    assert any("missing action spec" in failure for failure in summary["failures"])
+    assert any("references undeclared validation action" in failure for failure in summary["failures"])
+
+
+def test_runtime_scale_evidence_rejects_generated_report_authority() -> None:
+    scale_contract = copy.deepcopy(probe.load_json(probe.SCALE_SCENARIO_CONTRACT))
+    scale_contract["scale_scenarios"][0]["generated_report_allowed"] = True
+
+    summary = probe.build_scale_evidence_summary(
+        workload_manifest=probe.load_json(probe.WORKLOAD_MANIFEST),
+        replay_contract=probe.load_json(probe.REPLAY_CONTRACT),
+        metadata_resilience_contract=probe.load_json(probe.METADATA_RESILIENCE_CONTRACT),
+        stress_sanitizer_contract=probe.load_json(probe.STRESS_SANITIZER_CONTRACT),
+        scale_scenario_contract=scale_contract,
+        budget_model=probe.load_json(probe.BUDGET_MODEL),
+        parser_sema_fuzz_manifest=probe.load_json(probe.PARSER_SEMA_FUZZ_MANIFEST),
+        lowering_runtime_stress_manifest=probe.load_json(probe.LOWERING_RUNTIME_STRESS_MANIFEST),
+    )
+
+    assert summary["status"] == "FAIL"
+    assert any("must not promote generated reports" in failure for failure in summary["failures"])
 
 
 def test_runtime_scale_evidence_cli_writes_tmp_report(tmp_path: Path) -> None:
@@ -117,3 +175,4 @@ def test_runtime_scale_evidence_cli_writes_tmp_report(tmp_path: Path) -> None:
     assert payload["contract_id"] == "objc3c.runtime.performance.scale.evidence.summary.v1"
     assert payload["status"] == "PASS"
     assert payload["summary_counts"]["stress_scale"] == 8
+    assert payload["summary_counts"]["scale_scenarios"] == 4
