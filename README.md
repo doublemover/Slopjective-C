@@ -88,6 +88,24 @@ The native build publishes the compiler, C API runner, and runtime archive under
 `artifacts/`. The compile command writes diagnostics, manifest data, LLVM IR,
 object-output records, and frontend metadata under the selected output root.
 
+## Start Here
+
+Use this README for orientation, first-session commands, and the shortest path
+to a compiled Objective-C 3.0 program. It also routes to the support matrix,
+public command bridge, tutorial set, showcase portfolio, and published site.
+
+Canonical roots:
+
+- `README.md`: top-level technical orientation and first-session routing.
+- `CONTRIBUTING.md`: contributor boundaries and repository hygiene.
+- `docs/tutorials/`: guided setup, walkthrough, comparison, and sample paths.
+- `showcase/README.md`: checked example portfolio.
+- `showcase/applicationFrameworkSamples/README.md`: package-aware sample
+  libraries and apps.
+- `docs/runbooks/objc3c_public_command_surface.md`: synchronized command
+  reference.
+- `docs/support/capability_matrix.json`: machine-readable capability contract.
+
 ## Current State
 
 The checked capability matrix currently contains 93 rows:
@@ -186,7 +204,7 @@ Checked modules live under `stdlib/modules/`.
 broader toolchain ranges are represented explicitly as rejected, reserved, or
 internal rows until their own evidence exists.
 
-## Quick Start
+## Fresh Setup
 
 This repository is easiest to use on Windows with PowerShell 7.
 
@@ -226,6 +244,8 @@ Build the compiler and runtime archive:
 ```powershell
 npm run objc3c -- build-native-binaries
 ```
+
+## First Working Session
 
 Compile a checked-in program:
 
@@ -311,6 +331,22 @@ Common actions:
 The synchronized command reference is
 [`docs/runbooks/objc3c_public_command_surface.md`](docs/runbooks/objc3c_public_command_surface.md).
 
+## Spec Structure
+
+Specification and reader-facing docs are split by role:
+
+- `spec/`: language, ABI, runtime, and metadata contracts.
+- `docs/tutorials/`: task-oriented reader paths.
+- `docs/runbooks/`: operator and maintainer workflows.
+- `docs/support/`: capability claims, evidence maps, schema examples, and claim
+  ownership.
+- `site/`: source for the published site.
+
+Support prose in these files must route back to the capability matrix and
+evidence map. A spec chapter, runbook, tutorial, generated artifact, or issue
+closeout payload does not promote a reserved or internal row into public runtime
+behavior.
+
 ## Exact Support Boundaries
 
 The README is an orientation page. Exact claims come from the capability matrix,
@@ -333,6 +369,23 @@ Current explicit boundaries:
   collections row.
 - Linux, macOS, sanitizer variants, and broad LLVM version ranges need their own
   platform evidence before they become supported host rows.
+
+## Superclean Boundary
+
+`tmp/` and `artifacts/` are machine-owned output roots. They can contain build
+products, packages, compiler artifacts, and replay outputs, but durable
+capability claims live in checked source, tests, schemas, and the capability
+matrix.
+
+Explicit non-goals for cleanup work:
+
+- Do not convert machine outputs into editable capability claims.
+- Do not treat a passing output artifact as issue closure without the matching
+  checked owner surface and validation command.
+- Do not revive retired modes, retired routes, or alternate acceptance paths as
+  public Objective-C 3.0 behavior.
+- Do not replace the `npm run objc3c -- <action>` bridge with direct helper
+  commands in public docs.
 
 ## Repository Map
 
