@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-25",
+  "title": "Accept multi-protocol existential composition value flow",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8164,
+  "references": [
+    "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
+    "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+    "native/objc3c/src/sema/objc3_semantic_passes_protocol_message_resolution.inc"
+  ],
+  "source": "module ProtocolCompositionExistentialValueFlow;\n\n@protocol ReadableValue\n@required\n@property (readonly) id readToken;\n@end\n\n@protocol WritableValue\n@required\n- (id)writeToken;\n@end\n\nfn consumeComposed(value: id<ReadableValue, WritableValue>*?) -> i32 {\n  let read = [value? readToken];\n  let written = [value? writeToken];\n  return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "manifest_surface": [
+      "semantic_canonical_type_metadata.functions.consumeComposed.param_canonical_types.protocol_composition_lexicographic",
+      "frontend.pipeline.semantic_surface.objc_type_system_type_semantic_model.protocol_composition_semantic_sites"
+    ]
+  }
+}

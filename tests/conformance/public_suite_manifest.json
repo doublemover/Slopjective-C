@@ -334,15 +334,19 @@
       "release_gate": true,
       "positive_evidence": [
         "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
-        "tests/conformance/semantic/TYP-8013-01.json"
+        "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
+        "tests/conformance/semantic/TYP-8013-01.json",
+        "tests/conformance/semantic/TYP-8013-25.json"
       ],
       "negative_evidence": [
         "tests/conformance/semantic/TYP-8013-07.json",
-        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3"
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
+        "tests/conformance/semantic/TYP-8013-21.json",
+        "tests/conformance/semantic/TYP-8013-22.json"
       ],
       "source_truth_requirements": [
         "Protocol-qualified existential support resolves to checked semantic fixtures before public reporting.",
-        "Unknown protocol-qualified sends stay fail-closed semantic evidence."
+        "Comma-style protocol composition has positive source evidence; associated types and dynamic existential dispatch stay fail-closed semantic evidence."
       ]
     },
     {

@@ -699,6 +699,12 @@
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
     },
     {
@@ -706,6 +712,18 @@
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "test",
       "path": "tests/conformance/semantic/TYP-8013-01.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-18.json"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "test",
+      "path": "tests/conformance/semantic/TYP-8013-25.json"
     },
     {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
@@ -754,6 +772,12 @@
       "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+    },
+    {
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp"
     },
     {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
@@ -1363,6 +1387,12 @@
       "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
     },
     {
       "capability_id": "stdlib.collections.array-slice-runtime-shape",

@@ -16,6 +16,7 @@
   "api_families": [
     "utf8-text-record",
     "text-length",
+    "text-byte-access",
     "text-concat",
     "text-status"
   ],
@@ -24,6 +25,7 @@
     "objc3_runtime_stdlib_text_byte_count_i32",
     "objc3_runtime_stdlib_text_unit_count_i32",
     "objc3_runtime_stdlib_text_is_valid_utf8_i32",
+    "objc3_runtime_stdlib_text_byte_at_or_i32",
     "objc3_runtime_stdlib_text_prefix_units_i32",
     "objc3_runtime_stdlib_text_concat_i32",
     "objc3_runtime_stdlib_text_last_status_i32"
@@ -33,6 +35,7 @@
     "objc3_runtime_stdlib_text_byte_count_i32": "extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32",
     "objc3_runtime_stdlib_text_unit_count_i32": "extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32",
     "objc3_runtime_stdlib_text_is_valid_utf8_i32": "extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_text_byte_at_or_i32": "extern fn objc3_runtime_stdlib_text_byte_at_or_i32(handle: i32, byte_index: i32, default_value: i32) -> i32",
     "objc3_runtime_stdlib_text_prefix_units_i32": "extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32",
     "objc3_runtime_stdlib_text_concat_i32": "extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32",
     "objc3_runtime_stdlib_text_last_status_i32": "extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32"
@@ -42,10 +45,13 @@
     "Objc3TextStatusInvalidHandle",
     "Objc3TextStatusInvalidShape",
     "Objc3TextStatusMalformedUtf8",
+    "Objc3TextStatusOutOfBounds",
+    "Objc3TextStatusStorageUnavailable",
     "objc3_text_utf8_literal",
     "objc3_text_byte_count",
     "objc3_text_unit_count",
     "objc3_text_is_valid_utf8",
+    "objc3_text_byte_at_or",
     "objc3_text_prefix_units",
     "objc3_text_concat",
     "objc3_text_last_status"
@@ -55,10 +61,13 @@
     "Objc3TextStatusInvalidHandle": "let Objc3TextStatusInvalidHandle = 30641",
     "Objc3TextStatusInvalidShape": "let Objc3TextStatusInvalidShape = 30642",
     "Objc3TextStatusMalformedUtf8": "let Objc3TextStatusMalformedUtf8 = 30643",
+    "Objc3TextStatusOutOfBounds": "let Objc3TextStatusOutOfBounds = 30644",
+    "Objc3TextStatusStorageUnavailable": "let Objc3TextStatusStorageUnavailable = 30646",
     "objc3_text_utf8_literal": "fn objc3_text_utf8_literal(byte_count: i32, unit_count: i32, valid_utf8: i32)",
     "objc3_text_byte_count": "fn objc3_text_byte_count(handle: i32)",
     "objc3_text_unit_count": "fn objc3_text_unit_count(handle: i32)",
     "objc3_text_is_valid_utf8": "fn objc3_text_is_valid_utf8(handle: i32)",
+    "objc3_text_byte_at_or": "fn objc3_text_byte_at_or(handle: i32, byte_index: i32, default_value: i32)",
     "objc3_text_prefix_units": "fn objc3_text_prefix_units(handle: i32, requested_units: i32)",
     "objc3_text_concat": "fn objc3_text_concat(left_handle: i32, right_handle: i32)",
     "objc3_text_last_status": "fn objc3_text_last_status()"

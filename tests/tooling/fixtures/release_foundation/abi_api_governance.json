@@ -99,7 +99,9 @@
         "Objc3TextStatusOk",
         "Objc3TextStatusInvalidHandle",
         "Objc3TextStatusInvalidShape",
-        "Objc3TextStatusMalformedUtf8"
+        "Objc3TextStatusMalformedUtf8",
+        "Objc3TextStatusOutOfBounds",
+        "Objc3TextStatusStorageUnavailable"
       ]
     },
     "objc3.collections": {
@@ -233,10 +235,13 @@
         "Objc3TextStatusInvalidHandle": "let Objc3TextStatusInvalidHandle = 30641",
         "Objc3TextStatusInvalidShape": "let Objc3TextStatusInvalidShape = 30642",
         "Objc3TextStatusMalformedUtf8": "let Objc3TextStatusMalformedUtf8 = 30643",
+        "Objc3TextStatusOutOfBounds": "let Objc3TextStatusOutOfBounds = 30644",
+        "Objc3TextStatusStorageUnavailable": "let Objc3TextStatusStorageUnavailable = 30646",
         "objc3_text_utf8_literal": "fn objc3_text_utf8_literal(byte_count: i32, unit_count: i32, valid_utf8: i32)",
         "objc3_text_byte_count": "fn objc3_text_byte_count(handle: i32)",
         "objc3_text_unit_count": "fn objc3_text_unit_count(handle: i32)",
         "objc3_text_is_valid_utf8": "fn objc3_text_is_valid_utf8(handle: i32)",
+        "objc3_text_byte_at_or": "fn objc3_text_byte_at_or(handle: i32, byte_index: i32, default_value: i32)",
         "objc3_text_prefix_units": "fn objc3_text_prefix_units(handle: i32, requested_units: i32)",
         "objc3_text_concat": "fn objc3_text_concat(left_handle: i32, right_handle: i32)",
         "objc3_text_last_status": "fn objc3_text_last_status()"
@@ -418,6 +423,7 @@
         "objc3_runtime_stdlib_text_byte_count_i32": "extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32",
         "objc3_runtime_stdlib_text_unit_count_i32": "extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32",
         "objc3_runtime_stdlib_text_is_valid_utf8_i32": "extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_text_byte_at_or_i32": "extern fn objc3_runtime_stdlib_text_byte_at_or_i32(handle: i32, byte_index: i32, default_value: i32) -> i32",
         "objc3_runtime_stdlib_text_prefix_units_i32": "extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32",
         "objc3_runtime_stdlib_text_concat_i32": "extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32",
         "objc3_runtime_stdlib_text_last_status_i32": "extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32"
@@ -637,8 +643,8 @@
       "supported_major_line": 1,
       "current_minor_line": 0,
       "compatibility_class": "package-lockfile-abi",
-      "stdlib_public_api_symbol_count": 100,
-      "stdlib_runtime_abi_symbol_count": 49,
+      "stdlib_public_api_symbol_count": 103,
+      "stdlib_runtime_abi_symbol_count": 50,
       "frontend_c_api_symbol_count": 33
     }
   },
@@ -724,6 +730,30 @@
     "required_schema_transition_policy": "schema-breaking-change-without-major-line"
   },
   "private_helper_graduation_records": [
+    {
+      "record_id": "objc3.text.status.out-of-bounds.public-api",
+      "module": "objc3.text",
+      "symbol": "Objc3TextStatusOutOfBounds",
+      "source_profile": "private-runtime-helper",
+      "target_profile": "Core and above",
+      "issue_refs": [
+        "#8162",
+        "#8173"
+      ],
+      "policy_state": "approved"
+    },
+    {
+      "record_id": "objc3.text.status.storage-unavailable.public-api",
+      "module": "objc3.text",
+      "symbol": "Objc3TextStatusStorageUnavailable",
+      "source_profile": "private-runtime-helper",
+      "target_profile": "Core and above",
+      "issue_refs": [
+        "#8162",
+        "#8173"
+      ],
+      "policy_state": "approved"
+    },
     {
       "record_id": "objc3.collections.status.invalid-range.public-api",
       "module": "objc3.collections",

@@ -229,11 +229,15 @@
       "public_command": "npm run objc3c -- validate-conformance-corpus",
       "required_positive_evidence": [
         "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+        "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
         "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
         "tests/conformance/semantic/TYP-8013-01.json",
+        "tests/conformance/semantic/TYP-8013-18.json",
+        "tests/conformance/semantic/TYP-8013-25.json",
         "native/objc3c/src/runtime/classes/protocol_conformance.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
-        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp"
       ],
       "required_negative_evidence": [
         "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
@@ -273,6 +277,13 @@
           ]
         },
         {
+          "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
+          "snippets": [
+            "PopulateImportedTypeSystemProtocolContractEvidence",
+            "protocol_contract_protocols"
+          ]
+        },
+        {
           "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
           "snippets": [
             "ProtocolConformanceMatch",
@@ -282,15 +293,17 @@
       ],
       "required_source_truth_phrases": [
         "id<Protocol>",
+        "id<Protocol, Protocol>",
         "Runtime witness/conformance metadata",
+        "Cross-module protocol contract metadata",
         "fail-closed evidence",
         "does not claim"
       ],
       "unsupported_boundaries": [
         "associated types",
         "dynamic existential invocation dispatch",
-        "protocol composition beyond the typed semantic suffix",
-        "cross-module existential import/export"
+        "ampersand-style protocol composition syntax",
+        "cross-module existential invocation ABI"
       ]
     },
     {

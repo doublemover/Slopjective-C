@@ -1056,6 +1056,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "objc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",

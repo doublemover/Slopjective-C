@@ -44,17 +44,31 @@ int main() {
           OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8) {
     return Fail("text malformed UTF-8 flag did not fail closed");
   }
+  const int stored = objc3_runtime_stdlib_text_utf8_storage_i32("hi", 2);
+  char stored_bytes[2] = {};
+  if (stored <= 0 ||
+      objc3_runtime_stdlib_text_byte_at_or_i32(stored, 0, 0) != 104 ||
+      objc3_runtime_copy_stdlib_text_utf8_bytes_for_testing(stored,
+                                                            stored_bytes,
+                                                            2) != 2 ||
+      stored_bytes[0] != 'h' || stored_bytes[1] != 'i') {
+    return Fail("text owned UTF-8 storage retrieval drifted");
+  }
 
   objc3_runtime_stdlib_text_snapshot text_snapshot{};
   if (objc3_runtime_copy_stdlib_text_state_for_testing(&text_snapshot) != 0) {
     return Fail("text snapshot copy failed");
   }
-  if (text_snapshot.total_call_count != 14 ||
+  if (text_snapshot.total_call_count != 17 ||
       text_snapshot.literal_call_count != 4 ||
       text_snapshot.query_call_count != 6 ||
       text_snapshot.concat_call_count != 1 ||
+      text_snapshot.storage_create_call_count != 1 ||
+      text_snapshot.storage_query_call_count != 2 ||
       text_snapshot.status_call_count != 3 ||
-      text_snapshot.text_record_count != 3) {
+      text_snapshot.text_record_count != 4 ||
+      text_snapshot.owned_storage_record_count != 1 ||
+      text_snapshot.owned_storage_byte_count != 2) {
     return Fail("text runtime call counters drifted");
   }
 

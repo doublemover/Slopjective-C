@@ -146,11 +146,15 @@
       "runtime_acceptance_case": "type-semantic-model-protocol-qualified-existential-value-flow",
       "positive_evidence": [
         "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+        "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
         "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
         "tests/conformance/semantic/TYP-8013-01.json",
+        "tests/conformance/semantic/TYP-8013-18.json",
+        "tests/conformance/semantic/TYP-8013-25.json",
         "native/objc3c/src/runtime/classes/protocol_conformance.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
         "scripts/objc3c_type_semantic_model_closure/positive.py",
         "scripts/objc3c_type_semantic_model_closure/summary_checks.py"
       ],
@@ -176,10 +180,11 @@
         "O3S314"
       ],
       "source_truth_requirements": [
-        "Protocol-qualified existential value flow is claimed only for checked-in semantic fixtures using id<Protocol> object qualifiers, optional chaining, and declared protocol members",
+        "Protocol-qualified existential value flow is claimed only for checked-in semantic fixtures using id<Protocol> and id<Protocol, Protocol> object qualifiers, optional chaining, and declared protocol members",
         "Runtime witness/conformance metadata is claimable only through ProtocolConformanceMatch, BuildRuntimeProtocolExistentialWitnessMetadata, and the public language-semantics snapshot",
+        "Cross-module protocol contract metadata preservation is claimable only through TYP-8013-18 and runtime_import_type_system_preservation_protocol.cpp; imported existential invocation ABI remains unclaimed",
         "Duplicate protocol composition, unknown protocol identifiers, conflicting requirements, undeclared selector sends, associated-type declarations, and dynamic protocol dispatch attributes remain fail-closed evidence",
-        "This row does not claim associated types, dynamic existential invocation dispatch, protocol composition beyond the typed semantic suffix, or cross-module existential import/export"
+        "This row does not claim associated types, dynamic existential invocation dispatch, ampersand-style protocol composition syntax, or cross-module existential invocation ABI"
       ]
     },
     {
@@ -1371,7 +1376,7 @@
         "String-view runtime shape support is claimed by the dedicated objc3.text module and text runtime ABI, not by legacy objc3.core helper routing",
         "Positive evidence must include the stdlib foundation-next text fixture, public umbrella runtime probe, module manifest, source module, smoke source, and text runtime contract",
         "Invalid handles, malformed UTF-8 flags, invalid byte/unit shapes, and signature conflicts remain fail-closed evidence",
-        "Source-language string literal syntax ownership beyond the lowered UTF-8 metadata helper, Unicode scalar iteration, normalization and collation, formatting and interpolation, and NSString bridging remain reserved"
+        "Source-language text operations beyond decoded literal storage lowering, Unicode scalar iteration, normalization and collation, formatting and interpolation, and NSString bridging remain reserved"
       ]
     },
     {
@@ -1401,9 +1406,9 @@
       ],
       "source_truth_requirements": [
         "Byte-count runtime shape support is claimed by the dedicated objc3.text module and text runtime ABI, not by legacy objc3.core helper routing",
+        "In-place mutable byte buffer ownership, encoding conversion, slice mutation, iteration protocol, and Foundation NSData bridging remain reserved",
         "Positive evidence must include byte-count, prefix clamp, status, and invalid-handle behavior through the stdlib foundation-next runtime probe",
-        "Invalid handles, invalid byte/unit shapes, and ABI signature conflicts remain fail-closed evidence",
-        "Mutable byte buffer ownership, encoding conversion, slice mutation, iteration protocol, and Foundation NSData bridging remain reserved"
+        "Invalid handles, invalid byte/unit shapes, and ABI signature conflicts remain fail-closed evidence"
       ]
     },
     {
@@ -1427,7 +1432,8 @@
         "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
         "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
         "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
-        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
       ],
       "negative_evidence": [
         "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3",
@@ -1439,10 +1445,10 @@
         "O3L011"
       ],
       "source_truth_requirements": [
-        "Source string literal support is a shape-handle contract: the AST stores the decoded source value, while current lowering passes UTF-8 byte count, scalar unit count, and validity into the runtime text record helper",
-        "The runtime-visible type is the Text scalar handle and the runtime-visible operations are the existing byte/unit/validity helpers; content retrieval, mutation, formatting, interpolation, normalization, collation, NSString bridging, and Foundation compatibility remain reserved",
+        "Source string literal support is a storage-backed handle contract: the AST stores the decoded source value, while current lowering copies UTF-8 bytes into the runtime text storage helper",
+        "The runtime-visible type is the Text scalar handle and source literal handles preserve UTF-8 storage for byte retrieval; mutation, formatting, interpolation, normalization, collation, NSString bridging, and Foundation compatibility remain reserved",
         "Invalid escapes and interpolation syntax fail closed in lexer diagnostics O3L010 and O3L011; malformed UTF-8 remains O3L012 evidence owned by the same lexer scanner",
-        "This claim does not advertise runtime string content storage, locale formatting, Unicode normalization, collation, arbitrary string operations, or alternate Foundation/NSString compatibility paths"
+        "This claim does not advertise source-level mutation, locale formatting, Unicode normalization, collation, arbitrary string operations, or alternate Foundation/NSString compatibility paths"
       ]
     },
     {

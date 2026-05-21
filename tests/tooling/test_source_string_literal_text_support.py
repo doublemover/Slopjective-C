@@ -75,6 +75,7 @@ def test_source_string_literals_are_fail_closed_text_shape_handles() -> None:
         "native/objc3c/src/ir/"
         "objc3_ir_prototype_declarations_runtime_helpers.cpp"
     )
+    positive_fixture = _read(POSITIVE_FIXTURE)
 
     assert "ConsumeStringLiteral" in lexer_run
     assert {"O3L010", "O3L011", "O3L012"}.issubset(set(lexer_scan.split('"')))
@@ -101,12 +102,18 @@ def test_source_string_literals_are_fail_closed_text_shape_handles() -> None:
     assert 'return "Text";' in type_queries
     assert "type == ValueType::TextHandle" in type_queries
 
-    assert "objc3_runtime_stdlib_text_utf8_literal_i32" in ir_expr
+    assert "objc3_runtime_stdlib_text_utf8_storage_i32" in ir_expr
+    assert "text.literal.bytes." in ir_expr
+    assert "store i8" in ir_expr
     assert "string_literal_byte_count" in ir_expr
-    assert "string_literal_unit_count" in ir_expr
     assert "Objc3IRRequiresTextLiteralHelperDeclarations" in ir_decls
-    assert "kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol" in ir_decls
-    assert "(i32, i32, i32)\\n" in ir_decls
+    assert "kObjc3RuntimeStdlibTextUtf8StorageI32Symbol" in ir_decls
+    assert "(ptr, i32)\\n" in ir_decls
+
+    assert "objc3_runtime_stdlib_text_byte_at_or_i32" in positive_fixture
+    assert "objc3_runtime_stdlib_text_byte_at_or_i32(plain, 0, 0) - 104" in (
+        positive_fixture
+    )
 
 
 def test_source_string_literal_claim_has_truthful_evidence_rows() -> None:
@@ -145,7 +152,7 @@ def test_source_string_literal_claim_has_truthful_evidence_rows() -> None:
 
     requirement_text = " ".join(catalog_row["source_truth_requirements"]).lower()
     for reserved in [
-        "content retrieval",
+        "byte retrieval",
         "interpolation",
         "formatting",
         "normalization",

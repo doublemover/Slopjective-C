@@ -56,7 +56,18 @@ def test_post_cutover_completion_contracts_pass_current_source_truth() -> None:
 
     assert failures == []
     assert summary["contract_count"] == len(checker.COMPLETION_CONTRACT_SPECS)
-    assert set(summary["covered_issues"]) == set(checker.REQUIRED_ISSUES) - {"#8153"}
+    assert set(summary["covered_issues"]) == set(checker.REQUIRED_ISSUES)
+
+
+def test_post_cutover_index_issue_has_own_closure_contract() -> None:
+    specs = [
+        spec
+        for spec in checker.COMPLETION_CONTRACT_SPECS
+        if spec.covered_issues == ("#8153",)
+    ]
+
+    assert len(specs) == 1
+    assert specs[0].script == "scripts/check_objc3c_post_cutover_index_closure.py"
 
 
 def test_post_cutover_issue_evidence_rejects_missing_issue_row() -> None:

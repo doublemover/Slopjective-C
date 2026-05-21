@@ -11,6 +11,7 @@ MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
 CATALOG_PATH = (
     ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
 )
+ISSUE_EVIDENCE_PATH = ROOT / "docs" / "issues" / "objc3_next_8153_8179_evidence.md"
 CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -35,6 +36,16 @@ COLLECTIONS_NEGATIVE_FIXTURE = (
     "stdlib_foundation_next_collections_helper_signature_conflict.objc3"
 )
 FOUNDATION_NEXT_PROBE = "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp"
+EXPECTED_RESERVED_PUBLIC_SURFACES = {
+    "collection literals",
+    "generic element/key/value typing",
+    "owned arbitrary-length array storage",
+    "array mutation",
+    "syntax-level for-in integration",
+    "map iteration protocol",
+    "non-i32 hashing",
+    "set deletion",
+}
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -50,6 +61,16 @@ def _read_repo_text(path: str) -> str:
 def _assert_repo_path_exists(path: str) -> None:
     assert not path.startswith(("tmp/", "tmp\\"))
     assert (ROOT / path).is_file(), path
+
+
+def _issue_boundary(issue_number: int) -> str:
+    prefix = f"| #{issue_number} |"
+    for line in ISSUE_EVIDENCE_PATH.read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            assert len(cells) == 4
+            return cells[3]
+    raise AssertionError(f"missing issue evidence row #{issue_number}")
 
 
 def _expected_claim_ids(contract: dict[str, Any]) -> set[str]:
@@ -73,6 +94,7 @@ def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> No
     semantic_policy = _read_json(SEMANTIC_POLICY_PATH)
 
     assert 8161 in catalog["issue_refs"]
+    assert set(contract["reserved_public_surfaces"]) == EXPECTED_RESERVED_PUBLIC_SURFACES
 
     matrix_rows = {row["id"]: row for row in matrix["capabilities"]}
     fixture_paths = {
@@ -244,3 +266,14 @@ def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> 
         capability_text = row["capability_id"].lower()
         assert not any(fragment in claim_text for fragment in forbidden_fragments)
         assert not any(fragment in capability_text for fragment in forbidden_fragments)
+
+
+def test_issue_8161_boundary_names_reserved_collection_surfaces() -> None:
+    contract = _read_json(CONTRACT_PATH)
+    boundary = _issue_boundary(8161).lower()
+
+    for reserved_surface in contract["reserved_public_surfaces"]:
+        reserved_text = str(reserved_surface).lower()
+        if reserved_text == "map iteration protocol":
+            reserved_text = "map iteration"
+        assert reserved_text in boundary

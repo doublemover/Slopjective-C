@@ -19,8 +19,8 @@
 
 namespace {
 
-constexpr const char *kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol =
-    "objc3_runtime_stdlib_text_utf8_literal_i32";
+constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
+    "objc3_runtime_stdlib_text_utf8_storage_i32";
 
 bool Objc3IRFunctionRequiresArcHelperDeclarations(
     const FunctionDecl &fn, const Objc3IRFrontendMetadata &frontend_metadata) {
@@ -528,8 +528,8 @@ void EmitObjc3IRRuntimeHelperDeclarations(
           std::string(kObjc3RuntimePopAutoreleasepoolScopeSymbol) + "()\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out,
-      kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol,
+      kObjc3RuntimeStdlibTextUtf8StorageI32Symbol,
       "declare i32 @" +
-          std::string(kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol) +
-          "(i32, i32, i32)\n");
+          std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
+          "(ptr, i32)\n");
 }

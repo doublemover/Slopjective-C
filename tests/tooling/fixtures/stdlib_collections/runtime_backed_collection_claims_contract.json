@@ -3,6 +3,16 @@
   "contract_id": "objc3c.stdlib.collections.runtime_backed_claims.v1",
   "issue_ref": 8161,
   "scope": "runtime-backed-objc3-collections-module",
+  "reserved_public_surfaces": [
+    "collection literals",
+    "generic element/key/value typing",
+    "owned arbitrary-length array storage",
+    "array mutation",
+    "syntax-level for-in integration",
+    "map iteration protocol",
+    "non-i32 hashing",
+    "set deletion"
+  ],
   "source_truth": [
     "stdlib/modules/objc3.collections/module.json",
     "stdlib/modules/objc3.collections/module.objc3",

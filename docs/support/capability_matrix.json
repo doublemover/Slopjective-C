@@ -899,7 +899,7 @@
       "id": "language.protocols.protocol-qualified-existential-value-flow",
       "title": "Protocol-qualified existential value flow",
       "state": "implemented",
-      "summary": "Protocol-qualified value flow now includes required/optional member lookup, nullable flow, semantic diagnostics, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, cross-module existential import/export, and protocol composition beyond the typed semantic suffix remain unclaimed.",
+      "summary": "Protocol-qualified value flow now includes required/optional member lookup, nullable flow, comma-style multi-protocol composition, semantic diagnostics, cross-module protocol metadata preservation, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, ampersand-style composition syntax, and cross-module existential invocation ABI remain unclaimed.",
       "support_claims": [
         "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow"
       ],
@@ -907,6 +907,7 @@
         "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
         "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc",
         "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
         "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp"
@@ -919,11 +920,23 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
         },
         {
           "kind": "test",
           "path": "tests/conformance/semantic/TYP-8013-01.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-18.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-25.json"
         },
         {
           "kind": "test",
@@ -956,6 +969,10 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp"
         },
         {
           "kind": "source",
@@ -1365,7 +1382,7 @@
       "id": "stdlib.text.string-view-runtime-shape",
       "title": "Runtime-backed objc3.text UTF-8 record shape",
       "state": "implemented",
-      "summary": "The objc3.text module publishes runtime-owned UTF-8 text record helpers for lowered literal metadata, unit counts, validity checks, prefix clamping, concatenation, and fail-closed status reporting. Source-language literal syntax ownership, Unicode scalar iteration, normalization, formatting, interpolation, and NSString bridging remain outside this claim.",
+      "summary": "The objc3.text module publishes runtime-owned UTF-8 text record helpers for literal metadata, owned UTF-8 storage byte retrieval, unit counts, validity checks, prefix clamping, concatenation, and fail-closed status reporting. Source-language text operations beyond decoded literal storage lowering, Unicode scalar iteration, normalization, formatting, interpolation, and NSString bridging remain outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.text.string-view-runtime-shape"
       ],
@@ -1424,7 +1441,7 @@
       "id": "stdlib.text.byte-span-runtime-shape",
       "title": "Runtime-backed objc3.text byte-count shape",
       "state": "implemented",
-      "summary": "The objc3.text module exposes byte-count and prefix helpers over runtime-owned UTF-8 text records with explicit invalid-handle and invalid-shape status reporting. Mutable byte buffers, encoding conversion, mutation, iteration protocols, and Foundation NSData bridging remain outside this claim.",
+      "summary": "The objc3.text module exposes byte-count, byte-at-or, and prefix helpers over runtime-owned UTF-8 text records with explicit invalid-handle, unavailable-storage, out-of-bounds, and invalid-shape status reporting. In-place mutable byte buffer ownership, encoding conversion, mutation, iteration protocols, and Foundation NSData bridging remain outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.text.byte-span-runtime-shape"
       ],
@@ -1483,7 +1500,7 @@
       "id": "language.text.source-string-literal-text-shape-handle",
       "title": "Source string literal Text shape handles",
       "state": "implemented",
-      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to the existing runtime text UTF-8 record helper with byte count, scalar unit count, and validity metadata. Runtime content retrieval, interpolation, formatting, normalization, collation, Foundation/NSString bridging, mutation, and arbitrary string operations remain outside this shape-handle contract.",
+      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Source-level mutation, interpolation, formatting, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.",
       "support_claims": [
         "objc3c.behavior.language.text.source-string-literal-text-shape-handle"
       ],
@@ -1500,7 +1517,8 @@
         "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
         "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
         "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
-        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
       ],
       "evidence": [
         {
@@ -1567,6 +1585,10 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
         }
       ]
     },

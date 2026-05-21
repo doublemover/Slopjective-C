@@ -578,18 +578,22 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.protocols.protocol-qualified-existential-value-flow`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow`
-- Summary: Protocol-qualified value flow now includes required/optional member lookup, nullable flow, semantic diagnostics, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, cross-module existential import/export, and protocol composition beyond the typed semantic suffix remain unclaimed.
+- Summary: Protocol-qualified value flow now includes required/optional member lookup, nullable flow, comma-style multi-protocol composition, semantic diagnostics, cross-module protocol metadata preservation, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, ampersand-style composition syntax, and cross-module existential invocation ABI remain unclaimed.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc`
   - `native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc`
   - `native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp`
+  - `native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp`
   - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
   - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3`
   - test: `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`
   - test: `tests/conformance/semantic/TYP-8013-01.json`
+  - test: `tests/conformance/semantic/TYP-8013-18.json`
+  - test: `tests/conformance/semantic/TYP-8013-25.json`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3`
   - test: `tests/conformance/semantic/TYP-8013-07.json`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3`
@@ -598,6 +602,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/conformance/semantic/TYP-8013-21.json`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc`
+  - source: `native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp`
   - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
 
@@ -771,7 +776,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `stdlib.text.string-view-runtime-shape`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.text.string-view-runtime-shape`
-- Summary: The objc3.text module publishes runtime-owned UTF-8 text record helpers for lowered literal metadata, unit counts, validity checks, prefix clamping, concatenation, and fail-closed status reporting. Source-language literal syntax ownership, Unicode scalar iteration, normalization, formatting, interpolation, and NSString bridging remain outside this claim.
+- Summary: The objc3.text module publishes runtime-owned UTF-8 text record helpers for literal metadata, owned UTF-8 storage byte retrieval, unit counts, validity checks, prefix clamping, concatenation, and fail-closed status reporting. Source-language text operations beyond decoded literal storage lowering, Unicode scalar iteration, normalization, formatting, interpolation, and NSString bridging remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.text/module.json`
   - `stdlib/modules/objc3.text/module.objc3`
@@ -796,7 +801,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `stdlib.text.byte-span-runtime-shape`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.text.byte-span-runtime-shape`
-- Summary: The objc3.text module exposes byte-count and prefix helpers over runtime-owned UTF-8 text records with explicit invalid-handle and invalid-shape status reporting. Mutable byte buffers, encoding conversion, mutation, iteration protocols, and Foundation NSData bridging remain outside this claim.
+- Summary: The objc3.text module exposes byte-count, byte-at-or, and prefix helpers over runtime-owned UTF-8 text records with explicit invalid-handle, unavailable-storage, out-of-bounds, and invalid-shape status reporting. In-place mutable byte buffer ownership, encoding conversion, mutation, iteration protocols, and Foundation NSData bridging remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.text/module.json`
   - `stdlib/modules/objc3.text/module.objc3`
@@ -821,7 +826,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.text.source-string-literal-text-shape-handle`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.text.source-string-literal-text-shape-handle`
-- Summary: Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to the existing runtime text UTF-8 record helper with byte count, scalar unit count, and validity metadata. Runtime content retrieval, interpolation, formatting, normalization, collation, Foundation/NSString bridging, mutation, and arbitrary string operations remain outside this shape-handle contract.
+- Summary: Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Source-level mutation, interpolation, formatting, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.
 - Owner modules:
   - `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
   - `native/objc3c/src/lex/objc3_lexer_char_class.cpp`
@@ -836,6 +841,7 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
   - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` via `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3`
   - test: `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt`
@@ -853,6 +859,7 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
   - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
 
 ### Runtime-backed objc3.collections array and slice shape
 

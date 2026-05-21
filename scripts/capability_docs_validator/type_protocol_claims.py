@@ -91,7 +91,10 @@ TYPE_PROTOCOL_CLAIM_RULES = (
         required_positive_evidence=frozenset(
             {
                 "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+                "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
                 "tests/conformance/semantic/TYP-8013-01.json",
+                "tests/conformance/semantic/TYP-8013-18.json",
+                "tests/conformance/semantic/TYP-8013-25.json",
             }
         ),
         required_negative_evidence=frozenset(
@@ -107,8 +110,10 @@ TYPE_PROTOCOL_CLAIM_RULES = (
         required_source_or_owner_paths=frozenset(
             {
                 "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
+                "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
                 "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
                 "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+                "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
             }
         ),
     ),

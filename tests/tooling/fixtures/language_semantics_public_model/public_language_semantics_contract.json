@@ -208,7 +208,7 @@
     "protocol_existential_witness_model": {
       "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
       "existential_identity": {
-        "canonical_spelling": "id<Persistable & Sendable>",
+        "canonical_spelling": "id<Persistable, Sendable>",
         "key_fields": [
           "object_representation",
           "protocols_lexicographic",
@@ -242,9 +242,11 @@
         ]
       },
       "composition_policy": {
+        "supported_syntax": "comma-style typed object suffix",
         "duplicates": "rejected",
         "unknown_protocols": "rejected",
-        "conflicting_requirements": "rejected"
+        "conflicting_requirements": "rejected",
+        "ampersand_style_syntax": "reserved"
       },
       "unsupported_semantics": {
         "associated_types": {

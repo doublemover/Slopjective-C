@@ -48,6 +48,11 @@ class CompletionContractSpec:
 
 COMPLETION_CONTRACT_SPECS: tuple[CompletionContractSpec, ...] = (
     CompletionContractSpec(
+        contract_id="objc3c.post_cutover.index_closure.v1",
+        script="scripts/check_objc3c_post_cutover_index_closure.py",
+        covered_issues=("#8153",),
+    ),
+    CompletionContractSpec(
         contract_id="objc3c.runtime.public_rows.completion.v1",
         script="scripts/check_objc3c_next_runtime_public_rows.py",
         covered_issues=("#8154", "#8155"),

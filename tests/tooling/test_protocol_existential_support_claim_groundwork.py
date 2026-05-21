@@ -23,11 +23,15 @@ PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
 
 REQUIRED_POSITIVE_EVIDENCE = {
     BEHAVIOR_FIXTURE,
+    "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3",
     "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
     "tests/conformance/semantic/TYP-8013-01.json",
+    "tests/conformance/semantic/TYP-8013-18.json",
+    "tests/conformance/semantic/TYP-8013-25.json",
     "native/objc3c/src/runtime/classes/protocol_conformance.h",
     "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
     "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+    "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
     "scripts/objc3c_type_semantic_model_closure/positive.py",
     "scripts/objc3c_type_semantic_model_closure/summary_checks.py",
 }

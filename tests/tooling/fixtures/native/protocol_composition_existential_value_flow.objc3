@@ -1,0 +1,17 @@
+module ProtocolCompositionExistentialValueFlow;
+
+@protocol ReadableValue
+@required
+@property (readonly) id readToken;
+@end
+
+@protocol WritableValue
+@required
+- (id)writeToken;
+@end
+
+fn consumeComposed(value: id<ReadableValue, WritableValue>*?) -> i32 {
+  let read = [value? readToken];
+  let written = [value? writeToken];
+  return 0;
+}
