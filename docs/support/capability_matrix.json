@@ -1369,9 +1369,9 @@
     },
     {
       "id": "stdlib.collections.array-slice-runtime-shape",
-      "title": "Runtime-backed objc3.collections concrete array shape",
+      "title": "Runtime-backed objc3.collections array and slice shape",
       "state": "implemented",
-      "summary": "The objc3.collections module publishes runtime-owned concrete i32 array records with count, get-or, prefix-count, and fail-closed bounds/status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and iteration remain outside this claim.",
+      "summary": "The objc3.collections module publishes runtime-owned concrete i32 array records, slice records, and deterministic array/slice iterators with count, get-or, prefix-count, range, end-of-iteration, and fail-closed status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and syntax-level for-in integration remain outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.collections.array-slice-runtime-shape"
       ],
@@ -1433,6 +1433,65 @@
       "summary": "The objc3.collections module publishes runtime-owned single-entry i32 map records with count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, multi-entry storage, mutation, iteration, and Foundation bridging remain outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.collections.map-entry-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.set-iteration-runtime-shape",
+      "title": "Runtime-backed objc3.collections set and iteration shape",
+      "state": "implemented",
+      "summary": "The objc3.collections module publishes runtime-owned concrete i32 set records with deduplicated insertion-order storage, contains, insert, deterministic set iterators, and fail-closed missing-value, invalid-count, and mutation-during-iteration status behavior. Set literals, generic element typing, deletion, and syntax-level for-in integration remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape"
       ],
       "owner_modules": [
         "stdlib/modules/objc3.collections/module.json",

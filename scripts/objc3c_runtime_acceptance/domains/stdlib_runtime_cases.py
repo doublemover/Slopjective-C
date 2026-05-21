@@ -76,15 +76,22 @@ def check_stdlib_foundation_next_runtime_probe_case(
     expect_equal(payload.get("text_record_count"), 3, "stdlib text record count drifted")
     expect_equal(
         payload.get("collections_total_call_count"),
-        16,
+        44,
         "stdlib collections calls drifted",
     )
     expect_equal(payload.get("array_record_count"), 1, "stdlib array record count drifted")
     expect_equal(payload.get("map_record_count"), 1, "stdlib map record count drifted")
+    expect_equal(payload.get("set_record_count"), 1, "stdlib set record count drifted")
+    expect_equal(payload.get("slice_record_count"), 1, "stdlib slice record count drifted")
+    expect_equal(
+        payload.get("iterator_record_count"),
+        3,
+        "stdlib iterator record count drifted",
+    )
     expect_equal(
         payload.get("last_collection_status"),
-        30631,
-        "stdlib collection invalid-handle status drifted",
+        30633,
+        "stdlib collection invalid-count status drifted",
     )
     return CaseResult(
         case_id="stdlib-foundation-next-runtime-probe",
@@ -100,10 +107,16 @@ def check_stdlib_foundation_next_runtime_probe_case(
                 "objc3_runtime_stdlib_collections_array3_i32",
                 "objc3_runtime_stdlib_collections_array_get_or_i32",
                 "objc3_runtime_stdlib_collections_map_lookup_or_i32",
+                "objc3_runtime_stdlib_collections_set3_i32",
+                "objc3_runtime_stdlib_collections_array_slice_i32",
+                "objc3_runtime_stdlib_collections_iterator_next_or_i32",
             ],
             "text_record_count": payload.get("text_record_count"),
             "array_record_count": payload.get("array_record_count"),
             "map_record_count": payload.get("map_record_count"),
+            "set_record_count": payload.get("set_record_count"),
+            "slice_record_count": payload.get("slice_record_count"),
+            "iterator_record_count": payload.get("iterator_record_count"),
         },
     )
 

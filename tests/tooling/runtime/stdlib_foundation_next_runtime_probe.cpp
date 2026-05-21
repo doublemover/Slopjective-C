@@ -80,6 +80,53 @@ int main() {
     return Fail("array invalid count did not fail closed");
   }
 
+  const int slice = objc3_runtime_stdlib_collections_array_slice_i32(array, 1, 2);
+  if (slice <= 0) {
+    return Fail("slice handle was not a runtime-owned positive id");
+  }
+  if (objc3_runtime_stdlib_collections_slice_count_i32(slice) != 2 ||
+      objc3_runtime_stdlib_collections_slice_get_or_i32(slice, 1, 99) != 6) {
+    return Fail("slice count/index helpers drifted");
+  }
+  if (objc3_runtime_stdlib_collections_slice_get_or_i32(slice, 2, 99) != 99 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OUT_OF_BOUNDS) {
+    return Fail("slice bounds failure was not explicit");
+  }
+  if (objc3_runtime_stdlib_collections_array_slice_i32(array, 2, 3) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_RANGE) {
+    return Fail("slice invalid range did not fail closed");
+  }
+
+  const int array_iterator =
+      objc3_runtime_stdlib_collections_array_iterator_i32(array);
+  if (array_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(array_iterator,
+                                                           99) != 4 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(array_iterator,
+                                                           99) != 5 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(array_iterator,
+                                                           99) != 6 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(array_iterator,
+                                                           99) != 99 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_ITERATION_END) {
+    return Fail("array iterator did not preserve deterministic order");
+  }
+
+  const int slice_iterator =
+      objc3_runtime_stdlib_collections_slice_iterator_i32(slice);
+  if (slice_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(slice_iterator,
+                                                           99) != 5 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(slice_iterator,
+                                                           99) != 6 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(slice_iterator,
+                                                           99) != 99) {
+    return Fail("slice iterator did not preserve deterministic order");
+  }
+
   const int map = objc3_runtime_stdlib_collections_map_entry_i32(7, 42);
   if (map <= 0) {
     return Fail("map handle was not a runtime-owned positive id");
@@ -100,19 +147,58 @@ int main() {
     return Fail("map invalid handle did not fail closed");
   }
 
+  const int set = objc3_runtime_stdlib_collections_set3_i32(7, 7, 9, 3);
+  if (set <= 0) {
+    return Fail("set handle was not a runtime-owned positive id");
+  }
+  if (objc3_runtime_stdlib_collections_set_count_i32(set) != 2 ||
+      objc3_runtime_stdlib_collections_set_contains_i32(set, 9) != 1) {
+    return Fail("set count/contains helpers drifted");
+  }
+  if (objc3_runtime_stdlib_collections_set_contains_i32(set, 8) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
+    return Fail("set missing-value failure was not explicit");
+  }
+  const int set_iterator =
+      objc3_runtime_stdlib_collections_set_iterator_i32(set);
+  if (set_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_set_insert_i32(set, 11) != 3 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(set_iterator,
+                                                           99) != 99 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION) {
+    return Fail("set mutation during iteration did not fail closed");
+  }
+  if (objc3_runtime_stdlib_collections_set3_i32(1, 2, 3, 4) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT) {
+    return Fail("set invalid count did not fail closed");
+  }
+
   objc3_runtime_stdlib_collections_snapshot collections_snapshot{};
   if (objc3_runtime_copy_stdlib_collections_state_for_testing(
           &collections_snapshot) != 0) {
     return Fail("collections snapshot copy failed");
   }
-  if (collections_snapshot.total_call_count != 16 ||
+  if (collections_snapshot.total_call_count != 44 ||
       collections_snapshot.array_create_call_count != 2 ||
       collections_snapshot.array_query_call_count != 4 ||
       collections_snapshot.map_create_call_count != 1 ||
       collections_snapshot.map_query_call_count != 5 ||
-      collections_snapshot.status_call_count != 4 ||
+      collections_snapshot.set_create_call_count != 2 ||
+      collections_snapshot.set_query_call_count != 3 ||
+      collections_snapshot.set_mutation_call_count != 1 ||
+      collections_snapshot.slice_create_call_count != 2 ||
+      collections_snapshot.slice_query_call_count != 3 ||
+      collections_snapshot.iterator_create_call_count != 3 ||
+      collections_snapshot.iterator_query_call_count != 8 ||
+      collections_snapshot.status_call_count != 10 ||
       collections_snapshot.array_record_count != 1 ||
-      collections_snapshot.map_record_count != 1) {
+      collections_snapshot.map_record_count != 1 ||
+      collections_snapshot.set_record_count != 1 ||
+      collections_snapshot.slice_record_count != 1 ||
+      collections_snapshot.iterator_record_count != 3) {
     return Fail("collections runtime call counters drifted");
   }
 
@@ -126,6 +212,12 @@ int main() {
             << collections_snapshot.array_record_count
             << ",\"map_record_count\":"
             << collections_snapshot.map_record_count
+            << ",\"set_record_count\":"
+            << collections_snapshot.set_record_count
+            << ",\"slice_record_count\":"
+            << collections_snapshot.slice_record_count
+            << ",\"iterator_record_count\":"
+            << collections_snapshot.iterator_record_count
             << ",\"last_collection_status\":"
             << collections_snapshot.last_status << "}\n";
   return 0;

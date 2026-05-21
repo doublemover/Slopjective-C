@@ -26,6 +26,12 @@
         "objc3_collections_array_count",
         "objc3_collections_array_get_or",
         "objc3_collections_array_prefix_count",
+        "objc3_collections_array_slice",
+        "objc3_collections_array_iterator",
+        "objc3_collections_slice_count",
+        "objc3_collections_slice_get_or",
+        "objc3_collections_slice_iterator",
+        "objc3_collections_iterator_next_or",
         "objc3_collections_last_status"
       ],
       "runtime_abi": [
@@ -33,25 +39,36 @@
         "objc3_runtime_stdlib_collections_array_count_i32",
         "objc3_runtime_stdlib_collections_array_get_or_i32",
         "objc3_runtime_stdlib_collections_array_prefix_count_i32",
+        "objc3_runtime_stdlib_collections_array_slice_i32",
+        "objc3_runtime_stdlib_collections_array_iterator_i32",
+        "objc3_runtime_stdlib_collections_slice_count_i32",
+        "objc3_runtime_stdlib_collections_slice_get_or_i32",
+        "objc3_runtime_stdlib_collections_slice_iterator_i32",
+        "objc3_runtime_stdlib_collections_iterator_next_or_i32",
         "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
         "array3_record",
         "array_count",
         "array_get_or",
-        "array_prefix_count"
+        "array_prefix_count",
+        "array_slice",
+        "array_iterator",
+        "slice_get_or",
+        "slice_iterator"
       ],
       "supported_now": [
         "runtime-owned concrete i32 array records are created only for counts from zero through three",
-        "count, indexed get-or, prefix count, and status reporting are routed through the objc3.collections runtime ABI",
-        "invalid handles, out-of-bounds indexes, and invalid counts fail closed with stable status codes"
+        "count, indexed get-or, prefix count, slice creation, slice indexing, and status reporting are routed through the objc3.collections runtime ABI",
+        "array and slice iterators return deterministic insertion/view-order values followed by explicit iteration-end status",
+        "invalid handles, out-of-bounds indexes, invalid ranges, and invalid counts fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
         "array literals",
         "generic element typing",
         "owned arbitrary-length array storage",
-        "mutation",
-        "iteration protocol"
+        "array mutation",
+        "syntax-level for-in integration"
       ]
     },
     {
@@ -87,13 +104,54 @@
         "generic key or value typing",
         "key hashing beyond the current single-entry i32 key equality record",
         "owned multi-entry map storage",
-        "mutation",
-        "iteration protocol"
+        "map mutation",
+        "map iteration protocol"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "module": "objc3.collections",
+      "api_family": "concrete-i32-set-storage",
+      "exports": [
+        "objc3_collections_set3",
+        "objc3_collections_set_count",
+        "objc3_collections_set_contains",
+        "objc3_collections_set_insert",
+        "objc3_collections_set_iterator",
+        "objc3_collections_iterator_next_or",
+        "objc3_collections_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_collections_set3_i32",
+        "objc3_runtime_stdlib_collections_set_count_i32",
+        "objc3_runtime_stdlib_collections_set_contains_i32",
+        "objc3_runtime_stdlib_collections_set_insert_i32",
+        "objc3_runtime_stdlib_collections_set_iterator_i32",
+        "objc3_runtime_stdlib_collections_iterator_next_or_i32",
+        "objc3_runtime_stdlib_collections_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "set3_record",
+        "set_contains",
+        "set_insert",
+        "set_iterator"
+      ],
+      "supported_now": [
+        "runtime-owned concrete i32 set records are created only for counts from zero through three and deduplicate values in insertion order",
+        "set count, contains, insert, iterator creation, iterator next-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "missing values, invalid handles, invalid counts, and mutation during set iteration fail closed with stable status codes"
+      ],
+      "reserved_until_runtime_storage": [
+        "set literals",
+        "generic element typing",
+        "hashing beyond concrete i32 equality",
+        "set deletion",
+        "syntax-level for-in integration"
       ]
     }
   ],
   "non_goals": [
-    "set support claims",
     "collection literal support claims",
     "generic collection ABI promises",
     "Foundation compatibility promises",

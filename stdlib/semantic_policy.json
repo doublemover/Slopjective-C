@@ -90,7 +90,15 @@
     "array_get_or": "routes through objc3_runtime_stdlib_collections_array_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid indexes",
     "array_prefix_count": "routes through objc3_runtime_stdlib_collections_array_prefix_count_i32 and clamps requested elements to the runtime-owned array count with a zero floor",
     "map_entry": "routes single-entry i32 map construction through objc3_runtime_stdlib_collections_map_entry_i32 and returns a runtime-owned handle",
-    "map_lookup_or": "routes through objc3_runtime_stdlib_collections_map_lookup_or_i32 and returns the caller default while recording not-found status for missing keys"
+    "map_lookup_or": "routes through objc3_runtime_stdlib_collections_map_lookup_or_i32 and returns the caller default while recording not-found status for missing keys",
+    "array_slice": "routes concrete i32 array slicing through objc3_runtime_stdlib_collections_array_slice_i32 and returns a runtime-owned slice handle only for ranges inside the source array",
+    "array_iterator": "routes concrete i32 array iteration through objc3_runtime_stdlib_collections_array_iterator_i32 and objc3_runtime_stdlib_collections_iterator_next_or_i32 with insertion-order values followed by an explicit iteration-end status",
+    "slice_get_or": "routes concrete i32 slice indexing through objc3_runtime_stdlib_collections_slice_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid slice indexes",
+    "slice_iterator": "routes concrete i32 slice iteration through objc3_runtime_stdlib_collections_slice_iterator_i32 and objc3_runtime_stdlib_collections_iterator_next_or_i32 with view-order values followed by an explicit iteration-end status",
+    "set3_record": "routes concrete i32 set construction through objc3_runtime_stdlib_collections_set3_i32, deduplicates values in insertion order, and returns a runtime-owned handle only for counts from 0 through 3",
+    "set_contains": "routes through objc3_runtime_stdlib_collections_set_contains_i32 and records not-found status for missing values",
+    "set_insert": "routes through objc3_runtime_stdlib_collections_set_insert_i32, mutates the runtime-owned set only for new values, and increments the version observed by fail-closed iterators",
+    "set_iterator": "routes concrete i32 set iteration through objc3_runtime_stdlib_collections_set_iterator_i32 and fails closed with mutated-during-iteration status when the set version changes before iterator completion"
   },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",

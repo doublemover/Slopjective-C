@@ -264,6 +264,12 @@
       "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
+      "claim_id": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
       "claim_id": "objc3c.behavior.stdlib.concurrency-runtime-v1",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",

@@ -84,6 +84,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.semantic_optimization_pipeline` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.semantic-preserving-pipeline` |
 | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-slice-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.map-entry-runtime-shape` |
+| `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.set-iteration-runtime-shape` |
 | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
 | `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-actor-mailbox-api` |
 | `objc3c.behavior.stdlib.concurrency.public-executor-hop-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-executor-hop-api` |
@@ -561,6 +562,8 @@ the canonical manifest fixture and public npm command above.
   - doc: `docs/support/hard_cutover_capability_truth.md`
   - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
+  - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
+  - test: `tests/tooling/test_runtime_capability_public_split.py`
 
 ### Protocol-qualified existential value flow
 
@@ -760,12 +763,12 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
   - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
 
-### Runtime-backed objc3.collections concrete array shape
+### Runtime-backed objc3.collections array and slice shape
 
 - Capability ID: `stdlib.collections.array-slice-runtime-shape`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.collections.array-slice-runtime-shape`
-- Summary: The objc3.collections module publishes runtime-owned concrete i32 array records with count, get-or, prefix-count, and fail-closed bounds/status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and iteration remain outside this claim.
+- Summary: The objc3.collections module publishes runtime-owned concrete i32 array records, slice records, and deterministic array/slice iterators with count, get-or, prefix-count, range, end-of-iteration, and fail-closed status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and syntax-level for-in integration remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.collections/module.json`
   - `stdlib/modules/objc3.collections/module.objc3`
@@ -791,6 +794,31 @@ the canonical manifest fixture and public npm command above.
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.collections.map-entry-runtime-shape`
 - Summary: The objc3.collections module publishes runtime-owned single-entry i32 map records with count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, multi-entry storage, mutation, iteration, and Foundation bridging remain outside this claim.
+- Owner modules:
+  - `stdlib/modules/objc3.collections/module.json`
+  - `stdlib/modules/objc3.collections/module.objc3`
+  - `stdlib/modules/objc3.collections/smoke.objc3`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json`
+  - test: `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - source: `stdlib/modules/objc3.collections/module.json`
+  - source: `stdlib/modules/objc3.collections/module.objc3`
+  - source: `stdlib/semantic_policy.json`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+
+### Runtime-backed objc3.collections set and iteration shape
+
+- Capability ID: `stdlib.collections.set-iteration-runtime-shape`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape`
+- Summary: The objc3.collections module publishes runtime-owned concrete i32 set records with deduplicated insertion-order storage, contains, insert, deterministic set iterators, and fail-closed missing-value, invalid-count, and mutation-during-iteration status behavior. Set literals, generic element typing, deletion, and syntax-level for-in integration remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.collections/module.json`
   - `stdlib/modules/objc3.collections/module.objc3`
@@ -1242,6 +1270,8 @@ the canonical manifest fixture and public npm command above.
   - doc: `spec/PART_6_ERRORS_RESULTS_THROWS.md`
   - doc: `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`
   - doc: `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md`
+  - source: `scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py`
+  - test: `tests/tooling/test_runtime_capability_public_split.py`
 
 ### Native compiler module decomposition
 

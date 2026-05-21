@@ -16,6 +16,9 @@
   "api_families": [
     "concrete-i32-array-storage",
     "concrete-i32-map-entry-storage",
+    "concrete-i32-array-slice-storage",
+    "concrete-i32-set-storage",
+    "deterministic-i32-iteration",
     "bounds-and-lookup-status"
   ],
   "runtime_abi": [
@@ -27,7 +30,18 @@
     "objc3_runtime_stdlib_collections_map_count_i32",
     "objc3_runtime_stdlib_collections_map_contains_i32",
     "objc3_runtime_stdlib_collections_map_lookup_or_i32",
-    "objc3_runtime_stdlib_collections_last_status_i32"
+    "objc3_runtime_stdlib_collections_last_status_i32",
+    "objc3_runtime_stdlib_collections_array_slice_i32",
+    "objc3_runtime_stdlib_collections_array_iterator_i32",
+    "objc3_runtime_stdlib_collections_set3_i32",
+    "objc3_runtime_stdlib_collections_set_count_i32",
+    "objc3_runtime_stdlib_collections_set_contains_i32",
+    "objc3_runtime_stdlib_collections_set_insert_i32",
+    "objc3_runtime_stdlib_collections_set_iterator_i32",
+    "objc3_runtime_stdlib_collections_slice_count_i32",
+    "objc3_runtime_stdlib_collections_slice_get_or_i32",
+    "objc3_runtime_stdlib_collections_slice_iterator_i32",
+    "objc3_runtime_stdlib_collections_iterator_next_or_i32"
   ],
   "runtime_abi_signatures": {
     "objc3_runtime_stdlib_collections_array3_i32": "extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, third: i32, count: i32) -> i32",
@@ -38,7 +52,18 @@
     "objc3_runtime_stdlib_collections_map_count_i32": "extern fn objc3_runtime_stdlib_collections_map_count_i32(handle: i32) -> i32",
     "objc3_runtime_stdlib_collections_map_contains_i32": "extern fn objc3_runtime_stdlib_collections_map_contains_i32(handle: i32, key: i32) -> i32",
     "objc3_runtime_stdlib_collections_map_lookup_or_i32": "extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32",
-    "objc3_runtime_stdlib_collections_last_status_i32": "extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32"
+    "objc3_runtime_stdlib_collections_last_status_i32": "extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32",
+    "objc3_runtime_stdlib_collections_array_slice_i32": "extern fn objc3_runtime_stdlib_collections_array_slice_i32(handle: i32, start: i32, count: i32) -> i32",
+    "objc3_runtime_stdlib_collections_array_iterator_i32": "extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_collections_set3_i32": "extern fn objc3_runtime_stdlib_collections_set3_i32(first: i32, second: i32, third: i32, count: i32) -> i32",
+    "objc3_runtime_stdlib_collections_set_count_i32": "extern fn objc3_runtime_stdlib_collections_set_count_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_collections_set_contains_i32": "extern fn objc3_runtime_stdlib_collections_set_contains_i32(handle: i32, value: i32) -> i32",
+    "objc3_runtime_stdlib_collections_set_insert_i32": "extern fn objc3_runtime_stdlib_collections_set_insert_i32(handle: i32, value: i32) -> i32",
+    "objc3_runtime_stdlib_collections_set_iterator_i32": "extern fn objc3_runtime_stdlib_collections_set_iterator_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_collections_slice_count_i32": "extern fn objc3_runtime_stdlib_collections_slice_count_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_collections_slice_get_or_i32": "extern fn objc3_runtime_stdlib_collections_slice_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32",
+    "objc3_runtime_stdlib_collections_slice_iterator_i32": "extern fn objc3_runtime_stdlib_collections_slice_iterator_i32(handle: i32) -> i32",
+    "objc3_runtime_stdlib_collections_iterator_next_or_i32": "extern fn objc3_runtime_stdlib_collections_iterator_next_or_i32(handle: i32, default_value: i32) -> i32"
   },
   "exports": [
     "Objc3CollectionsStatusOk",
@@ -46,14 +71,28 @@
     "Objc3CollectionsStatusOutOfBounds",
     "Objc3CollectionsStatusInvalidCount",
     "Objc3CollectionsStatusNotFound",
+    "Objc3CollectionsStatusInvalidRange",
+    "Objc3CollectionsStatusIterationEnd",
+    "Objc3CollectionsStatusMutatedDuringIteration",
     "objc3_collections_array3",
     "objc3_collections_array_count",
     "objc3_collections_array_get_or",
     "objc3_collections_array_prefix_count",
+    "objc3_collections_array_slice",
+    "objc3_collections_array_iterator",
     "objc3_collections_map_entry",
     "objc3_collections_map_count",
     "objc3_collections_map_contains",
     "objc3_collections_map_lookup_or",
+    "objc3_collections_set3",
+    "objc3_collections_set_count",
+    "objc3_collections_set_contains",
+    "objc3_collections_set_insert",
+    "objc3_collections_set_iterator",
+    "objc3_collections_slice_count",
+    "objc3_collections_slice_get_or",
+    "objc3_collections_slice_iterator",
+    "objc3_collections_iterator_next_or",
     "objc3_collections_last_status"
   ],
   "abi_signatures": {
@@ -70,6 +109,20 @@
     "objc3_collections_map_count": "fn objc3_collections_map_count(handle: i32)",
     "objc3_collections_map_contains": "fn objc3_collections_map_contains(handle: i32, key: i32)",
     "objc3_collections_map_lookup_or": "fn objc3_collections_map_lookup_or(handle: i32, key: i32, default_value: i32)",
-    "objc3_collections_last_status": "fn objc3_collections_last_status()"
+    "objc3_collections_last_status": "fn objc3_collections_last_status()",
+    "Objc3CollectionsStatusInvalidRange": "let Objc3CollectionsStatusInvalidRange = 30635",
+    "Objc3CollectionsStatusIterationEnd": "let Objc3CollectionsStatusIterationEnd = 30636",
+    "Objc3CollectionsStatusMutatedDuringIteration": "let Objc3CollectionsStatusMutatedDuringIteration = 30637",
+    "objc3_collections_array_slice": "fn objc3_collections_array_slice(handle: i32, start: i32, count: i32)",
+    "objc3_collections_array_iterator": "fn objc3_collections_array_iterator(handle: i32)",
+    "objc3_collections_set3": "fn objc3_collections_set3(first: i32, second: i32, third: i32, count: i32)",
+    "objc3_collections_set_count": "fn objc3_collections_set_count(handle: i32)",
+    "objc3_collections_set_contains": "fn objc3_collections_set_contains(handle: i32, value: i32)",
+    "objc3_collections_set_insert": "fn objc3_collections_set_insert(handle: i32, value: i32)",
+    "objc3_collections_set_iterator": "fn objc3_collections_set_iterator(handle: i32)",
+    "objc3_collections_slice_count": "fn objc3_collections_slice_count(handle: i32)",
+    "objc3_collections_slice_get_or": "fn objc3_collections_slice_get_or(handle: i32, index: i32, default_value: i32)",
+    "objc3_collections_slice_iterator": "fn objc3_collections_slice_iterator(handle: i32)",
+    "objc3_collections_iterator_next_or": "fn objc3_collections_iterator_next_or(handle: i32, default_value: i32)"
   }
 }

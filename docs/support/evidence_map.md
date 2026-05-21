@@ -133,6 +133,8 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
+| `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
+| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/conformance/semantic/TYP-8013-01.json` |  |
@@ -226,6 +228,15 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
 | `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
 | `stdlib.collections.map-entry-runtime-shape` | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `test` | `tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.json` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `stdlib/modules/objc3.collections/module.objc3` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `stdlib/semantic_policy.json` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
+| `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
 | `stdlib.core.runtime-backed-v1` | `objc3c.behavior.stdlib.core-runtime-v1` | `test` | `tests/tooling/runtime/stdlib_core_runtime_probe.cpp` | `npm run objc3c -- test-runtime-acceptance-fast` |
@@ -363,6 +374,8 @@ diagnostic, documentation, or boundary evidence only.
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_6_ERRORS_RESULTS_THROWS.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md` |  |
 | `language.advanced-runtime-closure` |  | `doc` | `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md` |  |
+| `language.advanced-runtime-closure` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py` |  |
+| `language.advanced-runtime-closure` |  | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/config/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/ast/CMakeLists.txt` |  |

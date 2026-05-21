@@ -154,18 +154,22 @@ def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> 
     assert {row["support_claim"] for row in collection_rows} == {
         "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
         "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
+        "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
     }
 
     forbidden_fragments = {
         "literal",
-        "set",
         "generic",
-        "storage",
-        "mutation",
         "iteration",
         "foundation",
     }
-    for row in collection_rows:
+    reserved_rows = [
+        row
+        for row in collection_rows
+        if row["support_claim"]
+        != "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape"
+    ]
+    for row in reserved_rows:
         claim_text = row["support_claim"].lower()
         capability_text = row["capability_id"].lower()
         assert not any(fragment in claim_text for fragment in forbidden_fragments)

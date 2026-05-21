@@ -1266,6 +1266,63 @@
       "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
     },
     {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+      "command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-fast"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.collections/module.json"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.collections/module.objc3"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+    },
+    {
+      "capability_id": "stdlib.collections.set-iteration-runtime-shape",
+      "support_claim": "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+    },
+    {
       "capability_id": "stdlib.core.runtime-backed-v1",
       "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
       "evidence_kind": "test",
