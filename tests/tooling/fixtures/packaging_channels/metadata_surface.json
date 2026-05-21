@@ -14,6 +14,8 @@
     "interop_loader_metadata",
     "installer_signature",
     "archive_digests",
+    "payload_contract",
+    "receipt_contracts",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -22,9 +24,13 @@
     "contract_id",
     "install_root",
     "install_home",
+    "channel_id",
     "bootstrap_entrypoint",
     "package_bridge",
     "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
     "installed_at_utc"
   ],
   "required_installer_signature_fields": [
@@ -43,5 +49,30 @@
     "sha256",
     "verification_command",
     "trust_scope"
+  ],
+  "required_payload_contract_fields": [
+    "contract_id",
+    "source",
+    "manifest_relative_path",
+    "manifest_artifact",
+    "manifest_sha256",
+    "required_entries",
+    "entry_digests",
+    "clean_room_source_policy"
+  ],
+  "required_receipt_contract_fields": [
+    "contract_id",
+    "schema",
+    "receipt_path",
+    "channel_id",
+    "emitted_by",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_required_entries",
+    "required_fields",
+    "network_policy",
+    "rollback_required"
   ]
 }

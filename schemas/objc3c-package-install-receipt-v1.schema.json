@@ -8,20 +8,46 @@
     "contract_id",
     "install_root",
     "install_home",
+    "channel_id",
     "bootstrap_entrypoint",
     "package_bridge",
     "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
     "installed_at_utc"
   ],
   "properties": {
     "contract_id": { "const": "objc3c.packaging.channels.install-receipt.v1" },
     "install_root": { "type": "string" },
     "install_home": { "type": "string" },
+    "channel_id": { "enum": ["local-installer", "offline-bundle"] },
     "bootstrap_entrypoint": { "type": "string" },
     "package_bridge": { "const": "objc3c" },
     "install_command": {
       "type": "string",
       "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "payload_manifest": {
+      "const": "artifacts/package/objc3c-runnable-toolchain-package.json"
+    },
+    "payload_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "payload_required_entries": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native.exe",
+          "artifacts/lib/objc3_runtime.lib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
+        ]
+      },
+      "minItems": 1
     },
     "installed_at_utc": { "type": "string" }
   }

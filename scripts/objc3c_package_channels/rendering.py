@@ -6,7 +6,8 @@ from __future__ import annotations
 def install_script_text() -> str:
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot,
-  [switch]$Force
+  [switch]$Force,
+  [ValidateSet("local-installer", "offline-bundle")][string]$ChannelId = "local-installer"
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,6 +19,16 @@ $installHome = Join-Path $resolvedInstallRoot "objc3c"
 $receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
 $bootstrapSource = Join-Path $PSScriptRoot "Bootstrap-objc3cEnvironment.ps1"
 $bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
+$payloadManifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
+$payloadRequiredEntries = @(
+  $payloadManifest,
+  "artifacts/bin/objc3c-native.exe",
+  "artifacts/lib/objc3_runtime.lib",
+  "stdlib/workspace.json",
+  "stdlib/modules/objc3.core/module.json",
+  "docs/runbooks/objc3c_packaging_channels.md"
+)
+$allowedReceiptChannels = @("local-installer", "offline-bundle")
 
 function Assert-NoReparsePointInExistingPath {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -57,13 +68,38 @@ function Assert-ReceiptOwnsInstallHome {
     throw "installer target exists without an objc3c install receipt: $installHome"
   }
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+  $receiptPayloadEntries = @($receipt.payload_required_entries)
   if ($receipt.contract_id -ne "objc3c.packaging.channels.install-receipt.v1" -or
       [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome -or
+      $allowedReceiptChannels -notcontains [string]$receipt.channel_id -or
       [string]$receipt.bootstrap_entrypoint -ne "Bootstrap-objc3cEnvironment.ps1" -or
       [string]$receipt.package_bridge -ne "objc3c" -or
-      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels") {
+      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
+      [string]$receipt.payload_manifest -ne $payloadManifest -or
+      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256) -or
+      $receiptPayloadEntries.Count -ne $payloadRequiredEntries.Count) {
     throw "installer target receipt does not own install home: $installHome"
   }
+}
+
+function Resolve-InstalledPayloadPath {
+  param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+  return Join-Path $installHome ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+}
+
+function Assert-InstalledPayloadContract {
+  $manifestPath = Resolve-InstalledPayloadPath -RelativePath $payloadManifest
+  if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+    throw "installer payload missing runnable manifest: $payloadManifest"
+  }
+  foreach ($relativePath in $payloadRequiredEntries) {
+    $payloadPath = Resolve-InstalledPayloadPath -RelativePath $relativePath
+    if (!(Test-Path -LiteralPath $payloadPath -PathType Leaf)) {
+      throw "installer payload missing required entry: $relativePath"
+    }
+  }
+  return (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
 if ((Test-Path -LiteralPath $installHome) -and -not $Force.IsPresent) {
@@ -80,14 +116,19 @@ if (Test-Path -LiteralPath $installHome) {
 New-Item -ItemType Directory -Force -Path $resolvedInstallRoot | Out-Null
 Copy-Item -LiteralPath $sourceRoot -Destination $installHome -Recurse -Force
 Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapTarget -Force
+$payloadManifestSha256 = Assert-InstalledPayloadContract
 
 $receipt = [ordered]@{
   contract_id = "objc3c.packaging.channels.install-receipt.v1"
   install_root = $resolvedInstallRoot
   install_home = $installHome
+  channel_id = $ChannelId
   bootstrap_entrypoint = "Bootstrap-objc3cEnvironment.ps1"
   package_bridge = "objc3c"
   install_command = "npm run objc3c -- build-package-channels"
+  payload_manifest = $payloadManifest
+  payload_manifest_sha256 = $payloadManifestSha256
+  payload_required_entries = $payloadRequiredEntries
   installed_at_utc = [DateTime]::UtcNow.ToString("o")
 }
 $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
@@ -111,6 +152,16 @@ $resolvedInstallRoot = [System.IO.Path]::GetFullPath($InstallRoot)
 $installHome = Join-Path $resolvedInstallRoot "objc3c"
 $receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
 $bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
+$payloadManifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
+$payloadRequiredEntries = @(
+  $payloadManifest,
+  "artifacts/bin/objc3c-native.exe",
+  "artifacts/lib/objc3_runtime.lib",
+  "stdlib/workspace.json",
+  "stdlib/modules/objc3.core/module.json",
+  "docs/runbooks/objc3c_packaging_channels.md"
+)
+$allowedReceiptChannels = @("local-installer", "offline-bundle")
 
 function Assert-NoReparsePointInExistingPath {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -150,11 +201,16 @@ function Assert-ReceiptOwnsInstallHome {
     throw "uninstaller target exists without an objc3c install receipt: $installHome"
   }
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+  $receiptPayloadEntries = @($receipt.payload_required_entries)
   if ($receipt.contract_id -ne "objc3c.packaging.channels.install-receipt.v1" -or
       [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome -or
+      $allowedReceiptChannels -notcontains [string]$receipt.channel_id -or
       [string]$receipt.bootstrap_entrypoint -ne "Bootstrap-objc3cEnvironment.ps1" -or
       [string]$receipt.package_bridge -ne "objc3c" -or
-      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels") {
+      [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
+      [string]$receipt.payload_manifest -ne $payloadManifest -or
+      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256) -or
+      $receiptPayloadEntries.Count -ne $payloadRequiredEntries.Count) {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
 }
@@ -229,7 +285,7 @@ try {
   New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
   Expand-Archive -LiteralPath $installerArchive -DestinationPath $installerImageRoot -Force
 
-  & $installerScript -InstallRoot $InstallRoot -Force
+  & $installerScript -InstallRoot $InstallRoot -Force -ChannelId "offline-bundle"
   if (-not $?) {
     exit $LASTEXITCODE
   }

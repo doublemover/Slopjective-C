@@ -12,6 +12,7 @@ from .model import (
 )
 from .paths import package_channel_run_id
 from .publication import (
+    prepare_package_channel_workspace,
     print_package_channel_result,
     publish_installer_archive,
     publish_offline_bundle,
@@ -28,6 +29,7 @@ def main() -> int:
     build_release_foundation_artifacts()
 
     paths = package_channel_paths(package_channel_run_id())
+    prepare_package_channel_workspace(paths)
     build_runnable_package(paths.package_root, MANIFEST_RELATIVE_PATH)
 
     publish_portable_archive(paths)

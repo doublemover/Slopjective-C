@@ -17,6 +17,8 @@
     "interop_loader_metadata",
     "installer_signature",
     "archive_digests",
+    "payload_contract",
+    "receipt_contracts",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -53,6 +55,12 @@
     },
     "archive_digests": {
       "$ref": "#/$defs/archiveDigests"
+    },
+    "payload_contract": {
+      "$ref": "#/$defs/payloadContract"
+    },
+    "receipt_contracts": {
+      "$ref": "#/$defs/receiptContracts"
     },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
@@ -157,6 +165,158 @@
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "verification_command": { "const": "npm run objc3c -- validate-packaging-channels-end-to-end" },
         "trust_scope": { "const": "checked-in-artifact-digest" }
+      }
+    },
+    "payloadContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "source",
+        "manifest_relative_path",
+        "manifest_artifact",
+        "manifest_sha256",
+        "required_entries",
+        "entry_digests",
+        "clean_room_source_policy"
+      ],
+      "properties": {
+        "contract_id": { "const": "objc3c.packaging.channels.payload-contract.v1" },
+        "source": { "const": "canonical-runnable-toolchain-package" },
+        "manifest_relative_path": {
+          "const": "artifacts/package/objc3c-runnable-toolchain-package.json"
+        },
+        "manifest_artifact": { "type": "string", "minLength": 1 },
+        "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "required_entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/payloadEntryPath" },
+          "minItems": 1
+        },
+        "entry_digests": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/payloadEntryDigest" },
+          "minProperties": 1
+        },
+        "clean_room_source_policy": { "const": "fresh-owned-tmp-root-only" }
+      }
+    },
+    "payloadEntryPath": {
+      "enum": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ]
+    },
+    "payloadEntryDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["digest_format", "artifact", "sha256"],
+      "properties": {
+        "digest_format": { "const": "sha256" },
+        "artifact": { "$ref": "#/$defs/payloadEntryPath" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "receiptContracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["install_receipt", "offline_install_receipt"],
+      "properties": {
+        "install_receipt": { "$ref": "#/$defs/localInstallReceiptContract" },
+        "offline_install_receipt": { "$ref": "#/$defs/offlineInstallReceiptContract" }
+      }
+    },
+    "localInstallReceiptContract": {
+      "allOf": [
+        { "$ref": "#/$defs/installReceiptContract" },
+        {
+          "type": "object",
+          "properties": {
+            "channel_id": { "const": "local-installer" },
+            "emitted_by": { "const": "Install-objc3c.ps1" },
+            "network_policy": { "const": "local-filesystem-only" }
+          }
+        }
+      ]
+    },
+    "offlineInstallReceiptContract": {
+      "allOf": [
+        { "$ref": "#/$defs/installReceiptContract" },
+        {
+          "type": "object",
+          "required": ["delegates_to"],
+          "properties": {
+            "channel_id": { "const": "offline-bundle" },
+            "emitted_by": { "const": "OfflineBootstrap-objc3c.ps1" },
+            "network_policy": { "const": "no-network" },
+            "delegates_to": { "const": "local-installer" }
+          }
+        }
+      ]
+    },
+    "installReceiptContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "schema",
+        "receipt_path",
+        "channel_id",
+        "emitted_by",
+        "bootstrap_entrypoint",
+        "package_bridge",
+        "install_command",
+        "payload_manifest",
+        "payload_required_entries",
+        "required_fields",
+        "network_policy",
+        "rollback_required"
+      ],
+      "properties": {
+        "contract_id": { "const": "objc3c.packaging.channels.install-receipt.v1" },
+        "schema": { "const": "schemas/objc3c-package-install-receipt-v1.schema.json" },
+        "receipt_path": { "const": "objc3c-install-receipt.json" },
+        "channel_id": { "enum": ["local-installer", "offline-bundle"] },
+        "emitted_by": {
+          "enum": ["Install-objc3c.ps1", "OfflineBootstrap-objc3c.ps1"]
+        },
+        "bootstrap_entrypoint": { "const": "Bootstrap-objc3cEnvironment.ps1" },
+        "package_bridge": { "const": "objc3c" },
+        "install_command": { "const": "npm run objc3c -- build-package-channels" },
+        "payload_manifest": {
+          "const": "artifacts/package/objc3c-runnable-toolchain-package.json"
+        },
+        "payload_required_entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/payloadEntryPath" },
+          "minItems": 1
+        },
+        "required_fields": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "contract_id",
+              "install_root",
+              "install_home",
+              "channel_id",
+              "bootstrap_entrypoint",
+              "package_bridge",
+              "install_command",
+              "payload_manifest",
+              "payload_manifest_sha256",
+              "payload_required_entries",
+              "installed_at_utc"
+            ]
+          },
+          "minItems": 1
+        },
+        "network_policy": { "enum": ["local-filesystem-only", "no-network"] },
+        "rollback_required": { "const": true },
+        "delegates_to": { "const": "local-installer" }
       }
     },
     "interopLoaderMetadata": {

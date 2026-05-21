@@ -12,10 +12,12 @@ from objc3c_tooling.paths import repo_rel
 
 from .model import PackageChannelInputs, PackageChannelPaths, package_channels_report_payload
 from .paths import (
+    ARTIFACT_ROOT,
     RELEASE_FOUNDATION_ATTESTATION,
     RELEASE_FOUNDATION_MANIFEST,
     RELEASE_FOUNDATION_SBOM,
     REPORT_PATH,
+    ROOT,
 )
 from .rendering import (
     bootstrap_script_text,
@@ -23,6 +25,56 @@ from .rendering import (
     offline_bootstrap_script_text,
     uninstall_script_text,
 )
+
+
+OWNED_PACKAGE_RUN_ROOT = ROOT / "tmp" / "pkg" / "objc3c-package-channels"
+OWNED_CLEAN_ROOTS = (OWNED_PACKAGE_RUN_ROOT, ARTIFACT_ROOT)
+
+
+def prepare_package_channel_workspace(paths: PackageChannelPaths) -> None:
+    remove_owned_tree(paths.package_root.parent)
+    remove_owned_tree(paths.build_root)
+
+
+def remove_owned_tree(path: Path) -> None:
+    assert_owned_cleanup_path(path)
+    if not path.exists() and not path.is_symlink():
+        return
+    assert_tree_has_no_reparse_points(path)
+    if path.is_dir():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+
+
+def assert_owned_cleanup_path(path: Path) -> None:
+    resolved_path = path.resolve(strict=False)
+    for clean_root in OWNED_CLEAN_ROOTS:
+        resolved_root = clean_root.resolve(strict=False)
+        try:
+            relative = resolved_path.relative_to(resolved_root)
+        except ValueError:
+            continue
+        if not relative.parts:
+            raise RuntimeError(f"refusing to clean package-channel root itself: {repo_rel(path)}")
+        return
+    raise RuntimeError(f"refusing to clean path outside package-channel owned roots: {path}")
+
+
+def assert_tree_has_no_reparse_points(path: Path) -> None:
+    if path.is_symlink() or is_junction(path):
+        raise RuntimeError(f"refusing to clean package-channel reparse point: {path}")
+    candidates: list[Path] = []
+    if path.is_dir():
+        candidates.extend(path.rglob("*"))
+    for candidate in candidates:
+        if candidate.is_symlink() or is_junction(candidate):
+            raise RuntimeError(f"refusing to clean package-channel reparse point: {candidate}")
+
+
+def is_junction(path: Path) -> bool:
+    is_junction_method = getattr(path, "is_junction", None)
+    return bool(is_junction_method and is_junction_method())
 
 
 def zip_directory(source_dir: Path, destination_zip: Path) -> None:
