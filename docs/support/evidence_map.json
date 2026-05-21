@@ -4071,6 +4071,117 @@
       "support_claim": "objc3c.behavior.application-framework-samples.async-runtime-application",
       "evidence_kind": "doc",
       "path": "showcase/applicationFrameworkSamples/README.md"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_generic_collection_type_model.py"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/model/generic_collection_type_model.h"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+    },
+    {
+      "capability_id": "stdlib.collections.generic-type-model",
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_generic_collection_type_model.py"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+    },
+    {
+      "capability_id": "language.generics.collection-identity",
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.generics.collection-identity",
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_generic_collection_type_model.py"
+    },
+    {
+      "capability_id": "language.generics.collection-identity",
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+    },
+    {
+      "capability_id": "language.generics.collection-identity",
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+    },
+    {
+      "capability_id": "language.generics.collection-identity",
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
     }
   ]
 }

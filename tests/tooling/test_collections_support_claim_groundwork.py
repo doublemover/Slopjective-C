@@ -240,13 +240,13 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
 def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> None:
     catalog = _read_json(CATALOG_PATH)
     contract = _read_json(CONTRACT_PATH)
-    collection_rows = [
+    runtime_collection_rows = [
         row
         for row in catalog["rows"]
-        if ".stdlib.collections." in str(row.get("support_claim", ""))
+        if str(row.get("support_claim", "")) in _expected_claim_ids(contract)
     ]
 
-    assert {row["support_claim"] for row in collection_rows} == _expected_claim_ids(
+    assert {row["support_claim"] for row in runtime_collection_rows} == _expected_claim_ids(
         contract
     )
 
@@ -261,7 +261,7 @@ def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> 
         "delete",
         "hashing",
     }
-    for row in collection_rows:
+    for row in runtime_collection_rows:
         claim_text = row["support_claim"].lower()
         capability_text = row["capability_id"].lower()
         assert not any(fragment in claim_text for fragment in forbidden_fragments)

@@ -80,10 +80,18 @@
     "utf8_literal_record": "routes explicit UTF-8 literal metadata through objc3_runtime_stdlib_text_utf8_literal_i32 and returns a runtime-owned handle only for nonnegative byte/unit counts with units not greater than bytes and a nonzero valid-UTF8 flag",
     "byte_count": "routes through objc3_runtime_stdlib_text_byte_count_i32 and returns 0 plus invalid-handle status for unknown handles",
     "unit_count": "routes through objc3_runtime_stdlib_text_unit_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "scalar_count": "routes through objc3_runtime_stdlib_text_scalar_count_i32 and returns the decoded Unicode scalar count without treating byte indexes as scalar indexes",
+    "scalar_at_or": "routes through objc3_runtime_stdlib_text_scalar_at_or_i32 and returns a decoded Unicode scalar or the caller default while recording invalid-handle, unavailable-storage, or out-of-bounds status",
+    "scalar_iterator": "routes through objc3_runtime_stdlib_text_scalar_iterator_i32 and objc3_runtime_stdlib_text_scalar_iterator_next_or_i32 with decoded scalar values followed by an explicit iteration-end status; mutable builder iteration fails closed after builder mutation",
     "valid_utf8": "routes through objc3_runtime_stdlib_text_is_valid_utf8_i32 and returns 1 only for valid runtime-owned text records",
     "byte_at_or": "routes through objc3_runtime_stdlib_text_byte_at_or_i32 and returns an owned UTF-8 byte or the caller default while recording invalid-handle, unavailable-storage, or out-of-bounds status",
     "prefix_units": "routes through objc3_runtime_stdlib_text_prefix_units_i32 and clamps requested units to the runtime-owned text unit count with a zero floor",
-    "concat": "routes through objc3_runtime_stdlib_text_concat_i32 and creates a runtime-owned record whose byte and unit counts are the checked sums of both operands"
+    "concat": "routes through objc3_runtime_stdlib_text_concat_i32 and creates a runtime-owned record whose byte and unit counts are the checked sums of both operands",
+    "builder": "routes builder allocation, text append, i32 append, scalar append, and finalization through objc3_runtime_stdlib_text_builder_* entrypoints with UTF-8 validation and checked capacity growth",
+    "format_i32": "routes deterministic base-10 i32 formatting through objc3_runtime_stdlib_text_format_i32_i32 and returns runtime-owned UTF-8 text storage",
+    "interpolation_builder": "composes interpolation output by appending Text handles and deterministic i32 formatting into a runtime-owned text builder; unsupported source-level payloads remain diagnostic-only until compiler lowering owns them",
+    "equality": "routes byte-exact UTF-8 text equality through objc3_runtime_stdlib_text_equal_i32 and fails closed for invalid or storage-unavailable handles",
+    "compare": "routes deterministic lexicographic UTF-8 code-unit ordering through objc3_runtime_stdlib_text_compare_i32 and fails closed for invalid or storage-unavailable handles"
   },
   "collection_semantics": {
     "array3_record": "routes concrete i32 array construction through objc3_runtime_stdlib_collections_array3_i32 and returns a runtime-owned handle only for counts from 0 through 3",

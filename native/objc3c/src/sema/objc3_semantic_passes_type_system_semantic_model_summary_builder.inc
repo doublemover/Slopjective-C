@@ -101,6 +101,16 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.canonical_object_type_entries <= summary.canonical_type_entries &&
       summary.canonical_protocol_qualified_entries <=
           summary.canonical_type_entries &&
+      summary.generic_collection_descriptor_entries <=
+          summary.generic_collection_type_entries &&
+      summary.generic_collection_iterator_entries <=
+          summary.generic_collection_type_entries &&
+      summary.generic_collection_mutable_entries <=
+          summary.generic_collection_type_entries &&
+      summary.generic_collection_invariant_entries ==
+          summary.generic_collection_type_entries &&
+      summary.generic_collection_invalid_entries <=
+          summary.generic_collection_type_entries &&
       summary.canonical_nullable_entries +
               summary.canonical_nonnull_entries +
               summary.canonical_implicitly_unwrapped_entries +
@@ -138,6 +148,18 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << summary.canonical_protocol_qualified_entries
       << ";canonical-generics="
       << summary.canonical_generic_argument_entries
+      << ";generic-collection-types="
+      << summary.generic_collection_type_entries
+      << ";generic-collection-descriptors="
+      << summary.generic_collection_descriptor_entries
+      << ";generic-collection-iterators="
+      << summary.generic_collection_iterator_entries
+      << ";generic-collection-mutables="
+      << summary.generic_collection_mutable_entries
+      << ";generic-collection-invariant="
+      << summary.generic_collection_invariant_entries
+      << ";generic-collection-invalid="
+      << summary.generic_collection_invalid_entries
       << ";canonical-nullable=" << summary.canonical_nullable_entries
       << ";canonical-nonnull=" << summary.canonical_nonnull_entries
       << ";canonical-iuo="

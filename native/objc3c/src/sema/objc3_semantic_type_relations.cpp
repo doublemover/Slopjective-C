@@ -4,6 +4,7 @@
 #include <sstream>
 #include <utility>
 
+#include "sema/objc3_semantic_generic_collection_type_model.h"
 #include "sema/objc3_semantic_type_predicates.h"
 #include "support/objc3_value_type_names.h"
 
@@ -16,6 +17,13 @@ bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs
   }
   if (lhs.is_callable != rhs.is_callable) {
     return false;
+  }
+  if (lhs.is_generic_collection != rhs.is_generic_collection) {
+    return false;
+  }
+  if (lhs.is_generic_collection) {
+    return AreSameObjc3GenericCollectionTypeModel(
+        lhs.generic_collection_model, rhs.generic_collection_model);
   }
   if (!lhs.is_vector) {
     if (lhs.is_callable) {
@@ -41,6 +49,9 @@ bool IsEscapingBlockRuntimeHandleCompatible(
 
 std::string SemanticTypeName(const SemanticTypeInfo &info) {
   if (!info.is_vector) {
+    if (info.is_generic_collection) {
+      return info.generic_collection_model.public_spelling;
+    }
     if (info.is_callable) {
       std::ostringstream out;
       out << "block(";

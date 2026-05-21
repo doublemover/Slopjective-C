@@ -1500,6 +1500,242 @@
       ]
     },
     {
+      "id": "stdlib.text.unicode-scalar-iteration",
+      "title": "Runtime-backed objc3.text Unicode scalar iteration",
+      "state": "implemented",
+      "summary": "The objc3.text runtime exposes explicit scalar-count, scalar-at-or, and scalar iterator APIs over validated owned UTF-8 storage. Byte APIs remain separate from scalar APIs; invalid handles, missing storage, out-of-bounds scalar indexes, and builder mutation during iteration fail closed with stable status.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.unicode-scalar-iteration"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
+          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.basic-formatting",
+      "title": "Runtime-backed objc3.text basic i32 formatting",
+      "state": "implemented",
+      "summary": "The objc3.text runtime formats i32 values as deterministic base-10 UTF-8 text handles and can append i32 payloads into text builders. Locale-sensitive formatting, arbitrary object display, and Foundation formatter bridging remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.basic-formatting"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
+          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.equality-comparison",
+      "title": "Runtime-backed objc3.text equality and comparison",
+      "state": "implemented",
+      "summary": "The objc3.text runtime exposes byte-exact UTF-8 equality and deterministic lexicographic UTF-8 code-unit comparison for runtime-owned text storage. Normalization, collation, locale-aware comparison, and NSString bridging remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.equality-comparison"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
+          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.runtime-builder-interpolation",
+      "title": "Runtime-backed objc3.text builder interpolation",
+      "state": "implemented",
+      "summary": "The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation lowering and arbitrary object interpolation remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.runtime-builder-interpolation"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
+          "command": "python -m pytest tests/tooling/test_string_text_model_runtime.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
       "id": "language.text.source-string-literal-text-shape-handle",
       "title": "Source string literal Text shape handles",
       "state": "implemented",
@@ -4591,6 +4827,132 @@
         {
           "kind": "doc",
           "path": "showcase/applicationFrameworkSamples/README.md"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.generic-type-model",
+      "title": "Generic collection type model",
+      "state": "implemented",
+      "summary": "Semantic analysis models Array, MutableArray, Slice, Map, MutableMap, Set, MutableSet, Iterator, and MapIterator generic identities with invariant type arguments, explicit mutability, element/key/value identity, and fail-closed unsupported-shape diagnostics without claiming literals or for-in syntax.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.generic-type-model"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/model/generic_collection_type_model.h",
+        "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h",
+        "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_factory.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_relations.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_generic_collection_type_model.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/model/generic_collection_type_model.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "runtime.collections.type-descriptors",
+      "title": "Collection type descriptor identity",
+      "state": "implemented",
+      "summary": "Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract so later runtime descriptor lanes can reject cross-kind or cross-type misuse.",
+      "support_claims": [
+        "objc3c.behavior.runtime.collections.type-descriptors"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h",
+        "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp",
+        "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_generic_collection_type_model.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.collection-identity",
+      "title": "Collection generic identity semantics",
+      "state": "implemented",
+      "summary": "The language generic model treats collection specializations as invariant semantic identities with deterministic equality and assignment compatibility checks over type arguments, mutability, runtime descriptor identity, and ABI identity.",
+      "support_claims": [
+        "objc3c.behavior.language.generics.collection-identity"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_relations.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_generic_collection_type_model.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
         }
       ]
     }

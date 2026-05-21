@@ -31,6 +31,7 @@ TEXT_NEGATIVE_FIXTURE = (
     "stdlib_foundation_next_text_helper_signature_conflict.objc3"
 )
 FOUNDATION_NEXT_PROBE = "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp"
+STRING_TEXT_MODEL_PROBE = "tests/tooling/runtime/string_text_model_runtime_probe.cpp"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -85,12 +86,15 @@ def test_runtime_backed_text_claims_are_dedicated_module_contracts() -> None:
         assert row["traceability_fixture"] == "stdlib/modules/objc3.text/module.json"
         assert row["runnable_command"] == claim["executable_command"]
         assert row["runnable_command"].startswith(PUBLIC_COMMAND_PREFIX)
-        assert row["runtime_acceptance_case"] == "stdlib-foundation-next-runtime-probe"
+        assert row["runtime_acceptance_case"] == expected.get(
+            "runtime_acceptance_case", "stdlib-foundation-next-runtime-probe"
+        )
 
         assert claim["behavior_fixture"] in fixture_paths
         assert claim["behavior_fixture"] == TEXT_POSITIVE_FIXTURE
         assert claim["behavior_fixture"] in row["positive_evidence"]
-        assert FOUNDATION_NEXT_PROBE in row["positive_evidence"]
+        for evidence_path in expected.get("positive_evidence", [FOUNDATION_NEXT_PROBE]):
+            assert evidence_path in row["positive_evidence"]
         assert "stdlib/modules/objc3.text/module.objc3" in row["positive_evidence"]
         assert "native/objc3c/src/runtime/stdlib/text_runtime_contract.h" in row["positive_evidence"]
         assert TEXT_NEGATIVE_FIXTURE in row["negative_evidence"]
@@ -114,7 +118,10 @@ def test_runtime_backed_text_claims_are_dedicated_module_contracts() -> None:
             if item["kind"] == "test"
         }
         assert (claim["behavior_fixture"], claim["executable_command"]) in executable_evidence
-        assert (FOUNDATION_NEXT_PROBE, "npm run objc3c -- test-runtime-acceptance-fast") in executable_evidence
+        if expected.get("runtime_acceptance_case") == "string-text-model-runtime-probe":
+            assert (STRING_TEXT_MODEL_PROBE, "python -m pytest tests/tooling/test_string_text_model_runtime.py") in executable_evidence
+        else:
+            assert (FOUNDATION_NEXT_PROBE, "npm run objc3c -- test-runtime-acceptance-fast") in executable_evidence
 
         for path in [
             row["conformance_fixture"],
@@ -134,14 +141,15 @@ def test_text_groundwork_does_not_publish_reserved_text_claims() -> None:
     assert {row["support_claim"] for row in text_rows} == {
         "objc3c.behavior.stdlib.text.string-view-runtime-shape",
         "objc3c.behavior.stdlib.text.byte-span-runtime-shape",
+        "objc3c.behavior.stdlib.text.unicode-scalar-iteration",
+        "objc3c.behavior.stdlib.text.basic-formatting",
+        "objc3c.behavior.stdlib.text.equality-comparison",
+        "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
     }
 
     forbidden_fragments = {
         "owned-string",
-        "unicode",
         "normalization",
-        "format",
-        "interpolation",
         "foundation",
         "nsstring",
     }

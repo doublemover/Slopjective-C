@@ -330,6 +330,30 @@
       "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
+      "claim_id": "objc3c.behavior.stdlib.text.unicode-scalar-iteration",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.basic-formatting",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.equality-comparison",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
       "claim_id": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
       "owner_phase": "lowering",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
@@ -478,6 +502,24 @@
       "owner_phase": "e2e",
       "behavior_fixture": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
       "executable_command": "npm run objc3c -- validate-application-framework-samples"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.collections.type-descriptors",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.generics.collection-identity",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
     }
   ],
   "fixtures": [
@@ -1698,6 +1740,14 @@
       "behavior_family": "stdlib",
       "fixture_kind": "negative",
       "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "stdlib-collections-generic-type-model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
     }
   ]
 }

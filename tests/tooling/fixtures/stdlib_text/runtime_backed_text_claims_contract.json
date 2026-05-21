@@ -11,6 +11,7 @@
     "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
     "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
     "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+    "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
     "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
     "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
     "native/objc3c/src/runtime/public/objc3_runtime_api.h"
@@ -97,6 +98,154 @@
         "slice mutation",
         "iteration protocol",
         "Foundation NSData bridging"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.unicode-scalar-iteration",
+      "capability_id": "stdlib.text.unicode-scalar-iteration",
+      "module": "objc3.text",
+      "api_family": "text-scalar-iteration",
+      "exports": [
+        "objc3_text_scalar_count",
+        "objc3_text_scalar_at_or",
+        "objc3_text_scalar_iterator",
+        "objc3_text_scalar_iterator_next_or",
+        "objc3_text_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_text_scalar_count_i32",
+        "objc3_runtime_stdlib_text_scalar_at_or_i32",
+        "objc3_runtime_stdlib_text_scalar_iterator_i32",
+        "objc3_runtime_stdlib_text_scalar_iterator_next_or_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "scalar_count",
+        "scalar_at_or",
+        "scalar_iterator"
+      ],
+      "runtime_acceptance_case": "string-text-model-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/runtime/string_text_model_runtime_probe.cpp"
+      ],
+      "supported_now": [
+        "valid owned UTF-8 storage exposes decoded Unicode scalar counts, scalar-at-or access, and deterministic iterator order",
+        "byte APIs remain separate from scalar APIs and scalar out-of-bounds access fails closed with stable status codes",
+        "builder iterators fail closed when the source builder mutates during iteration"
+      ],
+      "reserved_until_runtime_storage": [
+        "normalization and collation",
+        "locale-aware scalar classification",
+        "grapheme cluster iteration",
+        "NSString bridging"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.basic-formatting",
+      "capability_id": "stdlib.text.basic-formatting",
+      "module": "objc3.text",
+      "api_family": "text-formatting",
+      "exports": [
+        "objc3_text_format_i32",
+        "objc3_text_builder_append_i32",
+        "objc3_text_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_text_format_i32_i32",
+        "objc3_runtime_stdlib_text_builder_append_i32_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "format_i32",
+        "builder"
+      ],
+      "runtime_acceptance_case": "string-text-model-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/runtime/string_text_model_runtime_probe.cpp"
+      ],
+      "supported_now": [
+        "i32 formatting is deterministic base-10 runtime-owned UTF-8 text storage",
+        "builder i32 append composes formatted i32 payloads into runtime-owned text handles"
+      ],
+      "reserved_until_runtime_storage": [
+        "locale-sensitive formatting",
+        "floating-point formatting",
+        "arbitrary object display formatting",
+        "Foundation formatter bridging"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.equality-comparison",
+      "capability_id": "stdlib.text.equality-comparison",
+      "module": "objc3.text",
+      "api_family": "text-comparison",
+      "exports": [
+        "objc3_text_equal",
+        "objc3_text_compare",
+        "objc3_text_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_text_equal_i32",
+        "objc3_runtime_stdlib_text_compare_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "equality",
+        "compare"
+      ],
+      "runtime_acceptance_case": "string-text-model-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/runtime/string_text_model_runtime_probe.cpp"
+      ],
+      "supported_now": [
+        "text equality compares runtime-owned UTF-8 bytes exactly",
+        "text comparison is deterministic lexicographic UTF-8 code-unit ordering"
+      ],
+      "reserved_until_runtime_storage": [
+        "Unicode normalization",
+        "collation",
+        "locale-aware comparison",
+        "NSString comparison bridging"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "capability_id": "stdlib.text.runtime-builder-interpolation",
+      "module": "objc3.text",
+      "api_family": "text-interpolation",
+      "exports": [
+        "objc3_text_builder",
+        "objc3_text_builder_append_text",
+        "objc3_text_builder_append_i32",
+        "objc3_text_builder_append_scalar",
+        "objc3_text_builder_build",
+        "objc3_text_last_status"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_stdlib_text_builder_i32",
+        "objc3_runtime_stdlib_text_builder_append_text_i32",
+        "objc3_runtime_stdlib_text_builder_append_i32_i32",
+        "objc3_runtime_stdlib_text_builder_append_scalar_i32",
+        "objc3_runtime_stdlib_text_builder_build_i32",
+        "objc3_runtime_stdlib_text_last_status_i32"
+      ],
+      "semantic_policy_keys": [
+        "builder",
+        "interpolation_builder"
+      ],
+      "runtime_acceptance_case": "string-text-model-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/runtime/string_text_model_runtime_probe.cpp"
+      ],
+      "supported_now": [
+        "runtime text builder composition appends Text handles, deterministic i32 formatting, and checked Unicode scalar payloads",
+        "builder finalization returns runtime-owned immutable UTF-8 text storage with snapshot-visible builder counters"
+      ],
+      "reserved_until_runtime_storage": [
+        "source-level interpolation lowering",
+        "unsupported payload interpolation",
+        "nested interpolation",
+        "arbitrary object interpolation"
       ]
     }
   ],

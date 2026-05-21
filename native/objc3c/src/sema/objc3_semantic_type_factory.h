@@ -16,3 +16,6 @@ SemanticTypeInfo MakeCallableSemanticType(
     ValueType return_type);
 SemanticTypeInfo MakeCallableSemanticTypeFromBlockLiteral(const Expr &expr);
 SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type);
+SemanticTypeInfo MakeGenericCollectionSemanticType(
+    const std::string &type_name,
+    const std::vector<std::string> &arguments_source_order);

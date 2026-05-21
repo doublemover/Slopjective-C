@@ -3,7 +3,9 @@
 #include "runtime/stdlib/stdlib_runtime_storage.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -38,6 +40,15 @@ struct RuntimeStdlibTextState {
   std::uint64_t storage_create_call_count = 0;
   std::uint64_t storage_query_call_count = 0;
   std::uint64_t status_call_count = 0;
+  std::uint64_t scalar_query_call_count = 0;
+  std::uint64_t scalar_iterator_call_count = 0;
+  std::uint64_t builder_create_call_count = 0;
+  std::uint64_t builder_append_call_count = 0;
+  std::uint64_t builder_finalize_call_count = 0;
+  std::uint64_t interpolation_call_count = 0;
+  std::uint64_t equality_call_count = 0;
+  std::uint64_t compare_call_count = 0;
+  std::uint64_t format_call_count = 0;
   std::uint64_t mutation_generation = 0;
   std::uint64_t invalid_handle_failure_count = 0;
   std::uint64_t cross_kind_handle_failure_count = 0;
@@ -51,6 +62,7 @@ struct RuntimeStdlibTextState {
   int last_input_c = 0;
   int last_status = OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK;
   int last_result = 0;
+  int last_malformed_offset = -1;
 };
 
 RuntimeStdlibTextState &State() {
@@ -127,9 +139,16 @@ bool HasValidTextShape(int byte_count, int unit_count) {
 bool TryDecodeUtf8Scalars(const unsigned char *bytes,
                           int byte_count,
                           int &scalar_count,
-                          std::vector<int> *scalars) {
+                          std::vector<int> *scalars,
+                          int *malformed_offset = nullptr) {
   scalar_count = 0;
+  if (malformed_offset != nullptr) {
+    *malformed_offset = -1;
+  }
   if (byte_count < 0 || (bytes == nullptr && byte_count != 0)) {
+    if (malformed_offset != nullptr) {
+      *malformed_offset = 0;
+    }
     return false;
   }
   if (scalars != nullptr) {
@@ -146,6 +165,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
       scalar = first;
     } else if (first >= 0xC2 && first <= 0xDF) {
       if (index + 1 >= byte_count || !IsContinuation(bytes[index + 1])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 2;
@@ -153,6 +175,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
     } else if (first == 0xE0) {
       if (index + 2 >= byte_count || bytes[index + 1] < 0xA0 ||
           bytes[index + 1] > 0xBF || !IsContinuation(bytes[index + 2])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 3;
@@ -162,6 +187,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
                (first >= 0xEE && first <= 0xEF)) {
       if (index + 2 >= byte_count || !IsContinuation(bytes[index + 1]) ||
           !IsContinuation(bytes[index + 2])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 3;
@@ -170,6 +198,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
     } else if (first == 0xED) {
       if (index + 2 >= byte_count || bytes[index + 1] < 0x80 ||
           bytes[index + 1] > 0x9F || !IsContinuation(bytes[index + 2])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 3;
@@ -179,6 +210,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
       if (index + 3 >= byte_count || bytes[index + 1] < 0x90 ||
           bytes[index + 1] > 0xBF || !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 4;
@@ -189,6 +223,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
       if (index + 3 >= byte_count || !IsContinuation(bytes[index + 1]) ||
           !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 4;
@@ -199,6 +236,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
       if (index + 3 >= byte_count || bytes[index + 1] < 0x80 ||
           bytes[index + 1] > 0x8F || !IsContinuation(bytes[index + 2]) ||
           !IsContinuation(bytes[index + 3])) {
+        if (malformed_offset != nullptr) {
+          *malformed_offset = index;
+        }
         return false;
       }
       width = 4;
@@ -206,6 +246,9 @@ bool TryDecodeUtf8Scalars(const unsigned char *bytes,
                ((bytes[index + 2] & 0x3F) << 6) |
                (bytes[index + 3] & 0x3F);
     } else {
+      if (malformed_offset != nullptr) {
+        *malformed_offset = index;
+      }
       return false;
     }
     index += width;
@@ -249,6 +292,91 @@ TextRecord MakeBuilderRecord() {
 bool HasUtf8Storage(const TextRecord &record) {
   return record.header.descriptor_kind == storage::DescriptorKind::TextOwnedUtf8 ||
          record.header.descriptor_kind == storage::DescriptorKind::TextBuilder;
+}
+
+bool TryEncodeScalarUtf8(int scalar, std::array<unsigned char, 4> &bytes,
+                         int &byte_count) {
+  byte_count = 0;
+  if (scalar < 0 || scalar > 0x10FFFF ||
+      (scalar >= 0xD800 && scalar <= 0xDFFF)) {
+    return false;
+  }
+  if (scalar <= 0x7F) {
+    bytes[0] = static_cast<unsigned char>(scalar);
+    byte_count = 1;
+    return true;
+  }
+  if (scalar <= 0x7FF) {
+    bytes[0] = static_cast<unsigned char>(0xC0 | (scalar >> 6));
+    bytes[1] = static_cast<unsigned char>(0x80 | (scalar & 0x3F));
+    byte_count = 2;
+    return true;
+  }
+  if (scalar <= 0xFFFF) {
+    bytes[0] = static_cast<unsigned char>(0xE0 | (scalar >> 12));
+    bytes[1] = static_cast<unsigned char>(0x80 | ((scalar >> 6) & 0x3F));
+    bytes[2] = static_cast<unsigned char>(0x80 | (scalar & 0x3F));
+    byte_count = 3;
+    return true;
+  }
+  bytes[0] = static_cast<unsigned char>(0xF0 | (scalar >> 18));
+  bytes[1] = static_cast<unsigned char>(0x80 | ((scalar >> 12) & 0x3F));
+  bytes[2] = static_cast<unsigned char>(0x80 | ((scalar >> 6) & 0x3F));
+  bytes[3] = static_cast<unsigned char>(0x80 | (scalar & 0x3F));
+  byte_count = 4;
+  return true;
+}
+
+int AppendDecodedUtf8ToBuilder(RuntimeStdlibTextState &state,
+                               TextRecord &builder,
+                               const unsigned char *bytes,
+                               int byte_count,
+                               int call_handle,
+                               int input_b,
+                               int input_c,
+                               std::uint64_t &family_count) {
+  if (byte_count < 0 ||
+      storage::AddWouldOverflowInt(builder.byte_count, byte_count)) {
+    RecordCall(state, family_count, call_handle, input_b, input_c, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
+    return 0;
+  }
+  if (storage::CountExceedsStorageCapacity(builder.byte_count + byte_count)) {
+    RecordCall(state, family_count, call_handle, input_b, input_c, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  if (bytes == nullptr && byte_count != 0) {
+    RecordCall(state, family_count, call_handle, input_b, input_c, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR, 0);
+    return 0;
+  }
+
+  int scalar_count = 0;
+  std::vector<int> scalars;
+  int malformed_offset = -1;
+  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars,
+                            &malformed_offset) ||
+      storage::AddWouldOverflowInt(builder.unit_count, scalar_count)) {
+    state.last_malformed_offset = malformed_offset;
+    RecordCall(state, family_count, call_handle, input_b, input_c, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
+    return 0;
+  }
+  if (byte_count > 0) {
+    builder.utf8_bytes.insert(builder.utf8_bytes.end(), bytes,
+                              bytes + byte_count);
+    builder.scalar_values.insert(builder.scalar_values.end(), scalars.begin(),
+                                 scalars.end());
+  }
+  builder.byte_count += byte_count;
+  builder.unit_count += scalar_count;
+  builder.valid_utf8 = true;
+  ++state.mutation_generation;
+  builder.header.mutation_generation = state.mutation_generation;
+  RecordCall(state, family_count, call_handle, input_b, input_c, scalar_count,
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, builder.byte_count);
+  return builder.byte_count;
 }
 
 int CountOwnedStorageRecords(const RuntimeStdlibTextState &state) {
@@ -297,6 +425,15 @@ void ResetRuntimeStdlibTextStateForTesting() {
   state.storage_create_call_count = 0;
   state.storage_query_call_count = 0;
   state.status_call_count = 0;
+  state.scalar_query_call_count = 0;
+  state.scalar_iterator_call_count = 0;
+  state.builder_create_call_count = 0;
+  state.builder_append_call_count = 0;
+  state.builder_finalize_call_count = 0;
+  state.interpolation_call_count = 0;
+  state.equality_call_count = 0;
+  state.compare_call_count = 0;
+  state.format_call_count = 0;
   state.mutation_generation = 0;
   state.invalid_handle_failure_count = 0;
   state.cross_kind_handle_failure_count = 0;
@@ -310,6 +447,7 @@ void ResetRuntimeStdlibTextStateForTesting() {
   state.last_input_c = 0;
   state.last_status = OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK;
   state.last_result = 0;
+  state.last_malformed_offset = -1;
   state.records.Reset();
 }
 
@@ -368,8 +506,11 @@ extern "C" int objc3_runtime_stdlib_text_utf8_storage_i32(
 
   int scalar_count = 0;
   std::vector<int> scalars;
+  int malformed_offset = -1;
   const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
-  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars)) {
+  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars,
+                            &malformed_offset)) {
+    state.last_malformed_offset = malformed_offset;
     RecordCall(state, state.storage_create_call_count, 0, byte_count, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
     return 0;
@@ -422,7 +563,58 @@ extern "C" int objc3_runtime_stdlib_text_unit_count_i32(int handle) {
 }
 
 extern "C" int objc3_runtime_stdlib_text_scalar_count_i32(int handle) {
-  return objc3_runtime_stdlib_text_unit_count_i32(handle);
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.scalar_query_call_count, handle, handle, 0, 0,
+               status, 0);
+    return 0;
+  }
+  RecordCall(state, state.scalar_query_call_count, handle, handle, 0, 0,
+             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, lookup.record->unit_count);
+  return lookup.record->unit_count;
+}
+
+extern "C" int objc3_runtime_stdlib_text_scalar_at_or_i32(
+    int handle,
+    int scalar_index,
+    int default_value) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      handle, {storage::DescriptorKind::TextLiteral,
+               storage::DescriptorKind::TextOwnedUtf8,
+               storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.scalar_query_call_count, handle, scalar_index,
+               default_value, 0, status, default_value);
+    return default_value;
+  }
+  if (!HasUtf8Storage(*lookup.record)) {
+    RecordCall(state, state.scalar_query_call_count, handle, scalar_index,
+               default_value, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE,
+               default_value);
+    return default_value;
+  }
+  if (scalar_index < 0 ||
+      scalar_index >= static_cast<int>(lookup.record->scalar_values.size())) {
+    RecordCall(state, state.scalar_query_call_count, handle, scalar_index,
+               default_value, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS, default_value);
+    return default_value;
+  }
+  const int result =
+      lookup.record->scalar_values[static_cast<std::size_t>(scalar_index)];
+  RecordCall(state, state.scalar_query_call_count, handle, scalar_index,
+             default_value, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
+  return result;
 }
 
 extern "C" int objc3_runtime_stdlib_text_is_valid_utf8_i32(int handle) {
@@ -596,11 +788,13 @@ extern "C" int objc3_runtime_stdlib_text_append_utf8_storage_i32(
 
   int appended_scalar_count = 0;
   std::vector<int> appended_scalars;
+  int malformed_offset = -1;
   const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
   if (!TryDecodeUtf8Scalars(bytes, byte_count, appended_scalar_count,
-                            &appended_scalars) ||
+                            &appended_scalars, &malformed_offset) ||
       storage::AddWouldOverflowInt(lookup.record->unit_count,
                                    appended_scalar_count)) {
+    state.last_malformed_offset = malformed_offset;
     RecordCall(state, state.storage_create_call_count, 0, handle, byte_count, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
     return 0;
@@ -639,11 +833,11 @@ extern "C" int objc3_runtime_stdlib_text_builder_i32(void) {
       state.records.Store(storage::DescriptorKind::TextBuilder,
                           MakeBuilderRecord());
   if (handle == 0) {
-    RecordCall(state, state.storage_create_call_count, 0, 0, 0, 0,
+    RecordCall(state, state.builder_create_call_count, 0, 0, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
-  RecordCall(state, state.storage_create_call_count, handle, 0, 0, 0,
+  RecordCall(state, state.builder_create_call_count, handle, 0, 0, 0,
              OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
   return handle;
 }
@@ -658,53 +852,105 @@ extern "C" int objc3_runtime_stdlib_text_builder_append_utf8_i32(
       builder_handle, {storage::DescriptorKind::TextBuilder});
   if (lookup.status != storage::LookupStatus::Ok) {
     const int status = StatusForLookup(lookup.status);
-    RecordCall(state, state.storage_create_call_count, builder_handle,
+    RecordCall(state, state.builder_append_call_count, builder_handle,
                builder_handle, byte_count, 0, status, 0);
     return 0;
   }
-  if (byte_count < 0 ||
-      storage::AddWouldOverflowInt(lookup.record->byte_count, byte_count)) {
-    RecordCall(state, state.storage_create_call_count, builder_handle,
-               builder_handle, byte_count, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_INVALID_SHAPE, 0);
-    return 0;
-  }
-  if (storage::CountExceedsStorageCapacity(lookup.record->byte_count + byte_count)) {
-    RecordCall(state, state.storage_create_call_count, builder_handle,
-               builder_handle, byte_count, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
-    return 0;
-  }
-  if (utf8_bytes == nullptr && byte_count != 0) {
-    RecordCall(state, state.storage_create_call_count, builder_handle,
-               builder_handle, byte_count, 0,
-               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_DESCRIPTOR, 0);
-    return 0;
-  }
-  int scalar_count = 0;
-  std::vector<int> scalars;
   const auto *bytes = reinterpret_cast<const unsigned char *>(utf8_bytes);
-  if (!TryDecodeUtf8Scalars(bytes, byte_count, scalar_count, &scalars) ||
-      storage::AddWouldOverflowInt(lookup.record->unit_count, scalar_count)) {
-    RecordCall(state, state.storage_create_call_count, builder_handle,
-               builder_handle, byte_count, 0,
+  return AppendDecodedUtf8ToBuilder(state, *lookup.record, bytes, byte_count,
+                                    builder_handle, builder_handle, byte_count,
+                                    state.builder_append_call_count);
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_append_text_i32(
+    int builder_handle,
+    int text_handle) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto builder_lookup = state.records.Lookup(
+      builder_handle, {storage::DescriptorKind::TextBuilder});
+  if (builder_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(builder_lookup.status);
+    RecordCall(state, state.interpolation_call_count, builder_handle,
+               builder_handle, text_handle, 0, status, 0);
+    return 0;
+  }
+  auto text_lookup = state.records.Lookup(
+      text_handle, {storage::DescriptorKind::TextLiteral,
+                    storage::DescriptorKind::TextOwnedUtf8,
+                    storage::DescriptorKind::TextBuilder});
+  if (text_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(text_lookup.status);
+    RecordCall(state, state.interpolation_call_count, builder_handle,
+               builder_handle, text_handle, 0, status, 0);
+    return 0;
+  }
+  if (!HasUtf8Storage(*text_lookup.record)) {
+    RecordCall(state, state.interpolation_call_count, builder_handle,
+               builder_handle, text_handle, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
+    return 0;
+  }
+  return AppendDecodedUtf8ToBuilder(
+      state, *builder_lookup.record, text_lookup.record->utf8_bytes.data(),
+      text_lookup.record->byte_count, builder_handle, builder_handle,
+      text_handle, state.interpolation_call_count);
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_append_i32_i32(
+    int builder_handle,
+    int value) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      builder_handle, {storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.interpolation_call_count, builder_handle,
+               builder_handle, value, 0, status, 0);
+    return 0;
+  }
+  std::array<char, 16> buffer{};
+  const int written =
+      std::snprintf(buffer.data(), buffer.size(), "%d", value);
+  if (written <= 0 || written >= static_cast<int>(buffer.size())) {
+    RecordCall(state, state.interpolation_call_count, builder_handle,
+               builder_handle, value, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUTPUT_TOO_SMALL, 0);
+    return 0;
+  }
+  return AppendDecodedUtf8ToBuilder(
+      state, *lookup.record,
+      reinterpret_cast<const unsigned char *>(buffer.data()), written,
+      builder_handle, builder_handle, value, state.interpolation_call_count);
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_append_scalar_i32(
+    int builder_handle,
+    int scalar) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto lookup = state.records.Lookup(
+      builder_handle, {storage::DescriptorKind::TextBuilder});
+  if (lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(lookup.status);
+    RecordCall(state, state.builder_append_call_count, builder_handle,
+               builder_handle, scalar, 0, status, 0);
+    return 0;
+  }
+  std::array<unsigned char, 4> bytes{};
+  int byte_count = 0;
+  if (!TryEncodeScalarUtf8(scalar, bytes, byte_count)) {
+    state.last_malformed_offset = 0;
+    RecordCall(state, state.builder_append_call_count, builder_handle,
+               builder_handle, scalar, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
     return 0;
   }
-  if (byte_count > 0) {
-    lookup.record->utf8_bytes.insert(lookup.record->utf8_bytes.end(), bytes,
-                                     bytes + byte_count);
-    lookup.record->scalar_values.insert(lookup.record->scalar_values.end(),
-                                        scalars.begin(), scalars.end());
-  }
-  lookup.record->byte_count += byte_count;
-  lookup.record->unit_count += scalar_count;
-  ++state.mutation_generation;
-  lookup.record->header.mutation_generation = state.mutation_generation;
-  RecordCall(state, state.storage_create_call_count, builder_handle,
-             builder_handle, byte_count, scalar_count,
-             OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, lookup.record->byte_count);
-  return lookup.record->byte_count;
+  return AppendDecodedUtf8ToBuilder(state, *lookup.record, bytes.data(),
+                                    byte_count, builder_handle,
+                                    builder_handle, scalar,
+                                    state.builder_append_call_count);
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_build_i32(
@@ -715,7 +961,7 @@ extern "C" int objc3_runtime_stdlib_text_builder_build_i32(
       builder_handle, {storage::DescriptorKind::TextBuilder});
   if (lookup.status != storage::LookupStatus::Ok) {
     const int status = StatusForLookup(lookup.status);
-    RecordCall(state, state.storage_create_call_count, builder_handle,
+    RecordCall(state, state.builder_finalize_call_count, builder_handle,
                builder_handle, 0, 0, status, 0);
     return 0;
   }
@@ -729,12 +975,12 @@ extern "C" int objc3_runtime_stdlib_text_builder_build_i32(
       state.records.Store(storage::DescriptorKind::TextOwnedUtf8,
                           std::move(record));
   if (handle == 0) {
-    RecordCall(state, state.storage_create_call_count, builder_handle,
+    RecordCall(state, state.builder_finalize_call_count, builder_handle,
                builder_handle, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
-  RecordCall(state, state.storage_create_call_count, handle, builder_handle, 0,
+  RecordCall(state, state.builder_finalize_call_count, handle, builder_handle, 0,
              0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
   return handle;
 }
@@ -748,12 +994,12 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_i32(int handle) {
                storage::DescriptorKind::TextBuilder});
   if (lookup.status != storage::LookupStatus::Ok) {
     const int status = StatusForLookup(lookup.status);
-    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+    RecordCall(state, state.scalar_iterator_call_count, handle, handle, 0, 0,
                status, 0);
     return 0;
   }
   if (!HasUtf8Storage(*lookup.record)) {
-    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+    RecordCall(state, state.scalar_iterator_call_count, handle, handle, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
     return 0;
   }
@@ -767,11 +1013,11 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_i32(int handle) {
       state.records.Store(storage::DescriptorKind::TextScalarIterator,
                           std::move(iterator));
   if (iterator_handle == 0) {
-    RecordCall(state, state.storage_query_call_count, handle, handle, 0, 0,
+    RecordCall(state, state.scalar_iterator_call_count, handle, handle, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
-  RecordCall(state, state.storage_query_call_count, iterator_handle, handle, 0,
+  RecordCall(state, state.scalar_iterator_call_count, iterator_handle, handle, 0,
              0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, iterator_handle);
   return iterator_handle;
 }
@@ -785,7 +1031,7 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(
       iterator_handle, {storage::DescriptorKind::TextScalarIterator});
   if (iterator_lookup.status != storage::LookupStatus::Ok) {
     const int status = StatusForLookup(iterator_lookup.status);
-    RecordCall(state, state.storage_query_call_count, iterator_handle,
+    RecordCall(state, state.scalar_iterator_call_count, iterator_handle,
                default_value, 0, 0, status, default_value);
     return default_value;
   }
@@ -796,14 +1042,14 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(
         {storage::DescriptorKind::TextBuilder});
     if (source_lookup.status != storage::LookupStatus::Ok) {
       const int status = StatusForLookup(source_lookup.status);
-      RecordCall(state, state.storage_query_call_count, iterator_handle,
+      RecordCall(state, state.scalar_iterator_call_count, iterator_handle,
                  default_value, 0, 0, status, default_value);
       return default_value;
     }
     if (source_lookup.record->header.mutation_generation !=
         iterator.expected_mutation_generation) {
       RecordCall(
-          state, state.storage_query_call_count, iterator_handle, default_value,
+          state, state.scalar_iterator_call_count, iterator_handle, default_value,
           0, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MUTATED_DURING_ITERATION,
           default_value);
       return default_value;
@@ -811,7 +1057,7 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(
   }
   if (iterator.iterator_position >=
       static_cast<int>(iterator.scalar_values.size())) {
-    RecordCall(state, state.storage_query_call_count, iterator_handle,
+    RecordCall(state, state.scalar_iterator_call_count, iterator_handle,
                default_value, 0, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS, default_value);
     return default_value;
@@ -820,7 +1066,7 @@ extern "C" int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(
       iterator.scalar_values[static_cast<std::size_t>(
           iterator.iterator_position)];
   ++iterator.iterator_position;
-  RecordCall(state, state.storage_query_call_count, iterator_handle,
+  RecordCall(state, state.scalar_iterator_call_count, iterator_handle,
              default_value, 0, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
 }
@@ -842,22 +1088,95 @@ extern "C" int objc3_runtime_stdlib_text_equal_i32(int left_handle,
     const int status = left_lookup.status != storage::LookupStatus::Ok
                            ? StatusForLookup(left_lookup.status)
                            : StatusForLookup(right_lookup.status);
-    RecordCall(state, state.storage_query_call_count, 0, left_handle,
+    RecordCall(state, state.equality_call_count, 0, left_handle,
                right_handle, 0, status, 0);
     return 0;
   }
   if (!HasUtf8Storage(*left_lookup.record) ||
       !HasUtf8Storage(*right_lookup.record)) {
-    RecordCall(state, state.storage_query_call_count, 0, left_handle,
+    RecordCall(state, state.equality_call_count, 0, left_handle,
                right_handle, 0,
                OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
     return 0;
   }
   const int result =
       left_lookup.record->utf8_bytes == right_lookup.record->utf8_bytes ? 1 : 0;
-  RecordCall(state, state.storage_query_call_count, left_handle, left_handle,
+  RecordCall(state, state.equality_call_count, left_handle, left_handle,
              right_handle, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, result);
   return result;
+}
+
+extern "C" int objc3_runtime_stdlib_text_compare_i32(int left_handle,
+                                                     int right_handle) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto left_lookup = state.records.Lookup(
+      left_handle, {storage::DescriptorKind::TextLiteral,
+                    storage::DescriptorKind::TextOwnedUtf8,
+                    storage::DescriptorKind::TextBuilder});
+  auto right_lookup = state.records.Lookup(
+      right_handle, {storage::DescriptorKind::TextLiteral,
+                     storage::DescriptorKind::TextOwnedUtf8,
+                     storage::DescriptorKind::TextBuilder});
+  if (left_lookup.status != storage::LookupStatus::Ok ||
+      right_lookup.status != storage::LookupStatus::Ok) {
+    const int status = left_lookup.status != storage::LookupStatus::Ok
+                           ? StatusForLookup(left_lookup.status)
+                           : StatusForLookup(right_lookup.status);
+    RecordCall(state, state.compare_call_count, 0, left_handle, right_handle, 0,
+               status, 0);
+    return 0;
+  }
+  if (!HasUtf8Storage(*left_lookup.record) ||
+      !HasUtf8Storage(*right_lookup.record)) {
+    RecordCall(state, state.compare_call_count, 0, left_handle, right_handle, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_STORAGE_UNAVAILABLE, 0);
+    return 0;
+  }
+  const auto &left = left_lookup.record->utf8_bytes;
+  const auto &right = right_lookup.record->utf8_bytes;
+  const int cmp = std::lexicographical_compare(left.begin(), left.end(),
+                                               right.begin(), right.end())
+                      ? -1
+                      : (std::lexicographical_compare(right.begin(),
+                                                      right.end(),
+                                                      left.begin(), left.end())
+                             ? 1
+                             : 0);
+  RecordCall(state, state.compare_call_count, left_handle, left_handle,
+             right_handle, 0, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, cmp);
+  return cmp;
+}
+
+extern "C" int objc3_runtime_stdlib_text_format_i32_i32(int value) {
+  RuntimeStdlibTextState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  std::array<char, 16> buffer{};
+  const int written =
+      std::snprintf(buffer.data(), buffer.size(), "%d", value);
+  if (written <= 0 || written >= static_cast<int>(buffer.size())) {
+    RecordCall(state, state.format_call_count, 0, value, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUTPUT_TOO_SMALL, 0);
+    return 0;
+  }
+  int scalar_count = 0;
+  std::vector<int> scalars;
+  const auto *bytes = reinterpret_cast<const unsigned char *>(buffer.data());
+  if (!TryDecodeUtf8Scalars(bytes, written, scalar_count, &scalars)) {
+    RecordCall(state, state.format_call_count, 0, value, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_MALFORMED_UTF8, 0);
+    return 0;
+  }
+  const int handle =
+      CreateOwnedText(state, bytes, written, scalar_count, std::move(scalars));
+  if (handle == 0) {
+    RecordCall(state, state.format_call_count, 0, value, 0, 0,
+               OBJC3_RUNTIME_STDLIB_TEXT_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.format_call_count, handle, value, written,
+             scalar_count, OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OK, handle);
+  return handle;
 }
 
 extern "C" int objc3_runtime_stdlib_text_last_status_i32(void) {
@@ -920,6 +1239,15 @@ extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
   out->storage_create_call_count = state.storage_create_call_count;
   out->storage_query_call_count = state.storage_query_call_count;
   out->status_call_count = state.status_call_count;
+  out->scalar_query_call_count = state.scalar_query_call_count;
+  out->scalar_iterator_call_count = state.scalar_iterator_call_count;
+  out->builder_create_call_count = state.builder_create_call_count;
+  out->builder_append_call_count = state.builder_append_call_count;
+  out->builder_finalize_call_count = state.builder_finalize_call_count;
+  out->interpolation_call_count = state.interpolation_call_count;
+  out->equality_call_count = state.equality_call_count;
+  out->compare_call_count = state.compare_call_count;
+  out->format_call_count = state.format_call_count;
   out->text_record_count = state.records.LiveRecordCount();
   out->owned_storage_record_count = CountOwnedStorageRecords(state);
   out->owned_storage_byte_count = CountOwnedStorageBytes(state);
@@ -929,6 +1257,7 @@ extern "C" int objc3_runtime_copy_stdlib_text_state_for_testing(
   out->last_input_c = state.last_input_c;
   out->last_status = state.last_status;
   out->last_result = state.last_result;
+  out->last_malformed_offset = state.last_malformed_offset;
   out->abi_version = storage::kStdlibRuntimeAbiVersion;
   out->handle_generation = state.records.handle_generation();
   out->mutation_generation = state.mutation_generation;

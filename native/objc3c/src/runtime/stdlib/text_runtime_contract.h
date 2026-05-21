@@ -31,6 +31,15 @@ typedef struct objc3_runtime_stdlib_text_snapshot {
   uint64_t storage_create_call_count;
   uint64_t storage_query_call_count;
   uint64_t status_call_count;
+  uint64_t scalar_query_call_count;
+  uint64_t scalar_iterator_call_count;
+  uint64_t builder_create_call_count;
+  uint64_t builder_append_call_count;
+  uint64_t builder_finalize_call_count;
+  uint64_t interpolation_call_count;
+  uint64_t equality_call_count;
+  uint64_t compare_call_count;
+  uint64_t format_call_count;
   int text_record_count;
   int owned_storage_record_count;
   int owned_storage_byte_count;
@@ -40,6 +49,7 @@ typedef struct objc3_runtime_stdlib_text_snapshot {
   int last_input_c;
   int last_status;
   int last_result;
+  int last_malformed_offset;
   uint32_t abi_version;
   uint32_t handle_generation;
   uint64_t mutation_generation;
@@ -66,6 +76,9 @@ int objc3_runtime_stdlib_text_utf8_storage_i32(const char *utf8_bytes,
 int objc3_runtime_stdlib_text_byte_count_i32(int handle);
 int objc3_runtime_stdlib_text_unit_count_i32(int handle);
 int objc3_runtime_stdlib_text_scalar_count_i32(int handle);
+int objc3_runtime_stdlib_text_scalar_at_or_i32(int handle,
+                                               int scalar_index,
+                                               int default_value);
 int objc3_runtime_stdlib_text_is_valid_utf8_i32(int handle);
 int objc3_runtime_stdlib_text_byte_at_or_i32(int handle,
                                              int byte_index,
@@ -79,11 +92,19 @@ int objc3_runtime_stdlib_text_builder_i32(void);
 int objc3_runtime_stdlib_text_builder_append_utf8_i32(int builder_handle,
                                                       const char *utf8_bytes,
                                                       int byte_count);
+int objc3_runtime_stdlib_text_builder_append_text_i32(int builder_handle,
+                                                      int text_handle);
+int objc3_runtime_stdlib_text_builder_append_i32_i32(int builder_handle,
+                                                     int value);
+int objc3_runtime_stdlib_text_builder_append_scalar_i32(int builder_handle,
+                                                        int scalar);
 int objc3_runtime_stdlib_text_builder_build_i32(int builder_handle);
 int objc3_runtime_stdlib_text_scalar_iterator_i32(int handle);
 int objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(int iterator_handle,
                                                           int default_value);
 int objc3_runtime_stdlib_text_equal_i32(int left_handle, int right_handle);
+int objc3_runtime_stdlib_text_compare_i32(int left_handle, int right_handle);
+int objc3_runtime_stdlib_text_format_i32_i32(int value);
 int objc3_runtime_stdlib_text_last_status_i32(void);
 int objc3_runtime_copy_stdlib_text_utf8_bytes_for_testing(int handle,
                                                           char *out,

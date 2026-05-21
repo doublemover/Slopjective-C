@@ -75,6 +75,65 @@ int main() {
       objc3_runtime_stdlib_text_equal_i32(appended, expected_handle) != 1) {
     return Fail("owned UTF-8 equality did not compare stored bytes");
   }
+  if (objc3_runtime_stdlib_text_compare_i32(mixed_handle, expected_handle) >=
+          0 ||
+      objc3_runtime_stdlib_text_compare_i32(expected_handle, mixed_handle) <=
+          0 ||
+      objc3_runtime_stdlib_text_compare_i32(expected_handle,
+                                           expected_handle) != 0) {
+    return Fail("owned UTF-8 compare did not use deterministic byte ordering");
+  }
+  if (objc3_runtime_stdlib_text_scalar_at_or_i32(mixed_handle, 0, -1) !=
+          'h' ||
+      objc3_runtime_stdlib_text_scalar_at_or_i32(mixed_handle, 1, -1) !=
+          0x00E9 ||
+      objc3_runtime_stdlib_text_scalar_at_or_i32(mixed_handle, 2, -1) !=
+          0x1F6A6 ||
+      objc3_runtime_stdlib_text_scalar_at_or_i32(mixed_handle, 3, 123) !=
+          123 ||
+      objc3_runtime_stdlib_text_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS) {
+    return Fail("owned UTF-8 scalar indexing did not decode or fail closed");
+  }
+  const int iterator =
+      objc3_runtime_stdlib_text_scalar_iterator_i32(mixed_handle);
+  if (iterator <= 0 ||
+      objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) !=
+          'h' ||
+      objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) !=
+          0x00E9 ||
+      objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) !=
+          0x1F6A6 ||
+      objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, 555) !=
+          555 ||
+      objc3_runtime_stdlib_text_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_TEXT_STATUS_OUT_OF_BOUNDS) {
+    return Fail("owned UTF-8 scalar iterator did not decode in order");
+  }
+
+  const int formatted = objc3_runtime_stdlib_text_format_i32_i32(-42);
+  if (formatted <= 0 ||
+      objc3_runtime_stdlib_text_byte_count_i32(formatted) != 3 ||
+      objc3_runtime_stdlib_text_scalar_count_i32(formatted) != 3) {
+    return Fail("i32 formatting did not create deterministic text storage");
+  }
+  const int builder = objc3_runtime_stdlib_text_builder_i32();
+  if (builder <= 0 ||
+      objc3_runtime_stdlib_text_builder_append_text_i32(builder, formatted) !=
+          3 ||
+      objc3_runtime_stdlib_text_builder_append_i32_i32(builder, 7) != 4 ||
+      objc3_runtime_stdlib_text_builder_append_scalar_i32(builder, 0x00E9) !=
+          6) {
+    return Fail("text builder interpolation append sequence drifted");
+  }
+  const int interpolated = objc3_runtime_stdlib_text_builder_build_i32(builder);
+  if (interpolated <= 0 ||
+      objc3_runtime_stdlib_text_byte_count_i32(interpolated) != 6 ||
+      objc3_runtime_stdlib_text_scalar_count_i32(interpolated) != 5 ||
+      objc3_runtime_stdlib_text_equal_i32(interpolated, formatted) != 0 ||
+      objc3_runtime_stdlib_text_compare_i32(formatted, interpolated) >= 0) {
+    return Fail("text builder interpolation finalization drifted");
+  }
 
   std::array<char, sizeof(expected)> copied{};
   if (objc3_runtime_copy_stdlib_text_utf8_bytes_for_testing(
@@ -125,10 +184,20 @@ int main() {
     return Fail("text snapshot copy failed");
   }
   if (snapshot.storage_create_call_count != 5 ||
-      snapshot.storage_query_call_count != 7 ||
-      snapshot.text_record_count != 4 ||
-      snapshot.owned_storage_record_count != 3 ||
-      snapshot.owned_storage_byte_count != 31) {
+      snapshot.storage_query_call_count != 6 ||
+      snapshot.scalar_query_call_count != 8 ||
+      snapshot.scalar_iterator_call_count != 5 ||
+      snapshot.builder_create_call_count != 1 ||
+      snapshot.builder_finalize_call_count != 1 ||
+      snapshot.interpolation_call_count != 2 ||
+      snapshot.builder_append_call_count != 1 ||
+      snapshot.equality_call_count != 2 ||
+      snapshot.compare_call_count != 4 ||
+      snapshot.format_call_count != 1 ||
+      snapshot.text_record_count != 7 ||
+      snapshot.owned_storage_record_count != 5 ||
+      snapshot.owned_storage_byte_count != 40 ||
+      snapshot.last_malformed_offset != 0) {
     return Fail("owned UTF-8 storage counters drifted");
   }
 
@@ -137,11 +206,28 @@ int main() {
             << snapshot.storage_create_call_count
             << ",\"storage_query_call_count\":"
             << snapshot.storage_query_call_count
+            << ",\"scalar_query_call_count\":"
+            << snapshot.scalar_query_call_count
+            << ",\"scalar_iterator_call_count\":"
+            << snapshot.scalar_iterator_call_count
+            << ",\"builder_create_call_count\":"
+            << snapshot.builder_create_call_count
+            << ",\"builder_finalize_call_count\":"
+            << snapshot.builder_finalize_call_count
+            << ",\"interpolation_call_count\":"
+            << snapshot.interpolation_call_count
+            << ",\"builder_append_call_count\":"
+            << snapshot.builder_append_call_count
+            << ",\"equality_call_count\":" << snapshot.equality_call_count
+            << ",\"compare_call_count\":" << snapshot.compare_call_count
+            << ",\"format_call_count\":" << snapshot.format_call_count
             << ",\"text_record_count\":" << snapshot.text_record_count
             << ",\"owned_storage_record_count\":"
             << snapshot.owned_storage_record_count
             << ",\"owned_storage_byte_count\":"
             << snapshot.owned_storage_byte_count
+            << ",\"last_malformed_offset\":"
+            << snapshot.last_malformed_offset
             << ",\"last_status\":" << snapshot.last_status << "}\n";
   return 0;
 }
