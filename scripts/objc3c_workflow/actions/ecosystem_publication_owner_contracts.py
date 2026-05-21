@@ -90,6 +90,16 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-lock-owner",
         "builds deterministic local lock evidence; it does not publish or imply hosted registry support",
     ),
+    "package-sign": _package_contract(
+        "package-sign",
+        "package-ecosystem-trust-owner",
+        "creates deterministic local fixture/replay signature envelopes only; production package signing remains reserved and fail-closed",
+    ),
+    "package-verify": _package_contract(
+        "package-verify",
+        "package-ecosystem-trust-owner",
+        "verifies package signature envelopes, trust roots, revocation, subject identity, language/ABI, and digest binding before any package trust claim",
+    ),
     "validate-package-manager-model": _package_contract(
         "validate-package-manager-model",
         "package-ecosystem-manager-owner",

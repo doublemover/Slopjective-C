@@ -98,6 +98,7 @@ def reset_clean_install_root(root: Path) -> bool:
 def package_manifest_digest(manifest: dict[str, Any]) -> str:
     payload = dict(manifest)
     payload.pop("manifest_digest", None)
+    payload.pop("trust", None)
     return stable_digest(payload)
 
 

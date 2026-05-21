@@ -12,10 +12,21 @@ from .model import (
     build_lock_components,
     cache_payload_from_mirror_package,
     collect_lock_model_failures,
+    default_trust_policy_payload,
     file_digest,
     package_resolution_plan,
     package_manifest_paths,
     stable_digest,
+)
+from .trust import (
+    LOCAL_PACKAGE_SIGNING_BACKEND,
+    LOCAL_PACKAGE_TRUST_ROOT_ID,
+    PACKAGE_TRUST_CONTRACT_ID,
+    SIGNATURE_ENVELOPE_CONTRACT_ID,
+    collect_manifest_trust_failures,
+    collect_signature_envelope_failures,
+    production_signing_reserved_diagnostic,
+    sign_manifest_trust_envelope,
 )
 
 __all__ = [
@@ -28,8 +39,17 @@ __all__ = [
     "build_lock_components",
     "cache_payload_from_mirror_package",
     "collect_lock_model_failures",
+    "collect_manifest_trust_failures",
+    "collect_signature_envelope_failures",
+    "default_trust_policy_payload",
     "file_digest",
+    "LOCAL_PACKAGE_SIGNING_BACKEND",
+    "LOCAL_PACKAGE_TRUST_ROOT_ID",
     "package_resolution_plan",
     "package_manifest_paths",
+    "PACKAGE_TRUST_CONTRACT_ID",
+    "production_signing_reserved_diagnostic",
+    "sign_manifest_trust_envelope",
+    "SIGNATURE_ENVELOPE_CONTRACT_ID",
     "stable_digest",
 ]

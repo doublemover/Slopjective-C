@@ -8,7 +8,9 @@ from .ecosystem_publication_package_contracts import (
     PACKAGE_LOCK_PY,
     PACKAGE_MANAGER_MODEL_PY,
     PACKAGE_MIRROR_REPRODUCIBILITY_PY,
+    PACKAGE_SIGN_PY,
     PACKAGE_INSTALL_DISTRIBUTION_PY,
+    PACKAGE_VERIFY_PY,
     RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
 )
 from .ecosystem_publication_package_runner import run_package_publication_action
@@ -16,6 +18,14 @@ from .ecosystem_publication_package_runner import run_package_publication_action
 
 def action_build_package_lock(_: list[str]) -> int:
     return run_package_publication_action("build-package-lock")
+
+
+def action_sign_package(rest: list[str]) -> int:
+    return run_package_publication_action("package-sign", rest)
+
+
+def action_verify_package(rest: list[str]) -> int:
+    return run_package_publication_action("package-verify", rest)
 
 
 def action_validate_package_manager_model(_: list[str]) -> int:
@@ -51,9 +61,13 @@ __all__ = [
     "PACKAGE_LOCK_PY",
     "PACKAGE_MANAGER_MODEL_PY",
     "PACKAGE_MIRROR_REPRODUCIBILITY_PY",
+    "PACKAGE_SIGN_PY",
     "PACKAGE_INSTALL_DISTRIBUTION_PY",
+    "PACKAGE_VERIFY_PY",
     "RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY",
     "action_build_package_lock",
+    "action_sign_package",
+    "action_verify_package",
     "action_validate_package_manager_model",
     "action_validate_package_authoring",
     "action_validate_package_ecosystem",

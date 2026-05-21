@@ -7,6 +7,8 @@ from scripts.objc3c_workflow.actions import ecosystem_publication
 
 ECOSYSTEM_PUBLICATION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-package-lock": ecosystem_publication.action_build_package_lock,
+    "package-sign": ecosystem_publication.action_sign_package,
+    "package-verify": ecosystem_publication.action_verify_package,
     "validate-package-manager-model": ecosystem_publication.action_validate_package_manager_model,
     "validate-package-authoring": ecosystem_publication.action_validate_package_authoring,
     "validate-package-mirror": ecosystem_publication.action_validate_package_mirror,

@@ -21,6 +21,13 @@ PACKAGE_MANIFEST_SCHEMA = PackageSchemaContract(
     document_contract_id="objc3c.package_ecosystem.package_manifest.v1",
 )
 
+PACKAGE_SIGNING_TRUST_SCHEMA = PackageSchemaContract(
+    contract_key="package_signing_trust",
+    schema_path="schemas/objc3c-package-signing-trust-v1.schema.json",
+    schema_id="https://objc3c.dev/schemas/objc3c-package-signing-trust-v1.schema.json",
+    document_contract_id="objc3c.package_ecosystem.signing_trust.v1",
+)
+
 PACKAGE_LOCK_ARTIFACT_PATH = (
     "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json"
 )
@@ -53,6 +60,39 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         schema_contracts=(PACKAGE_LOCK_SCHEMA,),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
         generated_paths=(PACKAGE_LOCK_ARTIFACT_PATH, PACKAGE_MANIFEST_ARTIFACT_ROOT),
+    ),
+    PackagePublicWorkflowAction(
+        action="package-sign",
+        summary=(
+            "create deterministic local package signature envelopes for "
+            "fixtures and fail closed for reserved production signing"
+        ),
+        script_path="scripts/sign_objc3c_package.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package signing stays explicit about trust roots, revocation, "
+            "digest subjects, and the reserved production backend"
+        ),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_SIGNING_TRUST_SCHEMA),
+        source_paths=PACKAGE_LOCK_SOURCE_PATHS,
+        pass_through_args=True,
+    ),
+    PackagePublicWorkflowAction(
+        action="package-verify",
+        summary=(
+            "verify package manifest digests, signature envelopes, trust roots, "
+            "and revocation policy"
+        ),
+        script_path="scripts/verify_objc3c_package.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package verification fails closed for missing signatures, bad "
+            "digests, unknown trust roots, revoked subjects, and reserved "
+            "production signing"
+        ),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_SIGNING_TRUST_SCHEMA),
+        source_paths=PACKAGE_LOCK_SOURCE_PATHS,
+        pass_through_args=True,
     ),
     PackagePublicWorkflowAction(
         action="validate-package-manager-model",
@@ -97,4 +137,5 @@ __all__ = [
     "PACKAGE_LOCK_SOURCE_PATHS",
     "PACKAGE_MANIFEST_ARTIFACT_ROOT",
     "PACKAGE_MANIFEST_SCHEMA",
+    "PACKAGE_SIGNING_TRUST_SCHEMA",
 ]

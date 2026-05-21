@@ -13,6 +13,7 @@ from objc3c_package_manager.model import (
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     build_lock_components,
     collect_lock_model_failures,
+    default_trust_policy_payload,
     package_manifest_rel_path,
 )
 from package_ecosystem_contracts import (
@@ -123,10 +124,13 @@ def main() -> int:
         "provenance": provenance,
         "resolution_plan": components["resolution_plan"],
         "interop_loader_metadata": package_loader_metadata_summary(interop_metadata, interop_by_package),
+        "trust_policy": default_trust_policy_payload(),
         "digest_inputs": digest_inputs,
         "replay": {
             "commands": [
                 build_lock_command,
+                public_workflow_command("package-sign"),
+                public_workflow_command("package-verify"),
                 public_workflow_command("validate-package-manager-model"),
                 authoring_check_command,
             ]
