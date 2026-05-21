@@ -77,9 +77,24 @@ def validate_package_install_distribution_credibility(payload: dict[str, Any]) -
         "tmp/artifacts/package-ecosystem/install-validation/clean-root"
     ):
         raise RuntimeError("package install distribution clean install root drifted")
+    if generated_outputs.get("local_package_artifact_root") != (
+        "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts"
+    ):
+        raise RuntimeError("package install distribution local artifact root drifted")
+    if generated_outputs.get("install_proof_manifest") != (
+        "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json"
+    ):
+        raise RuntimeError("package install distribution proof manifest path drifted")
     required_actions = payload.get("required_public_actions")
     if not isinstance(required_actions, list) or "validate-package-install-distribution" not in required_actions:
         raise RuntimeError("package install distribution action surface drifted")
+    source_contracts = payload.get("source_contracts")
+    if (
+        not isinstance(source_contracts, list)
+        or "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
+        not in source_contracts
+    ):
+        raise RuntimeError("package install distribution proof contract drifted")
     blocker_metadata = payload.get("blocker_metadata")
     blocking_conditions = (
         blocker_metadata.get("blocking_conditions", [])

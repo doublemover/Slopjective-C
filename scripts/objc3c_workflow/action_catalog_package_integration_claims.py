@@ -88,7 +88,10 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
             PACKAGE_REGISTRY_LOCAL_INDEX_PATH,
             PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
             "tmp/artifacts/package-ecosystem/install-validation",
+            "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
+            "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
         ),
+        pass_through_args=True,
     ),
     PackagePublicWorkflowAction(
         action="validate-runnable-package-ecosystem",

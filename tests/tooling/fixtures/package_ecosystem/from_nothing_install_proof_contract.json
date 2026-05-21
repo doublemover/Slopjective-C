@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.package_ecosystem.from_nothing_install_proof.v1",
+  "surface_kind": "package-ecosystem-from-nothing-install-proof",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "install_distribution_contract": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+  "generated_outputs": {
+    "local_package_artifact_root": "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
+    "install_proof_manifest": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
+    "install_verification": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json"
+  },
+  "release_manifest_validation": {
+    "required_release_manifest_command": "npm run objc3c -- build-release-manifest",
+    "generated_report_inputs_allowed": false,
+    "forbidden_input_prefixes": [
+      "tmp/reports/"
+    ],
+    "required_input_prefixes": [
+      "tmp/artifacts/package-ecosystem/install-validation/"
+    ],
+    "non_source_report_outputs": [
+      "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ]
+  },
+  "local_artifact_rules": [
+    "each installed package has a local install artifact under the package ecosystem install-validation root",
+    "each local install artifact records source manifest, installed manifest, source digest, manifest digest, lock manifest digest, and trust signature",
+    "each local install artifact carries a deterministic artifact digest recomputed by the install-distribution checker",
+    "generated reports are summary outputs only and cannot appear as release manifest inputs"
+  ],
+  "claim_boundary": "from-nothing local install proof only: release credibility may consume deterministic tmp/artifacts package-install proof records, but tmp/reports summaries cannot become release manifest source inputs"
+}

@@ -18,6 +18,8 @@ if str(ROOT) not in sys.path:
 from objc3c_package_manager.install_distribution import (
     INSTALL_DISTRIBUTION_SUMMARY_CONTRACT_ID,
     INSTALL_DISTRIBUTION_ACTION,
+    INSTALL_LOCAL_ARTIFACT_ROOT_REL,
+    INSTALL_PROOF_MANIFEST_REL,
     INSTALL_RECEIPT_REL,
     INSTALL_VERIFICATION_REL,
     collect_install_distribution_failures,
@@ -236,6 +238,8 @@ def main(argv: list[str] | None = None) -> int:
         "restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
         "install_receipt": INSTALL_RECEIPT_REL,
         "install_verification": INSTALL_VERIFICATION_REL,
+        "install_proof_manifest": INSTALL_PROOF_MANIFEST_REL,
+        "local_package_artifact_root": INSTALL_LOCAL_ARTIFACT_ROOT_REL,
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
         "package_count": len(package_ids(lock)),
         "mirror_package_count": len(package_ids(mirror)),

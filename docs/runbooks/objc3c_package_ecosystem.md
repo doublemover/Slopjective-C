@@ -136,6 +136,14 @@ package manifest digest, language version, ABI identity, trust envelope, and
 cache-entry digest, and is restored only with a machine-owned receipt under
 `tmp/artifacts/package-ecosystem/offline-install`.
 
+Clean install distribution validation additionally writes a from-nothing install
+proof under `tmp/artifacts/package-ecosystem/install-validation`. The proof
+manifest and per-package local artifact envelopes are generated artifacts, not
+reports: they bind each installed package to its source manifest, installed
+manifest, lock manifest digest, and trust signature. Release credibility may
+consume those artifact records, while `tmp/reports/package-ecosystem` remains a
+summary-output root and cannot become release manifest source truth.
+
 ## Registry And Publication Semantics
 
 The canonical registry/publication semantics are checked in at:

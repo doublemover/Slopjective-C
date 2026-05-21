@@ -54,6 +54,7 @@
     "schemas/objc3c-distribution-trust-report-v1.schema.json",
     "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
     "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
     "tests/tooling/fixtures/distribution_credibility/install_release_doc_surface.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
     "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",

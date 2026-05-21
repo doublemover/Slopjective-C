@@ -44,6 +44,12 @@ The machine-owned distribution trust story is limited to:
 - a package-ecosystem `from_nothing_probe` proving that
   `tmp/artifacts/package-ecosystem` and `tmp/reports/package-ecosystem` were
   removed before the install evidence was regenerated
+- a package-ecosystem install proof manifest under `tmp/artifacts`, with
+  per-package local artifact envelopes that digest-bind source manifests,
+  installed manifests, lock manifest digests, and trust signatures
+- release manifest input checks that reject `tmp/reports` paths as source truth;
+  reports may summarize install proof, but release inputs must come from
+  checked-in contracts or deterministic artifact records
 - update-manifest and support-window publication coherence
 - release-evidence gate coverage over the published conformance artifacts
 - explicit recovery and operator drill guidance for the live package surfaces

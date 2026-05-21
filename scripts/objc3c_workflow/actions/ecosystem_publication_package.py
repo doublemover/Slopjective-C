@@ -35,7 +35,10 @@ def action_validate_package_ecosystem(_: list[str]) -> int:
 
 
 def action_validate_package_install_distribution(rest: list[str]) -> int:
-    return run_package_publication_action("validate-package-install-distribution", rest)
+    return run_package_publication_action(
+        "validate-package-install-distribution",
+        rest or ["--from-nothing"],
+    )
 
 
 def action_validate_runnable_package_ecosystem(_: list[str]) -> int:

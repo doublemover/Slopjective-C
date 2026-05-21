@@ -11,7 +11,8 @@
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
-    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json"
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
   ],
   "generated_outputs": {
     "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
@@ -25,6 +26,8 @@
     "clean_install_home": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c",
     "install_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
     "install_verification": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json",
+    "local_package_artifact_root": "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
+    "install_proof_manifest": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
     "summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
   },
   "owner_policy": {
@@ -66,6 +69,8 @@
   "model_rules": [
     "clean install validation must remove its owned install root before materializing package evidence",
     "installed package manifests must byte-equivalently project from generated package manifests and keep lock manifest digests",
+    "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
+    "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
     "installed package sources, lock entries, mirror entries, local registry entries, publication metadata, and restore receipt counts must agree",
     "offline mirror cache entries must digest-match the lock-derived mirror index before an install claim can pass",
     "install receipts must be machine-generated under the package ecosystem validation root and must publish the objc3c package bridge",
@@ -78,6 +83,7 @@
       "install receipt missing or not machine-owned",
       "package manifest, lock, mirror, registry, publication, or restore metadata disagree",
       "offline mirror cache entry missing or digest-mismatched",
+      "from-nothing install proof manifest missing or report-derived release input accepted",
       "hosted registry or network install claim widened without evidence",
       "public package install validation action missing from objc3c bridge",
       "generated install evidence escaped the package ecosystem artifact root"

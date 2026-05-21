@@ -17,11 +17,14 @@ from objc3c_package_manager.install_distribution import (  # noqa: E402
     INSTALL_DISTRIBUTION_ACTION,
     INSTALL_DISTRIBUTION_CONTRACT_ID,
     INSTALL_HOME_REL,
+    INSTALL_LOCAL_ARTIFACT_ROOT_REL,
+    INSTALL_PROOF_MANIFEST_REL,
     INSTALL_RECEIPT_REL,
     INSTALL_ROOT_REL,
     INSTALL_VALIDATION_ROOT_REL,
     INSTALL_VERIFICATION_REL,
     collect_install_distribution_failures,
+    collect_install_proof_failures,
 )
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
@@ -99,6 +102,8 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
     assert (ROOT / INSTALL_HOME_REL / "Bootstrap-objc3cEnvironment.ps1").is_file()
     assert (ROOT / INSTALL_RECEIPT_REL).is_file()
     assert (ROOT / INSTALL_VERIFICATION_REL).is_file()
+    assert (ROOT / INSTALL_PROOF_MANIFEST_REL).is_file()
+    assert (ROOT / INSTALL_LOCAL_ARTIFACT_ROOT_REL).is_dir()
     assert all(
         str(path).startswith(INSTALL_VALIDATION_ROOT_REL + "/")
         for path in install_summary["generated_paths"]
@@ -151,8 +156,79 @@ def test_install_distribution_contract_fails_on_hosted_registry_widening(install
     assert f"{PACKAGE_MANAGER_TAMPER_CODE}: publication hosted registry support widened" in failures
 
 
+def test_install_distribution_proof_manifest_excludes_generated_reports(
+    install_summary: dict[str, Any],
+) -> None:
+    assert install_summary["status"] == "PASS"
+    proof = load_json(ROOT / INSTALL_PROOF_MANIFEST_REL)
+    verification = load_json(VERIFICATION_PATH)
+
+    release_validation = proof["release_manifest_validation"]
+    assert release_validation["generated_report_inputs_allowed"] is False
+    assert release_validation["generated_report_inputs"] == []
+    assert release_validation["forbidden_input_prefixes"] == ["tmp/reports/"]
+    assert all(
+        not path.startswith("tmp/reports/")
+        for path in release_validation["release_manifest_input_paths"]
+    )
+    assert proof["local_package_artifacts"]
+    assert len(proof["local_package_artifacts"]) == verification["manifest_count"]
+
+
+def test_install_distribution_proof_rejects_report_release_input(
+    install_summary: dict[str, Any],
+) -> None:
+    assert install_summary["status"] == "PASS"
+    proof = load_json(ROOT / INSTALL_PROOF_MANIFEST_REL)
+    verification = load_json(VERIFICATION_PATH)
+    drifted = deepcopy(proof)
+    drifted["release_manifest_validation"]["generated_report_inputs"] = [
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ]
+    drifted["release_manifest_validation"]["release_manifest_input_paths"].append(
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    )
+
+    failures = collect_install_proof_failures(
+        root=ROOT,
+        proof=drifted,
+        verification=verification,
+    )
+
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: generated report input list is not empty" in failures
+    assert (
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: generated report used as release input: "
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ) in failures
+
+
+def test_install_distribution_proof_rejects_local_artifact_digest_drift(
+    install_summary: dict[str, Any],
+) -> None:
+    assert install_summary["status"] == "PASS"
+    proof = load_json(ROOT / INSTALL_PROOF_MANIFEST_REL)
+    verification = load_json(VERIFICATION_PATH)
+    drifted = deepcopy(proof)
+    drifted["local_package_artifacts"][0]["artifact_digest"] = "sha256:" + ("1" * 64)
+    package_id = drifted["local_package_artifacts"][0]["package_id"]
+
+    failures = collect_install_proof_failures(
+        root=ROOT,
+        proof=drifted,
+        verification=verification,
+    )
+
+    assert (
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact digest record drifted for {package_id}"
+    ) in failures
+    assert (
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact digest drifted for {package_id}"
+    ) in failures
+
+
 def test_install_distribution_public_action_and_owner_contract_are_registered() -> None:
     assert INSTALL_DISTRIBUTION_ACTION in PACKAGE_INTEGRATION_ACTION_SPECS
+    assert PACKAGE_INTEGRATION_ACTION_SPECS[INSTALL_DISTRIBUTION_ACTION].pass_through_args
     assert PACKAGE_PUBLICATION_ACTION_CONTRACTS[INSTALL_DISTRIBUTION_ACTION].script == PACKAGE_INSTALL_DISTRIBUTION_PY
     assert PACKAGE_INSTALL_DISTRIBUTION_PY == ROOT / "scripts" / "check_objc3c_package_install_distribution_credibility.py"
 
@@ -178,6 +254,29 @@ def test_install_distribution_public_action_passes_from_nothing_flag(monkeypatch
     )
 
     assert ecosystem_publication_package.action_validate_package_install_distribution(["--from-nothing"]) == 0
+    assert captured == {
+        "action_name": "validate-package-install-distribution",
+        "rest": ["--from-nothing"],
+    }
+
+
+def test_install_distribution_public_action_defaults_to_from_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_runner(action_name: str, rest: list[str] | None = None) -> int:
+        captured["action_name"] = action_name
+        captured["rest"] = list(rest or [])
+        return 0
+
+    monkeypatch.setattr(
+        ecosystem_publication_package,
+        "run_package_publication_action",
+        fake_runner,
+    )
+
+    assert ecosystem_publication_package.action_validate_package_install_distribution([]) == 0
     assert captured == {
         "action_name": "validate-package-install-distribution",
         "rest": ["--from-nothing"],

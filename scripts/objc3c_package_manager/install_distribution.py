@@ -34,9 +34,12 @@ INSTALL_RECEIPT_REL = f"{INSTALL_ROOT_REL}/objc3c-install-receipt.json"
 INSTALL_VERIFICATION_REL = (
     f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-distribution-verification.json"
 )
+INSTALL_LOCAL_ARTIFACT_ROOT_REL = f"{INSTALL_VALIDATION_ROOT_REL}/local-package-artifacts"
+INSTALL_PROOF_MANIFEST_REL = f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-proof-manifest.json"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
 INSTALL_PACKAGE_BRIDGE = "objc3c"
 INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
+INSTALL_PROOF_CONTRACT_ID = "objc3c.package_ecosystem.from_nothing_install_proof.v1"
 NO_NETWORK_POLICY = "no-network-during-validation"
 HOSTED_REGISTRY_FAIL_CLOSED = "unsupported-fail-closed-if-claimed"
 NETWORK_RESOLUTION_UNSUPPORTED = "unsupported"
@@ -93,6 +96,11 @@ def package_manifest_install_path(root: Path, package_id: str) -> Path:
     return root / INSTALL_HOME_REL / "packages" / namespace / name / "package-manifest.json"
 
 
+def local_package_artifact_path(root: Path, package_id: str) -> Path:
+    namespace, name = _namespace_and_name(package_id)
+    return root / INSTALL_LOCAL_ARTIFACT_ROOT_REL / namespace / f"{name}.json"
+
+
 def _copy_json_payload(source: Path, target: Path) -> dict[str, Any]:
     payload = load_json(source)
     write_json_file(target, payload)
@@ -125,6 +133,95 @@ def bridge_payload(contract: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def install_artifact_payload(record: dict[str, Any]) -> dict[str, Any]:
+    payload = {
+        "contract_id": "objc3c.package_ecosystem.local_install_artifact.v1",
+        "artifact_kind": "from-nothing-local-package-install-proof",
+        "package_id": str(record["package_id"]),
+        "source": str(record["source"]),
+        "source_digest": str(record["source_digest"]),
+        "source_manifest": str(record["source_manifest"]),
+        "installed_manifest": str(record["installed_manifest"]),
+        "manifest_digest": str(record["manifest_digest"]),
+        "lock_manifest_digest": str(record["lock_manifest_digest"]),
+        "trust_signature": str(record["trust_signature"]),
+        "generated_report_source": False,
+    }
+    payload["artifact_digest"] = stable_digest(payload)
+    return payload
+
+
+def install_proof_payload(
+    *,
+    root: Path,
+    contract: dict[str, Any],
+    bridge_path: Path,
+    registry_copy: Path,
+    publication_copy: Path,
+    mirror_copy: Path,
+    restore_copy: Path,
+    local_artifacts: list[dict[str, str]],
+) -> dict[str, Any]:
+    release_input_paths = sorted(
+        [
+            INSTALL_RECEIPT_REL,
+            repo_rel(bridge_path),
+            repo_rel(registry_copy),
+            repo_rel(publication_copy),
+            repo_rel(mirror_copy),
+            repo_rel(restore_copy),
+            *[artifact["artifact_path"] for artifact in local_artifacts],
+        ]
+    )
+    return {
+        "contract_id": INSTALL_PROOF_CONTRACT_ID,
+        "source_contract": repo_rel(
+            root
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "package_ecosystem"
+            / "install_distribution_credibility_contract.json"
+        ),
+        "proof_contract": repo_rel(
+            root
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "package_ecosystem"
+            / "from_nothing_install_proof_contract.json"
+        ),
+        "install_verification": INSTALL_VERIFICATION_REL,
+        "install_receipt": INSTALL_RECEIPT_REL,
+        "local_package_artifact_root": INSTALL_LOCAL_ARTIFACT_ROOT_REL,
+        "package_bridge": INSTALL_PACKAGE_BRIDGE,
+        "network_policy": NO_NETWORK_POLICY,
+        "hosted_registry_support": HOSTED_REGISTRY_FAIL_CLOSED,
+        "required_public_actions": sorted(
+            str(action)
+            for action in contract.get("required_public_actions", [])
+            if isinstance(action, str)
+        ),
+        "release_manifest_validation": {
+            "required_release_manifest_command": "npm run objc3c -- build-release-manifest",
+            "generated_report_inputs_allowed": False,
+            "forbidden_input_prefixes": ["tmp/reports/"],
+            "generated_report_inputs": [],
+            "release_manifest_input_paths": release_input_paths,
+            "non_source_report_outputs": [
+                "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+            ],
+        },
+        "local_package_artifacts": local_artifacts,
+    }
+
+
+def _artifact_digest(payload: dict[str, Any]) -> str:
+    normalized = dict(payload)
+    normalized.pop("artifact_digest", None)
+    return stable_digest(normalized)
+
+
 def materialize_clean_distribution_install(
     *,
     root: Path,
@@ -146,10 +243,12 @@ def materialize_clean_distribution_install(
     mirror_dir = install_home / "offline-mirror"
     receipt_dir = install_home / "receipts"
     bin_dir = install_home / "bin"
-    for directory in (packages_dir, registry_dir, mirror_dir, receipt_dir, bin_dir):
+    artifact_root = root / INSTALL_LOCAL_ARTIFACT_ROOT_REL
+    for directory in (packages_dir, registry_dir, mirror_dir, receipt_dir, bin_dir, artifact_root):
         directory.mkdir(parents=True, exist_ok=True)
 
     installed_packages: list[dict[str, Any]] = []
+    local_artifacts: list[dict[str, str]] = []
     for package in sorted(
         (
             entry
@@ -165,16 +264,29 @@ def materialize_clean_distribution_install(
         source_manifest_path = root / str(manifest_ref.get("path", ""))
         installed_manifest_path = package_manifest_install_path(root, package_id)
         manifest = _copy_json_payload(source_manifest_path, installed_manifest_path)
-        installed_packages.append(
+        installed_record = {
+            "package_id": package_id,
+            "source": str(package.get("source")),
+            "source_digest": str(package.get("source_digest")),
+            "source_manifest": repo_rel(source_manifest_path),
+            "installed_manifest": repo_rel(installed_manifest_path),
+            "manifest_digest": str(manifest.get("manifest_digest")),
+            "lock_manifest_digest": str(manifest_ref.get("digest")),
+            "trust_signature": str(package.get("trust", {}).get("signature")),
+        }
+        artifact_path = local_package_artifact_path(root, package_id)
+        artifact_payload = install_artifact_payload(installed_record)
+        write_json_file(artifact_path, artifact_payload)
+        installed_record["local_install_artifact"] = repo_rel(artifact_path)
+        installed_record["local_install_artifact_digest"] = str(artifact_payload["artifact_digest"])
+        installed_packages.append(installed_record)
+        local_artifacts.append(
             {
                 "package_id": package_id,
-                "source": str(package.get("source")),
-                "source_digest": str(package.get("source_digest")),
-                "source_manifest": repo_rel(source_manifest_path),
+                "artifact_path": repo_rel(artifact_path),
+                "artifact_digest": str(artifact_payload["artifact_digest"]),
                 "installed_manifest": repo_rel(installed_manifest_path),
-                "manifest_digest": str(manifest.get("manifest_digest")),
-                "lock_manifest_digest": str(manifest_ref.get("digest")),
-                "trust_signature": str(package.get("trust", {}).get("signature")),
+                "source_manifest": repo_rel(source_manifest_path),
             }
         )
 
@@ -203,11 +315,25 @@ def materialize_clean_distribution_install(
     write_json_file(bridge_path, bridge_payload(contract))
     install_receipt_path = root / INSTALL_RECEIPT_REL
     write_json_file(install_receipt_path, install_receipt_payload(root))
+    install_proof_path = root / INSTALL_PROOF_MANIFEST_REL
+    install_proof = install_proof_payload(
+        root=root,
+        contract=contract,
+        bridge_path=bridge_path,
+        registry_copy=registry_copy,
+        publication_copy=publication_copy,
+        mirror_copy=mirror_copy,
+        restore_copy=restore_copy,
+        local_artifacts=sorted(local_artifacts, key=lambda entry: entry["package_id"]),
+    )
+    write_json_file(install_proof_path, install_proof)
 
     generated_paths = [
         repo_rel(root / INSTALL_ROOT_REL),
         repo_rel(install_home),
         repo_rel(install_receipt_path),
+        repo_rel(install_proof_path),
+        repo_rel(artifact_root),
         repo_rel(bootstrap_path),
         repo_rel(bridge_path),
         repo_rel(registry_copy),
@@ -216,6 +342,7 @@ def materialize_clean_distribution_install(
         repo_rel(restore_copy),
     ]
     generated_paths.extend(record["installed_manifest"] for record in installed_packages)
+    generated_paths.extend(record["local_install_artifact"] for record in installed_packages)
     verification = {
         "contract_id": INSTALL_DISTRIBUTION_CONTRACT_ID,
         "contract": repo_rel(
@@ -229,6 +356,8 @@ def materialize_clean_distribution_install(
         "install_root": repo_rel(root / INSTALL_ROOT_REL),
         "install_home": repo_rel(install_home),
         "install_receipt": repo_rel(install_receipt_path),
+        "install_proof_manifest": repo_rel(install_proof_path),
+        "local_package_artifact_root": INSTALL_LOCAL_ARTIFACT_ROOT_REL,
         "bootstrap_entrypoint": INSTALL_BOOTSTRAP_ENTRYPOINT,
         "package_bridge": INSTALL_PACKAGE_BRIDGE,
         "clean_start": {
@@ -259,6 +388,7 @@ def materialize_clean_distribution_install(
         "manifest_count": len(installed_packages),
         "cache_entry_count": restore_receipt.get("cache_entry_count"),
         "installed_packages": installed_packages,
+        "release_manifest_validation": install_proof["release_manifest_validation"],
         "public_actions": bridge_payload(contract)["public_actions"],
         "generated_paths": sorted(generated_paths),
     }
@@ -393,6 +523,19 @@ def collect_install_distribution_failures(
         if receipt != expected_receipt:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install receipt payload drifted")
 
+    proof_path = root / str(verification.get("install_proof_manifest", ""))
+    if not proof_path.is_file():
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing from-nothing install proof manifest")
+    else:
+        proof = load_json(proof_path)
+        failures.extend(
+            collect_install_proof_failures(
+                root=root,
+                proof=proof,
+                verification=verification,
+            )
+        )
+
     for raw_path in verification.get("generated_paths", []):
         if not isinstance(raw_path, str):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: generated install path is not a string")
@@ -421,19 +564,124 @@ def collect_install_distribution_failures(
     return failures
 
 
+def collect_install_proof_failures(
+    *,
+    root: Path,
+    proof: dict[str, Any],
+    verification: dict[str, Any],
+) -> list[str]:
+    failures: list[str] = []
+    if proof.get("contract_id") != INSTALL_PROOF_CONTRACT_ID:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof contract drifted")
+    if proof.get("package_bridge") != INSTALL_PACKAGE_BRIDGE:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof package bridge drifted")
+    if proof.get("network_policy") != NO_NETWORK_POLICY:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof network policy drifted")
+    if proof.get("hosted_registry_support") != HOSTED_REGISTRY_FAIL_CLOSED:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof hosted registry support widened")
+    if proof.get("local_package_artifact_root") != INSTALL_LOCAL_ARTIFACT_ROOT_REL:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact root drifted")
+
+    release_validation = proof.get("release_manifest_validation")
+    if not isinstance(release_validation, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof missing release manifest validation")
+        release_validation = {}
+    if release_validation.get("generated_report_inputs_allowed") is not False:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: generated reports allowed as release inputs")
+    if release_validation.get("generated_report_inputs") != []:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: generated report input list is not empty")
+    forbidden_prefixes = [
+        str(prefix)
+        for prefix in release_validation.get("forbidden_input_prefixes", [])
+        if isinstance(prefix, str)
+    ]
+    if "tmp/reports/" not in forbidden_prefixes:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: generated report exclusion prefix drifted")
+    release_input_paths = release_validation.get("release_manifest_input_paths")
+    if not isinstance(release_input_paths, list) or not release_input_paths:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof release input paths missing")
+        release_input_paths = []
+    for raw_path in release_input_paths:
+        if not isinstance(raw_path, str) or not raw_path:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof release input path is invalid")
+            continue
+        if any(raw_path.startswith(prefix) for prefix in forbidden_prefixes):
+            failures.append(
+                f"{PACKAGE_MANAGER_TAMPER_CODE}: generated report used as release input: {raw_path}"
+            )
+        if not (root / raw_path).exists():
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof release input missing: {raw_path}")
+
+    installed_by_id = {
+        str(record.get("package_id")): record
+        for record in verification.get("installed_packages", [])
+        if isinstance(record, dict)
+    }
+    proof_artifacts = proof.get("local_package_artifacts")
+    if not isinstance(proof_artifacts, list) or not proof_artifacts:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof local artifacts missing")
+        return failures
+    artifact_ids = sorted(
+        str(artifact.get("package_id"))
+        for artifact in proof_artifacts
+        if isinstance(artifact, dict)
+    )
+    if artifact_ids != sorted(installed_by_id):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact ids drifted")
+    for artifact in proof_artifacts:
+        if not isinstance(artifact, dict):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact entry is not an object")
+            continue
+        package_id = str(artifact.get("package_id"))
+        installed_record = installed_by_id.get(package_id, {})
+        artifact_path = str(artifact.get("artifact_path", ""))
+        if not artifact_path.startswith(INSTALL_LOCAL_ARTIFACT_ROOT_REL + "/"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact escaped root for {package_id}")
+            continue
+        payload_path = root / artifact_path
+        if not payload_path.is_file():
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact missing for {package_id}")
+            continue
+        payload = load_json(payload_path)
+        if payload.get("contract_id") != "objc3c.package_ecosystem.local_install_artifact.v1":
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact contract drifted for {package_id}")
+        if payload.get("generated_report_source") is not False:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact used report source for {package_id}")
+        if payload.get("artifact_digest") != artifact.get("artifact_digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact digest record drifted for {package_id}")
+        if _artifact_digest(payload) != artifact.get("artifact_digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact digest drifted for {package_id}")
+        for field_name in (
+            "source_manifest",
+            "installed_manifest",
+            "manifest_digest",
+            "lock_manifest_digest",
+            "trust_signature",
+        ):
+            if payload.get(field_name) != installed_record.get(field_name):
+                failures.append(
+                    f"{PACKAGE_MANAGER_TAMPER_CODE}: install proof artifact {field_name} drifted for {package_id}"
+                )
+    return failures
+
+
 __all__ = [
     "HOSTED_REGISTRY_FAIL_CLOSED",
     "INSTALL_DISTRIBUTION_ACTION",
     "INSTALL_DISTRIBUTION_CONTRACT_ID",
     "INSTALL_DISTRIBUTION_SUMMARY_CONTRACT_ID",
     "INSTALL_HOME_REL",
+    "INSTALL_LOCAL_ARTIFACT_ROOT_REL",
     "INSTALL_PACKAGE_BRIDGE",
+    "INSTALL_PROOF_CONTRACT_ID",
+    "INSTALL_PROOF_MANIFEST_REL",
     "INSTALL_RECEIPT_REL",
     "INSTALL_ROOT_REL",
     "INSTALL_VALIDATION_ROOT_REL",
     "INSTALL_VERIFICATION_REL",
     "NO_NETWORK_POLICY",
     "collect_install_distribution_failures",
+    "collect_install_proof_failures",
     "install_receipt_payload",
     "materialize_clean_distribution_install",
     "package_ids",
