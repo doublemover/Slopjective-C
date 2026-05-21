@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -37,6 +40,19 @@ REQUIRED_UNSUPPORTED_CLAIMS = {
     "compatibility shim support",
     "fallback downgrade route",
 }
+SUPPORTED_EXTRACTOR_KINDS = {
+    "c-header-public-symbols",
+    "stdlib-module-abi-signatures",
+    "package-abi-identity-schema",
+}
+COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
+FUNCTION_NAME_RE = re.compile(r"\b(?P<name>objc3[A-Za-z0-9_]*)\s*\(")
+TYPEDEF_RE = re.compile(
+    r"typedef\s+(?:struct|enum)\s+(?P<tag>[A-Za-z_][A-Za-z0-9_]*)?"
+    r"(?:\s*\{[^}]*\})?\s*(?P<name>objc3[A-Za-z0-9_]*)\s*;",
+    re.DOTALL,
+)
+ENUM_CONSTANT_RE = re.compile(r"^\s*(?P<name>OBJC3[A-Z0-9_]+)\s*=", re.MULTILINE)
 
 
 def _repo_rel(path: Path) -> str:
@@ -97,6 +113,196 @@ def _reject_tmp_or_absolute_path(raw_path: str, label: str, failures: list[str])
         failures.append(_failure(f"{label} must not point at generated temp output: {raw_path}"))
     if "\\" in raw_path:
         failures.append(_failure(f"{label} must use repo-relative slash paths: {raw_path}"))
+
+
+def _canonical_digest(entries: Sequence[str]) -> str:
+    payload = json.dumps(list(entries), ensure_ascii=True, separators=(",", ":"), sort_keys=False)
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _normalize_ws(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _expand_source_globs(raw_globs: Any, label: str, failures: list[str]) -> list[Path]:
+    if (
+        not isinstance(raw_globs, list)
+        or not raw_globs
+        or not all(isinstance(value, str) and value for value in raw_globs)
+    ):
+        failures.append(_failure(f"{label}.source_globs must be a non-empty string list"))
+        return []
+
+    result: list[Path] = []
+    seen: set[str] = set()
+    for raw_glob in raw_globs:
+        _reject_tmp_or_absolute_path(raw_glob, f"{label}.source_globs", failures)
+        matches = sorted(ROOT.glob(raw_glob))
+        if not matches:
+            failures.append(_failure(f"{label}.source_globs matched no files: {raw_glob}"))
+            continue
+        for path in matches:
+            if not path.is_file():
+                continue
+            rel = _repo_rel(path)
+            if rel not in seen:
+                seen.add(rel)
+                result.append(path)
+    return result
+
+
+def _extract_c_header_public_symbols(paths: Sequence[Path]) -> list[str]:
+    entries: list[str] = []
+    for path in sorted(paths, key=_repo_rel):
+        text = COMMENT_RE.sub("", path.read_text(encoding="utf-8"))
+        rel = _repo_rel(path)
+        for statement in text.split(";"):
+            if "objc3" not in statement or "(" not in statement or "typedef" in statement:
+                continue
+            match = FUNCTION_NAME_RE.search(statement)
+            if not match:
+                continue
+            name = match.group("name")
+            signature = _normalize_ws(statement + ";")
+            entries.append(f"{rel}::function::{name}::{signature}")
+        for match in TYPEDEF_RE.finditer(text):
+            name = match.group("name")
+            entries.append(f"{rel}::type::{name}")
+        for match in ENUM_CONSTANT_RE.finditer(text):
+            name = match.group("name")
+            entries.append(f"{rel}::enum-constant::{name}")
+    return sorted(set(entries))
+
+
+def _extract_stdlib_module_abi_signatures(paths: Sequence[Path], failures: list[str]) -> list[str]:
+    entries: list[str] = []
+    for path in sorted(paths, key=_repo_rel):
+        payload = _load_payload(path, f"stdlib ABI module {_repo_rel(path)}", failures)
+        if not payload:
+            continue
+        module = payload.get("canonical_module")
+        if not isinstance(module, str) or not module:
+            failures.append(_failure(f"stdlib ABI module {_repo_rel(path)} missing canonical_module"))
+            continue
+        for field_name in ("abi_signatures", "runtime_abi_signatures"):
+            signatures = payload.get(field_name)
+            if field_name == "runtime_abi_signatures" and not payload.get("runtime_abi"):
+                continue
+            if not isinstance(signatures, dict) or not signatures:
+                failures.append(_failure(f"stdlib ABI module {module} missing {field_name}"))
+                continue
+            for symbol, signature in sorted(signatures.items()):
+                if not isinstance(symbol, str) or not isinstance(signature, str):
+                    failures.append(_failure(f"stdlib ABI module {module} has malformed {field_name} entry"))
+                    continue
+                entries.append(f"{module}::{field_name}::{symbol}::{signature}")
+    return sorted(entries)
+
+
+def _walk_json_const_paths(
+    value: Any,
+    path: tuple[str, ...] = (),
+) -> list[tuple[tuple[str, ...], str]]:
+    if isinstance(value, dict):
+        result: list[tuple[tuple[str, ...], str]] = []
+        if isinstance(value.get("const"), str):
+            result.append((path + ("const",), str(value["const"])))
+        for key, nested in value.items():
+            if isinstance(key, str):
+                result.extend(_walk_json_const_paths(nested, path + (key,)))
+        return result
+    if isinstance(value, list):
+        result = []
+        for index, nested in enumerate(value):
+            result.extend(_walk_json_const_paths(nested, path + (str(index),)))
+        return result
+    return []
+
+
+def _extract_package_abi_identity_schema(paths: Sequence[Path], failures: list[str]) -> list[str]:
+    entries: list[str] = []
+    for path in sorted(paths, key=_repo_rel):
+        payload = _load_payload(path, f"package ABI schema {_repo_rel(path)}", failures)
+        if not payload:
+            continue
+        for json_path, const_value in _walk_json_const_paths(payload):
+            if const_value == "objc3-abi-2025Q4":
+                entries.append(f"{_repo_rel(path)}::{'/'.join(json_path)}::{const_value}")
+    return sorted(entries)
+
+
+def _extract_surface(target: dict[str, Any], failures: list[str]) -> list[str]:
+    extractor_id = str(target.get("extractor_id"))
+    kind = target.get("kind")
+    paths = _expand_source_globs(target.get("source_globs"), f"extractor {extractor_id}", failures)
+    if not paths:
+        return []
+    if kind == "c-header-public-symbols":
+        return _extract_c_header_public_symbols(paths)
+    if kind == "stdlib-module-abi-signatures":
+        return _extract_stdlib_module_abi_signatures(paths, failures)
+    if kind == "package-abi-identity-schema":
+        return _extract_package_abi_identity_schema(paths, failures)
+    failures.append(_failure(f"extractor {extractor_id} has unsupported kind {kind!r}"))
+    return []
+
+
+def _validate_surface_extractors(manifest: dict[str, Any], failures: list[str]) -> list[dict[str, Any]]:
+    targets = manifest.get("surface_extractors")
+    if not isinstance(targets, list) or not targets:
+        failures.append(_failure("surface_extractors must be a non-empty list"))
+        return []
+
+    observations: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for target in targets:
+        if not isinstance(target, dict):
+            failures.append(_failure("surface extractor entry is malformed"))
+            continue
+        extractor_id = target.get("extractor_id")
+        if not isinstance(extractor_id, str) or not extractor_id:
+            failures.append(_failure("surface extractor missing extractor_id"))
+            continue
+        if extractor_id in seen:
+            failures.append(_failure(f"surface extractor duplicated {extractor_id}"))
+            continue
+        seen.add(extractor_id)
+        kind = target.get("kind")
+        if kind not in SUPPORTED_EXTRACTOR_KINDS:
+            failures.append(_failure(f"surface extractor {extractor_id} has unsupported kind"))
+            continue
+        if target.get("release_blocker") is not True:
+            failures.append(_failure(f"surface extractor {extractor_id} must be release-blocking"))
+        if target.get("output_policy") != "tmp-report-only":
+            failures.append(_failure(f"surface extractor {extractor_id} must keep generated output in tmp"))
+        entries = _extract_surface(target, failures)
+        observed_digest = _canonical_digest(entries)
+        observed_count = len(entries)
+        expected_count = target.get("expected_count")
+        expected_digest = target.get("expected_digest")
+        observations.append(
+            {
+                "extractor_id": extractor_id,
+                "kind": kind,
+                "observed_count": observed_count,
+                "observed_digest": observed_digest,
+            }
+        )
+        if expected_count != observed_count:
+            failures.append(
+                _failure(
+                    f"surface extractor {extractor_id} count drifted: "
+                    f"expected {expected_count!r}, observed {observed_count}"
+                )
+            )
+        if expected_digest != observed_digest:
+            failures.append(
+                _failure(
+                    f"surface extractor {extractor_id} digest drifted: "
+                    f"expected {expected_digest!r}, observed {observed_digest}"
+                )
+            )
+    return observations
 
 
 def _validate_source_of_truth(manifest: dict[str, Any], failures: list[str]) -> None:
@@ -293,8 +499,11 @@ def run_check(
         _validate_source_of_truth(manifest, failures)
         _validate_posture(manifest, failures)
         governed_surface_count = _validate_governed_surfaces(manifest, failures)
+        surface_extractor_observations = _validate_surface_extractors(manifest, failures)
         _validate_compatibility_policy(manifest, failures)
         _validate_release_governance(manifest, failures, release_governance_override)
+    else:
+        surface_extractor_observations = []
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -304,6 +513,8 @@ def run_check(
         "schema_path": _repo_rel(SCHEMA_PATH),
         "release_blocker_issue_refs": manifest.get("issue_refs", []) if manifest else [],
         "governed_surface_count": governed_surface_count,
+        "surface_extractor_count": len(surface_extractor_observations),
+        "surface_extractors": surface_extractor_observations,
         "failure_count": len(failures),
         "failures": failures,
     }

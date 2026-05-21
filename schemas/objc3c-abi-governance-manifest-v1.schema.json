@@ -11,6 +11,7 @@
     "source_of_truth",
     "governance_posture",
     "governed_surfaces",
+    "surface_extractors",
     "release_blocked_transitions",
     "compatibility_policy",
     "summary_contract"
@@ -81,6 +82,11 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/governedSurface" }
+    },
+    "surface_extractors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/surfaceExtractor" }
     },
     "release_blocked_transitions": {
       "type": "array",
@@ -155,6 +161,42 @@
           ]
         },
         "allowed_transition_set": { "type": "string", "minLength": 1 }
+      }
+    },
+    "surfaceExtractor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extractor_id",
+        "kind",
+        "source_globs",
+        "release_blocker",
+        "output_policy",
+        "expected_count",
+        "expected_digest"
+      ],
+      "properties": {
+        "extractor_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "c-header-public-symbols",
+            "stdlib-module-abi-signatures",
+            "package-abi-identity-schema"
+          ]
+        },
+        "source_globs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/repoPath" }
+        },
+        "release_blocker": { "const": true },
+        "output_policy": { "const": "tmp-report-only" },
+        "expected_count": { "type": "integer", "minimum": 1 },
+        "expected_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
       }
     }
   }

@@ -68,6 +68,42 @@
       "allowed_transition_set": "abi-api-governance"
     }
   ],
+  "surface_extractors": [
+    {
+      "extractor_id": "runtime-public-c-header-symbols",
+      "kind": "c-header-public-symbols",
+      "source_globs": [
+        "native/objc3c/src/runtime/public/*.h",
+        "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
+      ],
+      "release_blocker": true,
+      "output_policy": "tmp-report-only",
+      "expected_count": 122,
+      "expected_digest": "sha256:c0a8a93e68dd899c1e5ff03c8ee10325e5b0d37b935ccbbc9951910a40450cdb"
+    },
+    {
+      "extractor_id": "stdlib-module-abi-signatures",
+      "kind": "stdlib-module-abi-signatures",
+      "source_globs": [
+        "stdlib/modules/*/module.json"
+      ],
+      "release_blocker": true,
+      "output_policy": "tmp-report-only",
+      "expected_count": 146,
+      "expected_digest": "sha256:b50db705b4f94ee3b7ff587690cf1035e91d5b68e588e51b8f9ed2b85ac488e0"
+    },
+    {
+      "extractor_id": "package-lock-abi-identity-schema",
+      "kind": "package-abi-identity-schema",
+      "source_globs": [
+        "schemas/objc3c-package-lock-v1.schema.json"
+      ],
+      "release_blocker": true,
+      "output_policy": "tmp-report-only",
+      "expected_count": 3,
+      "expected_digest": "sha256:718262afc9cc3bd0faa270531f106eb3e300666ef20e86f0728deaf2402ccae4"
+    }
+  ],
   "release_blocked_transitions": [
     "public-symbol-removal-without-deprecation-window",
     "runtime-symbol-removal-without-deprecation-window",

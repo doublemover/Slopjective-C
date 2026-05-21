@@ -39,6 +39,13 @@ def test_abi_governance_accepts_checked_in_manifest(tmp_path: Path) -> None:
     assert summary["status"] == "PASS"
     assert summary["diagnostic_code"] == "O3ABI8173"
     assert summary["governed_surface_count"] == 3
+    assert summary["surface_extractor_count"] == 3
+    observed = {
+        item["extractor_id"]: item for item in summary["surface_extractors"]  # type: ignore[index]
+    }
+    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 122
+    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 146
+    assert observed["package-lock-abi-identity-schema"]["observed_count"] == 3
     assert summary["release_blocker_issue_refs"] == ["#8173"]
 
 
@@ -97,6 +104,39 @@ def test_abi_governance_rejects_temp_source_of_truth_paths(tmp_path: Path) -> No
     assert rc == 1
     assert any(
         "must not point at generated temp output" in failure
+        for failure in summary["failures"]  # type: ignore[index]
+    )
+
+
+def test_abi_governance_rejects_extracted_public_header_digest_drift(
+    tmp_path: Path,
+) -> None:
+    manifest = _manifest()
+    extractors = manifest["surface_extractors"]  # type: ignore[index]
+    extractors[0]["expected_digest"] = (
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    )
+
+    rc, summary = _run_manifest(tmp_path, manifest)
+
+    assert rc == 1
+    assert any(
+        "surface extractor runtime-public-c-header-symbols digest drifted" in failure
+        for failure in summary["failures"]  # type: ignore[index]
+    )
+
+
+def test_abi_governance_rejects_generated_extraction_sources(tmp_path: Path) -> None:
+    manifest = _manifest()
+    extractors = manifest["surface_extractors"]  # type: ignore[index]
+    extractors[1]["source_globs"] = ["tmp/artifacts/generated-abi/*.json"]
+
+    rc, summary = _run_manifest(tmp_path, manifest)
+
+    assert rc == 1
+    assert any(
+        "extractor stdlib-module-abi-signatures.source_globs must not point at generated temp output"
+        in failure
         for failure in summary["failures"]  # type: ignore[index]
     )
 
