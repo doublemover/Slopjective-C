@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 1u
+#define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 2u
 
 typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_OK = 0,
@@ -22,6 +22,18 @@ typedef enum objc3_runtime_reflection_method_family {
   OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE = 1,
   OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_CLASS = 2,
 } objc3_runtime_reflection_method_family;
+
+typedef enum objc3_runtime_reflection_surface_kind {
+  OBJC3_RUNTIME_REFLECTION_SURFACE_INVALID = 0,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_STATE = 1,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_CLASS = 2,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_PROPERTY = 3,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_METHOD = 4,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_PROTOCOL = 5,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_PROTOCOL_CONFORMANCE = 6,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_CATEGORY = 7,
+  OBJC3_RUNTIME_REFLECTION_SURFACE_SELECTOR = 8,
+} objc3_runtime_reflection_surface_kind;
 
 typedef struct objc3_runtime_reflection_state_snapshot {
   uint32_t abi_version;
@@ -196,7 +208,35 @@ typedef struct objc3_runtime_reflection_selector_snapshot {
   const char *canonical_selector;
 } objc3_runtime_reflection_selector_snapshot;
 
+typedef struct objc3_runtime_reflection_surface_snapshot {
+  uint32_t abi_version;
+  uint32_t snapshot_size;
+  int status;
+  int surface_kind;
+  int issue_ref;
+  int supported;
+  int realized_state_backed;
+  int bounded_public_abi;
+  int fail_closed;
+  int creates_dynamic_runtime_state;
+  int exposes_private_testing_snapshot;
+  int unsupported_metadata_status;
+  int malformed_metadata_status;
+  const char *support_claim;
+  const char *surface_name;
+  const char *entrypoint_name;
+  const char *snapshot_type_name;
+  const char *runtime_anchor;
+  const char *query_boundary;
+  const char *unsupported_policy;
+} objc3_runtime_reflection_surface_snapshot;
+
 uint32_t objc3_runtime_reflection_api_abi_version(void);
+uint64_t objc3_runtime_reflection_surface_count(void);
+int objc3_runtime_copy_reflection_surface(
+    uint64_t index, objc3_runtime_reflection_surface_snapshot *snapshot);
+int objc3_runtime_copy_reflection_surface_by_kind(
+    int surface_kind, objc3_runtime_reflection_surface_snapshot *snapshot);
 int objc3_runtime_copy_reflection_state(
     objc3_runtime_reflection_state_snapshot *snapshot);
 int objc3_runtime_copy_reflection_class(
@@ -217,8 +257,7 @@ int objc3_runtime_copy_reflection_category(
     const char *class_name, const char *category_name,
     objc3_runtime_reflection_category_snapshot *snapshot);
 int objc3_runtime_copy_reflection_selector(
-    const char *selector,
-    objc3_runtime_reflection_selector_snapshot *snapshot);
+    const char *selector, objc3_runtime_reflection_selector_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

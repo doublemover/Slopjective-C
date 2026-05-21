@@ -8,14 +8,12 @@
 
 namespace {
 
-template <std::uint64_t EntryCount>
-struct PointerAggregateStorage {
+template <std::uint64_t EntryCount> struct PointerAggregateStorage {
   std::uint64_t count;
   const void *entries[EntryCount];
 };
 
-template <std::uint64_t EntryCount>
-struct MethodListStorage {
+template <std::uint64_t EntryCount> struct MethodListStorage {
   objc3c::runtime::EmittedMethodListHeader header;
   objc3c::runtime::EmittedMethodListEntry entries[EntryCount];
 };
@@ -39,8 +37,7 @@ constexpr const char *kValueLayoutSymbol =
 constexpr const char *kValueLayoutReplayKey =
     "PublicReflectionWidget.value.layout";
 constexpr const char *kTracerProtocolName = "PublicReflectionTracer";
-constexpr const char *kTracerProtocolOwner =
-    "protocol:PublicReflectionTracer";
+constexpr const char *kTracerProtocolOwner = "protocol:PublicReflectionTracer";
 constexpr const char *kTracingCategoryName = "Tracing";
 constexpr const char *kTracingCategoryOwner =
     "category:PublicReflectionWidget(Tracing)";
@@ -51,25 +48,25 @@ const objc3_runtime_pointer_aggregate *kEmptyRoot =
         &kEmptyRootStorage);
 
 struct PublicReflectionFixture {
-  objc3_runtime_image_descriptor image{kModuleName, kTranslationUnit, 1, 1, 1,
-                                       1, 1, 1};
+  objc3_runtime_image_descriptor image{
+      kModuleName, kTranslationUnit, 1, 1, 1, 1, 1, 1};
   MethodListStorage<1> value_methods{
       {1, kClassOwner, kClassOwner},
-      {{kValuePropertyName,
-        "method:PublicReflectionWidget::value",
-        "id",
-        0,
-        nullptr,
-        1,
-        false,
-        false}}};
-  objc3c::runtime::EmittedMethodListRef value_method_ref{
-      1, kClassOwner, &value_methods};
-  objc3c::runtime::EmittedProtocolRecord tracer_protocol{
-      kTracerProtocolName, kTracerProtocolOwner, kEmptyRoot, nullptr, nullptr,
-      0, 0, 0, 0, false};
-  PointerAggregateStorage<1> category_protocol_refs{
-      1, {&tracer_protocol}};
+      {{kValuePropertyName, "method:PublicReflectionWidget::value", "id", 0,
+        nullptr, 1, false, false}}};
+  objc3c::runtime::EmittedMethodListRef value_method_ref{1, kClassOwner,
+                                                         &value_methods};
+  objc3c::runtime::EmittedProtocolRecord tracer_protocol{kTracerProtocolName,
+                                                         kTracerProtocolOwner,
+                                                         kEmptyRoot,
+                                                         nullptr,
+                                                         nullptr,
+                                                         0,
+                                                         0,
+                                                         0,
+                                                         0,
+                                                         false};
+  PointerAggregateStorage<1> category_protocol_refs{1, {&tracer_protocol}};
   const objc3_runtime_pointer_aggregate *category_protocol_root =
       reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
           &category_protocol_refs);
@@ -126,31 +123,40 @@ struct PublicReflectionFixture {
       true,
       true,
       true};
-  objc3c::runtime::EmittedIvarLayoutRecord value_layout{
-      kValueLayoutSymbol, kValueLayoutReplayKey, 0, 0, 8, 8, 0, 0, 0, 8,
-      0, 0, true};
+  objc3c::runtime::EmittedIvarLayoutRecord value_layout{kValueLayoutSymbol,
+                                                        kValueLayoutReplayKey,
+                                                        0,
+                                                        0,
+                                                        8,
+                                                        8,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        8,
+                                                        0,
+                                                        0,
+                                                        true};
   std::uint64_t value_offset = 0;
-  objc3c::runtime::EmittedIvarDescriptor value_ivar{
-      kClassBundleOwner,
-      kClassBundleOwner,
-      kClassOwner,
-      kClassBundleOwner,
-      kValuePropertyName,
-      kValueIvarSymbol,
-      &value_layout,
-      &value_offset,
-      kValueLayoutReplayKey,
-      0,
-      0,
-      8,
-      8,
-      0,
-      0,
-      0,
-      8,
-      0,
-      0,
-      true};
+  objc3c::runtime::EmittedIvarDescriptor value_ivar{kClassBundleOwner,
+                                                    kClassBundleOwner,
+                                                    kClassOwner,
+                                                    kClassBundleOwner,
+                                                    kValuePropertyName,
+                                                    kValueIvarSymbol,
+                                                    &value_layout,
+                                                    &value_offset,
+                                                    kValueLayoutReplayKey,
+                                                    0,
+                                                    0,
+                                                    8,
+                                                    8,
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    8,
+                                                    0,
+                                                    0,
+                                                    true};
   PointerAggregateStorage<1> class_root_storage{1, {&class_bundle}};
   PointerAggregateStorage<1> protocol_root_storage{1, {&tracer_protocol}};
   PointerAggregateStorage<1> category_root_storage{1, {&tracing_category}};
@@ -185,10 +191,20 @@ struct PublicReflectionFixture {
           &discovery_root_storage);
   const void *discovery_root_anchor = discovery_root;
   unsigned char image_local_init_state = 0;
-  objc3_runtime_registration_table registration_table{
-      2, 12, &image, discovery_root, &discovery_root_anchor, class_root,
-      protocol_root, category_root, property_root, ivar_root, selector_pool,
-      nullptr, nullptr, &image_local_init_state};
+  objc3_runtime_registration_table registration_table{2,
+                                                      12,
+                                                      &image,
+                                                      discovery_root,
+                                                      &discovery_root_anchor,
+                                                      class_root,
+                                                      protocol_root,
+                                                      category_root,
+                                                      property_root,
+                                                      ivar_root,
+                                                      selector_pool,
+                                                      nullptr,
+                                                      nullptr,
+                                                      &image_local_init_state};
 };
 
 int Fail(const char *message) {
@@ -196,7 +212,7 @@ int Fail(const char *message) {
   return 1;
 }
 
-}  // namespace
+} // namespace
 
 int main() {
   PublicReflectionFixture fixture{};
@@ -216,8 +232,19 @@ int main() {
   objc3_runtime_reflection_protocol_conformance_snapshot tracer_conformance{};
   objc3_runtime_reflection_category_snapshot category{};
   objc3_runtime_reflection_selector_snapshot selector{};
+  objc3_runtime_reflection_surface_snapshot indexed_surface{};
+  objc3_runtime_reflection_surface_snapshot surface{};
+  objc3_runtime_reflection_surface_snapshot invalid_surface{};
   objc3_runtime_reflection_property_snapshot invalid_property{};
 
+  const std::uint64_t surface_count = objc3_runtime_reflection_surface_count();
+  const int indexed_surface_status =
+      objc3_runtime_copy_reflection_surface(0u, &indexed_surface);
+  const int surface_status = objc3_runtime_copy_reflection_surface_by_kind(
+      OBJC3_RUNTIME_REFLECTION_SURFACE_PROPERTY, &surface);
+  const int invalid_surface_status =
+      objc3_runtime_copy_reflection_surface_by_kind(
+          OBJC3_RUNTIME_REFLECTION_SURFACE_INVALID, &invalid_surface);
   const int state_status = objc3_runtime_copy_reflection_state(&state);
   const int class_status =
       objc3_runtime_copy_reflection_class(kWidgetClassName, &widget_class);
@@ -237,14 +264,25 @@ int main() {
       kWidgetClassName, kTracingCategoryName, &category);
   const int selector_status =
       objc3_runtime_copy_reflection_selector(kValuePropertyName, &selector);
-  const int invalid_status =
-      objc3_runtime_copy_reflection_property(nullptr, kValuePropertyName,
-                                             &invalid_property);
+  const int invalid_status = objc3_runtime_copy_reflection_property(
+      nullptr, kValuePropertyName, &invalid_property);
   const int invalid_output_status =
       objc3_runtime_copy_reflection_state(nullptr);
 
   if (state_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection state status drifted");
+  }
+  if (surface_count != 8u) {
+    return Fail("public reflection surface count drifted");
+  }
+  if (indexed_surface_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection indexed surface status drifted");
+  }
+  if (surface_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
+    return Fail("public reflection surface status drifted");
+  }
+  if (invalid_surface_status != OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY) {
+    return Fail("public reflection invalid surface status drifted");
   }
   if (class_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("public reflection class status drifted");
@@ -273,8 +311,7 @@ int main() {
   if (invalid_status != OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY) {
     return Fail("public reflection invalid-query status drifted");
   }
-  if (invalid_output_status !=
-      OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT) {
+  if (invalid_output_status != OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT) {
     return Fail("public reflection invalid-output status drifted");
   }
   if (widget_class.found != 1 || count_property.found != 1 ||
@@ -287,11 +324,29 @@ int main() {
       std::strcmp(value_property.property_behavior_name, "Observed") != 0) {
     return Fail("public property behavior reflection drifted");
   }
+  if (surface.issue_ref != 8174 || surface.supported != 1 ||
+      surface.realized_state_backed != 1 || surface.bounded_public_abi != 1 ||
+      surface.fail_closed != 1 || surface.creates_dynamic_runtime_state != 0 ||
+      surface.exposes_private_testing_snapshot != 0 ||
+      surface.unsupported_metadata_status !=
+          OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE ||
+      surface.malformed_metadata_status !=
+          OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA ||
+      surface.surface_name == nullptr ||
+      std::strcmp(surface.surface_name, "property") != 0) {
+    return Fail("public reflection surface contract drifted");
+  }
 
   std::printf("{");
   std::printf("\"abi_version\":%u,",
               objc3_runtime_reflection_api_abi_version());
   std::printf("\"registration_status\":%d,", registration_status);
+  std::printf("\"surface_count\":%llu,",
+              static_cast<unsigned long long>(surface_count));
+  std::printf("\"indexed_surface_status\":%d,", indexed_surface_status);
+  std::printf("\"surface_status\":%d,", surface_status);
+  std::printf("\"invalid_surface_status\":%d,", invalid_surface_status);
+  std::printf("\"surface_issue_ref\":%d,", surface.issue_ref);
   std::printf("\"state_status\":%d,", state_status);
   std::printf("\"class_status\":%d,", class_status);
   std::printf("\"property_status\":%d,", property_status);

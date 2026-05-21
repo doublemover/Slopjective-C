@@ -69,6 +69,8 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
 
     if contract.get("contract_id") != "objc3c.runtime.public.reflection.api.v1":
         failures.append("public runtime reflection contract_id drifted")
+    if contract.get("issue") != 8174:
+        failures.append("public runtime reflection issue binding drifted")
     if contract.get("support_claim") != "objc3c.behavior.runtime.public-reflection-api":
         failures.append("public runtime reflection support claim drifted")
 
@@ -156,6 +158,10 @@ def validate_public_runtime_reflection_api() -> dict[str, Any]:
         "ProtocolExistsByNameUnlocked",
         "QueryRealizedClassProtocolConformanceUnlocked",
         "FindSelectorSlotByCanonicalSpellingUnlocked",
+        "PublicRuntimeReflectionSurfaceRecord",
+        "snapshot.issue_ref = 8174",
+        "snapshot.creates_dynamic_runtime_state = 0",
+        "snapshot.exposes_private_testing_snapshot = 0",
         "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
         "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
         "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA",

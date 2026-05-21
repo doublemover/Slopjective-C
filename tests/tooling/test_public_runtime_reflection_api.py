@@ -50,7 +50,7 @@ def test_public_runtime_reflection_contract_fixture_matches_sources() -> None:
     probe = _read(PROBE_PATH)
 
     assert contract["contract_id"] == "objc3c.runtime.public.reflection.api.v1"
-    assert contract["issue"] == 8154
+    assert contract["issue"] == 8174
     assert contract["support_claim"] == "objc3c.behavior.runtime.public-reflection-api"
     assert '#include "runtime/public/objc3_runtime_reflection.h"' in umbrella
     assert "public/objc3_runtime_reflection.cpp" in cmake
@@ -86,6 +86,10 @@ def test_public_runtime_reflection_uses_realized_state_and_fail_closed_statuses(
     assert "FindSelectorSlotByCanonicalSpellingUnlocked" in implementation
     assert "AppendDynamicSelectorSlotUnlocked" not in implementation
     assert "LookupSelectorUnlocked(selector)" not in implementation
+    assert "PublicRuntimeReflectionSurfaceRecord" in implementation
+    assert "snapshot.issue_ref = 8174" in implementation
+    assert "snapshot.creates_dynamic_runtime_state = 0" in implementation
+    assert "snapshot.exposes_private_testing_snapshot = 0" in implementation
 
     assert "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT" in implementation
     assert "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY" in implementation
@@ -103,6 +107,9 @@ def test_public_runtime_reflection_probe_uses_public_surface() -> None:
     assert "objc3_runtime_copy_reflection_method" in probe
     assert "objc3_runtime_copy_reflection_protocol_conformance" in probe
     assert "objc3_runtime_copy_reflection_selector" in probe
+    assert "objc3_runtime_copy_reflection_surface_by_kind" in probe
+    assert "surface.creates_dynamic_runtime_state" in probe
+    assert "surface.exposes_private_testing_snapshot" in probe
     assert "value_property.property_behavior_name" in probe
     assert "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT" in probe
     for private_snapshot_entrypoint in (
@@ -130,6 +137,7 @@ def test_public_runtime_reflection_header_compiles_from_c_when_available(
                 '#include "runtime/public/objc3_runtime_api.h"',
                 "static int smoke(void) {",
                 "  objc3_runtime_reflection_state_snapshot state = {0};",
+                "  objc3_runtime_reflection_surface_snapshot surface = {0};",
                 "  objc3_runtime_reflection_class_snapshot cls = {0};",
                 "  objc3_runtime_reflection_property_snapshot property = {0};",
                 "  objc3_runtime_reflection_method_snapshot method = {0};",
@@ -139,6 +147,10 @@ def test_public_runtime_reflection_header_compiles_from_c_when_available(
                 "  objc3_runtime_reflection_selector_snapshot selector = {0};",
                 "  if (OBJC3_RUNTIME_REFLECTION_ABI_VERSION == 0u) return 1;",
                 "  if (objc3_runtime_reflection_api_abi_version() == 0u) return 2;",
+                "  if (objc3_runtime_reflection_surface_count() == 0u) return 3;",
+                "  (void)objc3_runtime_copy_reflection_surface(0u, &surface);",
+                "  (void)objc3_runtime_copy_reflection_surface_by_kind(",
+                "      OBJC3_RUNTIME_REFLECTION_SURFACE_PROPERTY, &surface);",
                 "  (void)objc3_runtime_copy_reflection_state(&state);",
                 '  (void)objc3_runtime_copy_reflection_class("Widget", &cls);',
                 '  (void)objc3_runtime_copy_reflection_property("Widget", "count", &property);',
