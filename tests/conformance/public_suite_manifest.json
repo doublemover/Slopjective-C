@@ -1,0 +1,417 @@
+{
+  "contract_id": "objc3c.public_conformance_suite.manifest.v1",
+  "schema_version": 1,
+  "suite_id": "objc3-public-conformance-suite",
+  "suite_version": "2026.05.objc3-next-018.v1",
+  "public_status": "stable",
+  "source_truth": {
+    "corpus_surface": "tests/conformance/corpus_surface.json",
+    "support_claim_runnable_evidence_catalog": "tests/conformance/support_claim_runnable_evidence_catalog.json",
+    "capability_matrix": "docs/support/capability_matrix.json",
+    "evidence_map": "docs/support/evidence_map.json",
+    "generated_report_boundary": "tmp/reports/conformance/public-suite-summary.json",
+    "tmp_source_truth_allowed": false
+  },
+  "package_surface": {
+    "artifact_root": "tmp/artifacts/public-conformance/suite",
+    "report_root": "tmp/reports/conformance",
+    "package_stage_root": "tmp/pkg/objc3-public-conformance-suite",
+    "public_command_prefix": "npm run objc3c -- ",
+    "offline_compatible": true
+  },
+  "phase_taxonomy": [
+    {
+      "phase_id": "parser",
+      "title": "Parser syntax and rejection",
+      "source_manifest": "tests/conformance/parser/manifest.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "sema",
+      "title": "Semantic type and ownership checks",
+      "source_manifest": "tests/conformance/semantic/manifest.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "lowering",
+      "title": "Lowering and ABI strict errors",
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "ir",
+      "title": "IR module emission",
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "runtime",
+      "title": "Runtime object model",
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "stdlib",
+      "title": "Runtime-backed standard library",
+      "source_manifest": "stdlib/modules/objc3.core/module.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "package",
+      "title": "Package and interop replay",
+      "source_manifest": "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json",
+      "required_for_release_candidate": true
+    },
+    {
+      "phase_id": "release_candidate",
+      "title": "Release-candidate public profile",
+      "source_manifest": "tests/conformance/longitudinal_suites.json",
+      "required_for_release_candidate": true
+    }
+  ],
+  "public_profiles": [
+    {
+      "profile_id": "core",
+      "title": "Core public compiler and runtime conformance",
+      "required_phase_ids": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime"
+      ],
+      "default_command": "npm run objc3c -- validate-conformance-corpus",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ]
+    },
+    {
+      "profile_id": "stdlib-package",
+      "title": "Standard-library and package replay conformance",
+      "required_phase_ids": [
+        "stdlib",
+        "package"
+      ],
+      "default_command": "npm run objc3c -- validate-interop-conformance",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ]
+    },
+    {
+      "profile_id": "release-candidate",
+      "title": "Release-candidate public conformance gate",
+      "required_phase_ids": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "stdlib",
+        "package",
+        "release_candidate"
+      ],
+      "default_command": "npm run objc3c -- validate-release-candidate-conformance",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ]
+    }
+  ],
+  "suite_cases": [
+    {
+      "case_id": "public.parser.canonical-syntax.core",
+      "phase": "parser",
+      "feature_id": "compiler.parser.core-declarations",
+      "capability_id": "compiler.parser.core-declarations",
+      "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/conformance/parser/manifest.json",
+      "conformance_fixture": "tests/conformance/parser/M01-A001.json",
+      "traceability_fixture": "tests/native/parser/positive/canonical_module_main.objc3",
+      "runnable_command": "npm run objc3c -- test-behavior-matrix",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/conformance/parser/M01-A001.json"
+      ],
+      "negative_evidence": [
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3"
+      ],
+      "source_truth_requirements": [
+        "Canonical parser syntax remains tied to the checked capability row and parser fixtures.",
+        "Retired mode spellings stay negative evidence and cannot define an alternate acceptance path."
+      ]
+    },
+    {
+      "case_id": "public.sema.protocol-qualified-existential",
+      "phase": "sema",
+      "feature_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
+      "support_claim": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/conformance/semantic/manifest.json",
+      "conformance_fixture": "tests/conformance/semantic/TYP-8013-01.json",
+      "traceability_fixture": "tests/conformance/semantic/TYP-8013-07.json",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+        "tests/conformance/semantic/TYP-8013-01.json"
+      ],
+      "negative_evidence": [
+        "tests/conformance/semantic/TYP-8013-07.json",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3"
+      ],
+      "source_truth_requirements": [
+        "Protocol-qualified existential support resolves to checked semantic fixtures before public reporting.",
+        "Unknown protocol-qualified sends stay fail-closed semantic evidence."
+      ]
+    },
+    {
+      "case_id": "public.lowering.strict-runtime-dispatch",
+      "phase": "lowering",
+      "feature_id": "compiler.lowering.strict-runtime-dispatch",
+      "capability_id": "compiler.lowering.strict-runtime-dispatch",
+      "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "expectation": "strict-error",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "conformance_fixture": "tests/conformance/lowering_abi/HC-NOGATE-01.json",
+      "traceability_fixture": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "runnable_command": "npm run objc3c -- test-behavior-matrix",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/conformance/lowering_abi/HC-NOGATE-01.json"
+      ],
+      "negative_evidence": [
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
+      ],
+      "source_truth_requirements": [
+        "Runtime dispatch fallback remains a strict lowering error.",
+        "No runtime-dispatch compatibility route is a public conformance mode."
+      ]
+    },
+    {
+      "case_id": "public.ir.module-emission",
+      "phase": "ir",
+      "feature_id": "compiler.ir.module-emission",
+      "capability_id": "compiler.ir.module-emission",
+      "support_claim": "objc3c.behavior.ir.module-emission",
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "conformance_fixture": "tests/conformance/lowering_abi/M01-C001.json",
+      "traceability_fixture": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "runnable_command": "npm run objc3c -- test-behavior-matrix",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "native/objc3c/src/ir/objc3_ir_module_emission_surface.cpp"
+      ],
+      "negative_evidence": [
+        "tests/native/ir/runtime_calls/non_i32_message_send_runtime_typed_call_contract.objc3"
+      ],
+      "source_truth_requirements": [
+        "IR module emission support is limited to checked module-shape evidence.",
+        "Runtime call typing failures remain separate strict evidence and do not widen the IR claim."
+      ]
+    },
+    {
+      "case_id": "public.runtime.object-model-interface-method-table",
+      "phase": "runtime",
+      "feature_id": "runtime.object-model.interface-method-table",
+      "capability_id": "runtime.object-model.interface-method-table",
+      "support_claim": "objc3c.behavior.runtime.object-model-interface-method-table",
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/conformance/lowering_abi/manifest.json",
+      "conformance_fixture": "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+      "traceability_fixture": "tests/conformance/lowering_abi/OBJFND-8059-01.json",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance-fast",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/category_unknown_class_rejected.objc3",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+      ],
+      "source_truth_requirements": [
+        "Runtime object-model support resolves to object foundation conformance rows and probes.",
+        "Malformed metadata and unknown owner paths stay fail-closed evidence."
+      ]
+    },
+    {
+      "case_id": "public.stdlib.core-runtime-backed-v1",
+      "phase": "stdlib",
+      "feature_id": "stdlib.core.runtime-backed-v1",
+      "capability_id": "stdlib.core.runtime-backed-v1",
+      "support_claim": "objc3c.behavior.stdlib.core-runtime-v1",
+      "expectation": "pass",
+      "profile_ids": [
+        "stdlib-package",
+        "release-candidate"
+      ],
+      "source_manifest": "stdlib/modules/objc3.core/module.json",
+      "conformance_fixture": "stdlib/modules/objc3.core/module.json",
+      "traceability_fixture": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json",
+      "runnable_command": "npm run objc3c -- test-execution-smoke",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+        "stdlib/modules/objc3.core/module.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+      ],
+      "source_truth_requirements": [
+        "Stdlib core support is limited to the runtime-backed module helpers in the checked module contract.",
+        "Helper signature conflicts stay strict execution replay evidence."
+      ]
+    },
+    {
+      "case_id": "public.package.interop-loader-bridge",
+      "phase": "package",
+      "feature_id": "runtime.interop.package-loader-bridge",
+      "capability_id": "runtime.interop.package-loader-bridge",
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "expectation": "pass",
+      "profile_ids": [
+        "stdlib-package",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json",
+      "conformance_fixture": "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+      "runnable_command": "npm run objc3c -- validate-interop-conformance",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+        "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+        "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
+      ],
+      "source_truth_requirements": [
+        "Package-loader support resolves to checked interop proof contracts and runtime probes.",
+        "Package replay does not claim a third-party certification program or dynamic plugin ABI."
+      ]
+    },
+    {
+      "case_id": "public.release-candidate.task-continuation-profile",
+      "phase": "release_candidate",
+      "feature_id": "runtime.concurrency.task-continuation-lifecycle",
+      "capability_id": "runtime.concurrency.task-continuation-lifecycle",
+      "support_claim": "objc3c.behavior.runtime.concurrency-task-continuation-lifecycle",
+      "expectation": "pass",
+      "profile_ids": [
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+      "conformance_fixture": "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+      "runnable_command": "npm run objc3c -- validate-release-candidate-conformance",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+        "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/non_async_task_runtime_rejected.objc3"
+      ],
+      "source_truth_requirements": [
+        "Release-candidate conformance consumes the same checked runtime concurrency evidence.",
+        "The release-candidate command is a profile gate and not a compatibility-mode bypass."
+      ]
+    }
+  ],
+  "strict_rejection_policy": {
+    "compatibility_mode_allowed": false,
+    "fallback_gate_allowed": false,
+    "unsupported_claim_promotion_allowed": false,
+    "tmp_artifact_support_allowed": false,
+    "forbidden_claim_patterns": [
+      "compatibility-mode conformance",
+      "fallback gate",
+      "old-mode command acceptance",
+      "tmp artifact as support",
+      "unsupported claim promotion"
+    ],
+    "fail_closed_states": [
+      "strict-error",
+      "canonical-rejection",
+      "reserved",
+      "blocked",
+      "quarantined",
+      "unsupported"
+    ]
+  }
+}

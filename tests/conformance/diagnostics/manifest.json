@@ -1489,6 +1489,17 @@
       ]
     },
     {
+      "name": "issue_8169_obj3_next_016_diagnostics_recovery_quality",
+      "feature": "OBJ3-NEXT-016 parser/sema recovery diagnostics with native replay fixtures",
+      "issue": 8169,
+      "files": [
+        "OBJ3-NEXT-016-PARSE-RECOVERY-01.json",
+        "OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+        "OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+        "OBJ3-NEXT-016-SEMA-RECOVERY-02.json"
+      ]
+    },
+    {
       "name": "issue_6474_m243_lane_d_conformance_corpus_expansion",
       "feature": "M243 lane D conformance corpus expansion for CLI/reporting output contract integration",
       "issue": 6474,

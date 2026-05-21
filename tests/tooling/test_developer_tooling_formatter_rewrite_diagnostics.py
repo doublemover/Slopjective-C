@@ -100,5 +100,12 @@ def test_diagnostic_quality_gate_covers_taxonomy_and_machine_fixits() -> None:
         summary["machine_applicable_fixit_count"]
         >= contract["minimum_machine_applicable_fixit_count"]
     )
+    assert (
+        summary["recovery_diagnostic_count"]
+        >= contract["minimum_recovery_diagnostic_count"]
+    )
     assert summary["missing_required_fixit_codes"] == []
+    assert summary["missing_required_recovery_case_ids"] == []
+    assert summary["missing_required_recovery_phases"] == []
+    assert summary["checks"]["structured_recovery_payloads_valid"] is True
     assert summary["deterministic_digest"]

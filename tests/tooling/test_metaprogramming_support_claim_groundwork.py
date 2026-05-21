@@ -9,6 +9,10 @@ MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
 CATALOG_PATH = ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
 
 PROPERTY_BEHAVIOR_CLAIM = "objc3c.behavior.language.metaprogramming.property-behavior-semantics"
+DERIVE_EXPANSION_CLAIM = "objc3c.behavior.language.metaprogramming.derive-expansion-inventory"
+MACRO_SAFETY_CLAIM = (
+    "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+)
 HOST_CACHE_CLAIM = "objc3c.behavior.runtime.metaprogramming.host-cache-boundary"
 
 EXPECTED_CLAIMS = {
@@ -16,6 +20,7 @@ EXPECTED_CLAIMS = {
         "capability_id": "language.metaprogramming.property-behavior-semantics",
         "owner_phase": "sema",
         "behavior_fixture": "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+        "runnable_command": "npm run objc3c -- test-runtime-acceptance",
         "required_positive": {
             "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json",
             "tests/tooling/fixtures/metaprogramming_interop_closure/metaprogramming_runtime_semantic_model.json",
@@ -29,10 +34,64 @@ EXPECTED_CLAIMS = {
         },
         "required_codes": {"O3S326", "O3S327", "O3S328", "O3S330"},
     },
+    DERIVE_EXPANSION_CLAIM: {
+        "capability_id": "language.metaprogramming.derive-expansion-inventory",
+        "owner_phase": "sema",
+        "behavior_fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+        "runnable_command": "npm run objc3c -- validate-metaprogramming-conformance",
+        "required_positive": {
+            "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+            "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc",
+            "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+            "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_positive_cases.py",
+        },
+        "required_negative": {
+            "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+            "tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3",
+            "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+            "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_negative_cases.py",
+        },
+        "required_codes": {"O3S317", "O3S318", "O3S319"},
+    },
+    MACRO_SAFETY_CLAIM: {
+        "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+        "owner_phase": "sema",
+        "behavior_fixture": "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+        "runnable_command": "npm run objc3c -- validate-metaprogramming-conformance",
+        "required_positive": {
+            "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+            "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+            "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+            "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+            "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_cases.py",
+        },
+        "required_negative": {
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_orphan_metadata.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
+            "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
+            "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py",
+        },
+        "required_codes": {
+            "O3S320",
+            "O3S321",
+            "O3S322",
+            "O3S323",
+            "O3S324",
+            "O3S325",
+            "O3S331",
+            "O3S332",
+        },
+    },
     HOST_CACHE_CLAIM: {
         "capability_id": "runtime.metaprogramming.host-cache-boundary",
         "owner_phase": "runtime",
         "behavior_fixture": "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+        "runnable_command": "npm run objc3c -- test-runtime-acceptance",
         "required_positive": {
             "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
             "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
@@ -68,7 +127,7 @@ def test_metaprogramming_support_claims_are_manifest_backed() -> None:
         claim = claims[claim_id]
         assert claim["owner_phase"] == expected["owner_phase"]
         assert claim["behavior_fixture"] == expected["behavior_fixture"]
-        assert claim["executable_command"] == "npm run objc3c -- test-runtime-acceptance"
+        assert claim["executable_command"] == expected["runnable_command"]
 
         fixture = fixtures[expected["behavior_fixture"]]
         assert fixture["origin"] == "hand-authored"
@@ -84,6 +143,7 @@ def test_metaprogramming_runnable_evidence_catalog_rows_are_narrow() -> None:
     rows = {row["support_claim"]: row for row in catalog["rows"]}
 
     assert 8155 in catalog["issue_refs"]
+    assert 8168 in catalog["issue_refs"]
 
     for claim_id, expected in EXPECTED_CLAIMS.items():
         row = rows[claim_id]

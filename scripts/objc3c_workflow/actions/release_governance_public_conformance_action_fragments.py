@@ -10,6 +10,7 @@ from .release_governance_public_conformance_contracts import (
     PUBLIC_CONFORMANCE_INTEGRATION_SCRIPT,
     PUBLIC_CONFORMANCE_INTEGRATION_SUMMARY,
     PUBLIC_CONFORMANCE_PUBLIC_SUMMARY,
+    PUBLIC_CONFORMANCE_PUBLIC_SUITE_SUMMARY,
     PUBLIC_CONFORMANCE_PUBLISHED_ARTIFACT_PATHS,
     PUBLIC_CONFORMANCE_REPORT_SCRIPT,
     PUBLIC_CONFORMANCE_SCHEMA_CHECK_SCRIPT,
@@ -70,6 +71,7 @@ PUBLIC_CONFORMANCE_ACTION_FRAGMENTS: dict[str, PublicConformanceActionFragment] 
         report_paths=(PUBLIC_CONFORMANCE_SCORECARD_SUMMARY,),
         upstream_truth=(
             "tmp/reports/conformance/corpus-integration-summary.json",
+            PUBLIC_CONFORMANCE_PUBLIC_SUITE_SUMMARY,
             "tmp/reports/external-validation/integration-summary.json",
             "tmp/reports/external-validation/publication-summary.json",
         ),

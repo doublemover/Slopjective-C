@@ -21,6 +21,16 @@ MD_OUT = OUT_DIR / "diagnostic_quality_summary.md"
 DOC_CODE_RE = re.compile(r"^OBJC3-D-[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$")
 NATIVE_CODE_RE = re.compile(r"^O3[CLPSREAT][0-9]{3}$")
 ALLOWED_SEVERITIES = {"note", "warning", "error", "fatal"}
+ALLOWED_PHASES = {
+    "lex",
+    "parse",
+    "sema",
+    "lowering",
+    "post-pipeline",
+    "runtime",
+    "frontend-api",
+    "tooling",
+}
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
@@ -79,6 +89,56 @@ def valid_fixit(fixit: object) -> bool:
     )
 
 
+def valid_recovery_payload(
+    recovery: object,
+    *,
+    diagnostic_code: str,
+    failures: list[str],
+    failure_prefix: str,
+) -> bool:
+    if not isinstance(recovery, dict):
+        failures.append(f"{failure_prefix}: missing structured recovery payload")
+        return False
+
+    ok = True
+    for field in ("strategy", "boundary"):
+        if not isinstance(recovery.get(field), str) or not recovery[field].strip():
+            failures.append(f"{failure_prefix}: recovery.{field} must be non-empty")
+            ok = False
+
+    if recovery.get("deterministic") is not True:
+        failures.append(f"{failure_prefix}: recovery.deterministic must be true")
+        ok = False
+    if recovery.get("accepts_invalid_program") is not False:
+        failures.append(f"{failure_prefix}: recovery must not accept invalid programs")
+        ok = False
+    if recovery.get("recovery_counts_as_success") is not False:
+        failures.append(f"{failure_prefix}: recovery_counts_as_success must stay false")
+        ok = False
+
+    expected_native_code = recovery.get("expected_native_code")
+    if expected_native_code is not None:
+        if not valid_code(expected_native_code):
+            failures.append(f"{failure_prefix}: expected_native_code is invalid")
+            ok = False
+        elif expected_native_code != diagnostic_code:
+            failures.append(
+                f"{failure_prefix}: expected_native_code does not match diagnostic code"
+            )
+            ok = False
+
+    native_fixture = recovery.get("native_fixture")
+    if native_fixture is not None:
+        if not isinstance(native_fixture, str) or not native_fixture.strip():
+            failures.append(f"{failure_prefix}: native_fixture must be non-empty")
+            ok = False
+        elif not (ROOT / native_fixture).is_file():
+            failures.append(f"{failure_prefix}: native_fixture does not exist")
+            ok = False
+
+    return ok
+
+
 def manifest_files(manifest: dict[str, Any]) -> list[str]:
     files: list[str] = []
     seen: set[str] = set()
@@ -115,7 +175,17 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
     non_diagnostic_case_count = 0
     missing_files: list[str] = []
     required_fixit_codes = set(str(code) for code in contract["required_fixit_codes"])
+    required_recovery_case_ids = set(
+        str(case_id) for case_id in contract.get("required_recovery_case_ids", [])
+    )
+    required_recovery_phases = set(
+        str(phase) for phase in contract.get("required_recovery_phases", [])
+    )
     observed_fixit_codes: set[str] = set()
+    observed_recovery_case_ids: set[str] = set()
+    observed_recovery_phases: set[str] = set()
+    recovery_diagnostic_count = 0
+    native_recovery_fixture_count = 0
 
     for file_name in files:
         case_path = diagnostic_root / file_name
@@ -134,6 +204,10 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             message = diagnostic.get("message")
             span = diagnostic.get("span")
             fixits = diagnostic.get("fixits", [])
+            phase = diagnostic.get("phase")
+            category = diagnostic.get("category")
+            explanation = diagnostic.get("explanation")
+            recovery = diagnostic.get("recovery")
             valid_fixits = [fixit for fixit in fixits if valid_fixit(fixit)] if isinstance(fixits, list) else []
             entry_ok = (
                 valid_code(code)
@@ -154,6 +228,36 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
                 observed_fixit_codes.add(code_text)
             if not entry_ok:
                 failures.append(f"{file_name}#{index}: malformed diagnostic payload")
+            requires_recovery_payload = (
+                case_id in required_recovery_case_ids or recovery is not None
+            )
+            recovery_ok = True
+            if requires_recovery_payload:
+                recovery_diagnostic_count += 1
+                observed_recovery_case_ids.add(case_id)
+                if isinstance(phase, str):
+                    observed_recovery_phases.add(phase)
+                recovery_prefix = f"{file_name}#{index}"
+                if not isinstance(phase, str) or phase not in ALLOWED_PHASES:
+                    failures.append(f"{recovery_prefix}: phase is invalid")
+                    recovery_ok = False
+                if not isinstance(category, str) or not category.strip():
+                    failures.append(f"{recovery_prefix}: category is required")
+                    recovery_ok = False
+                if not isinstance(explanation, str) or not explanation.strip():
+                    failures.append(f"{recovery_prefix}: explanation is required")
+                    recovery_ok = False
+                if not valid_recovery_payload(
+                    recovery,
+                    diagnostic_code=code_text,
+                    failures=failures,
+                    failure_prefix=recovery_prefix,
+                ):
+                    recovery_ok = False
+                if isinstance(recovery, dict) and isinstance(
+                    recovery.get("native_fixture"), str
+                ):
+                    native_recovery_fixture_count += 1
             entries.append(
                 {
                     "case_id": case_id,
@@ -164,11 +268,21 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
                     "family": family,
                     "fixit_count": len(fixits) if isinstance(fixits, list) else 0,
                     "machine_applicable_fixit_count": len(valid_fixits),
+                    "phase": phase if isinstance(phase, str) else "",
+                    "category": category if isinstance(category, str) else "",
+                    "has_recovery": recovery is not None,
+                    "recovery_ok": recovery_ok,
                     "ok": entry_ok,
                 }
             )
 
     missing_required_fixit_codes = sorted(required_fixit_codes - observed_fixit_codes)
+    missing_required_recovery_case_ids = sorted(
+        required_recovery_case_ids - observed_recovery_case_ids
+    )
+    missing_required_recovery_phases = sorted(
+        required_recovery_phases - observed_recovery_phases
+    )
     if missing_files:
         failures.extend(f"missing diagnostic fixture: {file_name}" for file_name in missing_files)
     if missing_required_fixit_codes:
@@ -176,9 +290,22 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
             "missing required machine-applicable fix-it code(s): "
             + ", ".join(missing_required_fixit_codes)
         )
+    if missing_required_recovery_case_ids:
+        failures.append(
+            "missing required recovery diagnostic case(s): "
+            + ", ".join(missing_required_recovery_case_ids)
+        )
+    if missing_required_recovery_phases:
+        failures.append(
+            "missing required recovery diagnostic phase(s): "
+            + ", ".join(missing_required_recovery_phases)
+        )
 
     min_diagnostic_count = int(contract["minimum_diagnostic_count"])
     min_fixit_count = int(contract["minimum_machine_applicable_fixit_count"])
+    min_recovery_diagnostic_count = int(
+        contract.get("minimum_recovery_diagnostic_count", 0)
+    )
     if len(entries) < min_diagnostic_count:
         failures.append(
             f"diagnostic entry count {len(entries)} below required {min_diagnostic_count}"
@@ -187,6 +314,11 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         failures.append(
             "machine-applicable fix-it count "
             f"{machine_applicable_fixit_count} below required {min_fixit_count}"
+        )
+    if recovery_diagnostic_count < min_recovery_diagnostic_count:
+        failures.append(
+            "recovery diagnostic count "
+            f"{recovery_diagnostic_count} below required {min_recovery_diagnostic_count}"
         )
 
     digest_input = {
@@ -202,6 +334,12 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "minimum_diagnostic_count_met": len(entries) >= min_diagnostic_count,
         "minimum_machine_applicable_fixit_count_met": machine_applicable_fixit_count >= min_fixit_count,
         "required_fixit_codes_present": not missing_required_fixit_codes,
+        "minimum_recovery_diagnostic_count_met": recovery_diagnostic_count >= min_recovery_diagnostic_count,
+        "required_recovery_case_ids_present": not missing_required_recovery_case_ids,
+        "required_recovery_phases_present": not missing_required_recovery_phases,
+        "structured_recovery_payloads_valid": not any(
+            entry["has_recovery"] and not entry["recovery_ok"] for entry in entries
+        ),
         "deterministic_digest_ready": bool(deterministic_digest),
     }
     return {
@@ -215,8 +353,14 @@ def build_diagnostic_quality_summary(contract: dict[str, Any]) -> dict[str, Any]
         "code_families": dict(sorted(code_families.items())),
         "fixit_count": fixit_count,
         "machine_applicable_fixit_count": machine_applicable_fixit_count,
+        "recovery_diagnostic_count": recovery_diagnostic_count,
+        "native_recovery_fixture_count": native_recovery_fixture_count,
         "required_fixit_codes": sorted(required_fixit_codes),
         "missing_required_fixit_codes": missing_required_fixit_codes,
+        "required_recovery_case_ids": sorted(required_recovery_case_ids),
+        "missing_required_recovery_case_ids": missing_required_recovery_case_ids,
+        "required_recovery_phases": sorted(required_recovery_phases),
+        "missing_required_recovery_phases": missing_required_recovery_phases,
         "deterministic_digest": deterministic_digest,
         "checks": checks,
         "failures": failures,
@@ -237,6 +381,7 @@ def main() -> int:
         f"- Diagnostic entries: `{summary['diagnostic_entry_count']}`\n"
         f"- Code families: `{summary['code_family_count']}`\n"
         f"- Machine-applicable fix-its: `{summary['machine_applicable_fixit_count']}`\n"
+        f"- Recovery diagnostics: `{summary['recovery_diagnostic_count']}`\n"
         f"- Status: `{summary['status']}`\n",
         encoding="utf-8",
     )

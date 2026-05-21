@@ -12,6 +12,7 @@ from .contracts import (
     EXPECTED_PRIMARY_BUCKETS,
     EXPECTED_WORKFLOW_SURFACE,
     LONGITUDINAL_CONTRACT_ID,
+    PUBLIC_SUITE_MANIFEST,
     SURFACE_FIELDS,
     SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
     SurfaceValidationError,
@@ -76,6 +77,10 @@ class ConformanceCorpusSurfaceModel:
         self.paths.require_path(
             SUPPORT_CLAIM_RUNNABLE_EVIDENCE_CATALOG,
             kind="support claim runnable evidence catalog",
+        )
+        self.paths.require_path(
+            PUBLIC_SUITE_MANIFEST,
+            kind="public suite manifest",
         )
         self.paths.require_path(
             "tests/conformance/longitudinal_suites.json",
@@ -163,6 +168,11 @@ class ConformanceCorpusSurfaceModel:
             != "tmp/reports/conformance/runnable-claim-trace-summary.json"
         ):
             raise SurfaceValidationError("artifact_surface.support_claim_traceability_summary drifted")
+        if (
+            artifact_surface.get("public_suite_summary")
+            != "tmp/reports/conformance/public-suite-summary.json"
+        ):
+            raise SurfaceValidationError("artifact_surface.public_suite_summary drifted")
 
         workflow_surface = surface.get("workflow_surface")
         if workflow_surface != EXPECTED_WORKFLOW_SURFACE:

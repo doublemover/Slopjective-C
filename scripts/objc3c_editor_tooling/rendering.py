@@ -24,6 +24,7 @@ def render_editor_surface(
         "diagnostics": diagnostics_summary(inputs),
         "language_server": model.language_server,
         "navigation": model.navigation,
+        "artifact_inspector": model.artifact_inspector,
         "formatter": model.formatter,
         "debug": model.debug,
     }

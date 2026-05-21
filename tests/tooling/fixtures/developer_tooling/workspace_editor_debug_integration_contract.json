@@ -20,6 +20,7 @@
     "language_server_capabilities_path",
     "navigation_path",
     "workspace_index_path",
+    "artifact_inspector_path",
     "workspace_index_digest",
     "workspace_package_count",
     "cross_package_edge_count",
@@ -30,12 +31,16 @@
     "format_preview_supported",
     "debugger_model",
     "declaration_breakpoint_anchor_count",
-    "statement_level_stepping"
+    "statement_level_stepping",
+    "artifact_inspector_supported",
+    "artifact_inspector_contract_id",
+    "artifact_inspector_kinds"
   ],
   "required_workspace_drill_commands": [
     "inspect_editor_tooling",
     "format_preview",
     "workspace_navigation_index",
+    "artifact_inspector",
     "object_symbol_inventory"
   ],
   "minimum_workspace_package_count": 9,

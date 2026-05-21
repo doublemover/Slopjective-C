@@ -1,0 +1,252 @@
+{
+  "contract_id": "objc3c.metaprogramming.public.macro.surface.contract.v1",
+  "schema_version": 1,
+  "issue_ref": 8168,
+  "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+  "runner_path": "scripts/check_objc3c_metaprogramming_public_surface.py",
+  "source_truth": "checked-in native fixtures, semantic contract sources, trust registry JSON, and runnable metaprogramming acceptance wiring",
+  "support_claims": [
+    {
+      "claim_id": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+      "runnable_command": "npm run objc3c -- validate-metaprogramming-conformance",
+      "runtime_acceptance_case": "metaprogramming-derive-property-behavior-semantics",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+        "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+        "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_positive_cases.py",
+        "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+        "tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3",
+        "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_negative_cases.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3S317",
+        "O3S318",
+        "O3S319"
+      ]
+    },
+    {
+      "claim_id": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+      "runnable_command": "npm run objc3c -- validate-metaprogramming-conformance",
+      "runtime_acceptance_case": "metaprogramming-macro-safety-cache-diagnostics",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+        "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+        "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+        "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_cases.py",
+        "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_orphan_metadata.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3S320",
+        "O3S321",
+        "O3S322",
+        "O3S323",
+        "O3S324",
+        "O3S325",
+        "O3S331",
+        "O3S332"
+      ]
+    },
+    {
+      "claim_id": "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
+      "capability_id": "language.metaprogramming.property-behavior-semantics",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance",
+      "runtime_acceptance_case": "metaprogramming-derive-property-behavior-semantics",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+        "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json",
+        "tests/tooling/fixtures/metaprogramming_interop_closure/metaprogramming_runtime_semantic_model.json"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3",
+        "tests/tooling/fixtures/native/property_behavior_legality_negative_nonobject.objc3",
+        "tests/tooling/fixtures/native/property_behavior_legality_negative_protocol_observed.objc3",
+        "tests/tooling/fixtures/native/property_behavior_legality_negative_projected_writable.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S326",
+        "O3S327",
+        "O3S328",
+        "O3S330"
+      ]
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.metaprogramming.host-cache-boundary",
+      "capability_id": "runtime.metaprogramming.host-cache-boundary",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance",
+      "runtime_acceptance_case": "live-metaprogramming-cache-runtime-integration",
+      "required_positive_evidence": [
+        "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+        "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+        "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+        "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
+      ],
+      "required_negative_evidence": [
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_cache_key.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_sandbox_policy.objc3",
+        "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S331",
+        "O3S332",
+        "O3S322"
+      ]
+    }
+  ],
+  "derive_surface": {
+    "positive_fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+    "supported_forms": [
+      {
+        "name": "Equality",
+        "aliases": [
+          "Equatable"
+        ],
+        "selector": "isEqual:"
+      },
+      {
+        "name": "Hash",
+        "aliases": [],
+        "selector": "hash"
+      },
+      {
+        "name": "DebugDescription",
+        "aliases": [],
+        "selector": "debugDescription"
+      }
+    ],
+    "expected_negative_cases": [
+      {
+        "key": "unsupported_derive",
+        "fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+        "code": "O3S317",
+        "message": "unsupported derive"
+      },
+      {
+        "key": "category_derive",
+        "fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3",
+        "code": "O3S318",
+        "message": "derive expansion is only supported on primary interfaces"
+      },
+      {
+        "key": "selector_conflict",
+        "fixture": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+        "code": "O3S319",
+        "message": "derive expansion selector conflict"
+      }
+    ]
+  },
+  "property_behavior_surface": {
+    "positive_fixture": "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+    "supported_behaviors": [
+      "Observed",
+      "Projected"
+    ],
+    "expected_negative_cases": [
+      {
+        "key": "unsupported_behavior",
+        "fixture": "tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3",
+        "code": "O3S326",
+        "message": "unsupported property behavior"
+      },
+      {
+        "key": "nonobject_behavior",
+        "fixture": "tests/tooling/fixtures/native/property_behavior_legality_negative_nonobject.objc3",
+        "code": "O3S327",
+        "message": "requires an Objective-C object property"
+      },
+      {
+        "key": "protocol_observed",
+        "fixture": "tests/tooling/fixtures/native/property_behavior_legality_negative_protocol_observed.objc3",
+        "code": "O3S328",
+        "message": "requires a concrete interface or implementation property"
+      },
+      {
+        "key": "projected_writable",
+        "fixture": "tests/tooling/fixtures/native/property_behavior_legality_negative_projected_writable.objc3",
+        "code": "O3S330",
+        "message": "requires a readonly getter-only property"
+      }
+    ]
+  },
+  "macro_safety_surface": {
+    "positive_fixture_paths": [
+      "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+      "tests/tooling/fixtures/native/macro_package_provenance_positive.objc3",
+      "tests/tooling/fixtures/native/macro_host_process_provider.objc3"
+    ],
+    "required_attributes": [
+      "objc_macro",
+      "objc_macro_package",
+      "objc_macro_provenance",
+      "objc_macro_cache_key",
+      "objc_macro_sandbox"
+    ],
+    "trusted_packages": [
+      "std.metaprogramming",
+      "std.metaprogramming.trace"
+    ],
+    "allowed_macro_names": [
+      "Trace"
+    ],
+    "allowed_sandbox_policies": [
+      "deterministic"
+    ],
+    "expected_denial_case_ids": [
+      "unknown-package-denied",
+      "revoked-provenance-denied",
+      "unsigned-provenance-denied",
+      "sandbox-network-denied",
+      "untrusted-signer-denied",
+      "missing-replay-metadata-denied"
+    ]
+  },
+  "source_contract_paths": [
+    "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+    "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+    "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_positive_cases.py",
+    "scripts/objc3c_runtime_acceptance/domains/metaprogramming_derive_property_negative_cases.py",
+    "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_cases.py",
+    "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
+  ],
+  "lead_owned_support_rows": [
+    "language.metaprogramming.derive-expansion-inventory",
+    "language.metaprogramming.macro-safety-sandbox-determinism"
+  ],
+  "non_claims": [
+    "no arbitrary host process execution",
+    "no network access from macro expansion",
+    "no source compatibility with third-party macro ecosystems",
+    "no property-behavior runtime hook materialization beyond checked runtime boundary evidence",
+    "no compatibility shim or fallback macro path"
+  ]
+}

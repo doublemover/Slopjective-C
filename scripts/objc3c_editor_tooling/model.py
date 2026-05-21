@@ -6,6 +6,7 @@ from typing import Any
 from format_objc3c_source import build_format_summary_for_source
 from objc3c_tooling.paths import display_path
 
+from objc3c_editor_tooling.artifact_inspector import build_artifact_inspector_payload
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
 from objc3c_editor_tooling.validation import diagnostics_entries
@@ -20,6 +21,7 @@ class EditorToolingModel:
     language_server: dict[str, Any]
     navigation: dict[str, Any]
     workspace_index: dict[str, Any]
+    artifact_inspector: dict[str, Any]
     formatter: dict[str, Any]
     formatted_source_text: str
     debug: dict[str, Any]
@@ -264,6 +266,12 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             workspace_index,
         ),
         workspace_index=workspace_index,
+        artifact_inspector=build_artifact_inspector_payload(
+            paths,
+            inputs,
+            symbols,
+            workspace_index,
+        ),
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(inputs.summary, inputs.object_path_text, symbols),

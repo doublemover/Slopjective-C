@@ -47,7 +47,13 @@
       "task-group-scope",
       "cancellation-observation",
       "executor-hop",
-      "actor-mailbox"
+      "actor-mailbox",
+      "public-task-spawn",
+      "public-task-join",
+      "public-task-group",
+      "public-cancellation",
+      "public-executor-hop",
+      "public-actor-mailbox"
     ],
     "objc3.system": [
       "resource-cleanup",
@@ -100,14 +106,23 @@
     ],
     "objc3.concurrency": [
       "objc3_concurrency_spawn_token",
+      "objc3_task_spawn",
       "objc3_concurrency_child_spawn_token",
+      "objc3_task_spawn_child",
       "objc3_concurrency_detached_spawn_token",
+      "objc3_task_spawn_detached",
       "objc3_concurrency_join_status",
+      "objc3_task_join",
       "objc3_concurrency_task_group_scope_depth",
+      "objc3_task_group_run_two",
       "objc3_concurrency_cancellation_query",
+      "objc3_task_is_cancelled",
       "objc3_concurrency_cancellation_checkpoint",
+      "objc3_task_cancel_if_needed",
       "objc3_concurrency_executor_hop_token",
-      "objc3_concurrency_actor_mailbox_token"
+      "objc3_executor_hop",
+      "objc3_concurrency_actor_mailbox_token",
+      "objc3_actor_mailbox_send_and_drain"
     ],
     "objc3.system": [
       "objc3_system_resource_token",

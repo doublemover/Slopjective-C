@@ -34,6 +34,13 @@ EXPECTED_SCHEMAS = (
         "objc3-conformance-dashboard-status/v1",
     ),
     (
+        "public_suite_schema",
+        "objc3c-public-conformance-suite-v1",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-suite-v1.schema.json",
+        "contract_id",
+        "objc3c.public_conformance_suite.manifest.v1",
+    ),
+    (
         "public_scorecard_schema",
         "objc3c-public-conformance-scorecard-v1",
         "https://objc3c.dev/schemas/objc3c-public-conformance-scorecard-v1.schema.json",
@@ -108,6 +115,7 @@ def main() -> int:
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "dashboard_status_schema": schema_refs["dashboard_status_schema"],
+        "public_suite_schema": schema_refs["public_suite_schema"],
         "public_scorecard_schema": schema_refs["public_scorecard_schema"],
         "public_summary_schema": schema_refs["public_summary_schema"],
         "schemas": checked_paths,

@@ -1,0 +1,13 @@
+module DeriveExpansionCategoryRejected;
+
+@interface CategoryWidget
+@property (strong) id value;
+@end
+
+@implementation CategoryWidget
+@end
+
+__attribute__((objc_derive(named("Equality"))))
+@interface CategoryWidget (Derived)
+@property (strong) id value;
+@end

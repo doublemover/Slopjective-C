@@ -13,6 +13,7 @@
     "tmp/reports/developer-tooling/editor-surface/language-server-capabilities.json",
     "tmp/reports/developer-tooling/editor-surface/navigation-index.json",
     "tmp/reports/developer-tooling/editor-surface/workspace-index.json",
+    "tmp/reports/developer-tooling/editor-surface/artifact-inspector.json",
     "tmp/reports/developer-tooling/editor-surface/formatter-output.json",
     "tmp/reports/developer-tooling/editor-surface/debug-map.json"
   ],
@@ -27,6 +28,7 @@
     "language_server",
     "navigation",
     "workspace_index",
+    "artifact_inspector",
     "formatter",
     "debug"
   ],
@@ -34,7 +36,9 @@
     "summary",
     "diagnostics",
     "manifest",
+    "ir",
     "object",
+    "runtime_metadata_binary",
     "runtime-inspector"
   ],
   "claim_narrowing_constraints": [

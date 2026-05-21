@@ -24,6 +24,9 @@ def build_playground_workspace_payload(
     formatter_payload = _object_payload(editor_surface_payload.get("formatter"))
     debug_payload = _object_payload(editor_surface_payload.get("debug"))
     navigation_payload = _object_payload(editor_surface_payload.get("navigation"))
+    artifact_inspector_payload = _object_payload(
+        editor_surface_payload.get("artifact_inspector")
+    )
     workspace_index_payload = _object_payload(navigation_payload.get("workspace_index"))
 
     return {
@@ -78,10 +81,25 @@ def build_playground_workspace_payload(
                 0,
             ),
             "statement_level_stepping": debug_payload.get("statement_level_stepping"),
+            "artifact_inspector_supported": artifact_inspector_payload.get(
+                "supported"
+            ),
+            "artifact_inspector_contract_id": artifact_inspector_payload.get(
+                "contract_id",
+                "",
+            ),
+            "artifact_inspector_kinds": artifact_inspector_payload.get(
+                "inspected_artifact_kinds",
+                [],
+            ),
         },
         "workspace_drill_commands": workspace_drill_commands(
             invocation.source_display,
             debug_payload,
             workspace_index_path=published_paths.get("workspace_index_path", ""),
+            artifact_inspector_path=published_paths.get(
+                "artifact_inspector_path",
+                "",
+            ),
         ),
     }

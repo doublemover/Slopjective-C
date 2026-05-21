@@ -18,7 +18,13 @@
       "task-group-scope",
       "cancellation-observation",
       "executor-hop",
-      "actor-mailbox"
+      "actor-mailbox",
+      "public-task-spawn",
+      "public-task-join",
+      "public-task-group",
+      "public-cancellation",
+      "public-executor-hop",
+      "public-actor-mailbox"
     ],
     "objc3.keypath": [
       "typed-keypath-application",

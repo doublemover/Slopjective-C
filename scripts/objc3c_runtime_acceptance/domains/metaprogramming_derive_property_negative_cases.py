@@ -21,6 +21,26 @@ NEGATIVE_DERIVE_PROPERTY_FIXTURES = {
         "O3S317",
         "unsupported derive 'Networked'",
     ),
+    "category_derive": (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "derive_expansion_inventory_negative_category.objc3",
+        "O3S318",
+        "derive expansion is only supported on primary interfaces",
+    ),
+    "selector_conflict": (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "derive_expansion_inventory_negative_selector_conflict.objc3",
+        "O3S319",
+        "derive expansion selector conflict",
+    ),
     "unsupported_behavior": (
         ROOT
         / "tests"

@@ -10,6 +10,7 @@
     "diagnostics",
     "language_server",
     "navigation",
+    "artifact_inspector",
     "formatter",
     "debug"
   ],
@@ -45,6 +46,7 @@
     },
     "language_server": {"type": "object"},
     "navigation": {"type": "object"},
+    "artifact_inspector": {"type": "object"},
     "formatter": {"type": "object"},
     "debug": {"type": "object"}
   },

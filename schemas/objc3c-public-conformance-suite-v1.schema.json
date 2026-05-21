@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-public-conformance-suite-v1.schema.json",
+  "title": "ObjC 3 Public Conformance Suite Manifest (v1)",
+  "description": "Checked-in manifest for the stable public conformance suite taxonomy, package surface, replay commands, and fixture evidence.",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-public-conformance-suite-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.public_conformance_suite.manifest.v1",
+    "registry_owner": "scripts/objc3c_shared/schema_registry.py",
+    "artifact_family": "public-conformance"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "suite_id",
+    "suite_version",
+    "public_status",
+    "source_truth",
+    "package_surface",
+    "phase_taxonomy",
+    "public_profiles",
+    "suite_cases",
+    "strict_rejection_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.public_conformance_suite.manifest.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "suite_id": {
+      "type": "string",
+      "pattern": "^objc3-public-conformance-suite$"
+    },
+    "suite_version": {
+      "type": "string",
+      "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[A-Za-z0-9._-]+$"
+    },
+    "public_status": {
+      "type": "string",
+      "enum": [
+        "stable"
+      ]
+    },
+    "source_truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_surface",
+        "support_claim_runnable_evidence_catalog",
+        "capability_matrix",
+        "evidence_map",
+        "generated_report_boundary",
+        "tmp_source_truth_allowed"
+      ],
+      "properties": {
+        "corpus_surface": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "support_claim_runnable_evidence_catalog": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "capability_matrix": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "evidence_map": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "generated_report_boundary": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "tmp_source_truth_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "package_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_root",
+        "report_root",
+        "package_stage_root",
+        "public_command_prefix",
+        "offline_compatible"
+      ],
+      "properties": {
+        "artifact_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "report_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "package_stage_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "public_command_prefix": {
+          "type": "string",
+          "const": "npm run objc3c -- "
+        },
+        "offline_compatible": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "phase_taxonomy": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phase_id",
+          "title",
+          "source_manifest",
+          "required_for_release_candidate"
+        ],
+        "properties": {
+          "phase_id": {
+            "$ref": "#/$defs/phaseId"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3
+          },
+          "source_manifest": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "required_for_release_candidate": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "public_profiles": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "title",
+          "required_phase_ids",
+          "default_command",
+          "platform_requirements"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3
+          },
+          "required_phase_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/phaseId"
+            }
+          },
+          "default_command": {
+            "$ref": "#/$defs/publicCommand"
+          },
+          "platform_requirements": {
+            "$ref": "#/$defs/platformRequirements"
+          }
+        }
+      }
+    },
+    "suite_cases": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "phase",
+          "feature_id",
+          "capability_id",
+          "support_claim",
+          "expectation",
+          "profile_ids",
+          "source_manifest",
+          "conformance_fixture",
+          "traceability_fixture",
+          "runnable_command",
+          "platform_requirements",
+          "packaging_class",
+          "release_gate",
+          "positive_evidence",
+          "negative_evidence",
+          "source_truth_requirements"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "pattern": "^public\\.[a-z0-9.-]+$"
+          },
+          "phase": {
+            "$ref": "#/$defs/phaseId"
+          },
+          "feature_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "support_claim": {
+            "type": "string",
+            "pattern": "^objc3c\\.behavior\\.[a-z0-9.-]+$"
+          },
+          "expectation": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "strict-error",
+              "canonical-rejection",
+              "reserved"
+            ]
+          },
+          "profile_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "source_manifest": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "conformance_fixture": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "traceability_fixture": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "runnable_command": {
+            "$ref": "#/$defs/publicCommand"
+          },
+          "platform_requirements": {
+            "$ref": "#/$defs/platformRequirements"
+          },
+          "packaging_class": {
+            "type": "string",
+            "enum": [
+              "public-stable"
+            ]
+          },
+          "release_gate": {
+            "type": "boolean"
+          },
+          "positive_evidence": {
+            "$ref": "#/$defs/evidencePaths"
+          },
+          "negative_evidence": {
+            "$ref": "#/$defs/evidencePaths"
+          },
+          "source_truth_requirements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 8
+            }
+          }
+        }
+      }
+    },
+    "strict_rejection_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compatibility_mode_allowed",
+        "fallback_gate_allowed",
+        "unsupported_claim_promotion_allowed",
+        "tmp_artifact_support_allowed",
+        "forbidden_claim_patterns",
+        "fail_closed_states"
+      ],
+      "properties": {
+        "compatibility_mode_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "fallback_gate_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "unsupported_claim_promotion_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "forbidden_claim_patterns": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "fail_closed_states": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "strict-error",
+              "canonical-rejection",
+              "reserved",
+              "blocked",
+              "quarantined",
+              "unsupported"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "phaseId": {
+      "type": "string",
+      "enum": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "stdlib",
+        "package",
+        "release_candidate"
+      ]
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [A-Za-z0-9:_\\- ]+$"
+    },
+    "platformRequirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "repo-python",
+          "node-npm",
+          "native-toolchain",
+          "windows",
+          "linux",
+          "macos"
+        ]
+      }
+    },
+    "evidencePaths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/repoPath"
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "contract_id": "objc3c.developer.tooling.artifact.inspector.implementation.contract.v1",
+  "surface_kind": "developer-tooling-artifact-inspector-implementation-contract",
+  "summary_implementation_anchor": "scripts/objc3c_editor_tooling/artifact_inspector.py",
+  "public_action": "inspect-editor-tooling",
+  "source_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+  "summary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
+  "diagnostics_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json",
+  "manifest_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json",
+  "ir_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll",
+  "runtime_metadata_binary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/runtime-metadata.bin",
+  "expected_inspected_artifact_kinds": [
+    "diagnostics",
+    "ir",
+    "manifest",
+    "runtime_metadata_binary",
+    "summary"
+  ],
+  "expected_unsupported_artifact_kinds": [
+    "object"
+  ],
+  "expected_symbol_names": [
+    "globalCounter",
+    "ArtifactWidget",
+    "ArtifactWidget",
+    "main"
+  ],
+  "expected_diagnostic_codes": [
+    "O3T200"
+  ],
+  "expected_inspection_command_keys": [
+    "diagnostics",
+    "ir",
+    "manifest",
+    "summary"
+  ],
+  "required_runtime_import_symbols": [
+    "objc3_runtime_bootstrap"
+  ]
+}

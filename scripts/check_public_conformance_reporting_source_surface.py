@@ -35,6 +35,7 @@ EXPECTED_ROOTS = [
 ]
 EXPECTED_FAMILY_IDS = [
     "upstream-conformance-evidence",
+    "public-stable-suite-manifest",
     "external-credibility-evidence",
     "public-reporting-schema-anchors",
 ]

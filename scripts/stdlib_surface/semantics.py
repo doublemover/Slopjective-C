@@ -94,8 +94,32 @@ def validate_semantic_policy(
         "routes cancellation checkpoints through objc3_runtime_cancel_task_group_i32 when flagged and objc3_runtime_task_is_cancelled_i32 otherwise"
     ):
         return "semantic policy cancellation_checkpoint drifted", None
+    if concurrency_semantics.get("public_task_spawn_api") != (
+        "objc3_task_spawn, objc3_task_spawn_child, and objc3_task_spawn_detached are stable public aliases over the structured and detached runtime task spawn helpers"
+    ):
+        return "semantic policy public_task_spawn_api drifted", None
+    if concurrency_semantics.get("public_task_join_api") != (
+        "objc3_task_join routes non-cancelled public task joins through objc3_concurrency_join_status and preserves explicit result and executor-tag operands"
+    ):
+        return "semantic policy public_task_join_api drifted", None
+    if concurrency_semantics.get("public_task_group_api") != (
+        "objc3_task_group_run_two enters a task-group scope, adds two child tasks, and drains them through objc3_concurrency_task_group_scope_depth"
+    ):
+        return "semantic policy public_task_group_api drifted", None
+    if concurrency_semantics.get("public_cancellation_api") != (
+        "objc3_task_is_cancelled and objc3_task_cancel_if_needed expose cancellation observation and cancellation checkpoints without widening scheduler policy claims"
+    ):
+        return "semantic policy public_cancellation_api drifted", None
+    if concurrency_semantics.get("public_executor_api") != (
+        "objc3_executor_hop is the public executor-hop entrypoint over objc3_concurrency_executor_hop_token with distinct value and executor-tag operands"
+    ):
+        return "semantic policy public_executor_api drifted", None
+    if concurrency_semantics.get("public_actor_mailbox_api") != (
+        "objc3_actor_mailbox_send_and_drain binds, enqueues, and drains a single actor mailbox message through objc3_concurrency_actor_mailbox_token"
+    ):
+        return "semantic policy public_actor_mailbox_api drifted", None
     if concurrency_semantics.get("family_growth_rule") != (
-        "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop and actor-mailbox helpers may grow additively inside objc3.concurrency"
+        "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop actor-mailbox public-task-spawn public-task-join public-task-group public-cancellation public-executor-hop and public-actor-mailbox helpers may grow additively inside objc3.concurrency"
     ):
         return "semantic policy concurrency family_growth_rule drifted", None
     if concurrency_semantics.get("layering_rule") != (

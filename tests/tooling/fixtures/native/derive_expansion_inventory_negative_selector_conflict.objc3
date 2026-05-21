@@ -1,0 +1,13 @@
+module DeriveExpansionSelectorConflict;
+
+__attribute__((objc_derive(named("Hash"))))
+@interface HashConflictWidget
+- (i32)hash;
+@property (strong) id value;
+@end
+
+@implementation HashConflictWidget
+- (i32)hash {
+  return 7;
+}
+@end

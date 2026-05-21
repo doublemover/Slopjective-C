@@ -1188,6 +1188,214 @@
       "path": "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
     },
     {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "command": "npm run objc3c -- test-execution-replay"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+      "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.json"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/module.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "source",
+      "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    {
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "evidence_kind": "source",
+      "path": "stdlib/semantic_policy.json"
+    },
+    {
       "capability_id": "language.ownership.memory-model",
       "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "evidence_kind": "test",
@@ -1500,6 +1708,100 @@
       "support_claim": "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
       "evidence_kind": "source",
       "path": "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_metaprogramming_public_surface.py"
+    },
+    {
+      "capability_id": "language.metaprogramming.derive-expansion-inventory",
+      "support_claim": "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+      "command": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
+    },
+    {
+      "capability_id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "support_claim": "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py"
     },
     {
       "capability_id": "runtime.metaprogramming.host-cache-boundary",
@@ -2041,6 +2343,98 @@
       "capability_id": "support.hard-cutover-capability-truth",
       "evidence_kind": "doc",
       "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "test",
+      "path": "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "test",
+      "path": "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp"
+    },
+    {
+      "capability_id": "diagnostics.parser-sema.recovery-fixits",
+      "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+      "evidence_kind": "source",
+      "path": "tests/conformance/diagnostics/manifest.json"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+      "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json",
+      "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+      "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/conformance/public_suite_manifest.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "schemas/objc3c-public-conformance-suite-v1.schema.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "source",
+      "path": "tests/conformance/corpus_surface.json"
     }
   ]
 }

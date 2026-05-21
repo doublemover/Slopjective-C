@@ -21,6 +21,7 @@ POLICY_PATH = (
     / "stability_policy.json"
 )
 CORPUS_INTEGRATION_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-integration-summary.json"
+PUBLIC_SUITE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "conformance" / "public-suite-summary.json"
 EXTERNAL_INTEGRATION_PATH = ROOT / "tmp" / "reports" / "external-validation" / "integration-summary.json"
 EXTERNAL_PUBLICATION_PATH = ROOT / "tmp" / "reports" / "external-validation" / "publication-summary.json"
 OUTPUT_PATH = ROOT / "tmp" / "reports" / "public-conformance" / "scorecard-summary.json"
@@ -28,6 +29,8 @@ SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.scorecard.summary.v1"
 SCHEMA_ANCHORS = [
     "schemas/objc3-conformance-dashboard-status-v1.schema.json",
     "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
+    "schemas/objc3c-public-conformance-suite-v1.schema.json",
+    "scripts/check_objc3c_public_conformance_suite_manifest.py",
     "scripts/check_release_evidence.py",
 ]
 
@@ -56,6 +59,7 @@ def main() -> int:
     try:
         policy = require_json(POLICY_PATH, kind="stability policy")
         corpus = require_json(CORPUS_INTEGRATION_PATH, kind="corpus integration summary")
+        public_suite = require_json(PUBLIC_SUITE_SUMMARY_PATH, kind="public suite summary")
         external_integration = require_json(
             EXTERNAL_INTEGRATION_PATH,
             kind="external validation integration summary",
@@ -83,9 +87,13 @@ def main() -> int:
     score = 0
 
     corpus_pass = corpus.get("status") == "PASS"
+    public_suite_pass = public_suite.get("status") == "PASS"
     external_integration_pass = external_integration.get("status") == "PASS"
     retained_suite_count = int(corpus.get("retained_suite_count", 0))
     manifest_summary_count = int(corpus.get("manifest_summary_count", 0))
+    public_suite_case_count = int(public_suite.get("case_count", 0))
+    public_suite_phase_count = int(public_suite.get("phase_count", 0))
+    public_suite_profile_count = int(public_suite.get("profile_count", 0))
     accepted_fixture_count = int(external_publication.get("accepted_fixture_count", 0))
     redacted_fixture_count = int(external_publication.get("redacted_fixture_count", 0))
     blocked_fixture_count = int(external_publication.get("blocked_fixture_count", 0))
@@ -94,6 +102,11 @@ def main() -> int:
         score += int(weights["conformance_corpus"])
     else:
         hard_blocks.append("corpus integration summary did not pass")
+
+    if not public_suite_pass:
+        hard_blocks.append("public suite manifest summary did not pass")
+    if not bool(public_suite.get("packageable")):
+        hard_blocks.append("public suite manifest is not packageable")
 
     if external_integration_pass and accepted_fixture_count >= int(
         minimum_claimability["accepted_fixture_count"]
@@ -137,6 +150,19 @@ def main() -> int:
             }
         )
 
+    public_suite_case_gap = max(
+        0,
+        int(minimum_claimability["public_suite_case_count"]) - public_suite_case_count,
+    )
+    public_suite_phase_gap = max(
+        0,
+        int(minimum_claimability["public_suite_phase_count"]) - public_suite_phase_count,
+    )
+    public_suite_profile_gap = max(
+        0,
+        int(minimum_claimability["public_suite_profile_count"]) - public_suite_profile_count,
+    )
+
     if redacted_fixture_count:
         penalty = redacted_fixture_count * int(deductions_policy["redacted_fixture_penalty"])
         score -= penalty
@@ -166,6 +192,12 @@ def main() -> int:
         hard_blocks.append("conformance corpus retained suite inventory is below the minimum claimability floor")
     if manifest_gap:
         hard_blocks.append("conformance corpus manifest summary inventory is below the minimum claimability floor")
+    if public_suite_case_gap:
+        hard_blocks.append("public suite manifest case inventory is below the minimum claimability floor")
+    if public_suite_phase_gap:
+        hard_blocks.append("public suite phase inventory is below the minimum claimability floor")
+    if public_suite_profile_gap:
+        hard_blocks.append("public suite profile inventory is below the minimum claimability floor")
     if accepted_fixture_count < int(minimum_claimability["accepted_fixture_count"]):
         hard_blocks.append("external validation accepted fixture count is below the minimum claimability floor")
 
@@ -189,6 +221,7 @@ def main() -> int:
         "policy_path": repo_rel(POLICY_PATH),
         "upstream_reports": {
             "corpus_integration": repo_rel(CORPUS_INTEGRATION_PATH),
+            "public_suite": repo_rel(PUBLIC_SUITE_SUMMARY_PATH),
             "external_validation_integration": repo_rel(EXTERNAL_INTEGRATION_PATH),
             "external_validation_publication": repo_rel(EXTERNAL_PUBLICATION_PATH),
         },
@@ -201,15 +234,28 @@ def main() -> int:
         "claim_ready": claim_ready,
         "upstream_status": {
             "corpus_integration": corpus.get("status"),
+            "public_suite": public_suite.get("status"),
             "external_validation_integration": external_integration.get("status"),
             "external_validation_publication": external_publication.get("status"),
         },
         "claimability_counts": {
             "retained_suite_count": retained_suite_count,
             "manifest_summary_count": manifest_summary_count,
+            "public_suite_case_count": public_suite_case_count,
+            "public_suite_phase_count": public_suite_phase_count,
+            "public_suite_profile_count": public_suite_profile_count,
             "accepted_fixture_count": accepted_fixture_count,
             "redacted_fixture_count": redacted_fixture_count,
             "blocked_fixture_count": blocked_fixture_count,
+        },
+        "public_suite": {
+            "manifest_path": public_suite.get("manifest_path"),
+            "schema_id": public_suite.get("schema_id"),
+            "suite_version": public_suite.get("suite_version"),
+            "packageable": bool(public_suite.get("packageable")),
+            "phase_case_counts": public_suite.get("phase_case_counts", {}),
+            "profile_case_counts": public_suite.get("profile_case_counts", {}),
+            "public_commands": public_suite.get("public_commands", []),
         },
         "deductions": deductions,
         "hard_blocks": hard_blocks,

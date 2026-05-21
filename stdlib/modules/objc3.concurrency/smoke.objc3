@@ -16,12 +16,24 @@ async fn objc3_concurrency_spawn_token(seed: i32) -> i32 __attribute__((objc_exe
   return objc3_runtime_spawn_task_i32(1, seed);
 }
 
+async fn objc3_task_spawn(executor_tag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_spawn_token(executor_tag);
+}
+
 async fn objc3_concurrency_child_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(global))) {
   return objc3_runtime_spawn_task_i32(1, seed);
 }
 
+async fn objc3_task_spawn_child(executor_tag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_child_spawn_token(executor_tag);
+}
+
 async fn objc3_concurrency_detached_spawn_token(seed: i32) -> i32 __attribute__((objc_executor(named("objc3.concurrency.detached")))) {
   return objc3_runtime_spawn_task_i32(2, seed);
+}
+
+async fn objc3_task_spawn_detached(executor_tag: i32) -> i32 __attribute__((objc_executor(named("objc3.concurrency.detached")))) {
+  return await objc3_concurrency_detached_spawn_token(executor_tag);
 }
 
 async fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, cancelled: i32) -> i32 __attribute__((objc_executor(global))) {
@@ -31,6 +43,10 @@ async fn objc3_concurrency_join_status(result_code: i32, executor_tag: i32, canc
   } else {
     return objc3_runtime_executor_hop_i32(result_code, executor_tag);
   }
+}
+
+async fn objc3_task_join(result_code: i32, executor_tag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_join_status(result_code, executor_tag, 0);
 }
 
 async fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) -> i32 __attribute__((objc_executor(global))) {
@@ -49,8 +65,16 @@ async fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks
   }
 }
 
+async fn objc3_task_group_run_two(executor_tag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_task_group_scope_depth(executor_tag, 2);
+}
+
 async fn objc3_concurrency_cancellation_query(flag: i32) -> i32 __attribute__((objc_executor(global))) {
   return objc3_runtime_task_is_cancelled_i32(flag);
+}
+
+async fn objc3_task_is_cancelled(executor_tag: i32) -> i32 __attribute__((objc_executor(global))) {
+  return await objc3_concurrency_cancellation_query(executor_tag);
 }
 
 async fn objc3_concurrency_cancellation_checkpoint(flag: i32) -> i32 __attribute__((objc_executor(global))) {
@@ -62,8 +86,20 @@ async fn objc3_concurrency_cancellation_checkpoint(flag: i32) -> i32 __attribute
   }
 }
 
+async fn objc3_task_cancel_if_needed(executor_tag: i32, should_cancel: i32) -> i32 __attribute__((objc_executor(global))) {
+  if (should_cancel) {
+    return await objc3_concurrency_cancellation_checkpoint(executor_tag);
+  } else {
+    return await objc3_concurrency_cancellation_query(executor_tag);
+  }
+}
+
 fn objc3_concurrency_executor_hop_token(value: i32, executor_tag: i32) {
   return objc3_runtime_executor_hop_i32(value, executor_tag);
+}
+
+fn objc3_executor_hop(value: i32, executor_tag: i32) {
+  return objc3_concurrency_executor_hop_token(value, executor_tag);
 }
 
 fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, pending_messages: i32) {
@@ -76,18 +112,31 @@ fn objc3_concurrency_actor_mailbox_token(actor_handle: i32, executor_tag: i32, p
   }
 }
 
+fn objc3_actor_mailbox_send_and_drain(actor_handle: i32, value: i32, executor_tag: i32) {
+  return objc3_concurrency_actor_mailbox_token(actor_handle, executor_tag, value);
+}
+
 async fn objc3_concurrency_smoke_async() -> i32 __attribute__((objc_executor(global))) {
   await objc3_concurrency_spawn_token(2);
+  await objc3_task_spawn(2);
   await objc3_concurrency_child_spawn_token(4);
+  await objc3_task_spawn_child(4);
   await objc3_concurrency_detached_spawn_token(5);
+  await objc3_task_spawn_detached(5);
   await objc3_concurrency_join_status(7, 4, 0);
+  await objc3_task_join(7, 4);
   await objc3_concurrency_task_group_scope_depth(4, 2);
+  await objc3_task_group_run_two(4);
   await objc3_concurrency_cancellation_query(4);
+  await objc3_task_is_cancelled(4);
   await objc3_concurrency_cancellation_checkpoint(4);
+  await objc3_task_cancel_if_needed(4, 1);
   objc3_concurrency_executor_hop_token(23, 4);
-  return objc3_concurrency_actor_mailbox_token(41, 4, 3);
+  objc3_executor_hop(23, 4);
+  objc3_concurrency_actor_mailbox_token(41, 4, 3);
+  return objc3_actor_mailbox_send_and_drain(41, 3, 4);
 }
 
 fn main() {
-  return objc3_concurrency_actor_mailbox_token(41, 4, 3);
+  return objc3_actor_mailbox_send_and_drain(41, 3, 4);
 }

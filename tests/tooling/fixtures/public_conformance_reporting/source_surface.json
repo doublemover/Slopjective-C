@@ -82,9 +82,31 @@
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",
+        "tests/conformance/support_claim_runnable_evidence_catalog.json",
         "scripts/check_conformance_corpus_surface.py",
         "scripts/generate_conformance_corpus_index.py",
         "scripts/check_objc3c_conformance_corpus_integration.py"
+      ]
+    },
+    {
+      "family_id": "public-stable-suite-manifest",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "public_conformance_provenance"
+      ],
+      "coverage_goal": "public suite packaging must terminate in the checked stable suite manifest, schema, and fail-closed validator rather than generated scorecard-only claims",
+      "source_paths": [
+        "tests/conformance/public_suite_manifest.json",
+        "schemas/objc3c-public-conformance-suite-v1.schema.json",
+        "scripts/check_objc3c_public_conformance_suite_manifest.py",
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
       ]
     },
     {
@@ -123,6 +145,7 @@
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
         "scripts/check_release_evidence.py",
         "scripts/check_conformance_corpus_surface.py",
+        "schemas/objc3c-public-conformance-suite-v1.schema.json",
         "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
         "schemas/objc3c-public-conformance-summary-v1.schema.json"
       ]

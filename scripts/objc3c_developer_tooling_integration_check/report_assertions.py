@@ -28,6 +28,7 @@ def assert_editor_tooling_reports(
 ) -> None:
     expect(editor_surface.get("formatter", {}).get("supported") is True, "expected editor tooling formatter surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("supported") is True, "expected editor tooling debug surface to report supported=true", failures)
+    expect(editor_surface.get("artifact_inspector", {}).get("supported") is True, "expected editor tooling artifact inspector surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "expected editor tooling debug surface to keep statement stepping fail-closed", failures)
     workspace_index = editor_surface.get("navigation", {}).get("workspace_index", {})
     expect(workspace_index.get("available") is True, "expected editor tooling workspace index available=true", failures)

@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3P104.
+module Obj3Next016ParserMissingSemicolonRecovery;
+
+fn helper() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  let value = helper();
+  value = value + 1
+  return value;
+}

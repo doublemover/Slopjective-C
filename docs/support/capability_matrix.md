@@ -31,12 +31,16 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
 | --- | --- | --- | --- | --- |
 | `objc3c.behavior.arc-cleanup.integration` | `runtime` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration` |
+| `objc3c.behavior.conformance.public-stable-suite` | `e2e` | `tests/conformance/public_suite_manifest.json` | `npm run objc3c -- validate-conformance-corpus` | `conformance.public.stable-suite-manifest` |
+| `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `parser` | `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` | `npm run objc3c -- validate-conformance-corpus` | `diagnostics.parser-sema.recovery-fixits` |
 | `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
 | `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
 | `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
 | `objc3c.behavior.language.blocks.escape-capture-legality` | `sema` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `language.blocks.escape-capture-legality` |
 | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
 | `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
+| `objc3c.behavior.language.metaprogramming.derive-expansion-inventory` | `sema` | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.derive-expansion-inventory` |
+| `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism` | `sema` | `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.macro-safety-sandbox-determinism` |
 | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `sema` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `language.metaprogramming.property-behavior-semantics` |
 | `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
@@ -68,9 +72,14 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.collections.array-slice-runtime-shape` |
 | `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.collections.map-entry-runtime-shape` |
 | `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
+| `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-actor-mailbox-api` |
+| `objc3c.behavior.stdlib.concurrency.public-executor-hop-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-executor-hop-api` |
+| `objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-group-cancellation-api` |
+| `objc3c.behavior.stdlib.concurrency.public-task-spawn-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-spawn-api` |
 | `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
 | `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.text.byte-span-runtime-shape` |
 | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.text.string-view-runtime-shape` |
+| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
 
 ## Phase Owner Contract
 
@@ -784,6 +793,114 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
   - source: `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
 
+### Public task spawn API
+
+- Capability ID: `stdlib.concurrency.public-task-spawn-api`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.concurrency.public-task-spawn-api`
+- Summary: objc3.concurrency exposes public task spawn, child spawn, detached spawn, and join entrypoints as stable APIs over the checked runtime task lifecycle helper boundary. This row does not claim generic Task ABI completeness, scheduler fairness, distributed actors, or Swift concurrency ABI compatibility.
+- Owner modules:
+  - `stdlib/modules/objc3.concurrency/module.json`
+  - `stdlib/modules/objc3.concurrency/module.objc3`
+  - `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - `stdlib/advanced_architecture.json`
+  - `stdlib/stability_policy.json`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_group_state.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_cancellation.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - source: `stdlib/modules/objc3.concurrency/module.json`
+  - source: `stdlib/modules/objc3.concurrency/module.objc3`
+  - source: `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - source: `stdlib/semantic_policy.json`
+
+### Public task-group and cancellation API
+
+- Capability ID: `stdlib.concurrency.public-task-group-cancellation-api`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api`
+- Summary: objc3.concurrency exposes public task-group and cancellation entrypoints backed by deterministic task-group scope/add/wait/cancel and cancellation observation helpers. This row stays bounded to the checked helper cluster and does not claim arbitrary typed task groups or broad scheduler propagation.
+- Owner modules:
+  - `stdlib/modules/objc3.concurrency/module.json`
+  - `stdlib/modules/objc3.concurrency/module.objc3`
+  - `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - `stdlib/advanced_architecture.json`
+  - `stdlib/stability_policy.json`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_group_state.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_cancellation.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - source: `stdlib/modules/objc3.concurrency/module.json`
+  - source: `stdlib/modules/objc3.concurrency/module.objc3`
+  - source: `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - source: `stdlib/semantic_policy.json`
+
+### Public executor-hop API
+
+- Capability ID: `stdlib.concurrency.public-executor-hop-api`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.concurrency.public-executor-hop-api`
+- Summary: objc3.concurrency exposes a public executor-hop entrypoint backed by the runtime executor hop helper with distinct value and executor-tag operands. This row does not claim OS scheduler integration, fairness, or priority inheritance.
+- Owner modules:
+  - `stdlib/modules/objc3.concurrency/module.json`
+  - `stdlib/modules/objc3.concurrency/module.objc3`
+  - `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - `stdlib/advanced_architecture.json`
+  - `stdlib/stability_policy.json`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_group_state.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_cancellation.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - source: `stdlib/modules/objc3.concurrency/module.json`
+  - source: `stdlib/modules/objc3.concurrency/module.objc3`
+  - source: `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - source: `stdlib/semantic_policy.json`
+
+### Public actor mailbox API
+
+- Capability ID: `stdlib.concurrency.public-actor-mailbox-api`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api`
+- Summary: objc3.concurrency exposes a public actor mailbox send-and-drain entrypoint backed by bind, enqueue, and drain runtime helpers. This row does not claim distributed actors, cross-process mailboxes, or Swift actor ABI compatibility.
+- Owner modules:
+  - `stdlib/modules/objc3.concurrency/module.json`
+  - `stdlib/modules/objc3.concurrency/module.objc3`
+  - `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - `stdlib/advanced_architecture.json`
+  - `stdlib/stability_policy.json`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_group_state.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_cancellation.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - source: `stdlib/modules/objc3.concurrency/module.json`
+  - source: `stdlib/modules/objc3.concurrency/module.objc3`
+  - source: `stdlib/modules/objc3.concurrency/smoke.objc3`
+  - source: `stdlib/semantic_policy.json`
+
 ### Ownership and memory model groundwork
 
 - Capability ID: `language.ownership.memory-model`
@@ -936,6 +1053,51 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/runtime/synthesized_accessor_probe.cpp`
   - test: `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc`
+
+### Derive expansion inventory
+
+- Capability ID: `language.metaprogramming.derive-expansion-inventory`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.metaprogramming.derive-expansion-inventory`
+- Summary: The public metaprogramming surface publishes a checked derive expansion inventory for Equality, Hash, and DebugDescription forms, including selector binding, positive native fixtures, and fail-closed unsupported/category/conflict diagnostics. This row does not claim arbitrary macro expansion or third-party macro ecosystem compatibility.
+- Owner modules:
+  - `tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json`
+  - `scripts/check_objc3c_metaprogramming_public_surface.py`
+  - `scripts/check_objc3c_runnable_metaprogramming_conformance.py`
+  - `native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - source: `scripts/check_objc3c_metaprogramming_public_surface.py`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc`
+
+### Macro safety sandbox determinism
+
+- Capability ID: `language.metaprogramming.macro-safety-sandbox-determinism`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism`
+- Summary: The public macro surface validates deterministic sandbox metadata, trusted package provenance, replay cache keys, and fail-closed denial cases through checked trust-registry fixtures and native macro safety evidence. This row does not allow arbitrary host execution, network access, or fallback macro execution.
+- Owner modules:
+  - `tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json`
+  - `scripts/check_objc3c_metaprogramming_public_surface.py`
+  - `scripts/check_objc3c_runnable_metaprogramming_conformance.py`
+  - `native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc`
+  - `tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json`
+  - `tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - test: `tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3` via `npm run objc3c -- validate-metaprogramming-conformance`
+  - source: `tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json`
+  - source: `scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py`
 
 ### Metaprogramming host cache boundary
 
@@ -1184,6 +1346,66 @@ the canonical manifest fixture and public npm command above.
   - doc: `docs/issues/hard_cutover_8132_8150_evidence.md`
   - doc: `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
   - doc: `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
+
+### Parser/sema recovery fix-it diagnostics
+
+- Capability ID: `diagnostics.parser-sema.recovery-fixits`
+- State: `implemented`
+- Support claims: `objc3c.behavior.diagnostics.parser-sema-recovery-fixits`
+- Summary: The diagnostics corpus now includes OBJ3-NEXT-016 parser and semantic recovery fixtures with structured spans, recovery payloads, machine-applicable fix-its where canonical, and native replay fixture links. This row claims diagnostic recovery/fix-it evidence only, not alternate syntax acceptance or fallback parsing.
+- Owner modules:
+  - `tests/conformance/diagnostics/manifest.json`
+  - `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-RECOVERY-01.json`
+  - `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json`
+  - `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json`
+  - `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-02.json`
+  - `native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp`
+  - `scripts/objc3c_native_recovery_contract_runner/fixture_contracts.psm1`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json` via `npm run objc3c -- validate-conformance-corpus`
+  - source: `native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp`
+  - source: `tests/conformance/diagnostics/manifest.json`
+
+### Editor artifact inspector
+
+- Capability ID: `tooling.editor.artifact-inspector`
+- State: `implemented`
+- Support claims: `objc3c.behavior.tooling.artifact-inspector`
+- Summary: The editor tooling surface now publishes an artifact inspector payload for summary, diagnostics, manifest, IR, runtime metadata, runtime imports, and source-graph inputs, with object inspection fail-closed unless real object inventory commands are available.
+- Owner modules:
+  - `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - `scripts/objc3c_editor_tooling/model.py`
+  - `scripts/objc3c_editor_tooling/publication.py`
+  - `scripts/objc3c_editor_tooling/cli.py`
+  - `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+  - `scripts/objc3c_workflow/actions/developer_tooling_playground_editor.py`
+  - `scripts/objc3c_workflow/actions/developer_tooling_playground_manifest.py`
+- Evidence:
+  - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+
+### Stable public conformance suite manifest
+
+- Capability ID: `conformance.public.stable-suite-manifest`
+- State: `implemented`
+- Support claims: `objc3c.behavior.conformance.public-stable-suite`
+- Summary: A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.
+- Owner modules:
+  - `tests/conformance/public_suite_manifest.json`
+  - `schemas/objc3c-public-conformance-suite-v1.schema.json`
+  - `scripts/check_objc3c_public_conformance_suite_manifest.py`
+  - `tests/conformance/corpus_surface.json`
+  - `scripts/check_objc3c_conformance_corpus_integration.py`
+- Evidence:
+  - test: `tests/conformance/public_suite_manifest.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `schemas/objc3c-public-conformance-suite-v1.schema.json` via `npm run objc3c -- validate-conformance-corpus`
+  - source: `scripts/check_objc3c_public_conformance_suite_manifest.py`
+  - source: `tests/conformance/corpus_surface.json`
 
 ## State Meanings
 

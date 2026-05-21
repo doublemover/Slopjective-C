@@ -19,6 +19,7 @@ from objc3c_editor_tooling.paths import default_source_argument, paths_for_sourc
 
 
 OWNER_MODULES = (
+    "objc3c_editor_tooling.artifact_inspector",
     "objc3c_editor_tooling.paths",
     "objc3c_editor_tooling.input_loading",
     "objc3c_editor_tooling.model",
@@ -58,6 +59,9 @@ def test_editor_tooling_paths_preserve_default_surface_layout() -> None:
     )
     assert paths.workspace_index.relative_to(ROOT).as_posix() == (
         "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/workspace-index.json"
+    )
+    assert paths.artifact_inspector.relative_to(ROOT).as_posix() == (
+        "tmp/reports/developer-tooling/editor-surface/hello-3bb3df22f2ea/artifact-inspector.json"
     )
 
 

@@ -82,6 +82,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-public-conformance-scorecard-v1": ROOT
     / "schemas"
     / "objc3c-public-conformance-scorecard-v1.schema.json",
+    "objc3c-public-conformance-suite-v1": ROOT
+    / "schemas"
+    / "objc3c-public-conformance-suite-v1.schema.json",
     "objc3c-public-conformance-summary-v1": ROOT
     / "schemas"
     / "objc3c-public-conformance-summary-v1.schema.json",

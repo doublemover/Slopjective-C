@@ -27,6 +27,7 @@
     "claim_ready",
     "upstream_status",
     "claimability_counts",
+    "public_suite",
     "deductions",
     "hard_blocks",
     "failures"
@@ -55,11 +56,15 @@
       "additionalProperties": false,
       "required": [
         "corpus_integration",
+        "public_suite",
         "external_validation_integration",
         "external_validation_publication"
       ],
       "properties": {
         "corpus_integration": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "public_suite": {
           "$ref": "#/$defs/repoPath"
         },
         "external_validation_integration": {
@@ -72,7 +77,7 @@
     },
     "schema_anchor_paths": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 5,
       "items": {
         "$ref": "#/$defs/repoPath"
       }
@@ -120,11 +125,15 @@
       "additionalProperties": false,
       "required": [
         "corpus_integration",
+        "public_suite",
         "external_validation_integration",
         "external_validation_publication"
       ],
       "properties": {
         "corpus_integration": {
+          "$ref": "#/$defs/passFail"
+        },
+        "public_suite": {
           "$ref": "#/$defs/passFail"
         },
         "external_validation_integration": {
@@ -141,6 +150,9 @@
       "required": [
         "retained_suite_count",
         "manifest_summary_count",
+        "public_suite_case_count",
+        "public_suite_phase_count",
+        "public_suite_profile_count",
         "accepted_fixture_count",
         "redacted_fixture_count",
         "blocked_fixture_count"
@@ -151,6 +163,18 @@
           "minimum": 0
         },
         "manifest_summary_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "public_suite_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "public_suite_phase_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "public_suite_profile_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -165,6 +189,57 @@
         "blocked_fixture_count": {
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "public_suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_path",
+        "schema_id",
+        "suite_version",
+        "packageable",
+        "phase_case_counts",
+        "profile_case_counts",
+        "public_commands"
+      ],
+      "properties": {
+        "manifest_path": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "schema_id": {
+          "type": "string",
+          "const": "objc3c-public-conformance-suite-v1"
+        },
+        "suite_version": {
+          "type": "string",
+          "minLength": 8
+        },
+        "packageable": {
+          "type": "boolean"
+        },
+        "phase_case_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "profile_case_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "public_commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 8
+          }
         }
       }
     },
