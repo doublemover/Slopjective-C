@@ -1,5 +1,7 @@
 #include "pipeline/objc3_semantic_optimization_pipeline.h"
 
+#include "opt/objc3_semantic_optimization_executor.h"
+
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -83,6 +85,113 @@ bool AllPassesFailClosedWithDiagnostics(
     }
   }
   return !passes.empty();
+}
+
+std::vector<objc3c::opt::Objc3SemanticOptimizationCandidate>
+BuildObjc3SemanticOptimizationTraceCandidates(
+    const Objc3FrontendPipelineResult &pipeline_result,
+    const Objc3FrontendOptions &options) {
+  const bool benchmark_governance_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_ready;
+  const bool lowering_key_present =
+      !pipeline_result.lowering_pipeline_pass_graph_scaffold
+           .lowering_boundary_replay_key.empty() ||
+      !pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+           .lowering_boundary_replay_key.empty();
+
+  std::vector<objc3c::opt::Objc3SemanticOptimizationCandidate> candidates;
+  candidates.reserve(9);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate precondition;
+  precondition.pass_id = "semantic-precondition-gate";
+  precondition.source_replay_key = "frontend-pipeline-preconditions";
+  precondition.typed_sema_handoff_deterministic =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold.typed_surface_ready;
+  precondition.lowering_boundary_replay_key_present = lowering_key_present;
+  precondition.parse_to_lowering_ready =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .parse_lowering_readiness_ready;
+  candidates.push_back(precondition);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate nil_receiver;
+  nil_receiver.pass_id = "nil-receiver-folding";
+  nil_receiver.source_replay_key = "ir-message-send-nil-receiver";
+  nil_receiver.benchmark_governance_ready = benchmark_governance_ready;
+  nil_receiver.compile_time_nil_receiver = true;
+  nil_receiver.optional_send_side_effect_free =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .runtime_dispatch_declaration_ready;
+  candidates.push_back(nil_receiver);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate direct_dispatch;
+  direct_dispatch.pass_id = "direct-dispatch-exact-call";
+  direct_dispatch.source_replay_key = "ir-message-send-direct-dispatch";
+  direct_dispatch.benchmark_governance_ready = benchmark_governance_ready;
+  direct_dispatch.direct_callee_symbol_present =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .direct_ir_entrypoint_enabled;
+  direct_dispatch.direct_signature_present =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  direct_dispatch.explicit_argument_types_cover_arguments =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  direct_dispatch.direct_result_owns_ir_storage =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .ir_emission_entrypoint_ready;
+  candidates.push_back(direct_dispatch);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate arc_cleanup;
+  arc_cleanup.pass_id = "arc-retained-result-cleanup";
+  arc_cleanup.source_replay_key = "ir-arc-retained-result-cleanup";
+  arc_cleanup.benchmark_governance_ready = benchmark_governance_ready;
+  arc_cleanup.arc_mode_enabled =
+      options.arc_mode == Objc3FrontendArcMode::kEnabled;
+  arc_cleanup.method_family_returns_retained_result =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .core_feature_ready;
+  arc_cleanup.related_result_cleanup_disarmed =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  candidates.push_back(arc_cleanup);
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate runtime_dispatch;
+  runtime_dispatch.pass_id = "runtime-dispatch-preservation";
+  runtime_dispatch.source_replay_key = "ir-runtime-dispatch-preservation";
+  runtime_dispatch.runtime_dispatch_result_owner_explicit =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .runtime_dispatch_declaration_ready;
+  runtime_dispatch.canonical_runtime_dispatch_symbol =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  runtime_dispatch.retired_routes_disabled = true;
+  runtime_dispatch.compatibility_routes_disabled =
+      !pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+           .compatibility_handoff_consistent ||
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .edge_case_compatibility_ready;
+  candidates.push_back(runtime_dispatch);
+
+  for (const auto *pass_id :
+       {"devirtualization", "method-inlining", "cache-aware-dispatch"}) {
+    objc3c::opt::Objc3SemanticOptimizationCandidate reserved;
+    reserved.pass_id = pass_id;
+    reserved.source_replay_key = "reserved-optimization-opportunity";
+    candidates.push_back(reserved);
+  }
+
+  objc3c::opt::Objc3SemanticOptimizationCandidate verifier;
+  verifier.pass_id = "ir-cleanup-verifier";
+  verifier.source_replay_key = "post-ir-cleanup-verifier";
+  verifier.all_prior_mutations_declared_invalidation = true;
+  verifier.unsupported_skips_emit_no_success_claim = true;
+  verifier.semantic_equivalence_verdict_present =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .core_feature_ready;
+  candidates.push_back(verifier);
+
+  return candidates;
 }
 
 }  // namespace
@@ -432,6 +541,22 @@ BuildObjc3SemanticOptimizationPipelineSurface(
   surface.benchmark_governance_bound =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .performance_quality_guardrails_ready;
+  const auto optimization_trace =
+      objc3c::opt::RunObjc3SemanticOptimizationPipelineTrace(
+          BuildObjc3SemanticOptimizationTraceCandidates(pipeline_result,
+                                                        options));
+  surface.reserved_passes_fail_closed =
+      surface.reserved_passes_fail_closed &&
+      objc3c::opt::AllObjc3SemanticOptimizationTraceReservedSkipsAreClaimless(
+          optimization_trace);
+  surface.explicit_invalidation_ready =
+      surface.explicit_invalidation_ready &&
+      objc3c::opt::AllObjc3SemanticOptimizationTraceMutationsDeclareInvalidation(
+          optimization_trace);
+  surface.fail_closed_diagnostics_ready =
+      surface.fail_closed_diagnostics_ready &&
+      objc3c::opt::AllObjc3SemanticOptimizationTraceDecisionsFailClosed(
+          optimization_trace);
   surface.semantic_optimization_pipeline_ready =
       surface.lowering_pass_graph_ready &&
       surface.pass_registry_order_deterministic &&

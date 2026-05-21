@@ -332,6 +332,7 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_sema
   objc3c_lower
   objc3c_ir
+  objc3c_opt
   objc3c_diag
   objc3c_json
   objc3c_pipeline_source_closure_replay_keys

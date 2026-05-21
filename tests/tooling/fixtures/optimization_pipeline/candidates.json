@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.optimization.semantic.pipeline.candidates.v1",
+  "candidates": [
+    {
+      "pass_id": "direct-dispatch-exact-call",
+      "source_replay_key": "fixture:direct-dispatch:exact",
+      "benchmark_governance_ready": true,
+      "direct_callee_symbol_present": true,
+      "direct_signature_present": true,
+      "explicit_argument_types_cover_arguments": true,
+      "direct_result_owns_ir_storage": true
+    },
+    {
+      "pass_id": "direct-dispatch-exact-call",
+      "source_replay_key": "fixture:direct-dispatch:missing-signature",
+      "benchmark_governance_ready": true,
+      "direct_callee_symbol_present": true,
+      "direct_signature_present": false,
+      "explicit_argument_types_cover_arguments": true,
+      "direct_result_owns_ir_storage": true
+    },
+    {
+      "pass_id": "nil-receiver-folding",
+      "source_replay_key": "fixture:nil-receiver:compile-time-nil",
+      "benchmark_governance_ready": true,
+      "compile_time_nil_receiver": true,
+      "optional_send_side_effect_free": true
+    },
+    {
+      "pass_id": "runtime-dispatch-preservation",
+      "source_replay_key": "fixture:runtime-dispatch:compatibility-route",
+      "runtime_dispatch_result_owner_explicit": true,
+      "canonical_runtime_dispatch_symbol": true,
+      "retired_routes_disabled": true,
+      "compatibility_routes_disabled": false
+    },
+    {
+      "pass_id": "devirtualization",
+      "source_replay_key": "fixture:reserved:devirtualization"
+    },
+    {
+      "pass_id": "arc-retained-result-cleanup",
+      "source_replay_key": "fixture:arc:retained-result-cleanup",
+      "benchmark_governance_ready": true,
+      "arc_mode_enabled": true,
+      "method_family_returns_retained_result": true,
+      "related_result_cleanup_disarmed": true
+    }
+  ]
+}

@@ -19,6 +19,8 @@ add_subdirectory(lower)
 
 add_subdirectory(ir)
 
+add_subdirectory(opt)
+
 add_subdirectory(io)
 
 add_subdirectory(pipeline)
