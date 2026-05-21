@@ -57,6 +57,11 @@ SUPPORTED_WORKLOAD_IDS = (
     "storage-ownership-reflection",
     "stdlib-core-runtime",
     "stdlib-concurrency-runtime",
+    "registration-replay",
+    "block-arc-runtime",
+    "live-error-runtime",
+    "async-error-foreign-boundary",
+    "live-concurrency-runtime",
 )
 CASE_FUNCTION_NAMES = {
     "startup-installation": "check_installation_lifecycle_case",
@@ -66,6 +71,11 @@ CASE_FUNCTION_NAMES = {
     "storage-ownership-reflection": "check_storage_ownership_reflection_case",
     "stdlib-core-runtime": "check_stdlib_core_runtime_probe_case",
     "stdlib-concurrency-runtime": "check_stdlib_concurrency_runtime_probe_case",
+    "registration-replay": "check_multi_image_registration_reset_replay_case",
+    "block-arc-runtime": "check_block_helper_runtime_execution_case",
+    "live-error-runtime": "check_live_error_runtime_integration_case",
+    "async-error-foreign-boundary": "check_async_error_foreign_boundary_runtime_trace_case",
+    "live-concurrency-runtime": "check_live_unified_concurrency_runtime_implementation_case",
 }
 
 

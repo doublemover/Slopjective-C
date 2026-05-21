@@ -30,7 +30,12 @@
     "tmp/reports/runtime-performance/ownership-helpers",
     "tmp/reports/runtime-performance/storage-ownership-reflection",
     "tmp/reports/runtime-performance/stdlib-core-runtime",
-    "tmp/reports/runtime-performance/stdlib-concurrency-runtime"
+    "tmp/reports/runtime-performance/stdlib-concurrency-runtime",
+    "tmp/reports/runtime-performance/registration-replay",
+    "tmp/reports/runtime-performance/block-arc-runtime",
+    "tmp/reports/runtime-performance/live-error-runtime",
+    "tmp/reports/runtime-performance/async-error-foreign-boundary",
+    "tmp/reports/runtime-performance/live-concurrency-runtime"
   ],
   "required_packet_fields": [
     "contract_id",

@@ -65,6 +65,16 @@ PERFORMANCE_GOVERNANCE_ACTION_SPECS: dict[str, ActionSpec] = {
             "schema, dashboard, and publication outputs"
         ),
     ),
+    "validate-performance-governance-runtime-contract-linkage": ActionSpec(
+        "validate-performance-governance-runtime-contract-linkage",
+        "validate runtime-performance contract counts, budget links, and release evidence",
+        "python:scripts/check_objc3c_performance_governance_contract_linkage.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "runtime performance workload, replay, stress, sanitizer, budget, and "
+            "release-evidence contracts stay linked through checked-in source truth"
+        ),
+    ),
     "validate-performance-governance-end-to-end": ActionSpec(
         "validate-performance-governance-end-to-end",
         "validate performance governance entrypoints, command-surface sync, and ci/nightly wiring",

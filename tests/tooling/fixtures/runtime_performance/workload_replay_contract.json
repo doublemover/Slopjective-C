@@ -163,6 +163,117 @@
         "duration_ms",
         "run_dir"
       ]
+    },
+    {
+      "workload_id": "registration-replay",
+      "acceptance_case_id": "multi-image-registration-reset-replay",
+      "fixture": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+      "probe": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+      "hot_path_family": "registration-replay",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "provider_compile_ms",
+        "consumer_compile_ms",
+        "probe_link_ms",
+        "probe_run_ms",
+        "case_total_ms",
+        "module_image_count",
+        "first_replay_generation",
+        "second_replay_generation",
+        "blocked_replay_status"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "block-arc-runtime",
+      "acceptance_case_id": "block-helper-runtime-execution",
+      "fixture": "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+      "probe": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+      "hot_path_family": "block-arc-lifetime",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "byref_runtime_exit_code",
+        "owned_runtime_exit_code",
+        "nonowning_runtime_exit_code",
+        "arc_mode_runtime_exit_code",
+        "arc_inference_runtime_exit_code",
+        "arc_cleanup_scope_runtime_exit_code",
+        "arc_implicit_cleanup_runtime_exit_code",
+        "copy_dispose_probe_copy_count_after_promotion",
+        "copy_dispose_probe_invoke_result",
+        "copy_dispose_probe_dispose_count_after_final_release",
+        "copy_dispose_probe_post_release_callback_count",
+        "byref_copy_helper_required_sites",
+        "owned_copy_helper_required_sites",
+        "nonowning_copy_helper_required_sites",
+        "arc_mode_retain_insertions",
+        "arc_inference_retain_insertions",
+        "arc_cleanup_scope_release_insertions",
+        "arc_implicit_cleanup_release_insertions"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "live-error-runtime",
+      "acceptance_case_id": "live-error-runtime-integration",
+      "fixture": "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+      "probe": "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+      "hot_path_family": "error-bridge-runtime",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "rc",
+        "status",
+        "last_catch_kind_name",
+        "throws_abi_contract"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "async-error-foreign-boundary",
+      "acceptance_case_id": "async-error-foreign-boundary-runtime-trace",
+      "fixture": "tests/tooling/fixtures/native/async_error_foreign_boundary_trace_positive.objc3",
+      "probe": "tests/tooling/runtime/async_error_foreign_boundary_trace_probe.cpp",
+      "hot_path_family": "async-error-foreign-boundary",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "compile",
+        "ir",
+        "runtime",
+        "negative_diagnostics_batch"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
+    },
+    {
+      "workload_id": "live-concurrency-runtime",
+      "acceptance_case_id": "live-unified-concurrency-runtime-implementation",
+      "fixture": "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+      "probe": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+      "hot_path_family": "live-concurrency-runtime",
+      "min_replay_samples": 1,
+      "required_summary_fields": [
+        "continuation_fixture",
+        "task_fixture",
+        "actor_fixture",
+        "continuation_probe",
+        "task_probe",
+        "actor_probe"
+      ],
+      "allowed_nondeterministic_packet_fields": [
+        "duration_ms",
+        "run_dir"
+      ]
     }
   ]
 }

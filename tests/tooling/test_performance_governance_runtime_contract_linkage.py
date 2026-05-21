@@ -28,9 +28,9 @@ def test_runtime_contract_linkage_passes_for_checked_in_governance_surface() -> 
 
     assert summary["status"] == "PASS"
     assert tuple(summary["contract_paths"]) == EXPECTED_RUNTIME_CONTRACT_PATHS
-    assert summary["replay_workload_count"] == 7
+    assert summary["replay_workload_count"] == 12
     assert summary["metadata_resilience_workload_count"] == 1
-    assert summary["stress_sanitizer_workload_count"] == 3
+    assert summary["stress_sanitizer_workload_count"] == 8
     assert summary["release_evidence"]["support_authority"] is False
     assert "storage_ownership_reflection_wall_clock_ms" in summary["runtime_budget_metric_ids"]
 
@@ -72,14 +72,14 @@ def test_runtime_contract_release_evidence_projects_summary_counts() -> None:
                 {"path": "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json"},
                 {"path": "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"},
             ],
-            "replay": {"row_count": 7},
+            "replay": {"row_count": 12},
             "metadata_resilience": {
                 "invalid_json_case_count": 1,
                 "fuzz_contract_count": 1,
             },
             "stress_sanitizer": {
-                "sanitizer_contract_count": 2,
-                "stress_scale_contract_count": 3,
+                "sanitizer_contract_count": 4,
+                "stress_scale_contract_count": 8,
             },
         }
     }
@@ -92,7 +92,7 @@ def test_runtime_contract_release_evidence_projects_summary_counts() -> None:
     assert evidence["status"] == "PASS"
     assert evidence["support_authority"] is False
     assert evidence["contract_paths"] == list(EXPECTED_RUNTIME_CONTRACT_PATHS)
-    assert evidence["summary_counts"]["stress_sanitizer.stress_scale_contract_count"] == 3
+    assert evidence["summary_counts"]["stress_sanitizer.stress_scale_contract_count"] == 8
 
 
 def test_runtime_contract_release_evidence_fails_closed_on_missing_summary() -> None:

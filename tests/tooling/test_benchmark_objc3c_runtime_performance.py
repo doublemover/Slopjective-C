@@ -142,7 +142,7 @@ def test_runtime_performance_fixture_manifest_validates_checked_in_cases() -> No
 
     assert summary == {
         "contract_id": "objc3c.runtime.performance.executable.fixture.manifest.v1",
-        "positive_case_count": 4,
+        "positive_case_count": 9,
         "negative_case_count": 2,
     }
 
@@ -167,8 +167,8 @@ def test_runtime_performance_contract_surfaces_validate_checked_in_contracts() -
     assert summary["replay"]["row_count"] == len(_runtime_workload_rows(workload_manifest))
     assert summary["metadata_resilience"]["invalid_json_case_count"] == 1
     assert summary["metadata_resilience"]["fuzz_contract_count"] == 1
-    assert summary["stress_sanitizer"]["sanitizer_contract_count"] == 2
-    assert summary["stress_sanitizer"]["stress_scale_contract_count"] == 3
+    assert summary["stress_sanitizer"]["sanitizer_contract_count"] == 4
+    assert summary["stress_sanitizer"]["stress_scale_contract_count"] == 8
     assert {row["path"] for row in summary["contract_files"]} == {
         "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
         "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",

@@ -22,6 +22,9 @@ from .performance_runtime import RUNTIME_PERFORMANCE_INTEGRATION_PY
 PERFORMANCE_GOVERNANCE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_performance_governance_integration.py"
 )
+PERFORMANCE_GOVERNANCE_RUNTIME_CONTRACT_LINKAGE_PY = (
+    ROOT / "scripts" / "check_objc3c_performance_governance_contract_linkage.py"
+)
 PERFORMANCE_GOVERNANCE_END_TO_END_PY = (
     ROOT / "scripts" / "check_objc3c_performance_governance_end_to_end.py"
 )
@@ -52,6 +55,13 @@ def action_validate_performance_governance(_: list[str]) -> int:
                 [sys.executable, str(PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY)],
             ),
             (
+                "validate-performance-governance-runtime-contract-linkage",
+                [
+                    sys.executable,
+                    str(PERFORMANCE_GOVERNANCE_RUNTIME_CONTRACT_LINKAGE_PY),
+                ],
+            ),
+            (
                 "build-performance-dashboard",
                 [sys.executable, str(PERFORMANCE_GOVERNANCE_DASHBOARD_PY)],
             ),
@@ -67,6 +77,10 @@ def action_validate_performance_governance_integration(_: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_GOVERNANCE_INTEGRATION_PY)])
 
 
+def action_validate_performance_governance_runtime_contract_linkage(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_RUNTIME_CONTRACT_LINKAGE_PY)])
+
+
 def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_GOVERNANCE_END_TO_END_PY)])
 
@@ -74,7 +88,9 @@ def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
 __all__ = [
     "PERFORMANCE_GOVERNANCE_END_TO_END_PY",
     "PERFORMANCE_GOVERNANCE_INTEGRATION_PY",
+    "PERFORMANCE_GOVERNANCE_RUNTIME_CONTRACT_LINKAGE_PY",
     "action_validate_performance_governance",
     "action_validate_performance_governance_end_to_end",
     "action_validate_performance_governance_integration",
+    "action_validate_performance_governance_runtime_contract_linkage",
 ]

@@ -95,6 +95,11 @@ def runtime_budget_metric_for_workload(budget_model: dict[str, Any], workload_id
         "storage-ownership-reflection": "storage_ownership_reflection_wall_clock_ms",
         "stdlib-core-runtime": "stdlib_core_wall_clock_ms",
         "stdlib-concurrency-runtime": "stdlib_concurrency_wall_clock_ms",
+        "registration-replay": "registration_replay_wall_clock_ms",
+        "block-arc-runtime": "block_arc_runtime_wall_clock_ms",
+        "live-error-runtime": "live_error_runtime_wall_clock_ms",
+        "async-error-foreign-boundary": "async_error_foreign_boundary_wall_clock_ms",
+        "live-concurrency-runtime": "live_concurrency_wall_clock_ms",
     }
     metric_id = metric_by_workload.get(workload_id)
     if metric_id is None:

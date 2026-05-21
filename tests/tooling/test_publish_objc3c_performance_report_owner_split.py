@@ -82,7 +82,7 @@ def test_performance_report_model_preserves_public_contract(tmp_path: Path) -> N
             ],
             "budget_metric_ids": ["dispatch_wall_clock_ms"],
             "workload_ids": ["dispatch-cache"],
-            "summary_counts": {"replay.row_count": 7},
+            "summary_counts": {"replay.row_count": 12},
         },
     }
 

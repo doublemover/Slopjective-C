@@ -39,6 +39,51 @@
       "probe_path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
       "public_workflow_action": "benchmark-runtime-performance",
       "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "registration-replay-positive",
+      "workload_id": "registration-replay",
+      "acceptance_case_id": "multi-image-registration-reset-replay",
+      "source_path": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+      "probe_path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "block-arc-runtime-positive",
+      "workload_id": "block-arc-runtime",
+      "acceptance_case_id": "block-helper-runtime-execution",
+      "source_path": "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+      "probe_path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "live-error-runtime-positive",
+      "workload_id": "live-error-runtime",
+      "acceptance_case_id": "live-error-runtime-integration",
+      "source_path": "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+      "probe_path": "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "async-error-foreign-boundary-positive",
+      "workload_id": "async-error-foreign-boundary",
+      "acceptance_case_id": "async-error-foreign-boundary-runtime-trace",
+      "source_path": "tests/tooling/fixtures/native/async_error_foreign_boundary_trace_positive.objc3",
+      "probe_path": "tests/tooling/runtime/async_error_foreign_boundary_trace_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
+    },
+    {
+      "case_id": "live-concurrency-runtime-positive",
+      "workload_id": "live-concurrency-runtime",
+      "acceptance_case_id": "live-unified-concurrency-runtime-implementation",
+      "source_path": "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+      "probe_path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+      "public_workflow_action": "benchmark-runtime-performance",
+      "expected_result": "runtime-acceptance-pass"
     }
   ],
   "negative_cases": [

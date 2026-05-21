@@ -18,7 +18,12 @@
     "packet_roots:tmp/reports/runtime-performance/ownership-helpers",
     "packet_roots:tmp/reports/runtime-performance/storage-ownership-reflection",
     "packet_roots:tmp/reports/runtime-performance/stdlib-core-runtime",
-    "packet_roots:tmp/reports/runtime-performance/stdlib-concurrency-runtime"
+    "packet_roots:tmp/reports/runtime-performance/stdlib-concurrency-runtime",
+    "packet_roots:tmp/reports/runtime-performance/registration-replay",
+    "packet_roots:tmp/reports/runtime-performance/block-arc-runtime",
+    "packet_roots:tmp/reports/runtime-performance/live-error-runtime",
+    "packet_roots:tmp/reports/runtime-performance/async-error-foreign-boundary",
+    "packet_roots:tmp/reports/runtime-performance/live-concurrency-runtime"
   ],
   "canonical_anchor": "tests/native/e2e",
   "retired_surface_rule": "integration summaries, runnable workflow artifacts, runtime acceptance summaries, packet roots, counter snapshots, generated-only rows, evidence-log rows, migration-only rows, retired route execution, gatemed execution, old-mode execution, compatibility wording, cache-only rows, timing-only rows, runner-only rows, package-only rows, counter-only rows, and alternate acceptance paths are e2e provenance, canonical rejection, or strict-error evidence only; they do not create compatibility, retired route, or alternate acceptance support"

@@ -41,6 +41,44 @@
         "stable-workload-id-in-failure"
       ],
       "support_authority": false
+    },
+    {
+      "sanitizer_id": "block-arc-runtime-asan-ubsan",
+      "workload_id": "block-arc-runtime",
+      "targeted_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id block-arc-runtime --warmup-runs 0 --measured-runs 3",
+      "opt_in_only": true,
+      "sanitizer_modes": [
+        "address",
+        "undefined"
+      ],
+      "required_environment": [
+        "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS=halt_on_error=1"
+      ],
+      "required_failure_modes": [
+        "nonzero-exit-on-sanitizer-finding",
+        "no-telemetry-packet-for-failed-sample",
+        "stable-workload-id-in-failure"
+      ],
+      "support_authority": false
+    },
+    {
+      "sanitizer_id": "live-concurrency-runtime-thread-sanitizer",
+      "workload_id": "live-concurrency-runtime",
+      "targeted_command": "npm run objc3c -- benchmark-runtime-performance -- --workload-id live-concurrency-runtime --warmup-runs 0 --measured-runs 3",
+      "opt_in_only": true,
+      "sanitizer_modes": [
+        "thread"
+      ],
+      "required_environment": [
+        "TSAN_OPTIONS=halt_on_error=1"
+      ],
+      "required_failure_modes": [
+        "nonzero-exit-on-data-race",
+        "no-support-claim-from-sanitizer-only-run",
+        "stable-workload-id-in-failure"
+      ],
+      "support_authority": false
     }
   ],
   "stress_scale_contracts": [
@@ -79,6 +117,71 @@
       "packet_invariants": [
         "helper-call-counts-are-monotonic",
         "last-result-remains-stable",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "registration-replay-scale",
+      "workload_id": "registration-replay",
+      "scale_axis": "multi-image-reset-replay-cycles",
+      "scale_factor": 16,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "generation-increases-between-replay-cycles",
+        "blocked-replay-remains-fail-closed",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "block-arc-lifetime-scale",
+      "workload_id": "block-arc-runtime",
+      "scale_axis": "block-copy-dispose-and-arc-helper-samples",
+      "scale_factor": 32,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "copy-dispose-counts-remain-balanced",
+        "stale-post-release-invocation-remains-rejected",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "live-error-bridge-scale",
+      "workload_id": "live-error-runtime",
+      "scale_axis": "error-bridge-state-snapshot-samples",
+      "scale_factor": 16,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "catch-kind-label-remains-stable",
+        "throws-abi-contract-remains-stable",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "async-error-foreign-boundary-scale",
+      "workload_id": "async-error-foreign-boundary",
+      "scale_axis": "async-error-runtime-trace-and-negative-diagnostic-samples",
+      "scale_factor": 16,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "runtime-trace-error-and-task-fields-remain-stable",
+        "negative-diagnostic-batch-remains-fail-closed",
+        "same-replay-key-across-samples"
+      ],
+      "support_authority": false
+    },
+    {
+      "stress_id": "live-concurrency-runtime-scale",
+      "workload_id": "live-concurrency-runtime",
+      "scale_axis": "continuation-task-actor-runtime-samples",
+      "scale_factor": 32,
+      "min_measured_runs": 3,
+      "packet_invariants": [
+        "continuation-task-actor-probe-set-remains-complete",
+        "actor-mailbox-probe-remains-linked",
         "same-replay-key-across-samples"
       ],
       "support_authority": false

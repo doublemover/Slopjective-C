@@ -4,6 +4,14 @@ from __future__ import annotations
 
 from objc3c_runtime_acceptance.domains.block_arc import (
     check_arc_property_helper_case,
+    check_block_helper_runtime_execution_case,
+)
+from objc3c_runtime_acceptance.domains.concurrency import (
+    check_live_unified_concurrency_runtime_implementation_case,
+)
+from objc3c_runtime_acceptance.domains.errors import (
+    check_async_error_foreign_boundary_runtime_trace_case,
+    check_live_error_runtime_integration_case,
 )
 from objc3c_runtime_acceptance.domains.object_model import (
     check_live_dispatch_fast_path_case,
@@ -11,6 +19,7 @@ from objc3c_runtime_acceptance.domains.object_model import (
 )
 from objc3c_runtime_acceptance.domains.registration import (
     check_installation_lifecycle_case,
+    check_multi_image_registration_reset_replay_case,
 )
 from objc3c_runtime_acceptance.domains.storage_reflection import (
     check_storage_ownership_reflection_case,
@@ -24,8 +33,13 @@ from objc3c_runtime_acceptance.native_binaries import find_clangxx
 
 __all__ = [
     "check_arc_property_helper_case",
+    "check_async_error_foreign_boundary_runtime_trace_case",
+    "check_block_helper_runtime_execution_case",
     "check_installation_lifecycle_case",
+    "check_live_error_runtime_integration_case",
     "check_live_dispatch_fast_path_case",
+    "check_live_unified_concurrency_runtime_implementation_case",
+    "check_multi_image_registration_reset_replay_case",
     "check_realization_lookup_reflection_runtime_case",
     "check_storage_ownership_reflection_case",
     "check_stdlib_concurrency_runtime_probe_case",
