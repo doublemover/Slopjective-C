@@ -72,6 +72,10 @@ bool AllMutatingPassesDeclareInvalidation(
         !pass.invalidates_global_proof_state) {
       return false;
     }
+    if (pass.pass_id == "devirtualization" &&
+        !pass.invalidates_global_proof_state) {
+      return false;
+    }
   }
   return !passes.empty();
 }
@@ -173,8 +177,28 @@ BuildObjc3SemanticOptimizationTraceCandidates(
           .edge_case_compatibility_ready;
   candidates.push_back(runtime_dispatch);
 
-  for (const auto *pass_id :
-       {"devirtualization", "method-inlining", "cache-aware-dispatch"}) {
+  objc3c::opt::Objc3SemanticOptimizationCandidate devirtualization;
+  devirtualization.pass_id = "devirtualization";
+  devirtualization.source_replay_key =
+      "ir-exact-target-devirtualization-proof-gate";
+  devirtualization.benchmark_governance_ready = benchmark_governance_ready;
+  devirtualization.exact_target_receiver_static_type_proven =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold.typed_surface_ready;
+  devirtualization.exact_method_target_identity_present =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .direct_ir_entrypoint_enabled;
+  devirtualization.devirtualization_ownership_arc_safe =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .lowering_ir_boundary_ready;
+  devirtualization.devirtualization_source_map_debug_preserved =
+      pipeline_result.lowering_pipeline_pass_graph_scaffold
+          .parse_lowering_readiness_ready;
+  devirtualization.devirtualization_runtime_abi_safe =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .runtime_dispatch_declaration_consistent;
+  candidates.push_back(devirtualization);
+
+  for (const auto *pass_id : {"method-inlining", "cache-aware-dispatch"}) {
     objc3c::opt::Objc3SemanticOptimizationCandidate reserved;
     reserved.pass_id = pass_id;
     reserved.source_replay_key = "reserved-optimization-opportunity";
@@ -310,21 +334,26 @@ BuildObjc3SemanticOptimizationPassRegistry() {
       {
           "devirtualization",
           60,
-          "semantic-optimization-reserved",
-          Objc3SemanticOptimizationPassMode::kReserved,
-          "closed-world receiver finality proof",
-          "exact direct dispatch call",
-          {"class finality proof exists",
-           "override set is closed",
-           "ABI stability allows direct target publication"},
-          "would invalidate receiver, selector, and callee proof state",
+          "semantic-exact-target-message-send-optimization",
+          Objc3SemanticOptimizationPassMode::kEnabled,
+          "Objc3ExactTargetMessageSendDevirtualizationCandidate",
+          "Objc3IRDirectDispatchCallRequest",
+          {"sealed or final dispatch evidence is present",
+           "static receiver type proof identifies one concrete class target",
+           "exact method target identity resolves selector to one ABI-compatible implementation",
+           "class category and method mutation generation snapshot is pinned",
+           "runtime cache version dependency is pinned before bypassing dispatch lookup",
+           "ownership and ARC transfer safety is preserved",
+           "source-map and line-table debug preservation is proven",
+           "package import ABI identity and runtime ABI compatibility are identical"},
+          "invalidates receiver_static_type, selector_resolution, callee_body_identity, class_generation, category_generation, method_generation, runtime_cache_version, runtime_metadata, and package/import proof state",
+          true,
+          true,
+          true,
+          true,
           true,
           false,
-          false,
-          true,
-          true,
-          false,
-          "devirtualization is reserved until closed-world finality proofs exist",
+          "exact-target devirtualization requires sealed or final dispatch, static receiver, mutation invalidation, runtime cache, ownership, source-map, ABI, and package proofs",
       },
       {
           "method-inlining",

@@ -52,6 +52,15 @@ struct Objc3SemanticOptimizationCandidate {
   bool canonical_runtime_dispatch_symbol = false;
   bool retired_routes_disabled = true;
   bool compatibility_routes_disabled = true;
+  bool exact_target_receiver_static_type_proven = false;
+  bool sealed_final_dispatch_evidence_present = false;
+  bool exact_method_target_identity_present = false;
+  bool class_category_method_mutation_generation_pinned = false;
+  bool runtime_cache_version_dependency_pinned = false;
+  bool devirtualization_ownership_arc_safe = false;
+  bool devirtualization_source_map_debug_preserved = false;
+  bool devirtualization_runtime_abi_safe = false;
+  bool devirtualization_package_abi_identical = false;
   bool all_prior_mutations_declared_invalidation = false;
   bool unsupported_skips_emit_no_success_claim = false;
   bool semantic_equivalence_verdict_present = false;

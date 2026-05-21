@@ -75,14 +75,14 @@
       "ir-cleanup-verifier"
     ],
     "required_reserved_passes": [
-      "devirtualization",
       "method-inlining",
       "cache-aware-dispatch"
     ],
     "required_enabled_passes": [
       "nil-receiver-folding",
       "direct-dispatch-exact-call",
-      "arc-retained-result-cleanup"
+      "arc-retained-result-cleanup",
+      "devirtualization"
     ],
     "reserved_pass_success_claims_allowed": false,
     "unsafe_flags_allowed": false,

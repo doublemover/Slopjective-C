@@ -4006,20 +4006,35 @@
     },
     {
       "id": "compiler.optimization.devirtualization",
-      "title": "Devirtualization optimization lane",
-      "state": "reserved",
-      "summary": "Devirtualization is explicitly reserved until closed-world finality, override-set, and ABI-publication proofs exist. The current pipeline records the lane and emits fail-closed skip evidence without publishing a success claim.",
+      "title": "Exact-target devirtualization optimization",
+      "state": "implemented",
+      "support_claims": [
+        "objc3c.behavior.semantic_optimization.exact_target_devirtualization"
+      ],
+      "summary": "Exact-target devirtualization is enabled behind sealed/final dispatch evidence, static receiver proof, mutation-generation invalidation, runtime-cache dependency pinning, ownership safety, source-map preservation, ABI safety, and package identity proof. Candidates without that complete proof set reject fail-closed and publish no success claim.",
       "owner_modules": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+        "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "scripts/objc3c_semantic_optimization_pipeline.py",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+          "kind": "source",
+          "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp"
         },
         {
-          "kind": "doc",
+          "kind": "source",
+          "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+        },
+        {
+          "kind": "source",
           "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
         }
       ]
     },

@@ -1901,17 +1901,24 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
   - source: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 
-### Devirtualization optimization lane
+### Exact-target devirtualization optimization
 
 - Capability ID: `compiler.optimization.devirtualization`
-- State: `reserved`
-- Support claims: None
-- Summary: Devirtualization is explicitly reserved until closed-world finality, override-set, and ABI-publication proofs exist. The current pipeline records the lane and emits fail-closed skip evidence without publishing a success claim.
+- State: `implemented`
+- Support claims:
+  - `objc3c.behavior.semantic_optimization.exact_target_devirtualization`
+- Summary: Exact-target devirtualization is enabled behind sealed/final dispatch evidence, static receiver proof, mutation-generation invalidation, runtime-cache dependency pinning, ownership safety, source-map preservation, ABI safety, and package identity proof. Candidates without that complete proof set reject fail-closed and publish no success claim.
 - Owner modules:
-  - `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json`
+  - `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
+  - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - `scripts/objc3c_semantic_optimization_pipeline.py`
+  - `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json`
-  - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - source: `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
+  - source: `scripts/objc3c_semantic_optimization_pipeline.py`
+  - source: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json`
 
 ### Method inlining optimization lane
 

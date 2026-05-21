@@ -36,7 +36,31 @@
     },
     {
       "pass_id": "devirtualization",
-      "source_replay_key": "fixture:reserved:devirtualization"
+      "source_replay_key": "fixture:devirtualization:exact-target",
+      "benchmark_governance_ready": true,
+      "exact_target_receiver_static_type_proven": true,
+      "sealed_final_dispatch_evidence_present": true,
+      "exact_method_target_identity_present": true,
+      "class_category_method_mutation_generation_pinned": true,
+      "runtime_cache_version_dependency_pinned": true,
+      "devirtualization_ownership_arc_safe": true,
+      "devirtualization_source_map_debug_preserved": true,
+      "devirtualization_runtime_abi_safe": true,
+      "devirtualization_package_abi_identical": true
+    },
+    {
+      "pass_id": "devirtualization",
+      "source_replay_key": "fixture:devirtualization:missing-sealed-proof",
+      "benchmark_governance_ready": true,
+      "exact_target_receiver_static_type_proven": true,
+      "sealed_final_dispatch_evidence_present": false,
+      "exact_method_target_identity_present": true,
+      "class_category_method_mutation_generation_pinned": true,
+      "runtime_cache_version_dependency_pinned": true,
+      "devirtualization_ownership_arc_safe": true,
+      "devirtualization_source_map_debug_preserved": true,
+      "devirtualization_runtime_abi_safe": true,
+      "devirtualization_package_abi_identical": true
     },
     {
       "pass_id": "arc-retained-result-cleanup",

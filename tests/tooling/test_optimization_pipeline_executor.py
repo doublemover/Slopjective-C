@@ -68,10 +68,23 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
     assert runtime["success_claim"] is False
     assert "non-canonical" in str(runtime["diagnostic"])
 
-    reserved = results["devirtualization:fixture:reserved:devirtualization"]
-    assert reserved["decision"] == "SKIPPED_FAIL_CLOSED"
-    assert reserved["success_claim"] is False
-    assert "reserved" in str(reserved["diagnostic"])
+    missing_devirt = results[
+        "devirtualization:fixture:devirtualization:missing-sealed-proof"
+    ]
+    assert missing_devirt["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_devirt["success_claim"] is False
+    assert "exact-target devirtualization requires" in str(missing_devirt["diagnostic"])
+
+
+def test_optimization_pipeline_applies_exact_target_devirtualization() -> None:
+    results = _candidate_results()
+
+    devirt = results["devirtualization:fixture:devirtualization:exact-target"]
+    assert devirt["decision"] == "APPLIED"
+    assert devirt["success_claim"] is True
+    assert devirt["rewrites_ir"] is True
+    assert devirt["invalidates_global_proof_state"] is True
+    assert "success-claim=true" in str(devirt["metadata_key"])
 
 
 def test_optimization_pipeline_metadata_is_deterministic_and_source_backed() -> None:
@@ -81,7 +94,8 @@ def test_optimization_pipeline_metadata_is_deterministic_and_source_backed() -> 
     for result in left.values():
         metadata_key = str(result["metadata_key"])
         assert "timestamp" not in metadata_key.lower()
-        assert "success-claim=false" in metadata_key
+        expected_success_claim = "true" if result["success_claim"] else "false"
+        assert f"success-claim={expected_success_claim}" in metadata_key
 
     cpp_text = CPP_SOURCE.read_text(encoding="utf-8")
     assert "EvaluateObjc3SemanticOptimizationCandidate" in cpp_text

@@ -67,15 +67,20 @@ const std::vector<Objc3SemanticOptimizationPassPlan> &PassPlans() {
        "runtime dispatch preservation rejected non-canonical dispatch emission"},
       {"devirtualization",
        60,
-       Objc3SemanticOptimizationPassMode::kReserved,
+       Objc3SemanticOptimizationPassMode::kEnabled,
        true,
-       false,
-       false,
-       "SKIP_FAIL_CLOSED",
-       {"class finality proof exists",
-        "override set is closed",
-        "ABI stability allows direct target publication"},
-       "devirtualization is reserved until closed-world finality proofs exist"},
+       true,
+       true,
+       "REJECT_FAIL_CLOSED",
+       {"sealed or final dispatch evidence is present",
+        "static receiver type proof identifies one concrete class target",
+        "exact method target identity resolves selector to one ABI-compatible implementation",
+        "class category and method mutation generation snapshot is pinned",
+        "runtime cache version dependency is pinned before bypassing dispatch lookup",
+        "ownership and ARC transfer safety is preserved",
+        "source-map and line-table debug preservation is proven",
+        "package import ABI identity and runtime ABI compatibility are identical"},
+       "exact-target devirtualization requires sealed or final dispatch, static receiver, mutation invalidation, runtime cache, ownership, source-map, ABI, and package proofs"},
       {"method-inlining",
        70,
        Objc3SemanticOptimizationPassMode::kReserved,
@@ -150,7 +155,9 @@ std::string BuildObjc3SemanticOptimizationMetadataKey(
       << ";rewrites-ir=" << (plan.rewrites_ir ? "true" : "false")
       << ";invalidates-global-proof-state="
       << (plan.invalidates_global_proof_state ? "true" : "false")
-      << ";success-claim=false"
+      << ";success-claim="
+      << (decision == Objc3SemanticOptimizationDecision::kApplied ? "true"
+                                                                   : "false")
       << ";source=" << candidate.source_replay_key;
   return key.str();
 }
@@ -279,6 +286,22 @@ Objc3SemanticOptimizationResult EvaluateObjc3SemanticOptimizationCandidate(
     return MissingProofResult(*plan, candidate);
   }
 
+  if (plan->pass_id == "devirtualization") {
+    if (candidate.exact_target_receiver_static_type_proven &&
+        candidate.sealed_final_dispatch_evidence_present &&
+        candidate.exact_method_target_identity_present &&
+        candidate.class_category_method_mutation_generation_pinned &&
+        candidate.runtime_cache_version_dependency_pinned &&
+        candidate.devirtualization_ownership_arc_safe &&
+        candidate.devirtualization_source_map_debug_preserved &&
+        candidate.devirtualization_runtime_abi_safe &&
+        candidate.devirtualization_package_abi_identical) {
+      return MakeResult(*plan, Objc3SemanticOptimizationDecision::kApplied,
+                        candidate, "");
+    }
+    return MissingProofResult(*plan, candidate);
+  }
+
   if (plan->pass_id == "ir-cleanup-verifier") {
     if (candidate.all_prior_mutations_declared_invalidation &&
         candidate.unsupported_skips_emit_no_success_claim &&
@@ -311,6 +334,10 @@ bool AllObjc3SemanticOptimizationTraceMutationsDeclareInvalidation(
       continue;
     }
     if (result.pass_id == "direct-dispatch-exact-call" &&
+        !result.invalidates_global_proof_state) {
+      return false;
+    }
+    if (result.pass_id == "devirtualization" &&
         !result.invalidates_global_proof_state) {
       return false;
     }

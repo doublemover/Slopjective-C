@@ -72,13 +72,12 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
         REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS
     )
     assert result.payload["enabled_pass_count"] >= 3
-    assert result.payload["reserved_pass_count"] == 3
+    assert result.payload["reserved_pass_count"] == 2
     assert result.payload["reserved_skip_fixture_count"] == (
         result.payload["reserved_pass_count"]
     )
     assert result.payload["reserved_skip_passes"] == [
         "cache-aware-dispatch",
-        "devirtualization",
         "method-inlining",
     ]
     assert result.payload["performance_governance_contract"] == (
@@ -299,7 +298,7 @@ def test_semantic_optimization_pipeline_requires_pass_specific_reserved_skip_fix
     for pass_row in payload["pass_registry"]:
         if pass_row["pass_id"] == "method-inlining":
             pass_row["fixtures"] = [
-                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+                "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
             ]
             break
 

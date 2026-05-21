@@ -31,7 +31,11 @@
         "primary_issues": {
           "type": "array",
           "items": { "type": "integer" },
-          "contains": { "const": 8175 }
+          "allOf": [
+            { "contains": { "const": 8175 } },
+            { "contains": { "const": 8191 } },
+            { "contains": { "const": 8192 } }
+          ]
         },
         "support_claims": {
           "type": "array",
@@ -212,17 +216,30 @@
         "candidate_input_fields": {
           "type": "array",
           "items": { "type": "string" },
-          "contains": { "const": "source_graph_node_ids" }
+          "allOf": [
+            { "contains": { "const": "source_graph_node_ids" } },
+            { "contains": { "const": "static_receiver_type_proof" } },
+            { "contains": { "const": "runtime_cache_version_dependency" } }
+          ]
         },
         "result_payload_fields": {
           "type": "array",
           "items": { "type": "string" },
-          "contains": { "const": "success_claim" }
+          "allOf": [
+            { "contains": { "const": "success_claim" } },
+            { "contains": { "const": "exact_target_eligibility_verdict" } },
+            { "contains": { "const": "runtime_cache_version_verdict" } }
+          ]
         },
         "required_verdict_fields": {
           "type": "array",
           "items": { "type": "string" },
-          "contains": { "const": "semantic_equivalence_verdict" }
+          "allOf": [
+            { "contains": { "const": "semantic_equivalence_verdict" } },
+            { "contains": { "const": "exact_target_eligibility_verdict" } },
+            { "contains": { "const": "mutation_invalidation_verdict" } },
+            { "contains": { "const": "runtime_cache_version_verdict" } }
+          ]
         },
         "verifier_passes": {
           "type": "array",
@@ -250,6 +267,9 @@
               "source_map_debug_impact_verdict",
               "ownership_arc_safety_verdict",
               "package_import_abi_identity_verdict",
+              "exact_target_eligibility_verdict",
+              "mutation_invalidation_verdict",
+              "runtime_cache_version_verdict",
               "unsupported_skip_behavior",
               "success_claim_on_skip",
               "fail_closed_diagnostic"
@@ -268,6 +288,15 @@
               "source_map_debug_impact_verdict": { "const": "required" },
               "ownership_arc_safety_verdict": { "const": "required" },
               "package_import_abi_identity_verdict": { "const": "required" },
+              "exact_target_eligibility_verdict": {
+                "enum": ["required", "not-applicable"]
+              },
+              "mutation_invalidation_verdict": {
+                "enum": ["required", "not-applicable"]
+              },
+              "runtime_cache_version_verdict": {
+                "enum": ["required", "not-applicable"]
+              },
               "unsupported_skip_behavior": {
                 "const": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM"
               },

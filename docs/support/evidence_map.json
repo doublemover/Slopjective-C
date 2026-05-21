@@ -3632,13 +3632,27 @@
     },
     {
       "capability_id": "compiler.optimization.devirtualization",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp"
     },
     {
       "capability_id": "compiler.optimization.devirtualization",
-      "evidence_kind": "doc",
+      "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+    },
+    {
+      "capability_id": "compiler.optimization.devirtualization",
+      "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+    },
+    {
+      "capability_id": "compiler.optimization.devirtualization",
+      "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",

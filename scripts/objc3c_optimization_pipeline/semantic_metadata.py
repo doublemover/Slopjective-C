@@ -63,11 +63,15 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
     },
     "devirtualization": {
         "ordinal": 60,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "devirtualization is reserved until closed-world finality proofs exist",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "exact-target devirtualization requires sealed or final dispatch, "
+            "static receiver, mutation invalidation, runtime cache, ownership, "
+            "source-map, ABI, and package proofs"
+        ),
     },
     "method-inlining": {
         "ordinal": 70,
@@ -97,13 +101,14 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
 
 
 def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any]) -> str:
+    success_claim = "true" if decision == "APPLIED" else "false"
     return (
         "objc3-semantic-optimization:v1"
         f";pass={candidate['pass_id']}"
         f";ordinal={plan['ordinal']}"
         f";decision={decision}"
         f";rewrites-ir={str(plan['rewrites_ir']).lower()}"
-        ";success-claim=false"
+        f";success-claim={success_claim}"
         f";source={candidate.get('source_replay_key', '')}"
     )
 
@@ -207,6 +212,21 @@ def evaluate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
             and candidate.get("compatibility_routes_disabled")
         ):
             return _result(candidate, plan, "VERIFIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "devirtualization":
+        if (
+            candidate.get("exact_target_receiver_static_type_proven")
+            and candidate.get("sealed_final_dispatch_evidence_present")
+            and candidate.get("exact_method_target_identity_present")
+            and candidate.get("class_category_method_mutation_generation_pinned")
+            and candidate.get("runtime_cache_version_dependency_pinned")
+            and candidate.get("devirtualization_ownership_arc_safe")
+            and candidate.get("devirtualization_source_map_debug_preserved")
+            and candidate.get("devirtualization_runtime_abi_safe")
+            and candidate.get("devirtualization_package_abi_identical")
+        ):
+            return _result(candidate, plan, "APPLIED")
         return _missing(candidate, plan)
 
     if pass_id == "ir-cleanup-verifier":

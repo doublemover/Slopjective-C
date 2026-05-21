@@ -623,8 +623,10 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.semantic-pass-registry` |  | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h` |  |
 | `compiler.optimization.semantic-pass-registry` |  | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
 | `compiler.optimization.semantic-pass-registry` |  | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
-| `compiler.optimization.devirtualization` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json` |  |
-| `compiler.optimization.devirtualization` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp` |  |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `scripts/objc3c_semantic_optimization_pipeline.py` |  |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` |  |
 | `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json` |  |
 | `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.optimization.cache-aware-dispatch` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json` |  |

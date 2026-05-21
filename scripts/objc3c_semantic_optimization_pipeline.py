@@ -24,7 +24,7 @@ PIPELINE_PATH = (
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "semantic-optimization-pipeline.json"
 PROOF_MODEL_REPORT_PATH = ROOT / "tmp" / "reports" / "optimization-proof-model.json"
-REQUIRED_ISSUES = {8175, 8191}
+REQUIRED_ISSUES = {8175, 8191, 8192}
 REQUIRED_SUPPORT_CLAIM = "objc3c.behavior.semantic_optimization_pipeline"
 REQUIRED_PASS_ORDER = [
     "semantic-precondition-gate",
@@ -54,8 +54,8 @@ FALSE_UNSUPPORTED_POLICY_FIELDS = {
 FAIL_CLOSED_MISSING_PROOF_ACTIONS = {"SKIP_FAIL_CLOSED", "REJECT_FAIL_CLOSED"}
 REQUIRED_CAPABILITY_ROWS = {
     "objc3c.behavior.semantic_optimization_pipeline",
+    "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
     "objc3c.internal.semantic_optimization_pass_registry",
-    "objc3c.reserved.semantic_optimization.devirtualization",
     "objc3c.reserved.semantic_optimization.method_inlining",
     "objc3c.reserved.semantic_optimization.cache_aware_dispatch",
 }
@@ -68,6 +68,7 @@ REQUIRED_EVIDENCE_IDS = {
     "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
     "objc3c.evidence.semantic_optimization_pipeline.proof_model",
     "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
+    "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
 }
 RESERVED_SKIP_CONTRACT_ID = "objc3c.optimization.semantic.pipeline.reserved.skip.v1"
 REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE = "O3OPT8175"
@@ -124,6 +125,14 @@ REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS = {
     "class_category_protocol_generation_assumptions",
     "benchmark_workload_digest",
 }
+REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS = {
+    "static_receiver_type_proof",
+    "sealed_final_dispatch_evidence",
+    "exact_target_method_identity",
+    "mutation_generation_snapshot",
+    "runtime_cache_version_dependency",
+    "devirtualized_target_symbol",
+}
 REQUIRED_PROOF_RESULT_FIELDS = {
     "decision",
     "reason",
@@ -138,6 +147,11 @@ REQUIRED_PROOF_RESULT_FIELDS = {
     "ownership_safety_verdict",
     "runtime_abi_safety_verdict",
     "package_import_abi_identity_verdict",
+    "exact_target_eligibility_verdict",
+    "mutation_invalidation_verdict",
+    "runtime_cache_version_verdict",
+    "devirtualized_target_symbol",
+    "runtime_cache_version_dependency",
     "success_claim",
 }
 REQUIRED_PROOF_VERDICT_FIELDS = {
@@ -162,6 +176,38 @@ REQUIRED_PROOF_IDS = {
     "semantic_equivalence",
     "invalidation_completeness",
 }
+REQUIRED_DEVIRTUALIZATION_PROOF_IDS = {
+    "sealed_final_dispatch_evidence",
+    "static_receiver_type_proof",
+    "exact_method_target_identity",
+    "class_category_method_mutation_invalidation",
+    "runtime_cache_version_dependency",
+}
+REQUIRED_ALL_PROOF_IDS = REQUIRED_PROOF_IDS | REQUIRED_DEVIRTUALIZATION_PROOF_IDS
+REQUIRED_DEVIRTUALIZATION_VERDICT_FIELDS = {
+    "exact_target_eligibility_verdict",
+    "mutation_invalidation_verdict",
+    "runtime_cache_version_verdict",
+}
+SAFE_DEVIRTUALIZATION_VERDICTS = {
+    "exact_target_eligibility_verdict": {"ELIGIBLE"},
+    "mutation_invalidation_verdict": {"COMPLETE"},
+    "runtime_cache_version_verdict": {"PINNED"},
+}
+DEVIRTUALIZATION_VERDICT_PROOF_IDS = {
+    "exact_target_eligibility_verdict": "exact_method_target_identity",
+    "mutation_invalidation_verdict": "class_category_method_mutation_invalidation",
+    "runtime_cache_version_verdict": "runtime_cache_version_dependency",
+}
+DEVIRTUALIZATION_REQUIRED_INVALIDATED_PROOFS = {
+    "receiver_static_type",
+    "selector_resolution",
+    "callee_body_identity",
+    "class_generation",
+    "category_generation",
+    "method_generation",
+    "runtime_cache_version",
+}
 REQUIRED_VERIFIER_PASSES = {
     "source-map-preservation-verifier",
     "ownership-preservation-verifier",
@@ -170,6 +216,8 @@ REQUIRED_VERIFIER_PASSES = {
     "runtime-metadata-consistency-verifier",
     "unsupported-skip-claimlessness-verifier",
     "invalidation-completeness-verifier",
+    "exact-target-devirtualization-verifier",
+    "runtime-cache-version-dependency-verifier",
 }
 REQUIRED_PROOF_CASE_IDS = {
     "direct-dispatch-full-proof-record",
@@ -178,6 +226,10 @@ REQUIRED_PROOF_CASE_IDS = {
     "direct-dispatch-runtime-abi-drift",
     "arc-retained-result-ownership-unsafe",
     "direct-dispatch-stale-package-identity",
+    "devirtualization-exact-target-full-proof-record",
+    "devirtualization-missing-sealed-final-evidence",
+    "devirtualization-stale-mutation-generation",
+    "devirtualization-runtime-cache-version-drift",
     "method-inlining-reserved-skip-no-success",
 }
 SAFE_PROOF_VERDICTS = {
@@ -353,6 +405,12 @@ def _proof_result_diagnostic(
     return diagnostic + "; " + "; ".join(details)
 
 
+def _required_proof_ids_for_pass(pass_id: str) -> set[str]:
+    if pass_id == "devirtualization":
+        return REQUIRED_ALL_PROOF_IDS
+    return REQUIRED_PROOF_IDS
+
+
 def evaluate_optimization_proof_case(
     case: dict[str, Any],
     *,
@@ -385,6 +443,11 @@ def evaluate_optimization_proof_case(
         verdict = str(verdicts.get(verdict_field, "MISSING"))
         if verdict not in SAFE_PROOF_VERDICTS[verdict_field]:
             failed_proofs.append(proof_id)
+    if pass_id == "devirtualization":
+        for verdict_field, proof_id in DEVIRTUALIZATION_VERDICT_PROOF_IDS.items():
+            verdict = str(verdicts.get(verdict_field, "MISSING"))
+            if verdict not in SAFE_DEVIRTUALIZATION_VERDICTS[verdict_field]:
+                failed_proofs.append(proof_id)
 
     invalidation = _as_dict(case.get("invalidation"))
     if pass_record.get("rewrites_ir") is True:
@@ -392,6 +455,18 @@ def evaluate_optimization_proof_case(
             failed_proofs.append("invalidation_completeness")
         if not _as_list(invalidation.get("invalidated_proofs")):
             failed_proofs.append("invalidation_completeness")
+    if pass_id == "devirtualization":
+        invalidated = {str(proof) for proof in _as_list(invalidation.get("invalidated_proofs"))}
+        if not DEVIRTUALIZATION_REQUIRED_INVALIDATED_PROOFS.issubset(invalidated):
+            failed_proofs.append("class_category_method_mutation_invalidation")
+        candidate_fields = _as_dict(case.get("candidate"))
+        for field in REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS:
+            value = candidate_fields.get(field)
+            if isinstance(value, list):
+                if not value:
+                    missing_proofs.append(field)
+            elif not str(value or ""):
+                missing_proofs.append(field)
 
     missing_proofs = _unique_ordered(missing_proofs)
     failed_proofs = _unique_ordered(failed_proofs)
@@ -449,6 +524,19 @@ def evaluate_optimization_proof_case(
         "runtime_abi_safety_verdict": str(verdicts.get("runtime_abi_safety_verdict", "")),
         "package_import_abi_identity_verdict": str(
             verdicts.get("package_import_abi_identity_verdict", "")
+        ),
+        "exact_target_eligibility_verdict": str(
+            verdicts.get("exact_target_eligibility_verdict", "")
+        ),
+        "mutation_invalidation_verdict": str(
+            verdicts.get("mutation_invalidation_verdict", "")
+        ),
+        "runtime_cache_version_verdict": str(
+            verdicts.get("runtime_cache_version_verdict", "")
+        ),
+        "devirtualized_target_symbol": str(candidate.get("devirtualized_target_symbol", "")),
+        "runtime_cache_version_dependency": str(
+            candidate.get("runtime_cache_version_dependency", "")
         ),
         "success_claim": success_claim,
         "diagnostic": diagnostic,
@@ -782,6 +870,18 @@ def _validate_pass_registry(
     if "runtime-owned" not in _pass_text(cache_pass):
         failures.append("cache-aware dispatch pass must remain runtime-owned")
 
+    devirt_pass = pass_by_id.get("devirtualization", {})
+    devirt_text = _pass_text(devirt_pass)
+    if devirt_pass.get("mode") != "enabled":
+        failures.append("devirtualization pass must be enabled for exact-target optimization")
+    if devirt_pass.get("rewrites_ir") is not True:
+        failures.append("devirtualization pass must rewrite IR")
+    if devirt_pass.get("invalidates_global_proof_state") is not True:
+        failures.append("devirtualization pass must invalidate global proof state")
+    for token in ("sealed", "final", "static receiver", "mutation", "runtime cache", "source-map", "abi"):
+        if token not in devirt_text:
+            failures.append(f"devirtualization pass missing exact-target proof token: {token}")
+
     return pass_by_id
 
 
@@ -896,6 +996,15 @@ def _validate_semantic_preservation_contracts(
                 failures.append(
                     "direct dispatch preservation contract must require proof invalidation"
                 )
+        if pass_id == "devirtualization":
+            proof_text = " ".join(
+                required_proofs + [str(row.get("semantic_equivalence", ""))]
+            ).lower()
+            for token in ("sealed", "static receiver", "mutation", "runtime cache", "ownership", "source-map", "abi"):
+                if token not in proof_text:
+                    failures.append(
+                        f"devirtualization preservation contract missing exact-target proof token: {token}"
+                    )
 
     missing = [pass_id for pass_id in REQUIRED_PASS_ORDER if pass_id not in contracts_by_id]
     if missing:
@@ -1060,6 +1169,25 @@ def _validate_proof_case_fixture(
             failures.append(
                 f"optimization proof case candidate lacks package_import_identity: {case_id}"
             )
+        if pass_id == "devirtualization":
+            missing_devirt_fields = sorted(
+                REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS.difference(candidate)
+            )
+            if missing_devirt_fields:
+                failures.append(
+                    f"devirtualization proof case candidate fields missing for {case_id}: "
+                    + ", ".join(missing_devirt_fields)
+                )
+            for field in REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS:
+                value = candidate.get(field)
+                if isinstance(value, list):
+                    empty = not value
+                else:
+                    empty = not str(value or "")
+                if empty:
+                    failures.append(
+                        f"devirtualization proof case candidate lacks {field}: {case_id}"
+                    )
 
         result = evaluate_optimization_proof_case(
             row,
@@ -1121,13 +1249,16 @@ def _validate_proof_model(
         for row in _as_list(proof_model.get("proof_definitions"))
         if isinstance(row, dict) and row.get("proof_id")
     }
-    if not REQUIRED_PROOF_IDS.issubset(proof_ids):
+    if not REQUIRED_ALL_PROOF_IDS.issubset(proof_ids):
         failures.append("optimization proof model required proof ids incomplete")
 
     candidate_fields = {
         str(field) for field in _as_list(proof_model.get("candidate_input_fields"))
     }
-    if not REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS.issubset(candidate_fields):
+    if not (
+        REQUIRED_PROOF_CANDIDATE_INPUT_FIELDS
+        | REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS
+    ).issubset(candidate_fields):
         failures.append("optimization proof model candidate input fields incomplete")
 
     result_fields = {
@@ -1139,7 +1270,9 @@ def _validate_proof_model(
     verdict_fields = {
         str(field) for field in _as_list(proof_model.get("required_verdict_fields"))
     }
-    if not REQUIRED_PROOF_VERDICT_FIELDS.issubset(verdict_fields):
+    if not (
+        REQUIRED_PROOF_VERDICT_FIELDS | REQUIRED_DEVIRTUALIZATION_VERDICT_FIELDS
+    ).issubset(verdict_fields):
         failures.append("optimization proof model verdict fields incomplete")
 
     verifier_passes = {
@@ -1177,6 +1310,12 @@ def _validate_proof_model(
                 failures.append(
                     f"optimization proof pass contract does not require {field}: {pass_id}"
                 )
+        if pass_id == "devirtualization":
+            for field in REQUIRED_DEVIRTUALIZATION_VERDICT_FIELDS:
+                if row.get(field) != "required":
+                    failures.append(
+                        f"devirtualization proof pass contract does not require {field}: {pass_id}"
+                    )
         if row.get("success_claim_on_skip") is not False:
             failures.append(f"optimization proof pass allows skip success claim: {pass_id}")
         if row.get("unsupported_skip_behavior") != "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM":
@@ -1195,7 +1334,7 @@ def _validate_proof_model(
         required_proofs = [str(proof) for proof in _as_list(row.get("required_proof_ids"))]
         if not required_proofs:
             failures.append(f"optimization proof pass missing required proofs: {pass_id}")
-        missing_required = sorted(REQUIRED_PROOF_IDS.difference(required_proofs))
+        missing_required = sorted(_required_proof_ids_for_pass(pass_id).difference(required_proofs))
         if missing_required:
             failures.append(
                 f"optimization proof pass required proofs incomplete for {pass_id}: "
@@ -1252,7 +1391,7 @@ def validate_pipeline(
     issue_mapping = _as_dict(pipeline.get("issue_mapping"))
     issues = set(int(issue) for issue in _as_list(issue_mapping.get("primary_issues")))
     if not REQUIRED_ISSUES.issubset(issues):
-        failures.append("semantic optimization pipeline must map to issues #8175 and #8191")
+        failures.append("semantic optimization pipeline must map to issues #8175, #8191, and #8192")
     support_claims = {str(claim) for claim in _as_list(issue_mapping.get("support_claims"))}
     if REQUIRED_SUPPORT_CLAIM not in support_claims:
         failures.append("semantic optimization pipeline support claim is missing")
@@ -1422,6 +1561,8 @@ __all__ = [
     "REQUIRED_CAPABILITY_ROWS",
     "REQUIRED_PASS_ORDER",
     "REQUIRED_PROOF_CASE_IDS",
+    "REQUIRED_DEVIRTUALIZATION_PROOF_IDS",
+    "REQUIRED_DEVIRTUALIZATION_VERDICT_FIELDS",
     "REQUIRED_PROOF_IDS",
     "REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS",
     "REQUIRED_PROOF_RESULT_FIELDS",

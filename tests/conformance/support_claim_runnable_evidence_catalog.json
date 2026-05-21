@@ -1888,22 +1888,26 @@
       "capability_id": "compiler.optimization.semantic-preserving-pipeline",
       "owner_phase": "ir",
       "conformance_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
-      "traceability_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json",
+      "traceability_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
       "runnable_command": "npm run objc3c -- validate-semantic-optimization-pipeline",
       "runtime_acceptance_case": "semantic-optimization-pipeline-contract",
       "positive_evidence": [
         "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
         "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.before.ll",
         "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
         "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
         "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
         "tests/tooling/fixtures/performance_governance/budget_model.json",
+        "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
         "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
         "scripts/objc3c_semantic_optimization_pipeline.py",
         "tests/tooling/test_semantic_optimization_pipeline.py"
       ],
       "negative_evidence": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json",
         "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
         "scripts/objc3c_semantic_optimization_pipeline.py"
       ],
@@ -1913,7 +1917,8 @@
       "source_truth_requirements": [
         "Semantic optimization support is bounded to deterministic pass ordering, explicit contracts, invalidation declarations, and post-pass verification",
         "Benchmark governance for semantic optimization must use checked-in workload manifests, fixture digests, and budget policy rather than generated report inputs",
-        "Reserved devirtualization, method-inlining, and cache-aware dispatch lanes cannot publish success claims",
+        "Exact-target devirtualization cannot publish a success claim without sealed/final dispatch, static receiver, mutation invalidation, runtime-cache, ownership, source-map, ABI, and package proof",
+        "Reserved method-inlining and cache-aware dispatch lanes cannot publish success claims",
         "Direct dispatch optimization requires exact symbol/signature ownership and explicit global proof-state invalidation"
       ]
     },

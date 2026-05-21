@@ -41,7 +41,6 @@ def test_completion_contract_passes_against_checked_in_sources() -> None:
     assert result.payload["semantic_optimization"]["pipeline_validation_status"] == "PASS"
     assert result.payload["semantic_optimization"]["reserved_passes"] == [
         "cache-aware-dispatch",
-        "devirtualization",
         "method-inlining",
     ]
     assert result.payload["semantic_optimization"]["runtime_equivalence_contract"] == (
