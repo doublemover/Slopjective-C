@@ -6,6 +6,7 @@
 // lowering/runtime tranches land.
 #include "ast/objc3_ast_block_surface.h"
 #include "ast/objc3_ast_decl_surface.h"
+#include "lex/objc3_lexer_char_class.h"
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_message_send_profiles.h"
 #include "parse/objc3_parse_support.h"

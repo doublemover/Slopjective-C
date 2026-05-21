@@ -1368,6 +1368,97 @@
       ]
     },
     {
+      "id": "language.text.source-string-literal-text-shape-handle",
+      "title": "Source string literal Text shape handles",
+      "state": "implemented",
+      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to the existing runtime text UTF-8 record helper with byte count, scalar unit count, and validity metadata. Runtime content retrieval, interpolation, formatting, normalization, collation, Foundation/NSString bridging, mutation, and arbitrary string operations remain outside this shape-handle contract.",
+      "support_claims": [
+        "objc3c.behavior.language.text.source-string-literal-text-shape-handle"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/lex/objc3_lexer_char_class.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc",
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc",
+        "native/objc3c/src/ast/objc3_ast_expr_kind_members.h",
+        "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h",
+        "native/objc3c/src/ast/objc3_ast_value_type.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+          "command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_source_string_literal_text_support.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/objc3_lexer_char_class.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_value_type.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
       "id": "stdlib.collections.array-slice-runtime-shape",
       "title": "Runtime-backed objc3.collections array and slice shape",
       "state": "implemented",

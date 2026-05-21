@@ -22,6 +22,21 @@
       matched_primary = true;
       return BuildObjc3NilLiteralExpr(Previous());
     }
+    if (Match(TokenKind::String)) {
+      matched_primary = true;
+      const Token &string_token = Previous();
+      std::string value;
+      int unit_count = 0;
+      if (!TryDecodeObjc3StringTokenText(string_token.text, value) ||
+          !TryCountObjc3Utf8Scalars(value, unit_count)) {
+        diagnostics_.push_back(MakeDiag(
+            string_token.line, string_token.column, "O3P104",
+            "invalid canonical string literal token"));
+        return nullptr;
+      }
+      return BuildObjc3StringLiteralExpr(
+          value, static_cast<int>(value.size()), unit_count, string_token);
+    }
     if (Match(TokenKind::Caret)) {
       matched_primary = true;
       return ParseBlockLiteralExpression();

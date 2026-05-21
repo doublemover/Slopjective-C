@@ -1152,6 +1152,103 @@
       "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
     },
     {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_source_string_literal_text_support.py"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lex/objc3_lexer_char_class.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_value_type.h"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+    },
+    {
       "capability_id": "stdlib.collections.array-slice-runtime-shape",
       "support_claim": "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
       "evidence_kind": "test",

@@ -34,3 +34,19 @@ std::unique_ptr<Expr> BuildObjc3NilLiteralExpr(const Objc3LexToken &token) {
   literal->column = token.column;
   return literal;
 }
+
+std::unique_ptr<Expr> BuildObjc3StringLiteralExpr(
+    const std::string &value,
+    int byte_count,
+    int unit_count,
+    const Objc3LexToken &token) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::StringLiteral;
+  literal->string_literal_value = value;
+  literal->string_literal_byte_count = byte_count;
+  literal->string_literal_unit_count = unit_count;
+  literal->string_literal_valid_utf8 = true;
+  literal->line = token.line;
+  literal->column = token.column;
+  return literal;
+}

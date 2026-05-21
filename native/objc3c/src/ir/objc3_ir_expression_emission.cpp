@@ -9,6 +9,9 @@
 
 namespace {
 
+constexpr const char *kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol =
+    "objc3_runtime_stdlib_text_utf8_literal_i32";
+
 std::string EmitObjc3IRExprImpl(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRExpressionEmissionCallbacks &callbacks) {
@@ -23,6 +26,16 @@ std::string EmitObjc3IRExprImpl(
       return expr->bool_value ? "1" : "0";
     case Expr::Kind::NilLiteral:
       return "0";
+    case Expr::Kind::StringLiteral: {
+      const std::string tmp = callbacks.new_temp(ctx);
+      ctx.code_lines.push_back(
+          "  " + tmp + " = call i32 @" +
+          std::string(kObjc3RuntimeStdlibTextUtf8LiteralI32Symbol) +
+          "(i32 " + std::to_string(expr->string_literal_byte_count) +
+          ", i32 " + std::to_string(expr->string_literal_unit_count) +
+          ", i32 " + (expr->string_literal_valid_utf8 ? "1" : "0") + ")");
+      return tmp;
+    }
     case Expr::Kind::BlockLiteral:
       if (BlockLiteralSupportsEscapingRuntimeHookLowering(*expr)) {
         const std::string storage_ptr =

@@ -15,6 +15,7 @@
     case ValueType::Bool:
       return scalar_layout(1u, 1u);
     case ValueType::I32:
+    case ValueType::TextHandle:
       return scalar_layout(4u, 4u);
     case ValueType::Void:
       return scalar_layout(0u, 1u);

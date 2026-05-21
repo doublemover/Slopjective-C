@@ -12,6 +12,8 @@ bool IsResultLikeFailureExpr(const Expr *expr) {
   case Expr::Kind::Identifier:
     return expr->ident == "err" || expr->ident == "error" ||
            expr->ident == "failure";
+  case Expr::Kind::StringLiteral:
+    return false;
   default:
     return false;
   }

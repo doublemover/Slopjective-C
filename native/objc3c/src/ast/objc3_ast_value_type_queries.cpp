@@ -22,6 +22,8 @@ const char *Objc3ValueTypeSpelling(ValueType type) {
       return "instancetype";
     case ValueType::ObjCObjectPtr:
       return "object-ptr";
+    case ValueType::TextHandle:
+      return "Text";
     case ValueType::Unknown:
     default:
       return "unknown";
@@ -30,7 +32,7 @@ const char *Objc3ValueTypeSpelling(ValueType type) {
 
 bool Objc3ValueTypeIsScalar(ValueType type) {
   return type == ValueType::I32 || type == ValueType::Bool ||
-         type == ValueType::Void;
+         type == ValueType::Void || type == ValueType::TextHandle;
 }
 
 bool Objc3ValueTypeIsObjectReference(ValueType type) {

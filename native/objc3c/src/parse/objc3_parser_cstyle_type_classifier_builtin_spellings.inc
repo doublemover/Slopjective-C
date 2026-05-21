@@ -46,5 +46,10 @@ bool ClassifyObjc3CStyleBuiltinTypeSpelling(
     classification.instancetype_spelling = true;
     return true;
   }
+  if (spelling == "Text" || spelling == "Objc3Text") {
+    classification.recognized = true;
+    classification.type = ValueType::TextHandle;
+    return true;
+  }
   return false;
 }

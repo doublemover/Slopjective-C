@@ -35,6 +35,12 @@ std::unique_ptr<Expr> BuildObjc3BoolLiteralExprAt(
 
 std::unique_ptr<Expr> BuildObjc3NilLiteralExpr(const Objc3LexToken &token);
 
+std::unique_ptr<Expr> BuildObjc3StringLiteralExpr(
+    const std::string &value,
+    int byte_count,
+    int unit_count,
+    const Objc3LexToken &token);
+
 std::unique_ptr<Expr> BuildObjc3IdentifierExpr(
     const std::string &identifier,
     const Objc3LexToken &token);

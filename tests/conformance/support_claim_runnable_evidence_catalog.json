@@ -1292,6 +1292,45 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "capability_id": "language.text.source-string-literal-text-shape-handle",
+      "owner_phase": "lowering",
+      "conformance_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "traceability_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3",
+      "runnable_command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "runtime_acceptance_case": "source-string-literal-text-shape-handle",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+        "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt",
+        "tests/tooling/test_source_string_literal_text_support.py",
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/lex/objc3_lexer_char_class.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc",
+        "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3",
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+      ],
+      "required_diagnostic_codes": [
+        "O3L010",
+        "O3L011"
+      ],
+      "source_truth_requirements": [
+        "Source string literal support is a shape-handle contract: the AST stores the decoded source value, while current lowering passes UTF-8 byte count, scalar unit count, and validity into the runtime text record helper",
+        "The runtime-visible type is the Text scalar handle and the runtime-visible operations are the existing byte/unit/validity helpers; content retrieval, mutation, formatting, interpolation, normalization, collation, NSString bridging, and Foundation compatibility remain reserved",
+        "Invalid escapes and interpolation syntax fail closed in lexer diagnostics O3L010 and O3L011; malformed UTF-8 remains O3L012 evidence owned by the same lexer scanner",
+        "This claim does not advertise runtime string content storage, locale formatting, Unicode normalization, collation, arbitrary string operations, or alternate Foundation/NSString compatibility paths"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
       "capability_id": "stdlib.concurrency.public-task-spawn-api",
       "owner_phase": "runtime",

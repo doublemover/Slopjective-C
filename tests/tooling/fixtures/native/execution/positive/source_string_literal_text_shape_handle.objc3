@@ -1,0 +1,14 @@
+// Positive execution fixture: source string literals lower to runtime text shape handles.
+module SourceStringLiteralTextShapeHandle;
+
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: Text) -> i32;
+extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: Text) -> i32;
+extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: Text) -> i32;
+
+fn main() -> i32 {
+  let plain = "hi";
+  let escaped = "line\nquote\"slash\\";
+  return objc3_runtime_stdlib_text_byte_count_i32(plain)
+    + objc3_runtime_stdlib_text_unit_count_i32(escaped)
+    + objc3_runtime_stdlib_text_is_valid_utf8_i32(escaped);
+}

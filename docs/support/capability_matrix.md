@@ -49,6 +49,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
 | `objc3c.behavior.language.protocols.existential-witness-model` | `runtime` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.existential-witness-model` |
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
+| `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `language.text.source-string-literal-text-shape-handle` |
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
 | `objc3c.behavior.modules.public-import-lookup` | `sema` | `tests/tooling/fixtures/native/module_import_lookup_consumer.objc3` | `npm run objc3c -- validate-conformance-corpus` | `modules.public-import-lookup` |
@@ -761,6 +762,44 @@ the canonical manifest fixture and public npm command above.
   - source: `stdlib/modules/objc3.text/module.objc3`
   - source: `stdlib/semantic_policy.json`
   - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+
+### Source string literal Text shape handles
+
+- Capability ID: `language.text.source-string-literal-text-shape-handle`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.text.source-string-literal-text-shape-handle`
+- Summary: Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to the existing runtime text UTF-8 record helper with byte count, scalar unit count, and validity metadata. Runtime content retrieval, interpolation, formatting, normalization, collation, Foundation/NSString bridging, mutation, and arbitrary string operations remain outside this shape-handle contract.
+- Owner modules:
+  - `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
+  - `native/objc3c/src/lex/objc3_lexer_char_class.cpp`
+  - `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc`
+  - `native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc`
+  - `native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc`
+  - `native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc`
+  - `native/objc3c/src/ast/objc3_ast_expr_kind_members.h`
+  - `native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h`
+  - `native/objc3c/src/ast/objc3_ast_value_type.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` via `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3`
+  - test: `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3`
+  - test: `tests/tooling/test_source_string_literal_text_support.py`
+  - source: `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
+  - source: `native/objc3c/src/lex/objc3_lexer_char_class.cpp`
+  - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc`
+  - source: `native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc`
+  - source: `native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc`
+  - source: `native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h`
+  - source: `native/objc3c/src/ast/objc3_ast_value_type.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc`
+  - source: `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
   - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
 
 ### Runtime-backed objc3.collections array and slice shape

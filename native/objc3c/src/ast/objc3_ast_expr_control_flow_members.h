@@ -5,6 +5,10 @@
 #endif
 
   bool typed_keypath_literal_enabled = false;
+  std::string string_literal_value;
+  int string_literal_byte_count = 0;
+  int string_literal_unit_count = 0;
+  bool string_literal_valid_utf8 = false;
   bool typed_keypath_root_is_self = false;
   std::string typed_keypath_root_name;
   std::vector<std::string> typed_keypath_components;

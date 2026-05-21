@@ -2,6 +2,8 @@
       return MakeScalarSemanticType(ValueType::I32);
     case Expr::Kind::BoolLiteral:
       return MakeScalarSemanticType(ValueType::Bool);
+    case Expr::Kind::StringLiteral:
+      return MakeScalarSemanticType(ValueType::TextHandle);
     case Expr::Kind::NilLiteral: {
       SemanticTypeInfo nil_type = MakeScalarSemanticType(ValueType::ObjCId);
       nil_type.canonical_type.nullability =

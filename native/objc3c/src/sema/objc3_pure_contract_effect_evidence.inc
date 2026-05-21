@@ -225,6 +225,7 @@ static void CollectPureContractEffectExpr(
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
+    case Expr::Kind::StringLiteral:
     case Expr::Kind::Identifier:
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:

@@ -37,6 +37,7 @@ void CollectBlockLiteralExprIdentifiers(
   case Expr::Kind::Number:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::NilLiteral:
+  case Expr::Kind::StringLiteral:
   default:
     return;
   }

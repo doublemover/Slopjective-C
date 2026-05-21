@@ -312,6 +312,12 @@
       "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
+      "claim_id": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "executable_command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
+    },
+    {
       "claim_id": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
@@ -1532,6 +1538,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "language-text",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",
@@ -1546,6 +1560,22 @@
       "behavior_family": "stdlib",
       "fixture_kind": "negative",
       "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "language-text",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3L010"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "language-text",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3L011"
     },
     {
       "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",

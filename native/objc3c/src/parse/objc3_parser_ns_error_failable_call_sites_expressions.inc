@@ -39,6 +39,7 @@ std::size_t CountFailableCallSitesInExpr(const Expr *expr) {
   case Expr::Kind::Number:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::NilLiteral:
+  case Expr::Kind::StringLiteral:
   default:
     return 0;
   }
