@@ -136,8 +136,9 @@
         "notes_source_mode": "source-derived",
         "signed_artifact_policy": "installer and archive digests must come from package-channel evidence",
         "release_notes_sources": [
-          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
-          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tests/tooling/fixtures/release_foundation/source_surface.json",
+          "tests/tooling/fixtures/release_operations/versioning_model.json",
+          "tests/tooling/fixtures/release_operations/update_channel_policy.json",
           "tests/tooling/fixtures/release_channel_operations_policy.json"
         ]
       },
@@ -165,6 +166,8 @@
         "evidence_state": "policy-defined",
         "source_truth": [
           "tests/tooling/fixtures/release_channel_operations_policy.json",
+          "tests/tooling/fixtures/release_foundation/source_surface.json",
+          "tests/tooling/fixtures/release_operations/versioning_model.json",
           "tests/tooling/fixtures/release_operations/channel_operations_model.json",
           "tests/tooling/fixtures/release_operations/update_channel_policy.json"
         ],
@@ -220,8 +223,9 @@
         "notes_source_mode": "source-derived",
         "signed_artifact_policy": "installer and archive digests must come from package-channel evidence",
         "release_notes_sources": [
-          "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
-          "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+          "tests/tooling/fixtures/release_foundation/source_surface.json",
+          "tests/tooling/fixtures/release_operations/versioning_model.json",
+          "tests/tooling/fixtures/release_operations/update_channel_policy.json",
           "tests/tooling/fixtures/release_channel_operations_policy.json"
         ]
       },
@@ -251,6 +255,8 @@
         "evidence_state": "policy-defined",
         "source_truth": [
           "tests/tooling/fixtures/release_channel_operations_policy.json",
+          "tests/tooling/fixtures/release_foundation/source_surface.json",
+          "tests/tooling/fixtures/release_operations/versioning_model.json",
           "tests/tooling/fixtures/release_operations/channel_operations_model.json",
           "tests/tooling/fixtures/release_operations/update_channel_policy.json"
         ],

@@ -45,10 +45,18 @@ extern "C" {
     "objc3_runtime_copy_arc_debug_state_for_testing",                      \
     "retain_call_count,release_call_count,autorelease_call_count,"          \
     "autoreleasepool_push_count,autoreleasepool_pop_count",                \
-    "supported", "OBJ3-NEXT-023.runtime-debug-trace.memory", 1, 0)
+    "supported", "OBJ3-NEXT-023.runtime-debug-trace.memory", 1, 0)        \
+  X("runtime.error.snapshot", "error", "runtime-error-snapshot",          \
+    "runtime/errors/error_bridge_snapshot_contracts.h",                    \
+    "objc3_runtime_error_bridge_state_snapshot",                           \
+    "objc3_runtime_copy_error_bridge_state_for_testing",                   \
+    "store_call_count,load_call_count,status_bridge_call_count,"            \
+    "foreign_exception_bridge_call_count,catch_match_call_count,"           \
+    "last_foreign_exception_bridge_result,last_catch_match_result",         \
+    "supported", "OBJ3-NEXT-023.runtime-debug-trace.error-unwind", 1, 0)
 
 enum {
-  OBJC3_RUNTIME_DEBUG_TRACE_LANE_CONTRACT_COUNT = 5,
+  OBJC3_RUNTIME_DEBUG_TRACE_LANE_CONTRACT_COUNT = 6,
 };
 
 typedef struct objc3_runtime_debug_trace_lane_contract {
@@ -72,4 +80,3 @@ int objc3_runtime_copy_debug_trace_lane_contracts_for_testing(
 #ifdef __cplusplus
 }
 #endif
-

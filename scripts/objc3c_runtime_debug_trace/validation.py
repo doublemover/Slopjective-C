@@ -131,7 +131,7 @@ def _validate_runtime_trace_source_contracts(
 
     source_anchors: set[str] = set()
     lane_ids: set[str] = set()
-    expected_domains = {"task", "actor", "dispatch", "object", "memory"}
+    expected_domains = {"task", "actor", "dispatch", "object", "memory", "error"}
     observed_domains: set[str] = set()
     for lane_value in lanes:
         lane = _object(lane_value)
@@ -335,6 +335,7 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
     for event_kind in [
         "runtime-actor-snapshot",
         "runtime-dispatch-snapshot",
+        "runtime-error-snapshot",
         "runtime-memory-snapshot",
         "runtime-object-snapshot",
         "runtime-task-snapshot",
@@ -380,8 +381,8 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             failures,
         )
         _expect(
-            trace_lanes.get("error_unwind_trace", {}).get("status") == "reserved",
-            "error unwind lane must stay reserved until runtime snapshots are published",
+            trace_lanes.get("error_unwind_trace", {}).get("status") == "supported",
+            "error unwind lane must be source-contract backed",
             failures,
         )
         _expect(
@@ -397,6 +398,7 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
         for lane_id in [
             "actor_runtime_trace",
             "dispatch_runtime_trace",
+            "error_unwind_trace",
             "memory_runtime_trace",
             "object_runtime_trace",
             "task_runtime_trace",
@@ -512,6 +514,7 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             "debug.runtime-trace.composed-event-sequence",
             "runtime.source-owned-trace-contracts",
             "runtime.async-task-inspection.source-contracts",
+            "runtime.error-unwind-trace.snapshots",
             "runtime.memory-inspection.source-contracts",
         }
         for query_id in expected_supported_queries:
@@ -523,7 +526,6 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
         expected_reserved_queries = {
             "debug.statement-level-stepping.line-table",
             "debug.full-source-map.publication",
-            "runtime.error-unwind-trace.snapshots",
             "debug.lldb-plugin.integration",
         }
         for query_id in expected_reserved_queries:

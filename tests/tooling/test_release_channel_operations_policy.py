@@ -42,6 +42,8 @@ def test_release_channel_operations_policy_validates_source_truth() -> None:
     }
     assert "validate-release-candidate-conformance" in summary["stable_gate_actions"]
     assert "test-nightly" in summary["nightly_gate_actions"]
+    assert summary["source_truth_path_count"] >= 8
+    assert summary["generated_evidence_artifact_count"] >= 8
 
 
 def test_release_channel_operations_policy_cli_writes_summary() -> None:
@@ -119,7 +121,47 @@ def test_release_channel_operations_policy_rejects_tmp_source_truth_root() -> No
 
     with pytest.raises(
         checker.ReleaseChannelPolicyError,
-        match="release evidence source truth roots must not include tmp",
+        match="release evidence source truth roots must not include generated output roots",
+    ):
+        validate(policy)
+
+
+def test_release_channel_operations_policy_rejects_generated_release_note_source() -> None:
+    policy = load_policy()
+    stable = next(channel for channel in policy["channels"] if channel["channel_id"] == "stable")
+    stable["publication_mechanics"]["release_notes_sources"][0] = (
+        "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json"
+    )
+
+    with pytest.raises(
+        checker.ReleaseChannelPolicyError,
+        match="stable\\.publication_mechanics\\.release_notes_sources\\[0\\] must not use generated output as source truth",
+    ):
+        validate(policy)
+
+
+def test_release_channel_operations_policy_rejects_generated_source_truth() -> None:
+    policy = load_policy()
+    nightly = next(channel for channel in policy["channels"] if channel["channel_id"] == "nightly")
+    nightly["evidence"]["source_truth"][0] = "tmp/reports/release-operations/nightly.json"
+
+    with pytest.raises(
+        checker.ReleaseChannelPolicyError,
+        match="nightly\\.evidence\\.source_truth\\[0\\] must not use generated output as source truth",
+    ):
+        validate(policy)
+
+
+def test_release_channel_operations_policy_rejects_checked_file_as_generated_evidence() -> None:
+    policy = load_policy()
+    stable = next(channel for channel in policy["channels"] if channel["channel_id"] == "stable")
+    stable["evidence"]["generated_evidence_artifacts"][0] = (
+        "tests/tooling/fixtures/release_channel_operations_policy.json"
+    )
+
+    with pytest.raises(
+        checker.ReleaseChannelPolicyError,
+        match="stable\\.evidence\\.generated_evidence_artifacts\\[0\\] must be generated evidence",
     ):
         validate(policy)
 

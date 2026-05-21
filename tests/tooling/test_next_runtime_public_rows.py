@@ -42,6 +42,13 @@ def test_next_runtime_public_rows_are_issue_backed_and_replayable() -> None:
     assert report["issues"] == [8154, 8155]
     assert "runtime.object-model.full-realization" in report["reserved_umbrella_rows"]
     assert "language.advanced-runtime-closure" in report["reserved_umbrella_rows"]
+    assert {
+        "runtime.errors.nserror-status-bridge",
+        "runtime.concurrency.async-actors",
+    } <= set(report["source_runtime_rows"]["advanced_runtime"])
+    assert set(report["source_runtime_rows"]["advanced_runtime"]) <= set(
+        report["advanced_runtime_rows"]
+    )
 
 
 def test_foundation_next_stdlib_runtime_contracts_are_public_umbrella_exports() -> None:

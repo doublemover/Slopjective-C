@@ -191,7 +191,7 @@
             ],
             "properties": {
               "lane_id": {"type": "string"},
-              "trace_domain": {"enum": ["task", "actor", "dispatch", "object", "memory"]},
+              "trace_domain": {"enum": ["task", "actor", "dispatch", "object", "memory", "error"]},
               "event_kind": {"type": "string"},
               "snapshot_header": {"type": "string"},
               "snapshot_type": {"type": "string"},

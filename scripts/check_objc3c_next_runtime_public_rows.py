@@ -6,10 +6,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.objc3c_runtime_acceptance.domains.advanced_runtime_capability_split import (  # noqa: E402
+    build_advanced_runtime_capability_split_contract,
+)
+from scripts.objc3c_runtime_acceptance.domains.object_model_capability_split import (  # noqa: E402
+    build_object_model_capability_split_contract,
+)
+
 MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
 MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
@@ -263,6 +274,28 @@ ADVANCED_RUNTIME_EXPECTATIONS: tuple[CapabilityRowExpectation, ...] = (
     ),
     CapabilityRowExpectation(
         issue=8155,
+        capability_id="runtime.errors.nserror-status-bridge",
+        support_claim="objc3c.behavior.runtime.error-nserror-status-bridge",
+        owner_phase="runtime",
+        behavior_fixture="tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+        manifest_command="npm run objc3c -- test-runtime-acceptance-fast",
+        runnable_command="npm run objc3c -- validate-error-conformance",
+        required_positive=(
+            "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+            "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json",
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+            "scripts/objc3c_runtime_acceptance/domains/errors_runtime_live_case.py",
+            "scripts/objc3c_runtime_acceptance/domains/errors_runtime_abi_case.py",
+        ),
+        required_negative=(
+            "tests/tooling/fixtures/native/bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_status_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
+        ),
+        required_diagnostic_codes=("O3S275", "O3S277"),
+    ),
+    CapabilityRowExpectation(
+        issue=8155,
         capability_id="runtime.errors.live-bridge-cleanup",
         support_claim="objc3c.behavior.runtime.error-live-bridge-cleanup",
         owner_phase="runtime",
@@ -279,6 +312,31 @@ ADVANCED_RUNTIME_EXPECTATIONS: tuple[CapabilityRowExpectation, ...] = (
             "tests/tooling/fixtures/native/throwing_call_requires_try_negative.objc3",
         ),
         required_diagnostic_codes=("O3S275", "O3S277"),
+    ),
+    CapabilityRowExpectation(
+        issue=8155,
+        capability_id="runtime.concurrency.async-actors",
+        support_claim="objc3c.behavior.runtime.concurrency-async-actors",
+        owner_phase="runtime",
+        behavior_fixture="tests/native/runtime/concurrency/actor_executor_contract.objc3",
+        manifest_command="npm run objc3c -- test-behavior-matrix",
+        runnable_command="npm run objc3c -- validate-concurrency-conformance",
+        required_positive=(
+            "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+            "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+            "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+            "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+            "scripts/objc3c_runtime_acceptance/domains/concurrency_live_runtime_cases.py",
+            "scripts/objc3c_runtime_acceptance/domains/concurrency_runtime_abi_cases.py",
+        ),
+        required_negative=(
+            "tests/tooling/fixtures/native/actor_nonisolated_executor_rejected.objc3",
+            "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+            "tests/tooling/fixtures/native/non_async_task_runtime_rejected.objc3",
+        ),
+        required_diagnostic_codes=("O3S342", "O3S343"),
     ),
     CapabilityRowExpectation(
         issue=8155,
@@ -486,6 +544,12 @@ def _as_set(raw: Any) -> set[str]:
     if not isinstance(raw, list):
         return set()
     return {str(item) for item in raw}
+
+
+def _as_path_tuple(raw: Any) -> tuple[str, ...]:
+    if not isinstance(raw, (list, tuple)):
+        return ()
+    return tuple(str(item) for item in raw)
 
 
 def _path_is_repo_file(path: str) -> bool:
@@ -802,6 +866,159 @@ def _check_advanced_runtime_reserved_capabilities_fail_closed(
         )
 
 
+def _check_split_contract_source_derived_rows(
+    failures: list[str],
+    label: str,
+    contract: dict[str, Any],
+    expectations: tuple[CapabilityRowExpectation, ...],
+    manifest_claims: dict[str, dict[str, Any]],
+) -> set[str]:
+    raw_rows = contract.get("implemented_rows")
+    _append(failures, isinstance(raw_rows, list), f"{label} implemented_rows must be a list")
+    if not isinstance(raw_rows, list):
+        return set()
+
+    contract_rows = [row for row in raw_rows if isinstance(row, dict)]
+    contract_by_capability: dict[str, dict[str, Any]] = {}
+    duplicate_capabilities: set[str] = set()
+    support_claims: set[str] = set()
+    duplicate_claims: set[str] = set()
+    for row in contract_rows:
+        capability_id = str(row.get("capability_id", ""))
+        support_claim = str(row.get("support_claim", ""))
+        if capability_id in contract_by_capability:
+            duplicate_capabilities.add(capability_id)
+        contract_by_capability[capability_id] = row
+        if support_claim in support_claims:
+            duplicate_claims.add(support_claim)
+        support_claims.add(support_claim)
+
+    _append(
+        failures,
+        not duplicate_capabilities,
+        f"{label} split contract has duplicate implemented capabilities: {sorted(duplicate_capabilities)}",
+    )
+    _append(
+        failures,
+        not duplicate_claims,
+        f"{label} split contract has duplicate support claims: {sorted(duplicate_claims)}",
+    )
+
+    expected_by_capability = {expected.capability_id: expected for expected in expectations}
+    for expected in expectations:
+        row = contract_by_capability.get(expected.capability_id)
+        _append(
+            failures,
+            row is not None,
+            f"{label} source split contract is missing {expected.capability_id}",
+        )
+        if row is None:
+            continue
+        _append(
+            failures,
+            row.get("support_claim") == expected.support_claim,
+            f"{label} source split support_claim drifted for {expected.capability_id}",
+        )
+        _append(
+            failures,
+            row.get("behavior_fixture") == expected.behavior_fixture,
+            f"{label} source split behavior_fixture drifted for {expected.capability_id}",
+        )
+
+    source_runtime_capabilities: set[str] = set()
+    for row in contract_rows:
+        support_claim = str(row.get("support_claim", ""))
+        manifest_claim = manifest_claims.get(support_claim)
+        _append(
+            failures,
+            manifest_claim is not None,
+            f"{label} source split row {support_claim} is missing its canonical manifest claim",
+        )
+        if manifest_claim is not None and manifest_claim.get("owner_phase") == "runtime":
+            source_runtime_capabilities.add(str(row.get("capability_id", "")))
+
+    expected_runtime_capabilities = {
+        expected.capability_id
+        for expected in expectations
+        if manifest_claims.get(expected.support_claim, {}).get("owner_phase") == "runtime"
+    }
+    missing_runtime_rows = source_runtime_capabilities - expected_runtime_capabilities
+    _append(
+        failures,
+        not missing_runtime_rows,
+        f"{label} checker is missing runtime-owned source-derived rows: {sorted(missing_runtime_rows)}",
+    )
+
+    support_contracts = contract.get("implemented_support_contracts")
+    _append(
+        failures,
+        isinstance(support_contracts, list),
+        f"{label} implemented_support_contracts must be a list",
+    )
+    if not isinstance(support_contracts, list):
+        return source_runtime_capabilities
+
+    for raw_contract in support_contracts:
+        if not isinstance(raw_contract, dict):
+            failures.append(f"{label} support contract is not a JSON-like object")
+            continue
+        capability_id = str(raw_contract.get("capability_id", ""))
+        support_claim = str(raw_contract.get("support_claim", ""))
+        row = contract_by_capability.get(capability_id)
+        _append(
+            failures,
+            row is not None,
+            f"{label} support contract references non-implemented row {capability_id}",
+        )
+        if row is not None:
+            _append(
+                failures,
+                row.get("support_claim") == support_claim,
+                f"{label} support contract support_claim drifted for {capability_id}",
+            )
+
+        _append(
+            failures,
+            str(raw_contract.get("contract_id", "")).startswith(f"objc3c.{label}."),
+            f"{label} support contract {capability_id} has an unexpected contract_id",
+        )
+        _append(
+            failures,
+            str(raw_contract.get("public_command", "")).startswith(PUBLIC_COMMAND_PREFIX),
+            f"{label} support contract {capability_id} must use the public npm workflow command surface",
+        )
+
+        source_truth = _as_path_tuple(raw_contract.get("source_truth"))
+        positive = _as_path_tuple(raw_contract.get("positive_evidence"))
+        negative = _as_path_tuple(raw_contract.get("negative_evidence"))
+        _append(
+            failures,
+            len(source_truth) >= 3,
+            f"{label} support contract {capability_id} must keep at least three source-truth anchors",
+        )
+        _append(
+            failures,
+            len(positive) >= 3,
+            f"{label} support contract {capability_id} must keep at least three positive anchors",
+        )
+        _append(
+            failures,
+            len(negative) >= 2,
+            f"{label} support contract {capability_id} must keep at least two fail-closed anchors",
+        )
+        _check_paths(failures, capability_id, {*source_truth, *positive, *negative})
+
+        expected = expected_by_capability.get(capability_id)
+        if expected is not None:
+            _append(
+                failures,
+                expected.behavior_fixture in positive,
+                f"{label} support contract {capability_id} omits its behavior fixture from positive evidence",
+            )
+
+    return source_runtime_capabilities
+
+
 def validate_next_runtime_public_rows() -> dict[str, Any]:
     matrix = _load_json(MATRIX_PATH)
     evidence_map = _load_json(EVIDENCE_MAP_PATH)
@@ -816,6 +1033,8 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
     manifest_claims = _row_map(manifest.get("support_claims"), "claim_id")
     manifest_fixtures = _row_map(manifest.get("fixtures"), "path")
     catalog_rows = _row_map(catalog.get("rows"), "support_claim")
+    object_model_contract = build_object_model_capability_split_contract()
+    advanced_runtime_contract = build_advanced_runtime_capability_split_contract()
 
     failures: list[str] = []
     issue_refs = set(catalog.get("issue_refs", []))
@@ -852,6 +1071,26 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
             manifest_fixtures,
             catalog_rows,
         )
+    source_runtime_rows = {
+        "object_model": sorted(
+            _check_split_contract_source_derived_rows(
+                failures,
+                "object-model",
+                object_model_contract,
+                OBJECT_MODEL_EXPECTATIONS,
+                manifest_claims,
+            )
+        ),
+        "advanced_runtime": sorted(
+            _check_split_contract_source_derived_rows(
+                failures,
+                "advanced-runtime",
+                advanced_runtime_contract,
+                ADVANCED_RUNTIME_EXPECTATIONS,
+                manifest_claims,
+            )
+        ),
+    }
     _check_advanced_runtime_reserved_umbrella(
         failures,
         matrix_rows,
@@ -876,6 +1115,7 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
         "advanced_runtime_reserved_boundaries": sorted(
             ADVANCED_RUNTIME_RESERVED_BOUNDARIES
         ),
+        "source_runtime_rows": source_runtime_rows,
         "reserved_umbrella_rows": sorted(RESERVED_UMBRELLA_ROWS),
         "failures": failures,
     }

@@ -165,6 +165,9 @@ public changelog must also publish:
   policy, not from prose release notes
 - release-note and changelog source paths derived from checked source
   manifests, never from manual changelog rows or tmp-only support claims
+- generated release, update, channel, rollback, and package artifacts listed as
+  replay evidence only; they must not appear in `release_note_sources` or
+  `public_changelog_sources`
 - local provenance for the release manifest digest, package-channel manifest
   digest, release payload digest, installer signature, archive digests, and git
   source stamp

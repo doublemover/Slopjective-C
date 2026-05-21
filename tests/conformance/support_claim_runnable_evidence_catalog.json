@@ -1937,7 +1937,7 @@
       ],
       "source_truth_requirements": [
         "Runtime debug trace support is bounded to schema-backed trace composition over runtime inspector, compile-stage trace, editor debug-map inputs, and source-owned runtime trace contract rows",
-        "LLDB plugin integration, statement stepping, full source-map publication, and error/unwind tracing remain reserved lanes",
+        "LLDB plugin integration, statement stepping, and full source-map publication remain reserved lanes",
         "Generated trace reports under tmp are replay outputs, not source truth for additional debugger claims"
       ]
     },
@@ -1970,7 +1970,40 @@
       "source_truth_requirements": [
         "Async task, continuation, actor, and executor inspection support is claimed only as source-owned runtime trace contract metadata in the runtime debug trace payload",
         "Supported async/task rows must retain live source anchors and replayable runtime debug trace inputs",
-        "Statement stepping, LLDB integration, full source maps, and error/unwind snapshots remain reserved and fail-closed"
+        "Statement stepping, LLDB integration, and full source maps remain reserved and fail-closed"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "capability_id": "runtime.debug-trace.error-unwind",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "traceability_fixture": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+      "runnable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3",
+      "runtime_acceptance_case": "runtime-debug-trace-error-unwind-source-contracts",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+        "scripts/objc3c_runtime_debug_trace/source_contracts.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py",
+        "tests/tooling/test_runtime_debug_trace_surface.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+        "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+        "scripts/objc3c_runtime_debug_trace/validation.py",
+        "tests/tooling/test_runtime_debug_trace_surface.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3DBG8176"
+      ],
+      "source_truth_requirements": [
+        "Error/unwind inspection support is claimed only as source-owned private runtime trace contract metadata in the runtime debug trace payload",
+        "Supported error rows must retain live source anchors, private ABI status, replayable runtime debug trace inputs, and error bridge snapshot field coverage",
+        "Statement stepping, LLDB integration, and full source maps remain reserved and fail-closed"
       ]
     },
     {

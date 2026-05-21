@@ -444,6 +444,12 @@
       "executable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
     },
     {
+      "claim_id": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "executable_command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
       "claim_id": "objc3c.behavior.platform.windows-x64-tier1",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",

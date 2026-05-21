@@ -18,6 +18,191 @@
   ],
   "source_authority": "checked-in contracts, capability matrix rows, evidence-map rows, and public workflow actions",
   "generated_output_boundary": "tmp reports and artifacts are replay outputs only; they cannot introduce support claims without a matching implemented capability row and evidence-map row",
+  "normal_developer_from_nothing": {
+    "contract_id": "objc3c.developer_tooling.normal_developer_from_nothing.v1",
+    "source_authority": "checked-in-contracts-and-public-workflow-actions",
+    "forbidden_source_prefixes": [
+      "tmp/artifacts/",
+      "tmp/reports/"
+    ],
+    "generated_output_prefixes": [
+      "tmp/artifacts/",
+      "tmp/reports/"
+    ],
+    "stage_order": [
+      "bootstrap-and-first-compile",
+      "diagnostic-recovery",
+      "editor-inspection",
+      "public-conformance-replay",
+      "package-install-receipts",
+      "application-sample-validation"
+    ],
+    "stages": [
+      {
+        "stage_id": "bootstrap-and-first-compile",
+        "workflow_id": "first-run-product-path",
+        "issue": "#8157",
+        "capability_id": "tooling.developer-experience.first-run-product-path",
+        "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+        "public_command": "npm run objc3c -- validate-getting-started",
+        "source_truth_paths": [
+          "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
+          "tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json",
+          "scripts/check_getting_started_integration.py",
+          "docs/tutorials/getting_started.md"
+        ],
+        "generated_outputs": [
+          "tmp/reports/tutorials/getting-started-integration-summary.json",
+          "tmp/artifacts/showcase/auroraBoard"
+        ],
+        "developer_contract": {
+          "first_compile_source": "showcase/auroraBoard/main.objc3",
+          "workflow_action": "compile-objc3c"
+        },
+        "unsupported_claims": [
+          "full IDE implementation",
+          "debugger stepping",
+          "retired Objective-C source acceptance"
+        ]
+      },
+      {
+        "stage_id": "diagnostic-recovery",
+        "workflow_id": "diagnostic-recovery-fixits",
+        "issue": "#8169",
+        "capability_id": "diagnostics.parser-sema.recovery-fixits",
+        "support_claim": "objc3c.behavior.diagnostics.parser-sema-recovery-fixits",
+        "public_command": "npm run objc3c -- check-developer-diagnostic-quality",
+        "source_truth_paths": [
+          "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json",
+          "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-RECOVERY-01.json",
+          "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+          "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+          "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-02.json",
+          "scripts/check_developer_tooling_diagnostic_quality.py"
+        ],
+        "generated_outputs": [
+          "tmp/reports/developer-tooling/diagnostic-quality/diagnostic_quality_summary.json"
+        ],
+        "unsupported_claims": [
+          "fuzzy recovery accepting invalid programs",
+          "non-deterministic fix-its",
+          "localized diagnostic prose"
+        ]
+      },
+      {
+        "stage_id": "editor-inspection",
+        "workflow_id": "formatter-lsp-workspace",
+        "issue": "#8170",
+        "capability_id": "tooling.editor.formatter-lsp-workspace",
+        "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+        "public_command": "npm run objc3c -- inspect-editor-tooling",
+        "source_truth_paths": [
+          "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+          "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+          "scripts/objc3c_editor_tooling/workspace_index.py",
+          "scripts/check_developer_tooling_workspace_integration.py",
+          "docs/runbooks/objc3c_developer_tooling.md"
+        ],
+        "generated_outputs": [
+          "tmp/reports/developer-tooling/workspace-integration-summary.json",
+          "tmp/reports/developer-tooling/editor-tooling-surface.json"
+        ],
+        "unsupported_claims": [
+          "rename",
+          "references",
+          "semantic tokens",
+          "statement-level debugger stepping"
+        ]
+      },
+      {
+        "stage_id": "public-conformance-replay",
+        "workflow_id": "public-conformance-suite-replay",
+        "issue": "#8171",
+        "capability_id": "conformance.public.stable-suite-manifest",
+        "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+        "public_command": "npm run objc3c -- validate-public-conformance-suite",
+        "source_truth_paths": [
+          "tests/conformance/public_suite_manifest.json",
+          "tests/conformance/public_suite_package_replay_evidence.json",
+          "schemas/objc3c-public-conformance-suite-v1.schema.json",
+          "scripts/check_objc3c_public_conformance_suite.py",
+          "docs/runbooks/objc3c_public_conformance_reporting.md"
+        ],
+        "generated_outputs": [
+          "tmp/reports/public-conformance-suite/summary.json",
+          "tmp/artifacts/public-conformance-suite"
+        ],
+        "unsupported_claims": [
+          "external validation as alternate source truth",
+          "internal-only fixture promotion",
+          "unsupported platform support claims"
+        ]
+      },
+      {
+        "stage_id": "package-install-receipts",
+        "workflow_id": "package-manager-local-registry",
+        "issue": "#8172",
+        "capability_id": "ecosystem.package-manager.local-registry",
+        "support_claim": "objc3c.behavior.package.manager-local-registry",
+        "public_command": "npm run objc3c -- validate-package-install-distribution --from-nothing",
+        "clean_start_required": true,
+        "source_truth_paths": [
+          "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+          "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+          "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+          "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+          "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
+          "scripts/objc3c_package_manager/model.py",
+          "scripts/objc3c_package_manager/registry.py",
+          "docs/runbooks/objc3c_package_ecosystem.md"
+        ],
+        "generated_outputs": [
+          "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
+          "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json",
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json",
+          "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
+          "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json",
+          "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+        ],
+        "required_receipt_paths": [
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json",
+          "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json"
+        ],
+        "unsupported_claims": [
+          "hosted registry",
+          "network dependency resolution",
+          "system installer publication",
+          "release-channel operations"
+        ]
+      },
+      {
+        "stage_id": "application-sample-validation",
+        "workflow_id": "application-framework-samples",
+        "issue": "#8178",
+        "capability_id": "applications.framework-samples.stdlib-text-collections-cli",
+        "support_claim": "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
+        "public_command": "npm run objc3c -- validate-application-framework-samples",
+        "source_truth_paths": [
+          "showcase/applicationFrameworkSamples/manifest.json",
+          "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+          "tests/tooling/fixtures/application_framework_samples/contract.json",
+          "scripts/check_objc3c_application_framework_samples.py",
+          "docs/tutorials/application-framework-samples.md"
+        ],
+        "generated_outputs": [
+          "tmp/reports/application-framework-samples/summary.json"
+        ],
+        "unsupported_claims": [
+          "GUI framework implementation",
+          "Cocoa-equivalent app framework",
+          "samples implying unsupported platform APIs"
+        ]
+      }
+    ]
+  },
   "workflow_rows": [
     {
       "workflow_id": "first-run-product-path",
@@ -117,6 +302,8 @@
         "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
         "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
         "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+        "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+        "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
         "scripts/objc3c_package_manager/model.py",
         "scripts/objc3c_package_manager/registry.py",
         "docs/runbooks/objc3c_package_ecosystem.md"
@@ -124,11 +311,15 @@
       "public_commands": [
         "npm run objc3c -- build-package-lock",
         "npm run objc3c -- validate-package-manager-model",
-        "npm run objc3c -- validate-package-mirror"
+        "npm run objc3c -- validate-package-mirror",
+        "npm run objc3c -- validate-package-install-distribution --from-nothing"
       ],
       "generated_outputs": [
         "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
-        "tmp/artifacts/package-ecosystem/registry/local-package-index.json"
+        "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
+        "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+        "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json",
+        "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json"
       ],
       "claim_boundary": "local generated registry, lock, mirror, and trust model only; hosted registry and network dependency resolution remain fail-closed"
     },

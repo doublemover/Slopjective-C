@@ -15,6 +15,75 @@
     "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
     "native/objc3c/src/runtime/public/objc3_runtime_api.h"
   ],
+  "source_backed_contract": {
+    "module_manifest": "stdlib/modules/objc3.collections/module.json",
+    "module_source": "stdlib/modules/objc3.collections/module.objc3",
+    "positive_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+    "negative_fixture": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+    "runtime_contract_header": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+    "runtime_implementation": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+    "runtime_probe": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+    "runtime_acceptance_domain": "scripts/objc3c_runtime_acceptance/domains/stdlib_runtime_cases.py",
+    "public_command": "npm run objc3c -- validate-stdlib-foundation",
+    "runtime_probe_command": "npm run objc3c -- test-runtime-acceptance-fast",
+    "runtime_probe_summary_fields": {
+      "collections_total_call_count": 59,
+      "array_record_count": 2,
+      "map_record_count": 1,
+      "map_mutation_call_count": 3,
+      "set_record_count": 1,
+      "slice_record_count": 1,
+      "iterator_record_count": 3,
+      "last_collection_status": 30633
+    },
+    "public_status_exports": {
+      "Objc3CollectionsStatusOk": 0,
+      "Objc3CollectionsStatusInvalidHandle": 30631,
+      "Objc3CollectionsStatusOutOfBounds": 30632,
+      "Objc3CollectionsStatusInvalidCount": 30633,
+      "Objc3CollectionsStatusNotFound": 30634,
+      "Objc3CollectionsStatusInvalidRange": 30635,
+      "Objc3CollectionsStatusIterationEnd": 30636,
+      "Objc3CollectionsStatusMutatedDuringIteration": 30637
+    },
+    "fail_closed_statuses": [
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE",
+        "value": 30631,
+        "boundary": "invalid handles"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OUT_OF_BOUNDS",
+        "value": 30632,
+        "boundary": "out-of-bounds indexes"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT",
+        "value": 30633,
+        "boundary": "invalid counts"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND",
+        "value": 30634,
+        "boundary": "missing keys"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_RANGE",
+        "value": 30635,
+        "boundary": "invalid ranges"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_ITERATION_END",
+        "value": 30636,
+        "boundary": "iteration-end status"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION",
+        "value": 30637,
+        "boundary": "mutation during set iteration"
+      }
+    ]
+  },
   "claims": [
     {
       "support_claim": "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",

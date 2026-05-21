@@ -9,6 +9,7 @@ from typing import Any
 
 
 JsonObject = dict[str, Any]
+GENERATED_SOURCE_PREFIXES = ("tmp/", "artifacts/")
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,22 @@ class ReleaseOperationsPublicationPayloads:
 
 def _generated_at_utc() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _validate_source_derived_paths(release_evidence: Mapping[str, Any]) -> None:
+    for field_name in ("release_note_sources", "public_changelog_sources"):
+        values = release_evidence.get(field_name)
+        if not isinstance(values, list) or not values:
+            raise RuntimeError(f"release evidence {field_name} must be a non-empty source list")
+        for value in values:
+            if not isinstance(value, str) or not value:
+                raise RuntimeError(f"release evidence {field_name} contains a non-string source")
+            normalized = value.replace("\\", "/")
+            if normalized.startswith(GENERATED_SOURCE_PREFIXES):
+                raise RuntimeError(
+                    f"release evidence {field_name} used generated output as source truth: "
+                    f"{normalized}"
+                )
 
 
 def _warning_payloads(
@@ -272,6 +289,7 @@ def build_release_operations_publication_payloads(
     release_notes_path: str,
     public_changelog_path: str,
 ) -> ReleaseOperationsPublicationPayloads:
+    _validate_source_derived_paths(release_channel_manifest["release_evidence"])
     warnings = _warning_payloads(
         update_manifest=update_manifest,
         update_channel_policy=update_channel_policy,

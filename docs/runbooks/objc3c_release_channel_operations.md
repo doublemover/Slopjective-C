@@ -13,6 +13,11 @@ They do not create support claims by themselves. A channel may be called
 releasable only after the policy-required release-foundation, update-manifest,
 rollback-proof, and signed-artifact evidence is verified.
 
+Release-note and public-changelog source lists are checked-source lists. They
+must point at repo files such as runbooks, schemas, and fixture manifests, never
+at `tmp/` release manifests or reports. Generated update, channel, rollback,
+and package artifacts stay in generated-evidence lists only.
+
 The docs/index evidence slice for #8179 is recorded in
 `docs/issues/objc3_next_8153_8179_evidence.md`. That page is limited to
 source-derived release notes, public changelog, and runbook references; release

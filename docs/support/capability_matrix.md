@@ -69,6 +69,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `runtime` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.task-continuation-lifecycle` |
 | `objc3c.behavior.runtime.debug_trace` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.structured-inspection` |
 | `objc3c.behavior.runtime.debug_trace.async_tasks` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.async-tasks` |
+| `objc3c.behavior.runtime.debug_trace.error_unwind` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.error-unwind` |
 | `objc3c.behavior.runtime.error-live-bridge-cleanup` | `runtime` | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` | `npm run objc3c -- validate-error-conformance` | `runtime.errors.live-bridge-cleanup` |
 | `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
 | `objc3c.behavior.runtime.generics.cross-module-metadata` | `runtime` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `runtime.generics.cross-module-metadata` |
@@ -1909,7 +1910,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.structured-inspection`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.debug_trace`
-- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, full source-map publication, and error/unwind tracing remain reserved.
+- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, error/bridge trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, and full source-map publication remain reserved.
 - Owner modules:
   - `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - `scripts/build_objc3c_runtime_debug_trace.py`
@@ -1953,7 +1954,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.async-tasks`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.debug_trace.async_tasks`
-- Summary: Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and error/unwind snapshots remain reserved.
+- Summary: Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h`
   - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp`
@@ -1970,13 +1971,22 @@ the canonical manifest fixture and public npm command above.
 ### Error and unwind runtime tracing
 
 - Capability ID: `runtime.debug-trace.error-unwind`
-- State: `reserved`
-- Support claims: None
-- Summary: Structured error/unwind tracing is reserved until error bridge and unwind snapshots are present in the runtime trace model. Current debug traces keep this lane explicit and unsupported.
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.debug_trace.error_unwind`
+- Summary: Error bridge, foreign-exception mapping, thrown-error slot traffic, and catch-filter inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims private snapshot trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.
 - Owner modules:
+  - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h`
+  - `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp`
+  - `native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h`
+  - `scripts/objc3c_runtime_debug_trace/source_contracts.py`
   - `scripts/objc3c_runtime_debug_trace/payload.py`
+  - `scripts/objc3c_runtime_debug_trace/validation.py`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json`
+  - test: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
+  - test: `tests/tooling/test_runtime_debug_trace_surface.py` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
+  - source: `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h`
+  - source: `native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h`
+  - source: `scripts/objc3c_runtime_debug_trace/source_contracts.py`
   - doc: `docs/runbooks/objc3c_developer_tooling.md`
 
 ### Windows x64 Tier 1 platform support

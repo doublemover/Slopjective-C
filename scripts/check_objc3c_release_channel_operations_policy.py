@@ -33,6 +33,7 @@ REQUIRED_FORBIDDEN_CLAIMS = (
     "package registry launch",
     "public production release without gate evidence",
 )
+GENERATED_OUTPUT_PREFIXES = ("tmp/", "artifacts/")
 ROLLBACK_COMMAND = "npm run objc3c -- validate-packaging-channels-end-to-end"
 STABLE_REQUIRED_GATES = (
     "validate-release-foundation",
@@ -93,6 +94,22 @@ def schema_contract_const(schema: Mapping[str, Any]) -> object:
     return contract.get("const")
 
 
+def normalize_repo_path(relative_path: str, *, field_name: str) -> str:
+    if not isinstance(relative_path, str) or not relative_path:
+        raise _fail(f"{field_name} must be a non-empty repo-relative path")
+    normalized = relative_path.replace("\\", "/")
+    if normalized != relative_path:
+        raise _fail(f"{field_name} must use slash paths: {relative_path}")
+    path = Path(normalized)
+    if path.is_absolute() or ".." in path.parts:
+        raise _fail(f"{field_name} must be a repo-relative path: {relative_path}")
+    return normalized
+
+
+def is_generated_output_path(relative_path: str) -> bool:
+    return relative_path.startswith(GENERATED_OUTPUT_PREFIXES)
+
+
 def validate_schema(schema: Mapping[str, Any]) -> None:
     if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
         raise _fail("schema must use draft 2020-12")
@@ -115,11 +132,43 @@ def validate_schema(schema: Mapping[str, Any]) -> None:
 
 
 def ensure_repo_file(relative_path: str, *, field_name: str) -> None:
-    if relative_path.startswith("tmp/"):
-        raise _fail(f"{field_name} must not use generated tmp source truth: {relative_path}")
-    target = ROOT / relative_path
+    normalized = normalize_repo_path(relative_path, field_name=field_name)
+    if is_generated_output_path(normalized):
+        raise _fail(f"{field_name} must not use generated output as source truth: {normalized}")
+    target = ROOT / normalized
     if not target.is_file():
-        raise _fail(f"{field_name} references missing file {relative_path}")
+        raise _fail(f"{field_name} references missing file {normalized}")
+
+
+def ensure_generated_evidence_path(relative_path: str, *, field_name: str) -> str:
+    normalized = normalize_repo_path(relative_path, field_name=field_name)
+    if not is_generated_output_path(normalized):
+        raise _fail(f"{field_name} must be generated evidence, not source truth: {normalized}")
+    return normalized
+
+
+def validate_checked_source_list(
+    payload: Mapping[str, Any],
+    field_name: str,
+    *,
+    owner: str,
+) -> list[str]:
+    values = require_string_list(payload, field_name)
+    for index, value in enumerate(values):
+        ensure_repo_file(value, field_name=f"{owner}.{field_name}[{index}]")
+    return values
+
+
+def validate_generated_evidence_list(
+    payload: Mapping[str, Any],
+    field_name: str,
+    *,
+    owner: str,
+) -> list[str]:
+    values = require_string_list(payload, field_name)
+    for index, value in enumerate(values):
+        ensure_generated_evidence_path(value, field_name=f"{owner}.{field_name}[{index}]")
+    return values
 
 
 def validate_policy_surfaces(policy: Mapping[str, Any]) -> str:
@@ -146,8 +195,9 @@ def validate_release_evidence_policy(policy: Mapping[str, Any]) -> list[str]:
     evidence_policy = require_mapping(policy, "release_evidence_policy")
     source_roots = require_string_list(evidence_policy, "source_truth_roots")
     for source_root in source_roots:
-        if source_root.startswith("tmp/"):
-            raise _fail("release evidence source truth roots must not include tmp")
+        normalized = normalize_repo_path(source_root, field_name="release_evidence_policy.source_truth_roots")
+        if is_generated_output_path(normalized):
+            raise _fail("release evidence source truth roots must not include generated output roots")
 
     requirements = require_list(evidence_policy, "required_for_releasable")
     class_ids: list[str] = []
@@ -157,8 +207,17 @@ def validate_release_evidence_policy(policy: Mapping[str, Any]) -> list[str]:
         class_id = requirement.get("class_id")
         if not isinstance(class_id, str) or not class_id:
             raise _fail("required_for_releasable entry missing class_id")
-        require_string_list(requirement, "required_paths")
-        require_string_list(requirement, "required_commands")
+        if requirement.get("evidence_kind") != "generated-artifact":
+            raise _fail(f"{class_id} releasable evidence must be generated-artifact")
+        validate_generated_evidence_list(
+            requirement,
+            "required_paths",
+            owner=f"release_evidence_policy.required_for_releasable.{class_id}",
+        )
+        commands = require_string_list(requirement, "required_commands")
+        for command in commands:
+            if not command.startswith("npm run objc3c -- "):
+                raise _fail(f"{class_id} releasable evidence command is not public: {command}")
         class_ids.append(class_id)
 
     missing = sorted(set(REQUIRED_RELEASABLE_EVIDENCE) - set(class_ids))
@@ -250,7 +309,11 @@ def validate_channel(
     gates = require_string_list(publication, "gate_actions")
     if publication.get("notes_source_mode") != "source-derived":
         raise _fail(f"{channel_id} release notes must be source-derived")
-    require_string_list(publication, "release_notes_sources")
+    release_note_sources = validate_checked_source_list(
+        publication,
+        "release_notes_sources",
+        owner=f"{channel_id}.publication_mechanics",
+    )
 
     update = require_mapping(channel, "update_mechanics")
     if update.get("update_manifest_channel") != channel_id:
@@ -273,6 +336,30 @@ def validate_channel(
     if claim_boundaries.get("unproven_distribution_claims_not_made") is not True:
         raise _fail(f"{channel_id} must explicitly reject unproven distribution claims")
     require_string_list(claim_boundaries, "forbidden_claims")
+
+    evidence = require_mapping(channel, "evidence")
+    source_truth = validate_checked_source_list(
+        evidence,
+        "source_truth",
+        owner=f"{channel_id}.evidence",
+    )
+    generated_evidence = validate_generated_evidence_list(
+        evidence,
+        "generated_evidence_artifacts",
+        owner=f"{channel_id}.evidence",
+    )
+    if not set(release_note_sources).issubset(set(source_truth)):
+        missing = sorted(set(release_note_sources) - set(source_truth))
+        raise _fail(
+            f"{channel_id} release-note sources must be listed as channel source truth: "
+            + ", ".join(missing)
+        )
+    overlap = sorted(set(source_truth) & set(generated_evidence))
+    if overlap:
+        raise _fail(
+            f"{channel_id} source truth overlaps generated evidence: "
+            + ", ".join(overlap)
+        )
 
     validate_channel_releasability(channel_id, channel, required_evidence_classes)
     return gates
@@ -394,6 +481,14 @@ def validate_policy(policy: Mapping[str, Any], schema: Mapping[str, Any]) -> dic
         "stable_gate_actions": stable_gates,
         "nightly_gate_actions": nightly_gates,
         "forbidden_distribution_claims": require_string_list(policy, "forbidden_distribution_claims"),
+        "source_truth_path_count": sum(
+            len(require_string_list(channels[channel_id]["evidence"], "source_truth"))
+            for channel_id in REQUIRED_CHANNELS
+        ),
+        "generated_evidence_artifact_count": sum(
+            len(require_string_list(channels[channel_id]["evidence"], "generated_evidence_artifacts"))
+            for channel_id in REQUIRED_CHANNELS
+        ),
     }
 
 

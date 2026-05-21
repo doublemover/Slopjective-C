@@ -14,6 +14,7 @@ from scripts.objc3c_runtime_acceptance.domains.object_model_capability_split imp
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
+MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
 ADVANCED_RUNTIME_FEATURE_FAMILIES = {
     "arc",
     "blocks",
@@ -47,6 +48,11 @@ def _evidence_rows() -> set[tuple[str, str | None, str]]:
         )
         for row in evidence_map["rows"]
     }
+
+
+def _manifest_claims() -> dict[str, dict[str, Any]]:
+    manifest = _read_json(MANIFEST_PATH)
+    return {str(row["claim_id"]): row for row in manifest["support_claims"]}
 
 
 def _assert_split_contract_matches_source_truth(contract: dict[str, Any]) -> None:
@@ -200,6 +206,34 @@ def _assert_advanced_runtime_support_contracts_are_source_derived(
     assert any("package loader" in scope for scope in covered_scopes)
 
 
+def _assert_runtime_owned_rows_keep_native_source_contracts(
+    contract: dict[str, Any],
+) -> None:
+    manifest_claims = _manifest_claims()
+    runtime_owned_capabilities = {
+        row["capability_id"]
+        for row in contract["implemented_rows"]
+        if manifest_claims[row["support_claim"]]["owner_phase"] == "runtime"
+    }
+    support_contracts = {
+        row["capability_id"]: row for row in contract["implemented_support_contracts"]
+    }
+
+    assert {
+        "runtime.errors.nserror-status-bridge",
+        "runtime.concurrency.async-actors",
+    } <= runtime_owned_capabilities
+    assert runtime_owned_capabilities <= set(support_contracts)
+
+    for capability_id in runtime_owned_capabilities:
+        source_truth = support_contracts[capability_id]["source_truth"]
+
+        assert any(str(path).startswith("native/objc3c/src/") for path in source_truth)
+        for path in source_truth:
+            assert not str(path).startswith("tmp/")
+            assert (ROOT / path).exists(), path
+
+
 def _assert_advanced_runtime_feature_taxonomy_is_precise(
     contract: dict[str, Any],
 ) -> None:
@@ -293,6 +327,13 @@ def test_advanced_runtime_public_support_contracts_are_source_derived() -> None:
 
     assert contract["issue"] == 8155
     _assert_advanced_runtime_support_contracts_are_source_derived(contract)
+
+
+def test_advanced_runtime_runtime_owned_rows_keep_native_source_contracts() -> None:
+    contract = build_advanced_runtime_capability_split_contract()
+
+    assert contract["issue"] == 8155
+    _assert_runtime_owned_rows_keep_native_source_contracts(contract)
 
 
 def test_advanced_runtime_feature_taxonomy_is_precise() -> None:

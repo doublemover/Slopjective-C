@@ -8,7 +8,7 @@
     "nightly"
   ],
   "release_note_sources": [
-    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tests/tooling/fixtures/release_foundation/source_surface.json",
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/release_operations/channel_operations_model.json"

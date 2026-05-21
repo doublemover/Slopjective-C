@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sys
+from copy import deepcopy
 from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_ROOT = ROOT / "scripts"
@@ -156,6 +158,52 @@ def _publication_payloads():
         release_notes_path="tmp/artifacts/release-operations/release-notes.json",
         public_changelog_path="tmp/artifacts/release-operations/public-changelog.json",
     )
+
+
+def test_release_operations_publication_rejects_generated_release_note_source() -> None:
+    payloads = _publication_payloads()
+    release_channel_manifest = {
+        "source_model": payloads.release_notes["source_model"],
+        "release_evidence": {
+            **payloads.channel_catalog["release_evidence"],
+            "release_note_sources": [
+                "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json"
+            ],
+        },
+        "channel_manifests": deepcopy(payloads.channel_catalog["channel_operations"]),
+    }
+
+    # Reuse the direct builder contract with only the source-list failure under test.
+    with pytest.raises(RuntimeError, match="used generated output as source truth"):
+        build_release_operations_publication_payloads(
+            update_manifest={
+                "current_version": "3.0.0",
+                "default_channel": "stable",
+                "default_platform_id": "windows-x64",
+                "platform_support_matrix": "tmp/artifacts/platform/matrix.json",
+                "supported_platform_ids": ["windows-x64"],
+                "support_tiers": [{"tier": "supported"}],
+                "local_provenance": {},
+                "channels": [],
+            },
+            versioning_model={"support_windows": {}},
+            upgrade_surface={"upgrade_path_classes": []},
+            claim_policy={"forbidden_claims": [], "upgrade_claim_classes": []},
+            update_channel_policy={
+                "default_channel": "stable",
+                "warning_classes": [],
+                "channels": [{"channel_id": "stable", "revert_channel": "local-installer"}],
+            },
+            fail_closed_policy={"diagnostic_classes": []},
+            metadata_surface={"required_upgrade_support_report_fields": []},
+            update_manifest_path="tmp/artifacts/release-operations/update-manifest.json",
+            release_channel_manifest=release_channel_manifest,
+            release_channel_manifest_path="tmp/artifacts/release-operations/channel-manifest.json",
+            upgrade_support_report_path="tmp/artifacts/release-operations/upgrade-report.json",
+            channel_catalog_path="tmp/artifacts/release-operations/channel-catalog.json",
+            release_notes_path="tmp/artifacts/release-operations/release-notes.json",
+            public_changelog_path="tmp/artifacts/release-operations/public-changelog.json",
+        )
 
 
 def test_release_operations_publication_emits_source_derived_release_notes() -> None:

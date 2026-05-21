@@ -216,7 +216,8 @@ full editor product:
     and editor debug artifacts, with replayable input-path evidence recorded on
     the supported trace row
   - runtime debug trace inspection queries for declaration anchors, object-symbol
-    inspection, message-send/cache observation, and composed trace replay
+    inspection, message-send/cache observation, error/unwind bridge snapshots,
+    and composed trace replay
   - manifest-backed language-server capabilities and navigation
   - deterministic workspace semantic indexing across the primary source,
     checked-in stdlib modules, and showcase package workspaces
@@ -233,8 +234,8 @@ full editor product:
   - references, rename, semantic tokens, and non-diagnostic code actions remain fail-closed
   - statement-level stepping and full source-map publication publish explicit
     reserved/fail-closed rows
-  - async task inspection, error/unwind tracing, and LLDB plugin support remain
-    reserved until emitted runtime trace snapshots prove those lanes directly
+  - LLDB plugin support remains reserved until a checked-in plugin and protocol
+    contract prove that lane directly
 
 Downstream work must extend the real frontend runner, runtime artifacts, and
 public workflow commands instead of creating an editor-only shadow parser or

@@ -632,8 +632,12 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h` |  |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `scripts/objc3c_runtime_debug_trace/source_contracts.py` |  |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.error-unwind` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
-| `runtime.debug-trace.error-unwind` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `source` | `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h` |  |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `source` | `native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h` |  |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `source` | `scripts/objc3c_runtime_debug_trace/source_contracts.py` |  |
+| `runtime.debug-trace.error-unwind` | `objc3c.behavior.runtime.debug_trace.error_unwind` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `test` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` | `npm run objc3c -- build-platform-support-matrix` |
 | `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `test` | `tests/tooling/test_platform_toolchain_support_evidence.py` | `npm run objc3c -- build-platform-support-matrix` |
 | `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `schema` | `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json` |  |

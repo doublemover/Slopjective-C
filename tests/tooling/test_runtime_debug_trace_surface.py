@@ -268,7 +268,7 @@ def test_runtime_debug_trace_source_contracts_are_runtime_owned_and_private() ->
     assert contracts == load_runtime_trace_source_contracts()
     assert contracts["contract_id"] == "objc3.runtime.debug.trace.source-contracts.v1"
     assert contracts["source_path"] == "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
-    assert set(lanes) == {"actor", "dispatch", "memory", "object", "task"}
+    assert set(lanes) == {"actor", "dispatch", "error", "memory", "object", "task"}
     for domain, lane in lanes.items():
         assert lane["lane_id"] == f"runtime.{domain}.snapshot"
         assert lane["status"] == "supported"
@@ -346,6 +346,9 @@ def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     assert "support_boundary" in schema["properties"]
     assert "runtime_trace_contracts" in schema["required"]
     assert "runtime_trace_contracts" in schema["properties"]
+    assert '"error"' in (ROOT / "schemas" / "objc3c-runtime-debug-trace-v1.schema.json").read_text(
+        encoding="utf-8"
+    )
     assert "trace-runtime-debug" in ACTION_SPECS
     assert "trace-runtime-debug" in ACTION_HANDLERS
     assert ACTION_SPECS["trace-runtime-debug"].pass_through_args is True
@@ -373,5 +376,40 @@ def test_runtime_debug_trace_async_task_support_row_matches_payload() -> None:
     assert "async task inspection" not in structured_row["summary"]
     assert (
         handoff_rows["objc3c.behavior.runtime.debug_trace.async_tasks"]["status"]
+        == "supported"
+    )
+
+
+def test_runtime_debug_trace_error_unwind_support_row_matches_payload() -> None:
+    matrix = load_json(ROOT / "docs" / "support" / "capability_matrix.json")
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    error_row = rows["runtime.debug-trace.error-unwind"]
+    structured_row = rows["runtime.debug-trace.structured-inspection"]
+    evidence_paths = {item["path"] for item in error_row["evidence"]}
+    payload = fixture_payload()
+    trace_lanes = payload["trace_lanes"]
+    queries = {query["query_id"]: query for query in payload["inspection_queries"]}
+    handoff_rows = {
+        row["capability_id"]: row
+        for row in payload["support_handoff"]["capability_rows"]
+    }
+
+    assert error_row["state"] == "implemented"
+    assert error_row["support_claims"] == [
+        "objc3c.behavior.runtime.debug_trace.error_unwind"
+    ]
+    assert "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h" in evidence_paths
+    assert "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h" in evidence_paths
+    assert "error/bridge trace contract rows" in structured_row["summary"]
+    assert trace_lanes["error_unwind_trace"]["status"] == "supported"
+    assert trace_lanes["error_unwind_trace"]["source_contract_ids"] == [
+        "runtime.error.snapshot"
+    ]
+    assert (
+        queries["runtime.error-unwind-trace.snapshots"]["status"]
+        == "supported"
+    )
+    assert (
+        handoff_rows["objc3c.behavior.runtime.debug_trace.error_unwind"]["status"]
         == "supported"
     )

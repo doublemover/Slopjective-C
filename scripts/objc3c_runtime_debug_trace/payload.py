@@ -250,7 +250,6 @@ def _reserved_surface_events() -> list[dict[str, Any]]:
         "full-source-map-publication": "fail-closed until emitted full source-map metadata exists on the canonical toolchain path",
         "lldb-plugin": "reserved; no checked-in LLDB plugin is published by this slice",
         "statement-level-stepping": "fail-closed until native line-table evidence is emitted",
-        "error-unwind-trace": "reserved until error bridge and unwind snapshots are in this trace",
     }
     return [
         _event(
@@ -405,6 +404,7 @@ def _trace_lanes(
     dispatch_rows = _source_contract_rows(runtime_trace_contracts, "dispatch")
     object_rows = _source_contract_rows(runtime_trace_contracts, "object")
     memory_rows = _source_contract_rows(runtime_trace_contracts, "memory")
+    error_rows = _source_contract_rows(runtime_trace_contracts, "error")
     task_actor_rows = [*task_rows, *actor_rows]
     return {
         "object_inspection": _trace_lane(
@@ -473,9 +473,10 @@ def _trace_lanes(
             source_rows=task_actor_rows,
         ),
         "error_unwind_trace": _trace_lane(
-            status="reserved",
-            support_class="not-yet-in-runtime-debug-trace",
-            scope="reserved until error bridge and unwind snapshots are emitted in this trace",
+            status="supported" if _has_supported_source_rows(error_rows) else "reserved",
+            support_class="source-owned-error-bridge-snapshot-contract",
+            scope="deterministic thrown-error, bridge, foreign-exception, and catch-filter snapshot trace contract",
+            source_rows=error_rows,
         ),
         "lldb_plugin": _trace_lane(
             status="reserved",
@@ -730,6 +731,15 @@ def _inspection_queries(
             result_path=trace_path,
             artifact_path=source_contract_path,
         ),
+        _supported_query(
+            query_id="runtime.error-unwind-trace.snapshots",
+            surface="error_unwind_trace",
+            support_class="source-owned-error-bridge-snapshot-contract",
+            public_command=f"npm run objc3c -- {TRACE_ACTION} {source_path}",
+            evidence_input_labels=["runtime_trace_contracts"],
+            result_path=trace_path,
+            artifact_path=source_contract_path,
+        ),
         _reserved_query(
             query_id="debug.statement-level-stepping.line-table",
             surface="statement_level_stepping",
@@ -743,12 +753,6 @@ def _inspection_queries(
             support_class="full-source-map-evidence-not-emitted",
             evidence_input_labels=["debug_map"],
             unpublished_reason="full source-map metadata is not emitted on the canonical toolchain path",
-        ),
-        _reserved_query(
-            query_id="runtime.error-unwind-trace.snapshots",
-            surface="error_unwind_trace",
-            support_class="not-yet-in-runtime-debug-trace",
-            unpublished_reason="error bridge and unwind snapshots are not emitted in this trace",
         ),
         _reserved_query(
             query_id="debug.lldb-plugin.integration",
@@ -830,6 +834,13 @@ def _support_handoff(
             if str(lane.get("trace_domain", "") or "") == "memory"
         ]
     )
+    error_anchors = _source_anchor_ids(
+        [
+            lane
+            for lane in lanes
+            if str(lane.get("trace_domain", "") or "") == "error"
+        ]
+    )
     return {
         "capability_rows": [
             {
@@ -887,9 +898,14 @@ def _support_handoff(
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.error_unwind",
-                "status": "reserved",
-                "evidence_ids": ["OBJ3-NEXT-023.schema.runtime-debug-trace.v1"],
-                "unpublished_reason": "error bridge and unwind snapshots are not emitted in this trace",
+                "status": "supported",
+                "evidence_ids": [
+                    "OBJ3-NEXT-023.schema.runtime-debug-trace.v1",
+                    "OBJ3-NEXT-023.source.runtime-debug-trace-contracts",
+                ],
+                "source_anchors": error_anchors,
+                "source_contract_id": runtime_trace_contracts.get("contract_id", ""),
+                "claim_boundary": "error bridge, foreign exception mapping, and catch-filter inspection is source-contract backed and emitted as deterministic trace contract rows",
             },
         ],
         "evidence_ids": evidence_ids,

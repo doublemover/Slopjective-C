@@ -10,12 +10,16 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
-ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
@@ -28,6 +32,7 @@ PACKAGE_CHANNEL_FRESHNESS_TIMESTAMP_SOURCES = [
     "package_channels_manifest.generated_at_utc",
     "platform_support_matrix.generated_at_utc",
 ]
+GENERATED_OUTPUT_PREFIXES = ("tmp/", "artifacts/")
 
 
 
@@ -45,6 +50,69 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def normalize_repo_path(raw_path: Any, field_name: str) -> str:
+    if not isinstance(raw_path, str) or not raw_path:
+        raise RuntimeError(f"{field_name} must be a non-empty repo-relative path")
+    normalized = raw_path.replace("\\", "/")
+    if normalized != raw_path:
+        raise RuntimeError(f"{field_name} must use slash-separated repo paths: {raw_path}")
+    path = Path(normalized)
+    if path.is_absolute() or ".." in path.parts:
+        raise RuntimeError(f"{field_name} must be a repo-relative path: {raw_path}")
+    return normalized
+
+
+def is_generated_output_path(raw_path: str) -> bool:
+    return raw_path.startswith(GENERATED_OUTPUT_PREFIXES)
+
+
+def validate_checked_source_paths(paths: Any, field_name: str) -> list[str]:
+    expect(isinstance(paths, list) and paths, f"{field_name} must be a non-empty source list")
+    checked_paths: list[str] = []
+    for index, raw_path in enumerate(paths):
+        normalized = normalize_repo_path(raw_path, f"{field_name}[{index}]")
+        expect(
+            not is_generated_output_path(normalized),
+            f"{field_name}[{index}] used generated output as source truth: {normalized}",
+        )
+        expect((ROOT / normalized).is_file(), f"{field_name}[{index}] missing checked source: {normalized}")
+        checked_paths.append(normalized)
+    return checked_paths
+
+
+def validate_generated_evidence_paths(paths: Any, field_name: str) -> list[str]:
+    expect(isinstance(paths, list) and paths, f"{field_name} must be a non-empty generated evidence list")
+    generated_paths: list[str] = []
+    for index, raw_path in enumerate(paths):
+        normalized = normalize_repo_path(raw_path, f"{field_name}[{index}]")
+        expect(
+            is_generated_output_path(normalized),
+            f"{field_name}[{index}] must be generated release evidence: {normalized}",
+        )
+        generated_paths.append(normalized)
+    return generated_paths
+
+
+def validate_release_evidence_source_truth(release_evidence: dict[str, Any]) -> dict[str, Any]:
+    release_note_sources = validate_checked_source_paths(
+        release_evidence.get("release_note_sources"),
+        "release_evidence.release_note_sources",
+    )
+    public_changelog_sources = validate_checked_source_paths(
+        release_evidence.get("public_changelog_sources"),
+        "release_evidence.public_changelog_sources",
+    )
+    evidence_artifacts = validate_generated_evidence_paths(
+        release_evidence.get("evidence_artifacts"),
+        "release_evidence.evidence_artifacts",
+    )
+    return {
+        "release_note_sources": release_note_sources,
+        "public_changelog_sources": public_changelog_sources,
+        "evidence_artifacts": evidence_artifacts,
+    }
 
 
 def validate_clean_install_prerequisites(channel_operations_model: dict[str, Any]) -> list[str]:
@@ -247,6 +315,7 @@ def write_summary() -> None:
         "release manifest provenance digest drifted",
     )
     release_evidence = release_channel_manifest.get("release_evidence", {})
+    release_source_boundary = validate_release_evidence_source_truth(release_evidence)
     expect(
         repo_rel(RELEASE_CHANNEL_MANIFEST) in release_evidence.get("evidence_artifacts", []),
         "release evidence omitted channel manifest artifact",
@@ -281,6 +350,10 @@ def write_summary() -> None:
         "release_note_channel_count": len(release_notes.get("channels", [])),
         "public_changelog_entry_count": len(public_changelog.get("entries", [])),
         "release_evidence_artifact_count": len(release_evidence.get("evidence_artifacts", [])),
+        "release_source_truth_paths": sorted(
+            set(release_source_boundary["release_note_sources"])
+            | set(release_source_boundary["public_changelog_sources"])
+        ),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

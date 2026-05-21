@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from scripts.build_objc3c_update_manifest import (
     release_evidence_payload,
     validate_package_channel_freshness,
     validate_channel_operations_model,
+    validate_release_source_boundaries,
 )
 
 
@@ -108,6 +110,36 @@ def test_release_operations_channels_require_package_channel_freshness() -> None
             "refresh_command": "npm run objc3c -- build-package-channels",
             "blocks_publication_on_stale": True,
         }
+
+
+def test_release_operations_channel_model_keeps_release_sources_checked_in() -> None:
+    model = load_channel_model()
+    boundaries = validate_release_source_boundaries(model)
+
+    assert boundaries["release_note_sources"][0] == (
+        "tests/tooling/fixtures/release_foundation/source_surface.json"
+    )
+    assert all(
+        not source.startswith(("tmp/", "artifacts/"))
+        for source in boundaries["release_note_sources"]
+    )
+    assert all(
+        not source.startswith(("tmp/", "artifacts/"))
+        for source in boundaries["public_changelog_sources"]
+    )
+
+
+def test_release_operations_channel_model_rejects_generated_release_note_source() -> None:
+    model = deepcopy(load_channel_model())
+    model["release_note_sources"][0] = (
+        "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json"
+    )
+
+    with pytest.raises(RuntimeError, match="used generated output as release source truth"):
+        validate_channel_operations_model(
+            channel_operations_model=model,
+            update_channel_policy=update_channel_policy_for(model),
+        )
 
 
 def test_release_operations_package_channel_freshness_accepts_coherent_artifacts() -> None:

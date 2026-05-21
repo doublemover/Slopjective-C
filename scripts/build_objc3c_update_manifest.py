@@ -31,6 +31,7 @@ PACKAGE_FRESHNESS_TIMESTAMP_SOURCES = [
     "platform_support_matrix.generated_at_utc",
 ]
 PACKAGE_FRESHNESS_REFRESH_COMMAND = "npm run objc3c -- build-package-channels"
+GENERATED_OUTPUT_PREFIXES = ("tmp/", "artifacts/")
 
 
 def require_file(path: Path, owner_action: str) -> None:
@@ -59,6 +60,102 @@ def sha256_file(path: Path) -> str:
 
 def workflow_command(action: str) -> str:
     return f"npm run objc3c -- {action}"
+
+
+def normalized_repo_path(raw_path: Any, field_name: str) -> str:
+    if not isinstance(raw_path, str) or not raw_path:
+        raise RuntimeError(f"{field_name} must be a non-empty repo-relative path")
+    normalized = raw_path.replace("\\", "/")
+    if normalized != raw_path:
+        raise RuntimeError(f"{field_name} must use slash-separated repo paths: {raw_path}")
+    path = Path(normalized)
+    if path.is_absolute() or ".." in path.parts:
+        raise RuntimeError(f"{field_name} must be a repo-relative path: {raw_path}")
+    return normalized
+
+
+def is_generated_output_path(raw_path: str) -> bool:
+    return raw_path.startswith(GENERATED_OUTPUT_PREFIXES)
+
+
+def require_checked_source_path(raw_path: Any, field_name: str) -> str:
+    normalized = normalized_repo_path(raw_path, field_name)
+    if is_generated_output_path(normalized):
+        raise RuntimeError(
+            f"{field_name} used generated output as release source truth: {normalized}"
+        )
+    if not (ROOT / normalized).is_file():
+        raise RuntimeError(f"{field_name} references missing checked source: {normalized}")
+    return normalized
+
+
+def require_generated_evidence_path(raw_path: Any, field_name: str) -> str:
+    normalized = normalized_repo_path(raw_path, field_name)
+    if not is_generated_output_path(normalized):
+        raise RuntimeError(
+            f"{field_name} must be generated release evidence, not source truth: {normalized}"
+        )
+    return normalized
+
+
+def require_checked_source_list(
+    payload: Mapping[str, Any],
+    field_name: str,
+    owner: str,
+) -> list[str]:
+    values = payload.get(field_name)
+    if not isinstance(values, list) or not values:
+        raise RuntimeError(f"{owner}.{field_name} must be a non-empty source list")
+    return [
+        require_checked_source_path(value, f"{owner}.{field_name}[{index}]")
+        for index, value in enumerate(values)
+    ]
+
+
+def require_generated_evidence_list(
+    values: Any,
+    field_name: str,
+    owner: str,
+) -> list[str]:
+    if not isinstance(values, list) or not values:
+        raise RuntimeError(f"{owner}.{field_name} must be a non-empty generated evidence list")
+    return [
+        require_generated_evidence_path(value, f"{owner}.{field_name}[{index}]")
+        for index, value in enumerate(values)
+    ]
+
+
+def validate_release_source_boundaries(
+    channel_operations_model: Mapping[str, Any],
+) -> dict[str, list[str]]:
+    release_note_sources = require_checked_source_list(
+        channel_operations_model,
+        "release_note_sources",
+        "channel_operations_model",
+    )
+    public_changelog_sources = require_checked_source_list(
+        channel_operations_model,
+        "public_changelog_sources",
+        "channel_operations_model",
+    )
+    for channel in channel_operations_model.get("channels", []):
+        if not isinstance(channel, Mapping):
+            raise RuntimeError("channel operations model contained a non-object channel")
+        channel_id = str(channel.get("channel_id", ""))
+        policy = channel.get("release_notes_policy")
+        if not isinstance(policy, Mapping):
+            raise RuntimeError(f"{channel_id} channel release notes policy must be source-derived")
+        if policy.get("source_mode") != "source-derived":
+            raise RuntimeError(f"{channel_id} channel release notes policy must be source-derived")
+        forbidden = policy.get("forbidden_sources")
+        if not isinstance(forbidden, list) or not forbidden:
+            raise RuntimeError(f"{channel_id} channel must define forbidden release-note sources")
+        if any(isinstance(source, str) and source.startswith("tmp/") for source in forbidden):
+            raise RuntimeError(f"{channel_id} channel must not normalize tmp-only claims as forbidden prose")
+    return {
+        "release_note_sources": release_note_sources,
+        "public_changelog_sources": public_changelog_sources,
+    }
 
 
 def parse_generated_at(value: Any, source_name: str) -> datetime:
@@ -151,6 +248,7 @@ def validate_channel_operations_model(
 ) -> dict[str, Mapping[str, Any]]:
     if channel_operations_model.get("contract_id") != "objc3c.release.operations.channel.operations.model.v1":
         raise RuntimeError("channel operations model contract_id drifted")
+    validate_release_source_boundaries(channel_operations_model)
     channels = channel_operations_model.get("channels")
     if not isinstance(channels, list) or not channels:
         raise RuntimeError("channel operations model must declare channels")
@@ -213,6 +311,12 @@ def release_evidence_payload(
     evidence_artifacts: list[str],
     channel_entries: list[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    source_boundaries = validate_release_source_boundaries(channel_operations_model)
+    generated_evidence_artifacts = require_generated_evidence_list(
+        evidence_artifacts,
+        "evidence_artifacts",
+        "release_evidence",
+    )
     replayable_public_commands = sorted(
         {
             workflow_command(str(action))
@@ -222,9 +326,9 @@ def release_evidence_payload(
         }
     )
     return {
-        "release_note_sources": channel_operations_model["release_note_sources"],
-        "public_changelog_sources": channel_operations_model["public_changelog_sources"],
-        "evidence_artifacts": evidence_artifacts,
+        "release_note_sources": source_boundaries["release_note_sources"],
+        "public_changelog_sources": source_boundaries["public_changelog_sources"],
+        "evidence_artifacts": generated_evidence_artifacts,
         "replayable_public_commands": replayable_public_commands,
     }
 

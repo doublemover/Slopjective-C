@@ -3990,7 +3990,7 @@
       "id": "runtime.debug-trace.structured-inspection",
       "title": "Structured runtime debug trace",
       "state": "implemented",
-      "summary": "The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, full source-map publication, and error/unwind tracing remain reserved.",
+      "summary": "The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, error/bridge trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, and full source-map publication remain reserved.",
       "support_claims": [
         "objc3c.behavior.runtime.debug_trace"
       ],
@@ -4075,7 +4075,7 @@
       "id": "runtime.debug-trace.async-tasks",
       "title": "Async task runtime inspection",
       "state": "implemented",
-      "summary": "Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and error/unwind snapshots remain reserved.",
+      "summary": "Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.",
       "support_claims": [
         "objc3c.behavior.runtime.debug_trace.async_tasks"
       ],
@@ -4114,15 +4114,41 @@
     {
       "id": "runtime.debug-trace.error-unwind",
       "title": "Error and unwind runtime tracing",
-      "state": "reserved",
-      "summary": "Structured error/unwind tracing is reserved until error bridge and unwind snapshots are present in the runtime trace model. Current debug traces keep this lane explicit and unsupported.",
+      "state": "implemented",
+      "summary": "Error bridge, foreign-exception mapping, thrown-error slot traffic, and catch-filter inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims private snapshot trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug_trace.error_unwind"
+      ],
       "owner_modules": [
-        "scripts/objc3c_runtime_debug_trace/payload.py"
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+        "scripts/objc3c_runtime_debug_trace/source_contracts.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_debug_trace/source_contracts.py"
         },
         {
           "kind": "doc",

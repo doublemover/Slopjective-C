@@ -3688,11 +3688,39 @@
     },
     {
       "capability_id": "runtime.debug-trace.error-unwind",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+      "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
     },
     {
       "capability_id": "runtime.debug-trace.error-unwind",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+      "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
+      "capability_id": "runtime.debug-trace.error-unwind",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+    },
+    {
+      "capability_id": "runtime.debug-trace.error-unwind",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h"
+    },
+    {
+      "capability_id": "runtime.debug-trace.error-unwind",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_debug_trace/source_contracts.py"
+    },
+    {
+      "capability_id": "runtime.debug-trace.error-unwind",
+      "support_claim": "objc3c.behavior.runtime.debug_trace.error_unwind",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_developer_tooling.md"
     },
