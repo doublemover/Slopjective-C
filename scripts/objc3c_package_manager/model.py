@@ -102,13 +102,36 @@ def trust_payload(package_id: str, signing_material: dict[str, Any]) -> dict[str
     }
 
 
-def dependency_payload(package_id: str) -> dict[str, str]:
+def dependency_payload(package_id: str, *, required_version: str) -> dict[str, str]:
     return {
         "package_id": package_id,
         "source": "checked-in-local-workspace",
+        "version_requirement": required_version,
         "language_requirement": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_requirement": LOCAL_PACKAGE_ABI_IDENTITY,
     }
+
+
+def manifest_signing_material(manifest: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "package_id": manifest.get("package_id"),
+        "source": manifest.get("source"),
+        "source_digest": manifest.get("source_digest"),
+        "package_version": manifest.get("package_version"),
+        "language_version": manifest.get("language", {}).get("version")
+        if isinstance(manifest.get("language"), dict)
+        else None,
+        "abi_identity": manifest.get("abi", {}).get("identity")
+        if isinstance(manifest.get("abi"), dict)
+        else None,
+        "dependencies": manifest.get("dependencies"),
+    }
+
+
+def package_manifest_digest(manifest: dict[str, Any]) -> str:
+    payload = dict(manifest)
+    payload.pop("manifest_digest", None)
+    return stable_digest(payload)
 
 
 def package_manifest_payload(
@@ -187,6 +210,113 @@ def package_lock_entry(
     }
 
 
+def lock_dependency_payload(
+    *,
+    from_package_id: str,
+    manifest_dependency: dict[str, str],
+    target_package: dict[str, Any],
+) -> dict[str, str]:
+    target_manifest = target_package.get("package_manifest", {})
+    if not isinstance(target_manifest, dict):
+        target_manifest = {}
+    target_version = str(target_package.get("package_version", ""))
+    return {
+        "from": from_package_id,
+        "to": str(manifest_dependency["package_id"]),
+        "source": str(manifest_dependency["source"]),
+        "language_requirement": str(manifest_dependency["language_requirement"]),
+        "abi_requirement": str(manifest_dependency["abi_requirement"]),
+        "resolution": "locked-local-registry",
+        "required_version": str(manifest_dependency.get("version_requirement", target_version)),
+        "resolved_version": target_version,
+        "target_source_digest": str(target_package.get("source_digest", "")),
+        "target_manifest_digest": str(target_manifest.get("digest", "")),
+    }
+
+
+def package_resolution_plan(
+    *,
+    packages: list[dict[str, Any]],
+    dependencies: list[dict[str, Any]],
+) -> dict[str, Any]:
+    package_ids = sorted(str(package.get("package_id")) for package in packages)
+    graph: dict[str, list[str]] = {package_id: [] for package_id in package_ids}
+    edge_by_pair: dict[tuple[str, str], dict[str, Any]] = {}
+    for dependency in dependencies:
+        from_id = str(dependency.get("from"))
+        to_id = str(dependency.get("to"))
+        graph.setdefault(from_id, []).append(to_id)
+        edge_by_pair[(from_id, to_id)] = dependency
+    for targets in graph.values():
+        targets.sort()
+
+    def closure_for(package_id: str) -> list[str]:
+        closure: list[str] = []
+        seen: set[str] = set()
+        visiting: set[str] = set()
+
+        def visit(current_id: str) -> None:
+            for target_id in graph.get(current_id, []):
+                if target_id in visiting:
+                    continue
+                if target_id in seen:
+                    continue
+                visiting.add(target_id)
+                visit(target_id)
+                visiting.remove(target_id)
+                seen.add(target_id)
+                closure.append(target_id)
+
+        visiting.add(package_id)
+        visit(package_id)
+        return closure
+
+    install_order: list[str] = []
+    installed: set[str] = set()
+    visiting_install: set[str] = set()
+
+    def visit_install(package_id: str) -> None:
+        if package_id in installed or package_id in visiting_install:
+            return
+        visiting_install.add(package_id)
+        for target_id in graph.get(package_id, []):
+            visit_install(target_id)
+        visiting_install.remove(package_id)
+        installed.add(package_id)
+        install_order.append(package_id)
+
+    for package_id in package_ids:
+        visit_install(package_id)
+
+    resolution_edges = [
+        {
+            "from": from_id,
+            "to": to_id,
+            "required_version": str(edge.get("required_version", "")),
+            "resolved_version": str(edge.get("resolved_version", "")),
+            "target_source_digest": str(edge.get("target_source_digest", "")),
+            "target_manifest_digest": str(edge.get("target_manifest_digest", "")),
+        }
+        for (from_id, to_id), edge in sorted(edge_by_pair.items())
+    ]
+    return {
+        "contract_id": "objc3c.package_ecosystem.resolution_plan.v1",
+        "resolver": "deterministic-local-registry",
+        "selection_policy": "exact-locked-version-only",
+        "network_resolution": "unsupported-fail-closed",
+        "hosted_registry": "unsupported-fail-closed-if-claimed",
+        "install_order": install_order,
+        "dependency_closures": [
+            {
+                "package_id": package_id,
+                "dependencies_first": closure_for(package_id),
+            }
+            for package_id in package_ids
+        ],
+        "resolution_edges": resolution_edges,
+    }
+
+
 def provenance_entry(
     *,
     manifest: dict[str, Any],
@@ -217,13 +347,16 @@ def build_lock_components(
         raise RuntimeError("package source inventories drifted from list shapes")
 
     package_manifests: list[dict[str, Any]] = []
-    dependencies: list[dict[str, str]] = []
+    manifest_dependencies_by_package: dict[str, list[dict[str, str]]] = {}
     digest_inputs: list[str] = []
     generator = "scripts/build_objc3c_package_lock.py"
 
+    stdlib_versions: dict[str, str] = {}
     for module in sorted((entry for entry in modules if isinstance(entry, dict)), key=lambda entry: str(entry.get("module", ""))):
         module_id = str(module["module"])
         package_id = f"stdlib:{module_id}"
+        package_version = package_version_from_module(module)
+        stdlib_versions[package_id] = package_version
         source = str(module["manifest"])
         runtime_symbols = [
             str(symbol)
@@ -234,7 +367,7 @@ def build_lock_components(
             package_id=package_id,
             source=source,
             source_kind="stdlib-module-manifest",
-            package_version=package_version_from_module(module),
+            package_version=package_version,
             source_digest=file_digest(root / source),
             dependencies=[],
             runtime_symbols=runtime_symbols,
@@ -245,6 +378,7 @@ def build_lock_components(
             ],
         )
         package_manifests.append(manifest)
+        manifest_dependencies_by_package[package_id] = []
         digest_inputs.append(source)
 
     for example in sorted((entry for entry in examples if isinstance(entry, dict)), key=lambda entry: str(entry.get("id", ""))):
@@ -252,20 +386,12 @@ def build_lock_components(
         package_id = f"showcase:{example_id}"
         source = str(example["workspace_manifest"])
         package_dependencies = [
-            dependency_payload(f"stdlib:{name}")
+            dependency_payload(
+                f"stdlib:{name}",
+                required_version=stdlib_versions.get(f"stdlib:{name}", "0.0.0"),
+            )
             for name in sorted(str(name) for name in example.get("stdlib_followup_modules", []) if isinstance(name, str))
         ]
-        for dependency in package_dependencies:
-            dependencies.append(
-                {
-                    "from": package_id,
-                    "to": dependency["package_id"],
-                    "source": dependency["source"],
-                    "language_requirement": dependency["language_requirement"],
-                    "abi_requirement": dependency["abi_requirement"],
-                    "resolution": "locked-local-registry",
-                }
-            )
         manifest = package_manifest_payload(
             package_id=package_id,
             source=source,
@@ -282,6 +408,7 @@ def build_lock_components(
             ],
         )
         package_manifests.append(manifest)
+        manifest_dependencies_by_package[package_id] = package_dependencies
         digest_inputs.append(source)
 
     packages = [
@@ -303,12 +430,45 @@ def build_lock_components(
         package_manifest_rel_path(str(manifest["package_id"]))
         for manifest in package_manifests
     ]
+    packages_by_id = {str(package["package_id"]): package for package in packages}
+    dependencies = []
+    for from_package_id, package_dependencies in sorted(manifest_dependencies_by_package.items()):
+        for manifest_dependency in package_dependencies:
+            target_package = packages_by_id.get(str(manifest_dependency["package_id"]))
+            if target_package is None:
+                dependencies.append(
+                    {
+                        "from": from_package_id,
+                        "to": str(manifest_dependency["package_id"]),
+                        "source": str(manifest_dependency["source"]),
+                        "language_requirement": str(manifest_dependency["language_requirement"]),
+                        "abi_requirement": str(manifest_dependency["abi_requirement"]),
+                        "resolution": "locked-local-registry",
+                        "required_version": str(manifest_dependency["version_requirement"]),
+                        "resolved_version": "",
+                        "target_source_digest": "",
+                        "target_manifest_digest": "",
+                    }
+                )
+                continue
+            dependencies.append(
+                lock_dependency_payload(
+                    from_package_id=from_package_id,
+                    manifest_dependency=manifest_dependency,
+                    target_package=target_package,
+                )
+            )
+    dependencies = sorted(dependencies, key=lambda entry: (str(entry["from"]), str(entry["to"])))
     digest_inputs.extend(manifest_paths)
     return {
         "package_manifests": sorted(package_manifests, key=lambda entry: str(entry["package_id"])),
         "packages": sorted(packages, key=lambda entry: str(entry["package_id"])),
-        "dependencies": sorted(dependencies, key=lambda entry: (str(entry["from"]), str(entry["to"]))),
+        "dependencies": dependencies,
         "provenance": sorted(provenance, key=lambda entry: str(entry["provenance_id"])),
+        "resolution_plan": package_resolution_plan(
+            packages=sorted(packages, key=lambda entry: str(entry["package_id"])),
+            dependencies=dependencies,
+        ),
         "digest_inputs": sorted(set(digest_inputs)),
     }
 
@@ -357,6 +517,17 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: duplicate package id {package_id}")
 
     package_by_id = {str(package.get("package_id")): package for package in packages}
+    dependencies = [dependency for dependency in raw_dependencies if isinstance(dependency, dict)]
+    expected_resolution_plan = package_resolution_plan(
+        packages=packages,
+        dependencies=dependencies,
+    )
+    resolution_plan = lock.get("resolution_plan")
+    if not isinstance(resolution_plan, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package resolution plan")
+    elif resolution_plan != expected_resolution_plan:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package resolution plan drifted")
+
     provenance_by_id = {
         str(entry.get("provenance_id")): entry
         for entry in raw_provenance
@@ -399,6 +570,47 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: provenance manifest digest drift for {package_id}")
                 if isinstance(trust, dict) and provenance.get("trust_signature") != trust.get("signature"):
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: provenance trust signature drift for {package_id}")
+            absolute_manifest_path = root / manifest_path
+            if not absolute_manifest_path.is_file():
+                failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package manifest for {package_id}")
+            else:
+                manifest_payload = json.loads(absolute_manifest_path.read_text(encoding="utf-8"))
+                manifest_digest = package_manifest_digest(manifest_payload)
+                if manifest_payload.get("manifest_digest") != manifest.get("digest"):
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest field drift for {package_id}")
+                if manifest_digest != manifest.get("digest"):
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest mismatch for {package_id}")
+                expected_trust = trust_payload(package_id, manifest_signing_material(manifest_payload))
+                if manifest_payload.get("trust") != expected_trust:
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest trust signature drift for {package_id}")
+                if isinstance(trust, dict) and trust != expected_trust:
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: lock trust signature drift for {package_id}")
+                expected_manifest_dependencies = sorted(
+                    [
+                        {
+                            "package_id": str(dependency.get("to")),
+                            "source": str(dependency.get("source")),
+                            "version_requirement": str(dependency.get("required_version")),
+                            "language_requirement": str(dependency.get("language_requirement")),
+                            "abi_requirement": str(dependency.get("abi_requirement")),
+                        }
+                        for dependency in dependencies
+                        if str(dependency.get("from")) == package_id
+                    ],
+                    key=lambda dependency: str(dependency["package_id"]),
+                )
+                actual_manifest_dependencies = manifest_payload.get("dependencies", [])
+                if isinstance(actual_manifest_dependencies, list):
+                    actual_manifest_dependencies = sorted(
+                        [
+                            dependency
+                            for dependency in actual_manifest_dependencies
+                            if isinstance(dependency, dict)
+                        ],
+                        key=lambda dependency: str(dependency.get("package_id")),
+                    )
+                if actual_manifest_dependencies != expected_manifest_dependencies:
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest dependency closure drift for {package_id}")
 
     graph: dict[str, list[str]] = {package_id: [] for package_id in package_ids}
     for dependency in raw_dependencies:
@@ -421,6 +633,15 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI requirement mismatch for {from_id}->{to_id}")
         if target_package is not None and dependency.get("language_requirement") != target_package.get("language_version"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: language requirement mismatch for {from_id}->{to_id}")
+        if target_package is not None and dependency.get("required_version") != target_package.get("package_version"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: version requirement mismatch for {from_id}->{to_id}")
+        if target_package is not None and dependency.get("resolved_version") != target_package.get("package_version"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: resolved version mismatch for {from_id}->{to_id}")
+        if target_package is not None and dependency.get("target_source_digest") != target_package.get("source_digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: target source digest mismatch for {from_id}->{to_id}")
+        target_manifest = target_package.get("package_manifest") if target_package is not None else None
+        if isinstance(target_manifest, dict) and dependency.get("target_manifest_digest") != target_manifest.get("digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: target manifest digest mismatch for {from_id}->{to_id}")
 
     visiting: set[str] = set()
     visited: set[str] = set()

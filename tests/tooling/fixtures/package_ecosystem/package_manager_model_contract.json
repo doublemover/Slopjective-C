@@ -32,8 +32,11 @@
     "every locked package carries language version, ABI identity, source digest, manifest digest, and local trust metadata",
     "dependency edges resolve only through the checked-in local registry model",
     "local registry entries carry exact locked version selection, dependency edge digests, fail-closed hosted/network policy, and replay evidence",
+    "the lock carries a deterministic dependency-first resolution plan that local registry indexes and clean installs must preserve exactly",
+    "manifest trust signatures are recomputed from package id, source digest, package version, language version, ABI identity, and dependency requirements before lock acceptance",
     "ABI and language requirements on dependency edges must match the target package before a lock can be accepted",
-    "revoked packages, digest drift, missing provenance, dependency cycles, hosted registry claims, and network resolution claims fail closed"
+    "dependency version requirements, resolved versions, target source digests, and target manifest digests must match the locked target package",
+    "revoked packages, signature drift, digest drift, missing provenance, dependency cycles, hosted registry claims, and network resolution claims fail closed"
   ],
   "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, and install/restore receipts; hosted registry and arbitrary network dependency resolution remain unsupported"
 }

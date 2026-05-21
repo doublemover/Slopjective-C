@@ -85,10 +85,10 @@ def dependency_edge_payload(
         "language_requirement": str(dependency.get("language_requirement")),
         "abi_requirement": str(dependency.get("abi_requirement")),
         "resolution": str(dependency.get("resolution")),
-        "required_version": str(target.get("package_version", "")),
-        "resolved_version": str(target.get("package_version", "")),
-        "target_manifest_digest": str(target_manifest.get("digest", "")),
-        "target_source_digest": str(target.get("source_digest", "")),
+        "required_version": str(dependency.get("required_version", target.get("package_version", ""))),
+        "resolved_version": str(dependency.get("resolved_version", target.get("package_version", ""))),
+        "target_manifest_digest": str(dependency.get("target_manifest_digest", target_manifest.get("digest", ""))),
+        "target_source_digest": str(dependency.get("target_source_digest", target.get("source_digest", ""))),
     }
 
 
@@ -173,6 +173,7 @@ def local_registry_payload(
     if not isinstance(package_manager, dict):
         package_manager = {}
     interop_loader_metadata = lock.get("interop_loader_metadata")
+    resolution_plan = lock.get("resolution_plan")
     payload: dict[str, Any] = {
         "contract_id": LOCAL_REGISTRY_CONTRACT_ID,
         "registry_version": 1,
@@ -202,6 +203,7 @@ def local_registry_payload(
             dependency_edges,
             key=lambda edge: (edge["from"], edge["to"]),
         ),
+        "resolution_plan": resolution_plan if isinstance(resolution_plan, dict) else {},
         "error_policy": registry_error_policy_payload(),
         "replay": {
             "commands": [
@@ -399,6 +401,13 @@ def collect_registry_index_failures(
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency version mismatch for {from_id}->{to_id}")
         if edge.get("resolved_version") != target.get("package_version"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency resolved version mismatch for {from_id}->{to_id}")
+        if edge.get("target_source_digest") != target.get("source_digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency target source digest mismatch for {from_id}->{to_id}")
+        target_manifest = target.get("package_manifest", {})
+        if isinstance(target_manifest, dict) and edge.get("target_manifest_digest") != target_manifest.get("digest"):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency target manifest digest mismatch for {from_id}->{to_id}")
+    if registry.get("resolution_plan") != lock.get("resolution_plan"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry resolution plan drifted from lock")
     return failures
 
 

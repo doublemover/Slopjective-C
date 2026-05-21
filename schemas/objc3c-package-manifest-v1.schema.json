@@ -91,11 +91,12 @@
   "$defs": {
     "dependency": {
       "type": "object",
-      "required": ["package_id", "source", "language_requirement", "abi_requirement"],
+      "required": ["package_id", "source", "version_requirement", "language_requirement", "abi_requirement"],
       "additionalProperties": false,
       "properties": {
         "package_id": { "type": "string", "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$" },
         "source": { "const": "checked-in-local-workspace" },
+        "version_requirement": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
         "language_requirement": { "const": "3.0" },
         "abi_requirement": { "const": "objc3-abi-2025Q4" }
       }

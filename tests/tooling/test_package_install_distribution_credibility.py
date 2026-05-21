@@ -108,6 +108,13 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
         str(path).startswith(INSTALL_VALIDATION_ROOT_REL + "/")
         for path in install_summary["generated_paths"]
     )
+    verification = load_json(VERIFICATION_PATH)
+    lock = load_json(LOCK_PATH)
+    assert verification["install_order"] == lock["resolution_plan"]["install_order"]
+    assert [
+        package["package_id"]
+        for package in verification["installed_packages"]
+    ] == lock["resolution_plan"]["install_order"]
 
 
 def test_install_distribution_contract_fails_on_manifest_digest_drift(install_summary: dict[str, Any]) -> None:

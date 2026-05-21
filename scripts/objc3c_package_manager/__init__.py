@@ -13,6 +13,7 @@ from .model import (
     cache_payload_from_mirror_package,
     collect_lock_model_failures,
     file_digest,
+    package_resolution_plan,
     package_manifest_paths,
     stable_digest,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "cache_payload_from_mirror_package",
     "collect_lock_model_failures",
     "file_digest",
+    "package_resolution_plan",
     "package_manifest_paths",
     "stable_digest",
 ]

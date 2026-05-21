@@ -50,6 +50,7 @@
   "reproducibility_rules": [
     "mirror package ids must match the generated lock package ids",
     "local registry package ids must match the generated lock package ids",
+    "local registry resolution plans must match the dependency-first install order and exact resolution edges from the generated lock",
     "local registry dependency edges must preserve exact locked target versions, source digests, manifest digests, language requirements, and ABI requirements",
     "local registry package entries must carry replay evidence for lock generation, package-manager validation, and mirror validation",
     "publication metadata must fail closed for hosted registry support claims",

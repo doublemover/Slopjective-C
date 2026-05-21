@@ -11,6 +11,7 @@
     "packages",
     "dependencies",
     "provenance",
+    "resolution_plan",
     "digest_inputs",
     "replay"
   ],
@@ -86,6 +87,9 @@
       "items": {
         "$ref": "#/$defs/provenance"
       }
+    },
+    "resolution_plan": {
+      "$ref": "#/$defs/resolutionPlan"
     },
     "interop_loader_metadata": {
       "$ref": "#/$defs/interopLoaderSummary"
@@ -381,7 +385,11 @@
         "source",
         "language_requirement",
         "abi_requirement",
-        "resolution"
+        "resolution",
+        "required_version",
+        "resolved_version",
+        "target_source_digest",
+        "target_manifest_digest"
       ],
       "additionalProperties": false,
       "properties": {
@@ -408,6 +416,97 @@
         },
         "resolution": {
           "const": "locked-local-registry"
+        },
+        "required_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "resolved_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "target_source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "target_manifest_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "resolutionPlan": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "resolver",
+        "selection_policy",
+        "network_resolution",
+        "hosted_registry",
+        "install_order",
+        "dependency_closures",
+        "resolution_edges"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.resolution_plan.v1" },
+        "resolver": { "const": "deterministic-local-registry" },
+        "selection_policy": { "const": "exact-locked-version-only" },
+        "network_resolution": { "const": "unsupported-fail-closed" },
+        "hosted_registry": { "const": "unsupported-fail-closed-if-claimed" },
+        "install_order": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "dependency_closures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["package_id", "dependencies_first"],
+            "additionalProperties": false,
+            "properties": {
+              "package_id": { "type": "string", "minLength": 1 },
+              "dependencies_first": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        "resolution_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to",
+              "required_version",
+              "resolved_version",
+              "target_source_digest",
+              "target_manifest_digest"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string", "minLength": 1 },
+              "to": { "type": "string", "minLength": 1 },
+              "required_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+              },
+              "resolved_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+              },
+              "target_source_digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "target_manifest_digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
         }
       }
     },

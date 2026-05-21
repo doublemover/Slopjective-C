@@ -17,6 +17,7 @@
     "registry_policy",
     "packages",
     "dependency_edges",
+    "resolution_plan",
     "error_policy",
     "replay"
   ],
@@ -73,6 +74,9 @@
       "items": {
         "$ref": "#/$defs/dependencyEdge"
       }
+    },
+    "resolution_plan": {
+      "$ref": "#/$defs/resolutionPlan"
     },
     "error_policy": {
       "$ref": "#/$defs/errorPolicy"
@@ -419,6 +423,69 @@
           },
           "minItems": 10,
           "uniqueItems": true
+        }
+      }
+    },
+    "resolutionPlan": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "resolver",
+        "selection_policy",
+        "network_resolution",
+        "hosted_registry",
+        "install_order",
+        "dependency_closures",
+        "resolution_edges"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.resolution_plan.v1" },
+        "resolver": { "const": "deterministic-local-registry" },
+        "selection_policy": { "const": "exact-locked-version-only" },
+        "network_resolution": { "const": "unsupported-fail-closed" },
+        "hosted_registry": { "const": "unsupported-fail-closed-if-claimed" },
+        "install_order": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/packageId" }
+        },
+        "dependency_closures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["package_id", "dependencies_first"],
+            "additionalProperties": false,
+            "properties": {
+              "package_id": { "$ref": "#/$defs/packageId" },
+              "dependencies_first": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/packageId" }
+              }
+            }
+          }
+        },
+        "resolution_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to",
+              "required_version",
+              "resolved_version",
+              "target_source_digest",
+              "target_manifest_digest"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "$ref": "#/$defs/packageId" },
+              "to": { "$ref": "#/$defs/packageId" },
+              "required_version": { "$ref": "#/$defs/semver" },
+              "resolved_version": { "$ref": "#/$defs/semver" },
+              "target_source_digest": { "$ref": "#/$defs/sha256" },
+              "target_manifest_digest": { "$ref": "#/$defs/sha256" }
+            }
+          }
         }
       }
     },

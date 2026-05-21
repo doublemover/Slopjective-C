@@ -69,6 +69,7 @@
   "model_rules": [
     "clean install validation must remove its owned install root before materializing package evidence",
     "installed package manifests must byte-equivalently project from generated package manifests and keep lock manifest digests",
+    "installed package order must preserve the dependency-first resolution plan from the generated package lock",
     "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
     "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
     "installed package sources, lock entries, mirror entries, local registry entries, publication metadata, and restore receipt counts must agree",

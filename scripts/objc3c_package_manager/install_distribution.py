@@ -249,14 +249,20 @@ def materialize_clean_distribution_install(
 
     installed_packages: list[dict[str, Any]] = []
     local_artifacts: list[dict[str, str]] = []
-    for package in sorted(
-        (
-            entry
-            for entry in lock.get("packages", [])
-            if isinstance(entry, dict)
-        ),
-        key=lambda entry: str(entry.get("package_id")),
-    ):
+    packages_by_id = {
+        str(entry.get("package_id")): entry
+        for entry in lock.get("packages", [])
+        if isinstance(entry, dict)
+    }
+    raw_install_order = lock.get("resolution_plan", {}).get("install_order", [])
+    install_order = [
+        str(package_id)
+        for package_id in raw_install_order
+        if isinstance(package_id, str) and package_id in packages_by_id
+    ] if isinstance(raw_install_order, list) else []
+    if not install_order:
+        install_order = sorted(packages_by_id)
+    for package in [packages_by_id[package_id] for package_id in install_order]:
         package_id = str(package.get("package_id"))
         manifest_ref = package.get("package_manifest", {})
         if not isinstance(manifest_ref, dict):
@@ -385,6 +391,7 @@ def materialize_clean_distribution_install(
         "dependency_count": len(lock.get("dependencies", []))
         if isinstance(lock.get("dependencies"), list)
         else 0,
+        "install_order": install_order,
         "manifest_count": len(installed_packages),
         "cache_entry_count": restore_receipt.get("cache_entry_count"),
         "installed_packages": installed_packages,
@@ -435,6 +442,21 @@ def collect_install_distribution_failures(
         for record in verification.get("installed_packages", [])
         if isinstance(record, dict)
     )
+    installed_order = [
+        str(record.get("package_id"))
+        for record in verification.get("installed_packages", [])
+        if isinstance(record, dict)
+    ]
+    expected_install_order = []
+    resolution_plan = lock.get("resolution_plan", {})
+    if isinstance(resolution_plan, dict):
+        raw_install_order = resolution_plan.get("install_order", [])
+        if isinstance(raw_install_order, list):
+            expected_install_order = [
+                str(package_id)
+                for package_id in raw_install_order
+                if isinstance(package_id, str)
+            ]
     minimum_package_count = int(contract.get("minimum_package_count", 0))
     minimum_dependency_count = int(contract.get("minimum_dependency_count", 0))
     if len(lock_ids) < minimum_package_count:
@@ -447,6 +469,10 @@ def collect_install_distribution_failures(
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install registry package ids drifted from lock")
     if lock_ids != installed_ids:
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: installed package ids drifted from lock")
+    if expected_install_order and verification.get("install_order") != expected_install_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install order drifted from package resolution plan")
+    if expected_install_order and installed_order != expected_install_order:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: installed package order drifted from package resolution plan")
 
     packages_by_id = {
         str(package.get("package_id")): package

@@ -121,6 +121,7 @@ def main() -> int:
         "packages": packages,
         "dependencies": dependencies,
         "provenance": provenance,
+        "resolution_plan": components["resolution_plan"],
         "interop_loader_metadata": package_loader_metadata_summary(interop_metadata, interop_by_package),
         "digest_inputs": digest_inputs,
         "replay": {
