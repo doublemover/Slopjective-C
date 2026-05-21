@@ -159,11 +159,13 @@
       "positive_evidence": [
         "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
         "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
         "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json",
         "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json",
         "native/objc3c/src/sema/model/language_semantics_public_model.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
       ],
@@ -182,7 +184,7 @@
       ],
       "source_truth_requirements": [
         "Existential witness support is limited to public metadata contracts over id<Protocol> conformance lookup and does not claim existential invocation ABI",
-        "ProtocolConformanceMatch and BuildRuntimeProtocolExistentialWitnessMetadata are the runtime source of truth for conformance-owner and protocol-owner evidence",
+        "ProtocolConformanceMatch and BuildRuntimeProtocolExistentialWitnessMetadata are the runtime source of truth for conformance-owner and protocol-owner evidence, and the protocol conformance query snapshot materializes deterministic witness metadata for runtime probes",
         "Associated type declarations and dynamic protocol dispatch attributes stay fail-closed with canonical negative fixtures"
       ]
     },

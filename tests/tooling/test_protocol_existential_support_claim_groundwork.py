@@ -50,11 +50,13 @@ REQUIRED_NEGATIVE_EVIDENCE = {
 REQUIRED_WITNESS_EVIDENCE = {
     WITNESS_BEHAVIOR_FIXTURE,
     "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp",
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
     "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json",
     "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json",
     "native/objc3c/src/sema/model/language_semantics_public_model.h",
     "native/objc3c/src/runtime/classes/protocol_conformance.h",
     "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+    "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
     "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
     "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
 }

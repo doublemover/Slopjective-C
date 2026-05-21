@@ -30,12 +30,26 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
   snapshot->matched_from_superclass = 0;
   snapshot->matched_via_inherited_protocol = 0;
   snapshot->malformed_metadata = 0;
+  snapshot->witness_metadata_materialized = 0;
+  snapshot->witness_metadata_supported = 0;
+  snapshot->conformance_edge_materializable = 0;
+  snapshot->associated_types_supported = 0;
+  snapshot->dynamic_existential_dispatch_supported = 0;
+  snapshot->fail_closed_for_unsupported_semantics = 0;
   snapshot->class_name = nullptr;
   snapshot->protocol_name = nullptr;
   snapshot->matched_protocol_owner_identity = nullptr;
   snapshot->matched_attachment_owner_identity = nullptr;
   snapshot->matched_class_name = nullptr;
   snapshot->matched_class_owner_identity = nullptr;
+  snapshot->existential_canonical_spelling = nullptr;
+  snapshot->object_representation = nullptr;
+  snapshot->conformance_owner_identity = nullptr;
+  snapshot->runtime_lookup_anchor = nullptr;
+  snapshot->witness_metadata_key = nullptr;
+  snapshot->requirement_resolution_policy = nullptr;
+  snapshot->unsupported_associated_type_diagnostic = nullptr;
+  snapshot->unsupported_dynamic_dispatch_diagnostic = nullptr;
   snapshot->failure_reason = nullptr;
 
   if (class_name == nullptr || class_name[0] == '\0' ||
@@ -52,6 +66,14 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
   state.last_protocol_conformance_matched_class_name.clear();
   state.last_protocol_conformance_matched_class_owner_identity.clear();
   state.last_protocol_conformance_failure_reason.clear();
+  state.last_protocol_existential_canonical_spelling.clear();
+  state.last_protocol_existential_object_representation.clear();
+  state.last_protocol_existential_conformance_owner_identity.clear();
+  state.last_protocol_existential_runtime_lookup_anchor.clear();
+  state.last_protocol_existential_witness_metadata_key.clear();
+  state.last_protocol_existential_requirement_resolution_policy.clear();
+  state.last_protocol_existential_associated_type_diagnostic.clear();
+  state.last_protocol_existential_dynamic_dispatch_diagnostic.clear();
   state.last_protocol_conformance_matched_protocol_depth = 0;
   state.last_protocol_conformance_matched_from_category = false;
   state.last_protocol_conformance_matched_from_superclass = false;
@@ -132,6 +154,61 @@ extern "C" int objc3_runtime_copy_protocol_conformance_query_for_testing(
     snapshot->matched_class_owner_identity =
         objc3c::runtime::BorrowRuntimeCString(
             state.last_protocol_conformance_matched_class_owner_identity);
+    objc3c::runtime::ProtocolExistentialWitnessMetadata metadata;
+    if (objc3c::runtime::BuildRuntimeProtocolExistentialWitnessMetadata(
+            class_name, protocol_name, match, metadata, failure_reason)) {
+      snapshot->witness_metadata_materialized = 1;
+      snapshot->witness_metadata_supported =
+          objc3c::runtime::RuntimeProtocolExistentialWitnessMetadataIsSupported(
+              metadata)
+              ? 1
+              : 0;
+      snapshot->conformance_edge_materializable =
+          metadata.conformance_edge_materializable ? 1 : 0;
+      snapshot->associated_types_supported =
+          metadata.associated_types_supported ? 1 : 0;
+      snapshot->dynamic_existential_dispatch_supported =
+          metadata.dynamic_existential_dispatch_supported ? 1 : 0;
+      snapshot->fail_closed_for_unsupported_semantics =
+          metadata.fail_closed_for_unsupported_semantics ? 1 : 0;
+      state.last_protocol_existential_canonical_spelling =
+          metadata.existential_canonical_spelling;
+      state.last_protocol_existential_object_representation =
+          metadata.object_representation;
+      state.last_protocol_existential_conformance_owner_identity =
+          metadata.conformance_owner_identity;
+      state.last_protocol_existential_runtime_lookup_anchor =
+          metadata.runtime_lookup_anchor;
+      state.last_protocol_existential_witness_metadata_key =
+          metadata.witness_metadata_key;
+      state.last_protocol_existential_requirement_resolution_policy =
+          metadata.requirement_resolution_policy;
+      state.last_protocol_existential_associated_type_diagnostic =
+          metadata.unsupported_associated_type_diagnostic;
+      state.last_protocol_existential_dynamic_dispatch_diagnostic =
+          metadata.unsupported_dynamic_dispatch_diagnostic;
+      snapshot->existential_canonical_spelling =
+          objc3c::runtime::BorrowRuntimeCString(
+              state.last_protocol_existential_canonical_spelling);
+      snapshot->object_representation = objc3c::runtime::BorrowRuntimeCString(
+          state.last_protocol_existential_object_representation);
+      snapshot->conformance_owner_identity =
+          objc3c::runtime::BorrowRuntimeCString(
+              state.last_protocol_existential_conformance_owner_identity);
+      snapshot->runtime_lookup_anchor = objc3c::runtime::BorrowRuntimeCString(
+          state.last_protocol_existential_runtime_lookup_anchor);
+      snapshot->witness_metadata_key = objc3c::runtime::BorrowRuntimeCString(
+          state.last_protocol_existential_witness_metadata_key);
+      snapshot->requirement_resolution_policy =
+          objc3c::runtime::BorrowRuntimeCString(
+              state.last_protocol_existential_requirement_resolution_policy);
+      snapshot->unsupported_associated_type_diagnostic =
+          objc3c::runtime::BorrowRuntimeCString(
+              state.last_protocol_existential_associated_type_diagnostic);
+      snapshot->unsupported_dynamic_dispatch_diagnostic =
+          objc3c::runtime::BorrowRuntimeCString(
+              state.last_protocol_existential_dynamic_dispatch_diagnostic);
+    }
   }
   if (!failure_reason.empty()) {
     state.last_protocol_query_malformed_metadata = true;

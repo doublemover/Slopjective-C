@@ -245,6 +245,18 @@ inline void PrintConformanceQueryProtocolCategory(
   PrintIntField("matched_via_inherited_protocol",
                 snapshot.matched_via_inherited_protocol);
   PrintIntField("malformed_metadata", snapshot.malformed_metadata);
+  PrintIntField("witness_metadata_materialized",
+                snapshot.witness_metadata_materialized);
+  PrintIntField("witness_metadata_supported",
+                snapshot.witness_metadata_supported);
+  PrintIntField("conformance_edge_materializable",
+                snapshot.conformance_edge_materializable);
+  PrintIntField("associated_types_supported",
+                snapshot.associated_types_supported);
+  PrintIntField("dynamic_existential_dispatch_supported",
+                snapshot.dynamic_existential_dispatch_supported);
+  PrintIntField("fail_closed_for_unsupported_semantics",
+                snapshot.fail_closed_for_unsupported_semantics);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
@@ -254,6 +266,19 @@ inline void PrintConformanceQueryProtocolCategory(
   PrintStringField("matched_class_name", snapshot.matched_class_name);
   PrintStringField("matched_class_owner_identity",
                    snapshot.matched_class_owner_identity);
+  PrintStringField("existential_canonical_spelling",
+                   snapshot.existential_canonical_spelling);
+  PrintStringField("object_representation", snapshot.object_representation);
+  PrintStringField("conformance_owner_identity",
+                   snapshot.conformance_owner_identity);
+  PrintStringField("runtime_lookup_anchor", snapshot.runtime_lookup_anchor);
+  PrintStringField("witness_metadata_key", snapshot.witness_metadata_key);
+  PrintStringField("requirement_resolution_policy",
+                   snapshot.requirement_resolution_policy);
+  PrintStringField("unsupported_associated_type_diagnostic",
+                   snapshot.unsupported_associated_type_diagnostic);
+  PrintStringField("unsupported_dynamic_dispatch_diagnostic",
+                   snapshot.unsupported_dynamic_dispatch_diagnostic);
   PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
@@ -288,6 +313,12 @@ inline void PrintConformanceQueryCanonicalSummary(
                    snapshot.matched_protocol_owner_identity);
   PrintStringField("matched_attachment_owner_identity",
                    snapshot.matched_attachment_owner_identity);
+  PrintIntField("witness_metadata_materialized",
+                snapshot.witness_metadata_materialized);
+  PrintStringField("existential_canonical_spelling",
+                   snapshot.existential_canonical_spelling);
+  PrintStringField("conformance_owner_identity",
+                   snapshot.conformance_owner_identity);
   PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
@@ -312,6 +343,18 @@ inline void PrintConformanceQueryProtocolInheritance(
   PrintIntField("matched_via_inherited_protocol",
                 snapshot.matched_via_inherited_protocol);
   PrintIntField("malformed_metadata", snapshot.malformed_metadata);
+  PrintIntField("witness_metadata_materialized",
+                snapshot.witness_metadata_materialized);
+  PrintIntField("witness_metadata_supported",
+                snapshot.witness_metadata_supported);
+  PrintIntField("conformance_edge_materializable",
+                snapshot.conformance_edge_materializable);
+  PrintIntField("associated_types_supported",
+                snapshot.associated_types_supported);
+  PrintIntField("dynamic_existential_dispatch_supported",
+                snapshot.dynamic_existential_dispatch_supported);
+  PrintIntField("fail_closed_for_unsupported_semantics",
+                snapshot.fail_closed_for_unsupported_semantics);
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("protocol_name", snapshot.protocol_name);
   PrintStringField("matched_protocol_owner_identity",
@@ -321,6 +364,19 @@ inline void PrintConformanceQueryProtocolInheritance(
   PrintStringField("matched_class_name", snapshot.matched_class_name);
   PrintStringField("matched_class_owner_identity",
                    snapshot.matched_class_owner_identity);
+  PrintStringField("existential_canonical_spelling",
+                   snapshot.existential_canonical_spelling);
+  PrintStringField("object_representation", snapshot.object_representation);
+  PrintStringField("conformance_owner_identity",
+                   snapshot.conformance_owner_identity);
+  PrintStringField("runtime_lookup_anchor", snapshot.runtime_lookup_anchor);
+  PrintStringField("witness_metadata_key", snapshot.witness_metadata_key);
+  PrintStringField("requirement_resolution_policy",
+                   snapshot.requirement_resolution_policy);
+  PrintStringField("unsupported_associated_type_diagnostic",
+                   snapshot.unsupported_associated_type_diagnostic);
+  PrintStringField("unsupported_dynamic_dispatch_diagnostic",
+                   snapshot.unsupported_dynamic_dispatch_diagnostic);
   PrintStringField("failure_reason", snapshot.failure_reason, false);
   std::printf("}");
 }
