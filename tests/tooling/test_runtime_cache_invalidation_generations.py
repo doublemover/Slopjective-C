@@ -108,5 +108,9 @@ def test_cache_aware_dispatch_requires_runtime_owned_validation_metadata() -> No
     assert "OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_GENERATIONS" in dispatch_contract
     assert "CacheAwareDescriptorHasRequiredValidationFlags" in checked_entrypoint
     assert "CacheAwareMalformedDispatchResult(state, descriptor)" in checked_entrypoint
+    assert "PrepareRuntimeCacheAwareDispatchDescriptor" in checked_entrypoint
+    assert "descriptor->selector_stable_id = selector_handle->stable_id" in checked_entrypoint
+    assert "descriptor->class_graph_generation = state.class_graph_generation" in checked_entrypoint
     assert "kObjc3RuntimeCacheAwareDispatchRequiredValidationFlags" in ir_contract
-    assert "kObjc3RuntimeCacheAwareDispatchDefaultDescriptorFlags" in ir_builder
+    assert "kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol" in ir_builder
+    assert "request.prepare_status_value" in ir_builder

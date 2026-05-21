@@ -30,5 +30,7 @@ void Objc3IRRuntimeDispatchCallState::NoteCacheAwareDispatchCall() {
   runtime_dispatch_call_emitted = true;
   ++cache_aware_dispatch_call_sites_emitted;
   runtime_dispatch_symbols_used.insert(
+      kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol);
+  runtime_dispatch_symbols_used.insert(
       kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol);
 }

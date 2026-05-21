@@ -39,10 +39,13 @@ struct Objc3IRDirectDispatchCallRequest {
 struct Objc3IRCacheAwareDispatchCallRequest {
   std::string result_value;
   std::string result_envelope_value;
+  std::string prepare_status_value;
+  std::string prepare_status_ok_value;
   std::string status_value;
   std::string status_ok_value;
   std::string descriptor_ptr;
   std::string selector_ptr;
+  std::string source_path_ptr = "null";
   std::string receiver;
   std::vector<std::string> args;
   unsigned source_line = 1;

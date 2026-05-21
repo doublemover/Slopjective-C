@@ -181,12 +181,13 @@ def test_semantic_optimization_pipeline_cache_aware_dispatch_trace_is_strict() -
     text = fixture.read_text(encoding="utf-8")
 
     assert "objc3_runtime_cache_aware_dispatch_i32_checked" in text
+    assert "objc3_runtime_prepare_cache_aware_dispatch_descriptor" in text
     assert "semantic-optimization.cache-aware-dispatch" in text
     assert "source-map.cache-aware-dispatch" in text
-    assert "store i32 7, ptr %objc3.cache_aware.dispatch.descriptor.0.field1" in text
-    assert "field3" in text
-    assert "field8" in text
+    assert "call i32 @objc3_runtime_prepare_cache_aware_dispatch_descriptor" in text
+    assert "ptr null, i32 12, i32 7" in text
     assert "extractvalue" in text
+    assert "icmp sge i32 %prepare_status, 0" in text
     assert "icmp sge i32 %status, 0" in text
     assert "cache_dispatch_strict_fail" in text
     assert "call void @abort()" in text

@@ -17,7 +17,10 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
       continue;
     }
     std::size_t arg_slots = boundary.runtime_dispatch_arg_slots;
-    if (symbol == kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol) {
+    if (symbol == kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol) {
+      out << "declare i32 @" << symbol << "(ptr, ptr, ptr, i32, i32)\n";
+      continue;
+    } else if (symbol == kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol) {
       out << "declare " << Objc3IRRuntimeDispatchI32ResultType() << " @"
           << symbol << "(i32, ptr";
       arg_slots = kObjc3RuntimeDispatchDefaultArgs;

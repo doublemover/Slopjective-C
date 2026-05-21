@@ -76,6 +76,7 @@ struct ProbeRun {
   int strict_error_expected = 0;
   int strict_error_first_value = 0;
   int strict_error_second_value = 0;
+  int cache_aware_prepare_status = 0;
   int cache_aware_value = 0;
   int cache_aware_stale_value = 0;
   int cache_aware_malformed_status = 0;

@@ -192,6 +192,12 @@ int objc3_runtime_copy_cache_aware_dispatch_record_for_testing(
     objc3_runtime_cache_aware_dispatch_record_snapshot *snapshot);
 int objc3_runtime_copy_dispatch_state_for_testing(
     objc3_runtime_dispatch_state_snapshot *snapshot);
+int objc3_runtime_prepare_cache_aware_dispatch_descriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
+    const char *selector,
+    const char *source_path,
+    uint32_t source_line,
+    uint32_t source_column);
 objc3_runtime_dispatch_i32_result objc3_runtime_cache_aware_dispatch_i32_checked(
     int receiver,
     const objc3_runtime_cache_aware_dispatch_descriptor *descriptor, int a0,

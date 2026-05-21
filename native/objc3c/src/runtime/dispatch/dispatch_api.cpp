@@ -136,3 +136,13 @@ objc3_runtime_cache_aware_dispatch_i32_checked(
   return objc3c::runtime::ExecuteRuntimeCacheAwareDispatchI32Checked(
       receiver, descriptor, a0, a1, a2, a3);
 }
+
+extern "C" int objc3_runtime_prepare_cache_aware_dispatch_descriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
+    const char *selector,
+    const char *source_path,
+    uint32_t source_line,
+    uint32_t source_column) {
+  return objc3c::runtime::PrepareRuntimeCacheAwareDispatchDescriptor(
+      descriptor, selector, source_path, source_line, source_column);
+}

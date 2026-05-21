@@ -23,6 +23,8 @@ bool Objc3IRDirectDispatchCallRequestOwnsResult(
 bool Objc3IRCacheAwareDispatchCallRequestOwnsResult(
     const Objc3IRCacheAwareDispatchCallRequest &request) {
   return !request.result_value.empty() && !request.result_envelope_value.empty() &&
+         !request.prepare_status_value.empty() &&
+         !request.prepare_status_ok_value.empty() &&
          !request.status_value.empty() && !request.status_ok_value.empty() &&
          !request.descriptor_ptr.empty() &&
          Objc3LoweringStrictOwnerModelIsReady(
@@ -76,29 +78,18 @@ std::vector<std::string> BuildObjc3IRCacheAwareDispatchCall(
                   ";debug-visible=true;preserves-source-map=true");
   lines.push_back("  " + request.descriptor_ptr + " = alloca " +
                   descriptor_type + ", align 8");
-
-  const auto store_field = [&](int index, const std::string &type,
-                               const std::string &value) {
-    const std::string field =
-        request.descriptor_ptr + ".field" + std::to_string(index);
-    lines.push_back("  " + field + " = getelementptr inbounds " +
-                    descriptor_type + ", ptr " + request.descriptor_ptr +
-                    ", i32 0, i32 " + std::to_string(index));
-    lines.push_back("  store " + type + " " + value + ", ptr " + field);
-  };
-
-  store_field(0, "i32",
-              std::to_string(kObjc3RuntimeCacheAwareDispatchAbiVersion));
-  store_field(1, "i32",
-              std::to_string(
-                  kObjc3RuntimeCacheAwareDispatchDefaultDescriptorFlags));
-  store_field(2, "ptr", request.selector_ptr);
-  for (int index = 3; index <= 8; ++index) {
-    store_field(index, "i64", "0");
-  }
-  store_field(9, "ptr", "null");
-  store_field(10, "i32", std::to_string(request.source_line));
-  store_field(11, "i32", std::to_string(request.source_column));
+  lines.push_back("  " + request.prepare_status_value + " = call i32 @" +
+                  kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol +
+                  "(ptr " + request.descriptor_ptr + ", ptr " +
+                  request.selector_ptr + ", ptr " + request.source_path_ptr +
+                  ", i32 " + std::to_string(request.source_line) + ", i32 " +
+                  std::to_string(request.source_column) + ")");
+  lines.push_back("  " + request.prepare_status_ok_value + " = icmp sge i32 " +
+                  request.prepare_status_value + ", 0");
+  const std::string dispatch_label = value_label + ".dispatch";
+  lines.push_back("  br i1 " + request.prepare_status_ok_value + ", label %" +
+                  dispatch_label + ", label %" + strict_failure_label);
+  lines.push_back(dispatch_label + ":");
 
   std::ostringstream call;
   call << "  " << request.result_envelope_value << " = call " << result_type

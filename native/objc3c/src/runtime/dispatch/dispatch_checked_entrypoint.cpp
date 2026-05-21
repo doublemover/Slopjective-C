@@ -199,6 +199,44 @@ ExecuteRuntimeDispatchTypedFromClassChecked(
       receiver, dispatch_target, a0, a1, a2, a3);
 }
 
+int PrepareRuntimeCacheAwareDispatchDescriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
+    const char *selector,
+    const char *source_path,
+    std::uint32_t source_line,
+    std::uint32_t source_column) {
+  if (descriptor == nullptr || selector == nullptr || selector[0] == '\0') {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
+  }
+
+  RuntimeState &state = ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const objc3_runtime_selector_handle *selector_handle =
+      LookupSelectorUnlocked(selector);
+  if (selector_handle == nullptr || selector_handle->stable_id == 0) {
+    return OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+  }
+
+  descriptor->abi_version = OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION;
+  descriptor->flags =
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_SELECTOR_STABLE_ID |
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_GENERATIONS |
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE;
+  descriptor->selector = selector_handle->selector;
+  descriptor->selector_stable_id = selector_handle->stable_id;
+  descriptor->class_graph_generation = state.class_graph_generation;
+  descriptor->category_attachment_generation =
+      state.category_attachment_generation;
+  descriptor->protocol_declaration_generation =
+      state.protocol_declaration_generation;
+  descriptor->storage_surface_generation = state.storage_surface_generation;
+  descriptor->method_surface_generation = state.method_surface_generation;
+  descriptor->source_path = source_path != nullptr ? source_path : "";
+  descriptor->source_line = source_line;
+  descriptor->source_column = source_column;
+  return OBJC3_RUNTIME_DISPATCH_STATUS_OK;
+}
+
 objc3_runtime_dispatch_i32_result ExecuteRuntimeCacheAwareDispatchI32Checked(
     int receiver,
     const objc3_runtime_cache_aware_dispatch_descriptor *descriptor,

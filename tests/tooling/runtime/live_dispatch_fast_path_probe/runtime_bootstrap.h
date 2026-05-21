@@ -87,6 +87,14 @@ MakeCacheAwareDescriptor(const MethodCacheStateObservation &state,
   return descriptor;
 }
 
+inline int PrepareRuntimeOwnedCacheAwareDescriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor &descriptor) {
+  return objc3_runtime_prepare_cache_aware_dispatch_descriptor(
+      &descriptor, kDynamicSelector,
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      1, 1);
+}
+
 inline int ExpectedStrictDispatchValue() {
   return ::objc3c::runtime::probe::ExpectedStrictDispatchErrorValue(
       kProbeClassId, kStrictErrorSelector, 4, 5, 6, 7);
@@ -132,6 +140,8 @@ inline ProbeRun CaptureProbeRun() {
 
   objc3_runtime_cache_aware_dispatch_descriptor cache_aware_descriptor =
       MakeCacheAwareDescriptor(run.mixed_second, run.dynamic_entry);
+  run.cache_aware_prepare_status =
+      PrepareRuntimeOwnedCacheAwareDescriptor(cache_aware_descriptor);
   const objc3_runtime_dispatch_i32_result cache_aware_result =
       objc3_runtime_cache_aware_dispatch_i32_checked(
           kProbeClassId, &cache_aware_descriptor, 0, 0, 0, 0);

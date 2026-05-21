@@ -454,6 +454,8 @@ std::string EmitObjc3IRRuntimeDispatch(
       Objc3IRCacheAwareDispatchCallRequest cache_request;
       cache_request.result_value = dispatch_value;
       cache_request.result_envelope_value = callbacks.new_temp(ctx);
+      cache_request.prepare_status_value = callbacks.new_temp(ctx);
+      cache_request.prepare_status_ok_value = callbacks.new_temp(ctx);
       cache_request.status_value = callbacks.new_temp(ctx);
       cache_request.status_ok_value = callbacks.new_temp(ctx);
       cache_request.descriptor_ptr =

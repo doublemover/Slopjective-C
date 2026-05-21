@@ -160,6 +160,8 @@ inline void WriteStatusAndReturnValues(const ProbeRun &run, std::ostream &out) {
   out << "strict_error_second_dispatch_state_status="
       << run.strict_error_second_dispatch.status << "\n";
   out << "strict_error_entry_status=" << run.strict_error_entry.status << "\n";
+  out << "cache_aware_prepare_status="
+      << run.cache_aware_prepare_status << "\n";
   out << "cache_aware_value=" << run.cache_aware_value << "\n";
   out << "cache_aware_stale_value=" << run.cache_aware_stale_value << "\n";
   out << "cache_aware_malformed_status="

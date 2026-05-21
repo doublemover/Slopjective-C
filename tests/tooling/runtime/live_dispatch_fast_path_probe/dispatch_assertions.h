@@ -28,6 +28,7 @@ inline bool FixtureReturnValuesMatch(const ProbeRun &run) {
          run.mixed_first_value == 12 && run.mixed_second_value == 12 &&
          run.strict_error_first_value == run.strict_error_expected &&
          run.strict_error_second_value == run.strict_error_expected &&
+         run.cache_aware_prepare_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
          run.cache_aware_value == 4 &&
          run.cache_aware_stale_value == run.cache_aware_value &&
          run.cache_aware_malformed_status ==
@@ -231,6 +232,8 @@ inline bool CacheAwareDispatchRecordsMatch(const ProbeRun &run) {
          valid.invalidation_reason ==
              OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE &&
          valid.selector_stable_id != 0 &&
+         valid.selector_stable_id ==
+             run.dynamic_entry.entry.selector_stable_id &&
          valid.normalized_receiver_identity != 0 &&
          valid.cache_entry_generation ==
              run.dynamic_entry.entry.cache_entry_generation &&
