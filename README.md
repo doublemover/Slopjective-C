@@ -370,23 +370,6 @@ Current explicit boundaries:
 - Linux, macOS, sanitizer variants, and broad LLVM version ranges need their own
   platform evidence before they become supported host rows.
 
-## Superclean Boundary
-
-`tmp/` and `artifacts/` are machine-owned output roots. They can contain build
-products, packages, compiler artifacts, and replay outputs, but durable
-capability claims live in checked source, tests, schemas, and the capability
-matrix.
-
-Explicit non-goals for cleanup work:
-
-- Do not convert machine outputs into editable capability claims.
-- Do not treat a passing output artifact as issue closure without the matching
-  checked owner surface and validation command.
-- Do not revive retired modes, retired routes, or alternate acceptance paths as
-  public Objective-C 3.0 behavior.
-- Do not replace the `npm run objc3c -- <action>` bridge with direct helper
-  commands in public docs.
-
 ## Repository Map
 
 - `native/objc3c/`: compiler, parser, sema, lowering, IR, runtime, C API, and
