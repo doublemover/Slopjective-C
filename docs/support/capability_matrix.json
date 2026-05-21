@@ -868,7 +868,7 @@
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, while debugger-grade source identity remains reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and a bounded runtime debug-anchor slice ties those reflection rows to source/debug identity. Full debugger stepping, native line tables, and replayable object value inspection remain reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -3199,6 +3199,18 @@
         {
           "kind": "test",
           "path": "tests/tooling/test_runtime_capability_public_split.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_advanced_runtime_closure.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
         }
       ]
     },
@@ -3791,6 +3803,84 @@
           "kind": "test",
           "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
           "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+        },
+        {
+          "kind": "source",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        }
+      ]
+    },
+    {
+      "id": "tooling.editor.object-artifact-inspector",
+      "title": "Editor object artifact inspector",
+      "state": "implemented",
+      "summary": "The inspect-artifact surface proves emitted object bytes through a real object path, SHA-256 digest, object format detection, symbol table inventory, section inventory, runtime helper import/export counts, and source/debug artifact links.",
+      "support_claims": [
+        "objc3c.behavior.tooling.artifact-inspector"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_editor_tooling/artifact_inspector.py",
+        "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+        "tests/tooling/test_developer_tooling_artifact_inspector.py",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
+          "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+          "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+        },
+        {
+          "kind": "source",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        }
+      ]
+    },
+    {
+      "id": "tooling.editor.runtime-artifact-inspector",
+      "title": "Editor runtime artifact inspector",
+      "state": "implemented",
+      "summary": "The inspect-artifact surface proves runtime metadata inventory from the emitted runtime metadata artifact plus manifest-backed class, protocol, method, property, helper, runtime artifact, source graph, and debug-map links.",
+      "support_claims": [
+        "objc3c.behavior.tooling.artifact-inspector"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_editor_tooling/artifact_inspector.py",
+        "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+        "tests/tooling/test_developer_tooling_artifact_inspector.py",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin",
+          "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json",
+          "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+          "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
         },
         {
           "kind": "source",

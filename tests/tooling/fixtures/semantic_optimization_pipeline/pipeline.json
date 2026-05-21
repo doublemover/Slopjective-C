@@ -509,7 +509,7 @@
       ],
       "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "cache-aware dispatch rewrites eligible i32 runtime sends only to the runtime-owned checked helper, aborts non-value strict dispatch statuses, and preserves source-map/debug anchors while runtime miss/fallback behavior remains authoritative"
+      "semantic_equivalence": "cache-aware dispatch rewrites eligible i32 runtime sends only to the runtime-owned checked helper, aborts non-value strict dispatch statuses, and preserves source-map/debug anchors while runtime miss and status behavior remain authoritative"
     },
     {
       "pass_id": "ir-cleanup-verifier",

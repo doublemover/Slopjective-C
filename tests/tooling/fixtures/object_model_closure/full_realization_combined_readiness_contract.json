@@ -11,6 +11,8 @@
   "combined_positive_fixture_meta": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.meta.json",
   "public_reflection_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
   "public_reflection_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+  "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+  "debug_anchor_identity_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
   "public_commands": [
     "npm run objc3c -- validate-object-model-conformance",
     "npm run objc3c -- validate-public-runtime-reflection-api"
@@ -58,8 +60,35 @@
     {
       "anchor_id": "public-reflection-implementation",
       "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+    },
+    {
+      "anchor_id": "runtime-debug-anchor-api",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+    },
+    {
+      "anchor_id": "runtime-debug-anchor-implementation",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
     }
   ],
+  "debug_anchor_identity_contract_summary": {
+    "source_identity_backed": true,
+    "runtime_owned": true,
+    "replayable_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
+    "covered_identity_kinds": [
+      "class",
+      "category",
+      "protocol",
+      "property",
+      "ivar",
+      "method"
+    ],
+    "negative_cases": [
+      "missing-anchor",
+      "stale-generation",
+      "malformed-metadata"
+    ],
+    "does_not_promote_umbrella": true
+  },
   "reflection_lifetime_contract": {
     "snapshot_ownership": "caller-owned snapshot structs",
     "string_lifetime": "runtime-owned borrowed strings",
@@ -83,6 +112,7 @@
       "evidence": [
         "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
         "tests/tooling/runtime/property_ivar_invalid_layout_probe.cpp",
+        "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
         "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
         "scripts/objc3c_runtime_acceptance/domains/storage_reflection_runtime_property_invalid_layout_assertions.py"
       ]
@@ -91,6 +121,7 @@
       "boundary_id": "stale-generation-replay-does-not-promote-support",
       "policy": "reset/replay generation state is evidence for deterministic runtime lifecycle only; stale or blocked replay cannot promote object-model support",
       "evidence": [
+        "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
         "tests/tooling/runtime/deterministic_reset_replay_probe.cpp",
         "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
         "tests/tooling/runtime/multi_image_registration_reset_replay_probe/reset_replay_assertions.h",
@@ -102,7 +133,7 @@
   "remaining_blockers": [
     {
       "blocker_id": "object-model-debugger-source-identity",
-      "summary": "Debugger-grade source identity, line tables, and replayable value inspection remain required before this reserved umbrella can become implemented."
+      "summary": "Bounded runtime debug-anchor identity is now covered; native line tables, debugger stepping, and replayable object value inspection remain required before this reserved umbrella can become implemented."
     }
   ]
 }

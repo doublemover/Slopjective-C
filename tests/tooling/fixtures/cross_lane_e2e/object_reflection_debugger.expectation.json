@@ -1,0 +1,102 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "object_reflection_debugger",
+  "expectation_state": "scaffold-blocked",
+  "source": "tests/native/e2e/cross_lane/object_reflection_debugger.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "runtime status",
+    "source-map/debug diagnostic",
+    "capability/evidence mismatch"
+  ],
+  "blockers": [
+    {
+      "blocker_id": "cross-lane-object-reflection-debug-map",
+      "domain": "source-map/debug",
+      "reason": "debug/source-map output for the combined object reflection program has not been emitted on the public path"
+    }
+  ],
+  "diagnostics": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "class/category/protocol/property reflection is present as source, but debugger source-map support remains blocked",
+    "expected_codes": [
+      "O3E2E8200DBG"
+    ],
+    "required_tokens": [
+      "class",
+      "category",
+      "protocol",
+      "property/ivar",
+      "runtime reflection",
+      "debug-map output"
+    ]
+  },
+  "runtime": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "runtime status",
+    "reason": "runtime reflection and debug-map output are not yet validated as one run",
+    "source_truth": false,
+    "expected_exit_code": null
+  },
+  "compile_manifest": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "compile manifest must eventually publish object reflection and debug-map artifact identities",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "source graph identity for class, category, protocol, property, ivar, and reflection remains expected-only",
+    "source_truth": false,
+    "expected_edges": [
+      "CrossLaneDebugSubject -> DebuggableSubject",
+      "CrossLaneDebugSubject(Inspection) -> DebuggableSubject"
+    ]
+  },
+  "debug_source_map": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "debug-map output is the family blocker and cannot be counted as source truth",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/module.debug-map.json"
+  },
+  "optimization_trace": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "optimization trace is not the owning proof for this family",
+    "source_truth": false
+  },
+  "negative_cases": [
+    {
+      "case_id": "object-reflection-debugger-reserved-stepping",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-debug-map",
+      "responsible_domain": "source-map/debug diagnostic",
+      "reason": "statement-level debugger stepping remains reserved and must fail closed"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "runtime.object-model.class-realization",
+      "runtime.object-model.category-protocol-registration",
+      "runtime.object-model.property-ivar-reflection",
+      "runtime.public-api.reflection",
+      "runtime.debug-trace.structured-inspection",
+      "runtime.debug-trace.statement-stepping"
+    ],
+    "claim_boundary": "object and reflection rows can be cited, but debugger-grade source maps and stepping remain blocked or reserved"
+  }
+}

@@ -113,6 +113,8 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.string-view-runtime-shape` |
 | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.unicode-scalar-iteration` |
 | `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
+| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.object-artifact-inspector` |
+| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.runtime-artifact-inspector` |
 | `objc3c.behavior.tooling.first-run-product-path` | `e2e` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` | `tooling.developer-experience.first-run-product-path` |
 | `objc3c.behavior.tooling.formatter-lsp-workspace` | `e2e` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` | `tooling.editor.formatter-lsp-workspace` |
 
@@ -572,7 +574,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, while debugger-grade source identity remains reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and a bounded runtime debug-anchor slice ties those reflection rows to source/debug identity. Full debugger stepping, native line tables, and replayable object value inspection remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -1578,6 +1580,9 @@ the canonical manifest fixture and public npm command above.
   - doc: `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md`
   - source: `scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
+  - source: `scripts/check_objc3c_advanced_runtime_closure.py`
+  - test: `tests/native/runtime/advanced_closure/combined_positive.objc3`
+  - test: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`
 
 ### Native compiler module decomposition
 
@@ -1830,6 +1835,44 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
   - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
   - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+
+### Editor object artifact inspector
+
+- Capability ID: `tooling.editor.object-artifact-inspector`
+- State: `implemented`
+- Support claims: `objc3c.behavior.tooling.artifact-inspector`
+- Summary: The inspect-artifact surface proves emitted object bytes through a real object path, SHA-256 digest, object format detection, symbol table inventory, section inventory, runtime helper import/export counts, and source/debug artifact links.
+- Owner modules:
+  - `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+  - `tests/tooling/test_developer_tooling_artifact_inspector.py`
+  - `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj`
+- Evidence:
+  - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py`
+  - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+
+### Editor runtime artifact inspector
+
+- Capability ID: `tooling.editor.runtime-artifact-inspector`
+- State: `implemented`
+- Support claims: `objc3c.behavior.tooling.artifact-inspector`
+- Summary: The inspect-artifact surface proves runtime metadata inventory from the emitted runtime metadata artifact plus manifest-backed class, protocol, method, property, helper, runtime artifact, source graph, and debug-map links.
+- Owner modules:
+  - `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+  - `tests/tooling/test_developer_tooling_artifact_inspector.py`
+  - `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json`
+  - `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin`
+- Evidence:
+  - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
+  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py`
   - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
   - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
 

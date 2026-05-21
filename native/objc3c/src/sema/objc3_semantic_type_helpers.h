@@ -33,6 +33,7 @@ struct SemanticTypeInfo {
   SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
   bool has_nullability_suffix = false;
   bool is_refined_nonnull_reference = false;
+  bool is_mutable_binding = false;
   std::string object_pointer_type_name;
 };
 

@@ -90,7 +90,8 @@ std::vector<std::string> BuildObjc3IRCacheAwareDispatchCall(
   store_field(0, "i32",
               std::to_string(kObjc3RuntimeCacheAwareDispatchAbiVersion));
   store_field(1, "i32",
-              std::to_string(kObjc3RuntimeCacheAwareDispatchDebugVisibleFlag));
+              std::to_string(
+                  kObjc3RuntimeCacheAwareDispatchDefaultDescriptorFlags));
   store_field(2, "ptr", request.selector_ptr);
   for (int index = 3; index <= 8; ++index) {
     store_field(index, "i64", "0");

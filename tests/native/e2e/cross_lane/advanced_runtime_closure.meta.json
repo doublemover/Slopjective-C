@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "fixture": "advanced_runtime_closure.objc3",
+  "origin": "hand-authored",
+  "issue": 8200,
+  "owner_phase": "e2e",
+  "behavior_family": "cross_lane_e2e",
+  "fixture_kind": "scaffold-blocked",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "cross-lane-scaffold",
+    "reserved_support_promoted": false,
+    "runtime_support_claimed": false
+  },
+  "expected": {
+    "stage": "manifest",
+    "diagnostic_code": "O3E2E8200ADV",
+    "required_tokens": [
+      "ownership",
+      "block",
+      "async",
+      "actor",
+      "cancellation",
+      "property behavior",
+      "macro provenance"
+    ]
+  }
+}

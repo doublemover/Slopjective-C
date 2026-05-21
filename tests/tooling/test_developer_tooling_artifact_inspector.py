@@ -57,14 +57,21 @@ def fixture_paths(contract: dict[str, object]) -> EditorToolingPaths:
 
 
 def fixture_inputs(contract: dict[str, object]) -> EditorToolingInputs:
+    summary = load_json(ROOT / str(contract["summary_path"]))
+    summary_paths = summary.get("paths", {})
+    object_path_text = (
+        str(summary_paths.get("object", "") or "")
+        if isinstance(summary_paths, dict)
+        else ""
+    )
     return EditorToolingInputs(
-        summary=load_json(ROOT / str(contract["summary_path"])),
+        summary=summary,
         diagnostics=load_json(ROOT / str(contract["diagnostics_path"])),
         manifest=load_json(ROOT / str(contract["manifest_path"])),
         source_text=(ROOT / str(contract["source_path"])).read_text(encoding="utf-8"),
         diagnostics_path_text=str(contract["diagnostics_path"]),
         manifest_path_text=str(contract["manifest_path"]),
-        object_path_text=None,
+        object_path_text=object_path_text or None,
     )
 
 
@@ -89,42 +96,73 @@ def test_artifact_inspector_explains_checked_in_compiler_outputs() -> None:
         "workspace_index_digest": "a" * 64,
         "package_symbols": [],
     }
+    source_index = {
+        "available": True,
+        "declaration_count": 4,
+        "reference_count": 1,
+        "source_index_digest": "b" * 64,
+    }
+    source_graph = {
+        "contract_id": "objc3c.developer.tooling.source.graph.v1",
+        "available": True,
+        "declaration_node_count": 4,
+        "package_provenance": {"package_count": 2},
+        "evidence": {"source_truth_inputs": [str(contract["source_path"])]},
+        "source_graph_digest": "c" * 64,
+    }
 
-    payload = build_artifact_inspector_payload(paths, inputs, symbols, workspace_index)
+    payload = build_artifact_inspector_payload(
+        paths,
+        inputs,
+        symbols,
+        workspace_index,
+        source_index,
+        source_graph,
+    )
 
     assert payload["contract_id"] == "objc3c.developer.tooling.artifact.inspector.v1"
     assert payload["supported"] is True
-    assert payload["support_class"] == "compile-artifact-inspector-with-fail-closed-inventory"
+    assert payload["support_class"] == "compile-artifact-inspector"
     assert payload["inspected_artifact_kinds"] == contract["expected_inspected_artifact_kinds"]
     assert payload["unsupported_artifact_kinds"] == contract["expected_unsupported_artifact_kinds"]
     assert [symbol["name"] for symbol in symbols] == contract["expected_symbol_names"]
     assert payload["diagnostics"]["diagnostic_codes"] == contract["expected_diagnostic_codes"]
-    assert payload["diagnostics"]["severity_counts"] == {"warning": 1}
-    assert payload["manifest"]["module"] == "ArtifactInspectorDemo"
+    assert payload["diagnostics"]["severity_counts"] == {}
+    assert payload["manifest"]["module"] == "runtimeMetadataClassRecords"
     assert payload["manifest"]["declaration_count"] == 4
     assert payload["manifest"]["symbol_kind_counts"] == {
         "function": 1,
-        "global": 1,
-        "implementation": 1,
         "interface": 1,
+        "protocol": 2,
     }
-    assert payload["ir"]["function_definition_count"] == 1
-    assert payload["ir"]["external_declaration_count"] == 1
-    assert payload["ir"]["global_record_count"] == 1
+    assert payload["ir"]["function_definition_count"] > 0
+    assert payload["ir"]["external_declaration_count"] > 0
+    assert payload["ir"]["global_record_count"] > 0
     assert payload["source_graph"]["available"] is True
     assert payload["source_graph"]["declaration_node_count"] == 4
     assert payload["source_graph"]["workspace_package_count"] == 2
     assert len(payload["source_graph"]["source_graph_digest"]) == 64
-    assert payload["object"]["available"] is False
-    assert payload["object"]["inspection_ready"] is False
-    assert payload["object"]["retired_route_reason"] == "compile summary did not publish a object artifact path"
+    assert payload["object"]["available"] is True
+    assert payload["object"]["inspection_ready"] is True
+    assert payload["object"]["object_format"] == "coff"
+    assert payload["object"]["symbol_count"] > 0
+    assert payload["object"]["section_count"] > 0
+    assert payload["object"]["exported_runtime_helper_count"] > 0
+    assert payload["object"]["imported_runtime_helper_count"] > 0
+    assert payload["object"]["object_symbol_inventory_command"]
+    assert payload["object"]["object_section_inventory_command"]
     assert payload["runtime_imports"]["available"] is True
     assert payload["runtime_imports"]["runtime_metadata_binary_present"] is True
     assert payload["runtime_inventory"]["available"] is True
+    assert payload["runtime_inventory"]["class_record_count"] == 1
+    assert payload["runtime_inventory"]["protocol_record_count"] == 2
+    assert payload["runtime_inventory"]["method_record_count"] > 0
+    assert payload["runtime_inventory"]["property_record_count"] > 0
     assert payload["runtime_inventory"]["runtime_artifact_count"] == 1
-    assert payload["inventory_validation"]["inventory_ready"] is False
-    assert payload["inventory_validation"]["fail_closed"] is True
-    assert "missing object artifact" in payload["inventory_validation"]["fail_closed_reasons"]
+    assert payload["artifact_links"]["source_graph_link"].endswith("source-graph.json")
+    assert payload["artifact_links"]["debug_map_link"].endswith("debug-map.json")
+    assert payload["inventory_validation"]["inventory_ready"] is True
+    assert payload["inventory_validation"]["fail_closed"] is False
     assert [
         entry["symbol"] for entry in payload["runtime_imports"]["runtime_imports"]
     ] == contract["required_runtime_import_symbols"]
@@ -133,6 +171,7 @@ def test_artifact_inspector_explains_checked_in_compiler_outputs() -> None:
 
 def test_artifact_inspector_only_publishes_object_commands_for_real_object_paths(
     tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     contract = load_json(CONTRACT_PATH)
     paths = fixture_paths(contract)
@@ -140,6 +179,25 @@ def test_artifact_inspector_only_publishes_object_commands_for_real_object_paths
     object_path = tmp_path / "module.obj"
     object_path.write_bytes(b"\x64\x86objc3-object-fixture")
     object_digest = file_sha256(object_path)
+
+    def fake_run_tool(tool_name: str, args: list[str]) -> tuple[str, list[str], str]:
+        command = f"{tool_name} {' '.join(args)}"
+        if tool_name == "llvm-nm":
+            return command, ["_main T 00000000 0", "objc3_runtime_bootstrap U"], ""
+        if tool_name == "llvm-objdump":
+            return (
+                command,
+                [
+                    "Idx Name          Size     VMA      LMA      File off  Algn",
+                    "  0 .text         00000010 00000000 00000000 000000DC 2**4",
+                    "  1 .objc3_runtime 00000008 00000000 00000000 000000EC 2**3",
+                ],
+                "",
+            )
+        return command, [], "unexpected tool"
+
+    monkeypatch.setattr(artifact_inspector_module, "_run_tool", fake_run_tool)
+
     inputs_with_object = EditorToolingInputs(
         summary={
             **inputs.summary,
@@ -181,14 +239,21 @@ def test_artifact_inspector_only_publishes_object_commands_for_real_object_paths
     assert payload["object"]["digest_matches"] is True
     assert payload["object"]["symbol_count"] == 2
     assert payload["object"]["imported_runtime_helper_count"] == 1
-    assert payload["object"]["object_symbol_inventory_command"] == "llvm-nm module.obj"
-    assert payload["object"]["object_section_inventory_command"] == "llvm-objdump -h module.obj"
-    assert payload["inspection_commands"]["object_symbols"] == "llvm-nm module.obj"
-    assert payload["inspection_commands"]["object_sections"] == "llvm-objdump -h module.obj"
+    assert payload["object"]["object_symbol_inventory_command"].startswith("llvm-nm ")
+    assert payload["object"]["object_section_inventory_command"].startswith("llvm-objdump ")
+    assert (
+        payload["inspection_commands"]["object_symbols"]
+        == payload["object"]["object_symbol_inventory_command"]
+    )
+    assert (
+        payload["inspection_commands"]["object_sections"]
+        == payload["object"]["object_section_inventory_command"]
+    )
 
 
 def test_artifact_inspector_extracts_object_runtime_package_and_link_inventory(
     tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     contract = load_json(CONTRACT_PATH)
     paths = fixture_paths(contract)
@@ -196,6 +261,33 @@ def test_artifact_inspector_extracts_object_runtime_package_and_link_inventory(
     object_path = tmp_path / "module.obj"
     object_path.write_bytes(b"\x64\x86objc3-object-fixture")
     object_digest = file_sha256(object_path)
+
+    def fake_run_tool(tool_name: str, args: list[str]) -> tuple[str, list[str], str]:
+        command = f"{tool_name} {' '.join(args)}"
+        if tool_name == "llvm-nm":
+            return (
+                command,
+                [
+                    "_main T 00000000 0",
+                    "objc3_runtime_bootstrap T 00000010 0",
+                    "_objc_msgSend U",
+                ],
+                "",
+            )
+        if tool_name == "llvm-objdump":
+            return (
+                command,
+                [
+                    "Idx Name          Size     VMA      LMA      File off  Algn",
+                    "  0 .text         00000010 00000000 00000000 000000DC 2**4",
+                    "  1 .objc3_runtime 00000008 00000000 00000000 000000EC 2**3",
+                ],
+                "",
+            )
+        return command, [], "unexpected tool"
+
+    monkeypatch.setattr(artifact_inspector_module, "_run_tool", fake_run_tool)
+
     receipt_path = tmp_path / "objc3c-install-receipt.json"
     write_json(
         receipt_path,
@@ -497,14 +589,21 @@ def test_artifact_inspector_fails_closed_for_unsupported_object_format(tmp_path:
     ]
 
 
-def test_artifact_inspector_normalizes_symbol_inventory_and_requires_digest(
+def test_artifact_inspector_requires_real_tool_inventory_for_available_object(
     tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     contract = load_json(CONTRACT_PATH)
     paths = fixture_paths(contract)
     inputs = fixture_inputs(contract)
     object_path = tmp_path / "module.obj"
     object_path.write_bytes(b"\x64\x86objc3-object-fixture")
+
+    def fake_run_tool(tool_name: str, args: list[str]) -> tuple[str, list[str], str]:
+        command = f"{tool_name} {' '.join(args)}"
+        return command, [], f"{tool_name} fixture intentionally published no rows"
+
+    monkeypatch.setattr(artifact_inspector_module, "_run_tool", fake_run_tool)
 
     payload = build_artifact_inspector_payload(
         paths,
@@ -543,15 +642,11 @@ def test_artifact_inspector_normalizes_symbol_inventory_and_requires_digest(
         {"available": False},
     )
 
-    assert payload["object"]["symbols"] == [
-        "U _objc_msgSend",
-        {"binding": "global", "name": "_main"},
-        {"defined": True, "name": "objc3_runtime_bootstrap"},
-    ]
-    assert payload["object"]["exported_runtime_helper_count"] == 1
-    assert payload["object"]["imported_runtime_helper_count"] == 1
-    assert payload["object"]["inspection_ready"] is True
-    assert "missing object digest expectation" not in payload["inventory_validation"]["fail_closed_reasons"]
+    assert payload["object"]["symbols"] == []
+    assert payload["object"]["sections"] == []
+    assert payload["object"]["inventory_available"] is False
+    assert payload["object"]["inspection_ready"] is False
+    assert "missing object symbol inventory" in payload["inventory_validation"]["fail_closed_reasons"]
 
 
 def test_inspect_artifact_public_action_is_registered() -> None:

@@ -1,0 +1,11 @@
+module AdvancedRuntimeClosureNegativeOwnership;
+
+extern fn ConsumeOwned(value: consumed id) -> void;
+
+fn invalidOwnership(owner: id) -> i32 {
+  let closure = ^[weak owner, consumed owner] {
+    ConsumeOwned(owner);
+    return 1;
+  };
+  return closure();
+}

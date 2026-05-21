@@ -156,6 +156,18 @@ inline ProbeRun CaptureProbeRun() {
   run.cache_aware_malformed_status = malformed_result.status_code;
   run.cache_aware_malformed_dispatch = CaptureCacheAwareDispatchRecord();
 
+  objc3_runtime_cache_aware_dispatch_descriptor missing_validation_descriptor =
+      cache_aware_descriptor;
+  missing_validation_descriptor.flags =
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE;
+  const objc3_runtime_dispatch_i32_result missing_validation_result =
+      objc3_runtime_cache_aware_dispatch_i32_checked(
+          kProbeClassId, &missing_validation_descriptor, 0, 0, 0, 0);
+  run.cache_aware_missing_validation_status =
+      missing_validation_result.status_code;
+  run.cache_aware_missing_validation_dispatch =
+      CaptureCacheAwareDispatchRecord();
+
   return run;
 }
 

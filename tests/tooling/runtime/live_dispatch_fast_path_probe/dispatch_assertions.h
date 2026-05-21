@@ -19,7 +19,8 @@ inline bool RuntimeSnapshotCopiesSucceeded(const ProbeRun &run) {
          run.strict_error_entry.status == 0 &&
          run.cache_aware_dispatch.status == 0 &&
          run.cache_aware_stale_dispatch.status == 0 &&
-         run.cache_aware_malformed_dispatch.status == 0;
+         run.cache_aware_malformed_dispatch.status == 0 &&
+         run.cache_aware_missing_validation_dispatch.status == 0;
 }
 
 inline bool FixtureReturnValuesMatch(const ProbeRun &run) {
@@ -27,9 +28,11 @@ inline bool FixtureReturnValuesMatch(const ProbeRun &run) {
          run.mixed_first_value == 12 && run.mixed_second_value == 12 &&
          run.strict_error_first_value == run.strict_error_expected &&
          run.strict_error_second_value == run.strict_error_expected &&
-         run.cache_aware_value == 12 &&
-         run.cache_aware_stale_value == 12 &&
+         run.cache_aware_value == 4 &&
+         run.cache_aware_stale_value == run.cache_aware_value &&
          run.cache_aware_malformed_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         run.cache_aware_missing_validation_status ==
              OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
 }
 
@@ -213,6 +216,8 @@ inline bool CacheAwareDispatchRecordsMatch(const ProbeRun &run) {
   const auto &valid = run.cache_aware_dispatch.record;
   const auto &stale = run.cache_aware_stale_dispatch.record;
   const auto &malformed = run.cache_aware_malformed_dispatch.record;
+  const auto &missing_validation =
+      run.cache_aware_missing_validation_dispatch.record;
   const char *expected_source =
       "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3";
 
@@ -247,8 +252,7 @@ inline bool CacheAwareDispatchRecordsMatch(const ProbeRun &run) {
          run.cache_aware_dispatch.dispatch_path == "cache-hit-fast-path" &&
          run.cache_aware_dispatch.implementation_kind ==
              "emitted-method-body" &&
-         run.cache_aware_dispatch.diagnostic_code ==
-             "objc3.runtime.dispatch.ok" &&
+         run.cache_aware_dispatch.diagnostic_code.empty() &&
          stale.abi_version == OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
          stale.descriptor_valid == 0 &&
          stale.fallback_used == 1 &&
@@ -284,7 +288,32 @@ inline bool CacheAwareDispatchRecordsMatch(const ProbeRun &run) {
          run.cache_aware_malformed_dispatch.implementation_kind ==
              "strict-dispatch-error" &&
          run.cache_aware_malformed_dispatch.diagnostic_code ==
-             "objc3.runtime.dispatch.malformed_metadata";
+             "O3RT004" &&
+         run.cache_aware_missing_validation_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         missing_validation.abi_version ==
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
+         missing_validation.descriptor_flags ==
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE &&
+         missing_validation.descriptor_valid == 0 &&
+         missing_validation.fallback_used == 0 &&
+         missing_validation.used_cache == 0 &&
+         missing_validation.used_fast_path == 0 &&
+         missing_validation.strict_error == 0 &&
+         missing_validation.status_code ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         missing_validation.cache_entry_generation == 0 &&
+         missing_validation.method_target_identity == 0 &&
+         run.cache_aware_missing_validation_dispatch.selector ==
+             "dynamicEscape" &&
+         run.cache_aware_missing_validation_dispatch.source_path ==
+             expected_source &&
+         run.cache_aware_missing_validation_dispatch.dispatch_path ==
+             "cache-aware-descriptor-error" &&
+         run.cache_aware_missing_validation_dispatch.implementation_kind ==
+             "strict-dispatch-error" &&
+         run.cache_aware_missing_validation_dispatch.diagnostic_code ==
+             "O3RT004";
 }
 
 inline bool ProbeAssertionsPassed(const ProbeRun &run) {

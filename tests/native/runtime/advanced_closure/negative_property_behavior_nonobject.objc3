@@ -1,0 +1,9 @@
+module AdvancedRuntimeClosureNegativeProperty;
+
+@interface InvalidAdvancedRuntimeProperty
+@property (strong, behavior=Observed) i32 counter;
+@end
+
+@implementation InvalidAdvancedRuntimeProperty
+@property (strong, behavior=Observed) i32 counter;
+@end

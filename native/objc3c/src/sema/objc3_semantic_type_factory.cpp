@@ -85,6 +85,38 @@ SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
   return MakeScalarSemanticType(type);
 }
 
+SemanticTypeInfo MakeSemanticTypeFromCanonicalType(
+    const Objc3SemanticCanonicalType &canonical_type) {
+  if (canonical_type.is_objc_named_object_pointer &&
+      canonical_type.has_generic_suffix &&
+      IsObjc3GenericCollectionKind(Objc3GenericCollectionKindFromSpelling(
+          canonical_type.object_pointer_type_name))) {
+    SemanticTypeInfo info = MakeGenericCollectionSemanticType(
+        canonical_type.object_pointer_type_name,
+        canonical_type.generic_arguments_source_order);
+    info.canonical_type.nullability = canonical_type.nullability;
+    info.canonical_type.has_explicit_nullability =
+        canonical_type.has_explicit_nullability;
+    info.has_nullability_suffix = canonical_type.has_explicit_nullability;
+    return info;
+  }
+  if (canonical_type.is_vector) {
+    return MakeVectorSemanticType(canonical_type.value_type,
+                                  canonical_type.vector_base_spelling,
+                                  canonical_type.vector_lane_count);
+  }
+  SemanticTypeInfo info = MakeScalarSemanticType(canonical_type.value_type);
+  info.canonical_type = canonical_type;
+  if (!canonical_type.object_pointer_type_name.empty()) {
+    info.object_pointer_type_name = canonical_type.object_pointer_type_name;
+  }
+  if (canonical_type.is_objc_object_reference) {
+    info.ownership_kind = SemanticOwnershipKind::Retained;
+  }
+  info.has_nullability_suffix = canonical_type.has_explicit_nullability;
+  return info;
+}
+
 SemanticTypeInfo MakeGenericCollectionSemanticType(
     const std::string &type_name,
     const std::vector<std::string> &arguments_source_order) {

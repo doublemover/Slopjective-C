@@ -18,7 +18,17 @@ inline constexpr const char *kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol =
     "objc3_runtime_cache_aware_dispatch_i32_checked";
 inline constexpr bool kObjc3RuntimeCacheAwareDispatchAbiAvailable = true;
 inline constexpr int kObjc3RuntimeCacheAwareDispatchAbiVersion = 1;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchRequireSelectorStableIdFlag =
+    1 << 0;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchRequireGenerationsFlag =
+    1 << 1;
 inline constexpr int kObjc3RuntimeCacheAwareDispatchDebugVisibleFlag = 1 << 2;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchRequiredValidationFlags =
+    kObjc3RuntimeCacheAwareDispatchRequireSelectorStableIdFlag |
+    kObjc3RuntimeCacheAwareDispatchRequireGenerationsFlag;
+inline constexpr int kObjc3RuntimeCacheAwareDispatchDefaultDescriptorFlags =
+    kObjc3RuntimeCacheAwareDispatchRequiredValidationFlags |
+    kObjc3RuntimeCacheAwareDispatchDebugVisibleFlag;
 inline constexpr int kObjc3RuntimeDispatchReturnKindUnsupported = 0;
 inline constexpr int kObjc3RuntimeDispatchReturnKindI32 = 1;
 inline constexpr int kObjc3RuntimeDispatchReturnKindBool = 2;

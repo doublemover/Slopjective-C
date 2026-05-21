@@ -46,6 +46,16 @@ bool CacheAwareDescriptorRequires(
   return (descriptor.flags & flag) != 0;
 }
 
+bool CacheAwareDescriptorHasRequiredValidationFlags(
+    const objc3_runtime_cache_aware_dispatch_descriptor &descriptor) {
+  return CacheAwareDescriptorRequires(
+             descriptor,
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_SELECTOR_STABLE_ID) &&
+         CacheAwareDescriptorRequires(
+             descriptor,
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_GENERATIONS);
+}
+
 bool CacheAwareGenerationsMatchUnlocked(
     const RuntimeState &state,
     const objc3_runtime_cache_aware_dispatch_descriptor &descriptor) {
@@ -71,6 +81,9 @@ std::uintptr_t HashCacheAwareIdentityPart(std::uintptr_t seed,
 
 std::uintptr_t CacheAwareMethodTargetIdentityUnlocked(
     const RuntimeState &state) {
+  if (!state.last_dispatch_resolved_live_method) {
+    return 0u;
+  }
   constexpr std::uintptr_t kOffset = 1469598103934665603ull;
   std::uintptr_t identity = kOffset;
   identity =
@@ -81,7 +94,7 @@ std::uintptr_t CacheAwareMethodTargetIdentityUnlocked(
   if (identity != kOffset) {
     return identity;
   }
-  return state.last_dispatch_resolved_live_method ? kOffset : 0u;
+  return kOffset;
 }
 
 std::uint64_t CacheAwareCacheEntryGenerationUnlocked(
@@ -194,7 +207,8 @@ objc3_runtime_dispatch_i32_result ExecuteRuntimeCacheAwareDispatchI32Checked(
   if (descriptor == nullptr ||
       descriptor->abi_version !=
           OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION ||
-      descriptor->selector == nullptr || descriptor->selector[0] == '\0') {
+      descriptor->selector == nullptr || descriptor->selector[0] == '\0' ||
+      !CacheAwareDescriptorHasRequiredValidationFlags(*descriptor)) {
     return CacheAwareMalformedDispatchResult(state, descriptor);
   }
 

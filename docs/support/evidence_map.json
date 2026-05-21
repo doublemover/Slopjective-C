@@ -690,6 +690,31 @@
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
     },
@@ -2874,6 +2899,21 @@
       "path": "tests/tooling/test_runtime_capability_public_split.py"
     },
     {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_advanced_runtime_closure.py"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+    },
+    {
       "capability_id": "compiler.architecture.module-decomposition",
       "evidence_kind": "source",
       "path": "native/objc3c/src/CMakeLists.txt"
@@ -3430,6 +3470,65 @@
     },
     {
       "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.editor.object-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
+      "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.object-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+      "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+    },
+    {
+      "capability_id": "tooling.editor.object-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+    },
+    {
+      "capability_id": "tooling.editor.object-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.editor.runtime-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin",
+      "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.runtime-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json",
+      "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    },
+    {
+      "capability_id": "tooling.editor.runtime-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+      "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+    },
+    {
+      "capability_id": "tooling.editor.runtime-artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+    },
+    {
+      "capability_id": "tooling.editor.runtime-artifact-inspector",
       "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"

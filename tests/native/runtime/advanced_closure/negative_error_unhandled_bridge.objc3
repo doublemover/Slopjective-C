@@ -1,0 +1,7 @@
+module AdvancedRuntimeClosureNegativeError;
+
+extern fn riskyAdvancedRuntime(value: i32) throws -> i32;
+
+async fn invalidErrorBoundary() -> i32 __attribute__((objc_executor(main))) {
+  return await riskyAdvancedRuntime(1);
+}

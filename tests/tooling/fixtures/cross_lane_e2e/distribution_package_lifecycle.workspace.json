@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.workspace.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "distribution_package_lifecycle",
+  "workspace_id": "cross-lane:distribution-package-lifecycle",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "module": {
+    "module_name": "CrossLaneDistributionPackageLifecycle",
+    "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
+    "package_id": "cross-lane:distribution-package-lifecycle"
+  },
+  "package_edges": [
+    {
+      "from": "cross-lane:distribution-package-lifecycle",
+      "to": "package:local-distribution-root",
+      "relationship": "clean-install-update-rollback-prerequisite"
+    },
+    {
+      "from": "cross-lane:distribution-package-lifecycle",
+      "to": "release:channel-operations",
+      "relationship": "sign-publish-channel-lifecycle-prerequisite"
+    }
+  ]
+}

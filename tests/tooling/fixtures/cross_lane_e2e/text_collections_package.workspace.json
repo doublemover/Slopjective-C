@@ -1,0 +1,30 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.workspace.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "text_collections_package",
+  "workspace_id": "cross-lane:text-collections-package",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "module": {
+    "module_name": "CrossLaneTextCollectionsPackage",
+    "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
+    "package_id": "cross-lane:text-collections-package"
+  },
+  "package_edges": [
+    {
+      "from": "cross-lane:text-collections-package",
+      "to": "stdlib:objc3.text",
+      "relationship": "runtime-backed-text-builder-prerequisite"
+    },
+    {
+      "from": "cross-lane:text-collections-package",
+      "to": "stdlib:objc3.collections",
+      "relationship": "literal-and-for-in-collection-prerequisite"
+    },
+    {
+      "from": "cross-lane:text-collections-package",
+      "to": "package:cross-lane-fixture-provider",
+      "relationship": "package-import-runtime-execution-prerequisite"
+    }
+  ]
+}

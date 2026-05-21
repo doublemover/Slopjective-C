@@ -1,0 +1,30 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.workspace.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "advanced_runtime_closure",
+  "workspace_id": "cross-lane:advanced-runtime-closure",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "module": {
+    "module_name": "CrossLaneAdvancedRuntimeClosure",
+    "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+    "package_id": "cross-lane:advanced-runtime-closure"
+  },
+  "package_edges": [
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:blocks-arc",
+      "relationship": "ownership-and-block-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:concurrency-actors",
+      "relationship": "async-actor-cancellation-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "metaprogramming:property-behavior-macro-provenance",
+      "relationship": "property-behavior-and-macro-provenance-prerequisite"
+    }
+  ]
+}

@@ -91,8 +91,14 @@
           "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
         },
         {
+          "id": "runtime-debug-anchor-identity",
+          "description": "Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+        },
+        {
           "id": "debugger-source-identity",
-          "description": "Debugger source identity and line-table/source-map integration must be owned by checked compiler artifacts.",
+          "description": "Full debugger source maps, native line tables, and stepping integration must still be owned by checked compiler artifacts.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -189,6 +195,12 @@
           "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
         },
         {
+          "id": "debug-anchor-identity-replay-probe",
+          "description": "Runtime-owned debug-anchor replay probe ties reflection rows to source/debug identity and missing/stale anchor boundaries.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+        },
+        {
           "id": "debugger-runtime-value-probe",
           "description": "Debugger value inspection must prove runtime metadata through a checked probe or replay fixture.",
           "status": "blocked",
@@ -243,12 +255,11 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Debugger-grade object-model source identity is not yet complete.",
+          "summary": "Bounded runtime debug-anchor identity exists, but full debugger-grade object-model source identity is not yet complete.",
           "missing_work": [
-            "Compiler-owned source graph integration for object metadata anchors.",
-            "Source maps and native line tables for debugger stepping.",
+            "Compiler-owned source-map publication and native line tables for debugger stepping.",
             "LLDB or replayable debugger protocol evidence for object value inspection.",
-            "Integrated object-model debugger fixtures and negative cases."
+            "Integrated object-model debugger value-inspection fixtures beyond the bounded debug-anchor replay probe."
           ],
           "tracking_issue": "#8198"
         }
@@ -367,9 +378,9 @@
         },
         {
           "id": "cross-lane-e2e",
-          "description": "Cross-lane runtime closure programs must become replayable through a public command.",
-          "status": "blocked",
-          "blocker_id": "advanced-runtime-cross-lane-e2e"
+          "description": "Cross-lane runtime closure fixture and negative-matrix checks are replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-advanced-runtime-closure"
         }
       ],
       "required_positive_fixtures": [
@@ -387,9 +398,9 @@
         },
         {
           "id": "combined-runtime-program",
-          "description": "A combined blocks, ownership, errors, async, actor, property behavior, macro provenance, and package replay program must exist.",
-          "status": "blocked",
-          "blocker_id": "advanced-runtime-cross-lane-e2e"
+          "description": "A combined blocks, ownership, errors, async, actor, cancellation, property behavior, macro provenance, and package replay program exists.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
         }
       ],
       "required_negative_fixtures": [
@@ -407,9 +418,9 @@
         },
         {
           "id": "combined-runtime-negative-boundaries",
-          "description": "Cross-feature negative cases must prove unsupported or unsafe runtime combinations fail closed.",
-          "status": "blocked",
-          "blocker_id": "advanced-runtime-cross-lane-e2e"
+          "description": "Cross-feature negative cases are issue-scoped to ownership, blocks, async, actor, cancellation, error, property, macro, and package replay boundaries.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
         }
       ],
       "required_runtime_probes": [
@@ -480,12 +491,9 @@
       "promotion_blockers": [
         {
           "blocker_id": "advanced-runtime-cross-lane-e2e",
-          "summary": "The combined runtime closure lacks cross-lane positive and negative programs.",
+          "summary": "The combined runtime closure has checked positive and negative fixture coverage, but still lacks integrated runtime state proof.",
           "missing_work": [
-            "A single integrated program combining blocks, ownership, errors, async, actors, property behaviors, macro provenance, and package replay.",
-            "Negative fixtures proving unsafe cross-feature combinations fail closed.",
-            "Runtime equivalence or state probes for the integrated program.",
-            "Public npm-bridge command coverage for the integrated conformance path."
+            "Runtime equivalence or state probes for the integrated program."
           ],
           "tracking_issue": "#8199"
         },

@@ -2,8 +2,8 @@ static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
   if (param.vector_spelling) {
     return MakeVectorSemanticType(param.type, param.vector_base_spelling, param.vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(param.type);
-  info.canonical_type = BuildCanonicalSemanticTypeFromParam(param);
+  SemanticTypeInfo info =
+      MakeSemanticTypeFromCanonicalType(BuildCanonicalSemanticTypeFromParam(param));
   if (param.object_pointer_type_spelling) {
     info.object_pointer_type_name = param.object_pointer_type_name;
   }
@@ -24,8 +24,8 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &f
   if (fn.return_vector_spelling) {
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
-  info.canonical_type = BuildCanonicalSemanticTypeFromFunctionReturn(fn);
+  SemanticTypeInfo info = MakeSemanticTypeFromCanonicalType(
+      BuildCanonicalSemanticTypeFromFunctionReturn(fn));
   if (fn.return_object_pointer_type_spelling) {
     info.object_pointer_type_name = fn.return_object_pointer_type_name;
   }
@@ -46,8 +46,8 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &
   if (method.return_vector_spelling) {
     return MakeVectorSemanticType(method.return_type, method.return_vector_base_spelling, method.return_vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
-  info.canonical_type = BuildCanonicalSemanticTypeFromMethodReturn(method);
+  SemanticTypeInfo info = MakeSemanticTypeFromCanonicalType(
+      BuildCanonicalSemanticTypeFromMethodReturn(method));
   if (method.return_object_pointer_type_spelling) {
     info.object_pointer_type_name = method.return_object_pointer_type_name;
   }
@@ -75,14 +75,37 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo
     const unsigned lane_count = index < fn.param_vector_lane_count.size() ? fn.param_vector_lane_count[index] : 1u;
     return MakeVectorSemanticType(fn.param_types[index], base_spelling, lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(fn.param_types[index]);
   if (index < fn.param_canonical_types.size()) {
+    SemanticTypeInfo info =
+        MakeSemanticTypeFromCanonicalType(fn.param_canonical_types[index]);
     info.canonical_type = fn.param_canonical_types[index];
     if (!info.canonical_type.object_pointer_type_name.empty()) {
       info.object_pointer_type_name =
           info.canonical_type.object_pointer_type_name;
     }
+    if (info.is_generic_collection) {
+      return info;
+    }
+  } else {
+    SemanticTypeInfo info = MakeScalarSemanticType(fn.param_types[index]);
+    if (IsObjCReferenceAliasValueType(fn.param_types[index])) {
+      if (index < fn.param_ownership_is_weak_reference.size() &&
+          fn.param_ownership_is_weak_reference[index]) {
+        info.ownership_kind = SemanticOwnershipKind::Weak;
+      } else if (index < fn.param_ownership_is_unowned_reference.size() &&
+                 fn.param_ownership_is_unowned_reference[index]) {
+        info.ownership_kind = SemanticOwnershipKind::Unowned;
+      } else {
+        info.ownership_kind = SemanticOwnershipKind::Retained;
+      }
+      info.has_nullability_suffix =
+          index < fn.param_has_nullability_suffix.size() &&
+          fn.param_has_nullability_suffix[index];
+    }
+    return info;
   }
+  SemanticTypeInfo info =
+      MakeSemanticTypeFromCanonicalType(fn.param_canonical_types[index]);
   if (IsObjCReferenceAliasValueType(fn.param_types[index])) {
     if (index < fn.param_ownership_is_weak_reference.size() &&
         fn.param_ownership_is_weak_reference[index]) {
@@ -104,11 +127,13 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInf
   if (fn.return_is_vector) {
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
-  info.canonical_type = fn.return_canonical_type;
+  SemanticTypeInfo info = MakeSemanticTypeFromCanonicalType(fn.return_canonical_type);
   if (!info.canonical_type.object_pointer_type_name.empty()) {
     info.object_pointer_type_name =
         info.canonical_type.object_pointer_type_name;
+  }
+  if (info.is_generic_collection) {
+    return info;
   }
   if (IsObjCReferenceAliasValueType(fn.return_type)) {
     if (fn.return_ownership_is_weak_reference) {
@@ -140,10 +165,33 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInf
     return MakeVectorSemanticType(method.param_types[index], base_spelling,
                                   lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(method.param_types[index]);
   if (index < method.param_canonical_types.size()) {
+    SemanticTypeInfo info =
+        MakeSemanticTypeFromCanonicalType(method.param_canonical_types[index]);
     info.canonical_type = method.param_canonical_types[index];
+    if (info.is_generic_collection) {
+      return info;
+    }
+  } else {
+    SemanticTypeInfo info = MakeScalarSemanticType(method.param_types[index]);
+    if (IsObjCReferenceAliasValueType(method.param_types[index])) {
+      if (index < method.param_ownership_is_weak_reference.size() &&
+          method.param_ownership_is_weak_reference[index]) {
+        info.ownership_kind = SemanticOwnershipKind::Weak;
+      } else if (index < method.param_ownership_is_unowned_reference.size() &&
+                 method.param_ownership_is_unowned_reference[index]) {
+        info.ownership_kind = SemanticOwnershipKind::Unowned;
+      } else {
+        info.ownership_kind = SemanticOwnershipKind::Retained;
+      }
+      info.has_nullability_suffix =
+          index < method.param_has_nullability_suffix.size() &&
+          method.param_has_nullability_suffix[index];
+    }
+    return info;
   }
+  SemanticTypeInfo info =
+      MakeSemanticTypeFromCanonicalType(method.param_canonical_types[index]);
   if (IsObjCReferenceAliasValueType(method.param_types[index])) {
     if (index < method.param_ownership_is_weak_reference.size() &&
         method.param_ownership_is_weak_reference[index]) {
@@ -168,8 +216,11 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
                                   method.return_vector_base_spelling,
                                   method.return_vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
-  info.canonical_type = method.return_canonical_type;
+  SemanticTypeInfo info =
+      MakeSemanticTypeFromCanonicalType(method.return_canonical_type);
+  if (info.is_generic_collection) {
+    return info;
+  }
   if (IsObjCReferenceAliasValueType(method.return_type)) {
     if (method.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -189,8 +240,10 @@ static SemanticTypeInfo MakeSemanticTypeFromPropertyInfo(
     return MakeVectorSemanticType(property.type, property.vector_base_spelling,
                                   property.vector_lane_count);
   }
-  SemanticTypeInfo info = MakeScalarSemanticType(property.type);
-  info.canonical_type = property.canonical_type;
+  SemanticTypeInfo info = MakeSemanticTypeFromCanonicalType(property.canonical_type);
+  if (info.is_generic_collection) {
+    return info;
+  }
   if (IsObjCReferenceAliasValueType(property.type)) {
     if (property.ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;

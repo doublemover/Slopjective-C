@@ -1491,6 +1491,9 @@
             "inventory_available": {
               "type": "boolean"
             },
+            "inventory_diagnostics": {
+              "$ref": "#/$defs/stringArray"
+            },
             "symbol_count": {
               "type": "integer",
               "minimum": 0
@@ -1729,6 +1732,19 @@
               "type": "array",
               "items": {
                 "type": "object"
+              }
+            },
+            "runtime_artifact_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "runtime_artifacts": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
               }
             },
             "retired_route_reason": {

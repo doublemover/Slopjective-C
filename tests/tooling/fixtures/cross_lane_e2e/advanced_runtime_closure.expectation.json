@@ -1,0 +1,103 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "advanced_runtime_closure",
+  "expectation_state": "scaffold-blocked",
+  "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "runtime status",
+    "parser/sema diagnostic",
+    "capability/evidence mismatch"
+  ],
+  "blockers": [
+    {
+      "blocker_id": "advanced-runtime-cross-lane-e2e",
+      "domain": "runtime",
+      "reason": "combined advanced runtime behavior remains an umbrella blocker, not an implemented support claim"
+    }
+  ],
+  "diagnostics": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "parser/sema diagnostic",
+    "reason": "combined ownership, block, async, actor, cancellation, property behavior, and macro provenance is not yet diagnostic-free",
+    "expected_codes": [
+      "O3E2E8200ADV"
+    ],
+    "required_tokens": [
+      "ownership",
+      "block",
+      "async",
+      "actor",
+      "cancellation",
+      "property behavior",
+      "macro provenance"
+    ]
+  },
+  "runtime": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "runtime status",
+    "reason": "advanced runtime closure must run as one integrated program before the umbrella blocker can move",
+    "source_truth": false,
+    "expected_exit_code": null
+  },
+  "compile_manifest": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "compile manifest must eventually publish block, async, actor, cancellation, property behavior, and macro provenance artifacts",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "combined runtime semantics are not yet tied to compiler-owned source identity",
+    "source_truth": false,
+    "expected_edges": [
+      "CrossLaneClosureActor -> runtime:concurrency-actors",
+      "CrossLaneClosureActor -> runtime:blocks-arc",
+      "CrossLaneClosureActor -> metaprogramming:macro-provenance"
+    ]
+  },
+  "debug_source_map": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "source-map coverage for cross-feature lowering remains part of the combined source identity blocker",
+    "source_truth": false
+  },
+  "optimization_trace": {
+    "status": "scaffold-blocked",
+    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "no optimization proof should claim this advanced runtime umbrella row",
+    "source_truth": false
+  },
+  "negative_cases": [
+    {
+      "case_id": "advanced-runtime-unsafe-cancelled-owned-block",
+      "status": "scaffold-blocked",
+      "blocker_id": "advanced-runtime-cross-lane-e2e",
+      "responsible_domain": "runtime status",
+      "reason": "unsafe cancellation plus owned escaping block combination must fail closed when implemented"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "language.advanced-runtime-closure",
+      "runtime.blocks.copy-dispose-invoke",
+      "runtime.concurrency.async-actors",
+      "runtime.concurrency.actor-mailbox-isolation",
+      "language.metaprogramming.property-behavior-semantics",
+      "runtime.metaprogramming.host-cache-boundary"
+    ],
+    "claim_boundary": "narrow runtime rows can be referenced, but the umbrella closure remains reserved"
+  }
+}

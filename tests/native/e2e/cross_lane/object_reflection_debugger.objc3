@@ -1,0 +1,44 @@
+// #8200 cross-lane scaffold: object model + reflection + debugger source maps.
+// Expected state is scaffold-blocked by tests/tooling/fixtures/cross_lane_e2e.
+module CrossLaneObjectReflectionDebugger;
+
+extern fn objc3_runtime_reflection_snapshot(id object) -> i32;
+extern fn objc3_debug_map_anchor(id object, i32 line) -> i32;
+
+@protocol DebuggableSubject
+@required
+- (i32) debugIdentifier;
+@property (readonly, getter=debugToken) id token;
+@end
+
+@interface CrossLaneDebugSubject
+@property (assign) i32 rawIdentifier;
+@property (readonly, getter=debugToken) id token;
+- (i32) debugIdentifier;
+@end
+
+@implementation CrossLaneDebugSubject
+@property (assign) i32 rawIdentifier;
+@property (readonly, getter=debugToken) id token;
+
+- (i32) debugIdentifier {
+  return self.rawIdentifier;
+}
+@end
+
+@interface CrossLaneDebugSubject (Inspection) <DebuggableSubject>
+- (i32) reflectedDebugScore;
+@end
+
+@implementation CrossLaneDebugSubject (Inspection)
+- (i32) reflectedDebugScore {
+  let path = @keypath(CrossLaneDebugSubject, token);
+  return [self debugIdentifier] + objc3_runtime_reflection_snapshot(self) + objc3_debug_map_anchor(path, 27);
+}
+@end
+
+fn main() -> i32 {
+  let subject = [[CrossLaneDebugSubject alloc] init];
+  subject.rawIdentifier = 11;
+  return [subject reflectedDebugScore];
+}

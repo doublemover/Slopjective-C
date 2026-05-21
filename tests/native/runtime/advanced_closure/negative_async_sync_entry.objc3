@@ -1,0 +1,9 @@
+module AdvancedRuntimeClosureNegativeAsync;
+
+async fn fetchAsync() -> i32 __attribute__((objc_executor(main))) {
+  return 7;
+}
+
+fn invalidSyncEntry() -> i32 {
+  return await fetchAsync();
+}

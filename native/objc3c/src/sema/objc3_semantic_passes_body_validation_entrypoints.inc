@@ -87,7 +87,9 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       if (scopes.back().find(param.name) != scopes.back().end()) {
         diagnostics.push_back(MakeDiag(param.line, param.column, "O3S201", "duplicate parameter '" + param.name + "'"));
       } else {
-        scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
+        SemanticTypeInfo param_type = MakeSemanticTypeFromParam(param);
+        param_type.is_mutable_binding = true;
+        scopes.back().emplace(param.name, param_type);
       }
     }
 
@@ -190,7 +192,9 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         if (scopes.back().find(param.name) != scopes.back().end()) {
           diagnostics.push_back(MakeDiag(param.line, param.column, "O3S201", "duplicate parameter '" + param.name + "'"));
         } else {
-          scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
+          SemanticTypeInfo param_type = MakeSemanticTypeFromParam(param);
+          param_type.is_mutable_binding = true;
+          scopes.back().emplace(param.name, param_type);
         }
       }
 

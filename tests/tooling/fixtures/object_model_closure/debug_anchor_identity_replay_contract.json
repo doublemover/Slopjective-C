@@ -1,0 +1,117 @@
+{
+  "contract_id": "objc3c.object_model.debug_anchor_identity_replay.v1",
+  "issue": 8198,
+  "capability_id": "runtime.object-model.full-realization",
+  "public_status": "reserved",
+  "support_claim_published": false,
+  "readiness_role": "bounded source/debug identity evidence for the reserved object-model full-realization umbrella",
+  "runtime_anchor_api": {
+    "header": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+    "implementation": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp",
+    "abi_version_macro": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION",
+    "snapshot_type": "objc3_runtime_reflection_debug_anchor_snapshot",
+    "entrypoints": [
+      "objc3_runtime_reflection_debug_anchor_abi_version",
+      "objc3_runtime_reflection_debug_anchor_count",
+      "objc3_runtime_copy_reflection_debug_anchor",
+      "objc3_runtime_copy_reflection_debug_anchor_with_generation",
+      "objc3_runtime_copy_reflection_debug_anchor_at"
+    ],
+    "status_codes": [
+      "OBJC3_RUNTIME_REFLECTION_STATUS_OK",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA",
+      "OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR"
+    ]
+  },
+  "replay_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
+  "source_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+  "runtime_identity_kinds": [
+    "class",
+    "category",
+    "protocol",
+    "property",
+    "ivar",
+    "method"
+  ],
+  "runtime_owned_fields": [
+    "module_name",
+    "translation_unit_identity_key",
+    "source_path",
+    "runtime_identity_key",
+    "anchor_generation",
+    "class_graph_generation",
+    "category_attachment_generation",
+    "protocol_declaration_generation",
+    "storage_surface_generation",
+    "method_surface_generation"
+  ],
+  "positive_replay_queries": [
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS",
+      "container_name": "DebugAnchorWidget",
+      "member_name": "",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_class"
+    },
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY",
+      "container_name": "DebugAnchorWidget",
+      "member_name": "ReplayDebugIdentity",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_category"
+    },
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL",
+      "container_name": "DebugAnchorTraceable",
+      "member_name": "",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_protocol"
+    },
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY",
+      "container_name": "DebugAnchorWidget",
+      "member_name": "value",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_property"
+    },
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR",
+      "container_name": "DebugAnchorWidget",
+      "member_name": "value",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_property"
+    },
+    {
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD",
+      "container_name": "DebugAnchorWidget",
+      "member_name": "value",
+      "method_family": "OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INSTANCE",
+      "ties_to_reflection_row": "objc3_runtime_copy_reflection_method"
+    }
+  ],
+  "negative_replay_queries": [
+    {
+      "case_id": "missing-anchor",
+      "entrypoint": "objc3_runtime_copy_reflection_debug_anchor",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+      "expected_snapshot_field": "missing_anchor"
+    },
+    {
+      "case_id": "stale-generation",
+      "entrypoint": "objc3_runtime_copy_reflection_debug_anchor_with_generation",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR",
+      "expected_snapshot_field": "stale_generation"
+    },
+    {
+      "case_id": "malformed-metadata",
+      "entrypoint": "objc3_runtime_copy_reflection_debug_anchor",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA",
+      "coverage_note": "runtime implementation returns malformed status when realized records lose image identity, runtime identity keys, method-list integrity, or descriptor backing"
+    }
+  ],
+  "boundaries": {
+    "does_not_promote_umbrella": true,
+    "does_not_expose_private_testing_snapshots": true,
+    "does_not_claim_statement_stepping": true,
+    "does_not_claim_lldb_plugin": true,
+    "does_not_create_dynamic_runtime_state": true
+  }
+}

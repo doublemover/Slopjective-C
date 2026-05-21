@@ -1,0 +1,30 @@
+// #8200 cross-lane scaffold: distribution package lifecycle.
+// package signing
+// package publish
+// install from clean root
+// update
+// rollback
+// compile/run installed package
+module CrossLaneDistributionPackageLifecycle;
+
+import CrossLanePublishedToolchain;
+
+extern fn package_signing_manifest_ok() -> i32;
+extern fn package_publish_receipt_ok() -> i32;
+extern fn install_from_clean_root() -> i32;
+extern fn update_installed_package() -> i32;
+extern fn rollback_installed_package() -> i32;
+extern fn compile_run_installed_package() -> i32;
+
+fn verifyLifecycle() -> i32 {
+  return package_signing_manifest_ok()
+    + package_publish_receipt_ok()
+    + install_from_clean_root()
+    + update_installed_package()
+    + rollback_installed_package()
+    + compile_run_installed_package();
+}
+
+fn main() -> i32 {
+  return verifyLifecycle();
+}

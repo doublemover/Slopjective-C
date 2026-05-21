@@ -1,0 +1,276 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.manifest.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "suite_id": "objc3-cross-lane-e2e",
+  "public_action": "validate-cross-lane-e2e",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "claim_policy": {
+    "tmp_source_truth_allowed": false,
+    "generated_outputs_can_define_support": false,
+    "integrated_success_promotes_reserved_rows": false,
+    "scaffold_pass_meaning": "manifest, fixture, and expectation integrity only; compile/run support must be promoted by the owning capability rows"
+  },
+  "families": [
+    {
+      "family_id": "text_collections_package",
+      "display_name": "Text + Collections + Package",
+      "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
+      "native_meta": "tests/native/e2e/cross_lane/text_collections_package.meta.json",
+      "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.workspace.json",
+      "expectation": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "expected_state": "scaffold-blocked",
+      "required_source_tokens": [
+        "import objc3.text",
+        "import objc3.collections",
+        "#array",
+        "#map",
+        "#set",
+        "for",
+        "text_interpolate_i32"
+      ],
+      "capability_rows": [
+        "stdlib.text.runtime-builder-interpolation",
+        "language.collections.literal-syntax-runtime-backed",
+        "language.collections.for-in-syntax-runtime-backed",
+        "runtime.interop.package-loader-bridge"
+      ],
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+        "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
+        "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
+        "objc3c.behavior.runtime.interop.package-loader-bridge"
+      ],
+      "evidence_map_refs": [
+        {
+          "capability_id": "stdlib.text.runtime-builder-interpolation",
+          "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+          "status": "implemented",
+          "claim_boundary": "runtime builder support exists; source-level interpolation across collection iteration remains expected-blocked in this family"
+        },
+        {
+          "capability_id": "language.collections.for-in-syntax-runtime-backed",
+          "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
+          "status": "implemented",
+          "claim_boundary": "for-in support is cited only as a prerequisite, not as proof of cross-package text interpolation"
+        }
+      ],
+      "blockers": [
+        {
+          "blocker_id": "cross-lane-text-collections-package-runtime",
+          "domain": "runtime",
+          "reason": "the combined package import, collection iteration, and text interpolation runtime path has not been compiled and executed as one public E2E program"
+        }
+      ]
+    },
+    {
+      "family_id": "object_reflection_debugger",
+      "display_name": "Object + Reflection + Debugger",
+      "source": "tests/native/e2e/cross_lane/object_reflection_debugger.objc3",
+      "native_meta": "tests/native/e2e/cross_lane/object_reflection_debugger.meta.json",
+      "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.workspace.json",
+      "expectation": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "expected_state": "scaffold-blocked",
+      "required_source_tokens": [
+        "@interface",
+        "@protocol",
+        "@property",
+        "@implementation",
+        "@keypath",
+        "objc3_runtime_reflection_snapshot",
+        "objc3_debug_map_anchor"
+      ],
+      "capability_rows": [
+        "runtime.object-model.class-realization",
+        "runtime.object-model.category-protocol-registration",
+        "runtime.object-model.property-ivar-reflection",
+        "runtime.public-api.reflection",
+        "runtime.debug-trace.structured-inspection",
+        "runtime.debug-trace.statement-stepping"
+      ],
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-class-realization",
+        "objc3c.behavior.runtime.object-model-category-protocol-registration",
+        "objc3c.behavior.runtime.object-model-property-ivar-reflection",
+        "objc3c.behavior.runtime.public-reflection-api",
+        "objc3c.behavior.runtime.debug_trace"
+      ],
+      "evidence_map_refs": [
+        {
+          "capability_id": "runtime.public-api.reflection",
+          "support_claim": "objc3c.behavior.runtime.public-reflection-api",
+          "status": "implemented",
+          "claim_boundary": "public reflection API evidence is a prerequisite only; debugger source-map and statement stepping remain reserved"
+        },
+        {
+          "capability_id": "runtime.debug-trace.statement-stepping",
+          "support_claim": "objc3c.behavior.runtime.debug_trace.statement_stepping",
+          "status": "reserved",
+          "claim_boundary": "statement-level debugger stepping is explicitly blocked in the expectation fixture"
+        }
+      ],
+      "blockers": [
+        {
+          "blocker_id": "cross-lane-object-reflection-debug-map",
+          "domain": "source-map/debug",
+          "reason": "object reflection plus debugger source-map output is not yet validated as one public E2E artifact set"
+        }
+      ]
+    },
+    {
+      "family_id": "optimization_runtime_equivalence",
+      "display_name": "Optimization + Runtime Equivalence",
+      "source": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+      "native_meta": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.meta.json",
+      "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
+      "expectation": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "expected_state": "scaffold-blocked",
+      "required_source_tokens": [
+        "exact devirtualization candidate",
+        "method inlining candidate",
+        "cache-aware dispatch candidate",
+        "before/after IR",
+        "runtime equivalence"
+      ],
+      "capability_rows": [
+        "compiler.optimization.semantic-preserving-pipeline",
+        "compiler.optimization.devirtualization",
+        "compiler.optimization.method-inlining",
+        "runtime.optimization.cache-aware-dispatch"
+      ],
+      "support_claims": [
+        "objc3c.behavior.semantic_optimization_pipeline",
+        "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+        "objc3c.behavior.runtime.cache-aware-dispatch"
+      ],
+      "evidence_map_refs": [
+        {
+          "capability_id": "compiler.optimization.devirtualization",
+          "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+          "status": "implemented",
+          "claim_boundary": "exact-target optimization support must still prove runtime equivalence for this integrated program"
+        },
+        {
+          "capability_id": "compiler.optimization.method-inlining",
+          "support_claim": "objc3c.behavior.semantic_optimization.method_inlining",
+          "status": "reserved",
+          "claim_boundary": "method inlining is reserved and must remain a blocker in this cross-lane family"
+        }
+      ],
+      "blockers": [
+        {
+          "blocker_id": "cross-lane-optimization-runtime-equivalence",
+          "domain": "optimization proof",
+          "reason": "before/after IR and runtime equivalence are scaffolded but not yet generated by the public compiler path"
+        }
+      ]
+    },
+    {
+      "family_id": "advanced_runtime_closure",
+      "display_name": "Advanced Runtime Closure",
+      "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+      "native_meta": "tests/native/e2e/cross_lane/advanced_runtime_closure.meta.json",
+      "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.workspace.json",
+      "expectation": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+      "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "expected_state": "scaffold-blocked",
+      "required_source_tokens": [
+        "__strong",
+        "^",
+        "async",
+        "actor",
+        "cancel",
+        "@propertyBehavior",
+        "@derive"
+      ],
+      "capability_rows": [
+        "language.advanced-runtime-closure",
+        "runtime.blocks.copy-dispose-invoke",
+        "runtime.concurrency.async-actors",
+        "runtime.concurrency.actor-mailbox-isolation",
+        "language.metaprogramming.property-behavior-semantics",
+        "runtime.metaprogramming.host-cache-boundary"
+      ],
+      "support_claims": [
+        "objc3c.behavior.language.advanced-runtime-closure",
+        "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
+        "objc3c.behavior.runtime.concurrency-async-actors",
+        "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
+        "objc3c.behavior.language.metaprogramming.property-behavior-semantics"
+      ],
+      "evidence_map_refs": [
+        {
+          "capability_id": "language.advanced-runtime-closure",
+          "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+          "status": "reserved",
+          "claim_boundary": "umbrella advanced runtime support remains reserved even when narrower rows are referenced"
+        },
+        {
+          "capability_id": "runtime.concurrency.async-actors",
+          "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
+          "status": "implemented",
+          "claim_boundary": "async actor support is a prerequisite only and does not prove the combined closure fixture"
+        }
+      ],
+      "blockers": [
+        {
+          "blocker_id": "advanced-runtime-cross-lane-e2e",
+          "domain": "runtime",
+          "reason": "the combined ownership, block, async, actor, cancellation, property behavior, and macro provenance program is intentionally blocker-explicit"
+        }
+      ]
+    },
+    {
+      "family_id": "distribution_package_lifecycle",
+      "display_name": "Distribution Package Lifecycle",
+      "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
+      "native_meta": "tests/native/e2e/cross_lane/distribution_package_lifecycle.meta.json",
+      "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.workspace.json",
+      "expectation": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "expected_state": "scaffold-blocked",
+      "required_source_tokens": [
+        "package signing",
+        "package publish",
+        "install from clean root",
+        "update",
+        "rollback",
+        "compile/run installed package"
+      ],
+      "capability_rows": [
+        "ecosystem.package-install.clean-distribution",
+        "release.operations.channel-lifecycle",
+        "release.abi.stability-governance"
+      ],
+      "support_claims": [
+        "objc3c.behavior.package.install-clean-distribution",
+        "objc3c.behavior.release.channel-operations",
+        "objc3c.behavior.release.abi-stability-governance"
+      ],
+      "evidence_map_refs": [
+        {
+          "capability_id": "ecosystem.package-install.clean-distribution",
+          "support_claim": "objc3c.behavior.package.install-clean-distribution",
+          "status": "implemented",
+          "claim_boundary": "clean local install evidence is a prerequisite only; signing, public publish, update, rollback, and installed compile/run are blocked here"
+        },
+        {
+          "capability_id": "release.operations.channel-lifecycle",
+          "support_claim": "objc3c.behavior.release.channel-operations",
+          "status": "implemented",
+          "claim_boundary": "release operations evidence does not claim hosted production publication"
+        }
+      ],
+      "blockers": [
+        {
+          "blocker_id": "cross-lane-distribution-package-lifecycle",
+          "domain": "package trust",
+          "reason": "sign, publish, clean install, update, rollback, and installed compile/run are not yet replayed as one public E2E lifecycle"
+        }
+      ]
+    }
+  ]
+}

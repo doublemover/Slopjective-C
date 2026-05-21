@@ -18,9 +18,24 @@ typedef enum objc3_runtime_stdlib_collections_status_i32 {
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CROSS_KIND_HANDLE = 30638,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_STALE_HANDLE = 30639,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR = 30640,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH = 30641,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED = 30653,
   OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OVERFLOW = 30654,
 } objc3_runtime_stdlib_collections_status_i32;
+
+typedef enum objc3_runtime_stdlib_collections_descriptor_kind_i32 {
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY = 1,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MUTABLE_ARRAY = 2,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SLICE = 3,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP = 4,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SET = 5,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ITERATOR = 6,
+} objc3_runtime_stdlib_collections_descriptor_kind_i32;
+
+typedef enum objc3_runtime_stdlib_collections_descriptor_type_i32 {
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE = 0,
+  OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 = 1,
+} objc3_runtime_stdlib_collections_descriptor_type_i32;
 
 typedef struct objc3_runtime_stdlib_collections_snapshot {
   uint64_t reset_generation;
@@ -68,6 +83,18 @@ int objc3_runtime_stdlib_collections_array3_i32(int first,
                                                 int second,
                                                 int third,
                                                 int count);
+int objc3_runtime_stdlib_collections_descriptor_i32(int descriptor_kind,
+                                                   int key_type,
+                                                   int value_type);
+int objc3_runtime_stdlib_collections_descriptor_matches_i32(
+    int descriptor_handle,
+    int collection_handle);
+int objc3_runtime_stdlib_collections_array3_descriptor_i32(
+    int descriptor_handle,
+    int first,
+    int second,
+    int third,
+    int count);
 int objc3_runtime_stdlib_collections_array_storage_i32(const int *values,
                                                        int count);
 int objc3_runtime_stdlib_collections_mutable_array_i32(void);
@@ -90,6 +117,10 @@ int objc3_runtime_stdlib_collections_array_slice_i32(int handle,
                                                      int count);
 int objc3_runtime_stdlib_collections_array_iterator_i32(int handle);
 int objc3_runtime_stdlib_collections_map_entry_i32(int key, int value);
+int objc3_runtime_stdlib_collections_map_entry_descriptor_i32(
+    int descriptor_handle,
+    int key,
+    int value);
 int objc3_runtime_stdlib_collections_map_empty_i32(void);
 int objc3_runtime_stdlib_collections_map_count_i32(int handle);
 int objc3_runtime_stdlib_collections_map_contains_i32(int handle, int key);
@@ -106,6 +137,11 @@ int objc3_runtime_stdlib_collections_set3_i32(int first,
                                              int second,
                                              int third,
                                              int count);
+int objc3_runtime_stdlib_collections_set3_descriptor_i32(int descriptor_handle,
+                                                        int first,
+                                                        int second,
+                                                        int third,
+                                                        int count);
 int objc3_runtime_stdlib_collections_set_storage_i32(const int *values,
                                                      int count);
 int objc3_runtime_stdlib_collections_set_count_i32(int handle);

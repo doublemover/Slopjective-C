@@ -23,6 +23,9 @@ struct CollectionRecord {
   storage::RecordHeader header;
   std::vector<int> values;
   std::vector<MapEntry> entries;
+  int collection_descriptor_kind = 0;
+  int collection_descriptor_key_type = 0;
+  int collection_descriptor_value_type = 0;
   int array_handle = 0;
   storage::DescriptorKind array_handle_kind = storage::DescriptorKind::Unknown;
   std::uint64_t expected_array_mutation_generation = 0;
@@ -52,6 +55,8 @@ struct RuntimeStdlibCollectionsState {
   std::uint64_t slice_query_call_count = 0;
   std::uint64_t iterator_create_call_count = 0;
   std::uint64_t iterator_query_call_count = 0;
+  std::uint64_t descriptor_create_call_count = 0;
+  std::uint64_t descriptor_query_call_count = 0;
   std::uint64_t status_call_count = 0;
   std::uint64_t mutation_generation = 0;
   std::uint64_t invalid_handle_failure_count = 0;
@@ -85,6 +90,9 @@ void RecordStatusCounter(RuntimeStdlibCollectionsState &state, int status) {
       ++state.stale_handle_failure_count;
       break;
     case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR:
+      ++state.malformed_descriptor_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH:
       ++state.malformed_descriptor_failure_count;
       break;
     case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED:
@@ -131,6 +139,84 @@ int StatusForLookup(storage::LookupStatus status) {
   }
 }
 
+bool IsSupportedDescriptorKind(int descriptor_kind) {
+  switch (descriptor_kind) {
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY:
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MUTABLE_ARRAY:
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SLICE:
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP:
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SET:
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ITERATOR:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool IsValidDescriptorShape(int descriptor_kind,
+                            int key_type,
+                            int value_type) {
+  if (!IsSupportedDescriptorKind(descriptor_kind)) {
+    return false;
+  }
+  if (descriptor_kind == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP) {
+    return key_type == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 &&
+           value_type == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32;
+  }
+  return key_type == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 &&
+         value_type == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE;
+}
+
+int DescriptorKindForStorageKind(storage::DescriptorKind kind) {
+  switch (kind) {
+    case storage::DescriptorKind::CollectionImmutableArray:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY;
+    case storage::DescriptorKind::CollectionMutableArray:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MUTABLE_ARRAY;
+    case storage::DescriptorKind::CollectionSlice:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SLICE;
+    case storage::DescriptorKind::CollectionMap:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP;
+    case storage::DescriptorKind::CollectionSet:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SET;
+    case storage::DescriptorKind::CollectionIterator:
+      return OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ITERATOR;
+    default:
+      return 0;
+  }
+}
+
+void AssignDescriptor(CollectionRecord &record,
+                      int descriptor_kind,
+                      int key_type,
+                      int value_type) {
+  record.collection_descriptor_kind = descriptor_kind;
+  record.collection_descriptor_key_type = key_type;
+  record.collection_descriptor_value_type = value_type;
+}
+
+void AssignDefaultDescriptor(CollectionRecord &record,
+                             storage::DescriptorKind kind) {
+  const int descriptor_kind = DescriptorKindForStorageKind(kind);
+  const int value_type =
+      descriptor_kind == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP
+          ? OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32
+          : OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE;
+  AssignDescriptor(record, descriptor_kind,
+                   OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+                   value_type);
+}
+
+bool DescriptorMatchesRecord(const CollectionRecord &descriptor,
+                             const CollectionRecord &record) {
+  return descriptor.collection_descriptor_kind ==
+             record.collection_descriptor_kind &&
+         descriptor.collection_descriptor_key_type ==
+             record.collection_descriptor_key_type &&
+         descriptor.collection_descriptor_value_type ==
+             record.collection_descriptor_value_type;
+}
+
 CollectionRecord MakeArrayRecord(const int *values,
                                  int count,
                                  storage::DescriptorKind kind) {
@@ -141,6 +227,7 @@ CollectionRecord MakeArrayRecord(const int *values,
   }
   record.count = count;
   record.header.descriptor_kind = kind;
+  AssignDefaultDescriptor(record, kind);
   return record;
 }
 
@@ -231,6 +318,8 @@ void ResetRuntimeStdlibCollectionsStateForTesting() {
   state.slice_query_call_count = 0;
   state.iterator_create_call_count = 0;
   state.iterator_query_call_count = 0;
+  state.descriptor_create_call_count = 0;
+  state.descriptor_query_call_count = 0;
   state.status_call_count = 0;
   state.mutation_generation = 0;
   state.invalid_handle_failure_count = 0;
@@ -250,6 +339,75 @@ void ResetRuntimeStdlibCollectionsStateForTesting() {
 
 }  // namespace objc3c::runtime
 
+extern "C" int objc3_runtime_stdlib_collections_descriptor_i32(
+    int descriptor_kind,
+    int key_type,
+    int value_type) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  if (!IsValidDescriptorShape(descriptor_kind, key_type, value_type)) {
+    RecordCall(state, state.descriptor_create_call_count, 0, descriptor_kind,
+               key_type, value_type,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR,
+               0);
+    return 0;
+  }
+  CollectionRecord record;
+  AssignDescriptor(record, descriptor_kind, key_type, value_type);
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionDescriptor, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.descriptor_create_call_count, 0, descriptor_kind,
+               key_type, value_type,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.descriptor_create_call_count, handle,
+             descriptor_kind, key_type, value_type,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_descriptor_matches_i32(
+    int descriptor_handle,
+    int collection_handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto descriptor_lookup = state.records.Lookup(
+      descriptor_handle, {storage::DescriptorKind::CollectionDescriptor});
+  if (descriptor_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(descriptor_lookup.status);
+    RecordCall(state, state.descriptor_query_call_count, descriptor_handle,
+               collection_handle, 0, 0, status, 0);
+    return 0;
+  }
+  auto collection_lookup = state.records.Lookup(
+      collection_handle,
+      {storage::DescriptorKind::CollectionImmutableArray,
+       storage::DescriptorKind::CollectionMutableArray,
+       storage::DescriptorKind::CollectionSlice,
+       storage::DescriptorKind::CollectionMap,
+       storage::DescriptorKind::CollectionSet,
+       storage::DescriptorKind::CollectionIterator});
+  if (collection_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(collection_lookup.status);
+    RecordCall(state, state.descriptor_query_call_count, descriptor_handle,
+               collection_handle, 0, 0, status, 0);
+    return 0;
+  }
+  if (!DescriptorMatchesRecord(*descriptor_lookup.record,
+                               *collection_lookup.record)) {
+    RecordCall(state, state.descriptor_query_call_count, descriptor_handle,
+               collection_handle, 0, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH, 0);
+    return 0;
+  }
+  RecordCall(state, state.descriptor_query_call_count, descriptor_handle,
+             collection_handle, 0, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, 1);
+  return 1;
+}
+
 extern "C" int objc3_runtime_stdlib_collections_array3_i32(int first,
                                                            int second,
                                                            int third,
@@ -268,6 +426,58 @@ extern "C" int objc3_runtime_stdlib_collections_array3_i32(int first,
                       storage::DescriptorKind::CollectionImmutableArray));
   if (handle == 0) {
     RecordCall(state, state.array_create_call_count, 0, first, second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.array_create_call_count, handle, first, second,
+             third, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_array3_descriptor_i32(
+    int descriptor_handle,
+    int first,
+    int second,
+    int third,
+    int count) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto descriptor_lookup = state.records.Lookup(
+      descriptor_handle, {storage::DescriptorKind::CollectionDescriptor});
+  if (descriptor_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(descriptor_lookup.status);
+    RecordCall(state, state.array_create_call_count, descriptor_handle, first,
+               second, third, status, 0);
+    return 0;
+  }
+  if (descriptor_lookup.record->collection_descriptor_kind !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY ||
+      descriptor_lookup.record->collection_descriptor_key_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 ||
+      descriptor_lookup.record->collection_descriptor_value_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE) {
+    RecordCall(state, state.array_create_call_count, descriptor_handle, first,
+               second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH, 0);
+    return 0;
+  }
+  if (count < 0 || count > 3) {
+    RecordCall(state, state.array_create_call_count, descriptor_handle, first,
+               second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT, 0);
+    return 0;
+  }
+  const std::array<int, 3> inputs = {first, second, third};
+  CollectionRecord record = MakeArrayRecord(
+      inputs.data(), count, storage::DescriptorKind::CollectionImmutableArray);
+  AssignDescriptor(record, descriptor_lookup.record->collection_descriptor_kind,
+                   descriptor_lookup.record->collection_descriptor_key_type,
+                   descriptor_lookup.record->collection_descriptor_value_type);
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionImmutableArray, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.array_create_call_count, descriptor_handle, first,
+               second, third,
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
@@ -315,6 +525,7 @@ extern "C" int objc3_runtime_stdlib_collections_mutable_array_i32(void) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   CollectionRecord record;
+  AssignDefaultDescriptor(record, storage::DescriptorKind::CollectionMutableArray);
   const int handle = state.records.Store(
       storage::DescriptorKind::CollectionMutableArray, std::move(record));
   if (handle == 0) {
@@ -529,6 +740,7 @@ extern "C" int objc3_runtime_stdlib_collections_array_slice_i32(int handle,
       lookup.record->header.mutation_generation;
   slice.start = start;
   slice.count = count;
+  AssignDefaultDescriptor(slice, storage::DescriptorKind::CollectionSlice);
   const int slice_handle = state.records.Store(
       storage::DescriptorKind::CollectionSlice, std::move(slice));
   if (slice_handle == 0) {
@@ -560,6 +772,7 @@ extern "C" int objc3_runtime_stdlib_collections_array_iterator_i32(
   iterator.iterator_source_kind = lookup.record->header.descriptor_kind;
   iterator.expected_mutation_generation =
       lookup.record->header.mutation_generation;
+  AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
   if (iterator_handle == 0) {
@@ -579,6 +792,7 @@ extern "C" int objc3_runtime_stdlib_collections_map_entry_i32(int key,
   std::lock_guard<std::mutex> lock(state.mutex);
   CollectionRecord record;
   record.entries.push_back(MapEntry{key, value});
+  AssignDefaultDescriptor(record, storage::DescriptorKind::CollectionMap);
   const int handle = state.records.Store(
       storage::DescriptorKind::CollectionMap, std::move(record));
   if (handle == 0) {
@@ -591,10 +805,54 @@ extern "C" int objc3_runtime_stdlib_collections_map_entry_i32(int key,
   return handle;
 }
 
+extern "C" int objc3_runtime_stdlib_collections_map_entry_descriptor_i32(
+    int descriptor_handle,
+    int key,
+    int value) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto descriptor_lookup = state.records.Lookup(
+      descriptor_handle, {storage::DescriptorKind::CollectionDescriptor});
+  if (descriptor_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(descriptor_lookup.status);
+    RecordCall(state, state.map_create_call_count, descriptor_handle, key,
+               value, 0, status, 0);
+    return 0;
+  }
+  if (descriptor_lookup.record->collection_descriptor_kind !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP ||
+      descriptor_lookup.record->collection_descriptor_key_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 ||
+      descriptor_lookup.record->collection_descriptor_value_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32) {
+    RecordCall(state, state.map_create_call_count, descriptor_handle, key,
+               value, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH, 0);
+    return 0;
+  }
+  CollectionRecord record;
+  record.entries.push_back(MapEntry{key, value});
+  AssignDescriptor(record, descriptor_lookup.record->collection_descriptor_kind,
+                   descriptor_lookup.record->collection_descriptor_key_type,
+                   descriptor_lookup.record->collection_descriptor_value_type);
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionMap, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.map_create_call_count, descriptor_handle, key,
+               value, 0,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.map_create_call_count, handle, key, value, 0,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
 extern "C" int objc3_runtime_stdlib_collections_map_empty_i32(void) {
   RuntimeStdlibCollectionsState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   CollectionRecord record;
+  AssignDefaultDescriptor(record, storage::DescriptorKind::CollectionMap);
   const int handle = state.records.Store(
       storage::DescriptorKind::CollectionMap, std::move(record));
   if (handle == 0) {
@@ -760,6 +1018,7 @@ extern "C" int objc3_runtime_stdlib_collections_map_key_iterator_i32(
   iterator.iterator_source_kind = storage::DescriptorKind::CollectionMap;
   iterator.expected_mutation_generation =
       lookup.record->header.mutation_generation;
+  AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
   if (iterator_handle == 0) {
@@ -794,6 +1053,7 @@ extern "C" int objc3_runtime_stdlib_collections_map_value_iterator_i32(
   iterator.iterator_source_kind = storage::DescriptorKind::CollectionMap;
   iterator.expected_mutation_generation =
       lookup.record->header.mutation_generation;
+  AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
   if (iterator_handle == 0) {
@@ -824,10 +1084,66 @@ extern "C" int objc3_runtime_stdlib_collections_set3_i32(int first,
     AppendUniqueValue(record.values, inputs[static_cast<std::size_t>(index)]);
   }
   record.count = static_cast<int>(record.values.size());
+  AssignDefaultDescriptor(record, storage::DescriptorKind::CollectionSet);
   const int handle = state.records.Store(
       storage::DescriptorKind::CollectionSet, std::move(record));
   if (handle == 0) {
     RecordCall(state, state.set_create_call_count, 0, first, second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
+    return 0;
+  }
+  RecordCall(state, state.set_create_call_count, handle, first, second, third,
+             OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK, handle);
+  return handle;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_set3_descriptor_i32(
+    int descriptor_handle,
+    int first,
+    int second,
+    int third,
+    int count) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  auto descriptor_lookup = state.records.Lookup(
+      descriptor_handle, {storage::DescriptorKind::CollectionDescriptor});
+  if (descriptor_lookup.status != storage::LookupStatus::Ok) {
+    const int status = StatusForLookup(descriptor_lookup.status);
+    RecordCall(state, state.set_create_call_count, descriptor_handle, first,
+               second, third, status, 0);
+    return 0;
+  }
+  if (descriptor_lookup.record->collection_descriptor_kind !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SET ||
+      descriptor_lookup.record->collection_descriptor_key_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32 ||
+      descriptor_lookup.record->collection_descriptor_value_type !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE) {
+    RecordCall(state, state.set_create_call_count, descriptor_handle, first,
+               second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH, 0);
+    return 0;
+  }
+  if (count < 0 || count > 3) {
+    RecordCall(state, state.set_create_call_count, descriptor_handle, first,
+               second, third,
+               OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT, 0);
+    return 0;
+  }
+  CollectionRecord record;
+  const std::array<int, 3> inputs = {first, second, third};
+  for (int index = 0; index < count; ++index) {
+    AppendUniqueValue(record.values, inputs[static_cast<std::size_t>(index)]);
+  }
+  record.count = static_cast<int>(record.values.size());
+  AssignDescriptor(record, descriptor_lookup.record->collection_descriptor_kind,
+                   descriptor_lookup.record->collection_descriptor_key_type,
+                   descriptor_lookup.record->collection_descriptor_value_type);
+  const int handle = state.records.Store(
+      storage::DescriptorKind::CollectionSet, std::move(record));
+  if (handle == 0) {
+    RecordCall(state, state.set_create_call_count, descriptor_handle, first,
+               second, third,
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
@@ -862,6 +1178,7 @@ extern "C" int objc3_runtime_stdlib_collections_set_storage_i32(
     AppendUniqueValue(record.values, values[index]);
   }
   record.count = static_cast<int>(record.values.size());
+  AssignDefaultDescriptor(record, storage::DescriptorKind::CollectionSet);
   const int handle = state.records.Store(
       storage::DescriptorKind::CollectionSet, std::move(record));
   if (handle == 0) {
@@ -1074,6 +1391,7 @@ extern "C" int objc3_runtime_stdlib_collections_slice_iterator_i32(
   iterator.iterator_source_kind = slice_lookup.record->array_handle_kind;
   iterator.expected_mutation_generation =
       slice_lookup.record->expected_array_mutation_generation;
+  AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
   if (iterator_handle == 0) {
@@ -1104,6 +1422,7 @@ extern "C" int objc3_runtime_stdlib_collections_set_iterator_i32(int handle) {
   iterator.iterator_source_kind = storage::DescriptorKind::CollectionSet;
   iterator.expected_mutation_generation =
       lookup.record->header.mutation_generation;
+  AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
   if (iterator_handle == 0) {

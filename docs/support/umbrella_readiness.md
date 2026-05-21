@@ -47,7 +47,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Image registration and replay source remains the runtime registration owner. (path: `native/objc3c/src/runtime/images/registration.cpp`)
 - `satisfied` Public runtime reflection API source remains checked in and evidence-linked. (path: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`)
 - `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
-- `blocked` Debugger source identity and line-table/source-map integration must be owned by checked compiler artifacts. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
+- `blocked` Full debugger source maps, native line tables, and stepping integration must still be owned by checked compiler artifacts. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
 
@@ -74,6 +75,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Public reflection API probe remains checked in. (path: `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp`)
 - `satisfied` Registration reset/replay generation probe remains checked in for lifecycle boundary evidence. (path: `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp`)
+- `satisfied` Runtime-owned debug-anchor replay probe ties reflection rows to source/debug identity and missing/stale anchor boundaries. (path: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`)
 - `blocked` Debugger value inspection must prove runtime metadata through a checked probe or replay fixture. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Abi Governance Rows
@@ -100,11 +102,10 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Debugger-grade object-model source identity is not yet complete.
-  - Compiler-owned source graph integration for object metadata anchors.
-  - Source maps and native line tables for debugger stepping.
+- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity exists, but full debugger-grade object-model source identity is not yet complete.
+  - Compiler-owned source-map publication and native line tables for debugger stepping.
   - LLDB or replayable debugger protocol evidence for object value inspection.
-  - Integrated object-model debugger fixtures and negative cases.
+  - Integrated object-model debugger value-inspection fixtures beyond the bounded debug-anchor replay probe.
 
 ### Final Promotion Criteria
 
@@ -155,19 +156,19 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Block ARC runtime acceptance remains replayable through the npm bridge. (command: `npm run objc3c -- test-runtime-acceptance-block-arc`)
 - `satisfied` Concurrency runtime conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-concurrency-conformance`)
-- `blocked` Cross-lane runtime closure programs must become replayable through a public command. (blocker_id: `advanced-runtime-cross-lane-e2e`)
+- `satisfied` Cross-lane runtime closure fixture and negative-matrix checks are replayable through the npm bridge. (command: `npm run objc3c -- validate-advanced-runtime-closure`)
 
 #### Positive Fixtures
 
 - `satisfied` Escaping owned-object block copy/dispose fixture remains checked in. (path: `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3`)
 - `satisfied` Live continuation runtime integration fixture remains checked in. (path: `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3`)
-- `blocked` A combined blocks, ownership, errors, async, actor, property behavior, macro provenance, and package replay program must exist. (blocker_id: `advanced-runtime-cross-lane-e2e`)
+- `satisfied` A combined blocks, ownership, errors, async, actor, cancellation, property behavior, macro provenance, and package replay program exists. (path: `tests/native/runtime/advanced_closure/combined_positive.objc3`)
 
 #### Negative Fixtures
 
 - `satisfied` Weak object capture mutation remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3`)
 - `satisfied` Missing runtime replay proof remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3`)
-- `blocked` Cross-feature negative cases must prove unsupported or unsafe runtime combinations fail closed. (blocker_id: `advanced-runtime-cross-lane-e2e`)
+- `satisfied` Cross-feature negative cases are issue-scoped to ownership, blocks, async, actor, cancellation, error, property, macro, and package replay boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
 
 #### Runtime Probes
 
@@ -199,11 +200,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `advanced-runtime-cross-lane-e2e`: The combined runtime closure lacks cross-lane positive and negative programs.
-  - A single integrated program combining blocks, ownership, errors, async, actors, property behaviors, macro provenance, and package replay.
-  - Negative fixtures proving unsafe cross-feature combinations fail closed.
+- `advanced-runtime-cross-lane-e2e`: The combined runtime closure has checked positive and negative fixture coverage, but still lacks integrated runtime state proof.
   - Runtime equivalence or state probes for the integrated program.
-  - Public npm-bridge command coverage for the integrated conformance path.
 - `advanced-runtime-combined-source-identity`: Combined runtime semantics are not yet tied to compiler-owned source identity and ABI interaction proof.
   - Compiler-owned source graph records for combined runtime semantics.
   - Source-map/debug-map coverage for cross-feature lowering.

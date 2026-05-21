@@ -52,18 +52,44 @@
         const SemanticTypeInfo collection_type = ValidateExpr(
             stmt->for_in_stmt->collection.get(), scopes, globals, functions,
             diagnostics, max_message_send_args, message_send_context);
-        (void)collection_type;
+        SemanticTypeInfo value_binding_type =
+            MakeScalarSemanticType(ValueType::Unknown);
+        SemanticTypeInfo key_binding_type =
+            MakeScalarSemanticType(ValueType::Unknown);
+        if (collection_type.is_generic_collection &&
+            IsReadyObjc3GenericCollectionTypeModel(
+                collection_type.generic_collection_model)) {
+          const Objc3GenericCollectionTypeModel &model =
+              collection_type.generic_collection_model;
+          if (IsObjc3CollectionMapKind(model.kind)) {
+            if (!stmt->for_in_stmt->has_key_binding) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->for_in_stmt->line, stmt->for_in_stmt->column, "O3S206",
+                  "type mismatch: map for-in requires key and value bindings"));
+            }
+            key_binding_type = MakeSemanticTypeFromObjc3CollectionIdentity(
+                model.key_type_identity);
+            value_binding_type = MakeSemanticTypeFromObjc3CollectionIdentity(
+                model.value_type_identity);
+          } else {
+            if (stmt->for_in_stmt->has_key_binding) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->for_in_stmt->line, stmt->for_in_stmt->column, "O3S206",
+                  "type mismatch: key binding is only valid when iterating maps"));
+            }
+            value_binding_type = MakeSemanticTypeFromObjc3CollectionIdentity(
+                model.element_type_identity);
+          }
+        }
         scopes.push_back({});
         if (!stmt->for_in_stmt->value_name.empty()) {
           scopes.back().emplace(
-              stmt->for_in_stmt->value_name,
-              MakeScalarSemanticType(ValueType::Unknown));
+              stmt->for_in_stmt->value_name, value_binding_type);
         }
         if (stmt->for_in_stmt->has_key_binding &&
             !stmt->for_in_stmt->key_name.empty()) {
           scopes.back().emplace(
-              stmt->for_in_stmt->key_name,
-              MakeScalarSemanticType(ValueType::Unknown));
+              stmt->for_in_stmt->key_name, key_binding_type);
         }
         ValidateStatements(stmt->for_in_stmt->body, scopes, globals, functions,
                            expected_return_type, function_name, diagnostics,
@@ -76,12 +102,122 @@
       return;
     case Stmt::Kind::CollectionMutation:
       if (stmt->collection_mutation_stmt != nullptr) {
-        ValidateExpr(stmt->collection_mutation_stmt->key_or_index.get(),
-                     scopes, globals, functions, diagnostics,
-                     max_message_send_args, message_send_context);
-        ValidateExpr(stmt->collection_mutation_stmt->value.get(), scopes,
-                     globals, functions, diagnostics, max_message_send_args,
-                     message_send_context);
+        SemanticTypeInfo collection_type =
+            MakeScalarSemanticType(ValueType::Unknown);
+        const bool found_collection = resolve_assignment_target_type(
+            stmt->collection_mutation_stmt->collection_name, collection_type);
+        if (!found_collection) {
+          diagnostics.push_back(MakeDiag(
+              stmt->collection_mutation_stmt->line,
+              stmt->collection_mutation_stmt->column, "O3S214",
+              "invalid assignment target '" +
+                  stmt->collection_mutation_stmt->collection_name +
+                  "': target must be a mutable symbol"));
+        }
+        const Objc3GenericCollectionTypeModel *model = nullptr;
+        if (found_collection && !IsUnknownSemanticType(collection_type)) {
+          if (!collection_type.is_generic_collection ||
+              !IsReadyObjc3GenericCollectionTypeModel(
+                  collection_type.generic_collection_model)) {
+            diagnostics.push_back(MakeDiag(
+                stmt->collection_mutation_stmt->line,
+                stmt->collection_mutation_stmt->column, "O3S206",
+                "type mismatch: collection mutation target '" +
+                    stmt->collection_mutation_stmt->collection_name +
+                    "' must be a generic collection, got '" +
+                    SemanticTypeName(collection_type) + "'"));
+          } else {
+            model = &collection_type.generic_collection_model;
+            if (!collection_type.is_mutable_binding) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->collection_mutation_stmt->line,
+                  stmt->collection_mutation_stmt->column, "O3S206",
+                  "type mismatch: collection mutation requires a 'var' binding for target '" +
+                      stmt->collection_mutation_stmt->collection_name + "'"));
+            }
+            if (!IsObjc3MutableCollectionKind(model->kind)) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->collection_mutation_stmt->line,
+                  stmt->collection_mutation_stmt->column, "O3S206",
+                  "type mismatch: collection mutation target '" +
+                      stmt->collection_mutation_stmt->collection_name +
+                      "' must be mutable, got '" +
+                      SemanticTypeName(collection_type) + "'"));
+            }
+          }
+        }
+        const SemanticTypeInfo key_or_index_type =
+            ValidateExpr(stmt->collection_mutation_stmt->key_or_index.get(),
+                         scopes, globals, functions, diagnostics,
+                         max_message_send_args, message_send_context);
+        SemanticTypeInfo value_type =
+            MakeScalarSemanticType(ValueType::Unknown);
+        if (stmt->collection_mutation_stmt->value != nullptr) {
+          value_type = ValidateExpr(stmt->collection_mutation_stmt->value.get(),
+                                    scopes, globals, functions, diagnostics,
+                                    max_message_send_args,
+                                    message_send_context);
+        }
+        if (model != nullptr &&
+            stmt->collection_mutation_stmt->kind ==
+                CollectionMutationStmt::Kind::IndexSet) {
+          if (IsObjc3CollectionSetKind(model->kind)) {
+            diagnostics.push_back(MakeDiag(
+                stmt->collection_mutation_stmt->line,
+                stmt->collection_mutation_stmt->column, "O3S206",
+                "type mismatch: set mutation uses insert/delete, not indexed assignment"));
+          } else {
+            const std::string expected_key_or_index =
+                IsObjc3CollectionMapKind(model->kind)
+                    ? model->key_type_identity
+                    : std::string("i32");
+            if (!IsUnknownSemanticType(key_or_index_type) &&
+                !IsObjc3CollectionValueCompatibleWithIdentity(
+                    expected_key_or_index, key_or_index_type)) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->collection_mutation_stmt->key_or_index->line,
+                  stmt->collection_mutation_stmt->key_or_index->column,
+                  "O3S206",
+                  "type mismatch: collection mutation index expects '" +
+                      expected_key_or_index + "', got '" +
+                      SemanticTypeName(key_or_index_type) + "'"));
+            }
+            const std::string &expected_value =
+                IsObjc3CollectionMapKind(model->kind)
+                    ? model->value_type_identity
+                    : model->element_type_identity;
+            if (!IsUnknownSemanticType(value_type) &&
+                !IsObjc3CollectionValueCompatibleWithIdentity(expected_value,
+                                                              value_type)) {
+              diagnostics.push_back(MakeDiag(
+                  stmt->collection_mutation_stmt->line,
+                  stmt->collection_mutation_stmt->column, "O3S206",
+                  "type mismatch: collection mutation expects '" +
+                      expected_value + "', got '" +
+                      SemanticTypeName(value_type) + "'"));
+            }
+          }
+        } else if (model != nullptr &&
+                   stmt->collection_mutation_stmt->kind ==
+                       CollectionMutationStmt::Kind::Delete) {
+          const std::string expected_key_or_index =
+              IsObjc3CollectionMapKind(model->kind)
+                  ? model->key_type_identity
+                  : (IsObjc3CollectionSetKind(model->kind)
+                         ? model->element_type_identity
+                         : std::string("i32"));
+          if (!IsUnknownSemanticType(key_or_index_type) &&
+              !IsObjc3CollectionValueCompatibleWithIdentity(
+                  expected_key_or_index, key_or_index_type)) {
+            diagnostics.push_back(MakeDiag(
+                stmt->collection_mutation_stmt->key_or_index->line,
+                stmt->collection_mutation_stmt->key_or_index->column,
+                "O3S206",
+                "type mismatch: collection delete expects '" +
+                    expected_key_or_index + "', got '" +
+                    SemanticTypeName(key_or_index_type) + "'"));
+          }
+        }
       }
       return;
     case Stmt::Kind::Switch: {

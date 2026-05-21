@@ -1,0 +1,10 @@
+module CollectionDescriptorImmutableParameterMutation;
+
+fn mutate(values: Array<i32>) -> i32 {
+  values[0] = 7;
+  return values[0];
+}
+
+fn main() -> i32 {
+  return 0;
+}

@@ -1,0 +1,98 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "distribution_package_lifecycle",
+  "expectation_state": "scaffold-blocked",
+  "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "package trust diagnostic",
+    "runtime status",
+    "capability/evidence mismatch"
+  ],
+  "blockers": [
+    {
+      "blocker_id": "cross-lane-distribution-package-lifecycle",
+      "domain": "package trust",
+      "reason": "package signing, publish, clean install, update, rollback, and installed compile/run are not yet one replayable path"
+    }
+  ],
+  "diagnostics": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "package trust diagnostic",
+    "reason": "distribution lifecycle support must fail closed until package trust artifacts are present",
+    "expected_codes": [
+      "O3E2E8200PKG"
+    ],
+    "required_tokens": [
+      "package signing",
+      "package publish",
+      "install from clean root",
+      "update",
+      "rollback",
+      "compile/run installed package"
+    ]
+  },
+  "runtime": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "runtime status",
+    "reason": "compile/run from the installed package root is not yet executed by this scaffold",
+    "source_truth": false,
+    "expected_exit_code": null
+  },
+  "compile_manifest": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "compile manifest must eventually come from the installed package root rather than the source checkout",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "source graph must prove installed package identity after update and rollback",
+    "source_truth": false,
+    "expected_edges": [
+      "cross-lane:distribution-package-lifecycle -> package:local-distribution-root",
+      "cross-lane:distribution-package-lifecycle -> release:channel-operations"
+    ]
+  },
+  "debug_source_map": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "debug source-map output is not required until installed compile/run exists",
+    "source_truth": false
+  },
+  "optimization_trace": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "optimization proof is outside the package lifecycle owner until installed execution exists",
+    "source_truth": false
+  },
+  "negative_cases": [
+    {
+      "case_id": "distribution-package-tampered-signature",
+      "status": "scaffold-blocked",
+      "blocker_id": "cross-lane-distribution-package-lifecycle",
+      "responsible_domain": "package trust diagnostic",
+      "reason": "tampered package signatures must fail closed before publish, install, update, rollback, or installed compile/run"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "ecosystem.package-install.clean-distribution",
+      "release.operations.channel-lifecycle",
+      "release.abi.stability-governance"
+    ],
+    "claim_boundary": "clean local install and release operations are prerequisites, not proof of full hosted distribution lifecycle support"
+  }
+}

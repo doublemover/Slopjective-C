@@ -5,36 +5,35 @@
   "public_action": "inspect-editor-tooling",
   "source_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
   "summary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
-  "diagnostics_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json",
-  "manifest_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json",
+  "diagnostics_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+  "manifest_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json",
   "ir_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll",
-  "runtime_metadata_binary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/runtime-metadata.bin",
+  "object_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
+  "runtime_metadata_binary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin",
   "expected_inspected_artifact_kinds": [
     "diagnostics",
     "ir",
     "manifest",
+    "object",
     "runtime_metadata_binary",
     "summary"
   ],
-  "expected_unsupported_artifact_kinds": [
-    "object"
-  ],
+  "expected_unsupported_artifact_kinds": [],
   "expected_symbol_names": [
-    "globalCounter",
-    "ArtifactWidget",
-    "ArtifactWidget",
+    "Base",
+    "Worker",
+    "Widget",
     "main"
   ],
-  "expected_diagnostic_codes": [
-    "O3T200"
-  ],
+  "expected_diagnostic_codes": [],
   "expected_inspection_command_keys": [
     "diagnostics",
     "ir",
     "manifest",
+    "object",
+    "object_sections",
+    "object_symbols",
     "summary"
   ],
-  "required_runtime_import_symbols": [
-    "objc3_runtime_bootstrap"
-  ]
+  "required_runtime_import_symbols": []
 }

@@ -43,4 +43,14 @@ CONFORMANCE_ACTION_SPECS: dict[str, ActionSpec] = {
             "gate surfaces stay reproducible from the staged runnable toolchain bundle"
         ),
     ),
+    "validate-cross-lane-e2e": ActionSpec(
+        "validate-cross-lane-e2e",
+        "validate the #8200 cross-lane end-to-end scaffold manifest and fixture expectations",
+        "python:scripts/check_objc3c_cross_lane_e2e.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "cross-lane end-to-end program families stay source-owned, public-command "
+            "reachable, and explicit about blocked or reserved runtime support"
+        ),
+    ),
 }

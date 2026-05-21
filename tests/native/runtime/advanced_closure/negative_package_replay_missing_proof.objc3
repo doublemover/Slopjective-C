@@ -1,0 +1,10 @@
+module AdvancedRuntimeClosureNegativePackageReplay;
+
+extern fn missingReplayEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign,
+                   objc_import_module(named("AdvancedRuntimeClosureKit")),
+                   objc_mixed_image(named("AdvancedRuntimeClosureKitCore"))));
+
+fn invalidPackageReplay() -> i32 {
+  return missingReplayEntry(nil);
+}

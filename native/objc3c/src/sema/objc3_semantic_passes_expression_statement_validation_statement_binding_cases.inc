@@ -3,9 +3,10 @@
       if (let == nullptr || scopes.empty()) {
         return;
       }
-      const SemanticTypeInfo value_type = ValidateExpr(
+      SemanticTypeInfo value_type = ValidateExpr(
           let->value.get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
+      value_type.is_mutable_binding = let->mutable_binding;
       if (scopes.back().find(let->name) != scopes.back().end()) {
         diagnostics.push_back(MakeDiag(let->line, let->column, "O3S201",
                                        "duplicate declaration '" + let->name + "'"));

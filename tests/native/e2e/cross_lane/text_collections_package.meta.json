@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "fixture": "text_collections_package.objc3",
+  "origin": "hand-authored",
+  "issue": 8200,
+  "owner_phase": "e2e",
+  "behavior_family": "cross_lane_e2e",
+  "fixture_kind": "scaffold-blocked",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "cross-lane-scaffold",
+    "reserved_support_promoted": false,
+    "runtime_support_claimed": false
+  },
+  "expected": {
+    "stage": "manifest",
+    "diagnostic_code": "O3E2E8200TEXT",
+    "required_tokens": [
+      "text interpolation",
+      "array/map/set literal",
+      "for-in",
+      "package import"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+module AdvancedRuntimeClosureNegativeMacro;
+
+pure fn invalidMacroHostIO() -> i32
+    __attribute__((objc_macro(named("AdvancedRuntimeHostIO")),
+                   objc_macro_package(named("std.metaprogramming.advanced-runtime")),
+                   objc_macro_provenance(named("sha256:advanced-runtime-host-io")),
+                   objc_macro_cache_key(named("AdvancedRuntimeHostIO:v1")),
+                   objc_macro_sandbox(named("network+filesystem")))) {
+  return 7;
+}

@@ -1,0 +1,37 @@
+// #8200 cross-lane scaffold: optimization + runtime equivalence.
+// exact devirtualization candidate
+// method inlining candidate
+// cache-aware dispatch candidate
+// before/after IR
+// runtime equivalence
+module CrossLaneOptimizationRuntimeEquivalence;
+
+@interface CrossLaneOptimizedCounter
+- (i32) exactValue;
+- (i32) inlineCandidate:(i32) seed;
+@end
+
+@implementation CrossLaneOptimizedCounter
+- (i32) exactValue {
+  return 7;
+}
+
+- (i32) inlineCandidate:(i32) seed {
+  return seed + 5;
+}
+@end
+
+extern fn objc3_runtime_cache_aware_dispatch_i32(id receiver, SEL selector, i32 seed) -> i32;
+extern fn objc3_record_runtime_equivalence(i32 before_value, i32 after_value) -> i32;
+
+fn runCandidate(CrossLaneOptimizedCounter counter, i32 seed) -> i32 {
+  let direct = [counter exactValue];
+  let inlineable = [counter inlineCandidate:seed];
+  let cached = objc3_runtime_cache_aware_dispatch_i32(counter, @selector(inlineCandidate:), seed);
+  return objc3_record_runtime_equivalence(direct + inlineable, direct + cached);
+}
+
+fn main() -> i32 {
+  let counter = [[CrossLaneOptimizedCounter alloc] init];
+  return runCandidate(counter, 3);
+}

@@ -1,9 +1,60 @@
 namespace {
 
+bool ParseObjc3CStyleGenericSuffix(
+    const std::vector<Objc3LexToken> &tokens,
+    std::size_t &index,
+    Objc3CStyleFunctionTypeParseResult &result,
+    std::vector<std::string> &diagnostics) {
+  if (!MatchTokenKind(tokens, index, Objc3LexTokenKind::Less)) {
+    return true;
+  }
+  const Objc3LexToken &open = tokens[index - 1u];
+  result.has_generic_suffix = true;
+  result.generic_suffix_terminated = false;
+  result.generic_suffix_text = "<";
+  result.generic_line = open.line;
+  result.generic_column = open.column;
+
+  int depth = 1;
+  while (depth > 0 && !AtTokenKind(tokens, index, Objc3LexTokenKind::Eof)) {
+    if (MatchTokenKind(tokens, index, Objc3LexTokenKind::Less)) {
+      result.generic_suffix_text += "<";
+      ++depth;
+      continue;
+    }
+    if (MatchTokenKind(tokens, index, Objc3LexTokenKind::Greater)) {
+      result.generic_suffix_text += ">";
+      --depth;
+      if (depth == 0) {
+        result.generic_suffix_terminated = true;
+      }
+      continue;
+    }
+    if (MatchTokenKind(tokens, index, Objc3LexTokenKind::GreaterGreater)) {
+      result.generic_suffix_text += ">>";
+      depth -= 2;
+      if (depth == 0) {
+        result.generic_suffix_terminated = true;
+      }
+      continue;
+    }
+    result.generic_suffix_text += AdvanceToken(tokens, index).text;
+  }
+
+  if (!result.generic_suffix_terminated) {
+    diagnostics.push_back(MakeDiag(
+        open.line, open.column, "O3P101",
+        "unterminated generic suffix in C-style type spelling"));
+    return false;
+  }
+  return true;
+}
+
 bool ParseObjc3CStyleTypeSpelling(
     const std::vector<Objc3LexToken> &tokens,
     std::size_t &index,
-    Objc3CStyleFunctionTypeParseResult &result) {
+    Objc3CStyleFunctionTypeParseResult &result,
+    std::vector<std::string> &diagnostics) {
   Objc3CStyleTypeTokenClassification classification;
   if (ClassifyObjc3CStyleBuiltinTypeToken(PeekToken(tokens, index), classification)) {
     result.type = classification.type;
@@ -23,7 +74,7 @@ bool ParseObjc3CStyleTypeSpelling(
   result.type = ValueType::ObjCObjectPtr;
   result.object_pointer_spelling = true;
   result.object_pointer_name = object_name.text;
-  return true;
+  return ParseObjc3CStyleGenericSuffix(tokens, index, result, diagnostics);
 }
 
 }  // namespace

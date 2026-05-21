@@ -771,12 +771,14 @@ def _object_payload(
     object_sections = str(runtime_commands.get("object_sections", "") or "")
     object_format = _detect_object_format(resolve_repo_path(str(record["path"]))) if record["available"] else ""
     inspected_inventory = _inspect_object_inventory(record)
+    summary_inventory = _summary_object_inventory(summary)
     inventory = {
+        **summary_inventory,
         **inspected_inventory,
-        **_summary_object_inventory(summary),
     }
     symbols = _stable_inventory_list(inventory.get("symbols"))
     sections = _stable_inventory_list(inventory.get("sections"))
+    inventory_commands = _as_dict(inventory.get("commands"))
     exported_runtime_helpers = [
         symbol
         for symbol in symbols
@@ -813,23 +815,19 @@ def _object_payload(
         "exported_runtime_helpers": exported_runtime_helpers,
         "imported_runtime_helper_count": len(imported_runtime_helpers),
         "imported_runtime_helpers": imported_runtime_helpers,
-        "object_symbol_inventory_command": object_symbols
-        or str(_as_dict(inventory.get("commands")).get("object_symbols", "") or ""),
-        "object_section_inventory_command": object_sections
-        or str(_as_dict(inventory.get("commands")).get("object_sections", "") or ""),
+        "object_symbol_inventory_command": str(
+            inventory_commands.get("object_symbols", "") or object_symbols
+        ),
+        "object_section_inventory_command": str(
+            inventory_commands.get("object_sections", "") or object_sections
+        ),
         "inspection_ready": bool(
             record["available"]
             and digest_matches
             and not unsupported_format
             and inventory_available
-            and (
-                object_symbols
-                or _as_dict(inventory.get("commands")).get("object_symbols")
-            )
-            and (
-                object_sections
-                or _as_dict(inventory.get("commands")).get("object_sections")
-            )
+            and (inventory_commands.get("object_symbols") or object_symbols)
+            and (inventory_commands.get("object_sections") or object_sections)
         ),
         "retired_route_reason": (
             record["retired_route_reason"]
@@ -971,16 +969,25 @@ def _source_graph_debug_links_payload(
         if isinstance(source_graph, dict)
         else ""
     )
+    source_graph_link = (
+        display_path(paths.source_graph)
+        if paths.source_graph.is_file()
+        or (isinstance(source_graph, dict) and source_graph.get("available") is True)
+        else ""
+    )
+    debug_map_link = debug_map_path or (
+        display_path(paths.debug_map)
+        if records["object"].get("available") is True or paths.debug_map.is_file()
+        else ""
+    )
     return {
         "manifest_link": records["manifest"]["path"],
         "ir_link": records["ir"]["path"],
         "diagnostics_link": records["diagnostics"]["path"],
         "runtime_metadata_link": records["runtime_metadata_binary"]["path"],
-        "source_graph_link": display_path(paths.source_graph)
-        if paths.source_graph.is_file()
-        else "",
+        "source_graph_link": source_graph_link,
         "source_graph_digest": source_graph_digest,
-        "debug_map_link": debug_map_path,
+        "debug_map_link": debug_map_link,
         "optimization_trace_link": optimization_trace_path,
     }
 
@@ -1154,6 +1161,7 @@ def _inventory_validation_payload(
         unsupported_notes.append("object bytes differ from the published inventory digest")
     if (
         object_payload.get("available") is True
+        and object_payload.get("object_format") != "unsupported"
         and object_payload.get("inventory_available") is not True
     ):
         reasons.append("missing object symbol inventory")
@@ -1196,11 +1204,13 @@ def _inspection_commands(
             commands[kind] = f"Get-Content -Raw '{record['path']}'"
     if records["object"].get("available") is True:
         for command_name in ("object_symbols", "object_sections"):
-            command = runtime_commands.get(command_name)
-            if not command and command_name == "object_symbols":
-                command = object_payload.get("object_symbol_inventory_command")
-            if not command and command_name == "object_sections":
-                command = object_payload.get("object_section_inventory_command")
+            command = (
+                object_payload.get("object_symbol_inventory_command")
+                if command_name == "object_symbols"
+                else object_payload.get("object_section_inventory_command")
+            )
+            if not command:
+                command = runtime_commands.get(command_name)
             if command:
                 commands[command_name] = str(command)
     return dict(sorted(commands.items()))

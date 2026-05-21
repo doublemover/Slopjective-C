@@ -4,19 +4,153 @@ module StdlibFoundationNextTextHelpers;
 extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_at_or_i32(handle: i32, scalar_index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle: i32, text_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_scalar_i32(builder_handle: i32, scalar: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator_handle: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_equal_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_compare_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32;
 
 fn main() -> i32 {
   let left = objc3_runtime_stdlib_text_utf8_literal_i32(5, 5, 1);
   let right = objc3_runtime_stdlib_text_utf8_literal_i32(6, 6, 1);
   let joined = objc3_runtime_stdlib_text_concat_i32(left, right);
-  return joined
-    + objc3_runtime_stdlib_text_byte_count_i32(joined)
-    + objc3_runtime_stdlib_text_unit_count_i32(joined)
-    + objc3_runtime_stdlib_text_is_valid_utf8_i32(joined)
-    + objc3_runtime_stdlib_text_prefix_units_i32(joined, 4)
-    + objc3_runtime_stdlib_text_last_status_i32();
+  if (joined <= 0) {
+    return 31;
+  }
+  if (objc3_runtime_stdlib_text_byte_count_i32(joined) != 11) {
+    return 32;
+  }
+  if (objc3_runtime_stdlib_text_unit_count_i32(joined) != 11) {
+    return 33;
+  }
+  if (objc3_runtime_stdlib_text_is_valid_utf8_i32(joined) != 1) {
+    return 34;
+  }
+  if (objc3_runtime_stdlib_text_prefix_units_i32(joined, 4) != 4) {
+    return 35;
+  }
+
+  let scalar_builder = objc3_runtime_stdlib_text_builder_i32();
+  if (scalar_builder <= 0) {
+    return 36;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_scalar_i32(scalar_builder, 104) != 1) {
+    return 37;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_scalar_i32(scalar_builder, 0x00E9) != 3) {
+    return 38;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_scalar_i32(scalar_builder, 0x1F6A6) != 7) {
+    return 39;
+  }
+  let scalar_text = objc3_runtime_stdlib_text_builder_build_i32(scalar_builder);
+  if (scalar_text <= 0) {
+    return 40;
+  }
+  if (objc3_runtime_stdlib_text_byte_count_i32(scalar_text) != 7) {
+    return 41;
+  }
+  if (objc3_runtime_stdlib_text_scalar_count_i32(scalar_text) != 3) {
+    return 42;
+  }
+  if (objc3_runtime_stdlib_text_scalar_at_or_i32(scalar_text, 0, -1) != 104) {
+    return 43;
+  }
+  if (objc3_runtime_stdlib_text_scalar_at_or_i32(scalar_text, 1, -1) != 0x00E9) {
+    return 44;
+  }
+  if (objc3_runtime_stdlib_text_scalar_at_or_i32(scalar_text, 2, -1) != 0x1F6A6) {
+    return 45;
+  }
+  if (objc3_runtime_stdlib_text_scalar_at_or_i32(scalar_text, 3, 123) != 123) {
+    return 46;
+  }
+  if (objc3_runtime_stdlib_text_last_status_i32() != 30644) {
+    return 47;
+  }
+
+  let iterator = objc3_runtime_stdlib_text_scalar_iterator_i32(scalar_text);
+  if (iterator <= 0) {
+    return 48;
+  }
+  if (objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) != 104) {
+    return 49;
+  }
+  if (objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) != 0x00E9) {
+    return 50;
+  }
+  if (objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, -1) != 0x1F6A6) {
+    return 51;
+  }
+  if (objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, 55) != 55) {
+    return 52;
+  }
+  if (objc3_runtime_stdlib_text_last_status_i32() != 30644) {
+    return 53;
+  }
+
+  let formatted = objc3_runtime_stdlib_text_format_i32_i32(-42);
+  if (formatted <= 0) {
+    return 54;
+  }
+  if (objc3_runtime_stdlib_text_byte_count_i32(formatted) != 3) {
+    return 55;
+  }
+  if (objc3_runtime_stdlib_text_scalar_count_i32(formatted) != 3) {
+    return 56;
+  }
+
+  let interpolation_builder = objc3_runtime_stdlib_text_builder_i32();
+  if (interpolation_builder <= 0) {
+    return 57;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_text_i32(interpolation_builder, formatted) != 3) {
+    return 58;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_i32_i32(interpolation_builder, 7) != 4) {
+    return 59;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_scalar_i32(interpolation_builder, 33) != 5) {
+    return 60;
+  }
+  let interpolated = objc3_runtime_stdlib_text_builder_build_i32(interpolation_builder);
+  if (interpolated <= 0) {
+    return 61;
+  }
+  if (objc3_runtime_stdlib_text_byte_count_i32(interpolated) != 5) {
+    return 62;
+  }
+  if (objc3_runtime_stdlib_text_scalar_count_i32(interpolated) != 5) {
+    return 63;
+  }
+  if (objc3_runtime_stdlib_text_equal_i32(interpolated, formatted) != 0) {
+    return 64;
+  }
+  if (objc3_runtime_stdlib_text_compare_i32(formatted, interpolated) >= 0) {
+    return 65;
+  }
+
+  let invalid_builder = objc3_runtime_stdlib_text_builder_i32();
+  if (invalid_builder <= 0) {
+    return 66;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_scalar_i32(invalid_builder, 0xD800) != 0) {
+    return 67;
+  }
+  if (objc3_runtime_stdlib_text_last_status_i32() != 30643) {
+    return 68;
+  }
+
+  return 83;
 }

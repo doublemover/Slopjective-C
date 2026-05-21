@@ -65,6 +65,7 @@ struct ProbeRun {
   CacheAwareDispatchObservation cache_aware_dispatch;
   CacheAwareDispatchObservation cache_aware_stale_dispatch;
   CacheAwareDispatchObservation cache_aware_malformed_dispatch;
+  CacheAwareDispatchObservation cache_aware_missing_validation_dispatch;
   MethodCacheEntryObservation dynamic_entry;
   MethodCacheEntryObservation explicit_entry;
   MethodCacheEntryObservation strict_error_entry;
@@ -78,6 +79,7 @@ struct ProbeRun {
   int cache_aware_value = 0;
   int cache_aware_stale_value = 0;
   int cache_aware_malformed_status = 0;
+  int cache_aware_missing_validation_status = 0;
 };
 
 inline std::string CopyRuntimeString(const char *value) {

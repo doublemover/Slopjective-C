@@ -14,7 +14,15 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for selector '" + selector + "' parameter '" + param.name +
                                          "' in " + owner_kind + " '" + owner_name + "'"));
-    } else if (param.has_generic_suffix) {
+    } else if (param.has_generic_suffix &&
+               !ValidateGenericCollectionSpecializationSuffix(
+                   param.object_pointer_type_spelling,
+                   param.object_pointer_type_name,
+                   param.generic_suffix_text, param.generic_line,
+                   param.generic_column,
+                   "selector '" + selector + "' parameter '" + param.name +
+                       "' in " + owner_kind + " '" + owner_name + "'",
+                   diagnostics)) {
       ValidateProtocolCompositionSuffix(
           param.generic_suffix_text,
           param.generic_line,
@@ -67,7 +75,15 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                    "type mismatch: unsupported method return type suffix '" + suffix +
                                        "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                        "'"));
-  } else if (method.has_return_generic_suffix) {
+  } else if (method.has_return_generic_suffix &&
+             !ValidateGenericCollectionSpecializationSuffix(
+                 method.return_object_pointer_type_spelling,
+                 method.return_object_pointer_type_name,
+                 method.return_generic_suffix_text, method.return_generic_line,
+                 method.return_generic_column,
+                 "selector '" + selector + "' in " + owner_kind + " '" +
+                     owner_name + "' return annotation",
+                 diagnostics)) {
     ValidateProtocolCompositionSuffix(method.return_generic_suffix_text,
                                      method.return_generic_line,
                                      method.return_generic_column,

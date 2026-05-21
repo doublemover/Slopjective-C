@@ -3,6 +3,7 @@
 #include "sema/objc3_semantic_collection_helpers.h"
 #include "sema/objc3_semantic_context.h"
 #include "sema/objc3_semantic_feature_claims.h"
+#include "sema/objc3_semantic_generic_collection_type_model.h"
 #include "sema/objc3_semantic_generic_argument_relations.h"
 #include "sema/objc3_semantic_interop_surface_helpers.h"
 #include "sema/objc3_semantic_match_exhaustiveness.h"

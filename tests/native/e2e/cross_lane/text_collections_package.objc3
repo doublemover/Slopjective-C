@@ -1,0 +1,31 @@
+// #8200 cross-lane scaffold: text interpolation + collections + package import.
+// Expected state is scaffold-blocked by tests/tooling/fixtures/cross_lane_e2e.
+module CrossLaneTextCollectionsPackage;
+
+import objc3.text;
+import objc3.collections;
+import CrossLaneFixtureProvider;
+
+extern fn importedPackageSeed() -> i32;
+extern fn text_interpolate_i32(label: Text, value: i32) -> Text;
+extern fn text_units(value: Text) -> i32;
+
+fn summarizeImportedCollections() -> i32 {
+  let labels = #array["lane", "package", "runtime"];
+  let weights = #map["lane": 2, "package": 3, "runtime": 5];
+  let required = #set["lane", "runtime"];
+  var total = importedPackageSeed();
+
+  for label in labels {
+    let line = text_interpolate_i32(label, weights[label]);
+    if (required contains label) {
+      total = total + text_units(line);
+    }
+  }
+
+  return total;
+}
+
+fn main() -> i32 {
+  return summarizeImportedCollections();
+}

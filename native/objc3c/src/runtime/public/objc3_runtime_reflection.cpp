@@ -793,6 +793,7 @@ void PopulateReflectionSelectorSnapshot(
   snapshot.canonical_selector = slot.handle.selector;
 }
 
+
 } // namespace
 } // namespace objc3c::runtime
 
@@ -800,9 +801,11 @@ extern "C" uint32_t objc3_runtime_reflection_api_abi_version(void) {
   return OBJC3_RUNTIME_REFLECTION_ABI_VERSION;
 }
 
+
 extern "C" uint64_t objc3_runtime_reflection_surface_count(void) {
   return objc3c::runtime::PublicReflectionSurfaceCount();
 }
+
 
 extern "C" int objc3_runtime_copy_reflection_surface(
     uint64_t index, objc3_runtime_reflection_surface_snapshot *snapshot) {
@@ -817,7 +820,6 @@ extern "C" int objc3_runtime_copy_reflection_surface(
       objc3c::runtime::kPublicReflectionSurfaces[index], *snapshot);
   return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
 }
-
 extern "C" int objc3_runtime_copy_reflection_surface_by_kind(
     int surface_kind, objc3_runtime_reflection_surface_snapshot *snapshot) {
   if (snapshot == nullptr) {

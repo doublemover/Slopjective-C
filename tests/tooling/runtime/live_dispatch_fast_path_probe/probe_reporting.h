@@ -164,6 +164,8 @@ inline void WriteStatusAndReturnValues(const ProbeRun &run, std::ostream &out) {
   out << "cache_aware_stale_value=" << run.cache_aware_stale_value << "\n";
   out << "cache_aware_malformed_status="
       << run.cache_aware_malformed_status << "\n";
+  out << "cache_aware_missing_validation_status="
+      << run.cache_aware_missing_validation_status << "\n";
 }
 
 inline void WriteMethodCacheSnapshots(const ProbeRun &run, std::ostream &out) {
@@ -235,6 +237,9 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
   WriteCacheAwareRecord(
       "cache_aware_malformed_dispatch",
       run.cache_aware_malformed_dispatch, out);
+  WriteCacheAwareRecord(
+      "cache_aware_missing_validation_dispatch",
+      run.cache_aware_missing_validation_dispatch, out);
   WriteMethodCacheSnapshots(run, out);
   WriteDispatchSnapshots(run, out);
 }

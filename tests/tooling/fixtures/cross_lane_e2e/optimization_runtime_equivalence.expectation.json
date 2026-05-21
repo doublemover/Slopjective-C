@@ -1,0 +1,98 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "optimization_runtime_equivalence",
+  "expectation_state": "scaffold-blocked",
+  "source": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "optimization proof diagnostic",
+    "lowering/IR diagnostic",
+    "runtime status"
+  ],
+  "blockers": [
+    {
+      "blocker_id": "cross-lane-optimization-runtime-equivalence",
+      "domain": "optimization proof",
+      "reason": "before/after IR and runtime equivalence proof are not yet generated for the integrated program"
+    }
+  ],
+  "diagnostics": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "optimization candidate selection must remain explicit until the proof trace is generated",
+    "expected_codes": [
+      "O3E2E8200OPT"
+    ],
+    "required_tokens": [
+      "exact devirtualization",
+      "method inlining",
+      "cache-aware dispatch",
+      "runtime equivalence"
+    ]
+  },
+  "runtime": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "runtime status",
+    "reason": "optimized and unoptimized executions have no checked equality report in this scaffold slice",
+    "source_truth": false,
+    "expected_exit_code": null
+  },
+  "compile_manifest": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "compile manifest must eventually include before/after IR and optimization trace artifact paths",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "source graph must preserve exact receiver proof and cache-aware dispatch dependency",
+    "source_truth": false,
+    "expected_edges": [
+      "CrossLaneOptimizedCounter -> runtime:cache-aware-dispatch",
+      "CrossLaneOptimizedCounter -> compiler:semantic-optimization-pipeline"
+    ]
+  },
+  "debug_source_map": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "optimized source-map preservation is a condition of the future equivalence proof",
+    "source_truth": false
+  },
+  "optimization_trace": {
+    "status": "scaffold-blocked",
+    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "before/after IR and runtime equivalence trace are not checked in as generated outputs",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/optimization-trace.json"
+  },
+  "negative_cases": [
+    {
+      "case_id": "optimization-runtime-method-inlining-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-optimization-runtime-equivalence",
+      "responsible_domain": "optimization proof diagnostic",
+      "reason": "method inlining remains reserved and must fail closed in the integrated proof"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "compiler.optimization.semantic-preserving-pipeline",
+      "compiler.optimization.devirtualization",
+      "compiler.optimization.method-inlining",
+      "runtime.optimization.cache-aware-dispatch"
+    ],
+    "claim_boundary": "semantic optimization support is not enough without integrated before/after IR and runtime equivalence"
+  }
+}

@@ -1,0 +1,30 @@
+// #8200 cross-lane scaffold: advanced runtime closure.
+// ownership + block + async + actor + cancellation + property behavior + macro provenance.
+module CrossLaneAdvancedRuntimeClosure;
+
+@derive(CrossLaneMacroProvenance)
+@propertyBehavior(CrossLaneLoggedProperty)
+actor CrossLaneClosureActor {
+  @property (strong) id token;
+
+  async fn foldOwnedBlock(__strong id owner, i32 seed) -> i32 {
+    let cancelled = Task.cancelled();
+    let transform = ^[__strong owner] (i32 value) {
+      if (cancelled) {
+        cancel owner;
+        return value;
+      }
+      return value + owner;
+    };
+    return await transform(seed);
+  }
+}
+
+async fn runClosure() -> i32 {
+  let actor = CrossLaneClosureActor();
+  return await actor.foldOwnedBlock(9, 4);
+}
+
+fn main() -> i32 {
+  return await runClosure();
+}

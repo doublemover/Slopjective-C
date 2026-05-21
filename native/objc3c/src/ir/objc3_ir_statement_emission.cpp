@@ -37,13 +37,30 @@ bool IsTerminalReturnAwaitDirectCall(const Expr *expr) {
 
 void RecordCollectionBinding(const LetStmt &let, const std::string &ptr,
                              FunctionContext &ctx) {
-  if (let.value == nullptr ||
-      let.value->kind != Expr::Kind::CollectionLiteral) {
+  if (let.value == nullptr) {
     return;
   }
-  ctx.collection_kind_by_ptr[ptr] = let.value->collection_literal_kind;
-  if (let.mutable_binding) {
-    ctx.mutable_collection_ptrs.insert(ptr);
+  Expr::CollectionLiteralKind kind = Expr::CollectionLiteralKind::None;
+  if (let.value->kind == Expr::Kind::CollectionLiteral) {
+    kind = let.value->collection_literal_kind;
+  } else if (let.value->kind == Expr::Kind::Identifier) {
+    for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+      const auto found_ptr = it->find(let.value->ident);
+      if (found_ptr == it->end()) {
+        continue;
+      }
+      const auto found_kind = ctx.collection_kind_by_ptr.find(found_ptr->second);
+      if (found_kind != ctx.collection_kind_by_ptr.end()) {
+        kind = found_kind->second;
+      }
+      break;
+    }
+  }
+  if (kind != Expr::CollectionLiteralKind::None) {
+    ctx.collection_kind_by_ptr[ptr] = kind;
+    if (let.mutable_binding) {
+      ctx.mutable_collection_ptrs.insert(ptr);
+    }
   }
 }
 

@@ -4,7 +4,6 @@
   "expect_failure": {
     "stage": "compile",
     "required_diagnostic_tokens": [
-      "lowering encountered unsupported fail-closed path",
       "collection mutation requires a 'var' binding"
     ]
   },
