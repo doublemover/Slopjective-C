@@ -41,6 +41,16 @@ struct MethodCacheEntryObservation {
   std::string fast_path_reason;
 };
 
+struct CacheAwareDispatchObservation {
+  int status = -1;
+  objc3_runtime_cache_aware_dispatch_record_snapshot record{};
+  std::string selector;
+  std::string source_path;
+  std::string dispatch_path;
+  std::string implementation_kind;
+  std::string diagnostic_code;
+};
+
 struct ProbeRun {
   MethodCacheStateObservation baseline;
   MethodCacheStateObservation direct;
@@ -52,6 +62,9 @@ struct ProbeRun {
   DispatchStateObservation mixed_second_dispatch;
   DispatchStateObservation strict_error_first_dispatch;
   DispatchStateObservation strict_error_second_dispatch;
+  CacheAwareDispatchObservation cache_aware_dispatch;
+  CacheAwareDispatchObservation cache_aware_stale_dispatch;
+  CacheAwareDispatchObservation cache_aware_malformed_dispatch;
   MethodCacheEntryObservation dynamic_entry;
   MethodCacheEntryObservation explicit_entry;
   MethodCacheEntryObservation strict_error_entry;
@@ -62,6 +75,9 @@ struct ProbeRun {
   int strict_error_expected = 0;
   int strict_error_first_value = 0;
   int strict_error_second_value = 0;
+  int cache_aware_value = 0;
+  int cache_aware_stale_value = 0;
+  int cache_aware_malformed_status = 0;
 };
 
 inline std::string CopyRuntimeString(const char *value) {

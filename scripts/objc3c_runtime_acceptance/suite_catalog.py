@@ -102,6 +102,9 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
         "stdlib-concurrency-runtime-probe",
         "cross-module-concurrency-actor-artifact-preservation",
     ),
+    "cache-aware-dispatch": (
+        "live-dispatch-fast-path",
+    ),
 }
 
 

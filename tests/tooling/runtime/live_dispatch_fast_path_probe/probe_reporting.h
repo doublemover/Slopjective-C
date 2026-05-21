@@ -32,6 +32,50 @@ inline void WriteEntry(const char *label,
   out << label << "_fast_path_reason=" << observation.fast_path_reason << "\n";
 }
 
+inline void WriteCacheAwareRecord(
+    const char *label,
+    const CacheAwareDispatchObservation &observation,
+    std::ostream &out) {
+  const auto &record = observation.record;
+
+  out << label << "_copy_status=" << observation.status << "\n";
+  out << label << "_abi_version=" << record.abi_version << "\n";
+  out << label << "_descriptor_flags=" << record.descriptor_flags << "\n";
+  out << label << "_descriptor_valid=" << record.descriptor_valid << "\n";
+  out << label << "_fallback_used=" << record.fallback_used << "\n";
+  out << label << "_used_cache=" << record.used_cache << "\n";
+  out << label << "_used_fast_path=" << record.used_fast_path << "\n";
+  out << label << "_strict_error=" << record.strict_error << "\n";
+  out << label << "_status_code=" << record.status_code << "\n";
+  out << label << "_invalidation_reason=" << record.invalidation_reason
+      << "\n";
+  out << label << "_selector_stable_id=" << record.selector_stable_id << "\n";
+  out << label << "_normalized_receiver_identity="
+      << record.normalized_receiver_identity << "\n";
+  out << label << "_cache_entry_generation="
+      << record.cache_entry_generation << "\n";
+  out << label << "_class_graph_generation="
+      << record.class_graph_generation << "\n";
+  out << label << "_category_attachment_generation="
+      << record.category_attachment_generation << "\n";
+  out << label << "_protocol_declaration_generation="
+      << record.protocol_declaration_generation << "\n";
+  out << label << "_storage_surface_generation="
+      << record.storage_surface_generation << "\n";
+  out << label << "_method_surface_generation="
+      << record.method_surface_generation << "\n";
+  out << label << "_method_target_identity="
+      << record.method_target_identity << "\n";
+  out << label << "_source_line=" << record.source_line << "\n";
+  out << label << "_source_column=" << record.source_column << "\n";
+  out << label << "_selector=" << observation.selector << "\n";
+  out << label << "_source_path=" << observation.source_path << "\n";
+  out << label << "_dispatch_path=" << observation.dispatch_path << "\n";
+  out << label << "_implementation_kind="
+      << observation.implementation_kind << "\n";
+  out << label << "_diagnostic_code=" << observation.diagnostic_code << "\n";
+}
+
 inline void WriteCounterDeltas(const ProbeRun &run, std::ostream &out) {
   const auto &baseline = run.baseline.state;
   const auto &direct = run.direct.state;
@@ -116,6 +160,10 @@ inline void WriteStatusAndReturnValues(const ProbeRun &run, std::ostream &out) {
   out << "strict_error_second_dispatch_state_status="
       << run.strict_error_second_dispatch.status << "\n";
   out << "strict_error_entry_status=" << run.strict_error_entry.status << "\n";
+  out << "cache_aware_value=" << run.cache_aware_value << "\n";
+  out << "cache_aware_stale_value=" << run.cache_aware_stale_value << "\n";
+  out << "cache_aware_malformed_status="
+      << run.cache_aware_malformed_status << "\n";
 }
 
 inline void WriteMethodCacheSnapshots(const ProbeRun &run, std::ostream &out) {
@@ -180,6 +228,13 @@ inline void WriteProbeReport(const ProbeRun &run, std::ostream &out) {
   WriteEntry("dynamic_entry", run.dynamic_entry, out);
   WriteEntry("explicit_entry", run.explicit_entry, out);
   WriteEntry("strict_error_entry", run.strict_error_entry, out);
+  WriteCacheAwareRecord(
+      "cache_aware_dispatch", run.cache_aware_dispatch, out);
+  WriteCacheAwareRecord(
+      "cache_aware_stale_dispatch", run.cache_aware_stale_dispatch, out);
+  WriteCacheAwareRecord(
+      "cache_aware_malformed_dispatch",
+      run.cache_aware_malformed_dispatch, out);
   WriteMethodCacheSnapshots(run, out);
   WriteDispatchSnapshots(run, out);
 }

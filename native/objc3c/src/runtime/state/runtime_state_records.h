@@ -99,6 +99,16 @@ struct RuntimeState {
   std::uint64_t strict_dispatch_error_count = 0;
   std::uint64_t fast_path_seed_count = 0;
   std::uint64_t fast_path_hit_count = 0;
+  bool last_cache_aware_descriptor_valid = false;
+  bool last_cache_aware_fallback_used = false;
+  std::uint32_t last_cache_aware_descriptor_flags = 0;
+  int last_cache_aware_invalidation_reason =
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE;
+  std::uint64_t last_cache_aware_cache_entry_generation = 0;
+  std::uintptr_t last_cache_aware_method_target_identity = 0;
+  std::string last_cache_aware_source_path;
+  std::uint32_t last_cache_aware_source_line = 0;
+  std::uint32_t last_cache_aware_source_column = 0;
   std::string last_dispatch_selector;
   std::uint64_t last_dispatch_selector_stable_id = 0;
   std::uint64_t last_dispatch_normalized_receiver_identity = 0;

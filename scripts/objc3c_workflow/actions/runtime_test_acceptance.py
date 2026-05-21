@@ -57,6 +57,10 @@ def action_test_runtime_acceptance_concurrency(_: list[str]) -> int:
     return run_runtime_acceptance_action("test-runtime-acceptance-concurrency")
 
 
+def action_validate_cache_aware_dispatch(_: list[str]) -> int:
+    return run_runtime_acceptance_action("validate-cache-aware-dispatch")
+
+
 def action_proof_runtime_architecture(_: list[str]) -> int:
     return run_python_check(RUNTIME_ARCHITECTURE_PROOF_PACKET_PY)
 

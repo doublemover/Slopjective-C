@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/public/objc3_runtime_dispatch_result.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -14,7 +16,14 @@ enum objc3_runtime_method_cache_invalidation_reason {
 };
 
 enum {
-  OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION = 1
+  OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION = 1,
+  OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION = 1
+};
+
+enum objc3_runtime_cache_aware_dispatch_descriptor_flags {
+  OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_SELECTOR_STABLE_ID = 1u << 0u,
+  OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_GENERATIONS = 1u << 1u,
+  OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE = 1u << 2u
 };
 
 // runtime-fast-path-integration anchor: Part 9 freezes the
@@ -87,6 +96,50 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   int miss_status;
 } objc3_runtime_method_cache_entry_snapshot;
 
+typedef struct objc3_runtime_cache_aware_dispatch_descriptor {
+  uint32_t abi_version;
+  uint32_t flags;
+  const char *selector;
+  uint64_t selector_stable_id;
+  uint64_t class_graph_generation;
+  uint64_t category_attachment_generation;
+  uint64_t protocol_declaration_generation;
+  uint64_t storage_surface_generation;
+  uint64_t method_surface_generation;
+  const char *source_path;
+  uint32_t source_line;
+  uint32_t source_column;
+} objc3_runtime_cache_aware_dispatch_descriptor;
+
+typedef struct objc3_runtime_cache_aware_dispatch_record_snapshot {
+  uint32_t abi_version;
+  uint32_t descriptor_flags;
+  int descriptor_valid;
+  int fallback_used;
+  int used_cache;
+  int used_fast_path;
+  int strict_error;
+  int status_code;
+  int invalidation_reason;
+  uint64_t selector_stable_id;
+  uint64_t normalized_receiver_identity;
+  uint64_t cache_entry_generation;
+  uint64_t class_graph_generation;
+  uint64_t category_attachment_generation;
+  uint64_t protocol_declaration_generation;
+  uint64_t storage_surface_generation;
+  uint64_t method_surface_generation;
+  uintptr_t method_target_identity;
+  uint32_t source_line;
+  uint32_t source_column;
+  const char *selector;
+  const char *source_path;
+  const char *dispatch_path;
+  const char *implementation_kind;
+  const char *diagnostic_code;
+  const char *diagnostic_message;
+} objc3_runtime_cache_aware_dispatch_record_snapshot;
+
 // realized-dispatch-runtime anchor: lane-D now widens the same
 // private runtime testing surface with one dispatch-state snapshot so
 // executable probes can read the authoritative realized dispatch path and
@@ -135,8 +188,14 @@ int objc3_runtime_copy_method_cache_state_for_testing(
 int objc3_runtime_copy_method_cache_entry_for_testing(
     int receiver, const char *selector,
     objc3_runtime_method_cache_entry_snapshot *snapshot);
+int objc3_runtime_copy_cache_aware_dispatch_record_for_testing(
+    objc3_runtime_cache_aware_dispatch_record_snapshot *snapshot);
 int objc3_runtime_copy_dispatch_state_for_testing(
     objc3_runtime_dispatch_state_snapshot *snapshot);
+objc3_runtime_dispatch_i32_result objc3_runtime_cache_aware_dispatch_i32_checked(
+    int receiver,
+    const objc3_runtime_cache_aware_dispatch_descriptor *descriptor, int a0,
+    int a1, int a2, int a3);
 
 #ifdef __cplusplus
 }

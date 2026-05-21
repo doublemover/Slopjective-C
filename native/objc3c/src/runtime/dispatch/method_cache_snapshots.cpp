@@ -164,3 +164,55 @@ extern "C" int objc3_runtime_copy_method_cache_entry_for_testing(
       objc3c::runtime::BorrowRuntimeCString(entry.owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
+
+extern "C" int objc3_runtime_copy_cache_aware_dispatch_record_for_testing(
+    objc3_runtime_cache_aware_dispatch_record_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->abi_version = OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION;
+  snapshot->descriptor_flags = state.last_cache_aware_descriptor_flags;
+  snapshot->descriptor_valid =
+      state.last_cache_aware_descriptor_valid ? 1 : 0;
+  snapshot->fallback_used = state.last_cache_aware_fallback_used ? 1 : 0;
+  snapshot->used_cache = state.last_dispatch_used_cache ? 1 : 0;
+  snapshot->used_fast_path = state.last_dispatch_used_fast_path ? 1 : 0;
+  snapshot->strict_error = state.last_dispatch_strict_error ? 1 : 0;
+  snapshot->status_code = state.last_dispatch_status_code;
+  snapshot->invalidation_reason =
+      state.last_cache_aware_invalidation_reason;
+  snapshot->selector_stable_id = state.last_dispatch_selector_stable_id;
+  snapshot->normalized_receiver_identity =
+      state.last_dispatch_normalized_receiver_identity;
+  snapshot->cache_entry_generation =
+      state.last_cache_aware_cache_entry_generation;
+  snapshot->class_graph_generation = state.class_graph_generation;
+  snapshot->category_attachment_generation =
+      state.category_attachment_generation;
+  snapshot->protocol_declaration_generation =
+      state.protocol_declaration_generation;
+  snapshot->storage_surface_generation = state.storage_surface_generation;
+  snapshot->method_surface_generation = state.method_surface_generation;
+  snapshot->method_target_identity =
+      state.last_cache_aware_method_target_identity;
+  snapshot->source_line = state.last_cache_aware_source_line;
+  snapshot->source_column = state.last_cache_aware_source_column;
+  snapshot->selector =
+      objc3c::runtime::BorrowRuntimeCString(state.last_dispatch_selector);
+  snapshot->source_path =
+      objc3c::runtime::BorrowRuntimeCString(state.last_cache_aware_source_path);
+  snapshot->dispatch_path =
+      objc3c::runtime::BorrowRuntimeCString(state.last_dispatch_path);
+  snapshot->implementation_kind =
+      objc3c::runtime::BorrowRuntimeCString(
+          state.last_dispatch_implementation_kind);
+  snapshot->diagnostic_code =
+      objc3c::runtime::BorrowRuntimeCString(state.last_dispatch_diagnostic_code);
+  snapshot->diagnostic_message =
+      objc3c::runtime::BorrowRuntimeCString(
+          state.last_dispatch_diagnostic_message);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}

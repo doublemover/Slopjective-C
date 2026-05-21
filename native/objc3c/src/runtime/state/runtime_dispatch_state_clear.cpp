@@ -21,6 +21,16 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.strict_dispatch_error_count = 0;
   state.fast_path_seed_count = 0;
   state.fast_path_hit_count = 0;
+  state.last_cache_aware_descriptor_valid = false;
+  state.last_cache_aware_fallback_used = false;
+  state.last_cache_aware_descriptor_flags = 0;
+  state.last_cache_aware_invalidation_reason =
+      OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_RESET;
+  state.last_cache_aware_cache_entry_generation = 0;
+  state.last_cache_aware_method_target_identity = 0;
+  state.last_cache_aware_source_path.clear();
+  state.last_cache_aware_source_line = 0;
+  state.last_cache_aware_source_column = 0;
   state.last_dispatch_selector.clear();
   state.last_dispatch_selector_stable_id = 0;
   state.last_dispatch_normalized_receiver_identity = 0;
