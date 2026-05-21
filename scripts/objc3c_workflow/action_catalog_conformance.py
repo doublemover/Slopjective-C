@@ -17,8 +17,8 @@ CONFORMANCE_ACTION_SPECS: dict[str, ActionSpec] = {
     ),
     "validate-public-conformance-suite": ActionSpec(
         "validate-public-conformance-suite",
-        "validate the stable public conformance suite manifest, fixture boundary, external-validation intake policy, and release-candidate profile",
-        "python:scripts/check_objc3c_public_conformance_suite_manifest.py",
+        "validate and stage the stable public conformance suite package, fixture boundary, external-validation intake policy, and release-candidate profile",
+        "python:scripts/check_objc3c_public_conformance_suite.py",
         validation_tier="repo",
         guarantee_owner=(
             "public conformance suite taxonomy, package replay evidence, fixture-publication "

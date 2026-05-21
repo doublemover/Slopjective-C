@@ -16,6 +16,7 @@ CONFORMANCE_CORPUS_INTEGRATION_PY = (
 PUBLIC_CONFORMANCE_SUITE_MANIFEST_PY = (
     ROOT / "scripts" / "check_objc3c_public_conformance_suite_manifest.py"
 )
+PUBLIC_CONFORMANCE_SUITE_PY = ROOT / "scripts" / "check_objc3c_public_conformance_suite.py"
 CONFORMANCE_MINIMA_PS1 = ROOT / "scripts" / "check_conformance_suite.ps1"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
