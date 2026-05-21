@@ -115,7 +115,10 @@
         "Objc3CollectionsStatusInvalidHandle",
         "Objc3CollectionsStatusOutOfBounds",
         "Objc3CollectionsStatusInvalidCount",
-        "Objc3CollectionsStatusNotFound"
+        "Objc3CollectionsStatusNotFound",
+        "Objc3CollectionsStatusInvalidRange",
+        "Objc3CollectionsStatusIterationEnd",
+        "Objc3CollectionsStatusMutatedDuringIteration"
       ]
     },
     "objc3.concurrency": {
@@ -259,14 +262,29 @@
         "Objc3CollectionsStatusOutOfBounds": "let Objc3CollectionsStatusOutOfBounds = 30632",
         "Objc3CollectionsStatusInvalidCount": "let Objc3CollectionsStatusInvalidCount = 30633",
         "Objc3CollectionsStatusNotFound": "let Objc3CollectionsStatusNotFound = 30634",
+        "Objc3CollectionsStatusInvalidRange": "let Objc3CollectionsStatusInvalidRange = 30635",
+        "Objc3CollectionsStatusIterationEnd": "let Objc3CollectionsStatusIterationEnd = 30636",
+        "Objc3CollectionsStatusMutatedDuringIteration": "let Objc3CollectionsStatusMutatedDuringIteration = 30637",
         "objc3_collections_array3": "fn objc3_collections_array3(first: i32, second: i32, third: i32, count: i32)",
         "objc3_collections_array_count": "fn objc3_collections_array_count(handle: i32)",
         "objc3_collections_array_get_or": "fn objc3_collections_array_get_or(handle: i32, index: i32, default_value: i32)",
         "objc3_collections_array_prefix_count": "fn objc3_collections_array_prefix_count(handle: i32, requested: i32)",
+        "objc3_collections_array_sum": "fn objc3_collections_array_sum(handle: i32)",
+        "objc3_collections_array_slice": "fn objc3_collections_array_slice(handle: i32, start: i32, count: i32)",
+        "objc3_collections_array_iterator": "fn objc3_collections_array_iterator(handle: i32)",
         "objc3_collections_map_entry": "fn objc3_collections_map_entry(key: i32, value: i32)",
         "objc3_collections_map_count": "fn objc3_collections_map_count(handle: i32)",
         "objc3_collections_map_contains": "fn objc3_collections_map_contains(handle: i32, key: i32)",
         "objc3_collections_map_lookup_or": "fn objc3_collections_map_lookup_or(handle: i32, key: i32, default_value: i32)",
+        "objc3_collections_set3": "fn objc3_collections_set3(first: i32, second: i32, third: i32, count: i32)",
+        "objc3_collections_set_count": "fn objc3_collections_set_count(handle: i32)",
+        "objc3_collections_set_contains": "fn objc3_collections_set_contains(handle: i32, value: i32)",
+        "objc3_collections_set_insert": "fn objc3_collections_set_insert(handle: i32, value: i32)",
+        "objc3_collections_set_iterator": "fn objc3_collections_set_iterator(handle: i32)",
+        "objc3_collections_slice_count": "fn objc3_collections_slice_count(handle: i32)",
+        "objc3_collections_slice_get_or": "fn objc3_collections_slice_get_or(handle: i32, index: i32, default_value: i32)",
+        "objc3_collections_slice_iterator": "fn objc3_collections_slice_iterator(handle: i32)",
+        "objc3_collections_iterator_next_or": "fn objc3_collections_iterator_next_or(handle: i32, default_value: i32)",
         "objc3_collections_last_status": "fn objc3_collections_last_status()"
       }
     },
@@ -422,11 +440,23 @@
         "objc3_runtime_stdlib_collections_array_count_i32": "extern fn objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32",
         "objc3_runtime_stdlib_collections_array_get_or_i32": "extern fn objc3_runtime_stdlib_collections_array_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32",
         "objc3_runtime_stdlib_collections_array_prefix_count_i32": "extern fn objc3_runtime_stdlib_collections_array_prefix_count_i32(handle: i32, requested: i32) -> i32",
+        "objc3_runtime_stdlib_collections_array_sum_i32": "extern fn objc3_runtime_stdlib_collections_array_sum_i32(handle: i32) -> i32",
         "objc3_runtime_stdlib_collections_map_entry_i32": "extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32",
         "objc3_runtime_stdlib_collections_map_count_i32": "extern fn objc3_runtime_stdlib_collections_map_count_i32(handle: i32) -> i32",
         "objc3_runtime_stdlib_collections_map_contains_i32": "extern fn objc3_runtime_stdlib_collections_map_contains_i32(handle: i32, key: i32) -> i32",
         "objc3_runtime_stdlib_collections_map_lookup_or_i32": "extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32",
-        "objc3_runtime_stdlib_collections_last_status_i32": "extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32"
+        "objc3_runtime_stdlib_collections_last_status_i32": "extern fn objc3_runtime_stdlib_collections_last_status_i32() -> i32",
+        "objc3_runtime_stdlib_collections_array_slice_i32": "extern fn objc3_runtime_stdlib_collections_array_slice_i32(handle: i32, start: i32, count: i32) -> i32",
+        "objc3_runtime_stdlib_collections_array_iterator_i32": "extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_set3_i32": "extern fn objc3_runtime_stdlib_collections_set3_i32(first: i32, second: i32, third: i32, count: i32) -> i32",
+        "objc3_runtime_stdlib_collections_set_count_i32": "extern fn objc3_runtime_stdlib_collections_set_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_set_contains_i32": "extern fn objc3_runtime_stdlib_collections_set_contains_i32(handle: i32, value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_set_insert_i32": "extern fn objc3_runtime_stdlib_collections_set_insert_i32(handle: i32, value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_set_iterator_i32": "extern fn objc3_runtime_stdlib_collections_set_iterator_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_slice_count_i32": "extern fn objc3_runtime_stdlib_collections_slice_count_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_slice_get_or_i32": "extern fn objc3_runtime_stdlib_collections_slice_get_or_i32(handle: i32, index: i32, default_value: i32) -> i32",
+        "objc3_runtime_stdlib_collections_slice_iterator_i32": "extern fn objc3_runtime_stdlib_collections_slice_iterator_i32(handle: i32) -> i32",
+        "objc3_runtime_stdlib_collections_iterator_next_or_i32": "extern fn objc3_runtime_stdlib_collections_iterator_next_or_i32(handle: i32, default_value: i32) -> i32"
       }
     },
     {
@@ -604,8 +634,8 @@
       "supported_major_line": 1,
       "current_minor_line": 0,
       "compatibility_class": "package-lockfile-abi",
-      "stdlib_public_api_symbol_count": 83,
-      "stdlib_runtime_abi_symbol_count": 36,
+      "stdlib_public_api_symbol_count": 98,
+      "stdlib_runtime_abi_symbol_count": 48,
       "frontend_c_api_symbol_count": 33
     }
   },
@@ -690,7 +720,44 @@
     ],
     "required_schema_transition_policy": "schema-breaking-change-without-major-line"
   },
-  "private_helper_graduation_records": [],
+  "private_helper_graduation_records": [
+    {
+      "record_id": "objc3.collections.status.invalid-range.public-api",
+      "module": "objc3.collections",
+      "symbol": "Objc3CollectionsStatusInvalidRange",
+      "source_profile": "private-runtime-helper",
+      "target_profile": "Core and above",
+      "issue_refs": [
+        "#8161",
+        "#8173"
+      ],
+      "policy_state": "approved"
+    },
+    {
+      "record_id": "objc3.collections.status.iteration-end.public-api",
+      "module": "objc3.collections",
+      "symbol": "Objc3CollectionsStatusIterationEnd",
+      "source_profile": "private-runtime-helper",
+      "target_profile": "Core and above",
+      "issue_refs": [
+        "#8161",
+        "#8173"
+      ],
+      "policy_state": "approved"
+    },
+    {
+      "record_id": "objc3.collections.status.mutated-during-iteration.public-api",
+      "module": "objc3.collections",
+      "symbol": "Objc3CollectionsStatusMutatedDuringIteration",
+      "source_profile": "private-runtime-helper",
+      "target_profile": "Core and above",
+      "issue_refs": [
+        "#8161",
+        "#8173"
+      ],
+      "policy_state": "approved"
+    }
+  ],
   "change_policy": {
     "unreviewed_symbol_additions": "block-publication",
     "unreviewed_symbol_removals": "block-publication",

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any
 
 
 JsonObject = dict[str, Any]
@@ -14,6 +15,8 @@ JsonObject = dict[str, Any]
 class ReleaseOperationsPublicationPayloads:
     upgrade_support_report: JsonObject
     channel_catalog: JsonObject
+    release_notes: JsonObject
+    public_changelog: JsonObject
     summary: JsonObject
 
 
@@ -139,6 +142,114 @@ def _channel_operation_payloads(
     return channel_operations
 
 
+def _forbidden_release_note_sources(
+    release_channel_manifest: Mapping[str, Any],
+) -> list[str]:
+    forbidden: set[str] = set()
+    for channel in release_channel_manifest["channel_manifests"]:
+        policy = channel.get("release_notes_policy", {})
+        if not isinstance(policy, Mapping):
+            continue
+        for source in policy.get("forbidden_sources", []):
+            if isinstance(source, str) and source:
+                forbidden.add(source)
+    return sorted(forbidden)
+
+
+def _release_note_channel_payloads(
+    release_channel_manifest: Mapping[str, Any],
+    update_manifest: Mapping[str, Any],
+) -> list[JsonObject]:
+    update_channels = {
+        channel["channel_id"]: channel
+        for channel in update_manifest["channels"]
+        if isinstance(channel, Mapping)
+    }
+    notes: list[JsonObject] = []
+    for channel in release_channel_manifest["channel_manifests"]:
+        channel_id = channel["channel_id"]
+        update_channel = update_channels[channel_id]
+        notes.append(
+            {
+                "channel_id": channel_id,
+                "version": channel["version"],
+                "operation_class": channel["operation_class"],
+                "support_status": channel["support_status"],
+                "publication_scope": channel["publication_scope"],
+                "update_manifest_channel": channel["update_manifest_channel"],
+                "release_gate_actions": channel["release_gate_actions"],
+                "rollback_channel": channel["rollback_safety"]["rollback_channel"],
+                "rollback_command": channel["rollback_safety"]["operator_command"],
+                "artifact_refs": channel["artifact_refs"],
+                "warning_classes": update_channel.get("warning_classes", []),
+                "upgrade_targets": update_channel.get("upgrade_targets", []),
+            }
+        )
+    return notes
+
+
+def _build_release_notes_payload(
+    *,
+    generated_at_utc: str,
+    update_manifest: Mapping[str, Any],
+    release_channel_manifest: Mapping[str, Any],
+    update_manifest_path: str,
+    release_channel_manifest_path: str,
+) -> JsonObject:
+    release_evidence = release_channel_manifest["release_evidence"]
+    return {
+        "contract_id": "objc3c.release.operations.release-notes.v1",
+        "generated_at_utc": generated_at_utc,
+        "source_mode": "source-derived",
+        "update_manifest": update_manifest_path,
+        "release_channel_manifest": release_channel_manifest_path,
+        "source_model": release_channel_manifest["source_model"],
+        "release_note_sources": release_evidence["release_note_sources"],
+        "forbidden_sources": _forbidden_release_note_sources(release_channel_manifest),
+        "local_provenance": update_manifest["local_provenance"],
+        "channels": _release_note_channel_payloads(
+            release_channel_manifest=release_channel_manifest,
+            update_manifest=update_manifest,
+        ),
+    }
+
+
+def _build_public_changelog_payload(
+    *,
+    generated_at_utc: str,
+    update_manifest: Mapping[str, Any],
+    release_channel_manifest: Mapping[str, Any],
+    release_notes_path: str,
+) -> JsonObject:
+    release_evidence = release_channel_manifest["release_evidence"]
+    entries: list[JsonObject] = []
+    for channel in release_channel_manifest["channel_manifests"]:
+        entries.append(
+            {
+                "channel_id": channel["channel_id"],
+                "version": channel["version"],
+                "publication_scope": channel["publication_scope"],
+                "summary": (
+                    f"{channel['channel_id']} {channel['version']} is governed by "
+                    f"{len(channel['release_gate_actions'])} release gate actions "
+                    f"and rollback channel {channel['rollback_safety']['rollback_channel']}."
+                ),
+                "gate_actions": channel["release_gate_actions"],
+                "rollback_channel": channel["rollback_safety"]["rollback_channel"],
+            }
+        )
+    return {
+        "contract_id": "objc3c.release.operations.public-changelog.v1",
+        "generated_at_utc": generated_at_utc,
+        "source_mode": "source-derived",
+        "current_version": update_manifest["current_version"],
+        "default_channel": update_manifest["default_channel"],
+        "release_notes": release_notes_path,
+        "public_changelog_sources": release_evidence["public_changelog_sources"],
+        "entries": entries,
+    }
+
+
 def build_release_operations_publication_payloads(
     *,
     update_manifest: Mapping[str, Any],
@@ -153,6 +264,8 @@ def build_release_operations_publication_payloads(
     release_channel_manifest_path: str,
     upgrade_support_report_path: str,
     channel_catalog_path: str,
+    release_notes_path: str,
+    public_changelog_path: str,
 ) -> ReleaseOperationsPublicationPayloads:
     warnings = _warning_payloads(
         update_manifest=update_manifest,
@@ -203,6 +316,19 @@ def build_release_operations_publication_payloads(
         "channels": update_manifest["channels"],
         "channel_operations": channel_operations,
     }
+    release_notes = _build_release_notes_payload(
+        generated_at_utc=generated_at_utc,
+        update_manifest=update_manifest,
+        release_channel_manifest=release_channel_manifest,
+        update_manifest_path=update_manifest_path,
+        release_channel_manifest_path=release_channel_manifest_path,
+    )
+    public_changelog = _build_public_changelog_payload(
+        generated_at_utc=generated_at_utc,
+        update_manifest=update_manifest,
+        release_channel_manifest=release_channel_manifest,
+        release_notes_path=release_notes_path,
+    )
 
     summary = {
         "contract_id": "objc3c.release.operations.publication.summary.v1",
@@ -211,15 +337,21 @@ def build_release_operations_publication_payloads(
         "release_channel_manifest": release_channel_manifest_path,
         "upgrade_support_report": upgrade_support_report_path,
         "channel_catalog": channel_catalog_path,
+        "release_notes": release_notes_path,
+        "public_changelog": public_changelog_path,
         "warning_count": len(warnings),
         "rollback_diagnostic_count": len(rollback_diagnostics),
         "channel_operation_count": len(channel_operations),
+        "release_note_channel_count": len(release_notes["channels"]),
+        "public_changelog_entry_count": len(public_changelog["entries"]),
         "claim_class_count": len(claim_policy["upgrade_claim_classes"]),
         "platform_support_matrix": update_manifest["platform_support_matrix"],
     }
     return ReleaseOperationsPublicationPayloads(
         upgrade_support_report=upgrade_support_report,
         channel_catalog=channel_catalog,
+        release_notes=release_notes,
+        public_changelog=public_changelog,
         summary=summary,
     )
 

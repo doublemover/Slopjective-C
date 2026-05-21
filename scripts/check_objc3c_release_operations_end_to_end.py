@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
+RELEASE_NOTES = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-notes.json"
+PUBLIC_CHANGELOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-public-changelog.json"
 CHANNEL_OPERATIONS_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "channel_operations_model.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
 
@@ -75,6 +77,8 @@ def write_summary() -> None:
     update_manifest = load_json(UPDATE_MANIFEST)
     release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
     upgrade_support_report = load_json(UPGRADE_SUPPORT_REPORT)
+    release_notes = load_json(RELEASE_NOTES)
+    public_changelog = load_json(PUBLIC_CHANGELOG)
     channel_operations_model = load_json(CHANNEL_OPERATIONS_MODEL)
     clean_install_prerequisite_channels = validate_clean_install_prerequisites(channel_operations_model)
 
@@ -104,6 +108,58 @@ def write_summary() -> None:
     expect(
         upgrade_support_report.get("release_channel_manifest") == repo_rel(RELEASE_CHANNEL_MANIFEST),
         "upgrade support report release channel manifest link drifted",
+    )
+    expect(
+        release_notes.get("contract_id") == "objc3c.release.operations.release-notes.v1",
+        "release notes contract drifted",
+    )
+    expect(release_notes.get("source_mode") == "source-derived", "release notes source mode drifted")
+    expect(
+        release_notes.get("update_manifest") == repo_rel(UPDATE_MANIFEST),
+        "release notes update manifest link drifted",
+    )
+    expect(
+        release_notes.get("release_channel_manifest") == repo_rel(RELEASE_CHANNEL_MANIFEST),
+        "release notes channel manifest link drifted",
+    )
+    expect(
+        release_notes.get("source_model") == repo_rel(CHANNEL_OPERATIONS_MODEL),
+        "release notes source model drifted",
+    )
+    expect(
+        release_notes.get("release_note_sources")
+        == release_channel_manifest["release_evidence"]["release_note_sources"],
+        "release notes source list drifted from release evidence",
+    )
+    expect(
+        not set(release_notes.get("forbidden_sources", []))
+        & set(release_notes.get("release_note_sources", [])),
+        "release notes included a forbidden source",
+    )
+    expect(
+        len(release_notes.get("channels", [])) == len(update_manifest["channels"]),
+        "release notes channel count drifted",
+    )
+    expect(
+        public_changelog.get("contract_id") == "objc3c.release.operations.public-changelog.v1",
+        "public changelog contract drifted",
+    )
+    expect(
+        public_changelog.get("source_mode") == "source-derived",
+        "public changelog source mode drifted",
+    )
+    expect(
+        public_changelog.get("release_notes") == repo_rel(RELEASE_NOTES),
+        "public changelog release notes link drifted",
+    )
+    expect(
+        public_changelog.get("public_changelog_sources")
+        == release_channel_manifest["release_evidence"]["public_changelog_sources"],
+        "public changelog source list drifted from release evidence",
+    )
+    expect(
+        len(public_changelog.get("entries", [])) == len(release_channel_manifest["channel_manifests"]),
+        "public changelog entry count drifted",
     )
     expect(len(upgrade_support_report.get("revert_guidance", [])) >= 4, "revert guidance drifted")
     rollback_diagnostics = upgrade_support_report.get("rollback_diagnostics", [])
@@ -166,6 +222,8 @@ def write_summary() -> None:
         "update_manifest": repo_rel(UPDATE_MANIFEST),
         "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST),
         "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT),
+        "release_notes": repo_rel(RELEASE_NOTES),
+        "public_changelog": repo_rel(PUBLIC_CHANGELOG),
         "channels": channel_ids,
         "stable_gate_actions": stable_gates,
         "nightly_gate_actions": nightly_gates,
@@ -173,6 +231,8 @@ def write_summary() -> None:
         "clean_install_prerequisite_channels": clean_install_prerequisite_channels,
         "fail_closed_diagnostic_count": len(fail_closed),
         "rollback_diagnostic_count": len(rollback_diagnostics),
+        "release_note_channel_count": len(release_notes.get("channels", [])),
+        "public_changelog_entry_count": len(public_changelog.get("entries", [])),
         "release_evidence_artifact_count": len(release_evidence.get("evidence_artifacts", [])),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -8,7 +8,9 @@
     "update_manifest": "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
     "release_channel_manifest": "tmp/artifacts/release-operations/channel-manifest/objc3c-release-channel-manifest.json",
     "upgrade_support_report": "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
-    "channel_catalog": "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
+    "channel_catalog": "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json",
+    "release_notes": "tmp/artifacts/release-operations/publication/objc3c-release-notes.json",
+    "public_changelog": "tmp/artifacts/release-operations/publication/objc3c-public-changelog.json"
   },
   "summary_reports": {
     "source_surface": "tmp/reports/release-operations/source-surface-summary.json",

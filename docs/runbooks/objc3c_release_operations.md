@@ -95,6 +95,9 @@ Support publication for release operations must emit:
   safety
 - a machine-owned upgrade-support report with support-window, upgrade-path, and
   warning details
+- machine-owned release notes and a public changelog derived from the update
+  manifest, release-channel manifest, checked channel model, and checked
+  release-operations policy sources
 - signed local-installer digest validation copied from the package-channel
   manifest into each update-channel artifact set
 - explicit revert guidance tied to the published installer/offline channels
@@ -137,10 +140,12 @@ These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge
 and publish machine-owned artifacts into release-operations output families
 selected by checked-in contracts.
 
-The update manifest, upgrade-support report, and channel catalog must also
-publish:
+The update manifest, upgrade-support report, channel catalog, release notes, and
+public changelog must also publish:
 
 - the release-channel manifest path
+- the release notes and public changelog artifact paths when publishing
+  release-operation metadata
 - the machine-owned platform support matrix path
 - the default supported platform id
 - the supported platform id set
@@ -148,6 +153,8 @@ publish:
 - the local installer digest signature selected by the package-channel surface
 - rollback diagnostics derived from the checked-in fail-closed diagnostics
   policy, not from prose release notes
+- release-note and changelog source paths derived from checked source
+  manifests, never from manual changelog rows or tmp-only support claims
 - local provenance for the release manifest digest, package-channel manifest
   digest, release payload digest, installer signature, archive digests, and git
   source stamp
