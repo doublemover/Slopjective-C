@@ -638,10 +638,16 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/validation.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.lldb-plugin` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
-| `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
-| `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |
-| `runtime.debug-trace.statement-stepping` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `test` | `tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json` | `npm run objc3c -- validate-debugger-integration` |
+| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `test` | `tests/tooling/test_debugger_integration.py` | `npm run objc3c -- validate-debugger-integration` |
+| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `source` | `scripts/check_objc3c_debugger_integration.py` |  |
+| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `source` | `scripts/objc3c_debugger_integration/model.py` |  |
+| `runtime.debug-trace.lldb-plugin` | `objc3c.behavior.runtime.debug_trace.lldb_plugin` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `test` | `tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json` | `npm run objc3c -- validate-debugger-integration` |
+| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `test` | `tests/tooling/test_debugger_integration.py` | `npm run objc3c -- validate-debugger-integration` |
+| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `source` | `scripts/check_objc3c_debugger_integration.py` |  |
+| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `source` | `scripts/objc3c_debugger_integration/model.py` |  |
+| `runtime.debug-trace.statement-stepping` | `objc3c.behavior.runtime.debug_trace.statement_stepping` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `source` | `native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h` |  |

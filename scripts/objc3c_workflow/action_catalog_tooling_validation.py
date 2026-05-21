@@ -36,6 +36,18 @@ TOOLING_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
             "line-table rows drift"
         ),
     ),
+    "validate-debugger-integration": ActionSpec(
+        "validate-debugger-integration",
+        "validate replayable LLDB debugger commands, value inspection, and source-map-backed stepping records",
+        "python:scripts/check_objc3c_debugger_integration.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "debugger stepping and LLDB command claims stay replayable and fail closed unless "
+            "source maps, debug-map entries, native line-table rows, object/debug anchors, and "
+            "debug-preserved build settings all agree"
+        ),
+        pass_through_args=True,
+    ),
     "validate-bonus-experiences": ActionSpec(
         "validate-bonus-experiences",
         "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces",

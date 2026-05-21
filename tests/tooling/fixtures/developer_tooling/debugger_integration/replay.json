@@ -1,0 +1,262 @@
+{
+  "contract_id": "objc3c.debugger-integration.replay.v1",
+  "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+  "debug_configuration": {
+    "profile": "debug",
+    "optimization": "debug-preserved",
+    "native_debug_info": "present",
+    "artifact_digest_status": "matches-source-map"
+  },
+  "lldb_plugin": {
+    "plugin_id": "objc3c.lldb.replay.v1",
+    "script_model": "deterministic-command-script",
+    "commands": [
+      {
+        "command_id": "load-module-metadata",
+        "plugin_command": "objc3 metadata load",
+        "script_entry": "objc3_lldb.commands.load_module_metadata",
+        "replayable": true
+      },
+      {
+        "command_id": "list-classes",
+        "plugin_command": "objc3 class list",
+        "script_entry": "objc3_lldb.commands.list_classes",
+        "replayable": true
+      },
+      {
+        "command_id": "list-selectors",
+        "plugin_command": "objc3 selector list",
+        "script_entry": "objc3_lldb.commands.list_selectors",
+        "replayable": true
+      },
+      {
+        "command_id": "inspect-class",
+        "plugin_command": "objc3 class inspect",
+        "script_entry": "objc3_lldb.commands.inspect_class",
+        "replayable": true
+      },
+      {
+        "command_id": "inspect-object",
+        "plugin_command": "objc3 object inspect",
+        "script_entry": "objc3_lldb.commands.inspect_object",
+        "replayable": true
+      },
+      {
+        "command_id": "inspect-stdlib-text",
+        "plugin_command": "objc3 stdlib text inspect",
+        "script_entry": "objc3_lldb.commands.inspect_text",
+        "replayable": true
+      },
+      {
+        "command_id": "inspect-stdlib-collection",
+        "plugin_command": "objc3 stdlib collection inspect",
+        "script_entry": "objc3_lldb.commands.inspect_collection",
+        "replayable": true
+      },
+      {
+        "command_id": "show-source-location",
+        "plugin_command": "objc3 source-location",
+        "script_entry": "objc3_lldb.commands.show_source_location",
+        "replayable": true
+      },
+      {
+        "command_id": "show-async-lanes",
+        "plugin_command": "objc3 async lanes",
+        "script_entry": "objc3_lldb.commands.show_async_lanes",
+        "replayable": true
+      },
+      {
+        "command_id": "show-runtime-debug-trace",
+        "plugin_command": "objc3 runtime-debug trace",
+        "script_entry": "objc3_lldb.commands.show_runtime_debug_trace",
+        "replayable": true
+      },
+      {
+        "command_id": "step-statement",
+        "plugin_command": "objc3 step statement",
+        "script_entry": "objc3_lldb.commands.step_statement",
+        "replayable": true
+      },
+      {
+        "command_id": "step-function",
+        "plugin_command": "objc3 step function",
+        "script_entry": "objc3_lldb.commands.step_function",
+        "replayable": true
+      },
+      {
+        "command_id": "step-method",
+        "plugin_command": "objc3 step method",
+        "script_entry": "objc3_lldb.commands.step_method",
+        "replayable": true
+      },
+      {
+        "command_id": "step-message-send",
+        "plugin_command": "objc3 step message-send",
+        "script_entry": "objc3_lldb.commands.step_message_send",
+        "replayable": true
+      },
+      {
+        "command_id": "explain-optimized-frame",
+        "plugin_command": "objc3 explain optimized-frame",
+        "script_entry": "objc3_lldb.commands.explain_optimized_frame",
+        "replayable": true
+      }
+    ]
+  },
+  "stepping_plan": {
+    "records": [
+      {
+        "record_id": "step.statement.value-binding",
+        "status": "supported",
+        "step_kind": "statement",
+        "source_map_entry_id": "smap.statement",
+        "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+        "source_line": 19,
+        "source_column": 3,
+        "native_symbol": "_objc3_DebugMaps_Foundation_statement",
+        "object_debug_line_anchor": "obj.line.statement",
+        "native_line_table_row_id": "lt.statement",
+        "lldb_command_id": "step-statement"
+      },
+      {
+        "record_id": "step.function.helper",
+        "status": "supported",
+        "step_kind": "function",
+        "source_map_entry_id": "smap.function",
+        "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+        "source_line": 13,
+        "source_column": 6,
+        "native_symbol": "_objc3_DebugMaps_Foundation_function",
+        "object_debug_line_anchor": "obj.line.function",
+        "native_line_table_row_id": "lt.function",
+        "lldb_command_id": "step-function"
+      },
+      {
+        "record_id": "step.method.box-value",
+        "status": "supported",
+        "step_kind": "method",
+        "source_map_entry_id": "smap.method",
+        "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+        "source_line": 8,
+        "source_column": 8,
+        "native_symbol": "_objc3_DebugMaps_Foundation_method",
+        "object_debug_line_anchor": "obj.line.method",
+        "native_line_table_row_id": "lt.method",
+        "lldb_command_id": "step-method"
+      },
+      {
+        "record_id": "step.message-send.box-value",
+        "status": "supported",
+        "step_kind": "message-send",
+        "source_map_entry_id": "smap.message_send",
+        "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+        "source_line": 19,
+        "source_column": 34,
+        "native_symbol": "_objc3_DebugMaps_Foundation_message_send",
+        "object_debug_line_anchor": "obj.line.message_send",
+        "native_line_table_row_id": "lt.message_send",
+        "lldb_command_id": "step-message-send"
+      },
+      {
+        "record_id": "step.optimized-away.direct-dispatch",
+        "status": "unsupported",
+        "step_kind": "statement",
+        "source_map_entry_id": "smap.optimization_transform_edge",
+        "unsupported_reason": "optimized-away",
+        "diagnostic_code": "debugger.optimized-away.statement",
+        "claims_stepping": false,
+        "lldb_command_id": "explain-optimized-frame"
+      }
+    ]
+  },
+  "value_inspection": {
+    "records": [
+      {
+        "value_kind": "class-metadata",
+        "lldb_command_id": "inspect-class",
+        "runtime_anchor_id": "runtime.anchor.declaration",
+        "replayable": true
+      },
+      {
+        "value_kind": "selector-metadata",
+        "lldb_command_id": "list-selectors",
+        "runtime_anchor_id": "runtime.anchor.method",
+        "replayable": true
+      },
+      {
+        "value_kind": "object-handle",
+        "lldb_command_id": "inspect-object",
+        "runtime_anchor_id": "runtime.anchor.declaration",
+        "replayable": true
+      },
+      {
+        "value_kind": "stdlib-text-handle",
+        "lldb_command_id": "inspect-stdlib-text",
+        "runtime_anchor_id": "runtime.anchor.stdlib_lowering_call",
+        "replayable": true
+      },
+      {
+        "value_kind": "stdlib-collection-handle",
+        "lldb_command_id": "inspect-stdlib-collection",
+        "runtime_anchor_id": "runtime.anchor.generated_accessor",
+        "replayable": true
+      },
+      {
+        "value_kind": "async-actor-lanes",
+        "lldb_command_id": "show-async-lanes",
+        "runtime_anchor_id": "runtime.anchor.async_suspension_point",
+        "replayable": true
+      },
+      {
+        "value_kind": "error-bridge-state",
+        "lldb_command_id": "show-runtime-debug-trace",
+        "runtime_anchor_id": "runtime.anchor.error_bridge_edge",
+        "replayable": true
+      },
+      {
+        "value_kind": "runtime-debug-trace",
+        "lldb_command_id": "show-runtime-debug-trace",
+        "runtime_anchor_id": "runtime.anchor.module",
+        "replayable": true
+      }
+    ]
+  },
+  "negative_cases": [
+    {
+      "case_id": "missing-debug-info",
+      "unsupported_reason": "missing-debug-info",
+      "expected_diagnostic_code": "debugger.missing-debug-info",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "optimized-away-statement",
+      "unsupported_reason": "optimized-away",
+      "expected_diagnostic_code": "debugger.optimized-away.statement",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "unsupported-handle",
+      "unsupported_reason": "unsupported-handle",
+      "expected_diagnostic_code": "debugger.unsupported-handle",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "malformed-runtime-metadata",
+      "unsupported_reason": "malformed-runtime-metadata",
+      "expected_diagnostic_code": "debugger.malformed-runtime-metadata",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "unsupported-plugin-command",
+      "unsupported_reason": "unsupported-plugin-command",
+      "expected_diagnostic_code": "debugger.unsupported-plugin-command",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "source-map-object-digest-mismatch",
+      "unsupported_reason": "source-map-object-digest-mismatch",
+      "expected_diagnostic_code": "debugger.source-map-object-digest-mismatch",
+      "claims_stepping": false
+    }
+  ]
+}
