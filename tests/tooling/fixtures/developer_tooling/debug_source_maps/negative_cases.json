@@ -1,0 +1,161 @@
+{
+  "contract_id": "objc3c.debug-source-maps.negative-cases.v1",
+  "base_fixture": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+  "cases": [
+    {
+      "case_id": "missing-source-span",
+      "expected_code": "source-map-range",
+      "mutation": {
+        "path": [
+          "source_maps",
+          2,
+          "source_range",
+          "line"
+        ],
+        "value": 0
+      }
+    },
+    {
+      "case_id": "stale-source-graph-id",
+      "expected_code": "source-graph-node-missing",
+      "mutation": {
+        "path": [
+          "source_maps",
+          1,
+          "source_graph_node_id"
+        ],
+        "value": "src.node.missing"
+      }
+    },
+    {
+      "case_id": "stale-source-digest",
+      "expected_code": "source-digest-stale",
+      "mutation": {
+        "path": [
+          "source",
+          "sha256"
+        ],
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "case_id": "generated-code-without-provenance",
+      "expected_code": "generated-provenance-missing",
+      "mutation": {
+        "path": [
+          "source_maps",
+          8,
+          "provenance_link_id"
+        ],
+        "value": ""
+      }
+    },
+    {
+      "case_id": "optimization-without-source-map-preservation",
+      "expected_code": "optimization-preservation-missing",
+      "mutations": [
+        {
+          "path": [
+            "optimization_preservation",
+            "claims",
+            1,
+            "preserves_source_map"
+          ],
+          "value": false
+        },
+        {
+          "path": [
+            "optimization_preservation",
+            "claims",
+            1,
+            "native_line_table_row_ids"
+          ],
+          "value": []
+        }
+      ]
+    },
+    {
+      "case_id": "statement-stepping-without-line-table",
+      "expected_code": "line-table-evidence-missing",
+      "mutations": [
+        {
+          "path": [
+            "debug_policy",
+            "statement_stepping_requested"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "source_maps",
+            2,
+            "native_line_table_row_ids"
+          ],
+          "value": []
+        }
+      ]
+    },
+    {
+      "case_id": "package-boundary-mismatch",
+      "expected_code": "package-boundary-mismatch",
+      "mutation": {
+        "path": [
+          "source_maps",
+          1,
+          "package_boundary_id"
+        ],
+        "value": "pkg.debugmaps.external"
+      }
+    },
+    {
+      "case_id": "native-line-table-drift",
+      "expected_code": "line-table-drift",
+      "mutation": {
+        "path": [
+          "native_line_tables",
+          2,
+          "source_range",
+          "line"
+        ],
+        "value": 20
+      }
+    },
+    {
+      "case_id": "unstable-source-path",
+      "expected_code": "source-path-unstable",
+      "mutation": {
+        "path": [
+          "source",
+          "path"
+        ],
+        "value": "tests\\tooling\\fixtures\\developer_tooling\\debug_source_maps\\source.objc3"
+      }
+    },
+    {
+      "case_id": "missing-capability-row",
+      "expected_code": "capability-row-missing",
+      "mutation": {
+        "path": [
+          "capabilities",
+          "rows"
+        ],
+        "value": [
+          {
+            "row_id": "compiler.artifacts.source-map",
+            "status": "supported",
+            "evidence": [
+              "source_maps"
+            ]
+          },
+          {
+            "row_id": "tooling.debug.debug-map",
+            "status": "supported",
+            "evidence": [
+              "debug_maps"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

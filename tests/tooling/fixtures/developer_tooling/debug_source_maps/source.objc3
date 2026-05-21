@@ -1,0 +1,22 @@
+package DebugMaps.Foundation
+
+macro DebugAccessor(target: Symbol) { generated accessor }
+
+class Box {
+  property count: i32
+
+  func value() -> i32 {
+    return count
+  }
+}
+
+func helper(value: i32) -> i32 {
+  return value + 1
+}
+
+func main() async throws -> i32 {
+  let box = Box(count: 41)
+  let value = helper(value: box.value())
+  await suspend()
+  return try bridge(value)
+}

@@ -13,6 +13,7 @@ from scripts.objc3c_workflow.actions import (
     validation_timing,
 )
 from scripts.objc3c_workflow.actions.developer_tooling_paths import (
+    CHECK_DEBUG_SOURCE_MAPS_PY,
     CHECK_LANGUAGE_SERVICE_PY,
     DEVELOPER_TOOLING_INTEGRATION_PY,
     RUNTIME_DEBUG_TRACE_PY,
@@ -23,6 +24,10 @@ from scripts.objc3c_workflow.commands import run
 
 def _run_python_script(script_path: object) -> int:
     return run([sys.executable, str(script_path)])
+
+
+def _run_python_script_with_args(script_path: object, *args: str) -> int:
+    return run([sys.executable, str(script_path), *args])
 
 
 def _action_validate_developer_tooling(_: list[str]) -> int:
@@ -37,11 +42,20 @@ def _action_validate_language_service(_: list[str]) -> int:
     return _run_python_script(CHECK_LANGUAGE_SERVICE_PY)
 
 
+def _action_validate_debug_source_maps(_: list[str]) -> int:
+    return _run_python_script(CHECK_DEBUG_SOURCE_MAPS_PY)
+
+
+def _action_inspect_debug_map(rest: list[str]) -> int:
+    return _run_python_script_with_args(CHECK_DEBUG_SOURCE_MAPS_PY, "--inspect", *rest)
+
+
 def _action_trace_runtime_debug(rest: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_DEBUG_TRACE_PY), *rest])
 
 
 TOOLING_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
+    "inspect-debug-map": _action_inspect_debug_map,
     "inspect-bonus-tool-integration": developer_tooling_bonus.action_inspect_bonus_tool_integration,
     "inspect-validation-timing": validation_timing.action_inspect_validation_timing,
     "materialize-project-template": developer_tooling_bonus.action_materialize_project_template,
@@ -50,6 +64,7 @@ TOOLING_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "trace-compile-stages": developer_tooling_dump_actions.action_trace_compile_stages,
     "test-capability-routed-source-parity": developer_tooling_llvm_parity.action_test_capability_routed_source_parity,
     "validate-developer-tooling": _action_validate_developer_tooling,
+    "validate-debug-source-maps": _action_validate_debug_source_maps,
     "validate-language-service": _action_validate_language_service,
     "validate-runnable-developer-tooling": _action_validate_runnable_developer_tooling,
     "validate-bonus-experiences": developer_tooling_bonus.action_validate_bonus_experiences,
