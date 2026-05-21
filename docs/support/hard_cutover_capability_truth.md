@@ -62,6 +62,18 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure                                   | `reserved` unless separately implemented         | Describe as unavailable or reserved spec surface, not runnable support.            |
 | Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.    |
 
+Advanced runtime closure is split into explicit implemented rows and reserved
+boundary rows. Implemented rows may be named only through their support claims in
+`docs/support/capability_matrix.json`; the following boundaries remain
+non-claiming unless a future matrix row changes state:
+
+- `runtime.blocks.full-language-closure`
+- `runtime.arc.full-automation`
+- `runtime.errors.generalized-foreign-exception-abi`
+- `runtime.concurrency.broad-async-actor-closure`
+- `runtime.metaprogramming.arbitrary-macro-ecosystem`
+- `runtime.interop.broad-runtime-closure`
+
 ## Documentation Rule
 
 Docs, specs, site pages, stdlib notes, and runbooks may summarize support only

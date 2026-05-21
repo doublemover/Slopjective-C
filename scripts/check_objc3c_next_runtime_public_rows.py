@@ -434,6 +434,24 @@ ADVANCED_RUNTIME_EXPECTATIONS: tuple[CapabilityRowExpectation, ...] = (
     ),
 )
 
+ADVANCED_RUNTIME_RESERVED_BOUNDARIES = {
+    "runtime.blocks.full-language-closure": "Only explicit block capture legality, copy/dispose/invoke, and byref forwarding rows may publish block support.",
+    "runtime.arc.full-automation": "ARC cleanup integration is public only through the checked helper-backed row.",
+    "runtime.errors.generalized-foreign-exception-abi": "Live NSError/status bridge cleanup does not claim a generalized foreign exception ABI.",
+    "runtime.concurrency.broad-async-actor-closure": "Task continuation and actor mailbox rows do not claim broad async/actor ABI closure.",
+    "runtime.metaprogramming.arbitrary-macro-ecosystem": "Checked metaprogramming rows do not claim arbitrary third-party macro expansion.",
+    "runtime.interop.broad-runtime-closure": "Package-loader and mixed-image replay rows do not claim broad interop closure or public ABI widening.",
+}
+
+ADVANCED_RUNTIME_UMBRELLA_EVIDENCE = {
+    "docs/support/hard_cutover_capability_truth.md",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md",
+    "scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py",
+    "tests/tooling/test_runtime_capability_public_split.py",
+}
+
 
 RESERVED_UMBRELLA_ROWS = {
     "runtime.object-model.full-realization": "8154 object-model umbrella",
@@ -646,6 +664,70 @@ def _check_expected_row(
     )
 
 
+def _check_advanced_runtime_reserved_umbrella(
+    failures: list[str],
+    matrix_rows: dict[str, dict[str, Any]],
+    evidence_rows: list[dict[str, Any]],
+) -> None:
+    umbrella = matrix_rows.get("language.advanced-runtime-closure")
+    if umbrella is None:
+        return
+    boundary_doc = (ROOT / "docs/support/hard_cutover_capability_truth.md").read_text(
+        encoding="utf-8"
+    )
+
+    evidence = umbrella.get("evidence", [])
+    umbrella_paths = {
+        str(item.get("path"))
+        for item in evidence
+        if isinstance(item, dict) and item.get("path") is not None
+    }
+    _append(
+        failures,
+        ADVANCED_RUNTIME_UMBRELLA_EVIDENCE <= umbrella_paths,
+        "language.advanced-runtime-closure umbrella is missing reserved-boundary evidence anchors",
+    )
+    _append(
+        failures,
+        all(not path.startswith(("tmp/", "tmp\\")) for path in umbrella_paths),
+        "language.advanced-runtime-closure umbrella must not use tmp reports as source truth",
+    )
+
+    matching_evidence = [
+        row
+        for row in evidence_rows
+        if row.get("capability_id") == "language.advanced-runtime-closure"
+    ]
+    _append(
+        failures,
+        matching_evidence and all(not row.get("support_claim") for row in matching_evidence),
+        "language.advanced-runtime-closure evidence-map rows must remain non-claiming",
+    )
+
+    summary = str(umbrella.get("summary", ""))
+    for boundary_id, required_text in ADVANCED_RUNTIME_RESERVED_BOUNDARIES.items():
+        _append(
+            failures,
+            boundary_id.startswith("runtime."),
+            f"{boundary_id} must stay scoped to runtime boundary taxonomy",
+        )
+        _append(
+            failures,
+            bool(required_text),
+            f"{boundary_id} reserved-boundary description is empty",
+        )
+        _append(
+            failures,
+            boundary_id in boundary_doc,
+            f"{boundary_id} must be documented as a non-claiming reserved boundary",
+        )
+    _append(
+        failures,
+        "remaining broad runtime closure stays reserved" in summary,
+        "language.advanced-runtime-closure summary must keep broad runtime closure reserved",
+    )
+
+
 def validate_next_runtime_public_rows() -> dict[str, Any]:
     matrix = _load_json(MATRIX_PATH)
     evidence_map = _load_json(EVIDENCE_MAP_PATH)
@@ -696,6 +778,11 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
             manifest_fixtures,
             catalog_rows,
         )
+    _check_advanced_runtime_reserved_umbrella(
+        failures,
+        matrix_rows,
+        evidence_dict_rows,
+    )
 
     report = {
         "contract_id": "objc3c.next-runtime-public-rows.validation.v1",
@@ -705,6 +792,9 @@ def validate_next_runtime_public_rows() -> dict[str, Any]:
         "advanced_runtime_rows": [
             row.capability_id for row in ADVANCED_RUNTIME_EXPECTATIONS
         ],
+        "advanced_runtime_reserved_boundaries": sorted(
+            ADVANCED_RUNTIME_RESERVED_BOUNDARIES
+        ),
         "reserved_umbrella_rows": sorted(RESERVED_UMBRELLA_ROWS),
         "failures": failures,
     }
@@ -724,6 +814,10 @@ def main() -> int:
     print("objc3c-next-runtime-public-rows: PASS")
     print(f"object_model_rows: {len(report['object_model_rows'])}")
     print(f"advanced_runtime_rows: {len(report['advanced_runtime_rows'])}")
+    print(
+        "advanced_runtime_reserved_boundaries: "
+        f"{len(report['advanced_runtime_reserved_boundaries'])}"
+    )
     return 0
 
 

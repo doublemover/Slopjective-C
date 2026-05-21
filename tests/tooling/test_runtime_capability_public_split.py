@@ -72,6 +72,22 @@ def _assert_split_contract_matches_source_truth(contract: dict[str, Any]) -> Non
         ) in evidence_rows
 
 
+def _assert_reserved_boundaries_do_not_publish_claims(contract: dict[str, Any]) -> None:
+    rows = _matrix_rows()
+    reserved_boundaries = contract.get("reserved_boundaries")
+
+    assert isinstance(reserved_boundaries, list)
+    assert reserved_boundaries
+    for boundary in reserved_boundaries:
+        assert boundary["public_status"] == "reserved"
+        assert boundary["matrix_owner"] == contract["reserved_umbrella"]
+        assert "reason" in boundary
+
+        owner_row = rows[boundary["matrix_owner"]]
+        assert owner_row["state"] == "reserved"
+        assert "support_claims" not in owner_row
+
+
 def test_object_model_public_capability_split_matches_capability_matrix() -> None:
     contract = build_object_model_capability_split_contract()
 
@@ -84,3 +100,10 @@ def test_advanced_runtime_public_capability_split_matches_capability_matrix() ->
 
     assert contract["issue"] == 8155
     _assert_split_contract_matches_source_truth(contract)
+
+
+def test_advanced_runtime_reserved_boundaries_stay_non_claiming() -> None:
+    contract = build_advanced_runtime_capability_split_contract()
+
+    assert contract["issue"] == 8155
+    _assert_reserved_boundaries_do_not_publish_claims(contract)

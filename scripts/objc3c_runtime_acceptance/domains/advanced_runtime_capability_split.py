@@ -78,6 +78,45 @@ ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS: tuple[dict[str, str], ...] = (
     },
 )
 
+ADVANCED_RUNTIME_RESERVED_BOUNDARIES: tuple[dict[str, str], ...] = (
+    {
+        "boundary_id": "runtime.blocks.full-language-closure",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "Only explicit capture legality, copy/dispose/invoke, and byref forwarding rows are public; broader block language closure remains unavailable.",
+    },
+    {
+        "boundary_id": "runtime.arc.full-automation",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "ARC cleanup integration is public only for the checked helper-backed rows; broad ARC ownership automation is not claimed.",
+    },
+    {
+        "boundary_id": "runtime.errors.generalized-foreign-exception-abi",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "NSError/status bridge cleanup has executable evidence; generalized foreign exception ABI support remains unclaimed.",
+    },
+    {
+        "boundary_id": "runtime.concurrency.broad-async-actor-closure",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "Task continuation and actor mailbox rows are public; scheduler fairness, distributed actors, and broad async ABI closure remain reserved.",
+    },
+    {
+        "boundary_id": "runtime.metaprogramming.arbitrary-macro-ecosystem",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "Checked derive inventory, property behavior semantics, and host/cache boundaries are public; arbitrary third-party macro expansion remains unavailable.",
+    },
+    {
+        "boundary_id": "runtime.interop.broad-runtime-closure",
+        "public_status": "reserved",
+        "matrix_owner": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
+        "reason": "Package-loader bridge and mixed-image replay rows are public; broad interop closure and public ABI widening remain reserved.",
+    },
+)
+
 
 def build_advanced_runtime_capability_split_contract() -> dict[str, Any]:
     return {
@@ -85,12 +124,14 @@ def build_advanced_runtime_capability_split_contract() -> dict[str, Any]:
         "reserved_umbrella": ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID,
         "source": ADVANCED_RUNTIME_CAPABILITY_SPLIT_SOURCE,
         "implemented_rows": list(ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS),
+        "reserved_boundaries": list(ADVANCED_RUNTIME_RESERVED_BOUNDARIES),
     }
 
 
 __all__ = [
     "ADVANCED_RUNTIME_CAPABILITY_SPLIT_SOURCE",
     "ADVANCED_RUNTIME_PUBLIC_CAPABILITY_ROWS",
+    "ADVANCED_RUNTIME_RESERVED_BOUNDARIES",
     "ADVANCED_RUNTIME_RESERVED_UMBRELLA_ID",
     "ADVANCED_RUNTIME_SPLIT_ISSUE",
     "build_advanced_runtime_capability_split_contract",
