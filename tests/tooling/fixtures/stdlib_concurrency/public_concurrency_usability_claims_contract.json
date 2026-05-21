@@ -8,6 +8,22 @@
   "module_smoke": "stdlib/modules/objc3.concurrency/smoke.objc3",
   "runtime_acceptance_case": "stdlib-concurrency-runtime-probe",
   "runnable_command": "npm run objc3c -- test-runtime-acceptance-concurrency",
+  "runtime_probe_payload_requirements": {
+    "spawn_call_count": 3,
+    "scope_call_count": 1,
+    "add_task_call_count": 2,
+    "wait_next_call_count": 2,
+    "cancel_all_call_count": 1,
+    "executor_hop_call_count": 1,
+    "actor_bind_executor_call_count": 1,
+    "actor_mailbox_enqueue_call_count": 1,
+    "actor_mailbox_drain_call_count": 1,
+    "actor_executor_binding_count": 1,
+    "actor_last_bound_executor_tag": 4,
+    "actor_last_mailbox_drained_value": 13,
+    "actor_mailbox_identity_guard_passed": 1,
+    "actor_executor_binding_guard_passed": 1
+  },
   "claims": [
     {
       "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
@@ -26,6 +42,9 @@
         "spawn_token",
         "child_spawn_token",
         "detached_spawn_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "spawn_call_count"
       ],
       "reserved_until_runtime_contract": [
         "generic Task ABI",
@@ -58,6 +77,12 @@
         "task_group_scope_depth",
         "cancellation_checkpoint"
       ],
+      "runtime_probe_payload_fields": [
+        "scope_call_count",
+        "add_task_call_count",
+        "wait_next_call_count",
+        "cancel_all_call_count"
+      ],
       "reserved_until_runtime_contract": [
         "arbitrary task group result typing",
         "structured cancellation propagation outside the checked helper cluster"
@@ -76,6 +101,9 @@
       "semantic_policy_keys": [
         "public_executor_api",
         "executor_hop_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "executor_hop_call_count"
       ],
       "reserved_until_runtime_contract": [
         "OS scheduler integration",
@@ -97,6 +125,15 @@
       "semantic_policy_keys": [
         "public_actor_mailbox_api",
         "actor_mailbox_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "actor_bind_executor_call_count",
+        "actor_mailbox_enqueue_call_count",
+        "actor_mailbox_drain_call_count",
+        "actor_executor_binding_count",
+        "actor_last_mailbox_drained_value",
+        "actor_mailbox_identity_guard_passed",
+        "actor_executor_binding_guard_passed"
       ],
       "reserved_until_runtime_contract": [
         "distributed actors",

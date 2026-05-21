@@ -139,6 +139,46 @@ def check_stdlib_concurrency_runtime_probe_case(
     expect_equal(payload.get("scheduler_dequeue_count"), 2, "stdlib scheduler dequeue count drifted")
     expect_equal(payload.get("scheduler_sequence"), 5, "stdlib scheduler sequence drifted")
     expect_equal(payload.get("last_queue_drain_result"), 26, "stdlib task-group drain order drifted")
+    expect_equal(
+        payload.get("actor_bind_executor_call_count"),
+        1,
+        "stdlib actor mailbox executor binding calls drifted",
+    )
+    expect_equal(
+        payload.get("actor_mailbox_enqueue_call_count"),
+        1,
+        "stdlib actor mailbox enqueue calls drifted",
+    )
+    expect_equal(
+        payload.get("actor_mailbox_drain_call_count"),
+        1,
+        "stdlib actor mailbox drain calls drifted",
+    )
+    expect_equal(
+        payload.get("actor_executor_binding_count"),
+        1,
+        "stdlib actor executor binding count drifted",
+    )
+    expect_equal(
+        payload.get("actor_last_bound_executor_tag"),
+        4,
+        "stdlib actor executor binding tag drifted",
+    )
+    expect_equal(
+        payload.get("actor_last_mailbox_drained_value"),
+        13,
+        "stdlib actor mailbox drained value drifted",
+    )
+    expect_equal(
+        payload.get("actor_mailbox_identity_guard_passed"),
+        1,
+        "stdlib actor mailbox identity guard drifted",
+    )
+    expect_equal(
+        payload.get("actor_executor_binding_guard_passed"),
+        1,
+        "stdlib actor executor binding guard drifted",
+    )
     return CaseResult(
         case_id="stdlib-concurrency-runtime-probe",
         probe="tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
@@ -146,7 +186,7 @@ def check_stdlib_concurrency_runtime_probe_case(
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
-            "kind": "stdlib-concurrency-runtime-backed-task-helper-probe",
+            "kind": "stdlib-concurrency-runtime-backed-public-helper-probe",
             "runtime_abi": [
                 "objc3_runtime_spawn_task_i32",
                 "objc3_runtime_enter_task_group_scope_i32",
@@ -156,6 +196,9 @@ def check_stdlib_concurrency_runtime_probe_case(
                 "objc3_runtime_task_is_cancelled_i32",
                 "objc3_runtime_task_on_cancel_i32",
                 "objc3_runtime_executor_hop_i32",
+                "objc3_runtime_actor_bind_executor_i32",
+                "objc3_runtime_actor_mailbox_enqueue_i32",
+                "objc3_runtime_actor_mailbox_drain_next_i32",
             ],
             "spawn_call_count": payload.get("spawn_call_count"),
             "scope_call_count": payload.get("scope_call_count"),
@@ -167,6 +210,21 @@ def check_stdlib_concurrency_runtime_probe_case(
             "scheduler_dequeue_count": payload.get("scheduler_dequeue_count"),
             "scheduler_sequence": payload.get("scheduler_sequence"),
             "last_queue_drain_result": payload.get("last_queue_drain_result"),
+            "actor_bind_executor_call_count": payload.get(
+                "actor_bind_executor_call_count"
+            ),
+            "actor_mailbox_enqueue_call_count": payload.get(
+                "actor_mailbox_enqueue_call_count"
+            ),
+            "actor_mailbox_drain_call_count": payload.get(
+                "actor_mailbox_drain_call_count"
+            ),
+            "actor_executor_binding_count": payload.get(
+                "actor_executor_binding_count"
+            ),
+            "actor_last_mailbox_drained_value": payload.get(
+                "actor_last_mailbox_drained_value"
+            ),
         },
     )
 
