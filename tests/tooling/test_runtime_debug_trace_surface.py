@@ -88,6 +88,31 @@ def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None
     )
 
 
+def test_runtime_debug_trace_inspection_queries_are_public_and_fail_closed() -> None:
+    contract = load_json(FIXTURE_ROOT / "contract.json")
+    payload = fixture_payload()
+    queries = {
+        query["query_id"]: query
+        for query in payload["inspection_queries"]
+    }
+
+    for query_id in contract["expected_supported_inspection_queries"]:
+        query = queries[query_id]
+        assert query["status"] == "supported"
+        assert query["public_command"].startswith("npm run objc3c -- ")
+        assert query["evidence_input_labels"]
+        assert query["result_path"]
+    for query_id in contract["expected_reserved_inspection_queries"]:
+        query = queries[query_id]
+        assert query["status"] == "reserved"
+        assert query["public_command"] == ""
+        assert query["unpublished_reason"]
+    assert (
+        queries["debug.runtime-trace.composed-event-sequence"]["schema_path"]
+        == "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+    )
+
+
 def test_runtime_debug_trace_support_handoff_ids_are_explicit() -> None:
     contract = load_json(FIXTURE_ROOT / "contract.json")
     payload = fixture_payload()
@@ -133,6 +158,23 @@ def test_runtime_debug_trace_supported_row_fails_closed_without_replayable_input
     assert "supported runtime debug trace row has unavailable input: debug_map" in failures
 
 
+def test_runtime_debug_trace_query_validation_rejects_private_supported_commands() -> None:
+    payload = fixture_payload()
+    query = next(
+        query
+        for query in payload["inspection_queries"]
+        if query["query_id"] == "debug.runtime-trace.composed-event-sequence"
+    )
+    query["public_command"] = "python scripts/build_objc3c_runtime_debug_trace.py"
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert (
+        "supported inspection query lacks public command: "
+        "debug.runtime-trace.composed-event-sequence"
+    ) in failures
+
+
 def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     schema = load_json(ROOT / "schemas" / "objc3c-runtime-debug-trace-v1.schema.json")
 
@@ -143,6 +185,7 @@ def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     validate_registered_schema(fixture_payload(), "objc3c-runtime-debug-trace-v1")
     assert "event_sequence" in schema["required"]
     assert "trace_lanes" in schema["properties"]
+    assert "inspection_queries" in schema["properties"]
     assert "support_boundary" in schema["properties"]
     assert "trace-runtime-debug" in ACTION_SPECS
     assert "trace-runtime-debug" in ACTION_HANDLERS

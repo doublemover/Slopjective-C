@@ -562,6 +562,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/build_objc3c_runtime_debug_trace.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/validation.py` |  |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.lldb-plugin` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
 | `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |

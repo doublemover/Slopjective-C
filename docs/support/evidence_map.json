@@ -3249,6 +3249,12 @@
       "path": "scripts/objc3c_runtime_debug_trace/validation.py"
     },
     {
+      "capability_id": "runtime.debug-trace.structured-inspection",
+      "support_claim": "objc3c.behavior.runtime.debug_trace",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_developer_tooling.md"
+    },
+    {
       "capability_id": "runtime.debug-trace.lldb-plugin",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"

@@ -3669,6 +3669,10 @@
         {
           "kind": "source",
           "path": "scripts/objc3c_runtime_debug_trace/validation.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
         }
       ]
     },

@@ -93,6 +93,76 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             "full source-map lane must stay reserved",
             failures,
         )
+    inspection_queries = payload.get("inspection_queries", [])
+    _expect(
+        isinstance(inspection_queries, list) and bool(inspection_queries),
+        "inspection queries are missing",
+        failures,
+    )
+    if isinstance(inspection_queries, list):
+        queries_by_id: dict[str, dict[str, Any]] = {}
+        for query in inspection_queries:
+            if not isinstance(query, dict):
+                failures.append("inspection query must be an object")
+                continue
+            query_id = str(query.get("query_id", "") or "")
+            status = str(query.get("status", "") or "")
+            queries_by_id[query_id] = query
+            _expect(bool(query_id), "inspection query missing query id", failures)
+            _expect(
+                status in {"supported", "reserved", "rejected", "internal"},
+                f"inspection query has invalid status: {query_id}",
+                failures,
+            )
+            if status == "supported":
+                public_command = str(query.get("public_command", "") or "")
+                evidence_input_labels = query.get("evidence_input_labels", [])
+                _expect(
+                    public_command.startswith("npm run objc3c -- "),
+                    f"supported inspection query lacks public command: {query_id}",
+                    failures,
+                )
+                _expect(
+                    isinstance(evidence_input_labels, list) and bool(evidence_input_labels),
+                    f"supported inspection query lacks evidence inputs: {query_id}",
+                    failures,
+                )
+                _expect(
+                    bool(str(query.get("result_path", "") or "")),
+                    f"supported inspection query lacks result path: {query_id}",
+                    failures,
+                )
+            if status == "reserved":
+                _expect(
+                    bool(str(query.get("unpublished_reason", "") or "")),
+                    f"reserved inspection query missing unpublished reason: {query_id}",
+                    failures,
+                )
+        expected_supported_queries = {
+            "debug.source-to-artifact.declaration-anchors",
+            "runtime.object-inspection.object-symbols",
+            "runtime.message-send.dispatch-cache-observation",
+            "debug.runtime-trace.composed-event-sequence",
+        }
+        for query_id in expected_supported_queries:
+            _expect(
+                queries_by_id.get(query_id, {}).get("status") == "supported",
+                f"expected supported inspection query missing: {query_id}",
+                failures,
+            )
+        expected_reserved_queries = {
+            "debug.statement-level-stepping.line-table",
+            "debug.full-source-map.publication",
+            "runtime.async-task-inspection.snapshots",
+            "runtime.error-unwind-trace.snapshots",
+            "debug.lldb-plugin.integration",
+        }
+        for query_id in expected_reserved_queries:
+            _expect(
+                queries_by_id.get(query_id, {}).get("status") == "reserved",
+                f"expected reserved inspection query missing: {query_id}",
+                failures,
+            )
     inputs = payload.get("inputs", {})
     input_records = inputs if isinstance(inputs, dict) else {}
     support_handoff = payload.get("support_handoff", {})

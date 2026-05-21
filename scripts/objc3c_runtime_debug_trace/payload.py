@@ -361,6 +361,143 @@ def _inspection_commands(
     }
 
 
+def _supported_query(
+    *,
+    query_id: str,
+    surface: str,
+    support_class: str,
+    public_command: str,
+    evidence_input_labels: list[str],
+    result_path: str,
+    artifact_path: str = "",
+    schema_path: str = "",
+) -> dict[str, Any]:
+    return {
+        "query_id": query_id,
+        "surface": surface,
+        "status": "supported",
+        "support_class": support_class,
+        "public_command": public_command,
+        "evidence_input_labels": evidence_input_labels,
+        "result_path": result_path,
+        "artifact_path": artifact_path,
+        "schema_path": schema_path,
+        "unpublished_reason": "",
+    }
+
+
+def _reserved_query(
+    *,
+    query_id: str,
+    surface: str,
+    support_class: str,
+    unpublished_reason: str,
+    evidence_input_labels: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "query_id": query_id,
+        "surface": surface,
+        "status": "reserved",
+        "support_class": support_class,
+        "public_command": "",
+        "evidence_input_labels": evidence_input_labels or [],
+        "result_path": "",
+        "artifact_path": "",
+        "schema_path": "",
+        "unpublished_reason": unpublished_reason,
+    }
+
+
+def _inspection_queries(
+    *,
+    source_path: str,
+    runtime_inspector: dict[str, Any],
+    path_records: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    runtime_inspector_path = str(
+        path_records.get("runtime_inspector", {}).get("path", "") or ""
+    )
+    debug_map_path = str(path_records.get("debug_map", {}).get("path", "") or "")
+    trace_path = TRACE_REPORT_PATH_TEXT
+    object_path = str(runtime_inspector.get("object_path", "") or "")
+    schema_path = display_path(RUNTIME_DEBUG_TRACE_SCHEMA_PATH)
+    return [
+        _supported_query(
+            query_id="debug.source-to-artifact.declaration-anchors",
+            surface="source_to_artifact_mapping",
+            support_class="manifest-declaration-coordinate-anchors",
+            public_command=f"npm run objc3c -- inspect-editor-tooling {source_path}",
+            evidence_input_labels=["debug_map", "editor_surface"],
+            result_path=debug_map_path,
+            artifact_path=object_path,
+        ),
+        _supported_query(
+            query_id="runtime.object-inspection.object-symbols",
+            surface="object_inspection",
+            support_class="runtime-inspector-object-artifact",
+            public_command=f"npm run objc3c -- inspect-runtime-inspector {source_path}",
+            evidence_input_labels=["runtime_inspector"],
+            result_path=runtime_inspector_path,
+            artifact_path=object_path,
+        ),
+        _supported_query(
+            query_id="runtime.message-send.dispatch-cache-observation",
+            surface="message_send_trace",
+            support_class="dispatch-cache-observation-and-object-symbols",
+            public_command=f"npm run objc3c -- inspect-runtime-inspector {source_path}",
+            evidence_input_labels=["runtime_inspector"],
+            result_path=runtime_inspector_path,
+            artifact_path=object_path,
+        ),
+        _supported_query(
+            query_id="debug.runtime-trace.composed-event-sequence",
+            surface="runtime_debug_trace",
+            support_class="deterministic-composed-trace",
+            public_command=f"npm run objc3c -- {TRACE_ACTION} {source_path}",
+            evidence_input_labels=[
+                "compile_stage_trace",
+                "debug_map",
+                "editor_surface",
+                "runtime_inspector",
+            ],
+            result_path=trace_path,
+            schema_path=schema_path,
+        ),
+        _reserved_query(
+            query_id="debug.statement-level-stepping.line-table",
+            surface="statement_level_stepping",
+            support_class="line-table-evidence-not-emitted",
+            evidence_input_labels=["debug_map"],
+            unpublished_reason="native line-table evidence is not emitted on the canonical toolchain path",
+        ),
+        _reserved_query(
+            query_id="debug.full-source-map.publication",
+            surface="full_source_map_publication",
+            support_class="full-source-map-evidence-not-emitted",
+            evidence_input_labels=["debug_map"],
+            unpublished_reason="full source-map metadata is not emitted on the canonical toolchain path",
+        ),
+        _reserved_query(
+            query_id="runtime.async-task-inspection.snapshots",
+            surface="async_task_inspection",
+            support_class="not-yet-in-runtime-debug-trace",
+            unpublished_reason="task, continuation, actor, and executor snapshots are not emitted in this trace",
+        ),
+        _reserved_query(
+            query_id="runtime.error-unwind-trace.snapshots",
+            surface="error_unwind_trace",
+            support_class="not-yet-in-runtime-debug-trace",
+            unpublished_reason="error bridge and unwind snapshots are not emitted in this trace",
+        ),
+        _reserved_query(
+            query_id="debug.lldb-plugin.integration",
+            surface="lldb_plugin",
+            support_class="not-published",
+            unpublished_reason="no checked-in LLDB plugin is published by this slice",
+        ),
+    ]
+
+
 def _source_mapping(debug_map: dict[str, Any]) -> dict[str, Any]:
     anchors = _list_payload(debug_map.get("declaration_breakpoints"))
     return {
@@ -531,6 +668,11 @@ def build_runtime_debug_trace_payload(
         "source_mapping": _source_mapping(debug_map),
         "runtime_inspection": _runtime_inspection_summary(runtime_inspector),
         "trace_lanes": _trace_lanes(runtime_inspector, debug_map),
+        "inspection_queries": _inspection_queries(
+            source_path=source_path,
+            runtime_inspector=runtime_inspector,
+            path_records=path_records,
+        ),
         "support_boundary": _support_boundary(debug_map),
         "event_sequence": events,
         "event_counts": _event_counts(events),

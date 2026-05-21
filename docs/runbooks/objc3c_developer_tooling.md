@@ -214,6 +214,8 @@ full editor product:
   - deterministic runtime debug tracing from runtime-inspector, compile-stage,
     and editor debug artifacts, with replayable input-path evidence recorded on
     the supported trace row
+  - runtime debug trace inspection queries for declaration anchors, object-symbol
+    inspection, message-send/cache observation, and composed trace replay
   - manifest-backed language-server capabilities and navigation
   - deterministic workspace semantic indexing across the primary source,
     checked-in stdlib modules, and showcase package workspaces
@@ -354,6 +356,12 @@ statement debugger. The runtime debug trace and editor debug map must keep
 statement-level stepping and full source-map publication as reserved rows unless
 their required emitted artifacts exist on disk and are referenced by the
 supported trace handoff.
+
+The runtime debug trace schema also publishes `inspection_queries`. Supported
+queries must route through `npm run objc3c -- <action>`, name their evidence
+input labels, and point at the generated `tmp/` result or artifact they inspect.
+Reserved debugger queries must keep an empty public command and an explicit
+unpublished reason.
 
 ## Editor Protocol And Debug Artifact Contract
 

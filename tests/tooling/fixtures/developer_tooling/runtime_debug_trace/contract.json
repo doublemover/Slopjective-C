@@ -19,6 +19,19 @@
     "lldb_plugin",
     "statement_level_stepping"
   ],
+  "expected_supported_inspection_queries": [
+    "debug.source-to-artifact.declaration-anchors",
+    "runtime.object-inspection.object-symbols",
+    "runtime.message-send.dispatch-cache-observation",
+    "debug.runtime-trace.composed-event-sequence"
+  ],
+  "expected_reserved_inspection_queries": [
+    "debug.statement-level-stepping.line-table",
+    "debug.full-source-map.publication",
+    "runtime.async-task-inspection.snapshots",
+    "runtime.error-unwind-trace.snapshots",
+    "debug.lldb-plugin.integration"
+  ],
   "required_support_handoff_ids": [
     "objc3c.behavior.runtime.debug_trace",
     "objc3c.behavior.runtime.debug_trace.lldb_plugin",

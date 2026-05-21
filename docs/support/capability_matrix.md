@@ -1779,6 +1779,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/build_objc3c_runtime_debug_trace.py`
   - source: `scripts/objc3c_runtime_debug_trace/payload.py`
   - source: `scripts/objc3c_runtime_debug_trace/validation.py`
+  - doc: `docs/runbooks/objc3c_developer_tooling.md`
 
 ### LLDB plugin debug integration
 
