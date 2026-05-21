@@ -27,8 +27,8 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 def main() -> int:
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    package_root = ROOT / "tmp" / "pkg" / "objc3c-runtime-performance-e2e" / run_id
+    run_id = datetime.now().strftime("%H%M%S%f")
+    package_root = ROOT / "tmp" / "p" / f"rp{run_id}"
     manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
     summary_out = package_root / "tmp" / "reports" / "runtime-performance" / "packaged-benchmark-summary.json"
 
@@ -61,6 +61,15 @@ def main() -> int:
     source_surface = package_root / normalize_rel_path(str(runtime_surface["source_surface_contract"]))
     artifact_surface = package_root / normalize_rel_path(str(runtime_surface["artifact_surface_contract"]))
     optimization_policy = package_root / normalize_rel_path(str(runtime_surface["optimization_policy"]))
+    workload_replay_contract = package_root / normalize_rel_path(
+        str(runtime_surface["workload_replay_contract"])
+    )
+    metadata_resilience_contract = package_root / normalize_rel_path(
+        str(runtime_surface["metadata_resilience_contract"])
+    )
+    stress_sanitizer_contract = package_root / normalize_rel_path(
+        str(runtime_surface["stress_sanitizer_contract"])
+    )
     telemetry_schema = package_root / normalize_rel_path(str(runtime_surface["telemetry_schema"]))
     source_readme = package_root / normalize_rel_path(str(runtime_surface["source_readme"]))
     runbook = package_root / normalize_rel_path(str(runtime_surface["runbook"]))
@@ -86,6 +95,9 @@ def main() -> int:
         source_surface,
         artifact_surface,
         optimization_policy,
+        workload_replay_contract,
+        metadata_resilience_contract,
+        stress_sanitizer_contract,
         telemetry_schema,
         source_readme,
         runbook,
@@ -146,6 +158,9 @@ def main() -> int:
             "executable_fixture_manifest": repo_rel(fixture_manifest),
             "artifact_surface_contract": repo_rel(artifact_surface),
             "optimization_policy": repo_rel(optimization_policy),
+            "workload_replay_contract": repo_rel(workload_replay_contract),
+            "metadata_resilience_contract": repo_rel(metadata_resilience_contract),
+            "stress_sanitizer_contract": repo_rel(stress_sanitizer_contract),
             "telemetry_schema": repo_rel(telemetry_schema),
         },
         "steps": [
