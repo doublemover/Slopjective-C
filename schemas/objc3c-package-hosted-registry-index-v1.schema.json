@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+  "title": "objc3c Package Hosted Registry Index",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "registry_id",
+    "registry_version",
+    "registry_state",
+    "network_policy",
+    "resolver",
+    "language_version",
+    "abi_identity",
+    "packages",
+    "revocations",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": { "const": "objc3c.package_ecosystem.hosted_registry_index.v1" },
+    "registry_id": { "type": "string", "minLength": 1 },
+    "registry_version": { "type": "integer", "minimum": 1 },
+    "registry_state": { "type": "string", "minLength": 1 },
+    "network_policy": { "type": "string", "minLength": 1 },
+    "resolver": { "const": "deterministic-hosted-registry-offline-resolver-v1" },
+    "language_version": { "type": "string", "minLength": 1 },
+    "abi_identity": { "type": "string", "minLength": 1 },
+    "packages": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/registryRecord" }
+    },
+    "revocations": { "$ref": "#/$defs/revocations" },
+    "replay": { "$ref": "#/$defs/replay" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "packageManifestRef": {
+      "type": "object",
+      "required": ["path", "contract_id", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
+        "digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "signatureEnvelope": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "signature_id",
+        "signature_format",
+        "signing_backend",
+        "signer_id",
+        "signing_key_id",
+        "trust_root_id",
+        "subject_kind",
+        "subject_package_id",
+        "subject_version",
+        "package_namespace",
+        "artifact_digest",
+        "manifest_digest",
+        "abi_identity",
+        "language_version",
+        "signature",
+        "revocation_state",
+        "verification_policy",
+        "signed_at_utc",
+        "provenance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.signature_envelope.v1" },
+        "signature_id": { "$ref": "#/$defs/sha256" },
+        "signature_format": { "type": "string", "minLength": 1 },
+        "signing_backend": { "type": "string", "minLength": 1 },
+        "signer_id": { "type": "string", "minLength": 1 },
+        "signing_key_id": { "type": "string", "minLength": 1 },
+        "trust_root_id": { "type": "string", "minLength": 1 },
+        "subject_kind": { "type": "string", "minLength": 1 },
+        "subject_package_id": { "type": "string", "minLength": 1 },
+        "subject_version": { "$ref": "#/$defs/semver" },
+        "package_namespace": { "type": "string", "minLength": 1 },
+        "artifact_digest": { "$ref": "#/$defs/sha256" },
+        "manifest_digest": { "$ref": "#/$defs/sha256" },
+        "abi_identity": { "type": "string", "minLength": 1 },
+        "language_version": { "type": "string", "minLength": 1 },
+        "lock_digest": { "$ref": "#/$defs/sha256" },
+        "signature": { "$ref": "#/$defs/sha256" },
+        "revocation_state": { "type": "string", "minLength": 1 },
+        "verification_policy": { "type": "string", "minLength": 1 },
+        "signed_at_utc": { "type": "string", "minLength": 1 },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "offlineMirrorPin": {
+      "type": "object",
+      "required": ["index_path", "cache_path", "cache_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "index_path": { "type": "string", "minLength": 1 },
+        "cache_path": { "type": "string", "minLength": 1 },
+        "cache_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "registryRecord": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "source",
+        "source_digest",
+        "source_kind",
+        "package_version",
+        "language_version",
+        "abi_identity",
+        "package_manifest",
+        "trust",
+        "offline_mirror",
+        "selection",
+        "metadata_digest",
+        "registry_signature"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": { "$ref": "#/$defs/packageId" },
+        "source": { "type": "string", "minLength": 1 },
+        "source_digest": { "$ref": "#/$defs/sha256" },
+        "source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest",
+            "hosted-fixture-source"
+          ]
+        },
+        "package_version": { "$ref": "#/$defs/semver" },
+        "language_version": { "type": "string", "minLength": 1 },
+        "abi_identity": { "type": "string", "minLength": 1 },
+        "package_manifest": { "$ref": "#/$defs/packageManifestRef" },
+        "trust": { "$ref": "#/$defs/signatureEnvelope" },
+        "offline_mirror": { "$ref": "#/$defs/offlineMirrorPin" },
+        "selection": {
+          "type": "object",
+          "required": ["policy", "candidate_rank"],
+          "additionalProperties": false,
+          "properties": {
+            "policy": { "const": "exact-version-from-offline-fixture" },
+            "candidate_rank": { "type": "integer", "const": 0 }
+          }
+        },
+        "metadata_digest": { "$ref": "#/$defs/sha256" },
+        "registry_signature": { "$ref": "#/$defs/signatureEnvelope" }
+      }
+    },
+    "revocations": {
+      "type": "object",
+      "required": [
+        "revoked_registry_ids",
+        "revoked_package_ids",
+        "revoked_signature_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "revoked_registry_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "revoked_package_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/packageId" },
+          "uniqueItems": true
+        },
+        "revoked_signature_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sha256" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "required": ["commands"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

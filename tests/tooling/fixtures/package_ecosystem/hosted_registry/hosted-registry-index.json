@@ -1,0 +1,92 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_index.v1",
+  "registry_id": "objc3c-hosted-registry-fixture-v1",
+  "registry_version": 1,
+  "registry_state": "not-revoked",
+  "network_policy": "offline-fixture-metadata-only",
+  "resolver": "deterministic-hosted-registry-offline-resolver-v1",
+  "language_version": "3.0",
+  "abi_identity": "objc3-abi-2025Q4",
+  "packages": [
+    {
+      "package_id": "fixture:network.core",
+      "source": "tests/tooling/fixtures/package_ecosystem/hosted_registry/network-core.objc3",
+      "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "source_kind": "showcase-workspace-manifest",
+      "package_version": "1.0.0",
+      "language_version": "3.0",
+      "abi_identity": "objc3-abi-2025Q4",
+      "package_manifest": {
+        "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/network-core-manifest.json",
+        "contract_id": "objc3c.package_ecosystem.package_manifest.v1",
+        "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "trust": {
+        "contract_id": "objc3c.package_ecosystem.signature_envelope.v1",
+        "signature_format": "objc3c-deterministic-test-sha256-v1",
+        "signing_backend": "deterministic-test-replay",
+        "signer_id": "objc3c-local-package-signer-v1",
+        "signing_key_id": "objc3c-local-package-key-v1",
+        "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+        "subject_kind": "package-manifest",
+        "subject_package_id": "fixture:network.core",
+        "subject_version": "1.0.0",
+        "package_namespace": "fixture",
+        "artifact_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "abi_identity": "objc3-abi-2025Q4",
+        "language_version": "3.0",
+        "revocation_state": "not-revoked",
+        "verification_policy": "fail-closed-local-digest-trust-root-revocation-v1",
+        "signed_at_utc": "omitted-for-deterministic-replay",
+        "provenance": "deterministic-local-fixture-replay-only",
+        "signature_id": "sha256:ebdad2e83df00f75a7bcfb4d4079eeeedc285d191591ef135b5ab35c7ec11c3f",
+        "signature": "sha256:e9a2256614d28ba91b222423bcfaccc3c04bbbefb8db11795b14fb68351cebe5"
+      },
+      "offline_mirror": {
+        "index_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+        "cache_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/cache/network-core.json",
+        "cache_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "selection": {
+        "policy": "exact-version-from-offline-fixture",
+        "candidate_rank": 0
+      },
+      "metadata_digest": "sha256:050aacb1afc69d1c336e79df7b721497fd00a47dc3c79e7f19a8ed5716352f50",
+      "registry_signature": {
+        "contract_id": "objc3c.package_ecosystem.signature_envelope.v1",
+        "signature_format": "objc3c-deterministic-test-sha256-v1",
+        "signing_backend": "deterministic-test-replay",
+        "signer_id": "objc3c-local-package-signer-v1",
+        "signing_key_id": "objc3c-local-package-key-v1",
+        "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+        "subject_kind": "hosted-registry-record",
+        "subject_package_id": "fixture:network.core",
+        "subject_version": "1.0.0",
+        "package_namespace": "fixture",
+        "artifact_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "manifest_digest": "sha256:050aacb1afc69d1c336e79df7b721497fd00a47dc3c79e7f19a8ed5716352f50",
+        "abi_identity": "objc3-abi-2025Q4",
+        "language_version": "3.0",
+        "lock_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revocation_state": "not-revoked",
+        "verification_policy": "fail-closed-local-digest-trust-root-revocation-v1",
+        "signed_at_utc": "omitted-for-deterministic-replay",
+        "provenance": "deterministic-local-fixture-replay-only",
+        "signature_id": "sha256:2e2ee5f236794ddd4ffa060a252400bed69bfd4f7413795794faeb4e6777279a",
+        "signature": "sha256:ee1aeea13daed27a6796441f0dd2729fe1617ea01b0dda43c39681072698bd51"
+      }
+    }
+  ],
+  "revocations": {
+    "revoked_registry_ids": [],
+    "revoked_package_ids": [],
+    "revoked_signature_ids": []
+  },
+  "replay": {
+    "commands": [
+      "npm run objc3c -- validate-package-registry-model",
+      "npm run objc3c -- package-registry-resolve"
+    ]
+  }
+}

@@ -8,6 +8,7 @@ from .ecosystem_publication_package_contracts import (
     PACKAGE_LOCK_PY,
     PACKAGE_MANAGER_MODEL_PY,
     PACKAGE_MIRROR_REPRODUCIBILITY_PY,
+    PACKAGE_REGISTRY_MODEL_PY,
     PACKAGE_SIGN_PY,
     PACKAGE_INSTALL_DISTRIBUTION_PY,
     PACKAGE_VERIFY_PY,
@@ -40,6 +41,14 @@ def action_validate_package_mirror(_: list[str]) -> int:
     return run_package_publication_action("validate-package-mirror")
 
 
+def action_validate_package_registry_model(_: list[str]) -> int:
+    return run_package_publication_action("validate-package-registry-model")
+
+
+def action_package_registry_resolve(rest: list[str]) -> int:
+    return run_package_publication_action("package-registry-resolve", rest)
+
+
 def action_validate_package_ecosystem(_: list[str]) -> int:
     return run_package_publication_action("validate-package-ecosystem")
 
@@ -61,6 +70,7 @@ __all__ = [
     "PACKAGE_LOCK_PY",
     "PACKAGE_MANAGER_MODEL_PY",
     "PACKAGE_MIRROR_REPRODUCIBILITY_PY",
+    "PACKAGE_REGISTRY_MODEL_PY",
     "PACKAGE_SIGN_PY",
     "PACKAGE_INSTALL_DISTRIBUTION_PY",
     "PACKAGE_VERIFY_PY",
@@ -69,9 +79,11 @@ __all__ = [
     "action_sign_package",
     "action_verify_package",
     "action_validate_package_manager_model",
+    "action_package_registry_resolve",
     "action_validate_package_authoring",
     "action_validate_package_ecosystem",
     "action_validate_package_install_distribution",
     "action_validate_package_mirror",
+    "action_validate_package_registry_model",
     "action_validate_runnable_package_ecosystem",
 ]

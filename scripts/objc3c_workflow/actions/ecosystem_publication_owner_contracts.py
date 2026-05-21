@@ -115,6 +115,16 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-mirror-owner",
         "proves local offline mirror reproducibility without network-dependent install claims",
     ),
+    "validate-package-registry-model": _package_contract(
+        "validate-package-registry-model",
+        "package-ecosystem-registry-owner",
+        "validates hosted registry fixture metadata, deterministic signatures, revocations, and offline mirror pins without live network resolution",
+    ),
+    "package-registry-resolve": _package_contract(
+        "package-registry-resolve",
+        "package-ecosystem-registry-owner",
+        "resolves hosted package metadata only from checked-in fixture registry and offline mirror inputs; live network fetches fail closed",
+    ),
     "validate-package-ecosystem": _package_contract(
         "validate-package-ecosystem",
         "package-ecosystem-registry-owner",
