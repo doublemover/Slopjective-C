@@ -57,6 +57,204 @@
         "OBJFND-8059-01 carries the negative diagnostic and malformed metadata mapping",
         "tmp artifacts are compiler scratch or generated summaries only"
       ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-class-realization",
+      "capability_id": "runtime.object-model.class-realization",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/object_model_closure/realized_object_graph_runtime_implementation_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+      "runnable_command": "npm run objc3c -- validate-object-model-conformance",
+      "runtime_acceptance_case": "metaclass-graph-root-class",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "tests/tooling/fixtures/native/class_realization_runtime_library.objc3",
+        "tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3",
+        "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/class_metaclass_missing_superclass.objc3",
+        "tests/tooling/fixtures/native/inheritance_override_missing_superclass.objc3",
+        "tests/tooling/fixtures/native/runtime_export_enforcement_duplicate_interface.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S200",
+        "O3S220"
+      ],
+      "source_truth_requirements": [
+        "Class and metaclass graph support is claimed by the dedicated class-realization row",
+        "Runtime probes and acceptance surfaces must query realized class graph state",
+        "Missing superclass and duplicate interface paths remain fail-closed evidence"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-category-protocol-registration",
+      "capability_id": "runtime.object-model.category-protocol-registration",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/conformance/lowering_abi/OBJFND-8058-01.json",
+      "traceability_fixture": "tests/conformance/lowering_abi/OBJFND-8059-01.json",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance-fast",
+      "runtime_acceptance_case": "runtime-object-foundation-protocol-category",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+        "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_method.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_merge_conflicting_property.objc3",
+        "tests/tooling/fixtures/native/execution/negative/category_unknown_class_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_requirement_duplicate_conflict_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_requirement_inherited_conflict_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/duplicate_protocol_runtime_export.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S200",
+        "O3S218",
+        "O3S219",
+        "O3S314",
+        "O3S315",
+        "O3S316",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "Category and protocol support is claimed by the dedicated registration row",
+        "OBJFND-8058-01 carries the positive runtime acceptance mapping",
+        "OBJFND-8059-01 carries the negative diagnostic and malformed metadata mapping"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
+      "capability_id": "runtime.object-model.property-ivar-reflection",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+      "traceability_fixture": "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+      "runnable_command": "npm run objc3c -- validate-storage-reflection-conformance",
+      "runtime_acceptance_case": "storage-ownership-reflection",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+        "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+        "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3",
+        "tests/tooling/fixtures/native/property_scalar_ownership_negative.objc3",
+        "tests/tooling/runtime/property_ivar_invalid_layout_probe.cpp"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "Property and ivar reflection support is claimed by the dedicated property/ivar row",
+        "Reflection snapshots must derive from runtime storage/reflection owners",
+        "Attribute, selector, ownership, and invalid-layout paths remain fail-closed evidence"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-registration-replay",
+      "capability_id": "runtime.object-model.registration-replay",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/object_model_closure/object_model_reflection_artifact_runtime_registration_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json",
+      "runnable_command": "npm run objc3c -- validate-object-model-conformance",
+      "runtime_acceptance_case": "multi-image-registration-reset-replay",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/registration_replay_contract.objc3",
+        "tests/tooling/fixtures/native/execution/positive/registration_reset_replay_runtime_entrypoints.objc3",
+        "scripts/objc3c_runtime_acceptance/domains/registration_replay_cases/assertions.py",
+        "scripts/check_objc3c_runnable_object_model_conformance.py",
+        "scripts/check_objc3c_runnable_object_model_end_to_end.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3",
+        "tests/tooling/fixtures/native/execution/negative/class_metaclass_missing_superclass.objc3",
+        "tests/tooling/fixtures/native/execution/negative/duplicate_protocol_runtime_export.objc3",
+        "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S200",
+        "O3S220",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "Registration replay support is claimed by the dedicated reset/replay row",
+        "Runnable object-model conformance must verify startup and replay surfaces from the same reports",
+        "Duplicate identity and invalid registration roots remain fail-closed evidence"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.object-model-bounded-query-snapshots",
+      "capability_id": "runtime.object-model.bounded-query-snapshots",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+      "traceability_fixture": "tests/tooling/fixtures/object_model_closure/object_model_reflection_artifact_runtime_registration_contract.json",
+      "runnable_command": "npm run objc3c -- validate-object-model-conformance",
+      "runtime_acceptance_case": "storage-ownership-reflection",
+      "positive_evidence": [
+        "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_abi.py",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_reflection.py",
+        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_semantics.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/category_unknown_class_rejected.objc3",
+        "tests/tooling/fixtures/native/execution/negative/protocol_requirement_duplicate_conflict_rejected.objc3",
+        "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/runtime/property_ivar_invalid_layout_probe.cpp"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206",
+        "O3S218",
+        "O3S219",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "Bounded query snapshot support is claimed by the dedicated testing-only snapshot row",
+        "Snapshot evidence must not be described as public debugger reflection ABI",
+        "Missing owner, conflicting protocol, and invalid property layout paths remain fail-closed evidence"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency-runtime-v1",
+      "capability_id": "stdlib.concurrency.runtime-backed-v1",
+      "owner_phase": "runtime",
+      "conformance_fixture": "stdlib/advanced_architecture.json",
+      "traceability_fixture": "stdlib/advanced_helper_package_surface.json",
+      "runnable_command": "npm run objc3c -- test-runtime-acceptance-concurrency",
+      "runtime_acceptance_case": "stdlib-concurrency-runtime-probe",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/modules/objc3.concurrency/smoke.objc3",
+        "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+        "scripts/objc3c_runtime_acceptance/domains/stdlib_runtime_cases.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+        "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Stdlib concurrency support is claimed by the dedicated runtime-backed stdlib row",
+        "The module surface must publish explicit runtime ABI helper names and signatures",
+        "Signature conflicts remain fail-closed execution replay evidence"
+      ]
     }
   ]
 }

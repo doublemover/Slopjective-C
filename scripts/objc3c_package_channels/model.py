@@ -23,6 +23,11 @@ from .paths import (
 
 IMPLEMENTED_CHANNELS = ["portable-archive", "local-installer", "offline-bundle"]
 MANIFEST_RELATIVE_PATH = "artifacts/package/objc3c-runnable-toolchain-package.json"
+ARCHIVE_DIGEST_FIELDS = {
+    "portable_archive": "portable-archive",
+    "installer_archive": "local-installer",
+    "offline_archive": "offline-bundle",
+}
 
 
 @dataclass(frozen=True)
@@ -79,7 +84,11 @@ def package_channels_manifest_payload(
     inputs: PackageChannelInputs,
     paths: PackageChannelPaths,
     installer_signature: dict[str, Any],
+    archive_digests: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    resolved_archive_digests = (
+        archive_digest_payloads(paths) if archive_digests is None else archive_digests
+    )
     return {
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -98,6 +107,7 @@ def package_channels_manifest_payload(
         "implemented_channels": IMPLEMENTED_CHANNELS,
         "interop_loader_metadata": inputs.interop_loader_metadata,
         "installer_signature": installer_signature,
+        "archive_digests": resolved_archive_digests,
         "release_foundation_artifacts": {
             "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
             "sbom": repo_rel(RELEASE_FOUNDATION_SBOM),
@@ -130,6 +140,7 @@ def package_channels_report_payload(
         "implemented_channels": manifest_payload["implemented_channels"],
         "interop_loader_metadata": manifest_payload["interop_loader_metadata"],
         "installer_signature": manifest_payload["installer_signature"],
+        "archive_digests": manifest_payload["archive_digests"],
     }
 
 
@@ -150,4 +161,30 @@ def installer_signature_payload(installer_archive: Path) -> dict[str, Any]:
         "sha256": sha256_file(installer_archive),
         "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
         "trust_scope": "checked-in-artifact-digest",
+    }
+
+
+def archive_digest_record(*, artifact_role: str, artifact_path: Path) -> dict[str, str]:
+    return {
+        "digest_format": "sha256",
+        "artifact_role": artifact_role,
+        "artifact": repo_rel(artifact_path),
+        "sha256": sha256_file(artifact_path),
+        "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "trust_scope": "checked-in-artifact-digest",
+    }
+
+
+def archive_digest_payloads(paths: PackageChannelPaths) -> dict[str, dict[str, str]]:
+    artifact_paths = {
+        "portable_archive": paths.portable_archive,
+        "installer_archive": paths.installer_archive,
+        "offline_archive": paths.offline_archive,
+    }
+    return {
+        field_name: archive_digest_record(
+            artifact_role=artifact_role,
+            artifact_path=artifact_paths[field_name],
+        )
+        for field_name, artifact_role in ARCHIVE_DIGEST_FIELDS.items()
     }

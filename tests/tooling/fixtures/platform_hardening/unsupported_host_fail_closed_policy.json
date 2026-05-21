@@ -60,6 +60,33 @@
       "required_behavior": "fail-closed"
     }
   ],
+  "synthetic_unsupported_host_checks": [
+    {
+      "host_id": "linux-x64",
+      "host_os": "Linux synthetic unsupported host",
+      "host_arch": "x64",
+      "host_system": "linux",
+      "host_machine": "x86_64",
+      "failure_id": "unsupported-host-linux-x64-denied",
+      "expected_behavior": "fail-closed"
+    },
+    {
+      "host_id": "darwin-arm64",
+      "host_os": "Darwin synthetic unsupported host",
+      "host_arch": "arm64",
+      "host_system": "darwin",
+      "host_machine": "arm64",
+      "failure_id": "unsupported-host-darwin-arm64-denied",
+      "expected_behavior": "fail-closed"
+    }
+  ],
+  "required_matrix_summary_fields": [
+    "unsupported_host_fail_closed.status",
+    "unsupported_host_fail_closed.summary.checked_host_count",
+    "unsupported_host_fail_closed.summary.fail_closed_host_count",
+    "unsupported_host_fail_closed.summary.support_claim_widened",
+    "unsupported_host_fail_closed.summary.failure_ids"
+  ],
   "allowed_fail_closed_non_build_actions": [
     {
       "action_id": "capability-inspection-only",

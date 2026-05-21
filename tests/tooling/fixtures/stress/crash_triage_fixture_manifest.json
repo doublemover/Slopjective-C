@@ -7,6 +7,7 @@
   "positive_cases": [
     {
       "case_id": "parser-reject-trailing-comma-replayable-signature",
+      "expected_subsystem": "parser",
       "source_path": "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3",
       "expected_triage_artifacts": [
         "signature-index.json",
@@ -15,6 +16,24 @@
       ],
       "expected_replay_request_fields": [
         "case_id",
+        "signature_sha256",
+        "source_path",
+        "reduced_candidate_path",
+        "recommended_command"
+      ]
+    },
+    {
+      "case_id": "execution-runtime-dispatch-strict-error-replayable-signature",
+      "expected_subsystem": "execution",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3",
+      "expected_triage_artifacts": [
+        "signature-index.json",
+        "case-index.json",
+        "triage-summary.json"
+      ],
+      "expected_replay_request_fields": [
+        "case_id",
+        "subsystem",
         "signature_sha256",
         "source_path",
         "reduced_candidate_path",

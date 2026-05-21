@@ -16,6 +16,7 @@
     "implemented_channels",
     "interop_loader_metadata",
     "installer_signature",
+    "archive_digests",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -49,6 +50,9 @@
     },
     "installer_signature": {
       "$ref": "#/$defs/installerSignature"
+    },
+    "archive_digests": {
+      "$ref": "#/$defs/archiveDigests"
     },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
@@ -84,6 +88,71 @@
         "signature_format": { "const": "objc3c-local-sha256-v1" },
         "signing_key_id": { "const": "objc3c-release-operations-local-installer-key-v1" },
         "subject": { "const": "local-installer" },
+        "artifact": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "verification_command": { "const": "npm run objc3c -- validate-packaging-channels-end-to-end" },
+        "trust_scope": { "const": "checked-in-artifact-digest" }
+      }
+    },
+    "archiveDigests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["portable_archive", "installer_archive", "offline_archive"],
+      "properties": {
+        "portable_archive": { "$ref": "#/$defs/portableArchiveDigest" },
+        "installer_archive": { "$ref": "#/$defs/installerArchiveDigest" },
+        "offline_archive": { "$ref": "#/$defs/offlineArchiveDigest" }
+      }
+    },
+    "portableArchiveDigest": {
+      "allOf": [
+        { "$ref": "#/$defs/archiveDigest" },
+        {
+          "type": "object",
+          "properties": {
+            "artifact_role": { "const": "portable-archive" }
+          }
+        }
+      ]
+    },
+    "installerArchiveDigest": {
+      "allOf": [
+        { "$ref": "#/$defs/archiveDigest" },
+        {
+          "type": "object",
+          "properties": {
+            "artifact_role": { "const": "local-installer" }
+          }
+        }
+      ]
+    },
+    "offlineArchiveDigest": {
+      "allOf": [
+        { "$ref": "#/$defs/archiveDigest" },
+        {
+          "type": "object",
+          "properties": {
+            "artifact_role": { "const": "offline-bundle" }
+          }
+        }
+      ]
+    },
+    "archiveDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest_format",
+        "artifact_role",
+        "artifact",
+        "sha256",
+        "verification_command",
+        "trust_scope"
+      ],
+      "properties": {
+        "digest_format": { "const": "sha256" },
+        "artifact_role": {
+          "enum": ["portable-archive", "local-installer", "offline-bundle"]
+        },
         "artifact": { "type": "string", "minLength": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "verification_command": { "const": "npm run objc3c -- validate-packaging-channels-end-to-end" },

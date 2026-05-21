@@ -596,14 +596,12 @@
       "id": "runtime.object-model.interface-method-table",
       "title": "Object-model interface method table",
       "state": "implemented",
-      "summary": "The canonical runtime object-model fixture proves interface method table publication, while runtime acceptance surfaces cover private class graph, category attachment, and protocol conformance queries. The broader realization claim and any public reflection surface remain reserved.",
+      "summary": "The canonical runtime fixture proves interface method table publication for declared and implemented methods. Class graph, category/protocol, property/ivar, and replay behavior are claimed only by their sibling rows.",
       "support_claims": [
         "objc3c.behavior.runtime.object-model-interface-method-table"
       ],
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
-        "native/objc3c/src/runtime/classes/category_attachment.cpp",
-        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
         "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
       ],
       "evidence": [
@@ -613,29 +611,8 @@
           "command": "npm run objc3c -- test-behavior-matrix"
         },
         {
-          "kind": "test",
-          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
-          "command": "npm run objc3c -- test-runtime-acceptance-fast"
-        },
-        {
-          "kind": "test",
-          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py"
-        },
-        {
-          "kind": "test",
-          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
-        },
-        {
           "kind": "source",
           "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
-        },
-        {
-          "kind": "source",
-          "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
-        },
-        {
-          "kind": "source",
-          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
         },
         {
           "kind": "source",
@@ -644,10 +621,251 @@
       ]
     },
     {
+      "id": "runtime.object-model.class-realization",
+      "title": "Class and metaclass graph",
+      "state": "implemented",
+      "summary": "Runtime class and metaclass nodes are ordered, realized, snapshotted, and queried from the live registration graph with fail-closed superclass and root-class checks.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-class-realization"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/metaclass_graph.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/class_realization_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/metaclass_graph.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.category-protocol-registration",
+      "title": "Category and protocol registration",
+      "state": "implemented",
+      "summary": "Category attachment and protocol conformance registration are deterministic runtime behaviors with positive probe coverage and strict rejection for unknown owners, duplicate requirements, and malformed metadata.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-category-protocol-registration"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/category_attachment.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.property-ivar-reflection",
+      "title": "Property and ivar reflection",
+      "state": "implemented",
+      "summary": "Property accessors, ivar layout, ownership profiles, and private reflection snapshots are derived from realized runtime storage and reflection owners.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-property-ivar-reflection"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp",
+        "native/objc3c/src/runtime/storage/property_lookup.cpp",
+        "native/objc3c/src/runtime/storage/property_value_storage.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
+          "command": "npm run objc3c -- validate-storage-reflection-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/property_layout_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.registration-replay",
+      "title": "Registration reset and replay",
+      "state": "implemented",
+      "summary": "Ordered image registration, reset, replay, and cache rebinding preserve realized class, category, protocol, property, and ivar descriptor state across the live runtime workflow.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-registration-replay"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/images/registration_api.cpp",
+        "native/objc3c/src/runtime/images/registration_snapshots.cpp",
+        "native/objc3c/src/runtime/state/runtime_live_state_reset.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/registration_replay_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_object_model_conformance.py",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/registration_replay_cases/assertions.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/registration_reset_replay_runtime_entrypoints.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/state/runtime_live_state_reset.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.bounded-query-snapshots",
+      "title": "Bounded query snapshots",
+      "state": "implemented",
+      "summary": "Testing-only query snapshots expose bounded class, protocol, selector, dispatch-cache, property, and ivar state derived from the same realized runtime graph without claiming debugger-grade public reflection.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-bounded-query-snapshots"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_abi.py"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_reflection.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+        }
+      ]
+    },
+    {
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "Parser, semantic, metadata, and owner-module evidence exists for object-model surfaces, but full live class, protocol, category, property, ivar, and reflection runtime behavior remains unclaimed until implemented rows carry executable evidence.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, and bounded query snapshots; debugger-grade public reflection ABI remains reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -720,6 +938,73 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/runtime/stdlib/core_runtime.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.concurrency.runtime-backed-v1",
+      "title": "Runtime-backed concurrency stdlib v1",
+      "state": "implemented",
+      "summary": "The objc3.concurrency v1 helper tokens are backed by the checked-in task, cancellation, executor-hop, and actor-mailbox runtime helper boundary. This row does not claim generic Task ABI completeness, scheduler fairness guarantees, distributed actors, or broad async language closure.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency-runtime-v1"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/advanced_helper_package_surface.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+        "native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py",
+          "command": "npm run objc3c -- validate-runnable-stdlib-advanced"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/advanced_architecture.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/advanced_helper_package_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
         }
       ]
     },

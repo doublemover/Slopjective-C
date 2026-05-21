@@ -28,6 +28,29 @@ def host_matches_supported_platform(default_platform_id: str, host: HostSnapshot
     return snapshot.system == "windows" and snapshot.machine in SUPPORTED_HOST_ARCH_ALIASES["windows-x64"]
 
 
+def synthetic_unsupported_host_check(
+    *,
+    host_id: str,
+    host: HostSnapshot,
+    failure_id: str,
+    default_platform_id: str,
+    supported_platform_ids: Iterable[str],
+) -> dict[str, Any]:
+    supported_platform_id_set = set(supported_platform_ids)
+    matched_supported_host = host_matches_supported_platform(default_platform_id, host)
+    claimed_as_supported = host_id in supported_platform_id_set
+    failed_closed = not matched_supported_host and not claimed_as_supported
+    return {
+        "host_id": host_id,
+        "host": host.as_json(),
+        "failure_id": failure_id,
+        "matched_supported_host": matched_supported_host,
+        "claimed_as_supported": claimed_as_supported,
+        "failed_closed": failed_closed,
+        "result": "fail-closed" if failed_closed else "support-claim-widened",
+    }
+
+
 def summary_passes(payload: dict[str, Any]) -> bool:
     return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
 
@@ -80,4 +103,5 @@ __all__ = [
     "require_platform_hardening_owner_policy",
     "require_required_fields",
     "summary_passes",
+    "synthetic_unsupported_host_check",
 ]

@@ -16,6 +16,11 @@
       "case_id": "sema_break_outside_control_flow",
       "subsystem": "semantic",
       "source_path": "tests/tooling/fixtures/native/break_outside_control_flow_negative.objc3"
+    },
+    {
+      "case_id": "execution_message_send_runtime_dispatch_strict_error",
+      "subsystem": "execution",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3"
     }
   ]
 }

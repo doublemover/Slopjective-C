@@ -41,6 +41,38 @@ def test_platform_support_matrix_publishes_matrix_dimensions_and_acceptance() ->
     ]
 
 
+def test_platform_support_matrix_fails_closed_for_synthetic_unsupported_hosts() -> None:
+    payload = build_support_matrix_payload()
+    policy = load_fixture(
+        "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    )
+    unsupported_hosts = payload["unsupported_host_fail_closed"]
+    summary = unsupported_hosts["summary"]
+    expected_host_ids = {
+        check["host_id"] for check in policy["synthetic_unsupported_host_checks"]
+    }
+    expected_failure_ids = [
+        check["failure_id"] for check in policy["synthetic_unsupported_host_checks"]
+    ]
+
+    assert payload["claim_boundary"]["supported_platform_ids"] == ["windows-x64"]
+    assert payload["platform_count"] == 1
+    assert {platform["platform_id"] for platform in payload["platforms"]} == {"windows-x64"}
+    assert unsupported_hosts["status"] == "PASS"
+    assert unsupported_hosts["failure_class_id"] == "unsupported-host-os-or-arch"
+    assert summary["checked_host_count"] == len(expected_host_ids)
+    assert summary["fail_closed_host_count"] == len(expected_host_ids)
+    assert summary["support_claim_widened"] is False
+    assert summary["supported_platform_ids"] == ["windows-x64"]
+    assert summary["failure_ids"] == expected_failure_ids
+    assert {check["host_id"] for check in unsupported_hosts["checks"]} == expected_host_ids
+    assert all(check["failed_closed"] is True for check in unsupported_hosts["checks"])
+    assert all(
+        check["claimed_as_supported"] is False
+        for check in unsupported_hosts["checks"]
+    )
+
+
 def test_release_operations_publication_publishes_rollback_diagnostics() -> None:
     update_channel_policy = load_fixture(
         "tests/tooling/fixtures/release_operations/update_channel_policy.json"

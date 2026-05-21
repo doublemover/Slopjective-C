@@ -90,6 +90,36 @@
       "executable_command": "npm run objc3c -- test-behavior-matrix"
     },
     {
+      "claim_id": "objc3c.behavior.runtime.object-model-class-realization",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/class_realization_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model-category-protocol-registration",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model-registration-replay",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/registration_replay_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model-bounded-query-snapshots",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
       "claim_id": "objc3c.behavior.errors.try-catch-semantics",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
@@ -117,6 +147,12 @@
       "claim_id": "objc3c.behavior.stdlib.core-runtime-v1",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.concurrency-runtime-v1",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
       "executable_command": "npm run objc3c -- test-execution-smoke"
     },
     {
@@ -534,6 +570,46 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/native/runtime/object_model/class_realization_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/registration_replay_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",
@@ -607,6 +683,22 @@
     },
     {
       "path": "tests/tooling/fixtures/native/execution/negative/stdlib_core_runtime_helper_signature_conflict.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "strict-error",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "stdlib",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",
       "behavior_family": "stdlib",

@@ -13,7 +13,7 @@
     {
       "id": "compile-auroraBoard",
       "workflow_action": "compile-objc3c",
-      "public_command": "npm run objc3c -- compile-objc3c -- showcase/auroraBoard/main.objc3",
+      "public_command": "npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3",
       "example_id": "auroraBoard",
       "source": "showcase/auroraBoard/main.objc3",
       "artifact_root": "tmp/artifacts/showcase/auroraBoard"
@@ -21,7 +21,7 @@
     {
       "id": "compile-signalMesh",
       "workflow_action": "compile-objc3c",
-      "public_command": "npm run objc3c -- compile-objc3c -- showcase/signalMesh/main.objc3",
+      "public_command": "npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3",
       "example_id": "signalMesh",
       "source": "showcase/signalMesh/main.objc3",
       "artifact_root": "tmp/artifacts/showcase/signalMesh"
@@ -29,7 +29,7 @@
     {
       "id": "compile-patchKit",
       "workflow_action": "compile-objc3c",
-      "public_command": "npm run objc3c -- compile-objc3c -- showcase/patchKit/main.objc3",
+      "public_command": "npm run objc3c -- compile-objc3c showcase/patchKit/main.objc3",
       "example_id": "patchKit",
       "source": "showcase/patchKit/main.objc3",
       "artifact_root": "tmp/artifacts/showcase/patchKit"

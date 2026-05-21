@@ -1,0 +1,50 @@
+// Canonical runtime object-model fixture: categories attach protocol edges
+// and method surfaces to realized classes.
+module RuntimeObjectModelCategoryProtocolRegistrationContract;
+
+@protocol RuntimeWorker
+@required
+- (i32) workValue;
+@end
+
+@protocol RuntimeTraceable <RuntimeWorker>
+@required
+- (i32) traceValue;
+@optional
+- (bool) traceReady;
+@end
+
+@interface RuntimeCategoryBase <RuntimeWorker>
+- (i32) workValue;
+@end
+
+@implementation RuntimeCategoryBase
+- (i32) workValue {
+  return 17;
+}
+@end
+
+@interface RuntimeCategoryWidget : RuntimeCategoryBase
+@end
+
+@implementation RuntimeCategoryWidget
+@end
+
+@interface RuntimeCategoryWidget (Tracing) <RuntimeTraceable>
+- (i32) traceValue;
+- (bool) traceReady;
+@end
+
+@implementation RuntimeCategoryWidget (Tracing)
+- (i32) traceValue {
+  return 19;
+}
+
+- (bool) traceReady {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

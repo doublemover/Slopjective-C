@@ -7,7 +7,6 @@ conformance manifests. Markdown projections explain the machine-readable
 truth, but they do not create support claims.
 
 Authoritative inputs:
-
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 - `tests/fixtures/canonical/manifest.json`
@@ -29,22 +28,28 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 ## Support Claim Authority
 
-| Support claim                                                 | Owner phase | Behavior fixture                                                                     | Command                                                             | Matrix capability                             |
-| ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------------------- |
-| `objc3c.behavior.arc-cleanup.integration`                     | `runtime`   | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3`    | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration`            |
-| `objc3c.behavior.e2e.runnable-smoke`                          | `e2e`       | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                 | `npm run objc3c -- test-behavior-matrix`                            | `compiler.e2e.runnable-smoke`                 |
-| `objc3c.behavior.errors.try-catch-semantics`                  | `sema`      | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`                | `npm run objc3c -- test-runtime-acceptance-fast`                    | `language.errors.try-catch-semantics`         |
-| `objc3c.behavior.ir.module-emission`                          | `ir`        | `tests/native/ir/module/basic_i32_return_main.objc3`                                 | `npm run objc3c -- test-behavior-matrix`                            | `compiler.ir.module-emission`                 |
-| `objc3c.behavior.lowering.error-unwind-cleanup`               | `ir`        | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`              | `npm run objc3c -- test-runtime-acceptance-fast`                    | `compiler.lowering.error-unwind-cleanup`      |
-| `objc3c.behavior.lowering.strict-runtime-dispatch`            | `lowering`  | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`     | `npm run objc3c -- test-behavior-matrix`                            | `compiler.lowering.strict-runtime-dispatch`   |
-| `objc3c.behavior.parser.canonical-syntax`                     | `parser`    | `tests/native/parser/positive/canonical_module_main.objc3`                           | `npm run objc3c -- test-behavior-matrix`                            | `compiler.parser.core-declarations`           |
-| `objc3c.behavior.runtime.concurrency-async-actors`            | `runtime`   | `tests/native/runtime/concurrency/actor_executor_contract.objc3`                     | `npm run objc3c -- test-behavior-matrix`                            | `runtime.concurrency.async-actors`            |
-| `objc3c.behavior.runtime.error-nserror-status-bridge`         | `runtime`   | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`           | `npm run objc3c -- test-runtime-acceptance-fast`                    | `runtime.errors.nserror-status-bridge`        |
-| `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime`   | `tests/native/runtime/object_model/interface_method_table_contract.objc3`            | `npm run objc3c -- test-behavior-matrix`                            | `runtime.object-model.interface-method-table` |
-| `objc3c.behavior.runtime.strict-dispatch-error`               | `runtime`   | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3`     | `npm run objc3c -- test-behavior-matrix`                            | `runtime.dispatch.strict-error`               |
-| `objc3c.behavior.sema.effects-ownership-model`                | `sema`      | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3`      | `npm run objc3c -- test-lowering-runtime-stress`                    | `compiler.sema.effects-ownership-model`       |
-| `objc3c.behavior.sema.typed-flow`                             | `sema`      | `tests/native/sema/types/typed_i32_bool_flow.objc3`                                  | `npm run objc3c -- test-behavior-matrix`                            | `compiler.sema.typed-flow`                    |
-| `objc3c.behavior.stdlib.core-runtime-v1`                      | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke`                            | `stdlib.core.runtime-backed-v1`               |
+| Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
+| --- | --- | --- | --- | --- |
+| `objc3c.behavior.arc-cleanup.integration` | `runtime` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration` |
+| `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
+| `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
+| `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
+| `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
+| `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
+| `objc3c.behavior.parser.canonical-syntax` | `parser` | `tests/native/parser/positive/canonical_module_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.parser.core-declarations` |
+| `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
+| `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
+| `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `runtime` | `tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.bounded-query-snapshots` |
+| `objc3c.behavior.runtime.object-model-category-protocol-registration` | `runtime` | `tests/native/runtime/object_model/category_protocol_registration_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.category-protocol-registration` |
+| `objc3c.behavior.runtime.object-model-class-realization` | `runtime` | `tests/native/runtime/object_model/class_realization_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.class-realization` |
+| `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime` | `tests/native/runtime/object_model/interface_method_table_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.interface-method-table` |
+| `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `runtime` | `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.property-ivar-reflection` |
+| `objc3c.behavior.runtime.object-model-registration-replay` | `runtime` | `tests/native/runtime/object_model/registration_replay_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.registration-replay` |
+| `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
+| `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
+| `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
+| `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
+| `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
 
 ## Phase Owner Contract
 
@@ -388,28 +393,121 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.interface-method-table`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.object-model-interface-method-table`
-- Summary: The canonical runtime object-model fixture proves interface method table publication, while runtime acceptance surfaces cover private class graph, category attachment, and protocol conformance queries. The broader realization claim and any public reflection surface remain reserved.
+- Summary: The canonical runtime fixture proves interface method table publication for declared and implemented methods. Class graph, category/protocol, property/ivar, and replay behavior are claimed only by their sibling rows.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
-  - `native/objc3c/src/runtime/classes/category_attachment.cpp`
-  - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
   - `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
 - Evidence:
   - test: `tests/native/runtime/object_model/interface_method_table_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
-  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py` via `npm run objc3c -- test-runtime-acceptance-fast`
-  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py`
-  - test: `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp`
   - source: `native/objc3c/src/runtime/classes/class_graph.cpp`
+  - source: `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
+
+### Class and metaclass graph
+
+- Capability ID: `runtime.object-model.class-realization`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model-class-realization`
+- Summary: Runtime class and metaclass nodes are ordered, realized, snapshotted, and queried from the live registration graph with fail-closed superclass and root-class checks.
+- Owner modules:
+  - `native/objc3c/src/runtime/classes/class_graph.cpp`
+  - `native/objc3c/src/runtime/classes/metaclass_graph.cpp`
+  - `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
+- Evidence:
+  - test: `tests/native/runtime/object_model/class_realization_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `tests/tooling/runtime/class_realization_runtime_probe.cpp` via `npm run objc3c -- validate-object-model-conformance`
+  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - source: `native/objc3c/src/runtime/classes/class_graph.cpp`
+  - source: `native/objc3c/src/runtime/classes/metaclass_graph.cpp`
+  - source: `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
+
+### Category and protocol registration
+
+- Capability ID: `runtime.object-model.category-protocol-registration`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model-category-protocol-registration`
+- Summary: Category attachment and protocol conformance registration are deterministic runtime behaviors with positive probe coverage and strict rejection for unknown owners, duplicate requirements, and malformed metadata.
+- Owner modules:
+  - `native/objc3c/src/runtime/classes/category_attachment.cpp`
+  - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+- Evidence:
+  - test: `tests/native/runtime/object_model/category_protocol_registration_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp`
+  - test: `tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp`
   - source: `native/objc3c/src/runtime/classes/category_attachment.cpp`
   - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
-  - source: `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
+
+### Property and ivar reflection
+
+- Capability ID: `runtime.object-model.property-ivar-reflection`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model-property-ivar-reflection`
+- Summary: Property accessors, ivar layout, ownership profiles, and private reflection snapshots are derived from realized runtime storage and reflection owners.
+- Owner modules:
+  - `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
+  - `native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp`
+  - `native/objc3c/src/runtime/storage/property_lookup.cpp`
+  - `native/objc3c/src/runtime/storage/property_value_storage.cpp`
+  - `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
+  - `native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp`
+- Evidence:
+  - test: `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `tests/native/runtime/storage/property_accessor_storage_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `scripts/check_objc3c_runnable_storage_reflection_conformance.py` via `npm run objc3c -- validate-storage-reflection-conformance`
+  - test: `tests/tooling/runtime/property_layout_runtime_probe.cpp`
+  - test: `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
+  - test: `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - test: `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
+  - source: `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
+  - source: `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
+
+### Registration reset and replay
+
+- Capability ID: `runtime.object-model.registration-replay`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model-registration-replay`
+- Summary: Ordered image registration, reset, replay, and cache rebinding preserve realized class, category, protocol, property, and ivar descriptor state across the live runtime workflow.
+- Owner modules:
+  - `native/objc3c/src/runtime/images/registration.cpp`
+  - `native/objc3c/src/runtime/images/registration_api.cpp`
+  - `native/objc3c/src/runtime/images/registration_snapshots.cpp`
+  - `native/objc3c/src/runtime/state/runtime_live_state_reset.cpp`
+- Evidence:
+  - test: `tests/native/runtime/object_model/registration_replay_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `scripts/check_objc3c_runnable_object_model_conformance.py` via `npm run objc3c -- validate-object-model-conformance`
+  - test: `scripts/objc3c_runtime_acceptance/domains/registration_replay_cases/assertions.py` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `tests/tooling/fixtures/native/execution/positive/registration_reset_replay_runtime_entrypoints.objc3`
+  - source: `native/objc3c/src/runtime/images/registration.cpp`
+  - source: `native/objc3c/src/runtime/images/registration_snapshots.cpp`
+  - source: `native/objc3c/src/runtime/state/runtime_live_state_reset.cpp`
+
+### Bounded query snapshots
+
+- Capability ID: `runtime.object-model.bounded-query-snapshots`
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model-bounded-query-snapshots`
+- Summary: Testing-only query snapshots expose bounded class, protocol, selector, dispatch-cache, property, and ivar state derived from the same realized runtime graph without claiming debugger-grade public reflection.
+- Owner modules:
+  - `native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp`
+  - `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
+  - `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp`
+  - `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
+- Evidence:
+  - test: `tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
+  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_abi.py`
+  - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_reflection.py`
+  - test: `tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp`
+  - source: `native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp`
+  - source: `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp`
+  - source: `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
 
 ### Full object-model runtime realization
 
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: Parser, semantic, metadata, and owner-module evidence exists for object-model surfaces, but full live class, protocol, category, property, ivar, and reflection runtime behavior remains unclaimed until implemented rows carry executable evidence.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, and bounded query snapshots; debugger-grade public reflection ABI remains reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -442,6 +540,35 @@ the canonical manifest fixture and public npm command above.
   - source: `stdlib/semantic_policy.json`
   - source: `native/objc3c/src/runtime/stdlib/core_runtime_contract.h`
   - source: `native/objc3c/src/runtime/stdlib/core_runtime.cpp`
+
+### Runtime-backed concurrency stdlib v1
+
+- Capability ID: `stdlib.concurrency.runtime-backed-v1`
+- State: `implemented`
+- Support claims: `objc3c.behavior.stdlib.concurrency-runtime-v1`
+- Summary: The objc3.concurrency v1 helper tokens are backed by the checked-in task, cancellation, executor-hop, and actor-mailbox runtime helper boundary. This row does not claim generic Task ABI completeness, scheduler fairness guarantees, distributed actors, or broad async language closure.
+- Owner modules:
+  - `stdlib/modules/objc3.concurrency/module.json`
+  - `stdlib/modules/objc3.concurrency/module.objc3`
+  - `stdlib/advanced_architecture.json`
+  - `stdlib/advanced_helper_package_surface.json`
+  - `stdlib/semantic_policy.json`
+  - `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_group_state.cpp`
+  - `native/objc3c/src/runtime/concurrency/task_cancellation.cpp`
+  - `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
+  - `native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
+  - test: `tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp` via `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - test: `scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py` via `npm run objc3c -- validate-runnable-stdlib-advanced`
+  - source: `stdlib/modules/objc3.concurrency/module.json`
+  - source: `stdlib/modules/objc3.concurrency/module.objc3`
+  - source: `stdlib/advanced_architecture.json`
+  - source: `stdlib/advanced_helper_package_surface.json`
+  - source: `native/objc3c/src/runtime/concurrency/task_lifecycle.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/actor_mailbox.cpp`
 
 ### Advanced runtime-backed language closure
 

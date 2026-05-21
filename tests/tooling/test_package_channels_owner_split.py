@@ -8,6 +8,8 @@ import pytest
 from scripts.objc3c_package_channels.model import (
     IMPLEMENTED_CHANNELS,
     PackageChannelInputs,
+    PackageChannelPaths,
+    archive_digest_payloads,
     package_channel_paths,
     package_channels_manifest_payload,
     package_channels_report_payload,
@@ -43,6 +45,7 @@ def sample_inputs() -> PackageChannelInputs:
                 "platform_id",
                 "package_root",
                 "installer_signature",
+                "archive_digests",
                 "portable_archive",
                 "installer_archive",
                 "offline_archive",
@@ -51,6 +54,14 @@ def sample_inputs() -> PackageChannelInputs:
                 "signature_format",
                 "signing_key_id",
                 "subject",
+                "artifact",
+                "sha256",
+                "verification_command",
+                "trust_scope",
+            ],
+            "required_archive_digest_fields": [
+                "digest_format",
+                "artifact_role",
                 "artifact",
                 "sha256",
                 "verification_command",
@@ -99,6 +110,35 @@ def sample_installer_signature() -> dict[str, str]:
     }
 
 
+def sample_archive_digests() -> dict[str, dict[str, str]]:
+    return {
+        "portable_archive": {
+            "digest_format": "sha256",
+            "artifact_role": "portable-archive",
+            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/portable/objc3c-windows-x64-portable.zip",
+            "sha256": "1" * 64,
+            "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+            "trust_scope": "checked-in-artifact-digest",
+        },
+        "installer_archive": {
+            "digest_format": "sha256",
+            "artifact_role": "local-installer",
+            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/installer/objc3c-windows-x64-installer.zip",
+            "sha256": "0" * 64,
+            "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+            "trust_scope": "checked-in-artifact-digest",
+        },
+        "offline_archive": {
+            "digest_format": "sha256",
+            "artifact_role": "offline-bundle",
+            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/offline/objc3c-windows-x64-offline-bundle.zip",
+            "sha256": "2" * 64,
+            "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+            "trust_scope": "checked-in-artifact-digest",
+        },
+    }
+
+
 def test_package_channel_owner_modules_are_explicit() -> None:
     for module_name in OWNER_MODULES:
         assert importlib.import_module(module_name)
@@ -121,6 +161,7 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
         inputs=inputs,
         paths=paths,
         installer_signature=signature,
+        archive_digests=sample_archive_digests(),
     )
     report = package_channels_report_payload(inputs=inputs, paths=paths, manifest_payload=manifest)
 
@@ -132,11 +173,48 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     assert manifest["interop_loader_metadata"]["objcxx_bridge_surface_count"] == 2
     assert manifest["interop_loader_metadata"]["swift_bridge_surface_count"] == 2
     assert manifest["installer_signature"] == signature
+    assert manifest["archive_digests"]["portable_archive"]["artifact_role"] == "portable-archive"
+    assert manifest["archive_digests"]["installer_archive"]["sha256"] == signature["sha256"]
+    assert manifest["archive_digests"]["offline_archive"]["artifact"].endswith(
+        "objc3c-windows-x64-offline-bundle.zip"
+    )
     assert manifest["portable_archive"].endswith("objc3c-windows-x64-portable.zip")
     assert report["manifest_path"].endswith("objc3c-package-channels-manifest.json")
     assert report["implemented_channels"] == IMPLEMENTED_CHANNELS
     assert report["interop_loader_metadata"]["tamper_rejection_diagnostic"] == "O3PKG8054"
     assert report["installer_signature"]["signature_format"] == "objc3c-local-sha256-v1"
+    assert report["archive_digests"]["installer_archive"]["digest_format"] == "sha256"
+
+
+def test_package_channel_archive_digest_payloads_are_owned_by_model(tmp_path: Path) -> None:
+    build_root = ROOT / "tmp" / "tests" / "package-channel-digests" / tmp_path.name
+    paths = PackageChannelPaths(
+        run_id="unit-run",
+        package_root=build_root / "runnable",
+        build_root=build_root,
+        portable_archive=build_root / "portable" / "objc3c-windows-x64-portable.zip",
+        installer_image_root=build_root / "installer" / "image",
+        installer_archive=build_root / "installer" / "objc3c-windows-x64-installer.zip",
+        offline_bundle_root=build_root / "offline" / "bundle",
+        offline_archive=build_root / "offline" / "objc3c-windows-x64-offline-bundle.zip",
+        manifest_path=build_root / "objc3c-package-channels-manifest.json",
+    )
+    archive_payloads = {
+        paths.portable_archive: b"portable",
+        paths.installer_archive: b"installer",
+        paths.offline_archive: b"offline",
+    }
+    for archive_path, payload in archive_payloads.items():
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        archive_path.write_bytes(payload)
+
+    digests = archive_digest_payloads(paths)
+
+    assert set(digests) == {"portable_archive", "installer_archive", "offline_archive"}
+    assert digests["portable_archive"]["artifact_role"] == "portable-archive"
+    assert digests["installer_archive"]["artifact_role"] == "local-installer"
+    assert digests["offline_archive"]["artifact_role"] == "offline-bundle"
+    assert all(len(record["sha256"]) == 64 for record in digests.values())
 
 
 def test_package_channel_validation_fails_closed_on_required_manifest_drift() -> None:
@@ -145,6 +223,7 @@ def test_package_channel_validation_fails_closed_on_required_manifest_drift() ->
         inputs=inputs,
         paths=package_channel_paths("unit-run"),
         installer_signature=sample_installer_signature(),
+        archive_digests=sample_archive_digests(),
     )
     del manifest["offline_archive"]
 
@@ -164,9 +243,52 @@ def test_package_channel_validation_fails_closed_on_signature_drift() -> None:
             **sample_installer_signature(),
             "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/installer/drifted.zip",
         },
+        archive_digests=sample_archive_digests(),
     )
 
     with pytest.raises(RuntimeError, match="installer_signature artifact"):
+        validate_manifest_required_fields(
+            manifest_payload=manifest,
+            metadata_surface=inputs.metadata_surface,
+        )
+
+
+def test_package_channel_validation_fails_closed_on_archive_digest_drift() -> None:
+    inputs = sample_inputs()
+    archive_digests = sample_archive_digests()
+    archive_digests["offline_archive"] = {
+        **archive_digests["offline_archive"],
+        "sha256": "not-a-sha256",
+    }
+    manifest = package_channels_manifest_payload(
+        inputs=inputs,
+        paths=package_channel_paths("unit-run"),
+        installer_signature=sample_installer_signature(),
+        archive_digests=archive_digests,
+    )
+
+    with pytest.raises(RuntimeError, match=r"archive_digests\.offline_archive sha256"):
+        validate_manifest_required_fields(
+            manifest_payload=manifest,
+            metadata_surface=inputs.metadata_surface,
+        )
+
+
+def test_package_channel_validation_requires_installer_signature_digest_parity() -> None:
+    inputs = sample_inputs()
+    archive_digests = sample_archive_digests()
+    archive_digests["installer_archive"] = {
+        **archive_digests["installer_archive"],
+        "sha256": "3" * 64,
+    }
+    manifest = package_channels_manifest_payload(
+        inputs=inputs,
+        paths=package_channel_paths("unit-run"),
+        installer_signature=sample_installer_signature(),
+        archive_digests=archive_digests,
+    )
+
+    with pytest.raises(RuntimeError, match="installer_signature digest drifted"):
         validate_manifest_required_fields(
             manifest_payload=manifest,
             metadata_surface=inputs.metadata_surface,

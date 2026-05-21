@@ -1,0 +1,40 @@
+// Canonical runtime object-model fixture: image registration replay keeps
+// class, category, and property descriptors replayable from one source module.
+module RuntimeObjectModelRegistrationReplayContract;
+
+@protocol RuntimeReplayProtocol
+@required
+- (i32) replayValue;
+@end
+
+@interface RuntimeReplayRoot <RuntimeReplayProtocol>
+@property (readonly, getter=replayToken) id token;
+- (i32) replayValue;
+- (id)replayToken;
+@end
+
+@implementation RuntimeReplayRoot
+@property (readonly, getter=replayToken) id token;
+
+- (i32) replayValue {
+  return 29;
+}
+
+- (id)replayToken {
+  return 0;
+}
+@end
+
+@interface RuntimeReplayRoot (ReplayCategory)
+- (bool) replayReady;
+@end
+
+@implementation RuntimeReplayRoot (ReplayCategory)
+- (bool) replayReady {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

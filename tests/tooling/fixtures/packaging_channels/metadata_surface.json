@@ -13,6 +13,7 @@
     "implemented_channels",
     "interop_loader_metadata",
     "installer_signature",
+    "archive_digests",
     "portable_archive",
     "installer_archive",
     "offline_archive"
@@ -30,6 +31,14 @@
     "signature_format",
     "signing_key_id",
     "subject",
+    "artifact",
+    "sha256",
+    "verification_command",
+    "trust_scope"
+  ],
+  "required_archive_digest_fields": [
+    "digest_format",
+    "artifact_role",
     "artifact",
     "sha256",
     "verification_command",

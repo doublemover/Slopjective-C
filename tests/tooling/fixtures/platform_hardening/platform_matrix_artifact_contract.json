@@ -41,6 +41,7 @@
     "current_host",
     "required_tool_probes",
     "claim_boundary",
+    "unsupported_host_fail_closed",
     "publication_surface"
   ],
   "required_publication_surface_fields": [

@@ -9,7 +9,7 @@ from typing import Any
 
 from objc3c_tooling.paths import repo_rel
 
-from .execution import compile_source
+from .execution import compile_source, run_runtime_or_execution_source
 from .fixtures import load_manifest, validate_artifact_surface
 from .minimization import reduce_source
 from .models import MinCase
@@ -24,6 +24,26 @@ from .reporting import (
     write_json,
 )
 
+RUNTIME_EXECUTION_SUBSYSTEMS = {"runtime", "execution"}
+
+
+def evaluate_source(
+    compiler: Path,
+    case: MinCase,
+    source_text: str,
+    work_dir: Path,
+    timeout_sec: float,
+) -> dict[str, Any]:
+    if case.subsystem in RUNTIME_EXECUTION_SUBSYSTEMS:
+        return run_runtime_or_execution_source(
+            compiler,
+            case.source_path,
+            source_text,
+            work_dir,
+            timeout_sec,
+        )
+    return compile_source(compiler, source_text, work_dir, timeout_sec)
+
 
 def materialize_case(
     compiler: Path,
@@ -35,7 +55,7 @@ def materialize_case(
     original_source = case.source_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     failure_dir = failure_root / case.case_id
     minimized_dir = minimized_root / case.case_id
-    baseline = compile_source(compiler, original_source, failure_dir / "baseline", timeout_sec)
+    baseline = evaluate_source(compiler, case, original_source, failure_dir / "baseline", timeout_sec)
     if baseline["returncode"] == 0:
         raise RuntimeError(f"stress minimization case unexpectedly compiled cleanly: {case.case_id}")
     failure_dir.mkdir(parents=True, exist_ok=True)

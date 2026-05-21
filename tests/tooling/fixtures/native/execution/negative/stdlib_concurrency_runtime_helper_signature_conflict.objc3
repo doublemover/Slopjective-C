@@ -1,0 +1,11 @@
+// Negative execution fixture: stdlib concurrency runtime helper contracts reject ABI drift.
+module StdlibConcurrencyRuntimeHelperSignatureConflict;
+
+fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+fn objc3_runtime_spawn_task_i32(task_kind: bool, executor_tag: i32) -> i32 {
+  return executor_tag;
+}
+
+fn main() -> i32 {
+  return objc3_runtime_spawn_task_i32(1, 4);
+}

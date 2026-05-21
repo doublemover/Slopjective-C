@@ -22,6 +22,32 @@
     "executor-hop",
     "actor-mailbox"
   ],
+  "runtime_abi": [
+    "objc3_runtime_spawn_task_i32",
+    "objc3_runtime_enter_task_group_scope_i32",
+    "objc3_runtime_add_task_group_task_i32",
+    "objc3_runtime_wait_task_group_next_i32",
+    "objc3_runtime_cancel_task_group_i32",
+    "objc3_runtime_task_is_cancelled_i32",
+    "objc3_runtime_task_on_cancel_i32",
+    "objc3_runtime_executor_hop_i32",
+    "objc3_runtime_actor_bind_executor_i32",
+    "objc3_runtime_actor_mailbox_enqueue_i32",
+    "objc3_runtime_actor_mailbox_drain_next_i32"
+  ],
+  "runtime_abi_signatures": {
+    "objc3_runtime_spawn_task_i32": "extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32",
+    "objc3_runtime_enter_task_group_scope_i32": "extern fn objc3_runtime_enter_task_group_scope_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_add_task_group_task_i32": "extern fn objc3_runtime_add_task_group_task_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_wait_task_group_next_i32": "extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_cancel_task_group_i32": "extern fn objc3_runtime_cancel_task_group_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_task_is_cancelled_i32": "extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_task_on_cancel_i32": "extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32",
+    "objc3_runtime_executor_hop_i32": "extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32",
+    "objc3_runtime_actor_bind_executor_i32": "extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32",
+    "objc3_runtime_actor_mailbox_enqueue_i32": "extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32",
+    "objc3_runtime_actor_mailbox_drain_next_i32": "extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32"
+  },
   "exports": [
     "objc3_concurrency_spawn_token",
     "objc3_concurrency_child_spawn_token",

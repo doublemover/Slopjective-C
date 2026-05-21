@@ -25,6 +25,11 @@ SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" 
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 INSTALL_RECEIPT_SCHEMA = ROOT / "schemas" / "objc3c-package-install-receipt-v1.schema.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summary.json"
+ARCHIVE_DIGEST_FIELDS = {
+    "portable_archive": "portable-archive",
+    "installer_archive": "local-installer",
+    "offline_archive": "offline-bundle",
+}
 
 
 
@@ -59,6 +64,29 @@ def load_valid_install_receipt(receipt_path: Path, receipt_schema: dict[str, Any
     expect(receipt["package_bridge"] == "objc3c", "install receipt package bridge drifted")
     expect(receipt["install_command"] == "npm run objc3c -- build-package-channels", "install receipt command drifted")
     return receipt
+
+
+def validate_archive_digest(
+    *,
+    manifest: dict[str, Any],
+    archive_digests: dict[str, Any],
+    archive_field: str,
+    archive_path: Path,
+    artifact_role: str,
+) -> dict[str, Any]:
+    digest_record = archive_digests.get(archive_field)
+    expect(isinstance(digest_record, dict), f"archive digest missing {archive_field}")
+    expect(digest_record.get("digest_format") == "sha256", f"{archive_field} digest format drifted")
+    expect(digest_record.get("artifact_role") == artifact_role, f"{archive_field} digest role drifted")
+    expect(digest_record.get("artifact") == manifest.get(archive_field), f"{archive_field} digest artifact drifted")
+    expect(digest_record.get("artifact") == repo_rel(archive_path), f"{archive_field} digest artifact path drifted")
+    expect(digest_record.get("sha256") == sha256_file(archive_path), f"{archive_field} digest drifted")
+    expect(
+        digest_record.get("verification_command") == "npm run objc3c -- validate-packaging-channels-end-to-end",
+        f"{archive_field} digest verification command drifted",
+    )
+    expect(digest_record.get("trust_scope") == "checked-in-artifact-digest", f"{archive_field} digest trust scope drifted")
+    return digest_record
 
 
 
@@ -99,6 +127,27 @@ def main() -> int:
     expect(installer_signature.get("artifact") == repo_rel(installer_archive), "installer signature artifact drifted")
     expect(installer_signature.get("sha256") == sha256_file(installer_archive), "installer signature digest drifted")
     expect(installer_signature.get("verification_command") == "npm run objc3c -- validate-packaging-channels-end-to-end", "installer signature verification command drifted")
+    archive_digests = manifest.get("archive_digests", {})
+    expect(isinstance(archive_digests, dict), "archive_digests missing from package channels manifest")
+    archive_paths = {
+        "portable_archive": portable_archive,
+        "installer_archive": installer_archive,
+        "offline_archive": offline_archive,
+    }
+    validated_archive_digests = {
+        archive_field: validate_archive_digest(
+            manifest=manifest,
+            archive_digests=archive_digests,
+            archive_field=archive_field,
+            archive_path=archive_paths[archive_field],
+            artifact_role=artifact_role,
+        )
+        for archive_field, artifact_role in ARCHIVE_DIGEST_FIELDS.items()
+    }
+    expect(
+        installer_signature.get("sha256") == validated_archive_digests["installer_archive"]["sha256"],
+        "installer signature digest drifted from installer archive digest",
+    )
 
     extract_zip(portable_archive, portable_extract_root)
     expect((portable_extract_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json").is_file(), "portable archive missing runnable package manifest")
@@ -169,6 +218,7 @@ def main() -> int:
         "installer_archive": repo_rel(installer_archive),
         "offline_archive": repo_rel(offline_archive),
         "installer_signature": installer_signature,
+        "archive_digests": validated_archive_digests,
         "install_root": repo_rel(install_root),
         "offline_install_root": repo_rel(offline_install_root),
     }

@@ -66,6 +66,149 @@ TOKEN_REPLACEMENTS = {
     "NO": ("objc2-bool-literal", "false"),
     "NULL": ("objc2-null-literal", "nil"),
 }
+ISSUE_IDS = [8077, 8078, 8157]
+REQUIRED_DIAGNOSTIC_FIELDS = (
+    "code",
+    "severity",
+    "message",
+    "category",
+    "explanation",
+    "next_step",
+    "surface",
+    "range",
+)
+DIAGNOSTIC_METADATA: dict[str, dict[str, str]] = {
+    "O3M002": {
+        "category": "input-contract",
+        "explanation": "The input uses an unsupported migration contract.",
+        "next_step": "Use contract_id objc3c.migration_analyzer.input.v1.",
+    },
+    "O3M003": {
+        "category": "input-contract",
+        "explanation": "The input does not name a source file to inspect.",
+        "next_step": "Set source_path to a checked-in source file.",
+    },
+    "O3M005": {
+        "category": "input-contract",
+        "explanation": "The source language is outside the migration analyzer scope.",
+        "next_step": "Use objective-c-2, swift, c++, or mixed.",
+    },
+    "O3M006": {
+        "category": "input-contract",
+        "explanation": "The target profile is not the canonical Objective-C 3 profile.",
+        "next_step": "Set target_profile to objc3-canonical.",
+    },
+    "O3M007": {
+        "category": "source-parse",
+        "explanation": "The migration source has malformed delimiters or source text.",
+        "next_step": "Fix the reported source span before migration analysis.",
+    },
+    "O3M008": {
+        "category": "input-contract",
+        "explanation": "Requested migration surfaces are not encoded as strings.",
+        "next_step": "List requested_surfaces as string values.",
+    },
+    "O3M009": {
+        "category": "surface-contract",
+        "explanation": "The input requests migration surfaces this analyzer does not validate.",
+        "next_step": "Remove unknown requested_surfaces entries.",
+    },
+    "O3M010": {
+        "category": "surface-contract",
+        "explanation": "Required migration surfaces are absent from the request.",
+        "next_step": "Add every required surface before rerunning analysis.",
+    },
+    "O3M011": {
+        "category": "input-contract",
+        "explanation": "The module name is not a valid identifier.",
+        "next_step": "Use an identifier-compatible module_name.",
+    },
+    "O3M012": {
+        "category": "foreign-interface",
+        "explanation": "Foreign interface declarations are missing.",
+        "next_step": "Declare Swift and C++ foreign interfaces.",
+    },
+    "O3M013": {
+        "category": "foreign-interface",
+        "explanation": "A foreign interface entry is not an object.",
+        "next_step": "Replace the entry with a language, module, and symbols object.",
+    },
+    "O3M014": {
+        "category": "foreign-interface",
+        "explanation": "A foreign interface language is unsupported.",
+        "next_step": "Use swift, c++, c, or objective-c-2.",
+    },
+    "O3M015": {
+        "category": "foreign-interface",
+        "explanation": "A foreign interface entry has no module owner.",
+        "next_step": "Add the module field for the foreign interface.",
+    },
+    "O3M016": {
+        "category": "foreign-interface",
+        "explanation": "A foreign interface entry has no symbol list to validate.",
+        "next_step": "List at least one non-empty foreign symbol.",
+    },
+    "O3M017": {
+        "category": "foreign-interface",
+        "explanation": "A required Swift or C++ boundary is not declared.",
+        "next_step": "Add the missing Swift or C++ foreign interface.",
+    },
+    "O3M018": {
+        "category": "packaged-execution",
+        "explanation": "Packaged execution evidence does not name a manifest.",
+        "next_step": "Set packaged_execution.manifest to checked-in package evidence.",
+    },
+    "O3M019": {
+        "category": "repository-path",
+        "explanation": "The requested migration source path was not found.",
+        "next_step": "Point source_path at an existing checked-in file.",
+    },
+    "O3M020": {
+        "category": "repository-path",
+        "explanation": "The source path is outside the repository boundary.",
+        "next_step": "Use a repository-relative source_path.",
+    },
+    "O3M021": {
+        "category": "packaged-execution",
+        "explanation": "The packaged execution manifest was not found.",
+        "next_step": "Point packaged_execution.manifest at an existing checked-in file.",
+    },
+    "O3M022": {
+        "category": "repository-path",
+        "explanation": "The packaged execution manifest path is outside the repository boundary.",
+        "next_step": "Use a repository-relative manifest path.",
+    },
+    "O3M101": {
+        "category": "surface-evidence",
+        "explanation": "Header import or export evidence was not observed.",
+        "next_step": "Add checked-in import or export evidence for the migrated source.",
+    },
+    "O3M102": {
+        "category": "surface-evidence",
+        "explanation": "ABI-sensitive type alignment evidence was not observed.",
+        "next_step": "Add source evidence for migrated ABI-sensitive types.",
+    },
+    "O3M103": {
+        "category": "surface-evidence",
+        "explanation": "Foreign type diagnostic evidence was not observed.",
+        "next_step": "Add checked-in Swift, C++, or extern boundary evidence.",
+    },
+    "O3M104": {
+        "category": "surface-evidence",
+        "explanation": "Mixed-image loading evidence was not observed.",
+        "next_step": "Declare both Swift and C++ boundaries or add mixed-source evidence.",
+    },
+    "O3M105": {
+        "category": "surface-evidence",
+        "explanation": "Packaged execution evidence was not observed.",
+        "next_step": "Add an existing packaged execution manifest.",
+    },
+    "O3M210": {
+        "category": "unsafe-loading",
+        "explanation": "The source contains an unsafe mixed-image loading marker.",
+        "next_step": "Replace the marker with explicit imported-module ownership.",
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -78,10 +221,14 @@ class MigrationDiagnostic:
     surface: str = "migration-input"
 
     def as_payload(self) -> dict[str, object]:
+        metadata = DIAGNOSTIC_METADATA[self.code]
         return {
             "code": self.code,
             "severity": self.severity,
             "message": self.message,
+            "category": metadata["category"],
+            "explanation": metadata["explanation"],
+            "next_step": metadata["next_step"],
             "surface": self.surface,
             "range": {
                 "start": {"line": self.line, "column": self.column},
@@ -148,10 +295,39 @@ def slugify(path_text: str) -> str:
     return f"{safe or 'migration-source'}-{digest}"
 
 
+def diagnostic_payloads(diagnostics: list[MigrationDiagnostic]) -> list[dict[str, object]]:
+    payloads = [diagnostic.as_payload() for diagnostic in diagnostics]
+    for payload in payloads:
+        missing = set(REQUIRED_DIAGNOSTIC_FIELDS) - set(payload)
+        if missing:
+            code = payload.get("code", "<unknown>")
+            raise ValueError(f"migration diagnostic {code} missing metadata fields: {', '.join(sorted(missing))}")
+    return payloads
+
+
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     contract = load_json_object(path)
     if contract.get("contract_id") != CONTRACT_ID:
         raise ValueError(f"migration analyzer contract_id drifted: {path}")
+    required_fields = contract.get("required_diagnostic_fields")
+    if required_fields != list(REQUIRED_DIAGNOSTIC_FIELDS):
+        raise ValueError(f"migration analyzer diagnostic field contract drifted: {path}")
+    metadata_by_code = {
+        item.get("code"): item
+        for item in contract.get("diagnostic_metadata", [])
+        if isinstance(item, dict)
+    }
+    missing_metadata = sorted(set(contract.get("diagnostic_codes", [])) - set(metadata_by_code))
+    if missing_metadata:
+        raise ValueError(f"migration analyzer diagnostic metadata missing: {', '.join(missing_metadata)}")
+    for code in contract.get("diagnostic_codes", []):
+        item = metadata_by_code[code]
+        expected = DIAGNOSTIC_METADATA.get(code)
+        if not expected:
+            raise ValueError(f"migration analyzer metadata table missing {code}: {path}")
+        for field in ("category", "explanation", "next_step"):
+            if item.get(field) != expected[field]:
+                raise ValueError(f"migration analyzer diagnostic metadata drifted for {code}.{field}: {path}")
     return contract
 
 
@@ -493,7 +669,7 @@ def build_report_payload(
         "contract_id": ANALYSIS_REPORT_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS" if not diagnostics else "FAIL",
-        "issue_ids": [8077, 8078],
+        "issue_ids": ISSUE_IDS,
         "input_path": repo_rel(input_path),
         "source_path": repo_rel(source_path) if source_path else None,
         "contract_path": repo_rel(CONTRACT_PATH),
@@ -503,7 +679,7 @@ def build_report_payload(
         "requested_surfaces": payload.get("requested_surfaces", []),
         "observed_surfaces": surfaces,
         "packaged_execution_manifest": repo_rel(manifest_path) if manifest_path else None,
-        "diagnostics": [diagnostic.as_payload() for diagnostic in diagnostics],
+        "diagnostics": diagnostic_payloads(diagnostics),
         "source_sha256": sha256_text(source_text),
         "source_contracts": contract.get("source_contracts", []),
         "public_actions": contract.get("public_actions", []),
@@ -585,7 +761,7 @@ def build_rewrite_workflow_report(
         "contract_id": REWRITE_REPORT_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS" if analysis.ok and rewritten_text is not None else "FAIL",
-        "issue_ids": [8077, 8078],
+        "issue_ids": ISSUE_IDS,
         "input_path": repo_rel(resolve_repo_path_inside(input_path)),
         "analysis_report_path": repo_rel(analysis_report_path) if analysis_report_path else None,
         "source_path": analysis.payload.get("source_path"),

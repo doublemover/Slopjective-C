@@ -10,7 +10,13 @@ from capability_docs_validator.support_links import _row_support_claims
 OBJECT_MODEL_IMPLEMENTED_PREFIX = "runtime.object-model."
 OBJECT_MODEL_SUPPORT_CLAIM_PREFIX = "objc3c.behavior.runtime.object-model-"
 OBJECT_MODEL_RUNTIME_FIXTURE_PREFIX = "tests/native/runtime/object_model/"
-OBJECT_MODEL_RUNTIME_SOURCE_PREFIX = "native/objc3c/src/runtime/classes/"
+OBJECT_MODEL_RUNTIME_SOURCE_PREFIXES = (
+    "native/objc3c/src/runtime/classes/",
+    "native/objc3c/src/runtime/images/",
+    "native/objc3c/src/runtime/reflection/",
+    "native/objc3c/src/runtime/state/",
+    "native/objc3c/src/runtime/storage/",
+)
 OBJECT_MODEL_FULL_REALIZATION_ID = "runtime.object-model.full-realization"
 OBJECT_MODEL_BROAD_SCOPE_PHRASES = (
     "full object-model",
@@ -113,11 +119,11 @@ def _validate_object_model_scope(rows: list[dict[str, Any]]) -> None:
                 f"{OBJECT_MODEL_RUNTIME_FIXTURE_PREFIX}"
             )
         if not any(
-            path.startswith(OBJECT_MODEL_RUNTIME_SOURCE_PREFIX)
+            path.startswith(OBJECT_MODEL_RUNTIME_SOURCE_PREFIXES)
             for path in [*evidence_paths, *owner_paths]
         ):
             raise CapabilityDocsError(
-                f"{capability_id} object-model implemented rows require runtime "
-                f"class/object-model source ownership under "
-                f"{OBJECT_MODEL_RUNTIME_SOURCE_PREFIX}"
+                f"{capability_id} object-model implemented rows require "
+                "runtime object-model source ownership under "
+                + ", ".join(OBJECT_MODEL_RUNTIME_SOURCE_PREFIXES)
             )
