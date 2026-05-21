@@ -20,6 +20,9 @@
     "public_status",
     "source_truth",
     "package_surface",
+    "fixture_boundary",
+    "external_validation_policy",
+    "release_candidate_profile",
     "phase_taxonomy",
     "public_profiles",
     "suite_cases",
@@ -108,6 +111,197 @@
         "offline_compatible": {
           "type": "boolean",
           "const": true
+        }
+      }
+    },
+    "fixture_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_fixture_roots",
+        "internal_only_roots",
+        "expected_output_policy"
+      ],
+      "properties": {
+        "public_fixture_roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "internal_only_roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "expected_output_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "checked_in_expected_outputs_required",
+            "tmp_expected_outputs_allowed",
+            "internal_owner_debug_fixtures_public_claim_allowed",
+            "public_case_expected_fields"
+          ],
+          "properties": {
+            "checked_in_expected_outputs_required": {
+              "type": "boolean",
+              "const": true
+            },
+            "tmp_expected_outputs_allowed": {
+              "type": "boolean",
+              "const": false
+            },
+            "internal_owner_debug_fixtures_public_claim_allowed": {
+              "type": "boolean",
+              "const": false
+            },
+            "public_case_expected_fields": {
+              "type": "array",
+              "minItems": 5,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "expectation",
+                  "runnable_command",
+                  "platform_requirements",
+                  "positive_evidence",
+                  "negative_evidence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "external_validation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_surface",
+        "trust_policy",
+        "intake_manifest",
+        "quarantine_manifest",
+        "support_claim_gate",
+        "replay_command",
+        "publication_command",
+        "admitted_trust_states",
+        "rejected_trust_states",
+        "capability_truth_policy",
+        "external_evidence_can_create_public_support_claim",
+        "tmp_artifact_support_allowed"
+      ],
+      "properties": {
+        "source_surface": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "trust_policy": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "intake_manifest": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "quarantine_manifest": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "support_claim_gate": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "replay_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "publication_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "admitted_trust_states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "accepted"
+            ]
+          }
+        },
+        "rejected_trust_states": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "quarantined",
+              "rejected"
+            ]
+          }
+        },
+        "capability_truth_policy": {
+          "type": "string",
+          "minLength": 32
+        },
+        "external_evidence_can_create_public_support_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "release_candidate_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "gate_command",
+        "runnable_gate_command",
+        "scorecard_command",
+        "package_replay_case_id",
+        "required_phase_ids",
+        "requires_all_public_stable_cases",
+        "consumes_external_validation_policy",
+        "tmp_artifact_support_allowed"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "const": "release-candidate"
+        },
+        "gate_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "runnable_gate_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "scorecard_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "package_replay_case_id": {
+          "type": "string",
+          "pattern": "^public\\.[a-z0-9.-]+$"
+        },
+        "required_phase_ids": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "$ref": "#/$defs/phaseId"
+          }
+        },
+        "requires_all_public_stable_cases": {
+          "type": "boolean",
+          "const": true
+        },
+        "consumes_external_validation_policy": {
+          "type": "boolean",
+          "const": true
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
         }
       }
     },

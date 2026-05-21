@@ -11,6 +11,7 @@ from .application_architecture import (
 from .application_conformance import (
     action_check_conformance_minima,
     action_validate_conformance_corpus,
+    action_validate_public_conformance_suite,
     action_validate_runnable_conformance_corpus,
 )
 from .application_showcase import (
@@ -38,6 +39,7 @@ from .application_surface_paths import (
     CONFORMANCE_MINIMA_PS1,
     GETTING_STARTED_INTEGRATION_PY,
     MATERIALIZE_STDLIB_PY,
+    PUBLIC_CONFORMANCE_SUITE_MANIFEST_PY,
     RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY,
     RUNNABLE_CONFORMANCE_CORPUS_E2E_PY,
     RUNNABLE_SHOWCASE_E2E_PY,

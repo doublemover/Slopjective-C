@@ -19,6 +19,74 @@
     "public_command_prefix": "npm run objc3c -- ",
     "offline_compatible": true
   },
+  "fixture_boundary": {
+    "public_fixture_roots": [
+      "docs/support",
+      "native/objc3c/src",
+      "schemas",
+      "stdlib/modules",
+      "tests/conformance",
+      "tests/native",
+      "tests/tooling"
+    ],
+    "internal_only_roots": [
+      "tests/conformance/spec_open_issues",
+      "tests/conformance/workpacks",
+      "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers"
+    ],
+    "expected_output_policy": {
+      "checked_in_expected_outputs_required": true,
+      "tmp_expected_outputs_allowed": false,
+      "internal_owner_debug_fixtures_public_claim_allowed": false,
+      "public_case_expected_fields": [
+        "expectation",
+        "runnable_command",
+        "platform_requirements",
+        "positive_evidence",
+        "negative_evidence"
+      ]
+    }
+  },
+  "external_validation_policy": {
+    "source_surface": "tests/tooling/fixtures/external_validation/source_surface.json",
+    "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
+    "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
+    "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+    "support_claim_gate": "tests/tooling/fixtures/external_validation/support_claim_gate.json",
+    "replay_command": "npm run objc3c -- test-external-validation-replay",
+    "publication_command": "npm run objc3c -- validate-external-validation-integration",
+    "admitted_trust_states": [
+      "accepted"
+    ],
+    "rejected_trust_states": [
+      "candidate",
+      "quarantined",
+      "rejected"
+    ],
+    "capability_truth_policy": "external validation can corroborate checked-in public conformance cases only after accepted replay through the external-validation support claim gate; it cannot override capability matrix, evidence map, or suite manifest truth",
+    "external_evidence_can_create_public_support_claim": false,
+    "tmp_artifact_support_allowed": false
+  },
+  "release_candidate_profile": {
+    "profile_id": "release-candidate",
+    "gate_command": "npm run objc3c -- validate-release-candidate-conformance",
+    "runnable_gate_command": "npm run objc3c -- validate-runnable-release-candidate",
+    "scorecard_command": "npm run objc3c -- validate-public-conformance-reporting",
+    "package_replay_case_id": "public.conformance.public-stable-suite-package-replay",
+    "required_phase_ids": [
+      "parser",
+      "sema",
+      "lowering",
+      "ir",
+      "runtime",
+      "stdlib",
+      "package",
+      "release_candidate"
+    ],
+    "requires_all_public_stable_cases": true,
+    "consumes_external_validation_policy": true,
+    "tmp_artifact_support_allowed": false
+  },
   "phase_taxonomy": [
     {
       "phase_id": "parser",

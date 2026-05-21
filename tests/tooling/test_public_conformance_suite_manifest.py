@@ -61,6 +61,16 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
     assert summary["phase_count"] == 8
     assert summary["profile_count"] == 3
     assert summary["packageable"] is True
+    assert summary["fixture_boundary"] == {
+        "public_fixture_root_count": 7,
+        "internal_only_root_count": 3,
+        "checked_in_expected_outputs_required": True,
+    }
+    assert summary["accepted_external_validation_entries"] == 3
+    assert summary["rejected_external_validation_entries"] == 3
+    assert summary["release_candidate_public_stable_case_count"] == 10
+    assert summary["release_candidate_required_phase_count"] == 8
+    assert summary["release_candidate_gate_command"] == "npm run objc3c -- validate-release-candidate-conformance"
     assert summary["phase_case_counts"]["release_candidate"] == 2
     assert summary["phase_case_counts"]["sema"] == 2
     assert "npm run objc3c -- validate-release-candidate-conformance" in summary["public_commands"]
@@ -107,12 +117,83 @@ def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_ev
     assert evidence["source_manifest"] == "tests/conformance/public_suite_manifest.json"
 
 
+def test_public_conformance_suite_manifest_declares_external_validation_intake_policy() -> None:
+    manifest = load_manifest()
+    policy = manifest["external_validation_policy"]
+    release_profile = manifest["release_candidate_profile"]
+
+    assert policy["source_surface"] == "tests/tooling/fixtures/external_validation/source_surface.json"
+    assert policy["trust_policy"] == "tests/tooling/fixtures/external_validation/trust_policy.json"
+    assert policy["intake_manifest"] == "tests/tooling/fixtures/external_validation/intake_manifest.json"
+    assert policy["quarantine_manifest"] == "tests/tooling/fixtures/external_validation/quarantine_manifest.json"
+    assert policy["support_claim_gate"] == "tests/tooling/fixtures/external_validation/support_claim_gate.json"
+    assert policy["admitted_trust_states"] == ["accepted"]
+    assert set(policy["rejected_trust_states"]) == {"candidate", "quarantined", "rejected"}
+    assert policy["external_evidence_can_create_public_support_claim"] is False
+    assert policy["tmp_artifact_support_allowed"] is False
+    assert "cannot override capability matrix" in policy["capability_truth_policy"]
+
+    assert release_profile["profile_id"] == "release-candidate"
+    assert release_profile["requires_all_public_stable_cases"] is True
+    assert release_profile["consumes_external_validation_policy"] is True
+    assert release_profile["tmp_artifact_support_allowed"] is False
+    assert release_profile["package_replay_case_id"] == "public.conformance.public-stable-suite-package-replay"
+
+
 def test_public_conformance_suite_manifest_rejects_compatibility_mode(
     tmp_path: Path,
 ) -> None:
     checker = load_checker()
     manifest = load_manifest()
     manifest["strict_rejection_policy"]["compatibility_mode_allowed"] = True
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_external_validation_claim_creation(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["external_validation_policy"]["external_evidence_can_create_public_support_claim"] = True
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_internal_only_public_case_source(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    manifest["suite_cases"][0]["positive_evidence"] = [
+        "tests/conformance/spec_open_issues/README.md"
+    ]
+
+    checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_manifest(checker.MANIFEST_PATH, manifest)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_suite_manifest_rejects_release_candidate_subset(
+    tmp_path: Path,
+) -> None:
+    checker = load_checker()
+    manifest = load_manifest()
+    case = case_by_id(manifest, "public.stdlib.core-runtime-backed-v1")
+    case["profile_ids"] = ["stdlib-package"]
 
     checker.MANIFEST_PATH = tmp_path / "public_suite_manifest.json"
     checker.SUMMARY_PATH = tmp_path / "summary.json"

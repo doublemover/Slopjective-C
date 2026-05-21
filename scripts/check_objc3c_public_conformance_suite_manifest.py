@@ -49,6 +49,13 @@ def require_file(relative_path: str, *, kind: str) -> Path:
     return path
 
 
+def require_existing_path(relative_path: str, *, kind: str) -> Path:
+    path = repo_path(relative_path)
+    if not path.exists():
+        raise RuntimeError(f"missing {kind}: {relative_path}")
+    return path
+
+
 def require_object(value: Any, *, field: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RuntimeError(f"{field} must be an object")
@@ -130,6 +137,71 @@ def validate_package_surface(manifest: dict[str, Any]) -> None:
             raise RuntimeError(f"package_surface.{key} cannot be a shared support-doc path")
 
 
+def normalized_repo_path(relative_path: str) -> str:
+    return relative_path.replace("\\", "/").strip("/")
+
+
+def path_is_inside(relative_path: str, root_path: str) -> bool:
+    path = normalized_repo_path(relative_path)
+    root = normalized_repo_path(root_path)
+    return path == root or path.startswith(f"{root}/")
+
+
+def validate_fixture_boundary(manifest: dict[str, Any]) -> dict[str, Any]:
+    boundary = require_object(manifest.get("fixture_boundary"), field="fixture_boundary")
+    public_roots = [
+        normalized_repo_path(str(root))
+        for root in require_list(boundary.get("public_fixture_roots"), field="public_fixture_roots")
+    ]
+    internal_roots = [
+        normalized_repo_path(str(root))
+        for root in require_list(boundary.get("internal_only_roots"), field="internal_only_roots")
+    ]
+    if len(set(public_roots)) != len(public_roots):
+        raise RuntimeError("fixture_boundary.public_fixture_roots contains duplicate roots")
+    if len(set(internal_roots)) != len(internal_roots):
+        raise RuntimeError("fixture_boundary.internal_only_roots contains duplicate roots")
+    for root in public_roots:
+        require_existing_path(root, kind="public fixture root")
+    for root in internal_roots:
+        require_existing_path(root, kind="internal-only fixture root")
+
+    policy = require_object(boundary.get("expected_output_policy"), field="expected_output_policy")
+    required_false = (
+        "tmp_expected_outputs_allowed",
+        "internal_owner_debug_fixtures_public_claim_allowed",
+    )
+    if policy.get("checked_in_expected_outputs_required") is not True:
+        raise RuntimeError("fixture_boundary.expected_output_policy.checked_in_expected_outputs_required must be true")
+    for field in required_false:
+        if policy.get(field) is not False:
+            raise RuntimeError(f"fixture_boundary.expected_output_policy.{field} must be false")
+    expected_fields = set(
+        str(field)
+        for field in require_list(
+            policy.get("public_case_expected_fields"),
+            field="fixture_boundary.expected_output_policy.public_case_expected_fields",
+        )
+    )
+    missing_expected_fields = {
+        "expectation",
+        "runnable_command",
+        "platform_requirements",
+        "positive_evidence",
+        "negative_evidence",
+    } - expected_fields
+    if missing_expected_fields:
+        raise RuntimeError(
+            "fixture_boundary.expected_output_policy.public_case_expected_fields missing "
+            + ", ".join(sorted(missing_expected_fields))
+        )
+    return {
+        "public_fixture_roots": public_roots,
+        "internal_only_roots": internal_roots,
+        "checked_in_expected_outputs_required": True,
+    }
+
+
 def validate_strict_rejection_policy(manifest: dict[str, Any]) -> dict[str, bool]:
     policy = require_object(manifest.get("strict_rejection_policy"), field="strict_rejection_policy")
     required_false = (
@@ -146,6 +218,115 @@ def validate_strict_rejection_policy(manifest: dict[str, Any]) -> dict[str, bool
         if state not in fail_closed_states:
             raise RuntimeError(f"strict_rejection_policy.fail_closed_states missing {state}")
     return {field: bool(policy[field]) for field in required_false}
+
+
+def validate_external_validation_policy(manifest: dict[str, Any]) -> dict[str, Any]:
+    policy = require_object(manifest.get("external_validation_policy"), field="external_validation_policy")
+    if policy.get("external_evidence_can_create_public_support_claim") is not False:
+        raise RuntimeError("external_validation_policy.external_evidence_can_create_public_support_claim must be false")
+    if policy.get("tmp_artifact_support_allowed") is not False:
+        raise RuntimeError("external_validation_policy.tmp_artifact_support_allowed must be false")
+
+    for command_key in ("replay_command", "publication_command"):
+        command = str(policy.get(command_key, ""))
+        if not command.startswith(PUBLIC_COMMAND_PREFIX):
+            raise RuntimeError(f"external_validation_policy.{command_key} is not public")
+
+    source_surface_path = str(policy["source_surface"])
+    trust_policy_path = str(policy["trust_policy"])
+    intake_manifest_path = str(policy["intake_manifest"])
+    quarantine_manifest_path = str(policy["quarantine_manifest"])
+    support_claim_gate_path = str(policy["support_claim_gate"])
+    for key, path in (
+        ("source_surface", source_surface_path),
+        ("trust_policy", trust_policy_path),
+        ("intake_manifest", intake_manifest_path),
+        ("quarantine_manifest", quarantine_manifest_path),
+        ("support_claim_gate", support_claim_gate_path),
+    ):
+        require_file(path, kind=f"external validation {key}")
+
+    source_surface = load_json(repo_path(source_surface_path))
+    trust_policy = load_json(repo_path(trust_policy_path))
+    intake_manifest = load_json(repo_path(intake_manifest_path))
+    quarantine_manifest = load_json(repo_path(quarantine_manifest_path))
+    support_claim_gate = load_json(repo_path(support_claim_gate_path))
+
+    expected_surface_paths = {
+        "trust_policy": trust_policy_path,
+        "intake_manifest": intake_manifest_path,
+        "quarantine_manifest": quarantine_manifest_path,
+        "support_claim_gate": support_claim_gate_path,
+    }
+    for key, expected_path in expected_surface_paths.items():
+        if source_surface.get(key) != expected_path:
+            raise RuntimeError(f"external_validation_policy.{key} is not mirrored by source_surface")
+
+    admitted_states = set(
+        str(state)
+        for state in require_list(policy.get("admitted_trust_states"), field="admitted_trust_states")
+    )
+    rejected_states = set(
+        str(state)
+        for state in require_list(policy.get("rejected_trust_states"), field="rejected_trust_states")
+    )
+    if admitted_states != {"accepted"}:
+        raise RuntimeError("external_validation_policy.admitted_trust_states must be exactly accepted")
+    if not {"candidate", "quarantined", "rejected"}.issubset(rejected_states):
+        raise RuntimeError("external_validation_policy.rejected_trust_states must include candidate, quarantined, rejected")
+    if set(trust_policy.get("publishable_trust_states", [])) != admitted_states:
+        raise RuntimeError("external trust policy publishable states drifted from public suite admission policy")
+    if set(trust_policy.get("capability_truth_trust_states", [])) != admitted_states:
+        raise RuntimeError("external trust policy capability truth states drifted from public suite admission policy")
+    if not rejected_states.issubset(set(trust_policy.get("forbidden_capability_truth_states", []))):
+        raise RuntimeError("external trust policy does not forbid all public suite rejected states")
+
+    if support_claim_gate.get("trust_policy") != trust_policy_path:
+        raise RuntimeError("external support claim gate trust_policy path drifted")
+    if support_claim_gate.get("intake_manifest") != intake_manifest_path:
+        raise RuntimeError("external support claim gate intake_manifest path drifted")
+
+    accepted_count = 0
+    for raw_entry in require_list(intake_manifest.get("entries"), field="external intake entries"):
+        entry = require_object(raw_entry, field="external intake entry")
+        fixture_id = str(entry.get("fixture_id", ""))
+        if entry.get("trust_state") not in admitted_states:
+            raise RuntimeError(f"{fixture_id} is in intake manifest but is not admitted")
+        accepted_count += 1
+        replay_script = str(entry.get("replay_script", ""))
+        require_file(replay_script, kind=f"{fixture_id} replay script")
+        normalized_path = str(entry.get("normalized_case_path") or entry.get("normalized_contract_path") or "")
+        require_file(normalized_path, kind=f"{fixture_id} normalized replay anchor")
+        owner_contract = require_object(entry.get("owner_contract"), field=f"{fixture_id}.owner_contract")
+        for field in (
+            "local_only_capability_truth_allowed",
+            "evidence_log_capability_truth_allowed",
+            "retired_route_trust_route_allowed",
+        ):
+            if owner_contract.get(field) is not False:
+                raise RuntimeError(f"{fixture_id}.owner_contract.{field} must be false")
+
+    rejected_count = 0
+    for raw_entry in require_list(quarantine_manifest.get("entries"), field="external quarantine entries"):
+        entry = require_object(raw_entry, field="external quarantine entry")
+        fixture_id = str(entry.get("fixture_id", ""))
+        if entry.get("trust_state") not in rejected_states:
+            raise RuntimeError(f"{fixture_id} has a quarantine trust_state not rejected by public suite policy")
+        rejected_count += 1
+        require_file(str(entry.get("replay_script", "")), kind=f"{fixture_id} quarantine replay script")
+        require_file(str(entry.get("normalized_contract_path", "")), kind=f"{fixture_id} quarantine replay anchor")
+        owner_contract = require_object(entry.get("owner_contract"), field=f"{fixture_id}.owner_contract")
+        if owner_contract.get("capability_truth_allowed") is not False:
+            raise RuntimeError(f"{fixture_id}.owner_contract.capability_truth_allowed must be false")
+        if owner_contract.get("retired_route_trust_route_allowed") is not False:
+            raise RuntimeError(f"{fixture_id}.owner_contract.retired_route_trust_route_allowed must be false")
+
+    return {
+        "accepted_external_validation_entries": accepted_count,
+        "rejected_external_validation_entries": rejected_count,
+        "external_validation_replay_command": policy["replay_command"],
+        "external_validation_publication_command": policy["publication_command"],
+    }
 
 
 def validate_phase_and_profiles(manifest: dict[str, Any]) -> tuple[set[str], set[str]]:
@@ -181,17 +362,47 @@ def validate_phase_and_profiles(manifest: dict[str, Any]) -> tuple[set[str], set
     return phase_id_set, {str(profile_id) for profile_id in profile_ids}
 
 
-def validate_case_paths(case: dict[str, Any]) -> None:
+def validate_public_suite_source_path(
+    relative_path: str,
+    *,
+    case_id: str,
+    public_roots: list[str],
+    internal_roots: list[str],
+) -> None:
+    path = normalized_repo_path(relative_path)
+    if path.startswith("tmp/"):
+        raise RuntimeError(f"{case_id} uses tmp as source truth: {path}")
+    for root in internal_roots:
+        if path_is_inside(path, root):
+            raise RuntimeError(f"{case_id} uses internal-only public-suite source path: {path}")
+    if not any(path_is_inside(path, root) for root in public_roots):
+        raise RuntimeError(f"{case_id} source path is outside public fixture roots: {path}")
+
+
+def validate_case_paths(
+    case: dict[str, Any],
+    *,
+    public_roots: list[str],
+    internal_roots: list[str],
+) -> None:
     for key in ("source_manifest", "conformance_fixture", "traceability_fixture"):
         path = str(case[key])
-        if path.startswith("tmp/"):
-            raise RuntimeError(f"{case['case_id']} uses tmp as source truth: {key}")
+        validate_public_suite_source_path(
+            path,
+            case_id=str(case["case_id"]),
+            public_roots=public_roots,
+            internal_roots=internal_roots,
+        )
         require_file(path, kind=f"{case['case_id']} {key}")
     for key in ("positive_evidence", "negative_evidence"):
         for evidence_path in require_list(case[key], field=f"{case['case_id']}.{key}"):
             path = str(evidence_path)
-            if path.startswith("tmp/"):
-                raise RuntimeError(f"{case['case_id']} uses tmp as source truth: {path}")
+            validate_public_suite_source_path(
+                path,
+                case_id=str(case["case_id"]),
+                public_roots=public_roots,
+                internal_roots=internal_roots,
+            )
             require_file(path, kind=f"{case['case_id']} {key}")
 
 
@@ -203,6 +414,7 @@ def validate_cases(
     matrix_pairs: set[tuple[str, str]],
     evidence_pairs: set[tuple[str, str]],
     catalog_claims: set[str],
+    fixture_boundary: dict[str, Any],
 ) -> dict[str, Any]:
     cases = require_list(manifest.get("suite_cases"), field="suite_cases")
     seen_case_ids: set[str] = set()
@@ -254,7 +466,11 @@ def validate_cases(
         capability_ids.add(capability_id)
         support_claims.add(support_claim)
 
-        validate_case_paths(case)
+        validate_case_paths(
+            case,
+            public_roots=fixture_boundary["public_fixture_roots"],
+            internal_roots=fixture_boundary["internal_only_roots"],
+        )
         if case["expectation"] in {"strict-error", "canonical-rejection"}:
             strict_case_count += 1
 
@@ -283,11 +499,83 @@ def validate_cases(
     }
 
 
+def validate_release_candidate_profile(manifest: dict[str, Any]) -> dict[str, Any]:
+    release_profile = require_object(
+        manifest.get("release_candidate_profile"),
+        field="release_candidate_profile",
+    )
+    if release_profile.get("profile_id") != "release-candidate":
+        raise RuntimeError("release_candidate_profile.profile_id must be release-candidate")
+    if release_profile.get("requires_all_public_stable_cases") is not True:
+        raise RuntimeError("release_candidate_profile.requires_all_public_stable_cases must be true")
+    if release_profile.get("consumes_external_validation_policy") is not True:
+        raise RuntimeError("release_candidate_profile.consumes_external_validation_policy must be true")
+    if release_profile.get("tmp_artifact_support_allowed") is not False:
+        raise RuntimeError("release_candidate_profile.tmp_artifact_support_allowed must be false")
+    for command_key in ("gate_command", "runnable_gate_command", "scorecard_command"):
+        command = str(release_profile.get(command_key, ""))
+        if not command.startswith(PUBLIC_COMMAND_PREFIX):
+            raise RuntimeError(f"release_candidate_profile.{command_key} is not public")
+
+    required_phase_ids = [
+        str(phase_id)
+        for phase_id in require_list(
+            release_profile.get("required_phase_ids"),
+            field="release_candidate_profile.required_phase_ids",
+        )
+    ]
+    if set(required_phase_ids) != set(REQUIRED_PHASES):
+        raise RuntimeError("release_candidate_profile.required_phase_ids drifted from required public phases")
+
+    profiles = {
+        str(require_object(profile, field="public profile")["profile_id"]): require_object(
+            profile, field="public profile"
+        )
+        for profile in require_list(manifest.get("public_profiles"), field="public_profiles")
+    }
+    public_release_profile = profiles.get("release-candidate")
+    if public_release_profile is None:
+        raise RuntimeError("public_profiles missing release-candidate profile")
+    if public_release_profile.get("default_command") != release_profile.get("gate_command"):
+        raise RuntimeError("release-candidate default command drifted from release_candidate_profile.gate_command")
+
+    package_case_id = str(release_profile.get("package_replay_case_id", ""))
+    public_stable_count = 0
+    release_case_count = 0
+    package_case_found = False
+    for raw_case in require_list(manifest.get("suite_cases"), field="suite_cases"):
+        case = require_object(raw_case, field="suite case")
+        if case.get("packaging_class") == "public-stable":
+            public_stable_count += 1
+            if "release-candidate" not in require_list(case.get("profile_ids"), field=f"{case['case_id']}.profile_ids"):
+                raise RuntimeError(f"{case['case_id']} is public-stable but missing release-candidate profile")
+        if "release-candidate" in case.get("profile_ids", []):
+            release_case_count += 1
+        if case.get("case_id") == package_case_id:
+            package_case_found = True
+            if "release-candidate" not in case.get("profile_ids", []):
+                raise RuntimeError("release_candidate_profile.package_replay_case_id is not a release-candidate case")
+    if not package_case_found:
+        raise RuntimeError("release_candidate_profile.package_replay_case_id does not exist")
+    if public_stable_count != release_case_count:
+        raise RuntimeError("release candidate profile must consume every public-stable case")
+
+    return {
+        "release_candidate_gate_command": release_profile["gate_command"],
+        "release_candidate_runnable_gate_command": release_profile["runnable_gate_command"],
+        "release_candidate_scorecard_command": release_profile["scorecard_command"],
+        "release_candidate_public_stable_case_count": public_stable_count,
+        "release_candidate_required_phase_count": len(required_phase_ids),
+    }
+
+
 def main() -> int:
     try:
         manifest = load_manifest()
         matrix_pairs, evidence_pairs, catalog_claims = validate_source_truth(manifest)
         validate_package_surface(manifest)
+        fixture_boundary = validate_fixture_boundary(manifest)
+        external_validation_summary = validate_external_validation_policy(manifest)
         strict_rejection_flags = validate_strict_rejection_policy(manifest)
         phase_ids, profile_ids = validate_phase_and_profiles(manifest)
         case_summary = validate_cases(
@@ -297,7 +585,9 @@ def main() -> int:
             matrix_pairs=matrix_pairs,
             evidence_pairs=evidence_pairs,
             catalog_claims=catalog_claims,
+            fixture_boundary=fixture_boundary,
         )
+        release_candidate_summary = validate_release_candidate_profile(manifest)
     except Exception as exc:
         return fail(str(exc))
 
@@ -316,6 +606,15 @@ def main() -> int:
         "required_phases": list(REQUIRED_PHASES),
         "required_profiles": list(REQUIRED_PROFILES),
         "strict_rejection_flags": strict_rejection_flags,
+        "fixture_boundary": {
+            "public_fixture_root_count": len(fixture_boundary["public_fixture_roots"]),
+            "internal_only_root_count": len(fixture_boundary["internal_only_roots"]),
+            "checked_in_expected_outputs_required": fixture_boundary[
+                "checked_in_expected_outputs_required"
+            ],
+        },
+        **external_validation_summary,
+        **release_candidate_summary,
         **case_summary,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
