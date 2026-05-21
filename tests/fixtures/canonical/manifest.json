@@ -564,6 +564,14 @@
       "expected_diagnostic_code": "O3S221"
     },
     {
+      "path": "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S308"
+    },
+    {
       "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -592,6 +600,14 @@
     },
     {
       "path": "tests/native/sema/ownership/strong_id_assignment.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/ownership/retainable_consumed_reassignment.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "ownership",

@@ -1783,6 +1783,12 @@
       "capability_id": "language.ownership.memory-model",
       "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "evidence_kind": "test",
+      "path": "tests/native/sema/ownership/retainable_consumed_reassignment.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
       "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
     },
     {
@@ -1802,6 +1808,12 @@
       "support_claim": "objc3c.behavior.language.ownership-memory-model",
       "evidence_kind": "test",
       "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+    },
+    {
+      "capability_id": "language.ownership.memory-model",
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "evidence_kind": "test",
+      "path": "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3"
     },
     {
       "capability_id": "language.ownership.memory-model",

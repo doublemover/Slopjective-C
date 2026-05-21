@@ -11,6 +11,7 @@
     "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
     "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
     "tests/native/sema/ownership/strong_id_assignment.objc3",
+    "tests/native/sema/ownership/retainable_consumed_reassignment.objc3",
     "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
     "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
     "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
@@ -20,14 +21,17 @@
     "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_parameter_ownership.objc3",
     "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_return_ownership.objc3",
     "tests/tooling/fixtures/native/invalid_borrowed_return_rejected.objc3",
+    "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_negative.objc3"
   ],
   "required_diagnostic_codes": [
-    "O3S221"
+    "O3S221",
+    "O3S308"
   ],
   "source_truth_requirements": [
-    "This groundwork claim only links checked-in ownership evidence that already exercises borrowed, retained, autoreleased, cleanup, weak/autoreleasepool, block capture, and lowering ownership surfaces.",
+    "This groundwork claim only links checked-in ownership evidence that already exercises borrowed, retained, consumed, autoreleased, cleanup, weak/autoreleasepool, block capture, and lowering ownership surfaces.",
     "Unsupported ARC ownership qualifier syntax remains negative evidence until issue 8166 lands explicit sema support for additional qualifiers.",
+    "Consumed retainable-family arguments are unavailable after transfer until reassigned, and use-after-consume remains fail-closed through O3S308.",
     "Generated reports and tmp outputs are not source truth for this claim."
   ]
 }

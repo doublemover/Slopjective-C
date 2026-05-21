@@ -973,6 +973,7 @@
         "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
         "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
         "tests/native/sema/ownership/strong_id_assignment.objc3",
+        "tests/native/sema/ownership/retainable_consumed_reassignment.objc3",
         "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
         "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
@@ -983,14 +984,17 @@
         "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_parameter_ownership.objc3",
         "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_arc_return_ownership.objc3",
         "tests/tooling/fixtures/native/invalid_borrowed_return_rejected.objc3",
+        "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3",
         "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_negative.objc3"
       ],
       "required_diagnostic_codes": [
-        "O3S221"
+        "O3S221",
+        "O3S308"
       ],
       "source_truth_requirements": [
-        "Ownership-memory model groundwork is claimed only through checked-in sema, lowering, ARC cleanup, weak/autoreleasepool, block capture, and borrowed/retainable source evidence",
+        "Ownership-memory model groundwork is claimed only through checked-in sema, lowering, ARC cleanup, weak/autoreleasepool, block capture, consumed-transfer, and borrowed/retainable source evidence",
         "Unsupported ARC ownership qualifiers remain fail-closed O3S221 evidence until issue 8166 widens the language model",
+        "Consumed retainable-family arguments are unavailable after transfer until reassigned, with use-after-consume rejected through O3S308",
         "Generated reports and tmp outputs are replay artifacts only and are not source truth for this claim"
       ]
     },

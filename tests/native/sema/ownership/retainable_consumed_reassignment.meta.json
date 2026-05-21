@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture": "retainable_consumed_reassignment.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "ownership",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false,
+    "retired_route_allowed": false,
+    "gate_allowed": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": []
+  }
+}

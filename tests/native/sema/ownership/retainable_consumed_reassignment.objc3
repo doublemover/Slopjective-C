@@ -1,0 +1,15 @@
+// Canonical sema ownership fixture: consumed retainable values can be reused only after reassignment.
+module SemaOwnershipRetainableConsumedReassignment;
+
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn Touch(value: id) -> i32;
+
+fn consumeThenReassign(owner: id) -> i32 {
+  let value = CFRetain(owner);
+  CFRelease(value);
+  value = CFRetain(owner);
+  return Touch(value);
+}

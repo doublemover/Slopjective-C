@@ -1996,7 +1996,7 @@
       "id": "language.ownership.memory-model",
       "title": "Ownership and memory model groundwork",
       "state": "implemented",
-      "summary": "The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.",
+      "summary": "The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, consumed retainable-family local invalidation, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.",
       "support_claims": [
         "objc3c.behavior.language.ownership-memory-model"
       ],
@@ -2036,6 +2036,10 @@
         },
         {
           "kind": "test",
+          "path": "tests/native/sema/ownership/retainable_consumed_reassignment.objc3"
+        },
+        {
+          "kind": "test",
           "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
         },
         {
@@ -2049,6 +2053,10 @@
         {
           "kind": "test",
           "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3"
         },
         {
           "kind": "source",
