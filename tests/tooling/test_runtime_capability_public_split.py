@@ -88,11 +88,68 @@ def _assert_reserved_boundaries_do_not_publish_claims(contract: dict[str, Any]) 
         assert "support_claims" not in owner_row
 
 
+def _assert_object_model_support_contracts_are_source_derived(
+    contract: dict[str, Any],
+) -> None:
+    implemented_rows = {
+        row["capability_id"]: row for row in contract["implemented_rows"]
+    }
+    support_contracts = contract.get("implemented_support_contracts")
+
+    assert isinstance(support_contracts, list)
+    assert len(support_contracts) == 4
+
+    covered_scopes = set()
+    for support_contract in support_contracts:
+        capability_id = support_contract["capability_id"]
+        support_claim = support_contract["support_claim"]
+        implemented_row = implemented_rows[capability_id]
+
+        assert implemented_row["support_claim"] == support_claim
+        assert support_contract["contract_id"].startswith(
+            "objc3c.object-model.public-support."
+        )
+        assert support_contract["public_command"].startswith("npm run objc3c -- ")
+        assert "full-realization" not in support_claim
+
+        source_truth = support_contract["source_truth"]
+        positive_evidence = support_contract["positive_evidence"]
+        negative_evidence = support_contract["negative_evidence"]
+        assert len(source_truth) >= 3
+        assert len(positive_evidence) >= 3
+        assert len(negative_evidence) >= 2
+
+        for path in (*source_truth, *positive_evidence, *negative_evidence):
+            assert not str(path).startswith("tmp/")
+            assert (ROOT / path).exists(), path
+
+        covered_scopes.add(support_contract["contract_scope"])
+
+    assert any("class and metaclass identity" in scope for scope in covered_scopes)
+    assert any("category attachment" in scope for scope in covered_scopes)
+    assert any("property and ivar layout" in scope for scope in covered_scopes)
+    assert any("public capability truth" in scope for scope in covered_scopes)
+
+
 def test_object_model_public_capability_split_matches_capability_matrix() -> None:
     contract = build_object_model_capability_split_contract()
 
     assert contract["issue"] == 8154
     _assert_split_contract_matches_source_truth(contract)
+
+
+def test_object_model_public_support_contracts_are_source_derived() -> None:
+    contract = build_object_model_capability_split_contract()
+
+    assert contract["issue"] == 8154
+    _assert_object_model_support_contracts_are_source_derived(contract)
+
+
+def test_object_model_reserved_boundaries_stay_non_claiming() -> None:
+    contract = build_object_model_capability_split_contract()
+
+    assert contract["issue"] == 8154
+    _assert_reserved_boundaries_do_not_publish_claims(contract)
 
 
 def test_advanced_runtime_public_capability_split_matches_capability_matrix() -> None:
