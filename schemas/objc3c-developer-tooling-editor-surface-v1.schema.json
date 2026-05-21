@@ -1451,7 +1451,10 @@
             "object_format",
             "expected_sha256",
             "digest_matches",
+            "inventory_source_model",
+            "tool_inventory_available",
             "inventory_available",
+            "inventory_digest",
             "symbol_count",
             "symbols",
             "section_count",
@@ -1488,8 +1491,18 @@
             "digest_matches": {
               "type": "boolean"
             },
+            "inventory_source_model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tool_inventory_available": {
+              "type": "boolean"
+            },
             "inventory_available": {
               "type": "boolean"
+            },
+            "inventory_digest": {
+              "$ref": "#/$defs/optionalSha256"
             },
             "inventory_diagnostics": {
               "$ref": "#/$defs/stringArray"
@@ -1615,6 +1628,7 @@
             "available",
             "reflection_abi_version",
             "runtime_metadata_link",
+            "inventory_digest",
             "class_record_count",
             "class_records",
             "selector_record_count",
@@ -1640,6 +1654,9 @@
             },
             "runtime_metadata_link": {
               "type": "string"
+            },
+            "inventory_digest": {
+              "$ref": "#/$defs/optionalSha256"
             },
             "class_record_count": {
               "type": "integer",
@@ -1760,6 +1777,8 @@
             "module_identity",
             "package_identity",
             "abi_identity",
+            "package_identity_source",
+            "abi_identity_source",
             "manifest_package_identity",
             "registry_package_identity",
             "receipt_package_identities",
@@ -1783,6 +1802,12 @@
               "type": "string"
             },
             "abi_identity": {
+              "type": "string"
+            },
+            "package_identity_source": {
+              "type": "string"
+            },
+            "abi_identity_source": {
               "type": "string"
             },
             "manifest_package_identity": {

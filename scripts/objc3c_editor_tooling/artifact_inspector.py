@@ -54,6 +54,7 @@ LLVM_TOOL_FALLBACK_DIRS = (
     ROOT / "artifacts" / "bin",
     Path("C:/Program Files/LLVM/bin"),
 )
+DEFAULT_OBJC3_ABI_IDENTITY = "objc3-abi-2025Q4"
 
 
 def _summary_paths(summary: dict[str, Any]) -> dict[str, Any]:
@@ -169,6 +170,16 @@ def _stable_json_value(value: Any) -> Any:
 
 def _stable_json_sort_key(value: Any) -> str:
     return json.dumps(_stable_json_value(value), sort_keys=True, separators=(",", ":"))
+
+
+def _stable_inventory_digest(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            _stable_json_value(value),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def _stable_inventory_list(value: Any) -> list[Any]:
@@ -772,6 +783,9 @@ def _object_payload(
     object_format = _detect_object_format(resolve_repo_path(str(record["path"]))) if record["available"] else ""
     inspected_inventory = _inspect_object_inventory(record)
     summary_inventory = _summary_object_inventory(summary)
+    tool_symbols = _stable_inventory_list(inspected_inventory.get("symbols"))
+    tool_sections = _stable_inventory_list(inspected_inventory.get("sections"))
+    tool_inventory_available = bool(tool_symbols and tool_sections)
     inventory = {
         **summary_inventory,
         **inspected_inventory,
@@ -791,10 +805,27 @@ def _object_payload(
     ]
     expected_digest = _digest_expectation(summary, record) or str(record["sha256"])
     digest_matches = not expected_digest or expected_digest == str(record["sha256"])
-    inventory_available = bool(inventory and symbols and sections and expected_digest)
+    inventory_available = bool(tool_inventory_available and expected_digest)
     unsupported_format = bool(
         record["available"] and object_format not in OBJECT_FORMATS_WITH_SYMBOL_TABLES
     )
+    inventory_source_model = (
+        "emitted-object-tool-symbol-and-section-inventory"
+        if tool_inventory_available
+        else "fail-closed-no-tool-derived-object-inventory"
+        if record["available"]
+        else "unavailable-object-artifact"
+    )
+    inventory_digest = _stable_inventory_digest(
+        {
+            "object_format": object_format,
+            "sha256": record["sha256"],
+            "symbols": symbols,
+            "sections": sections,
+            "exported_runtime_helpers": exported_runtime_helpers,
+            "imported_runtime_helpers": imported_runtime_helpers,
+        }
+    ) if inventory_available else ""
     return {
         "available": record["available"],
         "path": record["path"],
@@ -803,7 +834,10 @@ def _object_payload(
         "object_format": object_format,
         "expected_sha256": expected_digest,
         "digest_matches": digest_matches,
+        "inventory_source_model": inventory_source_model,
+        "tool_inventory_available": tool_inventory_available,
         "inventory_available": inventory_available,
+        "inventory_digest": inventory_digest,
         "inventory_diagnostics": sorted(
             str(item) for item in _as_list(inventory.get("diagnostics")) if item
         ),
@@ -918,11 +952,26 @@ def _runtime_inventory_payload(
         or category_records
         or runtime_artifacts
     )
+    inventory_digest = _stable_inventory_digest(
+        {
+            "reflection_abi_version": str(inventory.get("reflection_abi_version", "") or ""),
+            "class_records": class_records,
+            "selector_records": selector_records,
+            "method_records": method_records,
+            "property_records": property_records,
+            "protocol_records": protocol_records,
+            "category_records": category_records,
+            "stdlib_helper_references": helper_references,
+            "runtime_import_package_records": import_package_records,
+            "runtime_artifacts": runtime_artifacts,
+        }
+    ) if available else ""
 
     return {
         "available": available,
         "reflection_abi_version": str(inventory.get("reflection_abi_version", "") or ""),
         "runtime_metadata_link": record["path"],
+        "inventory_digest": inventory_digest,
         "class_record_count": len(class_records),
         "class_records": class_records,
         "selector_record_count": len(selector_records),
@@ -1077,7 +1126,9 @@ def _package_inventory_payload(
         for record in receipt_records
         if record.get("package_id")
     })
-    package_ids = [
+    source_path = str(manifest.get("source", "") or summary.get("input_path", "") or "")
+    source_package_id = f"source:{source_path}" if source_path else ""
+    explicit_package_ids = [
         value
         for value in (
             manifest_package_id,
@@ -1087,18 +1138,61 @@ def _package_inventory_payload(
         )
         if value
     ]
+    derived_package_id = source_package_id if not explicit_package_ids else ""
+    derived_abi_identity = DEFAULT_OBJC3_ABI_IDENTITY if not any(
+        (manifest_abi_identity, summary_abi_identity, registry_abi_identity)
+    ) else ""
+    package_ids = [
+        value
+        for value in (
+            *explicit_package_ids,
+            derived_package_id,
+        )
+        if value
+    ]
     abi_identities = [
         value
-        for value in (manifest_abi_identity, summary_abi_identity, registry_abi_identity)
+        for value in (
+            manifest_abi_identity,
+            summary_abi_identity,
+            registry_abi_identity,
+            derived_abi_identity,
+        )
         if value
     ]
     identity_mismatch = len(set(package_ids)) > 1 or len(set(abi_identities)) > 1
     receipt_untrusted = any(record.get("trusted") is False for record in receipt_records)
+    package_identity_source = (
+        "manifest"
+        if manifest_package_id
+        else "summary-package"
+        if summary_package_id
+        else "registry"
+        if registry_package_id
+        else "package-receipt"
+        if receipt_package_ids
+        else "source-path"
+        if derived_package_id
+        else ""
+    )
+    abi_identity_source = (
+        "manifest"
+        if manifest_abi_identity
+        else "summary-package"
+        if summary_abi_identity
+        else "registry"
+        if registry_abi_identity
+        else "default-objc3-abi-schema"
+        if derived_abi_identity
+        else ""
+    )
     return {
         "available": bool(package_ids or abi_identities or registry or receipt_records),
         "module_identity": str(manifest.get("module", "") or ""),
         "package_identity": package_ids[0] if package_ids else "",
         "abi_identity": abi_identities[0] if abi_identities else "",
+        "package_identity_source": package_identity_source,
+        "abi_identity_source": abi_identity_source,
         "manifest_package_identity": manifest_package_id,
         "registry_package_identity": registry_package_id,
         "receipt_package_identities": receipt_package_ids,
@@ -1175,6 +1269,12 @@ def _inventory_validation_payload(
     if int(package_inventory.get("untrusted_receipt_count", 0) or 0) > 0:
         reasons.append("untrusted package receipt")
         unsupported_notes.append("one or more package receipts are not trusted")
+    if not package_inventory.get("package_identity"):
+        reasons.append("missing package identity")
+        unsupported_notes.append("object inventory lacks module package identity")
+    if not package_inventory.get("abi_identity"):
+        reasons.append("missing ABI identity")
+        unsupported_notes.append("object inventory lacks ABI identity")
     if provenance.get("available") is not True:
         reasons.append("generated artifact missing provenance")
         unsupported_notes.append("generated artifacts do not cite source-truth inputs")

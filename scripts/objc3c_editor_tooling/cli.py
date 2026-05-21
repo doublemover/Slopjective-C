@@ -58,15 +58,25 @@ def main() -> int:
         object_inventory = artifact.get("object", {})
         runtime_inventory = artifact.get("runtime_inventory", {})
         package_inventory = artifact.get("package_inventory", {})
+        fail_closed_reasons = inventory.get("fail_closed_reasons", [])
         print(f"summary_path: {published.summary_path}")
         print(f"artifact_inspector_path: {published.artifact_inspector_path}")
         print(f"inventory_ready: {str(inventory.get('inventory_ready') is True).lower()}")
         print(f"fail_closed: {str(inventory.get('fail_closed') is True).lower()}")
+        fail_closed_reason_text = (
+            ",".join(str(reason) for reason in fail_closed_reasons)
+            if isinstance(fail_closed_reasons, list)
+            else ""
+        )
+        print(f"fail_closed_reasons: {fail_closed_reason_text}")
         print(f"object_format: {object_inventory.get('object_format', '')}")
         print(f"symbol_count: {object_inventory.get('symbol_count', 0)}")
+        print(f"object_inventory_digest: {object_inventory.get('inventory_digest', '')}")
         print(f"runtime_class_records: {runtime_inventory.get('class_record_count', 0)}")
+        print(f"runtime_inventory_digest: {runtime_inventory.get('inventory_digest', '')}")
         print(f"package_identity: {package_inventory.get('package_identity', '')}")
-        return 0
+        print(f"abi_identity: {package_inventory.get('abi_identity', '')}")
+        return 0 if inventory.get("fail_closed") is not True else 2
 
     print(f"summary_path: {published.summary_path}")
     print(f"dump_path: {published.dump_path}")

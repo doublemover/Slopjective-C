@@ -145,6 +145,9 @@ def test_artifact_inspector_explains_checked_in_compiler_outputs() -> None:
     assert payload["object"]["available"] is True
     assert payload["object"]["inspection_ready"] is True
     assert payload["object"]["object_format"] == "coff"
+    assert payload["object"]["inventory_source_model"] == "emitted-object-tool-symbol-and-section-inventory"
+    assert payload["object"]["tool_inventory_available"] is True
+    assert len(payload["object"]["inventory_digest"]) == 64
     assert payload["object"]["symbol_count"] > 0
     assert payload["object"]["section_count"] > 0
     assert payload["object"]["exported_runtime_helper_count"] > 0
@@ -159,6 +162,13 @@ def test_artifact_inspector_explains_checked_in_compiler_outputs() -> None:
     assert payload["runtime_inventory"]["method_record_count"] > 0
     assert payload["runtime_inventory"]["property_record_count"] > 0
     assert payload["runtime_inventory"]["runtime_artifact_count"] == 1
+    assert len(payload["runtime_inventory"]["inventory_digest"]) == 64
+    assert payload["package_inventory"]["package_identity"] == (
+        "source:tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+    )
+    assert payload["package_inventory"]["package_identity_source"] == "source-path"
+    assert payload["package_inventory"]["abi_identity"] == "objc3-abi-2025Q4"
+    assert payload["package_inventory"]["abi_identity_source"] == "default-objc3-abi-schema"
     assert payload["artifact_links"]["source_graph_link"].endswith("source-graph.json")
     assert payload["artifact_links"]["debug_map_link"].endswith("debug-map.json")
     assert payload["inventory_validation"]["inventory_ready"] is True
@@ -237,6 +247,8 @@ def test_artifact_inspector_only_publishes_object_commands_for_real_object_paths
     assert payload["object"]["inspection_ready"] is True
     assert payload["object"]["object_format"] == "coff"
     assert payload["object"]["digest_matches"] is True
+    assert payload["object"]["tool_inventory_available"] is True
+    assert len(payload["object"]["inventory_digest"]) == 64
     assert payload["object"]["symbol_count"] == 2
     assert payload["object"]["imported_runtime_helper_count"] == 1
     assert payload["object"]["object_symbol_inventory_command"].startswith("llvm-nm ")
@@ -390,6 +402,7 @@ def test_artifact_inspector_extracts_object_runtime_package_and_link_inventory(
     assert payload["object"]["exported_runtime_helper_count"] == 1
     assert payload["object"]["imported_runtime_helper_count"] == 1
     assert payload["runtime_inventory"]["reflection_abi_version"] == "objc3-runtime-reflection-v1"
+    assert len(payload["runtime_inventory"]["inventory_digest"]) == 64
     assert payload["runtime_inventory"]["class_record_count"] == 1
     assert payload["runtime_inventory"]["class_records"] == [{"name": "ArtifactWidget"}]
     assert payload["runtime_inventory"]["selector_record_count"] == 1
@@ -461,6 +474,8 @@ def test_artifact_inspector_derives_object_inventory_from_emitted_object(
 
     assert payload["object"]["expected_sha256"] == object_digest
     assert payload["object"]["digest_matches"] is True
+    assert payload["object"]["inventory_source_model"] == "emitted-object-tool-symbol-and-section-inventory"
+    assert payload["object"]["tool_inventory_available"] is True
     assert payload["object"]["symbol_count"] == 2
     assert payload["object"]["section_count"] == 2
     assert payload["object"]["inspection_ready"] is True
@@ -582,6 +597,8 @@ def test_artifact_inspector_fails_closed_for_unsupported_object_format(tmp_path:
     )
 
     assert payload["object"]["object_format"] == "unsupported"
+    assert payload["object"]["tool_inventory_available"] is False
+    assert payload["object"]["inventory_digest"] == ""
     assert payload["object"]["inspection_ready"] is False
     assert "unsupported object format" in payload["inventory_validation"]["fail_closed_reasons"]
     assert payload["inventory_validation"]["unsupported_inventory_notes"] == [
@@ -644,6 +661,8 @@ def test_artifact_inspector_requires_real_tool_inventory_for_available_object(
 
     assert payload["object"]["symbols"] == []
     assert payload["object"]["sections"] == []
+    assert payload["object"]["inventory_source_model"] == "fail-closed-no-tool-derived-object-inventory"
+    assert payload["object"]["tool_inventory_available"] is False
     assert payload["object"]["inventory_available"] is False
     assert payload["object"]["inspection_ready"] is False
     assert "missing object symbol inventory" in payload["inventory_validation"]["fail_closed_reasons"]
