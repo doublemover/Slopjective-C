@@ -22,13 +22,12 @@
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
       "expected_state": "scaffold-blocked",
       "required_source_tokens": [
-        "import objc3.text",
-        "import objc3.collections",
-        "#array",
-        "#map",
-        "#set",
-        "for",
-        "text_interpolate_i32"
+        "objc3_runtime_stdlib_text_builder_append_i32_i32",
+        "objc3_runtime_stdlib_collections_array3_i32",
+        "objc3_runtime_stdlib_collections_map_lookup_or_i32",
+        "objc3_runtime_stdlib_collections_set_contains_i32",
+        "objc3_runtime_stdlib_collections_iterator_next_or_i32",
+        "importedPackageSeed"
       ],
       "capability_rows": [
         "stdlib.text.runtime-builder-interpolation",
@@ -53,14 +52,20 @@
           "capability_id": "language.collections.for-in-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
           "status": "implemented",
-          "claim_boundary": "for-in support is cited only as a prerequisite, not as proof of cross-package text interpolation"
+          "claim_boundary": "iterator-backed collection execution is proven in this fixture; source-level for-in syntax remains blocked in the expectation"
+        },
+        {
+          "capability_id": "runtime.interop.package-loader-bridge",
+          "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+          "status": "blocked",
+          "claim_boundary": "the executable fixture keeps package seed behavior local; package import and loader replay remain blocked"
         }
       ],
       "blockers": [
         {
           "blocker_id": "cross-lane-text-collections-package-runtime",
-          "domain": "runtime",
-          "reason": "the combined package import, collection iteration, and text interpolation runtime path has not been compiled and executed as one public E2E program"
+          "domain": "parser/sema diagnostic",
+          "reason": "source-level package import, collection literals, and for-in syntax are not yet diagnostic-free even though runtime-backed text and collections now compile, link, and run together"
         }
       ]
     },

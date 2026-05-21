@@ -692,6 +692,53 @@
         "Release-candidate conformance consumes the same checked runtime concurrency evidence.",
         "The release-candidate command is a profile gate and not a compatibility-mode bypass."
       ]
+    },
+    {
+      "case_id": "public.stdlib.cross-lane-text-collections-e2e",
+      "phase": "stdlib",
+      "feature_id": "stdlib.cross-lane.text-collections-runtime-e2e",
+      "capability_id": "stdlib.text.runtime-builder-interpolation",
+      "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "stable_case_index": 11,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
+      "expectation": "pass",
+      "profile_ids": [
+        "stdlib-package",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+      "conformance_fixture": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "traceability_fixture": "tests/native/e2e/cross_lane/text_collections_package.objc3",
+      "runnable_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/e2e/cross_lane/text_collections_package.objc3",
+        "tests/native/e2e/cross_lane/text_collections_package.meta.json",
+        "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+        "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json"
+      ],
+      "source_truth_requirements": [
+        "Cross-lane public conformance references the checked #8200 manifest and executable text/collections fixture.",
+        "The runtime-backed text and collection helper interaction is public-command verified by validate-cross-lane-e2e.",
+        "Package import syntax, source-level collection literals, for-in sugar, debugger maps, optimization proof, advanced runtime closure, and distribution lifecycle rows remain blocked or reserved in their own expectation files."
+      ]
     }
   ],
   "strict_rejection_policy": {

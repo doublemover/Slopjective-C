@@ -1,31 +1,82 @@
-// #8200 cross-lane scaffold: text interpolation + collections + package import.
-// Expected state is scaffold-blocked by tests/tooling/fixtures/cross_lane_e2e.
+// #8200 cross-lane partial executable: runtime-backed text builders and
+// collection handles interact in one Objective-C 3 program.
+// Reserved source syntax remains blocked here: import objc3.text,
+// import objc3.collections, #array, #map, #set, and source-level for-in.
 module CrossLaneTextCollectionsPackage;
 
-import objc3.text;
-import objc3.collections;
-import CrossLaneFixtureProvider;
+extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle: i32, text_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_iterator_next_or_i32(handle: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_insert_i32(handle: i32, key: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_set3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
+extern fn objc3_runtime_stdlib_collections_set_contains_i32(handle: i32, value: i32) -> i32;
 
-extern fn importedPackageSeed() -> i32;
-extern fn text_interpolate_i32(label: Text, value: i32) -> Text;
-extern fn text_units(value: Text) -> i32;
+fn importedPackageSeed() -> i32 {
+  return 3;
+}
 
 fn summarizeImportedCollections() -> i32 {
-  let labels = #array["lane", "package", "runtime"];
-  let weights = #map["lane": 2, "package": 3, "runtime": 5];
-  let required = #set["lane", "runtime"];
+  let labels = objc3_runtime_stdlib_collections_array3_i32(2, 3, 5, 3);
+  let label_iterator = objc3_runtime_stdlib_collections_array_iterator_i32(labels);
+  let weights = objc3_runtime_stdlib_collections_map_entry_i32(2, 4);
+  let required = objc3_runtime_stdlib_collections_set3_i32(2, 5, 5, 3);
   var total = importedPackageSeed();
 
-  for label in labels {
-    let line = text_interpolate_i32(label, weights[label]);
-    if (required contains label) {
-      total = total + text_units(line);
-    }
+  let first_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
+  let second_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
+  let third_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
+  if (first_label + second_label + third_label != 10) {
+    return 11;
   }
 
+  if (objc3_runtime_stdlib_collections_map_insert_i32(weights, 5, 8) != 2) {
+    return 12;
+  }
+  if (objc3_runtime_stdlib_collections_set_contains_i32(required, first_label) != 1) {
+    return 13;
+  }
+  if (objc3_runtime_stdlib_collections_set_contains_i32(required, second_label) != 0) {
+    return 14;
+  }
+  if (objc3_runtime_stdlib_collections_set_contains_i32(required, third_label) != 1) {
+    return 15;
+  }
+
+  total = total + objc3_runtime_stdlib_collections_map_lookup_or_i32(weights, first_label, 0);
+  total = total + objc3_runtime_stdlib_collections_map_lookup_or_i32(weights, third_label, 0);
   return total;
 }
 
 fn main() -> i32 {
-  return summarizeImportedCollections();
+  let summary = summarizeImportedCollections();
+  if (summary != 15) {
+    return 21;
+  }
+
+  let label_text = objc3_runtime_stdlib_text_format_i32_i32(summary);
+  let builder = objc3_runtime_stdlib_text_builder_i32();
+  if (builder <= 0) {
+    return 22;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_text_i32(builder, label_text) != 2) {
+    return 23;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_i32_i32(builder, summary) != 4) {
+    return 24;
+  }
+
+  let interpolated = objc3_runtime_stdlib_text_builder_build_i32(builder);
+  if (objc3_runtime_stdlib_text_byte_count_i32(interpolated) != 4) {
+    return 25;
+  }
+  return 0;
 }
