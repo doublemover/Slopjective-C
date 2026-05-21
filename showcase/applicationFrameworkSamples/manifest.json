@@ -25,6 +25,7 @@
       "module_name": "RouteModelKit",
       "source": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/routeModelKit/workspace.json",
+      "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/routeModelKit",
       "support_claims": [
         "objc3c.behavior.application-framework-samples.object-runtime-library"
@@ -45,6 +46,7 @@
       "module_name": "InteropAdapterKit",
       "source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/workspace.json",
+      "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
       "support_claims": [
         "objc3c.behavior.application-framework-samples.interop-adapter-library"
@@ -66,6 +68,7 @@
       "module_name": "WorkflowStdlibCLI",
       "source": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/workspace.json",
+      "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/workflowStdlibCLI",
       "support_claims": [
         "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
@@ -90,6 +93,7 @@
       "module_name": "AsyncRuntimeConsole",
       "source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/workspace.json",
+      "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
       "support_claims": [
         "objc3c.behavior.application-framework-samples.async-runtime-application"

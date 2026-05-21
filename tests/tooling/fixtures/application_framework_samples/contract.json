@@ -24,6 +24,17 @@
     "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
     "objc3c.behavior.application-framework-samples.async-runtime-application"
   ],
+  "required_tutorials": [
+    "docs/tutorials/application-framework-samples.md"
+  ],
+  "required_tutorial_terms": [
+    "npm run objc3c -- validate-application-framework-samples",
+    "module.ll",
+    "module.manifest.json",
+    "workspace.json",
+    "main.objc3",
+    "Modify"
+  ],
   "required_package_edges": [
     {
       "from": "showcase-framework:workflowStdlibCLI",

@@ -13,6 +13,7 @@ class FrameworkSample:
     module_name: str
     source: str
     workspace_manifest: str
+    tutorial: str
     artifact_root: str
     capabilities: tuple[str, ...]
     support_claims: tuple[str, ...]
@@ -28,6 +29,7 @@ class FrameworkSample:
             module_name=str(payload["module_name"]),
             source=str(payload["source"]),
             workspace_manifest=str(payload["workspace_manifest"]),
+            tutorial=str(payload["tutorial"]),
             artifact_root=str(payload["artifact_root"]),
             capabilities=tuple(str(item) for item in payload.get("capabilities", [])),
             support_claims=tuple(str(item) for item in payload.get("support_claims", [])),
@@ -45,3 +47,6 @@ class FrameworkSample:
 
     def workspace_path(self, root: Path) -> Path:
         return root / self.workspace_manifest
+
+    def tutorial_path(self, root: Path) -> Path:
+        return root / self.tutorial

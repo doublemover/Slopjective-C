@@ -166,6 +166,25 @@ def validate_manifest(
         failures.append("contract fixture contract_id drifted")
     if contract.get("manifest") != "showcase/applicationFrameworkSamples/manifest.json":
         failures.append("contract fixture manifest path drifted")
+    required_tutorials = contract.get("required_tutorials", [])
+    if not isinstance(required_tutorials, list):
+        failures.append("contract required_tutorials must be a list")
+        required_tutorials = []
+    for tutorial in required_tutorials:
+        tutorial_path = root / str(tutorial)
+        if not str(tutorial).startswith("docs/tutorials/"):
+            failures.append(f"contract required tutorial escaped tutorials root: {tutorial}")
+        if not tutorial_path.is_file():
+            failures.append(f"contract required tutorial missing: {tutorial}")
+        else:
+            tutorial_text = tutorial_path.read_text(encoding="utf-8")
+            required_terms = contract.get("required_tutorial_terms", [])
+            if isinstance(required_terms, list):
+                for term in required_terms:
+                    if str(term) not in tutorial_text:
+                        failures.append(
+                            f"contract required tutorial term missing from {tutorial}: {term}"
+                        )
 
     samples_payload = manifest.get("samples")
     if not isinstance(samples_payload, list) or not samples_payload:
@@ -194,6 +213,7 @@ def validate_manifest(
 
         source_path = sample.source_path(root)
         workspace_path = sample.workspace_path(root)
+        tutorial_path = sample.tutorial_path(root)
         if not sample.source.startswith("showcase/applicationFrameworkSamples/"):
             failures.append(f"{sample.sample_id}: source escaped sample root")
         if not source_path.is_file():
@@ -212,6 +232,16 @@ def validate_manifest(
                     workspace=load_json(workspace_path),
                 )
             )
+        if not sample.tutorial.startswith("docs/tutorials/"):
+            failures.append(f"{sample.sample_id}: tutorial escaped tutorials root")
+        if not tutorial_path.is_file():
+            failures.append(f"{sample.sample_id}: tutorial missing")
+        else:
+            tutorial_text = tutorial_path.read_text(encoding="utf-8")
+            if sample.sample_id not in tutorial_text:
+                failures.append(f"{sample.sample_id}: tutorial does not name sample id")
+            if sample.public_compile_command not in tutorial_text:
+                failures.append(f"{sample.sample_id}: tutorial missing public compile command")
 
         actual_compile_command = build_public_compile_command_text(sample)
         if actual_compile_command != sample.public_compile_command:
@@ -239,6 +269,11 @@ def validate_manifest(
     )
     for claim in missing_claims:
         failures.append(f"missing required support claim {claim}")
+
+    actual_tutorials = {sample.tutorial for sample in samples}
+    missing_tutorials = _required_values_missing(required_tutorials, actual_tutorials)
+    for tutorial in missing_tutorials:
+        failures.append(f"missing required tutorial {tutorial}")
 
     failures.extend(
         _validate_package_edges(samples=samples, manifest=manifest, contract=contract)

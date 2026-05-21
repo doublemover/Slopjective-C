@@ -35,6 +35,7 @@ def test_application_framework_sample_manifest_is_real_source_backed() -> None:
     ]
     assert all((ROOT / sample.source).is_file() for sample in samples)
     assert all((ROOT / sample.workspace_manifest).is_file() for sample in samples)
+    assert all((ROOT / sample.tutorial).is_file() for sample in samples)
 
 
 def test_application_framework_sample_compile_commands_use_public_bridge() -> None:
@@ -62,6 +63,8 @@ def test_application_framework_contract_has_no_generated_source_roots() -> None:
         assert sample["source"].startswith("showcase/applicationFrameworkSamples/")
         assert not sample["source"].startswith(("tmp/", "artifacts/"))
         assert not sample["workspace_manifest"].startswith(("tmp/", "artifacts/"))
+        assert sample["tutorial"].startswith("docs/tutorials/")
+        assert not sample["tutorial"].startswith(("tmp/", "artifacts/"))
 
     for edge in manifest_payload["package_edges"]:
         assert edge["from"].startswith("showcase-framework:")

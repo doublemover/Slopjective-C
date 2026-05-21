@@ -26,14 +26,16 @@ manifest, and validation surface without widening the established
 
 ## Validation
 
-Run the focused checker from the repository root:
+The sample walkthrough is checked in at
+`docs/tutorials/application-framework-samples.md`. Run the focused checker from
+the repository root:
 
 ```powershell
-python scripts/check_objc3c_application_framework_samples.py
+npm run objc3c -- validate-application-framework-samples
 ```
 
 The checker validates `manifest.json`, each workspace manifest, package
-dependency edges, and compiles each sample source through:
+dependency edges, tutorial routes, and compiles each sample source through:
 
 ```powershell
 npm run objc3c -- compile-objc3c -- <source> --out-dir <sample artifact root> --emit-prefix module
