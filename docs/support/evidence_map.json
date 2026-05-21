@@ -784,6 +784,12 @@
       "capability_id": "language.protocols.existential-witness-model",
       "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
       "evidence_kind": "test",
+      "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json"
     },
     {
@@ -833,6 +839,12 @@
       "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+    },
+    {
+      "capability_id": "language.protocols.existential-witness-model",
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp"
     },
     {
       "capability_id": "language.protocols.existential-witness-model",

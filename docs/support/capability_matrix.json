@@ -971,7 +971,7 @@
       "id": "language.protocols.existential-witness-model",
       "title": "Protocol existential witness model",
       "state": "implemented",
-      "summary": "Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.",
+      "summary": "Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, conformance-query snapshots, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.",
       "support_claims": [
         "objc3c.behavior.language.protocols.existential-witness-model"
       ],
@@ -979,6 +979,7 @@
         "native/objc3c/src/sema/model/language_semantics_public_model.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.h",
         "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
         "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
       ],
@@ -991,6 +992,10 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
         },
         {
           "kind": "test",
@@ -1027,6 +1032,10 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp"
         },
         {
           "kind": "source",

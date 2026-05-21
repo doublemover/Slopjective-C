@@ -150,6 +150,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/runtime/language_semantics_runtime_api_probe.cpp` |  |
+| `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3` |  |
@@ -159,6 +160,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/sema/model/language_semantics_public_model.h` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/runtime/classes/protocol_conformance.h` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/runtime/classes/protocol_conformance.cpp` |  |
+| `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h` |  |
 | `language.protocols.existential-witness-model` | `objc3c.behavior.language.protocols.existential-witness-model` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp` |  |
 | `language.generics.protocol-qualified-arguments` | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `test` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` |
@@ -318,10 +320,12 @@ diagnostic, documentation, or boundary evidence only.
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/ownership/strong_id_assignment.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/ownership/retainable_consumed_reassignment.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3` |  |
+| `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `test` | `tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc` |  |
 | `language.ownership.memory-model` | `objc3c.behavior.language.ownership-memory-model` | `source` | `native/objc3c/src/runtime/memory/arc.cpp` |  |
 | `language.blocks.escape-capture-legality` | `objc3c.behavior.language.blocks.escape-capture-legality` | `test` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` |

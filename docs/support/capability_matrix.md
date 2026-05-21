@@ -600,16 +600,18 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.protocols.existential-witness-model`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.protocols.existential-witness-model`
-- Summary: Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.
+- Summary: Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, conformance-query snapshots, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.
 - Owner modules:
   - `native/objc3c/src/sema/model/language_semantics_public_model.h`
   - `native/objc3c/src/runtime/classes/protocol_conformance.h`
   - `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp`
   - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h`
   - `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` via `npm run objc3c -- validate-conformance-corpus`
   - test: `tests/tooling/runtime/language_semantics_runtime_api_probe.cpp`
+  - test: `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp`
   - test: `tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json`
   - test: `tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3`
@@ -619,6 +621,7 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/sema/model/language_semantics_public_model.h`
   - source: `native/objc3c/src/runtime/classes/protocol_conformance.h`
   - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
+  - source: `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp`
 
@@ -1068,7 +1071,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.ownership.memory-model`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.ownership-memory-model`
-- Summary: The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.
+- Summary: The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, consumed retainable-family local invalidation, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc`
   - `native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_arc_ownership_checks.inc`
@@ -1083,10 +1086,12 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3`
   - test: `tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3`
   - test: `tests/native/sema/ownership/strong_id_assignment.objc3`
+  - test: `tests/native/sema/ownership/retainable_consumed_reassignment.objc3`
   - test: `tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3`
   - test: `tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp`
   - test: `tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp`
   - test: `tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3`
+  - test: `tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc`
   - source: `native/objc3c/src/runtime/memory/arc.cpp`
 
