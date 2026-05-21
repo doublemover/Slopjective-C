@@ -2,9 +2,38 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
+from objc3c_tooling.paths import ROOT, resolve_repo_path
+
 from .contracts import RUNTIME_DEBUG_TRACE_CONTRACT_ID
+from .source_contracts import RUNTIME_TRACE_SOURCE_CONTRACT_ID
+
+_REQUIRED_TOP_LEVEL_FIELDS = {
+    "contract_id",
+    "schema_id",
+    "schema_version",
+    "schema_path",
+    "source_path",
+    "ok",
+    "failures",
+    "trace_model",
+    "inputs",
+    "artifacts",
+    "source_mapping",
+    "runtime_inspection",
+    "runtime_trace_contracts",
+    "trace_lanes",
+    "inspection_queries",
+    "support_boundary",
+    "event_sequence",
+    "event_counts",
+    "determinism",
+    "inspection_commands",
+    "support_handoff",
+    "steps",
+}
 
 
 def _expect(condition: bool, message: str, failures: list[str]) -> None:
@@ -12,8 +41,165 @@ def _expect(condition: bool, message: str, failures: list[str]) -> None:
         failures.append(message)
 
 
+def _digest(path: object) -> str:
+    resolved = resolve_repo_path(str(path))
+    digest = hashlib.sha256()
+    with resolved.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _object(value: object) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _list(value: object) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def _validate_input_evidence(payload: dict[str, Any], failures: list[str]) -> None:
+    inputs = payload.get("inputs", {})
+    if not isinstance(inputs, dict):
+        failures.append("input evidence records are missing")
+        return
+    for label, record_value in sorted(inputs.items()):
+        record = _object(record_value)
+        if record.get("available") is not True:
+            continue
+        path = resolve_repo_path(str(record.get("path", "") or ""))
+        if not path.is_file():
+            failures.append(f"available input evidence is missing: {label}")
+            continue
+        if int(record.get("size_bytes", -1) or -1) != path.stat().st_size:
+            failures.append(f"input evidence size is stale: {label}")
+        expected_digest = str(record.get("sha256", "") or "")
+        if len(expected_digest) != 64 or _digest(path) != expected_digest:
+            failures.append(f"input evidence digest is stale: {label}")
+
+
+def _source_contract_path(raw_path: object) -> object:
+    text = str(raw_path or "")
+    if text.startswith("runtime/"):
+        return ROOT / "native" / "objc3c" / "src" / text
+    return text
+
+
+def _validate_runtime_trace_source_contracts(
+    payload: dict[str, Any],
+    failures: list[str],
+) -> tuple[set[str], set[str]]:
+    contracts = payload.get("runtime_trace_contracts", {})
+    if not isinstance(contracts, dict) or not contracts:
+        failures.append("runtime trace source contracts are missing")
+        return set(), set()
+
+    _expect(
+        contracts.get("contract_id") == RUNTIME_TRACE_SOURCE_CONTRACT_ID,
+        "runtime trace source contract id drifted",
+        failures,
+    )
+    source_path = str(contracts.get("source_path", "") or "")
+    implementation_path = str(contracts.get("implementation_path", "") or "")
+    if not source_path:
+        failures.append("runtime trace source contracts missing source path")
+    if not implementation_path:
+        failures.append("runtime trace source contracts missing implementation path")
+
+    source_text = ""
+    for key, digest_key in (
+        ("source_path", "source_sha256"),
+        ("implementation_path", "implementation_sha256"),
+    ):
+        path_text = str(contracts.get(key, "") or "")
+        if not path_text:
+            continue
+        path = resolve_repo_path(path_text)
+        if not path.is_file():
+            failures.append(f"runtime trace source contract file missing: {path_text}")
+            continue
+        if _digest(path) != str(contracts.get(digest_key, "") or ""):
+            failures.append(f"runtime trace source contract digest is stale: {path_text}")
+        if key == "source_path":
+            source_text = path.read_text(encoding="utf-8")
+
+    lanes = _list(contracts.get("lanes"))
+    if int(contracts.get("lane_count", -1) or -1) != len(lanes):
+        failures.append("runtime trace source contract lane count drifted")
+    _expect(bool(lanes), "runtime trace source contract lanes are missing", failures)
+
+    source_anchors: set[str] = set()
+    lane_ids: set[str] = set()
+    expected_domains = {"task", "actor", "dispatch", "object", "memory"}
+    observed_domains: set[str] = set()
+    for lane_value in lanes:
+        lane = _object(lane_value)
+        lane_id = str(lane.get("lane_id", "") or "")
+        trace_domain = str(lane.get("trace_domain", "") or "")
+        source_anchor = str(lane.get("source_anchor", "") or "")
+        snapshot_header = str(lane.get("snapshot_header", "") or "")
+        snapshot_symbol = str(lane.get("snapshot_symbol", "") or "")
+        required_fields = _list(lane.get("required_fields"))
+        lane_ids.add(lane_id)
+        observed_domains.add(trace_domain)
+        if source_anchor:
+            source_anchors.add(source_anchor)
+        _expect(bool(lane_id), "runtime trace source contract lane missing id", failures)
+        _expect(bool(trace_domain), f"runtime trace source contract lane missing domain: {lane_id}", failures)
+        _expect(
+            lane.get("status") == "supported",
+            f"runtime trace source contract lane must be supported: {lane_id}",
+            failures,
+        )
+        _expect(
+            lane.get("deterministic") is True,
+            f"runtime trace source contract lane must be deterministic: {lane_id}",
+            failures,
+        )
+        _expect(
+            lane.get("public_abi") is False,
+            f"runtime trace source contract lane must stay private ABI: {lane_id}",
+            failures,
+        )
+        _expect(
+            bool(source_anchor) and source_anchor in source_text,
+            f"supported runtime trace contract missing live source anchor: {lane_id}",
+            failures,
+        )
+        _expect(
+            isinstance(required_fields, list) and bool(required_fields),
+            f"runtime trace source contract lane missing required fields: {lane_id}",
+            failures,
+        )
+        if snapshot_header:
+            snapshot_path = resolve_repo_path(_source_contract_path(snapshot_header))
+            if not snapshot_path.is_file():
+                failures.append(
+                    f"runtime trace source contract snapshot header missing: {lane_id}"
+                )
+            else:
+                snapshot_text = snapshot_path.read_text(encoding="utf-8")
+                _expect(
+                    snapshot_symbol in snapshot_text,
+                    f"runtime trace source contract snapshot symbol missing: {lane_id}",
+                    failures,
+                )
+                for field in required_fields:
+                    _expect(
+                        str(field) in snapshot_text,
+                        f"runtime trace source contract required field missing: {lane_id}.{field}",
+                        failures,
+                    )
+    missing_domains = expected_domains - observed_domains
+    for domain in sorted(missing_domains):
+        failures.append(f"runtime trace source contract domain missing: {domain}")
+    return source_anchors, lane_ids
+
+
 def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
+    for field in sorted(_REQUIRED_TOP_LEVEL_FIELDS):
+        _expect(field in payload, f"runtime debug trace payload missing field: {field}", failures)
     _expect(
         payload.get("contract_id") == RUNTIME_DEBUG_TRACE_CONTRACT_ID,
         "runtime debug trace contract id drifted",
@@ -44,6 +230,24 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
         "compile-stage events missing from runtime debug trace",
         failures,
     )
+    source_anchors, source_lane_ids = _validate_runtime_trace_source_contracts(
+        payload,
+        failures,
+    )
+    _validate_input_evidence(payload, failures)
+    for event_kind in [
+        "runtime-actor-snapshot",
+        "runtime-dispatch-snapshot",
+        "runtime-memory-snapshot",
+        "runtime-object-snapshot",
+        "runtime-task-snapshot",
+    ]:
+        _expect(
+            isinstance(event_counts, dict)
+            and int(event_counts.get(event_kind, 0) or 0) == 1,
+            f"{event_kind} event missing from runtime debug trace",
+            failures,
+        )
     determinism = payload.get("determinism", {})
     digest = determinism.get("trace_digest", "") if isinstance(determinism, dict) else ""
     _expect(isinstance(digest, str) and len(digest) == 64, "trace digest missing", failures)
@@ -74,8 +278,8 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             failures,
         )
         _expect(
-            trace_lanes.get("async_task_inspection", {}).get("status") == "reserved",
-            "async task lane must stay reserved until runtime snapshots are published",
+            trace_lanes.get("async_task_inspection", {}).get("status") == "supported",
+            "async task lane must be source-contract backed",
             failures,
         )
         _expect(
@@ -93,6 +297,52 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             "full source-map lane must stay reserved",
             failures,
         )
+        for lane_id in [
+            "actor_runtime_trace",
+            "dispatch_runtime_trace",
+            "memory_runtime_trace",
+            "object_runtime_trace",
+            "task_runtime_trace",
+        ]:
+            lane = _object(trace_lanes.get(lane_id))
+            _expect(
+                lane.get("status") == "supported",
+                f"source-owned runtime trace lane missing: {lane_id}",
+                failures,
+            )
+        for lane_id, lane_value in sorted(trace_lanes.items()):
+            lane = _object(lane_value)
+            if lane.get("status") != "supported":
+                continue
+            source_contract_ids = [
+                str(value)
+                for value in _list(lane.get("source_contract_ids"))
+                if str(value)
+            ]
+            lane_source_anchors = [
+                str(value)
+                for value in _list(lane.get("source_anchors"))
+                if str(value)
+            ]
+            if source_contract_ids:
+                _expect(
+                    bool(lane_source_anchors),
+                    f"supported runtime trace lane lacks source anchors: {lane_id}",
+                    failures,
+                )
+            for source_contract_id in source_contract_ids:
+                _expect(
+                    source_contract_id in source_lane_ids,
+                    f"supported runtime trace lane references unknown source contract: {lane_id}",
+                    failures,
+                )
+            for source_anchor in lane_source_anchors:
+                if source_anchor.startswith("OBJ3-NEXT-023."):
+                    _expect(
+                        source_anchor in source_anchors,
+                        f"supported runtime trace lane source anchor is stale: {lane_id}",
+                        failures,
+                    )
     inspection_queries = payload.get("inspection_queries", [])
     _expect(
         isinstance(inspection_queries, list) and bool(inspection_queries),
@@ -143,6 +393,9 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             "runtime.object-inspection.object-symbols",
             "runtime.message-send.dispatch-cache-observation",
             "debug.runtime-trace.composed-event-sequence",
+            "runtime.source-owned-trace-contracts",
+            "runtime.async-task-inspection.source-contracts",
+            "runtime.memory-inspection.source-contracts",
         }
         for query_id in expected_supported_queries:
             _expect(
@@ -153,7 +406,6 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
         expected_reserved_queries = {
             "debug.statement-level-stepping.line-table",
             "debug.full-source-map.publication",
-            "runtime.async-task-inspection.snapshots",
             "runtime.error-unwind-trace.snapshots",
             "debug.lldb-plugin.integration",
         }
@@ -188,11 +440,35 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             )
             if status == "supported":
                 required_labels = row.get("required_input_labels", [])
+                source_anchor_values = [
+                    str(value)
+                    for value in _list(row.get("source_anchors"))
+                    if str(value)
+                ]
                 _expect(
-                    isinstance(required_labels, list) and bool(required_labels),
-                    f"supported runtime debug trace row missing required input labels: {capability_id}",
+                    (isinstance(required_labels, list) and bool(required_labels))
+                    or bool(source_anchor_values),
+                    f"supported runtime debug trace row missing evidence anchors: {capability_id}",
                     failures,
                 )
+                if capability_id.startswith("objc3c.behavior.runtime.debug_trace"):
+                    _expect(
+                        bool(source_anchor_values),
+                        f"supported runtime debug trace row lacks source anchors: {capability_id}",
+                        failures,
+                    )
+                for source_anchor in source_anchor_values:
+                    _expect(
+                        source_anchor in source_anchors,
+                        f"supported runtime debug trace row has stale source anchor: {capability_id}",
+                        failures,
+                    )
+                if row.get("source_contract_id"):
+                    _expect(
+                        row.get("source_contract_id") == RUNTIME_TRACE_SOURCE_CONTRACT_ID,
+                        f"supported runtime debug trace row source contract id drifted: {capability_id}",
+                        failures,
+                    )
                 required_label_values = required_labels if isinstance(required_labels, list) else []
                 for label in required_label_values:
                     record = input_records.get(str(label), {})
@@ -202,11 +478,12 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
                         f"supported runtime debug trace row has unavailable input: {label}",
                         failures,
                     )
-                _expect(
-                    row.get("required_inputs_available") is True,
-                    f"supported runtime debug trace row did not confirm input availability: {capability_id}",
-                    failures,
-                )
+                if required_label_values:
+                    _expect(
+                        row.get("required_inputs_available") is True,
+                        f"supported runtime debug trace row did not confirm input availability: {capability_id}",
+                        failures,
+                    )
             if status == "reserved":
                 _expect(
                     bool(row.get("unpublished_reason")),

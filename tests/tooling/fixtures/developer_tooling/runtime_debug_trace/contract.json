@@ -5,15 +5,25 @@
   "expected_event_counts": {
     "compile-stage": 5,
     "debug-anchor": 3,
-    "reserved-surface": 5
+    "reserved-surface": 4,
+    "runtime-actor-snapshot": 1,
+    "runtime-dispatch-snapshot": 1,
+    "runtime-memory-snapshot": 1,
+    "runtime-object-snapshot": 1,
+    "runtime-task-snapshot": 1
   },
   "expected_supported_lanes": [
+    "actor_runtime_trace",
+    "async_task_inspection",
+    "dispatch_runtime_trace",
+    "memory_runtime_trace",
     "message_send_trace",
     "object_inspection",
-    "source_to_artifact_mapping"
+    "object_runtime_trace",
+    "source_to_artifact_mapping",
+    "task_runtime_trace"
   ],
   "expected_reserved_lanes": [
-    "async_task_inspection",
     "error_unwind_trace",
     "full_source_map_publication",
     "lldb_plugin",
@@ -23,12 +33,14 @@
     "debug.source-to-artifact.declaration-anchors",
     "runtime.object-inspection.object-symbols",
     "runtime.message-send.dispatch-cache-observation",
-    "debug.runtime-trace.composed-event-sequence"
+    "debug.runtime-trace.composed-event-sequence",
+    "runtime.source-owned-trace-contracts",
+    "runtime.async-task-inspection.source-contracts",
+    "runtime.memory-inspection.source-contracts"
   ],
   "expected_reserved_inspection_queries": [
     "debug.statement-level-stepping.line-table",
     "debug.full-source-map.publication",
-    "runtime.async-task-inspection.snapshots",
     "runtime.error-unwind-trace.snapshots",
     "debug.lldb-plugin.integration"
   ],
@@ -38,6 +50,18 @@
     "objc3c.behavior.runtime.debug_trace.statement_stepping",
     "objc3c.behavior.runtime.debug_trace.full_source_map",
     "objc3c.behavior.runtime.debug_trace.async_tasks",
+    "objc3c.behavior.runtime.debug_trace.memory",
+    "objc3c.behavior.runtime.debug_trace.error_unwind"
+  ],
+  "expected_supported_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace",
+    "objc3c.behavior.runtime.debug_trace.async_tasks",
+    "objc3c.behavior.runtime.debug_trace.memory"
+  ],
+  "expected_reserved_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace.lldb_plugin",
+    "objc3c.behavior.runtime.debug_trace.statement_stepping",
+    "objc3c.behavior.runtime.debug_trace.full_source_map",
     "objc3c.behavior.runtime.debug_trace.error_unwind"
   ],
   "diagnostic_codes": [

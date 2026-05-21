@@ -16,6 +16,7 @@ from .contracts import (
     RUNTIME_DEBUG_TRACE_SUMMARY_PATH,
 )
 from .payload import build_runtime_debug_trace_payload
+from .source_contracts import load_runtime_trace_source_contracts
 from .validation import validate_runtime_debug_trace_payload
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     "RUNTIME_DEBUG_TRACE_SCHEMA_PATH",
     "RUNTIME_DEBUG_TRACE_SUMMARY_PATH",
     "build_runtime_debug_trace_payload",
+    "load_runtime_trace_source_contracts",
     "validate_runtime_debug_trace_payload",
 ]

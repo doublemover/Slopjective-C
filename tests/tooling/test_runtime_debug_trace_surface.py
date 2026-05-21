@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from scripts.objc3c_runtime_debug_trace.payload import (
     build_runtime_debug_trace_payload,
+)
+from scripts.objc3c_runtime_debug_trace.source_contracts import (
+    load_runtime_trace_source_contracts,
 )
 from scripts.objc3c_runtime_debug_trace.validation import (
     validate_runtime_debug_trace_payload,
@@ -64,6 +68,14 @@ def test_runtime_debug_trace_fixture_builds_deterministic_payload() -> None:
     assert payload["event_counts"]["compile-stage"] == contract["expected_event_counts"]["compile-stage"]
     assert payload["event_counts"]["debug-anchor"] == contract["expected_event_counts"]["debug-anchor"]
     assert payload["event_counts"]["reserved-surface"] == contract["expected_event_counts"]["reserved-surface"]
+    for event_kind in [
+        "runtime-actor-snapshot",
+        "runtime-dispatch-snapshot",
+        "runtime-memory-snapshot",
+        "runtime-object-snapshot",
+        "runtime-task-snapshot",
+    ]:
+        assert payload["event_counts"][event_kind] == contract["expected_event_counts"][event_kind]
     assert payload["determinism"]["trace_digest"] == second_payload["determinism"]["trace_digest"]
     assert [event["ordinal"] for event in payload["event_sequence"]] == list(
         range(len(payload["event_sequence"]))
@@ -78,6 +90,8 @@ def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None
 
     for lane in contract["expected_supported_lanes"]:
         assert trace_lanes[lane]["status"] == "supported"
+        if trace_lanes[lane]["source_contract_ids"]:
+            assert trace_lanes[lane]["source_anchors"]
     for lane in contract["expected_reserved_lanes"]:
         assert trace_lanes[lane]["status"] == "reserved"
     assert payload["support_boundary"]["debug_metadata_public_abi"] is False
@@ -111,6 +125,10 @@ def test_runtime_debug_trace_inspection_queries_are_public_and_fail_closed() -> 
         queries["debug.runtime-trace.composed-event-sequence"]["schema_path"]
         == "schemas/objc3c-runtime-debug-trace-v1.schema.json"
     )
+    assert (
+        queries["runtime.source-owned-trace-contracts"]["artifact_path"]
+        == "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+    )
 
 
 def test_runtime_debug_trace_support_handoff_ids_are_explicit() -> None:
@@ -134,9 +152,14 @@ def test_runtime_debug_trace_support_handoff_ids_are_explicit() -> None:
         "editor_surface",
         "runtime_inspector",
     ]
-    for capability_id in contract["required_support_handoff_ids"]:
-        if capability_id == "objc3c.behavior.runtime.debug_trace":
-            continue
+    for capability_id in contract["expected_supported_support_handoff_ids"]:
+        assert rows[capability_id]["status"] == "supported"
+        assert rows[capability_id]["source_anchors"]
+        assert (
+            rows[capability_id]["source_contract_id"]
+            == "objc3.runtime.debug.trace.source-contracts.v1"
+        )
+    for capability_id in contract["expected_reserved_support_handoff_ids"]:
         assert rows[capability_id]["status"] == "reserved"
         assert rows[capability_id]["unpublished_reason"]
 
@@ -175,6 +198,79 @@ def test_runtime_debug_trace_query_validation_rejects_private_supported_commands
     ) in failures
 
 
+def test_runtime_debug_trace_source_contracts_are_runtime_owned_and_private() -> None:
+    payload = fixture_payload()
+    contracts = payload["runtime_trace_contracts"]
+    lanes = {lane["trace_domain"]: lane for lane in contracts["lanes"]}
+    source = (ROOT / contracts["source_path"]).read_text(encoding="utf-8")
+
+    assert contracts == load_runtime_trace_source_contracts()
+    assert contracts["contract_id"] == "objc3.runtime.debug.trace.source-contracts.v1"
+    assert contracts["source_path"] == "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+    assert set(lanes) == {"actor", "dispatch", "memory", "object", "task"}
+    for domain, lane in lanes.items():
+        assert lane["lane_id"] == f"runtime.{domain}.snapshot"
+        assert lane["status"] == "supported"
+        assert lane["deterministic"] is True
+        assert lane["public_abi"] is False
+        assert lane["source_anchor"] in source
+        assert lane["snapshot_symbol"].startswith("objc3_runtime_copy_")
+        assert lane["required_fields"]
+
+
+def test_runtime_debug_trace_validation_rejects_missing_source_contracts() -> None:
+    payload = fixture_payload()
+    del payload["runtime_trace_contracts"]
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert "runtime debug trace payload missing field: runtime_trace_contracts" in failures
+    assert "runtime trace source contracts are missing" in failures
+
+
+def test_runtime_debug_trace_validation_rejects_stale_source_anchor() -> None:
+    payload = fixture_payload()
+    payload["runtime_trace_contracts"] = deepcopy(payload["runtime_trace_contracts"])
+    payload["runtime_trace_contracts"]["lanes"][0]["source_anchor"] = (
+        "OBJ3-NEXT-023.runtime-debug-trace.missing"
+    )
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert (
+        "supported runtime trace contract missing live source anchor: "
+        f"{payload['runtime_trace_contracts']['lanes'][0]['lane_id']}"
+    ) in failures
+
+
+def test_runtime_debug_trace_validation_rejects_stale_input_evidence() -> None:
+    payload = fixture_payload()
+    payload["inputs"] = deepcopy(payload["inputs"])
+    payload["inputs"]["debug_map"]["sha256"] = "0" * 64
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert "input evidence digest is stale: debug_map" in failures
+
+
+def test_runtime_debug_trace_validation_rejects_supported_row_without_source_anchor() -> None:
+    payload = fixture_payload()
+    rows = payload["support_handoff"]["capability_rows"]
+    row = next(
+        row
+        for row in rows
+        if row["capability_id"] == "objc3c.behavior.runtime.debug_trace.memory"
+    )
+    row["source_anchors"] = []
+
+    failures = validate_runtime_debug_trace_payload(payload)
+
+    assert (
+        "supported runtime debug trace row lacks source anchors: "
+        "objc3c.behavior.runtime.debug_trace.memory"
+    ) in failures
+
+
 def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     schema = load_json(ROOT / "schemas" / "objc3c-runtime-debug-trace-v1.schema.json")
 
@@ -187,6 +283,8 @@ def test_runtime_debug_trace_schema_and_public_action_are_registered() -> None:
     assert "trace_lanes" in schema["properties"]
     assert "inspection_queries" in schema["properties"]
     assert "support_boundary" in schema["properties"]
+    assert "runtime_trace_contracts" in schema["required"]
+    assert "runtime_trace_contracts" in schema["properties"]
     assert "trace-runtime-debug" in ACTION_SPECS
     assert "trace-runtime-debug" in ACTION_HANDLERS
     assert ACTION_SPECS["trace-runtime-debug"].pass_through_args is True

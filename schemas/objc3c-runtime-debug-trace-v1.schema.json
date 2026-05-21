@@ -16,6 +16,7 @@
     "artifacts",
     "source_mapping",
     "runtime_inspection",
+    "runtime_trace_contracts",
     "trace_lanes",
     "inspection_queries",
     "support_boundary",
@@ -70,23 +71,95 @@
       "additionalProperties": false
     },
     "runtime_inspection": {"type": "object"},
+    "runtime_trace_contracts": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "macro",
+        "source_path",
+        "implementation_path",
+        "source_sha256",
+        "implementation_sha256",
+        "lane_count",
+        "lanes"
+      ],
+      "properties": {
+        "contract_id": {"const": "objc3.runtime.debug.trace.source-contracts.v1"},
+        "macro": {"const": "OBJC3_RUNTIME_DEBUG_TRACE_LANE_CONTRACTS"},
+        "source_path": {"type": "string"},
+        "implementation_path": {"type": "string"},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "implementation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "lane_count": {"type": "integer", "minimum": 1},
+        "lanes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "lane_id",
+              "trace_domain",
+              "event_kind",
+              "snapshot_header",
+              "snapshot_type",
+              "snapshot_symbol",
+              "required_fields",
+              "status",
+              "source_anchor",
+              "deterministic",
+              "public_abi",
+              "source_path",
+              "source_line"
+            ],
+            "properties": {
+              "lane_id": {"type": "string"},
+              "trace_domain": {"enum": ["task", "actor", "dispatch", "object", "memory"]},
+              "event_kind": {"type": "string"},
+              "snapshot_header": {"type": "string"},
+              "snapshot_type": {"type": "string"},
+              "snapshot_symbol": {"type": "string"},
+              "required_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "status": {"const": "supported"},
+              "source_anchor": {"type": "string"},
+              "deterministic": {"const": true},
+              "public_abi": {"const": false},
+              "source_path": {"type": "string"},
+              "source_line": {"type": "integer", "minimum": 1}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "trace_lanes": {
       "type": "object",
       "required": [
         "object_inspection",
         "message_send_trace",
         "source_to_artifact_mapping",
+        "task_runtime_trace",
+        "actor_runtime_trace",
+        "dispatch_runtime_trace",
+        "object_runtime_trace",
+        "memory_runtime_trace",
         "async_task_inspection",
         "error_unwind_trace",
         "lldb_plugin"
       ],
       "additionalProperties": {
         "type": "object",
-        "required": ["status", "support_class"],
+        "required": ["status", "support_class", "source_anchors", "source_contract_ids"],
         "properties": {
           "status": {"enum": ["supported", "reserved", "rejected", "internal"]},
           "support_class": {"type": "string"},
-          "scope": {"type": "string"}
+          "scope": {"type": "string"},
+          "source_anchors": {"type": "array", "items": {"type": "string"}},
+          "source_contract_ids": {"type": "array", "items": {"type": "string"}}
         },
         "additionalProperties": false
       }

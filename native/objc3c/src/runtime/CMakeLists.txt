@@ -89,6 +89,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/task_state.cpp
   concurrency/task_state.h
   concurrency/task_state_store.h
+  debug/runtime_debug_trace_contracts.cpp
+  debug/runtime_debug_trace_contracts.h
   dispatch/dispatch_abort_diagnostics.cpp
   dispatch/dispatch_abort_diagnostics.h
   dispatch/builtin_methods.cpp
