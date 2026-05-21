@@ -58,6 +58,9 @@ def test_metaprogramming_public_surface_contract_passes(tmp_path: Path) -> None:
     summary = load_json_object(checker.REPORT_PATH)
     assert summary["status"] == "PASS"
     assert summary["issue_ref"] == 8168
+    assert summary["schema_path"] == (
+        "schemas/objc3c-macro-metaprogramming-public-surface-v1.schema.json"
+    )
     assert summary["artifact_ownership_contract_id"] == (
         "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
     )
@@ -74,6 +77,18 @@ def test_metaprogramming_public_surface_contract_passes(tmp_path: Path) -> None:
     ]
     assert summary["surface_counts"]["artifact_ownership_required_fields"] >= 40
     assert summary["surface_counts"]["artifact_ownership_fail_closed_cases"] == 4
+    assert summary["surface_counts"]["reserved_surface_entries"] == 6
+    assert summary["surface_counts"]["fail_closed_validation_cases"] == 8
+    assert summary["supported_surface"]["macro_declaration_model"][
+        "unsafe_host_execution_allowed"
+    ] is False
+    assert summary["expansion_security_policy"][
+        "arbitrary_host_process_execution_allowed"
+    ] is False
+    assert summary["reserved_surface"]["arbitrary_compile_time_execution"][
+        "status"
+    ] == "rejected"
+    assert summary["fail_closed_validation"]["tmp_report_committable"] is False
 
 
 def test_metaprogramming_public_surface_rejects_derive_selector_drift(
@@ -92,3 +107,30 @@ def test_metaprogramming_public_surface_rejects_derive_selector_drift(
     summary = load_json_object(checker.REPORT_PATH)
     assert summary["status"] == "FAIL"
     assert any("isEqualToPublicSurface:" in failure for failure in summary["failures"])
+
+
+def test_metaprogramming_public_surface_rejects_arbitrary_execution_claim(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    _redirect_outputs(checker, tmp_path)
+    contract = deepcopy(load_json_object(CONTRACT_PATH))
+    contract["reserved_surface"]["arbitrary_compile_time_execution"][
+        "status"
+    ] = "supported"
+    contract["supported_surface"]["macro_declaration_model"][
+        "unsafe_host_execution_allowed"
+    ] = True
+    tmp_contract = tmp_path / "contract.json"
+    write_json_file(tmp_contract, contract, sort_keys=True)
+    checker.CONTRACT_PATH = tmp_contract
+
+    assert checker.main() == 1
+
+    summary = load_json_object(checker.REPORT_PATH)
+    assert summary["status"] == "FAIL"
+    assert any(
+        "arbitrary_compile_time_execution" in failure
+        or "unsafe host execution" in failure
+        for failure in summary["failures"]
+    )

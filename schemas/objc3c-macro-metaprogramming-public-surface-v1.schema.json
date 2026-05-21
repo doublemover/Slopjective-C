@@ -1,0 +1,439 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-macro-metaprogramming-public-surface-v1",
+  "title": "objc3c macro metaprogramming public surface",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_path",
+    "schema_version",
+    "issue_ref",
+    "public_command",
+    "runner_path",
+    "source_truth",
+    "supported_surface",
+    "reserved_surface",
+    "expansion_security_policy",
+    "deterministic_fixture_contracts",
+    "fail_closed_validation",
+    "support_claims",
+    "derive_surface",
+    "property_behavior_surface",
+    "macro_safety_surface",
+    "source_contract_paths",
+    "lead_owned_support_rows",
+    "non_claims"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.metaprogramming.public.macro.surface.contract.v1"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-macro-metaprogramming-public-surface-v1.schema.json"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "issue_ref": {
+      "const": 8168
+    },
+    "public_command": {
+      "const": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    "runner_path": {
+      "const": "scripts/check_objc3c_metaprogramming_public_surface.py"
+    },
+    "source_truth": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supported_surface": {
+      "type": "object",
+      "required": [
+        "macro_declaration_model",
+        "derive_model",
+        "property_behavior_model",
+        "host_cache_boundary"
+      ],
+      "properties": {
+        "macro_declaration_model": { "$ref": "#/$defs/macro_declaration_model" },
+        "derive_model": { "$ref": "#/$defs/derive_model" },
+        "property_behavior_model": { "$ref": "#/$defs/property_behavior_model" },
+        "host_cache_boundary": { "$ref": "#/$defs/host_cache_boundary" }
+      },
+      "additionalProperties": false
+    },
+    "reserved_surface": {
+      "type": "object",
+      "required": [
+        "arbitrary_compile_time_execution",
+        "unsafe_plugin_execution",
+        "network_access",
+        "filesystem_write_access",
+        "third_party_macro_ecosystem_compatibility",
+        "runtime_expanded_body_materialization"
+      ],
+      "properties": {
+        "arbitrary_compile_time_execution": { "$ref": "#/$defs/reserved_entry" },
+        "unsafe_plugin_execution": { "$ref": "#/$defs/reserved_entry" },
+        "network_access": { "$ref": "#/$defs/reserved_entry" },
+        "filesystem_write_access": { "$ref": "#/$defs/reserved_entry" },
+        "third_party_macro_ecosystem_compatibility": {
+          "$ref": "#/$defs/reserved_entry"
+        },
+        "runtime_expanded_body_materialization": {
+          "$ref": "#/$defs/reserved_entry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "expansion_security_policy": {
+      "type": "object",
+      "required": [
+        "trust_registry_path",
+        "default_sandbox",
+        "allowed_sandbox_policies",
+        "network_allowed",
+        "filesystem_write_allowed",
+        "arbitrary_host_process_execution_allowed",
+        "third_party_plugin_loading_allowed",
+        "require_signature",
+        "require_replay_metadata",
+        "require_cache_key_binding",
+        "require_deterministic_replay",
+        "fail_closed_requirements",
+        "expected_denial_case_ids"
+      ],
+      "properties": {
+        "trust_registry_path": {
+          "const": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
+        },
+        "default_sandbox": {
+          "const": "deny"
+        },
+        "allowed_sandbox_policies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "network_allowed": { "const": false },
+        "filesystem_write_allowed": { "const": false },
+        "arbitrary_host_process_execution_allowed": { "const": false },
+        "third_party_plugin_loading_allowed": { "const": false },
+        "require_signature": { "const": true },
+        "require_replay_metadata": { "const": true },
+        "require_cache_key_binding": { "const": true },
+        "require_deterministic_replay": { "const": true },
+        "fail_closed_requirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "expected_denial_case_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "deterministic_fixture_contracts": {
+      "type": "object",
+      "required": [
+        "positive_macro_fixtures",
+        "derive_positive_fixture",
+        "property_behavior_positive_fixture",
+        "generated_artifact_boundary_contract",
+        "replay_metadata_sources",
+        "tmp_report_source_truth_allowed"
+      ],
+      "properties": {
+        "positive_macro_fixtures": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "derive_positive_fixture": { "type": "string", "minLength": 1 },
+        "property_behavior_positive_fixture": { "type": "string", "minLength": 1 },
+        "generated_artifact_boundary_contract": {
+          "const": "tests/tooling/fixtures/metaprogramming_public_surface/macro_expansion_artifact_ownership_contract.json"
+        },
+        "replay_metadata_sources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "tmp_report_source_truth_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "fail_closed_validation": {
+      "type": "object",
+      "required": [
+        "validation_runner",
+        "schema_path",
+        "required_negative_case_ids",
+        "required_diagnostic_codes",
+        "source_truth_paths",
+        "tmp_report_committable"
+      ],
+      "properties": {
+        "validation_runner": {
+          "const": "scripts/check_objc3c_metaprogramming_public_surface.py"
+        },
+        "schema_path": {
+          "const": "schemas/objc3c-macro-metaprogramming-public-surface-v1.schema.json"
+        },
+        "required_negative_case_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_diagnostic_codes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "source_truth_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "tmp_report_committable": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "support_claims": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/support_claim" },
+      "minItems": 1
+    },
+    "derive_surface": { "$ref": "#/$defs/derive_surface" },
+    "property_behavior_surface": { "$ref": "#/$defs/property_behavior_surface" },
+    "macro_safety_surface": { "$ref": "#/$defs/macro_safety_surface" },
+    "source_contract_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "lead_owned_support_rows": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "non_claims": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "reserved_entry": {
+      "type": "object",
+      "required": ["status", "reason"],
+      "properties": {
+        "status": {
+          "enum": ["reserved", "rejected", "deferred", "internal"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "macro_declaration_model": {
+      "type": "object",
+      "required": [
+        "status",
+        "supported_macro_names",
+        "supported_attribute_names",
+        "admitted_callable_topologies",
+        "reserved_callable_topologies",
+        "expansion_authority",
+        "unsafe_host_execution_allowed"
+      ],
+      "properties": {
+        "status": { "const": "supported" },
+        "supported_macro_names": { "$ref": "#/$defs/string_array" },
+        "supported_attribute_names": { "$ref": "#/$defs/string_array" },
+        "admitted_callable_topologies": { "$ref": "#/$defs/string_array" },
+        "reserved_callable_topologies": { "$ref": "#/$defs/string_array" },
+        "expansion_authority": {
+          "const": "checked semantic metadata, trust registry, deterministic replay metadata, and host-cache provenance"
+        },
+        "unsafe_host_execution_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "derive_model": {
+      "type": "object",
+      "required": ["status", "supported_forms", "reserved_forms"],
+      "properties": {
+        "status": { "const": "supported" },
+        "supported_forms": { "$ref": "#/$defs/string_array" },
+        "reserved_forms": { "$ref": "#/$defs/string_array" }
+      },
+      "additionalProperties": false
+    },
+    "property_behavior_model": {
+      "type": "object",
+      "required": ["status", "supported_behaviors", "reserved_behaviors"],
+      "properties": {
+        "status": { "const": "supported" },
+        "supported_behaviors": { "$ref": "#/$defs/string_array" },
+        "reserved_behaviors": { "$ref": "#/$defs/string_array" }
+      },
+      "additionalProperties": false
+    },
+    "host_cache_boundary": {
+      "type": "object",
+      "required": [
+        "status",
+        "artifact_contract",
+        "generated_artifacts_are_support_authority"
+      ],
+      "properties": {
+        "status": { "const": "supported" },
+        "artifact_contract": {
+          "const": "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
+        },
+        "generated_artifacts_are_support_authority": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "support_claim": {
+      "type": "object",
+      "required": [
+        "claim_id",
+        "capability_id",
+        "owner_phase",
+        "behavior_fixture",
+        "runnable_command",
+        "runtime_acceptance_case",
+        "required_positive_evidence",
+        "required_negative_evidence",
+        "required_diagnostic_codes"
+      ],
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "pattern": "^objc3c\\.behavior\\."
+        },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "owner_phase": {
+          "enum": ["parser", "sema", "lowering", "ir", "runtime", "e2e"]
+        },
+        "behavior_fixture": { "type": "string", "minLength": 1 },
+        "runnable_command": { "type": "string", "minLength": 1 },
+        "runtime_acceptance_case": { "type": "string", "minLength": 1 },
+        "required_positive_evidence": { "$ref": "#/$defs/string_array" },
+        "required_negative_evidence": { "$ref": "#/$defs/string_array" },
+        "required_diagnostic_codes": { "$ref": "#/$defs/string_array" }
+      },
+      "additionalProperties": false
+    },
+    "derive_surface": {
+      "type": "object",
+      "required": ["positive_fixture", "supported_forms", "expected_negative_cases"],
+      "properties": {
+        "positive_fixture": { "type": "string", "minLength": 1 },
+        "supported_forms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "aliases", "selector"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "aliases": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true
+              },
+              "selector": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "expected_negative_cases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic_case" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "property_behavior_surface": {
+      "type": "object",
+      "required": [
+        "positive_fixture",
+        "supported_behaviors",
+        "expected_negative_cases"
+      ],
+      "properties": {
+        "positive_fixture": { "type": "string", "minLength": 1 },
+        "supported_behaviors": { "$ref": "#/$defs/string_array" },
+        "expected_negative_cases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic_case" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "macro_safety_surface": {
+      "type": "object",
+      "required": [
+        "positive_fixture_paths",
+        "required_attributes",
+        "trusted_packages",
+        "allowed_macro_names",
+        "allowed_sandbox_policies",
+        "expected_denial_case_ids"
+      ],
+      "properties": {
+        "positive_fixture_paths": { "$ref": "#/$defs/string_array" },
+        "required_attributes": { "$ref": "#/$defs/string_array" },
+        "trusted_packages": { "$ref": "#/$defs/string_array" },
+        "allowed_macro_names": { "$ref": "#/$defs/string_array" },
+        "allowed_sandbox_policies": { "$ref": "#/$defs/string_array" },
+        "expected_denial_case_ids": { "$ref": "#/$defs/string_array" }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic_case": {
+      "type": "object",
+      "required": ["key", "fixture", "code", "message"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "fixture": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "pattern": "^O3" },
+        "message": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
