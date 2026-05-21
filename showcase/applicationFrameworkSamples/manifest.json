@@ -25,6 +25,7 @@
       "module_name": "RouteModelKit",
       "source": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/routeModelKit/workspace.json",
+      "replay_contract": "showcase/applicationFrameworkSamples/libraries/routeModelKit/replay-contract.json",
       "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/routeModelKit",
       "support_claims": [
@@ -46,6 +47,7 @@
       "module_name": "InteropAdapterKit",
       "source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/workspace.json",
+      "replay_contract": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/replay-contract.json",
       "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
       "support_claims": [
@@ -68,6 +70,7 @@
       "module_name": "WorkflowStdlibCLI",
       "source": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/workspace.json",
+      "replay_contract": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/replay-contract.json",
       "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/workflowStdlibCLI",
       "support_claims": [
@@ -93,6 +96,7 @@
       "module_name": "AsyncRuntimeConsole",
       "source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
       "workspace_manifest": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/workspace.json",
+      "replay_contract": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/replay-contract.json",
       "tutorial": "docs/tutorials/application-framework-samples.md",
       "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
       "support_claims": [

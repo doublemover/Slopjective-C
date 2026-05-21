@@ -15,6 +15,7 @@ CONTRACT_PATH = (
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-framework-samples" / "summary.json"
 MANIFEST_CONTRACT_ID = "objc3c.application_framework_samples.v1"
 WORKSPACE_CONTRACT_ID = "objc3c.application_framework_samples.workspace.v1"
+REPLAY_CONTRACT_ID = "objc3c.application_framework_samples.replay_contract.v1"
 CONTRACT_ID = "objc3c.application_framework_samples.contract.v1"
 SUMMARY_CONTRACT_ID = "objc3c.application_framework_samples.summary.v1"
 COMPILE_EMIT_PREFIX = "module"

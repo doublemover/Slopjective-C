@@ -7,6 +7,7 @@
   "module_name": "AsyncRuntimeConsole",
   "workspace_root": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole",
   "entry_source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+  "replay_contract": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/replay-contract.json",
   "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
   "emit_prefix": "module",
   "capabilities": [

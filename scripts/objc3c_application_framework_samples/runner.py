@@ -19,7 +19,12 @@ from .constants import (
     ROOT,
 )
 from .models import FrameworkSample
-from .validation import build_compile_command, load_json, validate_manifest
+from .validation import (
+    build_compile_command,
+    load_json,
+    validate_compiled_replay_contract,
+    validate_manifest,
+)
 
 RunCommand = Callable[[list[str]], CommandExecution]
 
@@ -102,12 +107,23 @@ def _compile_sample(
     missing_artifacts = [
         path for path in artifacts.values() if not (root / path).is_file()
     ]
+    replay_contract = load_json(sample.replay_contract_path(root))
+    replay_failures = (
+        validate_compiled_replay_contract(
+            root=root,
+            sample=sample,
+            replay_contract=replay_contract,
+        )
+        if result.returncode == 0
+        else [f"{sample.sample_id}: compile command failed before replay validation"]
+    )
     return {
         "sample_id": sample.sample_id,
         "package_id": sample.package_id,
         "kind": sample.kind,
         "source": sample.source,
         "workspace_manifest": sample.workspace_manifest,
+        "replay_contract": sample.replay_contract,
         "tutorial": sample.tutorial,
         "module_name": sample.module_name,
         "capabilities": list(sample.capabilities),
@@ -121,7 +137,10 @@ def _compile_sample(
         "stale_artifacts_allowed": False,
         "artifacts": artifacts,
         "missing_artifacts": missing_artifacts,
-        "status": "PASS" if result.returncode == 0 and not missing_artifacts else "FAIL",
+        "replay_failures": replay_failures,
+        "status": "PASS"
+        if result.returncode == 0 and not missing_artifacts and not replay_failures
+        else "FAIL",
     }
 
 
@@ -187,6 +206,7 @@ def run_framework_sample_validation(
                 "package_id": sample.package_id,
                 "source": sample.source,
                 "workspace_manifest": sample.workspace_manifest,
+                "replay_contract": sample.replay_contract,
                 "tutorial": sample.tutorial,
                 "capabilities": list(sample.capabilities),
                 "support_claims": list(sample.support_claims),

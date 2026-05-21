@@ -1,0 +1,59 @@
+{
+  "contract_id": "objc3c.application_framework_samples.replay_contract.v1",
+  "schema_version": 1,
+  "sample_id": "workflowStdlibCLI",
+  "package_id": "showcase-framework:workflowStdlibCLI",
+  "module_name": "WorkflowStdlibCLI",
+  "source": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+  "workspace_manifest": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/workspace.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/workflowStdlibCLI",
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
+  ],
+  "package_dependencies": [
+    "stdlib:objc3.core",
+    "showcase-framework:routeModelKit"
+  ],
+  "required_source_terms": [
+    "objc3_runtime_stdlib_core_count_i32",
+    "objc3_runtime_stdlib_core_prefix_count_i32",
+    "workflowMapValue",
+    "fn main() -> i32"
+  ],
+  "expected_symbols": {
+    "functions": [
+      "objc3_runtime_stdlib_core_count_i32",
+      "objc3_runtime_stdlib_core_prefix_count_i32",
+      "objc3_runtime_stdlib_core_map_entry_present_i32",
+      "objc3_runtime_stdlib_core_map_entry_value_or_i32",
+      "stringViewUnits",
+      "byteSpanPrefix",
+      "workflowItemWindow",
+      "workflowMapValue",
+      "main"
+    ],
+    "interfaces": [],
+    "protocols": [],
+    "categories": []
+  },
+  "expected_runtime_registration": {
+    "class_descriptor_count": 0,
+    "protocol_descriptor_count": 0,
+    "category_descriptor_count": 0,
+    "property_descriptor_count": 0,
+    "ivar_descriptor_count": 0,
+    "total_descriptor_count": 0
+  },
+  "expected_compile_output_truthfulness": {
+    "truthful": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32"
+  },
+  "minimum_artifact_count": 17,
+  "required_emitted_artifacts": [
+    "module.ll",
+    "module.obj",
+    "module.manifest.json",
+    "module.runtime-metadata.bin",
+    "module.runtime-import-surface.json"
+  ]
+}

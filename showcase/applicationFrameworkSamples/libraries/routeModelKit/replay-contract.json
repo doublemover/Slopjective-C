@@ -1,0 +1,65 @@
+{
+  "contract_id": "objc3c.application_framework_samples.replay_contract.v1",
+  "schema_version": 1,
+  "sample_id": "routeModelKit",
+  "package_id": "showcase-framework:routeModelKit",
+  "module_name": "RouteModelKit",
+  "source": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+  "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/routeModelKit/workspace.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/routeModelKit",
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.object-runtime-library"
+  ],
+  "package_dependencies": [],
+  "required_source_terms": [
+    "@protocol RouteReadable",
+    "@interface RouteStage",
+    "@implementation RouteStage (Inspection)",
+    "@keypath(RouteStage, token)"
+  ],
+  "expected_symbols": {
+    "functions": [
+      "route_model_keypath_token",
+      "main"
+    ],
+    "interfaces": [
+      "RouteStage"
+    ],
+    "protocols": [
+      "RouteReadable",
+      "RouteInspectable"
+    ],
+    "categories": [
+      {
+        "class_name": "RouteStage",
+        "category_name": "Inspection",
+        "record_kind": "interface"
+      },
+      {
+        "class_name": "RouteStage",
+        "category_name": "Inspection",
+        "record_kind": "implementation"
+      }
+    ]
+  },
+  "expected_runtime_registration": {
+    "class_descriptor_count": 2,
+    "protocol_descriptor_count": 2,
+    "category_descriptor_count": 2,
+    "property_descriptor_count": 5,
+    "ivar_descriptor_count": 2,
+    "total_descriptor_count": 13
+  },
+  "expected_compile_output_truthfulness": {
+    "truthful": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32"
+  },
+  "minimum_artifact_count": 17,
+  "required_emitted_artifacts": [
+    "module.ll",
+    "module.obj",
+    "module.manifest.json",
+    "module.runtime-metadata.bin",
+    "module.runtime-import-surface.json"
+  ]
+}

@@ -7,6 +7,7 @@
   "module_name": "InteropAdapterKit",
   "workspace_root": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit",
   "entry_source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+  "replay_contract": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/replay-contract.json",
   "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
   "emit_prefix": "module",
   "capabilities": [

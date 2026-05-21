@@ -34,12 +34,16 @@ the repository root:
 npm run objc3c -- validate-application-framework-samples
 ```
 
-The checker validates `manifest.json`, each workspace manifest, package
-dependency edges, tutorial routes, and compiles each sample source through:
+The checker validates `manifest.json`, each workspace manifest, each
+`replay-contract.json`, package dependency edges, tutorial routes, and compiles
+each sample source through:
 
 ```powershell
 npm run objc3c -- compile-objc3c -- <source> --out-dir <sample artifact root> --emit-prefix module
 ```
 
 Outputs are machine-owned under `tmp/artifacts/application-framework-samples/`
-and `tmp/reports/application-framework-samples/`.
+and `tmp/reports/application-framework-samples/`. The checked-in replay
+contracts assert the real emitted module identity, source path, package edges,
+runtime registration descriptor counts, required artifacts, and compile
+truthfulness provenance for each sample.

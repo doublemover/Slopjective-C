@@ -48,8 +48,9 @@ npm run objc3c -- compile-objc3c -- showcase/applicationFrameworkSamples/apps/as
 
 ## Validate
 
-The focused checker validates the manifest, workspace manifests, tutorial
-routes, package edges, clean artifact roots, and sample compile outputs:
+The focused checker validates the manifest, workspace manifests,
+`replay-contract.json` files, tutorial routes, package edges, clean artifact
+roots, and sample compile outputs:
 
 ```powershell
 npm run objc3c -- validate-application-framework-samples
@@ -57,13 +58,15 @@ npm run objc3c -- validate-application-framework-samples
 
 ## Inspect And Modify
 
-Each sample keeps its source in `main.objc3` and its package/build contract in
-`workspace.json`. After compiling a sample, inspect the emitted `module.ll`,
+Each sample keeps its source in `main.objc3`, its package/build contract in
+`workspace.json`, and its replay contract in `replay-contract.json`. After
+compiling a sample, inspect the emitted `module.ll`,
 `module.manifest.json`, `module.compile-provenance.json`, and
 `module.runtime-registration-manifest.json` files under that sample's
 `tmp/artifacts/application-framework-samples/<sample-id>` directory.
 
 Modify a sample by editing its `main.objc3` source and, when package metadata
-changes, the adjacent `workspace.json`. Re-run the same public compile command
-for the sample or run the full `validate-application-framework-samples` action
-to rebuild from a clean sample artifact root.
+changes, the adjacent `workspace.json` and `replay-contract.json`. Re-run the
+same public compile command for the sample or run the full
+`validate-application-framework-samples` action to rebuild from a clean sample
+artifact root.

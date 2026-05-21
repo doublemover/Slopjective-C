@@ -35,6 +35,7 @@ def test_application_framework_sample_manifest_is_real_source_backed() -> None:
     ]
     assert all((ROOT / sample.source).is_file() for sample in samples)
     assert all((ROOT / sample.workspace_manifest).is_file() for sample in samples)
+    assert all((ROOT / sample.replay_contract).is_file() for sample in samples)
     assert all((ROOT / sample.tutorial).is_file() for sample in samples)
 
 
@@ -63,12 +64,79 @@ def test_application_framework_contract_has_no_generated_source_roots() -> None:
         assert sample["source"].startswith("showcase/applicationFrameworkSamples/")
         assert not sample["source"].startswith(("tmp/", "artifacts/"))
         assert not sample["workspace_manifest"].startswith(("tmp/", "artifacts/"))
+        assert sample["replay_contract"].startswith("showcase/applicationFrameworkSamples/")
+        assert not sample["replay_contract"].startswith(("tmp/", "artifacts/"))
         assert sample["tutorial"].startswith("docs/tutorials/")
         assert not sample["tutorial"].startswith(("tmp/", "artifacts/"))
 
     for edge in manifest_payload["package_edges"]:
         assert edge["from"].startswith("showcase-framework:")
         assert edge["to"].startswith(("showcase-framework:", "stdlib:"))
+
+
+def _sample_payload_by_source(source: str) -> dict[str, object]:
+    manifest = load_json(MANIFEST_PATH)
+    for sample in manifest["samples"]:
+        if sample["source"] == source:
+            return sample
+    raise AssertionError(f"unknown sample source {source}")
+
+
+def _write_fake_compile_artifacts(command: list[str], *, module_override: str | None = None) -> None:
+    source = command[5]
+    sample = _sample_payload_by_source(source)
+    replay = load_json(ROOT / str(sample["replay_contract"]))
+    out_dir = ROOT / command[command.index("--out-dir") + 1]
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    expected_symbols = replay["expected_symbols"]
+    expected_runtime = replay["expected_runtime_registration"]
+    required_artifacts = replay["required_emitted_artifacts"]
+    for artifact in required_artifacts:
+        artifact_path = out_dir / str(artifact)
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_text("fresh", encoding="utf-8")
+
+    (out_dir / "module.manifest.json").write_text(
+        json.dumps(
+            {
+                "source": source,
+                "module": module_override or sample["module_name"],
+                "functions": [
+                    {"name": name} for name in expected_symbols.get("functions", [])
+                ],
+                "interfaces": [
+                    {"name": name} for name in expected_symbols.get("interfaces", [])
+                ],
+                "protocols": [
+                    {"name": name} for name in expected_symbols.get("protocols", [])
+                ],
+                "categories": expected_symbols.get("categories", []),
+            }
+        ),
+        encoding="utf-8",
+    )
+    (out_dir / "module.runtime-registration-manifest.json").write_text(
+        json.dumps(expected_runtime),
+        encoding="utf-8",
+    )
+    (out_dir / "module.compile-provenance.json").write_text(
+        json.dumps(
+            {
+                "input_source": source,
+                "artifact_count": replay["minimum_artifact_count"],
+                "compile_output_truthfulness": {
+                    "truthful": True,
+                    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+                },
+                "emitted_artifacts": [
+                    {"path": artifact, "byte_count": 5, "sha256": "fake"}
+                    for artifact in required_artifacts
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_application_framework_sample_compile_starts_from_clean_artifact_root() -> None:
@@ -78,11 +146,7 @@ def test_application_framework_sample_compile_starts_from_clean_artifact_root() 
     stale_marker.write_text("stale", encoding="utf-8")
 
     def fake_compile(command: list[str]) -> CommandExecution:
-        out_dir = ROOT / command[command.index("--out-dir") + 1]
-        for artifact in load_json(CONTRACT_PATH)["required_artifacts"]:
-            artifact_path = out_dir / artifact
-            artifact_path.parent.mkdir(parents=True, exist_ok=True)
-            artifact_path.write_text("fresh", encoding="utf-8")
+        _write_fake_compile_artifacts(command)
         return CommandExecution(
             command=tuple(command),
             cwd=str(ROOT),
@@ -103,4 +167,29 @@ def test_application_framework_sample_compile_starts_from_clean_artifact_root() 
     assert result["sample_id"] == "routeModelKit"
     assert result["preexisting_artifact_root_removed"] is True
     assert result["stale_artifacts_allowed"] is False
+    assert result["replay_failures"] == []
     assert not stale_marker.exists()
+
+
+def test_application_framework_sample_compile_fails_on_replay_contract_drift() -> None:
+    def fake_compile(command: list[str]) -> CommandExecution:
+        _write_fake_compile_artifacts(command, module_override="DocsOnlyStub")
+        return CommandExecution(
+            command=tuple(command),
+            cwd=str(ROOT),
+            returncode=0,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+        )
+
+    exit_code, payload = run_framework_sample_validation(
+        selected_sample_ids={"routeModelKit"},
+        compile_samples=True,
+        run_command=fake_compile,
+    )
+
+    assert exit_code == 1
+    result = payload["compile_results"][0]
+    assert result["status"] == "FAIL"
+    assert "routeModelKit: compiled manifest module drifted" in result["replay_failures"]

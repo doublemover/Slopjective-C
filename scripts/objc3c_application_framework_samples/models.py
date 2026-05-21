@@ -13,6 +13,7 @@ class FrameworkSample:
     module_name: str
     source: str
     workspace_manifest: str
+    replay_contract: str
     tutorial: str
     artifact_root: str
     capabilities: tuple[str, ...]
@@ -29,6 +30,7 @@ class FrameworkSample:
             module_name=str(payload["module_name"]),
             source=str(payload["source"]),
             workspace_manifest=str(payload["workspace_manifest"]),
+            replay_contract=str(payload["replay_contract"]),
             tutorial=str(payload["tutorial"]),
             artifact_root=str(payload["artifact_root"]),
             capabilities=tuple(str(item) for item in payload.get("capabilities", [])),
@@ -47,6 +49,9 @@ class FrameworkSample:
 
     def workspace_path(self, root: Path) -> Path:
         return root / self.workspace_manifest
+
+    def replay_contract_path(self, root: Path) -> Path:
+        return root / self.replay_contract
 
     def tutorial_path(self, root: Path) -> Path:
         return root / self.tutorial

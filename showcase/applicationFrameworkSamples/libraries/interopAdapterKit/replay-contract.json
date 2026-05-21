@@ -1,0 +1,53 @@
+{
+  "contract_id": "objc3c.application_framework_samples.replay_contract.v1",
+  "schema_version": 1,
+  "sample_id": "interopAdapterKit",
+  "package_id": "showcase-framework:interopAdapterKit",
+  "module_name": "InteropAdapterKit",
+  "source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+  "workspace_manifest": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/workspace.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.interop-adapter-library"
+  ],
+  "package_dependencies": [],
+  "required_source_terms": [
+    "objc_foreign",
+    "objc_import_module(named(\"FrameworkSamplesHost\"))",
+    "objc_derive(named(\"Equatable\"))",
+    "objc_macro(named(\"FrameworkTrace\"))"
+  ],
+  "expected_symbols": {
+    "functions": [
+      "adapterForeignEntry",
+      "adapterMacroValue",
+      "main"
+    ],
+    "interfaces": [
+      "AdapterRecord"
+    ],
+    "protocols": [],
+    "categories": []
+  },
+  "expected_runtime_registration": {
+    "class_descriptor_count": 2,
+    "protocol_descriptor_count": 0,
+    "category_descriptor_count": 0,
+    "property_descriptor_count": 2,
+    "ivar_descriptor_count": 1,
+    "total_descriptor_count": 5
+  },
+  "expected_compile_output_truthfulness": {
+    "truthful": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32"
+  },
+  "minimum_artifact_count": 20,
+  "required_emitted_artifacts": [
+    "module.ll",
+    "module.obj",
+    "module.manifest.json",
+    "module.runtime-metadata.bin",
+    "module.runtime-import-surface.json",
+    "module.metaprogramming-macro-host-cache.json"
+  ]
+}
