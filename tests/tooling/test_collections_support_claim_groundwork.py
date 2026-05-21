@@ -37,14 +37,10 @@ COLLECTIONS_NEGATIVE_FIXTURE = (
 )
 FOUNDATION_NEXT_PROBE = "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp"
 EXPECTED_RESERVED_PUBLIC_SURFACES = {
-    "collection literals",
-    "generic element/key/value typing",
-    "owned arbitrary-length array storage",
-    "array mutation",
-    "syntax-level for-in integration",
-    "map iteration protocol",
+    "non-i32 collection storage",
     "non-i32 hashing",
-    "set deletion",
+    "Foundation collection bridging",
+    "collection display or string interpolation",
 }
 
 
@@ -251,15 +247,11 @@ def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> 
     )
 
     forbidden_fragments = {
-        "literal",
-        "generic",
         "foundation",
         "nsarray",
         "nsdictionary",
-        "arbitrary-length",
-        "for-in",
-        "delete",
         "hashing",
+        "interpolation",
     }
     for row in runtime_collection_rows:
         claim_text = row["support_claim"].lower()
@@ -274,6 +266,4 @@ def test_issue_8161_boundary_names_reserved_collection_surfaces() -> None:
 
     for reserved_surface in contract["reserved_public_surfaces"]:
         reserved_text = str(reserved_surface).lower()
-        if reserved_text == "map iteration protocol":
-            reserved_text = "map iteration"
         assert reserved_text in boundary

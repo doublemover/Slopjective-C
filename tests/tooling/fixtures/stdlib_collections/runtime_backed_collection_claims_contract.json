@@ -4,14 +4,10 @@
   "issue_ref": 8161,
   "scope": "runtime-backed-objc3-collections-module",
   "reserved_public_surfaces": [
-    "collection literals",
-    "generic element/key/value typing",
-    "owned arbitrary-length array storage",
-    "array mutation",
-    "syntax-level for-in integration",
-    "map iteration protocol",
+    "non-i32 collection storage",
     "non-i32 hashing",
-    "set deletion"
+    "Foundation collection bridging",
+    "collection display or string interpolation"
   ],
   "source_truth": [
     "stdlib/modules/objc3.collections/module.json",
@@ -54,7 +50,13 @@
       "Objc3CollectionsStatusNotFound": 30634,
       "Objc3CollectionsStatusInvalidRange": 30635,
       "Objc3CollectionsStatusIterationEnd": 30636,
-      "Objc3CollectionsStatusMutatedDuringIteration": 30637
+      "Objc3CollectionsStatusMutatedDuringIteration": 30637,
+      "Objc3CollectionsStatusCrossKindHandle": 30638,
+      "Objc3CollectionsStatusStaleHandle": 30639,
+      "Objc3CollectionsStatusMalformedDescriptor": 30640,
+      "Objc3CollectionsStatusDescriptorMismatch": 30641,
+      "Objc3CollectionsStatusCapacityExceeded": 30653,
+      "Objc3CollectionsStatusOverflow": 30654
     },
     "fail_closed_statuses": [
       {
@@ -91,6 +93,36 @@
         "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION",
         "value": 30637,
         "boundary": "mutation during set iteration"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CROSS_KIND_HANDLE",
+        "value": 30638,
+        "boundary": "cross-kind handles"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_STALE_HANDLE",
+        "value": 30639,
+        "boundary": "stale handles"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR",
+        "value": 30640,
+        "boundary": "malformed descriptors"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH",
+        "value": 30641,
+        "boundary": "descriptor mismatches"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED",
+        "value": 30653,
+        "boundary": "capacity exhaustion"
+      },
+      {
+        "constant": "OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OVERFLOW",
+        "value": 30654,
+        "boundary": "checked arithmetic overflow"
       }
     ]
   },
@@ -102,6 +134,13 @@
       "api_family": "concrete-i32-array-storage",
       "exports": [
         "objc3_collections_array3",
+        "objc3_collections_descriptor",
+        "objc3_collections_descriptor_matches",
+        "objc3_collections_array3_descriptor",
+        "objc3_collections_mutable_array",
+        "objc3_collections_mutable_array_append",
+        "objc3_collections_mutable_array_set",
+        "objc3_collections_mutable_array_remove_at",
         "objc3_collections_array_count",
         "objc3_collections_array_get_or",
         "objc3_collections_array_prefix_count",
@@ -115,6 +154,13 @@
       ],
       "runtime_abi": [
         "objc3_runtime_stdlib_collections_array3_i32",
+        "objc3_runtime_stdlib_collections_descriptor_i32",
+        "objc3_runtime_stdlib_collections_descriptor_matches_i32",
+        "objc3_runtime_stdlib_collections_array3_descriptor_i32",
+        "objc3_runtime_stdlib_collections_mutable_array_i32",
+        "objc3_runtime_stdlib_collections_mutable_array_append_i32",
+        "objc3_runtime_stdlib_collections_mutable_array_set_i32",
+        "objc3_runtime_stdlib_collections_mutable_array_remove_at_i32",
         "objc3_runtime_stdlib_collections_array_count_i32",
         "objc3_runtime_stdlib_collections_array_get_or_i32",
         "objc3_runtime_stdlib_collections_array_prefix_count_i32",
@@ -128,6 +174,10 @@
       ],
       "semantic_policy_keys": [
         "array3_record",
+        "type_descriptor",
+        "descriptor_match",
+        "descriptor_array3",
+        "mutable_array",
         "array_count",
         "array_get_or",
         "array_prefix_count",
@@ -138,16 +188,16 @@
       ],
       "supported_now": [
         "runtime-owned concrete i32 array records are created only for counts from zero through three",
+        "descriptor-backed Array<i32> construction and descriptor compatibility checks reject malformed descriptors and descriptor mismatches",
+        "mutable i32 arrays support allocation, append, indexed set, and remove-at through generation-tracked runtime storage",
         "count, indexed get-or, prefix count, slice creation, slice indexing, and status reporting are routed through the objc3.collections runtime ABI",
         "array and slice iterators return deterministic insertion/view-order values followed by explicit iteration-end status",
-        "invalid handles, out-of-bounds indexes, invalid ranges, and invalid counts fail closed with stable status codes"
+        "invalid handles, cross-kind handles, stale handles, out-of-bounds indexes, invalid ranges, invalid counts, capacity exhaustion, and checked arithmetic overflow fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
-        "array literals",
-        "generic element typing",
-        "owned arbitrary-length array storage",
-        "array mutation",
-        "syntax-level for-in integration"
+        "non-i32 collection storage",
+        "Foundation collection bridging",
+        "collection display or string interpolation"
       ]
     },
     {
@@ -189,36 +239,52 @@
       "api_family": "concrete-i32-map-entry-storage",
       "exports": [
         "objc3_collections_map_entry",
+        "objc3_collections_map_entry_descriptor",
+        "objc3_collections_map_empty",
         "objc3_collections_map_count",
         "objc3_collections_map_contains",
         "objc3_collections_map_insert",
+        "objc3_collections_map_delete",
         "objc3_collections_map_lookup_or",
+        "objc3_collections_map_key_iterator",
+        "objc3_collections_map_value_iterator",
         "objc3_collections_last_status"
       ],
       "runtime_abi": [
         "objc3_runtime_stdlib_collections_map_entry_i32",
+        "objc3_runtime_stdlib_collections_map_entry_descriptor_i32",
+        "objc3_runtime_stdlib_collections_map_empty_i32",
         "objc3_runtime_stdlib_collections_map_count_i32",
         "objc3_runtime_stdlib_collections_map_contains_i32",
         "objc3_runtime_stdlib_collections_map_insert_i32",
+        "objc3_runtime_stdlib_collections_map_delete_i32",
         "objc3_runtime_stdlib_collections_map_lookup_or_i32",
+        "objc3_runtime_stdlib_collections_map_key_iterator_i32",
+        "objc3_runtime_stdlib_collections_map_value_iterator_i32",
         "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
         "map_entry",
+        "map_entry_descriptor",
+        "map_empty",
         "map_insert",
+        "map_delete",
+        "map_iteration",
         "map_lookup_or"
       ],
       "supported_now": [
         "i32 map records are runtime-owned handles created through objc3_runtime_stdlib_collections_map_entry_i32 and widened by objc3_runtime_stdlib_collections_map_insert_i32",
+        "descriptor-backed Map<i32,i32> construction and empty-map allocation preserve runtime descriptor identity",
         "map count, contains, insert, lookup-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "map delete removes present keys, reports not-found for missing keys, and participates in mutation generation tracking",
+        "map key and value iterators preserve insertion order and fail closed on mutation-generation invalidation",
         "new keys append deterministic entries, existing keys are replaced in place, and current entry count is returned after mutation",
         "invalid handles and missing keys fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
-        "dictionary literals",
-        "generic key or value typing",
         "key hashing beyond concrete i32 key equality",
-        "map iteration protocol"
+        "Foundation collection bridging",
+        "collection display or string interpolation"
       ]
     },
     {
@@ -228,46 +294,52 @@
       "api_family": "concrete-i32-set-storage",
       "exports": [
         "objc3_collections_set3",
+        "objc3_collections_set3_descriptor",
         "objc3_collections_set_count",
         "objc3_collections_set_contains",
         "objc3_collections_set_insert",
+        "objc3_collections_set_delete",
         "objc3_collections_set_iterator",
         "objc3_collections_iterator_next_or",
         "objc3_collections_last_status"
       ],
       "runtime_abi": [
         "objc3_runtime_stdlib_collections_set3_i32",
+        "objc3_runtime_stdlib_collections_set3_descriptor_i32",
         "objc3_runtime_stdlib_collections_set_count_i32",
         "objc3_runtime_stdlib_collections_set_contains_i32",
         "objc3_runtime_stdlib_collections_set_insert_i32",
+        "objc3_runtime_stdlib_collections_set_delete_i32",
         "objc3_runtime_stdlib_collections_set_iterator_i32",
         "objc3_runtime_stdlib_collections_iterator_next_or_i32",
         "objc3_runtime_stdlib_collections_last_status_i32"
       ],
       "semantic_policy_keys": [
         "set3_record",
+        "set3_descriptor",
         "set_contains",
         "set_insert",
+        "set_delete",
         "set_iterator"
       ],
       "supported_now": [
         "runtime-owned concrete i32 set records are created only for counts from zero through three and deduplicate values in insertion order",
+        "descriptor-backed Set<i32> construction preserves descriptor identity and rejects descriptor mismatches",
         "set count, contains, insert, iterator creation, iterator next-or, and status reporting are routed through the objc3.collections runtime ABI",
+        "set delete removes present values, reports not-found for absent values, and participates in mutation generation tracking",
         "missing values, invalid handles, invalid counts, and mutation during set iteration fail closed with stable status codes"
       ],
       "reserved_until_runtime_storage": [
-        "set literals",
-        "generic element typing",
         "hashing beyond concrete i32 equality",
-        "set deletion",
-        "syntax-level for-in integration"
+        "Foundation collection bridging",
+        "collection display or string interpolation"
       ]
     }
   ],
   "non_goals": [
-    "collection literal support claims",
-    "generic collection ABI promises",
+    "non-i32 collection storage support claims",
     "Foundation compatibility promises",
+    "collection display or string interpolation claims",
     "widening objc3.core helper claims into objc3.collections without the dedicated module contract"
   ]
 }
