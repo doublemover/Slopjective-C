@@ -125,6 +125,31 @@ inline bool TypedBoolCategoryResultPassed(
          TextEquals(result.result_contract, "typed-dispatch-value-result");
 }
 
+inline bool ProtocolExistentialWitnessMetadataPassed(
+    const objc3_runtime_protocol_conformance_query_snapshot &query,
+    const char *expected_existential,
+    const char *expected_conformance_owner) {
+  return query.witness_metadata_materialized == 1 &&
+         query.witness_metadata_supported == 1 &&
+         query.conformance_edge_materializable == 1 &&
+         query.associated_types_supported == 0 &&
+         query.dynamic_existential_dispatch_supported == 0 &&
+         query.fail_closed_for_unsupported_semantics == 1 &&
+         TextEquals(query.existential_canonical_spelling,
+                    expected_existential) &&
+         TextEquals(query.object_representation, "id") &&
+         TextEquals(query.conformance_owner_identity,
+                    expected_conformance_owner) &&
+         TextEquals(query.runtime_lookup_anchor,
+                    "QueryRealizedClassProtocolConformanceUnlocked") &&
+         TextEquals(query.witness_metadata_key,
+                    "protocol-witness-conformance-metadata") &&
+         TextEquals(query.requirement_resolution_policy,
+                    "semantic-requirements-before-runtime-conformance-edge") &&
+         TextEquals(query.unsupported_associated_type_diagnostic, "O3P100") &&
+         TextEquals(query.unsupported_dynamic_dispatch_diagnostic, "O3S314");
+}
+
 inline bool CategoryAttachmentProtocolRuntimeProbePassed(
     const CategoryAttachmentProtocolProbeRun &run) {
   const CategoryAttachmentProtocolValues &values = run.values;
@@ -188,10 +213,14 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          widget.attached_protocol_count == 1 && base.found == 1 &&
          base.attached_protocol_count == 0 && worker.conforms == 1 &&
          worker.malformed_metadata == 0 &&
+         ProtocolExistentialWitnessMetadataPassed(worker, "id<Worker>",
+                                                  "class:Widget") &&
          TextPresent(worker.matched_protocol_owner_identity) &&
          worker.matched_protocol_depth == 0 &&
          worker.matched_from_category == 0 && tracer.conforms == 1 &&
          tracer.malformed_metadata == 0 &&
+         ProtocolExistentialWitnessMetadataPassed(
+             tracer, "id<Tracer>", "category:Widget(Tracing)") &&
          tracer.visited_protocol_count >= 2 &&
          TextEquals(tracer.matched_attachment_owner_identity,
                     "category:Widget(Tracing)") &&
@@ -203,6 +232,9 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          TextEquals(derived_worker.matched_protocol_owner_identity,
                     "protocol:Worker") &&
          TextEquals(derived_worker.matched_class_name, "Derived") &&
+         ProtocolExistentialWitnessMetadataPassed(derived_worker,
+                                                  "id<Worker>",
+                                                  "class:Derived") &&
          derived_worker.matched_protocol_depth >= 1 &&
          derived_worker.matched_via_inherited_protocol == 1 &&
          derived_worker.matched_from_category == 0 &&
@@ -213,6 +245,8 @@ inline bool CategoryAttachmentProtocolRuntimeProbePassed(
          TextEquals(leaf_worker.matched_class_name, "Derived") &&
          TextEquals(leaf_worker.matched_class_owner_identity,
                     "class:Derived") &&
+         ProtocolExistentialWitnessMetadataPassed(leaf_worker, "id<Worker>",
+                                                  "class:Derived") &&
          leaf_worker.matched_protocol_depth >= 1 &&
          leaf_worker.matched_via_inherited_protocol == 1 &&
          leaf_worker.matched_from_superclass == 1 &&

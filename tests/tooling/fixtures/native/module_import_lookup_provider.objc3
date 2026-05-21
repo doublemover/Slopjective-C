@@ -1,0 +1,13 @@
+module moduleImportLookupProvider;
+
+const i32 ModuleImportPacketCount = 7;
+
+@interface ModuleImportMetrics
++ (i32)packetCount;
+@end
+
+@implementation ModuleImportMetrics
++ (i32)packetCount {
+  return ModuleImportPacketCount;
+}
+@end

@@ -1,0 +1,23 @@
+{
+  "id": "TYP-8013-23",
+  "title": "Preserve generic method receiver substitution",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8013,
+  "references": [
+    "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+    "native/objc3c/src/sema/model/language_semantics_concrete_contracts.h",
+    "scripts/objc3c_type_semantic_model_closure/positive.py",
+    "tmp/reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "module TypeSemanticGenericMethodSubstitutionPositive;\n\n@protocol Persistable\n@end\n\n@interface SemanticBox <Persistable>\n@property (readonly) id title;\n@end\n\n@implementation SemanticBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable>>\n- (T)peek;\n@end\n\n@implementation SemanticVault\n@end\n\nfn consumeGenericMethod(vault: SemanticVault<SemanticBox *> *?) -> i32 {\n  let record = [vault? peek];\n  let title = [record? title];\n  return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "manifest_surface": [
+      "semantic_canonical_type_metadata.interfaces.SemanticVault.methods.peek.return_canonical_type",
+      "semantic_canonical_type_metadata.functions.consumeGenericMethod.param_canonical_types.generic_arguments_source_order"
+    ]
+  }
+}

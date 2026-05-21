@@ -26,10 +26,18 @@
     "codeAction",
     "statementLevelStepping"
   ],
+  "conditional_capability_classes": [
+    {
+      "capability": "codeAction",
+      "published_when": "diagnostics-json-fixits",
+      "support_class": "diagnostics-fixit-backed",
+      "unpublished_without": "machine-applicable diagnostic fix-it ranges"
+    }
+  ],
   "unpublished_capability_policy": {
     "unowned_capability_claims_supported": false,
     "owner": "developer-tooling.language-server.publication",
-    "claim_boundary": "unpublished language-server capabilities must remain explicit gaps until owned implementation and evidence surfaces publish them"
+    "claim_boundary": "unpublished language-server capabilities must remain explicit gaps until owned implementation and evidence surfaces publish them; codeAction may publish only from deterministic diagnostics-json fix-its"
   },
   "evidence_roots": [
     "tmp/reports/objc3c-public-workflow/compile-observability.json",
@@ -39,6 +47,7 @@
   "claim_narrowing_constraints": [
     "capability publication must stay narrower than the shipped developer-tooling artifact set",
     "unsupported capabilities must publish explicit unpublished-status metadata instead of partial-success theater",
+    "codeAction support must be withheld unless diagnostic entries contain deterministic machine-applicable fix-its",
     "editor claims must stay rooted in compile-owned diagnostics, declaration coordinates, and emitted artifact presence"
   ]
 }

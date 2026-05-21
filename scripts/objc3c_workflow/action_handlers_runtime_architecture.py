@@ -10,6 +10,9 @@ RUNTIME_ARCHITECTURE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runtime-architecture": (
         runtime_test_acceptance.action_validate_runtime_architecture
     ),
+    "validate-public-runtime-reflection-api": (
+        runtime_test_acceptance.action_validate_public_runtime_reflection_api
+    ),
 }
 
 

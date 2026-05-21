@@ -23,6 +23,10 @@ def load_editor_surface(
             editor_result_stdout,
             "workspace_index_path:",
         ),
+        "artifact_inspector_path": extract_output_line(
+            editor_result_stdout,
+            "artifact_inspector_path:",
+        ),
         "formatter_path": extract_output_line(editor_result_stdout, "formatter_path:"),
         "debug_path": extract_output_line(editor_result_stdout, "debug_path:"),
     }
@@ -43,6 +47,7 @@ def workspace_drill_commands(
     debug_payload: dict[str, object],
     *,
     workspace_index_path: str = "",
+    artifact_inspector_path: str = "",
 ) -> dict[str, str]:
     return {
         "inspect_editor_tooling": (
@@ -52,6 +57,12 @@ def workspace_drill_commands(
         "workspace_navigation_index": f"Get-Content -Raw '{workspace_index_path}'"
         if workspace_index_path
         else "",
+        "artifact_inspector": f"Get-Content -Raw '{artifact_inspector_path}'"
+        if artifact_inspector_path
+        else "",
+        "runtime_debug_trace": str(
+            debug_payload.get("runtime_debug_trace_command", "")
+        ),
         "object_symbol_inventory": str(
             debug_payload.get("object_symbol_inventory_command", "")
         ),

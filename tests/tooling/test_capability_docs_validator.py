@@ -59,6 +59,9 @@ RUNTIME_CLAIM = {
 
 
 def _load_validator():
+    scripts_path = str(ROOT / "scripts")
+    if scripts_path not in sys.path:
+        sys.path.insert(0, scripts_path)
     spec = importlib.util.spec_from_file_location("validate_capability_docs", VALIDATOR_PATH)
     assert spec is not None
     assert spec.loader is not None
@@ -407,6 +410,151 @@ def test_runtime_concurrency_claim_is_implemented_and_probe_backed() -> None:
     } <= evidence_paths
 
 
+def test_developer_experience_first_run_claim_is_bounded_and_evidence_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest = json.loads(
+        (ROOT / "tests" / "fixtures" / "canonical" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    catalog = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "conformance"
+            / "support_claim_runnable_evidence_catalog.json"
+        ).read_text(encoding="utf-8")
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    row = rows["tooling.developer-experience.first-run-product-path"]
+    support_claim = "objc3c.behavior.tooling.first-run-product-path"
+    behavior_fixture = (
+        "tests/tooling/fixtures/developer_tooling/"
+        "developer_experience_completion_contract.json"
+    )
+    public_command = "npm run objc3c -- validate-getting-started"
+
+    assert row["state"] == "implemented"
+    assert row["support_claims"] == [support_claim]
+    assert "does not claim a full IDE" in row["summary"]
+    assert "full LSP" in row["summary"]
+    assert {
+        (evidence["kind"], evidence["path"], evidence.get("command", ""))
+        for evidence in row["evidence"]
+    } >= {
+        ("test", behavior_fixture, public_command),
+        (
+            "test",
+            "tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json",
+            public_command,
+        ),
+        (
+            "test",
+            "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+            "npm run objc3c -- validate-migration-workflow",
+        ),
+        (
+            "diagnostic",
+            "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+            "",
+        ),
+    }
+
+    manifest_claims = {
+        claim["claim_id"]: claim for claim in manifest["support_claims"]
+    }
+    assert manifest_claims[support_claim] == {
+        "claim_id": support_claim,
+        "owner_phase": "e2e",
+        "behavior_fixture": behavior_fixture,
+        "executable_command": public_command,
+    }
+
+    catalog_rows = {row["support_claim"]: row for row in catalog["rows"]}
+    catalog_row = catalog_rows[support_claim]
+    assert catalog_row["capability_id"] == row["id"]
+    assert behavior_fixture in catalog_row["positive_evidence"]
+    assert {
+        "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+        "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+    } <= set(catalog_row["negative_evidence"])
+
+
+def test_platform_and_application_framework_issue_rows_are_support_catalog_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    evidence_map = json.loads(
+        (ROOT / "docs" / "support" / "evidence_map.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    catalog = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "conformance"
+            / "support_claim_runnable_evidence_catalog.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    expected = {
+        "platform.windows-x64.tier1": (
+            "objc3c.behavior.platform.windows-x64-tier1",
+            "npm run objc3c -- build-platform-support-matrix",
+            "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        ),
+        "applications.framework-samples.object-runtime-library": (
+            "objc3c.behavior.application-framework-samples.object-runtime-library",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+        ),
+        "applications.framework-samples.interop-adapter-library": (
+            "objc3c.behavior.application-framework-samples.interop-adapter-library",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+        ),
+        "applications.framework-samples.stdlib-text-collections-cli": (
+            "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+        ),
+        "applications.framework-samples.async-runtime-application": (
+            "objc3c.behavior.application-framework-samples.async-runtime-application",
+            "npm run objc3c -- validate-application-framework-samples",
+            "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+        ),
+    }
+    matrix_rows = {row["id"]: row for row in matrix["capabilities"]}
+    evidence_rows = {
+        (
+            row["capability_id"],
+            row.get("support_claim"),
+            row.get("command"),
+            row["path"],
+        )
+        for row in evidence_map["rows"]
+    }
+    catalog_rows = {row["support_claim"]: row for row in catalog["rows"]}
+
+    assert {8177, 8178} <= set(catalog["issue_refs"])
+    for capability_id, (support_claim, command, positive_path) in expected.items():
+        row = matrix_rows[capability_id]
+        assert row["state"] == "implemented"
+        assert row["support_claims"] == [support_claim]
+        assert (capability_id, support_claim, command, positive_path) in evidence_rows
+        catalog_row = catalog_rows[support_claim]
+        assert catalog_row["capability_id"] == capability_id
+        assert catalog_row["runnable_command"] == command
+        assert positive_path in catalog_row["positive_evidence"]
+
+
 def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() -> None:
     matrix = json.loads(
         (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
@@ -423,13 +571,23 @@ def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() ->
     evidence_paths = {evidence["path"] for evidence in row["evidence"]}
     assert {
         "tests/native/runtime/object_model/interface_method_table_contract.objc3",
-        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
-        "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py",
-        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
         "native/objc3c/src/runtime/classes/class_graph.cpp",
-        "native/objc3c/src/runtime/classes/category_attachment.cpp",
-        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
     } <= evidence_paths
+    assert rows["runtime.object-model.class-realization"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-class-realization"
+    ]
+    assert rows["runtime.object-model.category-protocol-registration"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-category-protocol-registration"
+    ]
+    assert rows["runtime.object-model.property-ivar-reflection"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-property-ivar-reflection"
+    ]
+    assert rows["runtime.object-model.registration-replay"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-registration-replay"
+    ]
+    assert rows["runtime.object-model.bounded-query-snapshots"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model-bounded-query-snapshots"
+    ]
     assert rows["runtime.object-model.full-realization"]["state"] == "reserved"
 
 
@@ -459,3 +617,33 @@ def test_object_model_implemented_rows_reject_broad_realization_language() -> No
 
     with pytest.raises(validator.CapabilityDocsError, match="must stay narrow"):
         validator._validate_object_model_scope([row])
+
+
+def test_object_model_implemented_rows_allow_storage_reflection_owners() -> None:
+    validator = _load_validator()
+    row = {
+        "id": "runtime.object-model.property-ivar-reflection",
+        "title": "Property and ivar reflection",
+        "state": "implemented",
+        "summary": "Property accessors and ivar layout are backed by runtime storage owners.",
+        "support_claims": [
+            "objc3c.behavior.runtime.object-model-property-ivar-reflection"
+        ],
+        "owner_modules": [
+            "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+            "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        ],
+        "evidence": [
+            {
+                "kind": "test",
+                "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+                "command": "npm run objc3c -- test-behavior-matrix",
+            },
+            {
+                "kind": "source",
+                "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+            },
+        ],
+    }
+
+    validator._validate_object_model_scope([row])

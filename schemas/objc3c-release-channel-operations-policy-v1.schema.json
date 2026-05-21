@@ -1,0 +1,395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-release-channel-operations-policy-v1.schema.json",
+  "title": "objc3c Release Channel Operations Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "issue_ref",
+    "source_authority",
+    "generated_artifact_role",
+    "required_channels",
+    "channel_order",
+    "policy_surfaces",
+    "release_evidence_policy",
+    "update_policy",
+    "rollback_policy",
+    "channels",
+    "forbidden_distribution_claims",
+    "fail_closed_rules"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.channel.operations.policy.v1" },
+    "schema_version": { "const": 1 },
+    "issue_ref": { "const": "#8179" },
+    "source_authority": { "const": "checked-in-release-channel-operations-policy" },
+    "generated_artifact_role": {
+      "const": "generated outputs are replayable evidence summaries only; checked policy and manifests remain source truth"
+    },
+    "required_channels": {
+      "type": "array",
+      "items": { "enum": ["stable", "nightly"] },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "channel_order": {
+      "type": "array",
+      "items": { "enum": ["stable", "nightly"] },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "policy_surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_policy",
+        "schema",
+        "validator",
+        "runbook",
+        "upstream_checked_manifests"
+      ],
+      "properties": {
+        "source_policy": { "type": "string", "minLength": 1 },
+        "schema": { "type": "string", "minLength": 1 },
+        "validator": { "type": "string", "minLength": 1 },
+        "runbook": { "type": "string", "minLength": 1 },
+        "upstream_checked_manifests": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "release_evidence_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_truth_roots",
+        "generated_output_role",
+        "evidence_state_values",
+        "releasable_state_values",
+        "required_for_releasable"
+      ],
+      "properties": {
+        "source_truth_roots": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "generated_output_role": {
+          "const": "tmp artifacts and reports prove replayability but do not create support claims"
+        },
+        "evidence_state_values": {
+          "type": "array",
+          "items": { "enum": ["policy-defined", "verified"] },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "releasable_state_values": {
+          "type": "array",
+          "items": { "enum": ["blocked-until-verified-evidence", "releasable"] },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "required_for_releasable": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRequirement" },
+          "minItems": 1
+        }
+      }
+    },
+    "update_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_channel_behavior",
+        "manifest_contract",
+        "manifest_path",
+        "allowed_update_mechanics",
+        "blocked_update_mechanics"
+      ],
+      "properties": {
+        "missing_channel_behavior": { "const": "fail-closed" },
+        "manifest_contract": { "const": "objc3c.release.operations.update-manifest.v1" },
+        "manifest_path": { "type": "string", "minLength": 1 },
+        "allowed_update_mechanics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "blocked_update_mechanics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "rollback_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_rollback_behavior",
+        "required_primitives",
+        "rollback_drill_command",
+        "proof_required",
+        "metadata_required"
+      ],
+      "properties": {
+        "missing_rollback_behavior": { "const": "fail-closed" },
+        "required_primitives": {
+          "type": "array",
+          "items": { "enum": ["local-installer", "offline-bundle"] },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "rollback_drill_command": {
+          "const": "npm run objc3c -- validate-packaging-channels-end-to-end"
+        },
+        "proof_required": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "metadata_required": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/channelPolicy" },
+      "minItems": 2
+    },
+    "forbidden_distribution_claims": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "fail_closed_rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failClosedRule" },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "evidenceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class_id",
+        "evidence_kind",
+        "required_paths",
+        "required_commands"
+      ],
+      "properties": {
+        "class_id": { "type": "string", "minLength": 1 },
+        "evidence_kind": { "type": "string", "minLength": 1 },
+        "required_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "required_commands": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "channelPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "operation_class",
+        "support_claim_scope",
+        "publication_mechanics",
+        "update_mechanics",
+        "rollback_mechanics",
+        "evidence",
+        "releasability",
+        "claim_boundaries"
+      ],
+      "properties": {
+        "channel_id": { "enum": ["stable", "nightly"] },
+        "operation_class": { "enum": ["stable", "nightly"] },
+        "support_claim_scope": {
+          "enum": ["public-stable-after-evidence", "nightly-evidence-only"]
+        },
+        "publication_mechanics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "gate_actions",
+            "notes_source_mode",
+            "signed_artifact_policy",
+            "release_notes_sources"
+          ],
+          "properties": {
+            "gate_actions": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "notes_source_mode": { "const": "source-derived" },
+            "signed_artifact_policy": { "type": "string", "minLength": 1 },
+            "release_notes_sources": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            }
+          }
+        },
+        "update_mechanics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "update_manifest_channel",
+            "permitted_targets",
+            "warnings",
+            "missing_manifest_behavior"
+          ],
+          "properties": {
+            "update_manifest_channel": { "enum": ["stable", "nightly"] },
+            "permitted_targets": {
+              "type": "array",
+              "items": { "enum": ["stable", "nightly"] },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "warnings": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "missing_manifest_behavior": { "const": "fail-closed" }
+          }
+        },
+        "rollback_mechanics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "primitive",
+            "command",
+            "proof_required",
+            "blocks_publication_on_failure"
+          ],
+          "properties": {
+            "primitive": { "enum": ["local-installer", "offline-bundle"] },
+            "command": {
+              "const": "npm run objc3c -- validate-packaging-channels-end-to-end"
+            },
+            "proof_required": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            },
+            "blocks_publication_on_failure": { "const": true }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evidence_state",
+            "source_truth",
+            "generated_evidence_artifacts",
+            "replayable_public_commands",
+            "required_evidence_classes",
+            "verified_evidence"
+          ],
+          "properties": {
+            "evidence_state": { "enum": ["policy-defined", "verified"] },
+            "source_truth": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            },
+            "generated_evidence_artifacts": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            },
+            "replayable_public_commands": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "required_evidence_classes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "verified_evidence": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          }
+        },
+        "releasability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "may_call_releasable",
+            "missing_evidence_behavior"
+          ],
+          "properties": {
+            "state": { "enum": ["blocked-until-verified-evidence", "releasable"] },
+            "may_call_releasable": { "type": "boolean" },
+            "missing_evidence_behavior": { "const": "fail-closed" }
+          }
+        },
+        "claim_boundaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "unproven_distribution_claims_not_made",
+            "stable_support_claim_allowed",
+            "forbidden_claims"
+          ],
+          "properties": {
+            "unproven_distribution_claims_not_made": { "const": true },
+            "stable_support_claim_allowed": { "type": "boolean" },
+            "forbidden_claims": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    },
+    "failClosedRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "diagnostic_id",
+        "trigger",
+        "required_action",
+        "blocks_publication"
+      ],
+      "properties": {
+        "rule_id": { "type": "string", "minLength": 1 },
+        "diagnostic_id": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "required_action": { "type": "string", "minLength": 1 },
+        "blocks_publication": { "const": true }
+      }
+    }
+  }
+}

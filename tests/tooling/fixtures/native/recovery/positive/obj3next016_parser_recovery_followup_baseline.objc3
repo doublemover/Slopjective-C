@@ -1,0 +1,11 @@
+module Obj3Next016ParserRecoveryFollowupBaseline;
+
+fn first() -> i32 {
+  let value = 1;
+  return value;
+}
+
+fn second() -> i32 {
+  let value = first();
+  return value + 1;
+}

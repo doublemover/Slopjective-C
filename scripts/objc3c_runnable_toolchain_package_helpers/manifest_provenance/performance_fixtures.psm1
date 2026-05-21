@@ -22,6 +22,10 @@ function Get-ManifestProvenancePerformanceFixtureFiles {
     "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
     "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
     "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
+    "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+    "tests/tooling/fixtures/runtime_performance/malformed_metadata/truncated_runtime_dispatch_unresolved_symbol.meta.json.invalid",
     "tests/tooling/fixtures/runtime_performance/README.md",
     "schemas/objc3c-runtime-performance-telemetry-v1.schema.json"
   )

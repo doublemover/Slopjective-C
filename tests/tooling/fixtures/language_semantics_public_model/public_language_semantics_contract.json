@@ -1,0 +1,543 @@
+{
+  "contract_id": "objc3c.language.semantics.public-model.v1",
+  "issue_mapping": {
+    "primary_issues": [8160, 8163, 8164, 8165, 8166, 8167, 8168],
+    "support_claims": [
+      "objc3c.behavior.language.generics.protocol-qualified-arguments",
+      "objc3c.behavior.language.generics.callable-type-parameters",
+      "objc3c.behavior.language.generics.variance-specialization",
+      "objc3c.behavior.runtime.generics.cross-module-metadata",
+      "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "objc3c.behavior.language.protocols.existential-witness-model",
+      "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "objc3c.behavior.language.ownership-memory-model",
+      "objc3c.behavior.language.concurrency.public-usability-model",
+      "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+      "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+    ],
+    "evidence_ids_required": [
+      "objc3c.evidence.language_semantics.public_model.fixture",
+      "objc3c.evidence.language_semantics.public_model.schema",
+      "objc3c.evidence.language_semantics.public_model.sema_header",
+      "objc3c.evidence.language_semantics.public_model.validator",
+      "objc3c.evidence.language_semantics.module_interop.fixture",
+      "objc3c.evidence.language_semantics.module_interop.validator",
+      "objc3c.evidence.language_semantics.metaprogramming.fixture",
+      "objc3c.evidence.language_semantics.metaprogramming.validator"
+    ]
+  },
+  "source_truth": {
+    "schema_path": "schemas/objc3c-language-semantics-public-model-v1.schema.json",
+    "model_header_path": "native/objc3c/src/sema/model/language_semantics_public_model.h",
+    "workflow_action": "validate-language-semantics-public-model",
+    "source_anchors": [
+      {
+        "path": "native/objc3c/src/sema/model/language_semantics_public_model.h",
+        "tokens": [
+          "Objc3GenericTypeParameterSurface",
+          "Objc3ProtocolExistentialWitnessSurface",
+          "Objc3OwnershipFlowSurface",
+          "Objc3ConcurrencyEffectSurface",
+          "Objc3ModuleVisibilitySurface",
+          "Objc3InteropLaneSurface",
+          "Objc3MacroMetaprogrammingSurface",
+          "IsReadyObjc3PublicLanguageSemanticsModelSummary"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+        "tokens": [
+          "Objc3ModuleInteropForeignLaneContract",
+          "supported_foreign_lane_count",
+          "reserved_foreign_lane_count",
+          "reserved_lanes_have_stable_diagnostics"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+        "tokens": [
+          "\"support_state\": \"supported\"",
+          "\"support_state\": \"reserved\"",
+          "\"reserved_bridge_surface_count\": 2"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/sema/model/semantic_type.h",
+        "tokens": [
+          "sema/model/language_semantics_public_model.h"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.h",
+        "tokens": [
+          "NormalizeGenericArgumentTypeSpelling",
+          "InterfaceAdoptsProtocolDirectly",
+          "IsSameOrDerivedInterface"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/runtime/classes/protocol_conformance.h",
+        "tokens": [
+          "ProtocolConformanceMatch",
+          "QueryRealizedClassProtocolConformanceUnlocked",
+          "RuntimeProtocolConformanceEdgeIsMaterializable"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/runtime/public/objc3_runtime_result_ownership.h",
+        "tokens": [
+          "RuntimeResultDiagnosticOwnerModel",
+          "RuntimeResultFailClosedOwnershipModel"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_scope_cleanup_emission_ownership.cpp",
+        "tokens": [
+          "EmitObjc3IROwnershipCleanupCall",
+          "EmitObjc3IROwnershipCleanupUnwindToDepth",
+          "pending_ownership_cleanup_calls"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_concurrency_runtime_call_emission.cpp",
+        "tokens": [
+          "TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall",
+          "actor_mailbox_enqueue",
+          "kObjc3RuntimeExecutorHopI32Symbol"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        "tokens": [
+          "\"issue_ref\": 8168",
+          "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+          "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+        "tokens": [
+          "Objc3MetaprogrammingDeriveExpansionInventorySummary",
+          "Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary",
+          "kObjc3MetaprogrammingMacroSafetySandboxDeterminismContractId"
+        ]
+      }
+    ]
+  },
+  "typed_model_surfaces": {
+    "generic_type_system": {
+      "support_claim": "objc3c.behavior.language.generics.protocol-qualified-arguments",
+      "type_parameters": [
+        {
+          "name": "Element",
+          "variance": "covariant",
+          "bounds": ["Persistable"],
+          "canonical_constraint_key": "generic:Element:bound:protocol:Persistable",
+          "public_state": "supported"
+        },
+        {
+          "name": "Failure",
+          "variance": "invariant",
+          "bounds": ["NSErrorLike"],
+          "canonical_constraint_key": "generic:Failure:bound:protocol:NSErrorLike",
+          "public_state": "reserved"
+        }
+      ],
+      "specialization_policy": {
+        "identity_key_fields": [
+          "declaration_owner",
+          "parameter_names_source_order",
+          "argument_canonical_spelling",
+          "constraint_protocols_lexicographic"
+        ],
+        "substitution_key_fields": [
+          "receiver_canonical_spelling",
+          "substituted_member_signature",
+          "substitution_replay_key"
+        ],
+        "runtime_metadata_required": true,
+        "monomorphization_required": false,
+        "unsupported_patterns": [
+          "higher_kinded_type_parameters",
+          "generic_collection_abi",
+          "unresolved_type_parameter_escape"
+        ]
+      },
+      "fail_closed_diagnostics": [
+        "arity_mismatch",
+        "missing_protocol_constraint",
+        "invalid_variance_assignment"
+      ]
+    },
+    "module_identity_visibility_model": {
+      "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
+      "module_identity_key_fields": [
+        "module_name",
+        "metadata_version",
+        "abi_identity",
+        "package_lock_identity"
+      ],
+      "visibility_policy": {
+        "public_imports": "exported-for-dependent-modules",
+        "private_imports": "module-local-only",
+        "reexports": "public-import-required",
+        "hidden_import_access": "rejected"
+      },
+      "rebuild_policy": {
+        "deterministic": true,
+        "identity_inputs": [
+          "module_identity",
+          "import_graph",
+          "visibility",
+          "foreign_surfaces",
+          "package_lock"
+        ],
+        "invalidation_conditions": [
+          "source-digest-drift",
+          "imported-module-abi-identity-drift",
+          "package-lock-module-identity-drift",
+          "visibility-surface-drift",
+          "bridge-metadata-digest-drift"
+        ]
+      },
+      "fail_closed_diagnostics": [
+        "O3MOD8163",
+        "O3INT8165"
+      ]
+    },
+    "protocol_existential_witness_model": {
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "existential_identity": {
+        "canonical_spelling": "id<Persistable, Sendable>",
+        "key_fields": [
+          "object_representation",
+          "protocols_lexicographic",
+          "nullability",
+          "module_owner"
+        ],
+        "public_state": "supported"
+      },
+      "witness_table": {
+        "key_fields": [
+          "conforming_type_canonical_spelling",
+          "protocol_owner_identity",
+          "conformance_owner_identity",
+          "requirement_selector_or_property_key",
+          "implementation_owner_identity"
+        ],
+        "requirement_resolution": "semantic-requirements-before-runtime-conformance-edge",
+        "runtime_lookup_anchor": "QueryRealizedClassProtocolConformanceUnlocked",
+        "associated_type_policy": "rejected"
+      },
+      "conformance_metadata": {
+        "metadata_key": "protocol-witness-conformance-metadata",
+        "runtime_record": "ProtocolConformanceMatch",
+        "builder": "BuildRuntimeProtocolExistentialWitnessMetadata",
+        "key_fields": [
+          "existential_canonical_spelling",
+          "conforming_type_canonical_spelling",
+          "protocol_owner_identity",
+          "conformance_owner_identity",
+          "runtime_lookup_anchor"
+        ]
+      },
+      "composition_policy": {
+        "supported_syntax": "comma-style typed object suffix",
+        "duplicates": "rejected",
+        "unknown_protocols": "rejected",
+        "conflicting_requirements": "rejected",
+        "ampersand_style_syntax": "reserved"
+      },
+      "unsupported_semantics": {
+        "associated_types": {
+          "public_state": "rejected",
+          "diagnostic_code": "O3P100",
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        "dynamic_existential_dispatch": {
+          "public_state": "rejected",
+          "diagnostic_code": "O3S314",
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        }
+      },
+      "fail_closed_diagnostics": [
+        "missing_requirement",
+        "ambiguous_conformance",
+        "invalid_protocol_composition",
+        "unsupported_associated_type",
+        "unsupported_dynamic_existential_dispatch"
+      ]
+    },
+    "interop_bridge_model": {
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "lanes": [
+        {
+          "language": "c",
+          "surface_id": "c.foundation-next.visibility-bridge",
+          "public_state": "supported",
+          "evidence_anchors": [
+            "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+            "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+          ]
+        },
+        {
+          "language": "objc2",
+          "surface_id": "objc2.foundation-next.visibility-bridge",
+          "public_state": "supported",
+          "evidence_anchors": [
+            "tests/tooling/fixtures/native/bridge_legality_positive.objc3"
+          ]
+        },
+        {
+          "language": "swift",
+          "surface_id": "swift.foundation-next.visibility-bridge",
+          "public_state": "reserved",
+          "evidence_anchors": []
+        },
+        {
+          "language": "cpp",
+          "surface_id": "cpp.foundation-next.visibility-bridge",
+          "public_state": "reserved",
+          "evidence_anchors": []
+        }
+      ],
+      "foreign_type_contract_policy": {
+        "symbol_owner_required": true,
+        "abi_alignment_required": true,
+        "ownership_policy_required": true
+      },
+      "unsupported_lane_policy": {
+        "swift_abi_import": "reserved",
+        "cpp_template_instantiation_import": "reserved",
+        "objc2_retired_source_syntax": "rejected"
+      }
+    },
+    "ownership_memory_model": {
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "qualifier_flows": [
+        {
+          "qualifier": "strong",
+          "transfer": "retain",
+          "public_state": "supported"
+        },
+        {
+          "qualifier": "weak",
+          "transfer": "observe",
+          "public_state": "supported"
+        },
+        {
+          "qualifier": "owned",
+          "transfer": "release",
+          "public_state": "supported"
+        },
+        {
+          "qualifier": "borrowed",
+          "transfer": "borrow",
+          "public_state": "supported"
+        },
+        {
+          "qualifier": "consumed",
+          "transfer": "consume",
+          "public_state": "reserved"
+        },
+        {
+          "qualifier": "unowned",
+          "transfer": "observe",
+          "public_state": "rejected"
+        }
+      ],
+      "cleanup_paths": ["normal", "error", "async", "interop"],
+      "escape_analysis": {
+        "borrowed_escape": "rejected",
+        "use_after_consume": "rejected",
+        "unsafe_async_crossing": "rejected"
+      },
+      "runtime_result_contract": "RuntimeResultFailClosedOwnershipModel"
+    },
+    "concurrency_usability_model": {
+      "support_claim": "objc3c.behavior.language.concurrency.public-usability-model",
+      "public_effects": [
+        {
+          "effect": "async",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "await",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "actor",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "executor",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "task_group",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "cancellation",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        },
+        {
+          "effect": "continuation",
+          "public_state": "supported",
+          "requires_diagnostic": true
+        }
+      ],
+      "executor_policy": {
+        "selection": "explicit-tagged-runtime-helper",
+        "hop_required_for_cross_executor": true,
+        "named_executor_policy": "reserved"
+      },
+      "actor_isolation": {
+        "cross_actor_access": "requires-await-or-diagnostic",
+        "sendability_boundary": true,
+        "mailbox_runtime_anchor": "actor_mailbox_enqueue"
+      },
+      "task_group_policy": {
+        "cancellation_propagates": true,
+        "wait_next_hops_executor": true
+      },
+      "continuation_policy": {
+        "double_resume": "rejected",
+        "stale_task_resume": "rejected",
+        "ownership_handoff": "uses-ownership-memory-model"
+      }
+    },
+    "macro_metaprogramming_public_surface": {
+      "support_claims": [
+        "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+        "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+      ],
+      "public_command": "npm run objc3c -- validate-metaprogramming-conformance",
+      "contract_path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+      "derive_model": {
+        "supported_forms": [
+          "DebugDescription",
+          "Equality",
+          "Equatable",
+          "Hash"
+        ],
+        "reserved_forms": [
+          "custom-user-provided-derive-plugins",
+          "ordering",
+          "reflection",
+          "serialization"
+        ],
+        "runtime_materialization": "deferred"
+      },
+      "macro_safety_model": {
+        "required_metadata_fields": [
+          "cache_key",
+          "deterministic",
+          "macro",
+          "manifest_digest",
+          "package",
+          "provenance",
+          "replay_metadata",
+          "sandbox_policy",
+          "signature_digest",
+          "signer_key_id"
+        ],
+        "required_negative_case_ids": [
+          "invalid_package",
+          "invalid_provenance",
+          "method_topology",
+          "missing_cache_key",
+          "missing_metadata",
+          "missing_sandbox_policy",
+          "nonpure_callable",
+          "orphan_metadata"
+        ],
+        "required_diagnostic_codes": [
+          "O3S320",
+          "O3S321",
+          "O3S322",
+          "O3S323",
+          "O3S324",
+          "O3S325",
+          "O3S331",
+          "O3S332"
+        ],
+        "denial_case_ids": [
+          "missing-replay-metadata-denied",
+          "revoked-provenance-denied",
+          "sandbox-network-denied",
+          "unknown-package-denied",
+          "unsigned-provenance-denied",
+          "untrusted-signer-denied"
+        ],
+        "fail_closed_before_expansion": true,
+        "arbitrary_host_execution_allowed": false,
+        "network_access_allowed": false,
+        "deterministic_replay_required": true
+      },
+      "artifact_policy": {
+        "generated_artifacts_are_support_authority": false,
+        "tmp_report_source_truth_allowed": false,
+        "third_party_macro_ecosystem_claimed": false
+      }
+    }
+  },
+  "cross_issue_handoffs": [
+    {
+      "from_issue": 8160,
+      "to_issue": 8164,
+      "semantic_contract": "generic constraints use protocol existential identity keys, not lossy strings"
+    },
+    {
+      "from_issue": 8164,
+      "to_issue": 8160,
+      "semantic_contract": "witness table requirement keys remain stable inside generic substitutions"
+    },
+    {
+      "from_issue": 8163,
+      "to_issue": 8165,
+      "semantic_contract": "module identity and visibility state are part of the interop bridge replay key"
+    },
+    {
+      "from_issue": 8165,
+      "to_issue": 8163,
+      "semantic_contract": "reserved foreign lanes keep stable diagnostics and do not claim supported module surfaces"
+    },
+    {
+      "from_issue": 8166,
+      "to_issue": 8167,
+      "semantic_contract": "async cleanup and continuation handoff use the ownership qualifier flow table"
+    },
+    {
+      "from_issue": 8167,
+      "to_issue": 8166,
+      "semantic_contract": "actor, executor, and task-group crossings reject unsafe ownership escapes"
+    },
+    {
+      "from_issue": 8168,
+      "to_issue": 8160,
+      "semantic_contract": "macro expansion output must re-enter the same typed generic and protocol semantic checks as hand-authored source"
+    },
+    {
+      "from_issue": 8160,
+      "to_issue": 8168,
+      "semantic_contract": "generic and protocol metadata used by macro-generated declarations must be deterministic replay data, not generated-only support authority"
+    }
+  ],
+  "unsupported_policy": {
+    "fallback_or_compatibility_shim_allowed": false,
+    "legacy_objc2_compatibility_claimed": false,
+    "higher_kinded_types_claimed": false,
+    "generic_collection_abi_claimed": false,
+    "swift_protocol_bridge_claimed": false,
+    "distributed_actors_claimed": false,
+    "swift_abi_import_claimed": false,
+    "cpp_template_import_claimed": false
+  }
+}

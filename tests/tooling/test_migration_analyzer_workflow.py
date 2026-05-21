@@ -22,12 +22,14 @@ from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility"
 POSITIVE_INPUT = FIXTURE_ROOT / "migration_inputs" / "objc2_swift_cpp_positive.json"
 NEGATIVE_INPUT = FIXTURE_ROOT / "migration_inputs" / "objc2_swift_cpp_negative.json"
+EXPECTED_REWRITE_OUTPUT = FIXTURE_ROOT / "migration_outputs" / "objc2_swift_cpp_positive_rewritten.objc3"
+EXPECTED_NEGATIVE_DIAGNOSTICS = FIXTURE_ROOT / "migration_outputs" / "objc2_swift_cpp_negative_diagnostics.json"
 
 
 def test_migration_analyzer_contract_covers_required_surfaces_and_actions() -> None:
     contract = load_contract()
 
-    assert contract["issue_ids"] == [8077, 8078]
+    assert contract["issue_ids"] == [8077, 8078, 8157]
     assert contract["required_surfaces"] == [
         "header-import-export",
         "abi-alignment",
@@ -40,6 +42,18 @@ def test_migration_analyzer_contract_covers_required_surfaces_and_actions() -> N
         "rewrite-migration-source",
         "validate-migration-workflow",
     ]
+    assert contract["required_diagnostic_fields"] == [
+        "code",
+        "severity",
+        "message",
+        "category",
+        "explanation",
+        "next_step",
+        "surface",
+        "range",
+    ]
+    metadata_codes = {item["code"] for item in contract["diagnostic_metadata"]}
+    assert set(contract["diagnostic_codes"]).issubset(metadata_codes)
     assert "standalone report output as a capability basis" in contract["support_boundary"]
 
 
@@ -64,6 +78,16 @@ def test_migration_analyzer_passes_positive_and_fails_closed_negative() -> None:
     assert negative.payload["status"] == "FAIL"
     codes = {item["code"] for item in negative.payload["diagnostics"]}
     assert {"O3M010", "O3M016", "O3M017", "O3M102", "O3M210"}.issubset(codes)
+    for item in negative.payload["diagnostics"]:
+        assert {"category", "explanation", "next_step"}.issubset(item)
+        assert item["category"]
+        assert item["explanation"]
+        assert item["next_step"]
+    diagnostics_by_code = {item["code"]: item for item in negative.payload["diagnostics"]}
+    assert diagnostics_by_code["O3M102"]["category"] == "surface-evidence"
+    assert diagnostics_by_code["O3M102"]["next_step"] == "Add source evidence for migrated ABI-sensitive types."
+    assert diagnostics_by_code["O3M210"]["category"] == "unsafe-loading"
+    assert diagnostics_by_code["O3M210"]["next_step"] == "Replace the marker with explicit imported-module ownership."
     assert negative.payload["rewrite_plan"]["safe_to_apply"] is False
 
 
@@ -84,9 +108,30 @@ def test_migration_rewrite_applies_only_safe_plan_and_reports_manual_work() -> N
     assert "Bool enabled = true;" in rewritten
     assert "id fallback = nil;" in rewritten
     assert "@interface LegacyWidget" in rewritten
+    assert rewritten == EXPECTED_REWRITE_OUTPUT.read_text(encoding="utf-8")
     assert report["status"] == "PASS"
     assert report["applied_edit_count"] == analysis.payload["rewrite_plan"]["automatic_edit_count"]
     assert report["manual_step_count"] == analysis.payload["rewrite_plan"]["manual_step_count"]
+
+
+def test_migration_checked_in_negative_diagnostic_expectations_are_current() -> None:
+    expected = json.loads(EXPECTED_NEGATIVE_DIAGNOSTICS.read_text(encoding="utf-8"))
+    analysis = analyze_migration_input(NEGATIVE_INPUT)
+    diagnostics = [item for item in analysis.payload["diagnostics"] if isinstance(item, dict)]
+
+    assert expected["contract_id"] == "objc3c.migration_analyzer.expected_diagnostics.v1"
+    assert analysis.ok is False
+    for required in expected["required_diagnostics"]:
+        matches = [
+            item
+            for item in diagnostics
+            if item["code"] == required["code"]
+            and item["category"] == required["category"]
+            and item["surface"] == required["surface"]
+        ]
+        assert len(matches) >= required.get("minimum_count", 1)
+        for field in required["metadata_fields"]:
+            assert all(field in item and item[field] not in ("", None) for item in matches)
 
 
 def test_migration_workflow_actions_are_public_and_runnable() -> None:

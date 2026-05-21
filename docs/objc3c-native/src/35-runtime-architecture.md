@@ -1432,7 +1432,7 @@ truth from ad hoc IR inspection or release-scope notes.
   - `objc3c.runtime.property.metadata.reflection.v1`
   - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
 - authoritative query API boundary model:
-  - `private-testing-snapshots-over-runtime-owned-realized-class-property-and-protocol-metadata-with-no-public-reflection-abi`
+  - `bounded-public-reflection-api-plus-private-testing-snapshots-over-runtime-owned-realized-class-property-and-protocol-metadata`
 - authoritative private query symbols:
   - `objc3_runtime_copy_realized_class_graph_state_for_testing`
   - `objc3_runtime_copy_realized_class_entry_for_testing`
@@ -1449,12 +1449,13 @@ truth from ad hoc IR inspection or release-scope notes.
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
-This is the authoritative reflection-query source and API boundary. It freezes
-the fact that current reflection queries are runtime-backed, compile-coupled,
-and exposed only through the private testing snapshots over realized
-class/property/protocol metadata. Downstream work must extend this surface
-instead of inventing a public reflection ABI or recovering reflection answers
-from source-side manifests alone.
+This is the authoritative reflection-query source and coherence boundary. It
+freezes the fact that current reflection queries are runtime-backed and
+compile-coupled. Public reflection uses the bounded C ABI in
+`public/objc3_runtime_reflection.h`; private testing snapshots remain the
+closure-audit surface over realized class/property/protocol metadata.
+Downstream work must extend these surfaces instead of recovering reflection
+answers from source-side manifests alone.
 
 ## Realization And Lookup Semantics Surface
 

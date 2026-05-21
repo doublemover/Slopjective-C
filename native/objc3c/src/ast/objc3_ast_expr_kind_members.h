@@ -5,11 +5,12 @@
 #endif
 
   // Canonical extraction anchor retained for strict parser/AST contract tests:
-  // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
+  // enum class Kind { Number, BoolLiteral, NilLiteral, StringLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
     Number,
     BoolLiteral,
     NilLiteral,
+    StringLiteral,
     Identifier,
     KeyPathLiteral,
     Binary,

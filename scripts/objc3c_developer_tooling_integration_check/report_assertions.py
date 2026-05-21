@@ -23,11 +23,14 @@ def assert_editor_tooling_reports(
     formatter_debug_summary: dict[str, Any],
     formatter_rewrite_summary: dict[str, Any],
     diagnostic_quality_summary: dict[str, Any],
+    editor_tooling_source_truth_summary: dict[str, Any],
+    product_workflow_source_truth_summary: dict[str, Any],
     workspace_integration_summary: dict[str, Any],
     failures: list[str],
 ) -> None:
     expect(editor_surface.get("formatter", {}).get("supported") is True, "expected editor tooling formatter surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("supported") is True, "expected editor tooling debug surface to report supported=true", failures)
+    expect(editor_surface.get("artifact_inspector", {}).get("supported") is True, "expected editor tooling artifact inspector surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "expected editor tooling debug surface to keep statement stepping fail-closed", failures)
     workspace_index = editor_surface.get("navigation", {}).get("workspace_index", {})
     expect(workspace_index.get("available") is True, "expected editor tooling workspace index available=true", failures)
@@ -36,6 +39,10 @@ def assert_editor_tooling_reports(
     expect(formatter_debug_summary.get("ok") is True, "expected formatter/debug surface validation ok=true", failures)
     expect(formatter_rewrite_summary.get("ok") is True, "expected formatter/rewrite surface validation ok=true", failures)
     expect(diagnostic_quality_summary.get("ok") is True, "expected diagnostic quality validation ok=true", failures)
+    expect(editor_tooling_source_truth_summary.get("ok") is True, "expected editor tooling source truth ok=true", failures)
+    expect(int(editor_tooling_source_truth_summary.get("source_truth_row_count", 0)) >= 5, "expected editor tooling source truth rows for formatter/LSP/workspace/artifact-inspector/validator", failures)
+    expect(product_workflow_source_truth_summary.get("ok") is True, "expected product workflow source truth ok=true", failures)
+    expect(int(product_workflow_source_truth_summary.get("workflow_row_count", 0)) >= 6, "expected product workflow source truth rows for all owned issues", failures)
     expect(workspace_integration_summary.get("ok") is True, "expected workspace editor/debug integration ok=true", failures)
 
 
@@ -70,6 +77,16 @@ def assert_stage_trace_report(stage_trace: dict[str, Any], failures: list[str]) 
     expect(stage_trace.get("stages", {}).get("lex", {}).get("stage") == 0, "expected lex stage ordinal 0", failures)
 
 
+def assert_runtime_debug_trace_report(runtime_debug_trace: dict[str, Any], failures: list[str]) -> None:
+    expect(runtime_debug_trace.get("contract_id") == "objc3c.runtime.debug.trace.v1", "expected runtime debug trace contract id", failures)
+    expect(runtime_debug_trace.get("ok") is True, "expected runtime debug trace ok=true", failures)
+    expect(int(runtime_debug_trace.get("event_counts", {}).get("compile-stage", 0) or 0) >= 5, "expected runtime debug trace compile-stage events", failures)
+    expect(int(runtime_debug_trace.get("event_counts", {}).get("debug-anchor", 0) or 0) >= 3, "expected runtime debug trace debug-anchor events", failures)
+    expect(runtime_debug_trace.get("trace_lanes", {}).get("lldb_plugin", {}).get("status") == "reserved", "expected runtime debug trace LLDB lane to stay reserved", failures)
+    expect(runtime_debug_trace.get("support_boundary", {}).get("statement_level_stepping") is False, "expected runtime debug trace statement stepping fail-closed", failures)
+    expect(len(str(runtime_debug_trace.get("determinism", {}).get("trace_digest", ""))) == 64, "expected runtime debug trace digest", failures)
+
+
 def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
     assert_observability_report(reports["compile_observability"], failures)
     assert_runtime_inspector_report(reports["runtime_inspector"], failures)
@@ -78,9 +95,12 @@ def assert_loaded_reports(reports: dict[str, Any], failures: list[str]) -> None:
         reports["formatter_debug_summary"],
         reports["formatter_rewrite_summary"],
         reports["diagnostic_quality_summary"],
+        reports["editor_tooling_source_truth_summary"],
+        reports["product_workflow_source_truth_summary"],
         reports["workspace_integration_summary"],
         failures,
     )
     assert_capability_explorer_report(reports["capability_explorer"], failures)
     assert_runtime_inspector_benchmark_report(reports["runtime_inspector_benchmark"], failures)
     assert_stage_trace_report(reports["compile_stage_trace"], failures)
+    assert_runtime_debug_trace_report(reports["runtime_debug_trace"], failures)

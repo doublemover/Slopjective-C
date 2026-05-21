@@ -137,6 +137,8 @@
                 "' must be called with try, try?, or try!"));
       }
 
+      std::unordered_map<std::string, SemanticTypeInfo>
+          generic_function_bindings;
       for (std::size_t i = 0; i < expr->args.size(); ++i) {
         const SemanticTypeInfo arg_type = ValidateExpr(
             expr->args[i].get(), scopes, globals, functions, diagnostics,
@@ -146,7 +148,19 @@
               fn_it->second.param_has_invalid_type_suffix[i]) {
             continue;
           }
-          const SemanticTypeInfo expected = MakeSemanticTypeFromFunctionInfoParam(fn_it->second, i);
+          const SemanticTypeInfo raw_expected =
+              MakeSemanticTypeFromFunctionInfoParam(fn_it->second, i);
+          BindGenericFunctionParameterFromArgument(
+              fn_it->second, expr->ident, i, raw_expected, arg_type,
+              message_send_context, expr->args[i]->line,
+              expr->args[i]->column, generic_function_bindings, diagnostics);
+          const SemanticTypeInfo expected =
+              SubstituteGenericFunctionTypeParameters(
+                  fn_it->second, raw_expected, generic_function_bindings);
+          if (IsUnknownSemanticType(expected) &&
+              !IsUnknownSemanticType(raw_expected)) {
+            continue;
+          }
           const bool bool_coercion =
               !expected.is_vector && expected.type == ValueType::Bool && !arg_type.is_vector && arg_type.type == ValueType::I32;
           const bool i32_alias_coercion = AreScalarI32AliasCompatible(expected, arg_type);
@@ -198,7 +212,14 @@
         }
       }
       if (fn_it != functions.end()) {
-        return MakeSemanticTypeFromFunctionInfoReturn(fn_it->second);
+        const SemanticTypeInfo raw_return_type =
+            MakeSemanticTypeFromFunctionInfoReturn(fn_it->second);
+        DiagnoseUnresolvedGenericFunctionReturn(
+            fn_it->second, expr->ident, raw_return_type,
+            generic_function_bindings, expr->line, expr->column,
+            diagnostics);
+        return SubstituteGenericFunctionTypeParameters(
+            fn_it->second, raw_return_type, generic_function_bindings);
       }
       return MakeScalarSemanticType(ValueType::Unknown);
     }

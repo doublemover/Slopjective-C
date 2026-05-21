@@ -12,6 +12,7 @@
     "validate-developer-tooling",
     "validate-runnable-developer-tooling",
     "materialize-project-template",
+    "compile-objc3c",
     "materialize-playground-workspace"
   ],
   "checked_in_fixture_roots": [

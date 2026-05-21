@@ -1,0 +1,341 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-semantic-optimization-pipeline-v1",
+  "title": "objc3c semantic optimization pipeline",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_mapping",
+    "source_truth",
+    "pass_order_contract",
+    "pass_registry",
+    "semantic_preservation_contracts",
+    "verification_gates",
+    "performance_governance",
+    "unsupported_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.optimization.semantic.pipeline.v1"
+    },
+    "issue_mapping": {
+      "type": "object",
+      "required": [
+        "primary_issues",
+        "support_claims",
+        "capability_rows_required",
+        "evidence_ids_required"
+      ],
+      "properties": {
+        "primary_issues": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "contains": { "const": 8175 }
+        },
+        "support_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "objc3c.behavior.semantic_optimization_pipeline" }
+        },
+        "capability_rows_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "evidence_ids_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "source_truth": {
+      "type": "object",
+      "required": ["schema_path", "validator_path", "workflow_action", "source_anchors"],
+      "properties": {
+        "schema_path": { "type": "string" },
+        "validator_path": { "type": "string" },
+        "workflow_action": { "const": "validate-semantic-optimization-pipeline" },
+        "source_anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "tokens"],
+            "properties": {
+              "path": { "type": "string" },
+              "tokens": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "pass_order_contract": {
+      "type": "object",
+      "required": ["order_authority", "ordered_pass_ids", "ordering_rule", "drift_policy"],
+      "properties": {
+        "order_authority": { "type": "string" },
+        "ordered_pass_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "ordering_rule": { "type": "string" },
+        "drift_policy": { "const": "REJECT_FAIL_CLOSED" }
+      }
+    },
+    "pass_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pass_id",
+          "ordinal",
+          "stage",
+          "mode",
+          "semantic_preserving",
+          "rewrites_ir",
+          "invalidates_global_proof_state",
+          "input_contract",
+          "output_contract",
+          "preconditions",
+          "invalidation",
+          "post_verify",
+          "fail_closed_diagnostics",
+          "fixtures"
+        ],
+        "properties": {
+          "pass_id": { "type": "string" },
+          "ordinal": { "type": "integer" },
+          "stage": { "type": "string" },
+          "mode": {
+            "enum": ["enabled", "reserved", "verifier-only"]
+          },
+          "semantic_preserving": { "const": true },
+          "rewrites_ir": { "type": "boolean" },
+          "invalidates_global_proof_state": { "type": "boolean" },
+          "input_contract": { "type": "string" },
+          "output_contract": { "type": "string" },
+          "preconditions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "invalidation": { "type": "string" },
+          "post_verify": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "fail_closed_diagnostics": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "fixtures": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "semantic_preservation_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pass_id",
+          "required_proofs",
+          "missing_proof_action",
+          "success_claim_on_skip",
+          "semantic_equivalence"
+        ],
+        "properties": {
+          "pass_id": { "type": "string" },
+          "required_proofs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "missing_proof_action": {
+            "enum": ["SKIP_FAIL_CLOSED", "REJECT_FAIL_CLOSED"]
+          },
+          "success_claim_on_skip": { "const": false },
+          "semantic_equivalence": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    },
+    "verification_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate_id", "required", "evidence"],
+        "properties": {
+          "gate_id": { "type": "string" },
+          "required": { "const": true },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "performance_governance": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_truth_policy",
+        "forbidden_input_roots",
+        "budget_model",
+        "required_public_actions",
+        "required_checked_in_paths",
+        "workload_evidence",
+        "semantic_trace_evidence",
+        "runtime_equivalence_validation"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.optimization.semantic.pipeline.performance.governance.v1"
+        },
+        "source_truth_policy": { "type": "string" },
+        "forbidden_input_roots": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "tmp/" }
+        },
+        "budget_model": {
+          "const": "tests/tooling/fixtures/performance_governance/budget_model.json"
+        },
+        "required_public_actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "validate-performance-governance" }
+        },
+        "required_checked_in_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "workload_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "workload_id",
+              "owner",
+              "manifest_path",
+              "source_path",
+              "source_sha256",
+              "budget_family",
+              "metric_id"
+            ],
+            "properties": {
+              "workload_id": { "type": "string" },
+              "owner": { "type": "string" },
+              "manifest_path": { "type": "string" },
+              "source_path": { "type": "string" },
+              "source_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "budget_family": { "type": "string" },
+              "metric_id": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "semantic_trace_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "trace_id",
+              "source_path",
+              "source_sha256",
+              "claim_boundary"
+            ],
+            "properties": {
+              "trace_id": { "type": "string" },
+              "source_path": { "type": "string" },
+              "source_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "claim_boundary": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "runtime_equivalence_validation": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "issue_ref",
+            "source_truth_policy",
+            "required_public_actions",
+            "checked_in_paths",
+            "equivalence_cases"
+          ],
+          "properties": {
+            "contract_id": {
+              "const": "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"
+            },
+            "issue_ref": { "const": "#8175" },
+            "source_truth_policy": { "type": "string" },
+            "required_public_actions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "contains": { "const": "test-execution-replay" }
+            },
+            "checked_in_paths": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "equivalence_cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "case_id",
+                  "public_action",
+                  "source_paths",
+                  "semantic_equivalence_claim"
+                ],
+                "properties": {
+                  "case_id": { "type": "string" },
+                  "public_action": { "type": "string" },
+                  "source_paths": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "minItems": 1
+                  },
+                  "semantic_equivalence_claim": { "type": "string" }
+                }
+              },
+              "minItems": 1
+            }
+          }
+        }
+      }
+    },
+    "unsupported_policy": {
+      "type": "object",
+      "required": [
+        "unsafe_flags_allowed",
+        "reserved_pass_success_claims_allowed",
+        "whole_program_optimization_allowed",
+        "compatibility_shims_allowed"
+      ],
+      "properties": {
+        "unsafe_flags_allowed": { "const": false },
+        "reserved_pass_success_claims_allowed": { "const": false },
+        "whole_program_optimization_allowed": { "const": false },
+        "compatibility_shims_allowed": { "const": false }
+      }
+    }
+  }
+}

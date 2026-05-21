@@ -38,6 +38,14 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_conformance_matched_class_name.clear();
   state.last_protocol_conformance_matched_class_owner_identity.clear();
   state.last_protocol_conformance_failure_reason.clear();
+  state.last_protocol_existential_canonical_spelling.clear();
+  state.last_protocol_existential_object_representation.clear();
+  state.last_protocol_existential_conformance_owner_identity.clear();
+  state.last_protocol_existential_runtime_lookup_anchor.clear();
+  state.last_protocol_existential_witness_metadata_key.clear();
+  state.last_protocol_existential_requirement_resolution_policy.clear();
+  state.last_protocol_existential_associated_type_diagnostic.clear();
+  state.last_protocol_existential_dynamic_dispatch_diagnostic.clear();
   state.last_protocol_conformance_matched_protocol_depth = 0;
   state.last_protocol_conformance_matched_from_category = false;
   state.last_protocol_conformance_matched_from_superclass = false;

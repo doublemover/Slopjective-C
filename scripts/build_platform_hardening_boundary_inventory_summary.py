@@ -81,6 +81,9 @@ def main() -> int:
             "python": probes["python"],
             "pwsh": probes["pwsh"],
             "clang": probes["clang"],
+            "cmake": probes["cmake"],
+            "ninja": probes["ninja"],
+            "node": probes["node"],
         },
         "checks": checks,
     }

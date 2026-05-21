@@ -71,6 +71,62 @@
           "comparison": "max",
           "warning_value": 3300.0,
           "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "storage_ownership_reflection_wall_clock_ms",
+          "source_field": "workloads[storage-ownership-reflection].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "stdlib_core_wall_clock_ms",
+          "source_field": "workloads[stdlib-core-runtime].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "stdlib_concurrency_wall_clock_ms",
+          "source_field": "workloads[stdlib-concurrency-runtime].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "registration_replay_wall_clock_ms",
+          "source_field": "workloads[registration-replay].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "block_arc_runtime_wall_clock_ms",
+          "source_field": "workloads[block-arc-runtime].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "live_error_runtime_wall_clock_ms",
+          "source_field": "workloads[live-error-runtime].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "async_error_foreign_boundary_wall_clock_ms",
+          "source_field": "workloads[async-error-foreign-boundary].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "live_concurrency_wall_clock_ms",
+          "source_field": "workloads[live-concurrency-runtime].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
         }
       ]
     },
@@ -124,6 +180,88 @@
       ]
     }
   ],
+  "runtime_contract_linkage": {
+    "contract_paths": [
+      "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+      "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+      "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
+    ],
+    "workload_budget_links": [
+      {
+        "workload_id": "startup-installation",
+        "metric_id": "startup_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "dispatch-cache",
+        "metric_id": "dispatch_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "reflection-query",
+        "metric_id": "reflection_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "ownership-helpers",
+        "metric_id": "ownership_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "storage-ownership-reflection",
+        "metric_id": "storage_ownership_reflection_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "stdlib-core-runtime",
+        "metric_id": "stdlib_core_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "stdlib-concurrency-runtime",
+        "metric_id": "stdlib_concurrency_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "registration-replay",
+        "metric_id": "registration_replay_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "block-arc-runtime",
+        "metric_id": "block_arc_runtime_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "live-error-runtime",
+        "metric_id": "live_error_runtime_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "async-error-foreign-boundary",
+        "metric_id": "async_error_foreign_boundary_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      },
+      {
+        "workload_id": "live-concurrency-runtime",
+        "metric_id": "live_concurrency_wall_clock_ms",
+        "contract_role": "replay-key-budget-metric"
+      }
+    ],
+    "release_evidence": {
+      "dashboard_field": "runtime_contract_evidence",
+      "public_summary_field": "runtime_contract_evidence",
+      "required_runtime_summary_field": "runtime_contract_summary",
+      "support_authority": false,
+      "required_contract_summary_counts": {
+        "replay.row_count": 12,
+        "metadata_resilience.invalid_json_case_count": 1,
+        "metadata_resilience.fuzz_contract_count": 1,
+        "stress_sanitizer.sanitizer_contract_count": 4,
+        "stress_sanitizer.stress_scale_contract_count": 8
+      }
+    }
+  },
   "breach_taxonomy": [
     {
       "breach_id": "hard-regression",

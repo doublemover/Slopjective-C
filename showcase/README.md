@@ -28,6 +28,12 @@ Choose the story that matches the question before you read deeper docs:
 Use `stdlib/README.md` after choosing the example when you want the checked-in
 stdlib module surface that matches the same story.
 
+Use `applicationFrameworkSamples/README.md` when you want package-aware samples
+instead of the compact three-example portfolio. That surface contains library,
+CLI, runtime, and interop samples routed by
+`npm run objc3c -- validate-application-framework-samples` and backed by the
+application-framework capability rows in the support matrix.
+
 ## Adoption Evidence Anchors
 
 The adoption evidence generator treats this portfolio as the runnable proof for
@@ -59,6 +65,9 @@ Canonical checked-in inputs:
 - `showcase/signalMesh/workspace.json`
 - `showcase/patchKit/main.objc3`
 - `showcase/patchKit/workspace.json`
+- `showcase/applicationFrameworkSamples/manifest.json`
+- `showcase/applicationFrameworkSamples/README.md`
+- `docs/tutorials/application-framework-samples.md`
 
 Shared live tooling:
 

@@ -35,7 +35,7 @@ def build_runtime_reflection_query_surface(
             "objc3c.runtime.backed.object.ownership.attribute.surface.v1",
         ],
         "query_api_boundary_model": (
-            "private-testing-snapshots-over-runtime-owned-realized-class-property-and-protocol-metadata-with-no-public-reflection-abi"
+            "bounded-public-reflection-api-plus-private-testing-snapshots-over-runtime-owned-realized-class-property-and-protocol-metadata"
         ),
         "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
         "private_query_symbols": [
@@ -63,7 +63,7 @@ def build_runtime_reflection_query_surface(
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
-        "no_public_reflection_abi": True,
+        "public_reflection_abi_bounded_to_realized_state": True,
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,

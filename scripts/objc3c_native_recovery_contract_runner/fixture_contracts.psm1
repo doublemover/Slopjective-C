@@ -68,6 +68,218 @@ function Get-NegativeFixtureDiagnosticTokenContracts {
       "cause-site:6:10",
       "detail:message-send@6:10"
     )
+    "negative_obj3next016_parser_missing_semicolon_recovery.objc3" = @(
+      "O3P104",
+      "missing ';' after assignment"
+    )
+    "negative_obj3next016_optional_alias_fixit_recovery.objc3" = @(
+      "O3C004",
+      "optional<T> aliases are rejected; use canonical Optional<T> spelling",
+      "O3P100",
+      "unsupported Objective-C 3 statement"
+    )
+    "negative_obj3next016_sema_missing_return_value_recovery.objc3" = @(
+      "O3S211",
+      "must return 'i32'"
+    )
+    "negative_obj3next016_sema_unknown_symbol_recovery.objc3" = @(
+      "O3S203",
+      "unknown function 'known_vaule'"
+    )
+  }
+}
+
+function Get-NegativeFixtureDiagnosticJsonContracts {
+  return @{
+    "negative_obj3next016_parser_missing_semicolon_recovery.objc3" = @(
+      @{
+        Code = "O3P104"
+        Phase = "parse"
+        Category = "parsing"
+        RecoveryStrategy = "parser-statement-boundary-synchronization"
+      }
+    )
+    "negative_obj3next016_optional_alias_fixit_recovery.objc3" = @(
+      @{
+        Code = "O3C004"
+        Phase = "parse"
+        Category = "configuration"
+        FixitReplacement = "Optional"
+        RecoveryStrategy = "parser-canonical-spelling-rejection"
+      },
+      @{
+        Code = "O3P100"
+        Phase = "parse"
+        Category = "parsing"
+        RecoveryStrategy = "skip-unsupported-top-level-fragment"
+      }
+    )
+    "negative_obj3next016_sema_missing_return_value_recovery.objc3" = @(
+      @{
+        Code = "O3S211"
+        Phase = "sema"
+        Category = "semantic-analysis"
+        RecoveryStrategy = "semantic-return-contract-boundary"
+      }
+    )
+    "negative_obj3next016_sema_unknown_symbol_recovery.objc3" = @(
+      @{
+        Code = "O3S203"
+        Phase = "sema"
+        Category = "semantic-analysis"
+        RecoveryStrategy = "semantic-symbol-resolution-boundary"
+      }
+    )
+  }
+}
+
+function ConvertTo-PositiveDiagnosticCoordinate {
+  param(
+    [object]$Value,
+    [string]$FieldName,
+    [string]$CaseName
+  )
+
+  try {
+    $intValue = [int]$Value
+  } catch {
+    throw "contract FAIL: $CaseName diagnostic JSON field '$FieldName' is not an integer"
+  }
+  if ($intValue -le 0) {
+    throw "contract FAIL: $CaseName diagnostic JSON field '$FieldName' must be positive"
+  }
+  return $intValue
+}
+
+function Assert-DiagnosticJsonPosition {
+  param(
+    [object]$Position,
+    [string]$FieldName,
+    [string]$CaseName
+  )
+
+  if ($null -eq $Position) {
+    throw "contract FAIL: $CaseName diagnostic JSON missing $FieldName"
+  }
+  $line = ConvertTo-PositiveDiagnosticCoordinate -Value $Position.line -FieldName "$FieldName.line" -CaseName $CaseName
+  $column = ConvertTo-PositiveDiagnosticCoordinate -Value $Position.column -FieldName "$FieldName.column" -CaseName $CaseName
+  return @{
+    Line = $line
+    Column = $column
+  }
+}
+
+function Read-NegativeDiagnosticJsonArtifact {
+  param(
+    [string]$JsonPath,
+    [string]$CaseName
+  )
+
+  if (!(Test-Path -LiteralPath $JsonPath -PathType Leaf)) {
+    throw "contract FAIL: missing diagnostics JSON artifact for negative fixture $CaseName"
+  }
+  $jsonText = Get-Content -LiteralPath $JsonPath -Raw
+  if ([string]::IsNullOrWhiteSpace($jsonText)) {
+    throw "contract FAIL: empty diagnostics JSON artifact for negative fixture $CaseName"
+  }
+  try {
+    $payload = $jsonText | ConvertFrom-Json
+  } catch {
+    throw "contract FAIL: diagnostics JSON artifact is not parseable for negative fixture $CaseName"
+  }
+  return [pscustomobject]@{
+    Text = $jsonText
+    Payload = $payload
+  }
+}
+
+function Assert-NegativeDiagnosticJsonPayload {
+  param(
+    [object]$Payload,
+    [string]$CaseName
+  )
+
+  if ($Payload.schema_version -ne "1.0.0") {
+    throw "contract FAIL: $CaseName diagnostics JSON has unexpected schema_version"
+  }
+  $diagnostics = @($Payload.diagnostics)
+  if ($diagnostics.Count -eq 0) {
+    throw "contract FAIL: $CaseName diagnostics JSON has no diagnostics"
+  }
+
+  foreach ($diagnostic in $diagnostics) {
+    foreach ($field in @("severity", "code", "message", "raw", "phase", "category")) {
+      if ([string]::IsNullOrWhiteSpace([string]$diagnostic.$field)) {
+        throw "contract FAIL: $CaseName diagnostic JSON missing non-empty field '$field'"
+      }
+    }
+
+    $line = ConvertTo-PositiveDiagnosticCoordinate -Value $diagnostic.line -FieldName "line" -CaseName $CaseName
+    $column = ConvertTo-PositiveDiagnosticCoordinate -Value $diagnostic.column -FieldName "column" -CaseName $CaseName
+    $spanStart = Assert-DiagnosticJsonPosition -Position $diagnostic.span.start -FieldName "span.start" -CaseName $CaseName
+    $spanEnd = Assert-DiagnosticJsonPosition -Position $diagnostic.span.end -FieldName "span.end" -CaseName $CaseName
+    if (($spanStart.Line -ne $line) -or ($spanStart.Column -ne $column)) {
+      throw "contract FAIL: $CaseName diagnostic JSON span start does not match line/column"
+    }
+    if (($spanEnd.Line -lt $spanStart.Line) -or (($spanEnd.Line -eq $spanStart.Line) -and ($spanEnd.Column -lt $spanStart.Column))) {
+      throw "contract FAIL: $CaseName diagnostic JSON span end precedes start"
+    }
+
+    $fixits = @($diagnostic.fixits)
+    foreach ($fixit in $fixits) {
+      if ($null -eq $fixit.range -or $null -eq $fixit.replacement) {
+        throw "contract FAIL: $CaseName diagnostic JSON fix-it is missing range or replacement"
+      }
+      $null = Assert-DiagnosticJsonPosition -Position $fixit.range.start -FieldName "fixit.range.start" -CaseName $CaseName
+      $null = Assert-DiagnosticJsonPosition -Position $fixit.range.end -FieldName "fixit.range.end" -CaseName $CaseName
+    }
+
+    if ($null -eq $diagnostic.recovery) {
+      throw "contract FAIL: $CaseName diagnostic JSON missing recovery metadata"
+    }
+    if ($diagnostic.recovery.recovery_counts_as_success -ne $false) {
+      throw "contract FAIL: $CaseName diagnostic JSON recovery_counts_as_success must stay false"
+    }
+    if ($diagnostic.recovery.accepts_invalid_program -ne $false) {
+      throw "contract FAIL: $CaseName diagnostic JSON must not accept invalid programs through recovery"
+    }
+    if ($diagnostic.recovery.deterministic -ne $true) {
+      throw "contract FAIL: $CaseName diagnostic JSON recovery metadata must be deterministic"
+    }
+  }
+}
+
+function Assert-NegativeDiagnosticJsonContracts {
+  param(
+    [object]$Payload,
+    [object[]]$Contracts,
+    [string]$CaseName
+  )
+
+  $diagnostics = @($Payload.diagnostics)
+  foreach ($contract in $Contracts) {
+    $code = [string]$contract.Code
+    $matches = @($diagnostics | Where-Object { $_.code -eq $code })
+    if ($matches.Count -eq 0) {
+      throw "contract FAIL: $CaseName diagnostics JSON missing expected code $code"
+    }
+    $diagnostic = $matches[0]
+    if ($diagnostic.phase -ne $contract.Phase) {
+      throw "contract FAIL: $CaseName diagnostics JSON code $code has phase '$($diagnostic.phase)', expected '$($contract.Phase)'"
+    }
+    if ($diagnostic.category -ne $contract.Category) {
+      throw "contract FAIL: $CaseName diagnostics JSON code $code has category '$($diagnostic.category)', expected '$($contract.Category)'"
+    }
+    if ($diagnostic.recovery.strategy -ne $contract.RecoveryStrategy) {
+      throw "contract FAIL: $CaseName diagnostics JSON code $code has recovery strategy '$($diagnostic.recovery.strategy)', expected '$($contract.RecoveryStrategy)'"
+    }
+    if (-not [string]::IsNullOrWhiteSpace([string]$contract.FixitReplacement)) {
+      $fixits = @($diagnostic.fixits)
+      $matchingFixits = @($fixits | Where-Object { $_.replacement -eq $contract.FixitReplacement })
+      if ($matchingFixits.Count -eq 0) {
+        throw "contract FAIL: $CaseName diagnostics JSON code $code missing fix-it replacement '$($contract.FixitReplacement)'"
+      }
+    }
   }
 }
 
@@ -112,6 +324,7 @@ function Invoke-NegativeRecoveryFixtures {
   )
 
   $negativeFixtureDiagnosticTokenContracts = Get-NegativeFixtureDiagnosticTokenContracts
+  $negativeFixtureDiagnosticJsonContracts = Get-NegativeFixtureDiagnosticJsonContracts
   foreach ($fixture in $Fixtures) {
     $source = $fixture.FullName
     $caseName = Get-FixtureCaseName -Prefix "recovery_negative" -FixturePath $source
@@ -142,11 +355,19 @@ function Invoke-NegativeRecoveryFixtures {
       throw "contract FAIL: empty diagnostics artifact for negative fixture $source run2"
     }
 
+    $diagJson1 = Read-NegativeDiagnosticJsonArtifact -JsonPath (Join-Path $run1 "module.diagnostics.json") -CaseName "$source run1"
+    $diagJson2 = Read-NegativeDiagnosticJsonArtifact -JsonPath (Join-Path $run2 "module.diagnostics.json") -CaseName "$source run2"
+    Assert-NegativeDiagnosticJsonPayload -Payload $diagJson1.Payload -CaseName "$source run1"
+    Assert-NegativeDiagnosticJsonPayload -Payload $diagJson2.Payload -CaseName "$source run2"
+
     if ($exit1 -ne $exit2) {
       throw "contract FAIL: negative fixture exit-code drift across replay for $source ($exit1 vs $exit2)"
     }
     if ($diag1 -ne $diag2) {
       throw "contract FAIL: negative fixture diagnostics drift across replay for $source"
+    }
+    if ($diagJson1.Text -ne $diagJson2.Text) {
+      throw "contract FAIL: negative fixture diagnostics JSON drift across replay for $source"
     }
 
     $fixtureLeaf = [System.IO.Path]::GetFileName($source)
@@ -161,6 +382,17 @@ function Invoke-NegativeRecoveryFixtures {
         }
       }
       Write-Output "$caseName`_diagnostic_tokens_verified=true"
+    }
+    if ($negativeFixtureDiagnosticJsonContracts.ContainsKey($fixtureLeaf)) {
+      Assert-NegativeDiagnosticJsonContracts `
+        -Payload $diagJson1.Payload `
+        -Contracts @($negativeFixtureDiagnosticJsonContracts[$fixtureLeaf]) `
+        -CaseName "$source run1"
+      Assert-NegativeDiagnosticJsonContracts `
+        -Payload $diagJson2.Payload `
+        -Contracts @($negativeFixtureDiagnosticJsonContracts[$fixtureLeaf]) `
+        -CaseName "$source run2"
+      Write-Output "$caseName`_diagnostic_json_contract_verified=true"
     }
 
     Write-Output "$caseName`_fails=true"

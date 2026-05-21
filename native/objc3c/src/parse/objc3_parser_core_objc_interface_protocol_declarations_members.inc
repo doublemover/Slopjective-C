@@ -30,6 +30,16 @@
         SynchronizeObjcContainer();
         continue;
       }
+      if (At(TokenKind::Identifier) &&
+          (Peek().text == "associatedtype" || Peek().text == "typealias")) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P100",
+            "unsupported protocol associated-type declaration; public "
+            "protocol existentials require explicit id<Protocol> requirements"));
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
         const Token &token = Peek();
         diagnostics_.push_back(

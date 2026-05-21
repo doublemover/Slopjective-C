@@ -55,6 +55,14 @@ struct ProtocolConformanceObservation {
   std::string attachment_owner;
   std::string matched_class_name;
   std::string matched_class_owner;
+  std::string existential_canonical_spelling;
+  std::string object_representation;
+  std::string conformance_owner_identity;
+  std::string runtime_lookup_anchor;
+  std::string witness_metadata_key;
+  std::string requirement_resolution_policy;
+  std::string unsupported_associated_type_diagnostic;
+  std::string unsupported_dynamic_dispatch_diagnostic;
   std::string failure_reason;
 };
 

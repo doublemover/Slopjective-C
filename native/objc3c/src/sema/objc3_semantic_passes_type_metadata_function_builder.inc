@@ -15,6 +15,12 @@
     Objc3SemanticFunctionTypeMetadata metadata;
     metadata.name = name;
     metadata.arity = source.arity;
+    metadata.generic_parameter_names_source_order =
+        source.generic_parameter_names_source_order;
+    metadata.generic_parameter_variance_source_order =
+        source.generic_parameter_variance_source_order;
+    metadata.generic_parameter_constraints_lexicographic =
+        source.generic_parameter_constraints_lexicographic;
     metadata.param_types = source.param_types;
     metadata.param_canonical_types = source.param_canonical_types;
     metadata.param_is_vector = source.param_is_vector;

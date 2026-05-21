@@ -17,6 +17,7 @@ Replayable public workflow actions:
 
 - `npm run objc3c -- test-runtime-acceptance-fast`
 - `npm run objc3c -- validate-object-model-conformance`
+- `npm run objc3c -- validate-public-runtime-reflection-api`
 - `npm run objc3c -- validate-storage-reflection-conformance`
 - `npm run objc3c -- validate-runnable-object-model`
 - `npm run objc3c -- validate-runnable-storage-reflection`
@@ -28,17 +29,19 @@ Current closure scope:
 
 - realized class, metaclass, protocol, and category behavior over the runtime-owned graph
 - property, ivar, and aggregate reflection coherence over runtime-owned query surfaces
-- compile-coupled object-model proof and packaged validation without widening the public runtime ABI
+- bounded public reflection snapshots for state, class, property, direct method, concrete protocol, conformance, category, and selector metadata
+- deterministic indexed reflection for realized classes, direct properties, direct methods, concrete protocols, attached categories, and selectors
+- compile-coupled object-model proof and packaged validation without widening unrelated private runtime helper surfaces
 
 Current closure constraints:
 
 - unresolved sends still retain one deterministic miss strict error path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
-- reflection visibility remains on the private runtime-owned query surface and must not be repackaged as public ABI
+- public reflection is limited to `runtime.public-api.reflection`; private `_for_testing` snapshots remain internal and cannot be cited as public ABI
 - milestone proof must stay compile-coupled to the live runtime/registration path and not fork into release-scope scaffolding
 
 Explicit non-goals:
 
-- public runtime ABI widening beyond registration, selector lookup, dispatch, and reset
+- public runtime ABI widening beyond the checked `objc3_runtime_reflection.h` snapshot API and existing registration, selector lookup, dispatch, and reset surfaces
 - claims that unresolved dispatch miss recovery is part of the supported object-model closure
 - probe-local or source-only reflection truth that bypasses runtime-owned query state
 - release-scope runtime or packaging scaffolds parallel to the shipped acceptance path
@@ -66,6 +69,7 @@ Authoritative live surfaces:
 - acceptance and public workflow:
   - `npm run objc3c -- test-runtime-acceptance-fast`
   - `npm run objc3c -- validate-object-model-conformance`
+  - `npm run objc3c -- validate-public-runtime-reflection-api`
   - `npm run objc3c -- validate-storage-reflection-conformance`
   - `npm run objc3c -- validate-runnable-object-model`
   - `npm run objc3c -- validate-runnable-storage-reflection`

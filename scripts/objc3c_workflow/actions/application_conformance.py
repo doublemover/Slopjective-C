@@ -8,12 +8,17 @@ from ..commands import pwsh_file, run
 from .application_surface_paths import (
     CONFORMANCE_CORPUS_INTEGRATION_PY,
     CONFORMANCE_MINIMA_PS1,
+    PUBLIC_CONFORMANCE_SUITE_PY,
     RUNNABLE_CONFORMANCE_CORPUS_E2E_PY,
 )
 
 
 def action_validate_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
+
+
+def action_validate_public_conformance_suite(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_SUITE_PY)])
 
 
 def action_check_conformance_minima(_: list[str]) -> int:

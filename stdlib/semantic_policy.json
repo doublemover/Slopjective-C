@@ -15,6 +15,16 @@
       "minor": 0,
       "patch": 0
     },
+    "objc3.text": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.collections": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
     "objc3.concurrency": {
       "major": 1,
       "minor": 0,
@@ -66,6 +76,33 @@
     "text_data_shape_score": "returns unit_count plus byte_count",
     "text_data_shape_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
   },
+  "text_semantics": {
+    "utf8_literal_record": "routes explicit UTF-8 literal metadata through objc3_runtime_stdlib_text_utf8_literal_i32 and returns a runtime-owned handle only for nonnegative byte/unit counts with units not greater than bytes and a nonzero valid-UTF8 flag",
+    "byte_count": "routes through objc3_runtime_stdlib_text_byte_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "unit_count": "routes through objc3_runtime_stdlib_text_unit_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "valid_utf8": "routes through objc3_runtime_stdlib_text_is_valid_utf8_i32 and returns 1 only for valid runtime-owned text records",
+    "byte_at_or": "routes through objc3_runtime_stdlib_text_byte_at_or_i32 and returns an owned UTF-8 byte or the caller default while recording invalid-handle, unavailable-storage, or out-of-bounds status",
+    "prefix_units": "routes through objc3_runtime_stdlib_text_prefix_units_i32 and clamps requested units to the runtime-owned text unit count with a zero floor",
+    "concat": "routes through objc3_runtime_stdlib_text_concat_i32 and creates a runtime-owned record whose byte and unit counts are the checked sums of both operands"
+  },
+  "collection_semantics": {
+    "array3_record": "routes concrete i32 array construction through objc3_runtime_stdlib_collections_array3_i32 and returns a runtime-owned handle only for counts from 0 through 3",
+    "array_count": "routes through objc3_runtime_stdlib_collections_array_count_i32 and returns 0 plus invalid-handle status for unknown handles",
+    "array_get_or": "routes through objc3_runtime_stdlib_collections_array_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid indexes",
+    "array_prefix_count": "routes through objc3_runtime_stdlib_collections_array_prefix_count_i32 and clamps requested elements to the runtime-owned array count with a zero floor",
+    "array_sum": "routes concrete i32 array aggregation through objc3_runtime_stdlib_collections_array_sum_i32, returns the checked sum of runtime-owned array elements, and fails closed for invalid handles or i32 overflow",
+    "map_entry": "routes initial i32 map construction through objc3_runtime_stdlib_collections_map_entry_i32 and returns a runtime-owned handle seeded with one key/value entry",
+    "map_insert": "routes mutable i32 map insertion and replacement through objc3_runtime_stdlib_collections_map_insert_i32, appends new keys, updates existing keys, and returns the current entry count",
+    "map_lookup_or": "routes through objc3_runtime_stdlib_collections_map_lookup_or_i32 and returns the caller default while recording not-found status for missing keys",
+    "array_slice": "routes concrete i32 array slicing through objc3_runtime_stdlib_collections_array_slice_i32 and returns a runtime-owned slice handle only for ranges inside the source array",
+    "array_iterator": "routes concrete i32 array iteration through objc3_runtime_stdlib_collections_array_iterator_i32 and objc3_runtime_stdlib_collections_iterator_next_or_i32 with insertion-order values followed by an explicit iteration-end status",
+    "slice_get_or": "routes concrete i32 slice indexing through objc3_runtime_stdlib_collections_slice_get_or_i32 and returns the caller default while recording out-of-bounds status for invalid slice indexes",
+    "slice_iterator": "routes concrete i32 slice iteration through objc3_runtime_stdlib_collections_slice_iterator_i32 and objc3_runtime_stdlib_collections_iterator_next_or_i32 with view-order values followed by an explicit iteration-end status",
+    "set3_record": "routes concrete i32 set construction through objc3_runtime_stdlib_collections_set3_i32, deduplicates values in insertion order, and returns a runtime-owned handle only for counts from 0 through 3",
+    "set_contains": "routes through objc3_runtime_stdlib_collections_set_contains_i32 and records not-found status for missing values",
+    "set_insert": "routes through objc3_runtime_stdlib_collections_set_insert_i32, mutates the runtime-owned set only for new values, and increments the version observed by fail-closed iterators",
+    "set_iterator": "routes concrete i32 set iteration through objc3_runtime_stdlib_collections_set_iterator_i32 and fails closed with mutated-during-iteration status when the set version changes before iterator completion"
+  },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",
     "component_count": "returns root plus offset as the explicit component-count shape",
@@ -88,8 +125,14 @@
     "cancellation_checkpoint": "routes cancellation checkpoints through objc3_runtime_cancel_task_group_i32 when flagged and objc3_runtime_task_is_cancelled_i32 otherwise",
     "executor_hop_token": "routes executor hops through objc3_runtime_executor_hop_i32 with distinct value and executor-tag operands",
     "actor_mailbox_token": "routes actor mailbox binding, enqueue, and drain behavior through the runtime actor mailbox helper cluster with distinct actor-handle and executor-tag operands",
-    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop and actor-mailbox helpers may grow additively inside objc3.concurrency",
-    "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
+    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation executor-hop actor-mailbox public-task-spawn public-task-join public-task-group public-cancellation public-executor-hop and public-actor-mailbox helpers may grow additively inside objc3.concurrency",
+    "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1",
+    "public_task_spawn_api": "objc3_task_spawn, objc3_task_spawn_child, and objc3_task_spawn_detached are stable public aliases over the structured and detached runtime task spawn helpers",
+    "public_task_join_api": "objc3_task_join routes non-cancelled public task joins through objc3_concurrency_join_status and preserves explicit result and executor-tag operands",
+    "public_task_group_api": "objc3_task_group_run_two enters a two-child task-group scope and objc3_task_group_run_bounded accepts a caller-provided child count; both drain through objc3_concurrency_task_group_scope_depth and negative counts fail closed through cancellation",
+    "public_cancellation_api": "objc3_task_is_cancelled and objc3_task_cancel_if_needed expose cancellation observation and cancellation checkpoints without widening scheduler policy claims",
+    "public_executor_api": "objc3_executor_hop is the public executor-hop entrypoint over objc3_concurrency_executor_hop_token with distinct value and executor-tag operands",
+    "public_actor_mailbox_api": "objc3_actor_mailbox_send_and_drain binds, enqueues, and drains a single actor mailbox message through objc3_concurrency_actor_mailbox_token"
   },
   "system_semantics": {
     "resource_token": "returns seed plus 4 as the canonical deterministic strict-system resource token",
@@ -103,8 +146,8 @@
   },
   "non_goals": [
     "allocator or ownership ABI claims",
-    "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
+    "Foundation NSString NSArray NSDictionary or NSData compatibility promises",
     "moving result-shape helpers into objc3.core",
     "presenting runtime-backed executor or reflection semantics without checked-in helper exports",
     "widening strict-system helpers into always-on core imports"

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-manifest-v1.schema.json",
+  "title": "objc3c Package Manifest",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "package_id",
+    "package_namespace",
+    "package_name",
+    "package_version",
+    "source_kind",
+    "source",
+    "source_digest",
+    "language",
+    "abi",
+    "dependencies",
+    "registry",
+    "trust",
+    "replay",
+    "manifest_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
+    "package_id": { "type": "string", "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$" },
+    "package_namespace": { "type": "string", "minLength": 1 },
+    "package_name": { "type": "string", "minLength": 1 },
+    "package_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "source_kind": {
+      "enum": [
+        "stdlib-module-manifest",
+        "showcase-workspace-manifest"
+      ]
+    },
+    "source": { "type": "string", "minLength": 1 },
+    "source_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "language": {
+      "type": "object",
+      "required": ["version", "mode"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "const": "3.0" },
+        "mode": { "const": "strict" }
+      }
+    },
+    "abi": {
+      "type": "object",
+      "required": ["identity", "minimum", "runtime_symbols"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": { "const": "objc3-abi-2025Q4" },
+        "minimum": { "const": "objc3-abi-2025Q4" },
+        "runtime_symbols": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/dependency" }
+    },
+    "registry": {
+      "type": "object",
+      "required": ["resolution", "network_resolution", "offline_mirror_required"],
+      "additionalProperties": false,
+      "properties": {
+        "resolution": { "const": "checked-in-local-registry" },
+        "network_resolution": { "const": "unsupported-fail-closed" },
+        "offline_mirror_required": { "const": true }
+      }
+    },
+    "trust": { "$ref": "#/$defs/trust" },
+    "replay": {
+      "type": "object",
+      "required": ["commands"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          }
+        }
+      }
+    },
+    "manifest_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  },
+  "$defs": {
+    "dependency": {
+      "type": "object",
+      "required": ["package_id", "source", "version_requirement", "language_requirement", "abi_requirement"],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": { "type": "string", "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$" },
+        "source": { "const": "checked-in-local-workspace" },
+        "version_requirement": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "language_requirement": { "const": "3.0" },
+        "abi_requirement": { "const": "objc3-abi-2025Q4" }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": [
+        "signature_format",
+        "signing_key_id",
+        "subject",
+        "signature",
+        "trust_scope",
+        "revocation_state",
+        "revocation_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "signing_key_id": { "const": "objc3c-local-package-key-v1" },
+        "subject": { "type": "string", "minLength": 1 },
+        "signature": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "trust_scope": { "const": "checked-in-local-package-source" },
+        "revocation_state": { "const": "not-revoked" },
+        "revocation_policy": { "const": "revoked-package-ids-fail-resolution" }
+      }
+    }
+  }
+}

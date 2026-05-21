@@ -1,0 +1,523 @@
+{
+  "contract_id": "objc3c.module_interop.import_visibility_bridge_contract.v1",
+  "schema": "schemas/objc3c-module-interop-contract-v1.schema.json",
+  "issue_refs": [
+    8163,
+    8165
+  ],
+  "public_command": "npm run objc3c -- validate-module-interop-contracts",
+  "source_authority": "checked-in-module-interop-contract-fixture",
+  "evidence_log_allowed": false,
+  "checked_source_proofs": [
+    {
+      "case": "missing-module",
+      "diagnostic": "O3MOD8161",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "missing_module_lookup_fail_closed",
+        "missing-module",
+        "O3MOD8161"
+      ]
+    },
+    {
+      "case": "import-cycle",
+      "diagnostic": "O3MOD8162",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "import_cycle_detection_fail_closed",
+        "import-cycle",
+        "O3MOD8162"
+      ]
+    },
+    {
+      "case": "duplicate-export",
+      "diagnostic": "O3MOD8164",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "duplicate_export_detection_fail_closed",
+        "duplicate-export",
+        "O3MOD8164"
+      ]
+    },
+    {
+      "case": "hidden-declaration",
+      "diagnostic": "O3MOD8165",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "hidden-declaration",
+        "O3MOD8165",
+        "hidden declaration access must fail closed"
+      ]
+    },
+    {
+      "case": "private-reexport",
+      "diagnostic": "O3MOD8165",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "edge.reexported",
+        "edge.visibility != Objc3ModuleImportVisibility::kPublic",
+        "reexported import edge must be public"
+      ]
+    },
+    {
+      "case": "stale-metadata",
+      "diagnostic": "O3MOD8163",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "stale-metadata",
+        "O3MOD8163",
+        "stale_metadata_diagnostic_code"
+      ]
+    },
+    {
+      "case": "abi-mismatch",
+      "diagnostic": "O3MOD8166",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "abi-mismatch",
+        "O3MOD8166",
+        "abi_mismatch_diagnostic_code"
+      ]
+    },
+    {
+      "case": "bridge-digest-drift",
+      "diagnostic": "O3MOD8163",
+      "fail_closed": true,
+      "source_anchor": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+      "source_sha256": "0d8b60e2293c022da908f43b6603e449357d8c262eb39ab8d19f06153e297f96",
+      "fragments": [
+        "bridge_metadata_digest_participates_in_rebuild_key",
+        "bridge_metadata_digest=",
+        "surface.bridge_metadata_digest"
+      ]
+    }
+  ],
+  "module_identity": {
+    "module_name": "FoundationNext.VisibilityBridge",
+    "metadata_version": "1.0.0",
+    "abi_identity": "objc3c.foundation-next.visibility-bridge.abi.v1",
+    "source_digest": "00cfd35af985117b0a23620136572995d8502d1d85933f698cdab98b2f7dd75b",
+    "source_identity_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1",
+    "package_lock_identity": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1"
+  },
+  "imports": [
+    {
+      "module_name": "FoundationCore",
+      "metadata_version": "1.0.0",
+      "abi_identity": "objc3c.foundation-core.abi.v1",
+      "visibility": "public",
+      "reexport": true,
+      "exported_symbols": [
+        "FNCoreObject",
+        "FNCoreSelector"
+      ],
+      "rebuild_affects": [
+        "semantic",
+        "abi",
+        "link",
+        "package-lock"
+      ]
+    },
+    {
+      "module_name": "FoundationPrivateShims",
+      "metadata_version": "1.0.0",
+      "abi_identity": "objc3c.foundation-private-shims.abi.v1",
+      "visibility": "private",
+      "reexport": false,
+      "exported_symbols": [
+        "FNPrivateBridgeShim"
+      ],
+      "rebuild_affects": [
+        "semantic"
+      ]
+    },
+    {
+      "module_name": "FoundationText",
+      "metadata_version": "1.0.0",
+      "abi_identity": "objc3c.foundation-text.abi.v1",
+      "visibility": "public",
+      "reexport": false,
+      "exported_symbols": [
+        "FNTextStorage"
+      ],
+      "rebuild_affects": [
+        "semantic",
+        "abi",
+        "link"
+      ]
+    }
+  ],
+  "exports": {
+    "public": [
+      "FNBridgeString",
+      "FNBridgeToken",
+      "FNMakeOpaqueHandle"
+    ],
+    "private": [
+      "FNBridgeScratchBuffer"
+    ],
+    "duplicate_policy": "fail-closed",
+    "hidden_import_access_policy": "reject"
+  },
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationCore",
+        "visibility": "public",
+        "reexport": true
+      },
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationPrivateShims",
+        "visibility": "private",
+        "reexport": false
+      },
+      {
+        "from": "FoundationNext.VisibilityBridge",
+        "to": "FoundationText",
+        "visibility": "public",
+        "reexport": false
+      }
+    ],
+    "reexported_modules": [
+      "FoundationCore"
+    ],
+    "diagnostics": [
+      {
+        "case": "missing-module",
+        "diagnostic": "O3MOD8161"
+      },
+      {
+        "case": "import-cycle",
+        "diagnostic": "O3MOD8162"
+      },
+      {
+        "case": "stale-metadata",
+        "diagnostic": "O3MOD8163"
+      },
+      {
+        "case": "duplicate-export",
+        "diagnostic": "O3MOD8164"
+      },
+      {
+        "case": "hidden-declaration",
+        "diagnostic": "O3MOD8165"
+      },
+      {
+        "case": "abi-mismatch",
+        "diagnostic": "O3MOD8166"
+      }
+    ]
+  },
+  "visibility_access_cases": [
+    {
+      "symbol": "FNBridgeString",
+      "provided_by": "FoundationNext.VisibilityBridge",
+      "access": "public-export",
+      "allowed": true
+    },
+    {
+      "symbol": "FNCoreObject",
+      "provided_by": "FoundationCore",
+      "access": "public-reexport",
+      "allowed": true
+    },
+    {
+      "symbol": "FNTextStorage",
+      "provided_by": "FoundationText",
+      "access": "public-import",
+      "allowed": true
+    },
+    {
+      "symbol": "FNPrivateBridgeShim",
+      "provided_by": "FoundationPrivateShims",
+      "access": "private-import",
+      "allowed": false,
+      "diagnostic": "O3MOD8165"
+    },
+    {
+      "symbol": "FNBridgeScratchBuffer",
+      "provided_by": "FoundationNext.VisibilityBridge",
+      "access": "private-export",
+      "allowed": false,
+      "diagnostic": "O3MOD8165"
+    }
+  ],
+  "incremental_rebuild": {
+    "deterministic": true,
+    "identity_inputs": [
+      "module_identity",
+      "import_graph",
+      "visibility",
+      "foreign_surfaces",
+      "package_lock"
+    ],
+    "invalidation_conditions": [
+      "source-digest-drift",
+      "imported-module-abi-identity-drift",
+      "package-lock-module-identity-drift",
+      "visibility-surface-drift",
+      "bridge-metadata-digest-drift"
+    ],
+    "invalidation_cases": [
+      {
+        "condition": "source-digest-drift",
+        "mutated_surface": "module_identity.source_digest",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link",
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "imported-module-abi-identity-drift",
+        "mutated_surface": "imports[].abi_identity",
+        "diagnostic": "O3MOD8166",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link",
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "package-lock-module-identity-drift",
+        "mutated_surface": "package_metadata.package_lock_module_identity",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "package-lock"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "visibility-surface-drift",
+        "mutated_surface": "visibility_access_cases[].allowed",
+        "diagnostic": "O3MOD8165",
+        "rebuild_affects": [
+          "semantic"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      },
+      {
+        "condition": "bridge-metadata-digest-drift",
+        "mutated_surface": "interop.bridge_metadata_digest",
+        "diagnostic": "O3MOD8163",
+        "rebuild_affects": [
+          "semantic",
+          "abi",
+          "link"
+        ],
+        "fail_closed": true,
+        "deterministic": true
+      }
+    ],
+    "stale_metadata_diagnostic": "O3MOD8163",
+    "abi_mismatch_diagnostic": "O3MOD8166",
+    "replay_key": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;source_digest=00cfd35af985117b0a23620136572995d8502d1d85933f698cdab98b2f7dd75b;package=module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1;imports=[FoundationCore@1.0.0:objc3c.foundation-core.abi.v1:public:reexport,FoundationPrivateShims@1.0.0:objc3c.foundation-private-shims.abi.v1:private:import,FoundationText@1.0.0:objc3c.foundation-text.abi.v1:public:import];exports=[FNBridgeString,FNBridgeToken,FNMakeOpaqueHandle];bridge_metadata_digest=485d69d649d515ae6f67893a7fcd8d1bb813727dfcb6b16b14a767a030a2ee77;mixed_image_loader_metadata_digest=a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003;foreign=[c:c.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,cpp:cpp.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:16:reserved,objc2:objc2.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:supported,swift:swift.foundation-next.visibility-bridge:FoundationNext.VisibilityBridge:8:reserved]"
+  },
+  "interop": {
+    "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
+    "modulemap": "include/FoundationNext/module.modulemap",
+    "bridge_metadata": "include/FoundationNext/FoundationNextVisibilityBridge.interop.json",
+    "bridge_metadata_digest": "485d69d649d515ae6f67893a7fcd8d1bb813727dfcb6b16b14a767a030a2ee77",
+    "foreign_surfaces": [
+      {
+        "language": "c",
+        "surface_id": "c.foundation-next.visibility-bridge",
+        "supported": true,
+        "support_state": "supported",
+        "fail_closed": true,
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
+        "modulemap": "include/FoundationNext/module.modulemap",
+        "callable_metadata": [
+          "FNMakeOpaqueHandle"
+        ],
+        "source_syntax_policy": "c-header-import-only",
+        "evidence_anchors": [
+          "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+          "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+        ],
+        "safety_policies": {
+          "ownership": "explicit-retain-release-transfer",
+          "errors": "status-or-nserror-bridge",
+          "async": "callback-requires-bridge-metadata",
+          "object_identity": "opaque-handle"
+        }
+      },
+      {
+        "language": "cpp",
+        "surface_id": "cpp.foundation-next.visibility-bridge",
+        "supported": false,
+        "support_state": "reserved",
+        "fail_closed": true,
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 16,
+        "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
+        "modulemap": "include/FoundationNext/module.modulemap",
+        "callable_metadata": [
+          "FoundationNext::MakeBridgeToken"
+        ],
+        "source_syntax_policy": "cxx-callable-annotation-only",
+        "reservation_diagnostic": "O3INT8167",
+        "reservation_reason": "C++ callable annotations are modeled as bridge metadata, but no executable mixed-image C++ lane proof is checked in for this contract.",
+        "evidence_anchors": [],
+        "safety_policies": {
+          "ownership": "explicit-raii-boundary",
+          "errors": "status-or-nserror-bridge",
+          "async": "no-implicit-async-thunks",
+          "object_identity": "stable-opaque-handle"
+        }
+      },
+      {
+        "language": "objc2",
+        "surface_id": "objc2.foundation-next.visibility-bridge",
+        "supported": true,
+        "support_state": "supported",
+        "fail_closed": true,
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
+        "modulemap": "include/FoundationNext/module.modulemap",
+        "callable_metadata": [
+          "FNBridgeObjC2Entry"
+        ],
+        "source_syntax_policy": "metadata-only-retired-syntax-rejected",
+        "evidence_anchors": [
+          "tests/tooling/fixtures/native/bridge_legality_positive.objc3"
+        ],
+        "safety_policies": {
+          "ownership": "arc-boundary-explicit",
+          "errors": "nserror-out-parameter-only",
+          "async": "block-callback-requires-metadata",
+          "object_identity": "objc-object-identity-preserved"
+        }
+      },
+      {
+        "language": "swift",
+        "surface_id": "swift.foundation-next.visibility-bridge",
+        "supported": false,
+        "support_state": "reserved",
+        "fail_closed": true,
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "bridge_header": "include/FoundationNext/FoundationNextVisibilityBridge.h",
+        "modulemap": "include/FoundationNext/module.modulemap",
+        "callable_metadata": [
+          "FoundationNext.VisibilityBridge.makeBridgeToken()"
+        ],
+        "source_syntax_policy": "swift-name-annotation-only",
+        "reservation_diagnostic": "O3INT8166",
+        "reservation_reason": "Swift name annotations are modeled as bridge metadata, but no executable mixed-image Swift lane proof is checked in for this contract.",
+        "evidence_anchors": [],
+        "safety_policies": {
+          "ownership": "explicit-bridged-reference",
+          "errors": "throws-mapped-through-bridge-metadata",
+          "async": "async-import-requires-metadata",
+          "object_identity": "stable-objc-identity"
+        }
+      }
+    ],
+    "foreign_type_contracts": [
+      {
+        "type_name": "FNBridgeOpaqueHandle",
+        "source_language": "c",
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "ownership": "caller-owned"
+      },
+      {
+        "type_name": "FNBridgeObjC2Entry",
+        "source_language": "objc2",
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "ownership": "arc-managed"
+      },
+      {
+        "type_name": "FoundationNext.VisibilityBridge.Token",
+        "source_language": "swift",
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 8,
+        "ownership": "swift-bridged-reference"
+      },
+      {
+        "type_name": "FoundationNext::BridgeToken",
+        "source_language": "cpp",
+        "symbol_owner": "FoundationNext.VisibilityBridge",
+        "abi_alignment": 16,
+        "ownership": "raii-boundary"
+      }
+    ]
+  },
+  "package_metadata": {
+    "package_name": "foundation-next-interop",
+    "module_identity": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1",
+    "package_lock_module_identity": "module=FoundationNext.VisibilityBridge;metadata=1.0.0;abi=objc3c.foundation-next.visibility-bridge.abi.v1",
+    "imported_module_identities": [
+      "FoundationCore@1.0.0:objc3c.foundation-core.abi.v1",
+      "FoundationPrivateShims@1.0.0:objc3c.foundation-private-shims.abi.v1",
+      "FoundationText@1.0.0:objc3c.foundation-text.abi.v1"
+    ],
+    "mixed_image_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
+    "mixed_image_loader_metadata_digest": "a633284716450520067b979a49ad2940e306440bf2a91f8a376aea9c4de7a003",
+    "bridge_surface_count": 4,
+    "supported_bridge_surface_count": 2,
+    "reserved_bridge_surface_count": 2,
+    "swift_bridge_surface_count": 0,
+    "cpp_bridge_surface_count": 0
+  },
+  "unsupported_surfaces": [
+    {
+      "surface": "objc2-retired-source-syntax",
+      "diagnostic": "O3INT8165",
+      "fail_closed": true
+    },
+    {
+      "surface": "swift-unstable-abi-shape",
+      "diagnostic": "O3INT8166",
+      "fail_closed": true
+    },
+    {
+      "surface": "cpp-template-instantiation-import",
+      "diagnostic": "O3INT8167",
+      "fail_closed": true
+    }
+  ],
+  "native_anchors": [
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+    "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+  ],
+  "fixture_anchors": [
+    "schemas/objc3c-module-interop-contract-v1.schema.json",
+    "tests/tooling/fixtures/native/module_import_lookup_provider.objc3",
+    "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+    "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+  ]
+}

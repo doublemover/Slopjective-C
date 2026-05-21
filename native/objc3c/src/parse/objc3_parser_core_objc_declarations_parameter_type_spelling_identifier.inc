@@ -32,6 +32,11 @@
                 param.object_pointer_type_name);
         return true;
       }
+      if (type_token.text == "Text" || type_token.text == "Objc3Text") {
+        param.type = ValueType::TextHandle;
+        parameter_type_spelling_matched = true;
+        return true;
+      }
       param.type = ValueType::ObjCObjectPtr;
       param.object_pointer_type_spelling = true;
       param.object_pointer_type_name = type_token.text;

@@ -15,6 +15,10 @@
       fn.return_vector_lane_count = vector_lane_count;
       return;
     }
+    if (type_token.text == "Text" || type_token.text == "Objc3Text") {
+      fn.return_type = ValueType::TextHandle;
+      return;
+    }
 
     fn.return_type = ValueType::ObjCObjectPtr;
     fn.return_object_pointer_type_spelling = true;

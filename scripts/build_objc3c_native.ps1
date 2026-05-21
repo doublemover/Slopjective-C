@@ -166,6 +166,105 @@ function Get-Objc3cNativeBuildFileDigest {
   }
 }
 
+function Get-Objc3cNativeBuildLockTimeoutSeconds {
+  $defaultTimeoutSeconds = 900
+  if ([string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_BUILD_LOCK_TIMEOUT_SECONDS)) {
+    return $defaultTimeoutSeconds
+  }
+
+  $parsedTimeoutSeconds = 0
+  if (![int]::TryParse($env:OBJC3C_NATIVE_BUILD_LOCK_TIMEOUT_SECONDS, [ref]$parsedTimeoutSeconds) -or $parsedTimeoutSeconds -lt 1) {
+    throw "OBJC3C_NATIVE_BUILD_LOCK_TIMEOUT_SECONDS must be a positive integer when set"
+  }
+  return $parsedTimeoutSeconds
+}
+
+function Enter-Objc3cNativeBuildDirectoryLock {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$BuildDirPath
+  )
+
+  New-Item -ItemType Directory -Force -Path $BuildDirPath | Out-Null
+  $lockPath = Join-Path $BuildDirPath ".objc3c-native-build.lock"
+  $lockRelativePath = Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $lockPath
+  $timeoutSeconds = Get-Objc3cNativeBuildLockTimeoutSeconds
+  $startedAt = [System.Diagnostics.Stopwatch]::StartNew()
+
+  while ($true) {
+    try {
+      $stream = [System.IO.File]::Open(
+        $lockPath,
+        [System.IO.FileMode]::OpenOrCreate,
+        [System.IO.FileAccess]::ReadWrite,
+        [System.IO.FileShare]::None
+      )
+      $startedAt.Stop()
+      $waitSeconds = [Math]::Round($startedAt.Elapsed.TotalSeconds, 3)
+      $metadata = @(
+        "pid=$PID",
+        "build_dir=$(Get-Objc3cNativeBuildRepoRelativePath -RootPath $RootPath -TargetPath $BuildDirPath)",
+        "acquired_utc=$([DateTimeOffset]::UtcNow.ToString('O'))"
+      ) -join [Environment]::NewLine
+      $bytes = [System.Text.Encoding]::UTF8.GetBytes($metadata + [Environment]::NewLine)
+      $stream.SetLength(0)
+      $stream.Write($bytes, 0, $bytes.Length)
+      $stream.Flush()
+
+      Write-BuildStep ("native_build_lock_acquired=" + $lockRelativePath)
+      Write-BuildStep ("native_build_lock_wait_seconds=" + $waitSeconds)
+      Write-BuildStep ("native_build_lock_timeout_seconds=" + $timeoutSeconds)
+      return [ordered]@{
+        acquired = $true
+        path = $lockPath
+        path_relative = $lockRelativePath
+        wait_seconds = $waitSeconds
+        timeout_seconds = $timeoutSeconds
+        stream = $stream
+      }
+    } catch [System.IO.IOException] {
+      if ($startedAt.Elapsed.TotalSeconds -ge $timeoutSeconds) {
+        throw "timed out waiting for native build directory lock: $lockRelativePath"
+      }
+      Start-Sleep -Milliseconds 250
+    }
+  }
+}
+
+function Exit-Objc3cNativeBuildDirectoryLock {
+  param([object]$LockState)
+
+  if ($null -eq $LockState) {
+    return
+  }
+  if ($null -ne $LockState.stream) {
+    $LockState.stream.Dispose()
+  }
+  if ($LockState.path_relative) {
+    Write-BuildStep ("native_build_lock_released=" + $LockState.path_relative)
+  }
+}
+
+function Get-Objc3cNativeBuildLockTelemetry {
+  param([object]$LockState)
+
+  if ($null -eq $LockState) {
+    return [ordered]@{
+      acquired = $false
+      path = ""
+      wait_seconds = 0.0
+      timeout_seconds = Get-Objc3cNativeBuildLockTimeoutSeconds
+    }
+  }
+
+  return [ordered]@{
+    acquired = [bool]$LockState.acquired
+    path = [string]$LockState.path_relative
+    wait_seconds = [double]$LockState.wait_seconds
+    timeout_seconds = [int]$LockState.timeout_seconds
+  }
+}
+
 function Write-Objc3cNativeBuildSummary {
   param(
     [Parameter(Mandatory = $true)][string]$RootPath,
@@ -186,7 +285,8 @@ function Write-Objc3cNativeBuildSummary {
     [Parameter(Mandatory = $true)][string]$CompileCommandsFilePath,
     [Parameter(Mandatory = $true)][string]$BuildFingerprintFilePath,
     [Parameter(Mandatory = $true)][string]$RepoSupercleanSurfaceFilePath,
-    [object[]]$SelectedFrontendPacketDefinitions = @()
+    [object[]]$SelectedFrontendPacketDefinitions = @(),
+    [object]$NativeBuildLockTelemetry = $null
   )
 
   $frontendPackets = @(
@@ -210,6 +310,7 @@ function Write-Objc3cNativeBuildSummary {
     native_build_ran = $NativeBuildRan
     force_reconfigure = [bool]$ForceReconfigure
     parallelism = $Parallelism
+    native_build_lock = if ($null -ne $NativeBuildLockTelemetry) { $NativeBuildLockTelemetry } else { Get-Objc3cNativeBuildLockTelemetry -LockState $null }
     source_date_epoch = $SourceDateEpoch
     runtime_archive_timestamps_normalized = $RuntimeArchiveNormalized
     clean_room = [bool]$CleanRoomRootPath
@@ -242,6 +343,20 @@ function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
   return $Mode -in @("full", "binaries-only", "contracts-binary", "contracts-closeout", "contracts-all")
+}
+
+if ($Parallelism -eq 0 -and ![string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_BUILD_PARALLELISM)) {
+  $parsedParallelism = 0
+  if (![int]::TryParse($env:OBJC3C_NATIVE_BUILD_PARALLELISM, [ref]$parsedParallelism) -or $parsedParallelism -lt 1) {
+    throw "OBJC3C_NATIVE_BUILD_PARALLELISM must be a positive integer when set"
+  }
+  $Parallelism = $parsedParallelism
+}
+if ($Parallelism -eq 0) {
+  $Parallelism = 4
+}
+if ($Parallelism -lt 1) {
+  throw "native build parallelism must be a positive integer"
 }
 
 $modeRunsNativeBuild = Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode
@@ -325,7 +440,14 @@ $selectedFrontendPacketDefinitions = @(
     -PacketDefinitions $frontendPacketDefinitions
 )
 
+$nativeBuildLockState = $null
+$nativeBuildLockTelemetry = Get-Objc3cNativeBuildLockTelemetry -LockState $null
 if ($modeRunsNativeBuild) {
+  $nativeBuildLockState = Enter-Objc3cNativeBuildDirectoryLock `
+    -RootPath $repoRoot `
+    -BuildDirPath $tmpOutDir
+  $nativeBuildLockTelemetry = Get-Objc3cNativeBuildLockTelemetry -LockState $nativeBuildLockState
+  try {
   $buildFingerprint = Get-Objc3cNativeBuildFingerprint `
     -Clangxx $clangxx `
     -CmakeTool $cmakeTool `
@@ -377,6 +499,9 @@ if ($modeRunsNativeBuild) {
   Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
   Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
   Write-BuildStep ("compile_commands=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
+  } finally {
+    Exit-Objc3cNativeBuildDirectoryLock -LockState $nativeBuildLockState
+  }
 } else {
   Write-BuildStep "cmake_build_skip=native-binaries"
   $runtimeArchiveNormalized = $false
@@ -421,7 +546,8 @@ Write-Objc3cNativeBuildSummary `
   -CompileCommandsFilePath $compileCommandsPath `
   -BuildFingerprintFilePath $buildFingerprintPath `
   -RepoSupercleanSurfaceFilePath $repoSupercleanSurfacePath `
-  -SelectedFrontendPacketDefinitions $selectedFrontendPacketDefinitions
+  -SelectedFrontendPacketDefinitions $selectedFrontendPacketDefinitions `
+  -NativeBuildLockTelemetry $nativeBuildLockTelemetry
 
 if ($modeRunsNativeBuild) {
   if (Test-Path -LiteralPath $outExe -PathType Leaf) {

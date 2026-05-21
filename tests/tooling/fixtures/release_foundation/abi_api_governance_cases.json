@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.release.foundation.abi_api_governance.case_matrix.v1",
+  "schema_version": 1,
+  "positive_cases": [
+    {
+      "case_id": "canonical-governance",
+      "governance": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "expected_status": "PASS",
+      "expected_public_api_symbol_count": 103,
+      "expected_runtime_abi_symbol_count": 50,
+      "expected_frontend_c_api_symbol_count": 33,
+      "expected_governed_symbol_surface_count": 12,
+      "expected_compiler_artifact_schema_count": 6
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "runtime-surface-class-drift",
+      "mutation": "set stdlib_runtime_abi[objc3.concurrency].compatibility_class=stable-public-api",
+      "diagnostic_code": "O3ABI8173",
+      "expected_failure": "stdlib-runtime-abi compatibility class drifted"
+    },
+    {
+      "case_id": "unsupported-downgrade-route-not-release-blocking",
+      "mutation": "remove allowed_transition_policy.release_blocked_transitions[unsupported-downgrade-route]",
+      "diagnostic_code": "O3ABI8173",
+      "expected_failure": "allowed transition policy lost release blockers: unsupported-downgrade-route"
+    },
+    {
+      "case_id": "package-abi-identity-count-drift",
+      "mutation": "set package_abi_identity.lockfile_abi_identity.stdlib_runtime_abi_symbol_count=35",
+      "diagnostic_code": "O3ABI8173",
+      "expected_failure": "package ABI identity stdlib_runtime_abi_symbol_count drifted"
+    },
+    {
+      "case_id": "package-lock-schema-abi-identity-drift",
+      "mutation": "set compiler_artifact_compatibility.artifact_schema_surfaces[package-lockfile-abi-identity].expected_identity=objc3-abi-broken",
+      "diagnostic_code": "O3ABI8173",
+      "expected_failure": "compiler artifact package-lockfile-abi-identity identity drifted"
+    }
+  ]
+}

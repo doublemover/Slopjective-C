@@ -44,6 +44,7 @@ void CollectAwaitSuspensionExprSites(
   case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::NilLiteral:
   case Expr::Kind::Number:
+  case Expr::Kind::StringLiteral:
   default:
     return;
   }

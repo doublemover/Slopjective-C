@@ -10,12 +10,18 @@ Use these workloads to measure:
 - realized class/property/protocol reflection
 - ARC/current-property/weak/autoreleasepool helper traffic
 - runtime-backed ownership and reflection coupling
+- stdlib core helper runtime traffic
+- stdlib concurrency scheduler/task-group/helper traffic
 
 Authoritative workload inventory:
 
 - `workload_manifest.json`
 - `source_surface.json`
 - `behavior_owner_splits/index.json`
+- `workload_replay_contract.json`
+- `metadata_resilience_contract.json`
+- `stress_sanitizer_contract.json`
+- `scale_scenario_contract.json`
 
 What does not count:
 

@@ -3,12 +3,18 @@
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_package_manager.model import (
+    LOCAL_PACKAGE_ABI_IDENTITY,
+    LOCAL_PACKAGE_LANGUAGE_VERSION,
+    build_lock_components,
+    collect_lock_model_failures,
+    package_manifest_rel_path,
+)
 from package_ecosystem_contracts import (
     load_package_loader_interop_metadata,
     normalize_package_loader_interop_metadata,
@@ -21,12 +27,15 @@ from package_ecosystem_contracts import (
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "package_authoring_workflow_contract.json"
 LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
+PACKAGE_MANIFEST_ROOT = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "manifests"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
 
 
 
 
 def digest_for_paths(paths: list[str]) -> str:
+    import hashlib
+
     digest = hashlib.sha256()
     for raw_path in sorted(paths):
         path = ROOT / raw_path
@@ -37,12 +46,17 @@ def digest_for_paths(paths: list[str]) -> str:
     return digest.hexdigest()
 
 
-def provenance_id(package_id: str) -> str:
-    return "prov-" + package_id.replace(":", "-").replace(".", "-")
-
-
 def public_workflow_command(action: str) -> str:
     return f"npm run objc3c -- {action}"
+
+
+def write_package_manifests(manifests: list[dict[str, Any]]) -> list[str]:
+    written_paths: list[str] = []
+    for manifest in manifests:
+        manifest_path = ROOT / package_manifest_rel_path(str(manifest["package_id"]))
+        write_json_file(manifest_path, manifest)
+        written_paths.append(repo_rel(manifest_path))
+    return sorted(written_paths)
 
 
 def main() -> int:
@@ -54,70 +68,23 @@ def main() -> int:
     package_surface = load_json(ROOT / str(sources["stdlib_package_surface"]))
     showcase_portfolio = load_json(ROOT / str(sources["showcase_portfolio"]))
 
-    modules = module_inventory.get("canonical_modules", [])
-    examples = showcase_portfolio.get("examples", [])
-    if not isinstance(modules, list) or not isinstance(examples, list):
-        raise RuntimeError("package source inventories drifted from list shapes")
+    components = build_lock_components(
+        root=ROOT,
+        module_inventory=module_inventory,
+        showcase_portfolio=showcase_portfolio,
+    )
+    package_manifest_paths = write_package_manifests(components["package_manifests"])
 
     interop_metadata = load_package_loader_interop_metadata(ROOT)
-    packages: list[dict[str, Any]] = []
-    dependencies: list[dict[str, str]] = []
-    provenance: list[dict[str, str]] = []
+    packages: list[dict[str, Any]] = components["packages"]
+    dependencies: list[dict[str, str]] = components["dependencies"]
+    provenance: list[dict[str, str]] = components["provenance"]
     digest_inputs: list[str] = [
         str(sources["stdlib_module_inventory"]),
         str(sources["stdlib_package_surface"]),
         str(sources["showcase_portfolio"]),
+        *components["digest_inputs"],
     ]
-
-    for module in sorted((entry for entry in modules if isinstance(entry, dict)), key=lambda entry: str(entry.get("module", ""))):
-        module_id = str(module["module"])
-        package_id = f"stdlib:{module_id}"
-        source = str(module["manifest"])
-        packages.append(
-            {
-                "package_id": package_id,
-                "source": source,
-                "provenance_id": provenance_id(package_id),
-            }
-        )
-        provenance.append(
-            {
-                "provenance_id": provenance_id(package_id),
-                "source_path": source,
-                "generator": "scripts/build_objc3c_package_lock.py",
-                "replay_command": build_lock_command,
-            }
-        )
-        digest_inputs.append(source)
-
-    for example in sorted((entry for entry in examples if isinstance(entry, dict)), key=lambda entry: str(entry.get("id", ""))):
-        example_id = str(example["id"])
-        package_id = f"showcase:{example_id}"
-        source = str(example["workspace_manifest"])
-        packages.append(
-            {
-                "package_id": package_id,
-                "source": source,
-                "provenance_id": provenance_id(package_id),
-            }
-        )
-        provenance.append(
-            {
-                "provenance_id": provenance_id(package_id),
-                "source_path": source,
-                "generator": "scripts/build_objc3c_package_lock.py",
-                "replay_command": build_lock_command,
-            }
-        )
-        digest_inputs.append(source)
-        for dependency in sorted(str(name) for name in example.get("stdlib_followup_modules", []) if isinstance(name, str)):
-            dependencies.append(
-                {
-                    "from": package_id,
-                    "to": f"stdlib:{dependency}",
-                    "source": "checked-in-local-workspace",
-                }
-            )
 
     interop_by_package = package_loader_metadata_by_package(
         interop_metadata,
@@ -142,18 +109,33 @@ def main() -> int:
             "workspace_id": "objc3c-local-package-workspace",
             "source": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
         },
+        "package_manager": {
+            "model": "checked-in-local-registry-offline-mirror-v1",
+            "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
+            "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,
+            "package_manifest_root": repo_rel(PACKAGE_MANIFEST_ROOT),
+            "package_manifest_paths": package_manifest_paths,
+            "network_resolution": "unsupported-fail-closed",
+            "hosted_registry": "unsupported-fail-closed-if-claimed",
+        },
         "packages": packages,
         "dependencies": dependencies,
         "provenance": provenance,
+        "resolution_plan": components["resolution_plan"],
         "interop_loader_metadata": package_loader_metadata_summary(interop_metadata, interop_by_package),
         "digest_inputs": digest_inputs,
         "replay": {
             "commands": [
                 build_lock_command,
+                public_workflow_command("validate-package-manager-model"),
                 authoring_check_command,
             ]
         },
     }
+
+    lock_failures = collect_lock_model_failures(lock, root=ROOT)
+    if lock_failures:
+        raise RuntimeError("package manager lock model failed: " + "; ".join(lock_failures))
 
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(LOCK_PATH, lock)
@@ -167,6 +149,12 @@ def main() -> int:
         "package_count": len(packages),
         "dependency_count": len(dependencies),
         "provenance_count": len(provenance),
+        "package_manifest_count": len(package_manifest_paths),
+        "package_manifest_root": repo_rel(PACKAGE_MANIFEST_ROOT),
+        "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
+        "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,
+        "network_resolution": lock["package_manager"]["network_resolution"],
+        "hosted_registry": lock["package_manager"]["hosted_registry"],
         "interop_loader_metadata_package_count": len(interop_by_package),
         "interop_loader_metadata_source": interop_summary["source"],
         "interop_loader_metadata_bridge_surface_count": interop_summary["bridge_surface_count"],

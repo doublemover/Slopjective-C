@@ -62,4 +62,6 @@ def test_build_helper_uses_stable_logs_and_passes_clean_room_paths() -> None:
     assert '"normalized_command"' in source
     assert '"saw_clean_room_root"' in source
     assert '"saw_native_build_summary"' in source
+    assert '"saw_native_build_lock"' in source
+    assert '"saw_native_build_lock_release"' in source
     assert '"saw_cmake_build_parallelism"' in source

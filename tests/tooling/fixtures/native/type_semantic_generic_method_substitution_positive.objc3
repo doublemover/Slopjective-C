@@ -1,0 +1,24 @@
+module TypeSemanticGenericMethodSubstitutionPositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable>>
+- (T)peek;
+@end
+
+@implementation SemanticVault
+@end
+
+fn consumeGenericMethod(vault: SemanticVault<SemanticBox *> *?) -> i32 {
+  let record = [vault? peek];
+  let title = [record? title];
+  return 0;
+}

@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
-
-ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "project_template_workspace_semantics.json"
 PACKAGE_JSON = ROOT / "package.json"
 MATERIALIZER_PATH = ROOT / "scripts" / "materialize_objc3c_project_template.py"
@@ -37,8 +41,9 @@ def main() -> int:
     required_actions = [str(name) for name in contract["required_actions"]]
     registered_actions = set(public_workflow_action_names())
     missing_actions = [action for action in required_actions if action not in registered_actions]
+    template_materializer_action = str(contract["template_materializer_action"])
     materializer_bound_actions = [
-        str(contract["template_materializer_action"]),
+        "compile-objc3c",
         "inspect-bonus-tool-integration",
         str(contract["playground_materializer_action"]),
         "benchmark-runtime-inspector",
@@ -54,6 +59,7 @@ def main() -> int:
         "runbook": str(contract["runbook"]),
         "checked_in_source_root_count": len(checked_in_source_roots),
         "template_materializer_implementation_anchor": template_materializer,
+        "template_materializer_action": template_materializer_action,
         "required_action_count": len(required_actions),
         "materializer_bound_actions": materializer_bound_actions,
         "package_bridge_count": 1 if package_bridge_exists else 0,

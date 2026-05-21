@@ -1,0 +1,40 @@
+{
+  "contract_id": "objc3c.developer.tooling.editor.diagnostic.bridge.contract.v1",
+  "surface_kind": "developer-tooling-lsp-diagnostic-bridge-contract",
+  "issues": [
+    8169,
+    8170,
+    8171
+  ],
+  "source_uri": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_optional_alias_fixit_recovery.objc3",
+  "diagnostic_case_paths": [
+    "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-RECOVERY-01.json",
+    "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+    "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+    "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-02.json"
+  ],
+  "expected_diagnostic_count": 5,
+  "expected_code_action_count": 2,
+  "expected_machine_applicable_fixit_count": 2,
+  "expected_recovery_boundary_count": 5,
+  "expected_code_action_codes": [
+    "O3C004",
+    "O3P104"
+  ],
+  "expected_recovery_codes": [
+    "O3C004",
+    "O3P100",
+    "O3P104",
+    "O3S203",
+    "O3S211"
+  ],
+  "expected_recovery_phases": [
+    "parse",
+    "sema"
+  ],
+  "source_truth_requirements": [
+    "LSP diagnostics are derived from checked structured diagnostics JSON rather than an editor shadow parser.",
+    "Code actions are published only for deterministic machine-applicable fix-it ranges.",
+    "Recovery boundaries remain fail-closed metadata and do not turn invalid programs into successful compiles."
+  ]
+}

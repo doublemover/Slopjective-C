@@ -1,0 +1,14 @@
+// Canonical sema error fixture: consumed retainable values are unavailable until reassigned.
+module SemaErrorsRetainableConsumedUseAfterRejected;
+
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn Touch(value: id) -> i32;
+
+fn useAfterConsume(owner: id) -> i32 {
+  let value = CFRetain(owner);
+  CFRelease(value);
+  return Touch(value);
+}

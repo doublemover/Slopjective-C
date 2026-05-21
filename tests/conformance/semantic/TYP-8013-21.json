@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-21",
+  "title": "Reject dynamic dispatch-control attributes in protocol existential requirements",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3",
+    "native/objc3c/src/sema/objc3_semantic_dispatch_intent_legality_summaries.cpp"
+  ],
+  "source": "// Expected diagnostic code(s): O3S314.\nmodule NegativeProtocolExistentialDynamicDispatchRejected;\n\n@protocol DynamicExistentialCallable\n- (i32)invoke __attribute__((objc_dynamic));\n@end\n\nfn consume(value: id<DynamicExistentialCallable>*?) -> i32 {\n  let result = [value? invoke];\n  return result;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S314",
+        "line": 5,
+        "column": 1
+      }
+    ]
+  }
+}

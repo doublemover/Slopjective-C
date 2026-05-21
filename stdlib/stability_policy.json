@@ -18,7 +18,13 @@
       "task-group-scope",
       "cancellation-observation",
       "executor-hop",
-      "actor-mailbox"
+      "actor-mailbox",
+      "public-task-spawn",
+      "public-task-join",
+      "public-task-group",
+      "public-cancellation",
+      "public-executor-hop",
+      "public-actor-mailbox"
     ],
     "objc3.keypath": [
       "typed-keypath-application",
@@ -37,6 +43,8 @@
   "profile_gates": {
     "objc3.core": "Core and above",
     "objc3.errors": "Core and above",
+    "objc3.text": "Core and above",
+    "objc3.collections": "Core and above",
     "objc3.concurrency": "Core and above",
     "objc3.keypath": "Core and above",
     "objc3.system": "Strict System"
@@ -58,6 +66,8 @@
       "name": "data-and-errors",
       "modules": [
         "objc3.errors",
+        "objc3.text",
+        "objc3.collections",
         "objc3.keypath"
       ],
       "allowed_dependencies": [

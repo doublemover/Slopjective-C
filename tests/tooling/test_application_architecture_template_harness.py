@@ -34,8 +34,9 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
             {
                 "template_contract_id": "objc3c.project.template.surface.v1",
                 "template_harness_contract_id": "objc3c.project.template.demo.harness.v1",
-                "public_actions": [
+                "required_actions": [
                     "materialize-project-template",
+                    "compile-objc3c",
                     "materialize-playground-workspace",
                     "benchmark-runtime-inspector",
                     "inspect-bonus-tool-integration",
@@ -66,8 +67,22 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
                     "project_template_workspace": "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json"
                 },
                 "source_origin": "showcase/auroraBoard/main.objc3",
+                "template_compile_contract": {
+                    "compile_action": "compile-objc3c",
+                    "source": "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+                    "artifact_root": "tmp/artifacts/project-template/auroraBoard/build",
+                    "emit_prefix": "module",
+                    "public_command": "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module",
+                    "expected_artifacts": [
+                        "module.obj",
+                        "module.ll",
+                        "module.manifest.json",
+                        "module.runtime-registration-manifest.json",
+                    ],
+                },
                 "public_actions": [
                     "materialize-project-template",
+                    "compile-objc3c",
                     "materialize-playground-workspace",
                     "benchmark-runtime-inspector",
                     "inspect-bonus-tool-integration",
@@ -88,6 +103,23 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
             {
                 "contract_id": "objc3c.project.template.demo.harness.v1",
                 "ok": True,
+                "compile_artifact_root": "tmp/artifacts/project-template/auroraBoard/build",
+                "compile_step": {
+                    "name": "compile-template-source",
+                    "command": [
+                        "npm",
+                        "run",
+                        "objc3c",
+                        "--",
+                        "compile-objc3c",
+                        "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+                        "--out-dir",
+                        "tmp/artifacts/project-template/auroraBoard/build",
+                        "--emit-prefix",
+                        "module",
+                    ],
+                    "exit_code": 0,
+                },
                 "integration_report": "tmp/reports/objc3c-public-workflow/bonus-tool-integration.json",
                 "playground_workspace": "tmp/artifacts/playground/auroraBoard/workspace.json",
                 "benchmark_report": "tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json",

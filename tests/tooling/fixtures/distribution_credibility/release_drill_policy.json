@@ -3,12 +3,14 @@
   "schema_version": 1,
   "required_upstream_reports": [
     "tmp/reports/package-channels/end-to-end-summary.json",
+    "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
     "checked_outputs/release-evidence/index.json"
   ],
   "required_drill_steps": [
     "stage-package-channels",
     "verify-install-smoke",
+    "verify-clean-package-install",
     "verify-rollback-guidance",
     "verify-update-manifest-coherence",
     "verify-release-evidence-index"
@@ -33,6 +35,7 @@
     ],
     "required_reports": [
       "tmp/reports/package-channels/end-to-end-summary.json",
+      "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
       "tmp/reports/release-operations/end-to-end-summary.json",
       "checked_outputs/release-evidence/index.json"
     ],

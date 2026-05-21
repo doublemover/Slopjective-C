@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3S314.
+module NegativeProtocolExistentialDynamicDispatchRejected;
+
+@protocol DynamicExistentialCallable
+- (i32)invoke __attribute__((objc_dynamic));
+@end
+
+fn consume(value: id<DynamicExistentialCallable>*?) -> i32 {
+  let result = [value? invoke];
+  return result;
+}

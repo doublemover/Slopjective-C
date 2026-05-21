@@ -48,6 +48,9 @@ from capability_docs_validator.support_links import (
     _row_support_claims,
     _validate_support_claim_links,
 )
+from capability_docs_validator.type_protocol_claims import (
+    _validate_type_protocol_capability_rows,
+)
 from capability_docs_validator.validation import _load_validated_inputs, validate
 
 

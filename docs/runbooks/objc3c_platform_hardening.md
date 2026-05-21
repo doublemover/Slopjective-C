@@ -15,11 +15,14 @@ claims than the packaged evidence can prove.
 Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
+- `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
 - release operations upgrade-claim policy:
   `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
   (live contract fields are upgrade/support-scoped)
+- detailed platform/toolchain evidence rules:
+  `docs/runbooks/objc3c_platform_toolchain_support_matrix.md`
 
 Replayable public workflow actions:
 
@@ -72,7 +75,10 @@ The current checked-in support matrix is intentionally narrow.
   - required local tools:
     - `pwsh`
     - `python`
+    - `node`
     - `clang++`
+    - `cmake`
+    - `ninja`
 - `Tier 2`:
   - none published
 - `Experimental`:
@@ -98,7 +104,8 @@ Current support claims must stay narrower than the evidence:
 
 Toolchain claims must also stay narrow:
 
-- `clang++`, `python`, and `pwsh` presence are part of the live support surface
+- `clang++`, `cmake`, `ninja`, `python`, `node`, and `pwsh` presence are
+  part of the live support surface
 - unsupported hosts and unsupported toolchain shapes must fail closed with
   explicit diagnostics
 - packaged install behavior, archive behavior, and update/revert publication

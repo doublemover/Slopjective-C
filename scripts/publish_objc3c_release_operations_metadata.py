@@ -18,6 +18,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+RELEASE_CHANNEL_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "channel-manifest" / "objc3c-release-channel-manifest.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
 UPGRADE_PATH_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_path_surface.json"
 UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_support_claim_policy.json"
@@ -26,11 +27,14 @@ FAIL_CLOSED_DIAGNOSTICS_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "rele
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "metadata_surface.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-report.json"
 CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
+RELEASE_NOTES = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-notes.json"
+PUBLIC_CHANGELOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-public-changelog.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "publication-summary.json"
 
 
 def main() -> int:
     update_manifest = load_json(UPDATE_MANIFEST)
+    release_channel_manifest = load_json(RELEASE_CHANNEL_MANIFEST)
     versioning_model = load_json(VERSIONING_MODEL)
     upgrade_surface = load_json(UPGRADE_PATH_SURFACE)
     claim_policy = load_json(UPGRADE_CLAIM_POLICY)
@@ -47,13 +51,19 @@ def main() -> int:
         fail_closed_policy=fail_closed_policy,
         metadata_surface=metadata_surface,
         update_manifest_path=repo_rel(UPDATE_MANIFEST),
+        release_channel_manifest=release_channel_manifest,
+        release_channel_manifest_path=repo_rel(RELEASE_CHANNEL_MANIFEST),
         upgrade_support_report_path=repo_rel(UPGRADE_SUPPORT_REPORT),
         channel_catalog_path=repo_rel(CHANNEL_CATALOG),
+        release_notes_path=repo_rel(RELEASE_NOTES),
+        public_changelog_path=repo_rel(PUBLIC_CHANGELOG),
     )
 
     UPGRADE_SUPPORT_REPORT.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(UPGRADE_SUPPORT_REPORT, payloads.upgrade_support_report)
     write_json_file(CHANNEL_CATALOG, payloads.channel_catalog)
+    write_json_file(RELEASE_NOTES, payloads.release_notes)
+    write_json_file(PUBLIC_CHANGELOG, payloads.public_changelog)
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, payloads.summary)

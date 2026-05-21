@@ -1,0 +1,11 @@
+// Negative execution fixture: objc3.text runtime helper contracts reject ABI drift.
+module StdlibFoundationNextTextHelperSignatureConflict;
+
+fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
+fn objc3_runtime_stdlib_text_byte_count_i32(handle: bool) -> i32 {
+  return handle;
+}
+
+fn main() -> i32 {
+  return objc3_runtime_stdlib_text_byte_count_i32(1);
+}

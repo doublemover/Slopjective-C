@@ -14,6 +14,42 @@ from .model import PackageAssembly, ReleaseValidation
 ABI_API_DRIFT_SUMMARY_CONTRACT_ID = "objc3c.release.foundation.abi_api_drift.summary.v1"
 
 
+def _entry_by_path(assembly: PackageAssembly) -> dict[str, Any]:
+    return {entry.path: entry for entry in assembly.entries}
+
+
+def _reproducibility_drift_detail(
+    *,
+    first: PackageAssembly,
+    second: PackageAssembly,
+) -> str:
+    first_entries = _entry_by_path(first)
+    second_entries = _entry_by_path(second)
+    first_paths = set(first_entries)
+    second_paths = set(second_entries)
+
+    added = sorted(second_paths - first_paths)
+    removed = sorted(first_paths - second_paths)
+    changed = [
+        path
+        for path in sorted(first_paths & second_paths)
+        if first_entries[path] != second_entries[path]
+    ]
+    if added:
+        return f"added payload entries after first package run: {', '.join(added[:5])}"
+    if removed:
+        return f"removed payload entries after first package run: {', '.join(removed[:5])}"
+    if changed:
+        return f"changed payload entry digests after first package run: {', '.join(changed[:5])}"
+    if first.package_manifest["copied_file_count"] != second.package_manifest["copied_file_count"]:
+        return (
+            "copied_file_count drifted "
+            f"{first.package_manifest['copied_file_count']} -> "
+            f"{second.package_manifest['copied_file_count']}"
+        )
+    return "release payload digest drifted without entry-level mismatch"
+
+
 def validate_release_inputs(
     *,
     first: PackageAssembly,
@@ -48,7 +84,11 @@ def validate_release_inputs(
         and first.package_manifest["copied_file_count"] == second.package_manifest["copied_file_count"]
     )
     if not reproducibility_match:
-        raise RuntimeError("repeated runnable package assembly drifted across release payload digests")
+        detail = _reproducibility_drift_detail(first=first, second=second)
+        raise RuntimeError(
+            "repeated runnable package assembly drifted across release payload digests: "
+            + detail
+        )
 
     return ReleaseValidation(
         repo_superclean_path=repo_superclean_path,

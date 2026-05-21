@@ -1,0 +1,146 @@
+{
+  "contract_id": "objc3c.ownership.concurrency-boundary.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    8166,
+    8167
+  ],
+  "support_claims": [
+    "objc3c.behavior.language.ownership-memory-model",
+    "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+    "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api"
+  ],
+  "public_command_evidence": {
+    "ownership": "npm run objc3c -- validate-conformance-corpus",
+    "concurrency": "npm run objc3c -- test-runtime-acceptance-concurrency"
+  },
+  "source_truth": [
+    "docs/spec/ownership.md",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md",
+    "stdlib/modules/objc3.concurrency/module.json",
+    "stdlib/modules/objc3.concurrency/module.objc3",
+    "stdlib/modules/objc3.concurrency/smoke.objc3",
+    "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json"
+  ],
+  "required_diagnostic_codes": [
+    "O3S221",
+    "O3S298",
+    "O3S308",
+    "O3S342",
+    "O3S343"
+  ],
+  "ownership_positive_evidence": [
+    "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json",
+    "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3",
+    "tests/native/sema/ownership/retainable_consumed_reassignment.objc3"
+  ],
+  "concurrency_claims": [
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "required_exports": [
+        "objc3_executor_hop"
+      ],
+      "required_runtime_abi": [
+        "objc3_runtime_executor_hop_i32"
+      ],
+      "required_probe_fields": [
+        "executor_hop_call_count"
+      ],
+      "reserved_fragments": [
+        "OS scheduler integration",
+        "fairness or priority inheritance guarantees"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "required_exports": [
+        "objc3_actor_mailbox_send_and_drain"
+      ],
+      "required_runtime_abi": [
+        "objc3_runtime_actor_bind_executor_i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ],
+      "required_probe_fields": [
+        "actor_executor_binding_guard_passed",
+        "actor_mailbox_identity_guard_passed",
+        "actor_invalid_handle_failure_code"
+      ],
+      "reserved_fragments": [
+        "distributed actors",
+        "cross-process mailboxes",
+        "Swift actor ABI compatibility"
+      ]
+    }
+  ],
+  "source_records": [
+    {
+      "path": "docs/spec/ownership.md",
+      "required_tokens": [
+        "objc3c.ownership.concurrency-boundary.v1",
+        "Async ownership and concurrency boundaries",
+        "not a public ARC runtime ABI",
+        "executor and actor hops",
+        "fail-closed"
+      ]
+    },
+    {
+      "path": "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md",
+      "required_tokens": [
+        "Strict Concurrency",
+        "values that are needed after a potential suspension",
+        "implicit autorelease pool",
+        "`async` suspension points shall preserve pool semantics"
+      ]
+    },
+    {
+      "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md",
+      "required_tokens": [
+        "ARC lifetimes across suspension",
+        "retain values captured into an async frame",
+        "Autorelease pools at suspension points",
+        "actor instance's serial executor"
+      ]
+    },
+    {
+      "path": "stdlib/modules/objc3.concurrency/module.objc3",
+      "required_tokens": [
+        "objc3_executor_hop",
+        "objc3_actor_mailbox_send_and_drain",
+        "objc3_runtime_executor_hop_i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32"
+      ]
+    },
+    {
+      "path": "stdlib/modules/objc3.concurrency/module.json",
+      "required_tokens": [
+        "objc3_executor_hop",
+        "objc3_actor_mailbox_send_and_drain",
+        "objc3_runtime_executor_hop_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ]
+    },
+    {
+      "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+      "required_tokens": [
+        "actor_executor_binding_guard_passed",
+        "actor_mailbox_identity_guard_passed",
+        "unsupported_task_kind_result",
+        "invalid_actor_bind_result"
+      ]
+    }
+  ],
+  "forbidden_public_claim_fragments": [
+    "public ARC runtime ABI widening",
+    "generalized ARC optimization",
+    "OS scheduler integration",
+    "fairness or priority inheritance guarantees",
+    "distributed actors",
+    "cross-process mailboxes",
+    "Swift actor ABI compatibility"
+  ]
+}

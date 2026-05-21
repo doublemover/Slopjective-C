@@ -22,4 +22,5 @@ DEVELOPER_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "rewrite-migration-source": migration_workflow.action_rewrite_migration_source,
     "validate-migration-workflow": migration_workflow.action_validate_migration_workflow,
     "check-developer-diagnostic-quality": developer_tooling_playground.action_check_developer_diagnostic_quality,
+    "check-developer-tooling-editor-source-truth": developer_tooling_playground.action_check_developer_tooling_editor_source_truth,
 }

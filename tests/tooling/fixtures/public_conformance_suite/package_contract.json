@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.public_conformance_suite.package_contract.v1",
+  "schema_version": 1,
+  "suite_id": "objc3-public-conformance-suite",
+  "source_manifest": "tests/conformance/public_suite_manifest.json",
+  "package_replay_evidence": "tests/conformance/public_suite_package_replay_evidence.json",
+  "package_manifest_output": "tmp/pkg/objc3-public-conformance-suite/package-manifest.json",
+  "package_summary_output": "tmp/reports/conformance/public-suite-package-replay-summary.json",
+  "source_owned_contracts": [
+    "tests/conformance/public_suite_manifest.json",
+    "tests/conformance/public_suite_package_replay_evidence.json",
+    "tests/tooling/fixtures/public_conformance_suite/package_contract.json"
+  ],
+  "generated_output_boundary": {
+    "required_tmp_roots": [
+      "tmp/reports/conformance",
+      "tmp/artifacts/public-conformance/suite",
+      "tmp/pkg/objc3-public-conformance-suite"
+    ],
+    "generated_outputs_committable": false,
+    "generated_outputs_can_define_support": false
+  },
+  "required_packaged_inputs": [
+    "tests/conformance/public_suite_manifest.json",
+    "tests/conformance/public_suite_package_replay_evidence.json",
+    "tests/conformance/corpus_surface.json",
+    "tests/conformance/support_claim_runnable_evidence_catalog.json",
+    "docs/support/capability_matrix.json",
+    "docs/support/evidence_map.json",
+    "schemas/objc3c-public-conformance-suite-v1.schema.json"
+  ],
+  "required_package_outputs": [
+    "package-manifest.json",
+    "package.json",
+    "replay-plan.json",
+    "README.md",
+    "tools/replay_public_conformance_suite.py",
+    "cases"
+  ],
+  "fail_closed_invariants": [
+    "tmp artifacts are never source truth",
+    "compatibility modes and fallback gates stay disabled",
+    "unsupported claims cannot be promoted by packaged replay",
+    "every public-stable case carries positive and negative checked evidence",
+    "every public-stable case carries source-owned fixture provenance",
+    "generated package outputs stay under tmp and are never checked-in source contracts"
+  ]
+}

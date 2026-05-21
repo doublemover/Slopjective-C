@@ -18,6 +18,7 @@
     "policy_contracts",
     "upstream_report_contracts",
     "upstream_reports",
+    "runtime_contract_evidence",
     "release_status",
     "claim_ready",
     "regression_gate",
@@ -84,6 +85,9 @@
       "additionalProperties": {
         "$ref": "#/$defs/repoPath"
       }
+    },
+    "runtime_contract_evidence": {
+      "$ref": "#/$defs/runtimeContractEvidence"
     },
     "release_status": {
       "type": "string",
@@ -452,6 +456,75 @@
     "actionName": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "runtimeContractEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "status",
+        "support_authority",
+        "contract_paths",
+        "budget_metric_ids",
+        "workload_ids",
+        "summary_counts"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "const": "objc3c.performance.governance.runtime-contract-evidence.v1"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "MISSING",
+            "NOT_CONFIGURED"
+          ]
+        },
+        "support_authority": {
+          "type": "boolean",
+          "const": false
+        },
+        "contract_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "budget_metric_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "workload_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "summary_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
+          }
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
     }
   }
 }

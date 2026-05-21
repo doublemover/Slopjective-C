@@ -14,8 +14,18 @@ PACKAGE_LOCK_SCHEMA = PackageSchemaContract(
     document_contract_id="objc3c.package_ecosystem.lockfile.v1",
 )
 
+PACKAGE_MANIFEST_SCHEMA = PackageSchemaContract(
+    contract_key="package_manifest",
+    schema_path="schemas/objc3c-package-manifest-v1.schema.json",
+    schema_id="https://objc3c.dev/schemas/objc3c-package-manifest-v1.schema.json",
+    document_contract_id="objc3c.package_ecosystem.package_manifest.v1",
+)
+
 PACKAGE_LOCK_ARTIFACT_PATH = (
     "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json"
+)
+PACKAGE_MANIFEST_ARTIFACT_ROOT = (
+    "tmp/artifacts/package-ecosystem/manifests"
 )
 
 PACKAGE_LOCK_SOURCE_PATHS = (
@@ -23,6 +33,7 @@ PACKAGE_LOCK_SOURCE_PATHS = (
     "stdlib/package_surface.json",
     "stdlib/advanced_helper_package_surface.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
 )
 
@@ -41,7 +52,24 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         ),
         schema_contracts=(PACKAGE_LOCK_SCHEMA,),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
-        generated_paths=(PACKAGE_LOCK_ARTIFACT_PATH,),
+        generated_paths=(PACKAGE_LOCK_ARTIFACT_PATH, PACKAGE_MANIFEST_ARTIFACT_ROOT),
+    ),
+    PackagePublicWorkflowAction(
+        action="validate-package-manager-model",
+        summary=(
+            "validate generated package manifests, local dependency resolution, "
+            "language/ABI requirements, and package trust metadata"
+        ),
+        script_path="scripts/check_objc3c_package_manager_model.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package manager claims stay grounded in generated package "
+            "manifests, deterministic local locks, fail-closed network "
+            "resolution, and package trust envelopes"
+        ),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA),
+        source_paths=PACKAGE_LOCK_SOURCE_PATHS,
+        generated_paths=(PACKAGE_MANIFEST_ARTIFACT_ROOT, PACKAGE_LOCK_ARTIFACT_PATH),
     ),
     PackagePublicWorkflowAction(
         action="validate-package-authoring",
@@ -55,9 +83,9 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
             "package authoring stays replayable through checked-in package "
             "surfaces and public workflow commands"
         ),
-        schema_contracts=(PACKAGE_LOCK_SCHEMA,),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
-        generated_paths=(PACKAGE_LOCK_ARTIFACT_PATH,),
+        generated_paths=(PACKAGE_MANIFEST_ARTIFACT_ROOT, PACKAGE_LOCK_ARTIFACT_PATH),
     ),
 )
 
@@ -67,4 +95,6 @@ __all__ = [
     "PACKAGE_LOCK_PUBLIC_ACTIONS",
     "PACKAGE_LOCK_SCHEMA",
     "PACKAGE_LOCK_SOURCE_PATHS",
+    "PACKAGE_MANIFEST_ARTIFACT_ROOT",
+    "PACKAGE_MANIFEST_SCHEMA",
 ]

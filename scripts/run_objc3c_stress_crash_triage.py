@@ -22,11 +22,14 @@ MINIMIZATION_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "minimization-
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "crash-triage-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stress.crash.triage.summary.v1"
 SIGNATURE_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+SUMMARY_SUBSYSTEMS = ("parser", "semantic", "runtime", "execution")
+ALLOWED_SUMMARY_SUBSYSTEMS = set(SUMMARY_SUBSYSTEMS)
 
 
 @dataclass(frozen=True)
 class ValidatedCaseArtifacts:
     case_id: str
+    subsystem: str
     failure_dir: Path
     minimized_dir: Path
     signature_sha256: str
@@ -60,6 +63,16 @@ def require_repo_file(path_value: object, *, case_id: str, field_name: str) -> N
         )
 
 
+def count_subsystems(items: Sequence[dict[str, Any]]) -> dict[str, int]:
+    counts = {subsystem: 0 for subsystem in SUMMARY_SUBSYSTEMS}
+    for item in items:
+        subsystem = item.get("subsystem")
+        if subsystem in counts:
+            counts[subsystem] += 1
+    counts["runtime_execution"] = counts["runtime"] + counts["execution"]
+    return counts
+
+
 def validate_fixture_manifest(payload: dict[str, Any]) -> dict[str, Any]:
     if payload.get("contract_id") != "objc3c.stress.crash.triage.fixture.manifest.v1":
         raise RuntimeError("stress crash triage fixture manifest contract_id drifted")
@@ -78,6 +91,9 @@ def validate_fixture_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         case_id = str(case.get("case_id", ""))
         if not case_id:
             raise RuntimeError("stress crash triage fixture positive case missing case_id")
+        expected_subsystem = case.get("expected_subsystem")
+        if expected_subsystem not in ALLOWED_SUMMARY_SUBSYSTEMS:
+            raise RuntimeError(f"stress crash triage fixture {case_id} has invalid expected_subsystem")
         require_repo_file(case.get("source_path"), case_id=case_id, field_name="source_path")
         artifacts = case.get("expected_triage_artifacts")
         if not isinstance(artifacts, list) or not artifacts:
@@ -102,10 +118,19 @@ def validate_fixture_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(diagnostic.get("source_range"), dict):
             raise RuntimeError(f"stress crash triage fixture {case_id} missing source_range")
 
+    positive_case_subsystem_counts = count_subsystems(
+        [
+            {"subsystem": case.get("expected_subsystem")}
+            for case in positive_cases
+            if isinstance(case, dict)
+        ]
+    )
     return {
         "contract_id": payload["contract_id"],
         "positive_case_count": len(positive_cases),
         "negative_case_count": len(negative_cases),
+        "positive_case_subsystem_counts": positive_case_subsystem_counts,
+        "positive_runtime_execution_case_count": positive_case_subsystem_counts["runtime_execution"],
     }
 
 
@@ -117,6 +142,13 @@ def require_signature(case: dict[str, Any]) -> str:
             f"stress minimization case {case_id} has invalid signature_sha256"
         )
     return signature_sha256
+
+
+def require_subsystem(case: dict[str, Any], *, case_id: str, field_name: str) -> str:
+    subsystem = case.get(field_name)
+    if subsystem not in ALLOWED_SUMMARY_SUBSYSTEMS:
+        raise RuntimeError(f"stress minimization case {case_id} has invalid {field_name}")
+    return str(subsystem)
 
 
 def resolve_repo_relative_dir(case: dict[str, Any], field_name: str) -> Path:
@@ -274,6 +306,16 @@ def load_validated_case_artifacts(
         case_id=case_id,
         artifact_name="failure-summary.json",
     )
+    summary_subsystem = case.get("subsystem")
+    failure_subsystem = require_subsystem(
+        failure_summary,
+        case_id=case_id,
+        field_name="subsystem",
+    )
+    if summary_subsystem is not None and summary_subsystem != failure_subsystem:
+        raise RuntimeError(
+            f"stress case {case_id} subsystem drifted between minimization summary and failure-summary.json"
+        )
     require_artifact_signature(
         payload=reduced_summary,
         field_name="signature_sha256",
@@ -314,6 +356,7 @@ def load_validated_case_artifacts(
 
     return ValidatedCaseArtifacts(
         case_id=case_id,
+        subsystem=failure_subsystem,
         failure_dir=failure_dir,
         minimized_dir=minimized_dir,
         signature_sha256=signature_sha256,
@@ -387,6 +430,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         replay_request_path = replay_dir / "replay-request.json"
         replay_request = {
             "case_id": case.case_id,
+            "subsystem": case.subsystem,
             "signature_sha256": case.signature_sha256,
             "source_path": f"{repo_rel(case.failure_dir / 'source.objc3')}",
             "reduced_candidate_path": (
@@ -420,6 +464,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         case_index.append(
             {
                 "case_id": case.case_id,
+                "subsystem": case.subsystem,
                 "signature_sha256": case.signature_sha256,
                 "failure_dir": repo_rel(case.failure_dir),
                 "minimized_dir": repo_rel(case.minimized_dir),
@@ -439,6 +484,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         for key, value in sorted(signature_groups.items())
     ]
     case_index = sorted(case_index, key=lambda item: item["case_id"])
+    subsystem_counts = count_subsystems(case_index)
+    replay_request_count = len(case_index)
 
     signature_index_path = triage_root / "signature-index.json"
     case_index_path = triage_root / "case-index.json"
@@ -450,6 +497,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             {
                 "signature_count": len(signature_index),
                 "case_count": len(case_index),
+                "parser_case_count": subsystem_counts["parser"],
+                "semantic_case_count": subsystem_counts["semantic"],
+                "runtime_case_count": subsystem_counts["runtime"],
+                "execution_case_count": subsystem_counts["execution"],
+                "runtime_execution_case_count": subsystem_counts["runtime_execution"],
+                "subsystem_case_counts": subsystem_counts,
+                "replay_request_count": replay_request_count,
                 "replay_root": repo_rel(replay_root),
             },
             indent=2,
@@ -478,6 +532,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         "triage_summary_path": repo_rel(triage_summary_path),
         "signature_count": len(signature_index),
         "case_count": len(case_index),
+        "parser_case_count": subsystem_counts["parser"],
+        "semantic_case_count": subsystem_counts["semantic"],
+        "runtime_case_count": subsystem_counts["runtime"],
+        "execution_case_count": subsystem_counts["execution"],
+        "runtime_execution_case_count": subsystem_counts["runtime_execution"],
+        "subsystem_case_counts": subsystem_counts,
+        "replay_request_count": replay_request_count,
         "artifact_surface_summary_reports": artifact_surface.get("summary_reports"),
     }
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)

@@ -18,8 +18,22 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 from objc3c_tooling.subprocesses import python_script_command
+from objc3c_package_manager.model import (
+    LOCAL_PACKAGE_ABI_IDENTITY,
+    LOCAL_PACKAGE_LANGUAGE_VERSION,
+    LOCAL_PACKAGE_TRUST_KEY_ID,
+    PACKAGE_MANAGER_TAMPER_CODE,
+    collect_lock_model_failures,
+)
+from objc3c_package_manager.registry import (
+    LOCAL_REGISTRY_CONTRACT_ID,
+    LOCAL_REGISTRY_SCHEMA_KEY,
+    collect_registry_index_failures,
+)
+from objc3c_shared.schema_registry import validate_registered_schema
 from package_ecosystem_contracts import (
     PACKAGE_LOADER_INTEROP_TAMPER_CODE,
+    collect_normalized_package_loader_interop_metadata_failures,
     require_package_ecosystem_blocker_metadata,
     require_package_ecosystem_owner_policy,
 )
@@ -92,6 +106,11 @@ def expected_cache_payload(mirror_package: dict[str, Any]) -> dict[str, Any]:
         "package_id": str(mirror_package.get("package_id")),
         "source": str(mirror_package.get("source")),
         "source_digest": str(mirror_package.get("source_digest")),
+        "package_manifest": mirror_package.get("package_manifest"),
+        "package_version": str(mirror_package.get("package_version")),
+        "language_version": str(mirror_package.get("language_version")),
+        "abi_identity": str(mirror_package.get("abi_identity")),
+        "trust": mirror_package.get("trust"),
         "network_policy": "no-network-during-validation",
         "restore_failure_mode": "reject-package-metadata-digest-mismatch",
     }
@@ -158,6 +177,8 @@ def collect_interop_loader_metadata_failures(
     mirror: dict[str, Any],
     registry: dict[str, Any],
     publication: dict[str, Any],
+    *,
+    root: Path = ROOT,
 ) -> list[str]:
     lock_metadata = package_interop_metadata(lock)
     if not lock_metadata:
@@ -178,6 +199,13 @@ def collect_interop_loader_metadata_failures(
 
     for package_id in sorted(lock_ids):
         expected_metadata = lock_metadata[package_id]
+        for failure in collect_normalized_package_loader_interop_metadata_failures(
+            expected_metadata,
+            root=root,
+        ):
+            failures.append(
+                f"{PACKAGE_LOADER_INTEROP_TAMPER_CODE}: lock interop metadata {failure} for {package_id}"
+            )
         expected_digest = expected_metadata.get("digest")
         mirror_payload = mirror_metadata.get(package_id, {})
         registry_payload = registry_metadata.get(package_id, {})
@@ -281,6 +309,19 @@ def main() -> int:
     failures.extend(interop_failures)
     cache_failures = collect_offline_mirror_cache_failures(mirror)
     failures.extend(cache_failures)
+    failures.extend(collect_lock_model_failures(lock, root=ROOT))
+    registry_failures = collect_registry_index_failures(registry, lock, root=ROOT)
+    failures.extend(registry_failures)
+    try:
+        validate_registered_schema(registry, LOCAL_REGISTRY_SCHEMA_KEY, label=repo_rel(REGISTRY_PATH))
+    except (KeyError, RuntimeError) as exc:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry schema validation failed: {exc}")
+    expect(registry.get("contract_id") == LOCAL_REGISTRY_CONTRACT_ID, "registry contract id drifted", failures)
+    expect(registry.get("network_resolution_support") == "unsupported-fail-closed", "registry network resolution must fail closed", failures)
+    expect(registry.get("language_version") == LOCAL_PACKAGE_LANGUAGE_VERSION, "registry language version drifted", failures)
+    expect(registry.get("abi_identity") == LOCAL_PACKAGE_ABI_IDENTITY, "registry ABI identity drifted", failures)
+    expect(publication.get("package_manager_tamper_diagnostic") == PACKAGE_MANAGER_TAMPER_CODE, "publication package manager diagnostic drifted", failures)
+    expect(publication.get("trust_key_id") == LOCAL_PACKAGE_TRUST_KEY_ID, "publication trust key drifted", failures)
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.registry_mirror_reproducibility.summary.v1",
@@ -289,6 +330,7 @@ def main() -> int:
         "lock_path": repo_rel(LOCK_PATH),
         "mirror_index": repo_rel(MIRROR_PATH),
         "local_registry_index": repo_rel(REGISTRY_PATH),
+        "local_registry_contract_id": registry.get("contract_id"),
         "publication_metadata": repo_rel(PUBLICATION_PATH),
         "restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
@@ -307,6 +349,10 @@ def main() -> int:
         "offline_restore_support": publication.get("offline_restore_support"),
         "interop_loader_support": publication.get("interop_loader_support"),
         "tamper_rejection_diagnostic": publication.get("tamper_rejection_diagnostic"),
+        "package_manager_tamper_diagnostic": publication.get("package_manager_tamper_diagnostic"),
+        "language_version": publication.get("language_version"),
+        "abi_identity": publication.get("abi_identity"),
+        "trust_key_id": publication.get("trust_key_id"),
         "owner_policy": owner_policy,
         "blocker_metadata": blocker_metadata,
         "package_bridge": package_bridge,
@@ -315,6 +361,7 @@ def main() -> int:
         "missing_actions": missing_actions,
         "interop_integrity_failures": interop_failures,
         "offline_mirror_cache_failures": cache_failures,
+        "local_registry_failures": registry_failures,
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

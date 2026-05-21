@@ -1,0 +1,229 @@
+{
+  "contract_id": "objc3c.developer.tooling.editor.source_truth.contract.v1",
+  "surface_kind": "developer-tooling-editor-source-truth",
+  "issue": "#8170",
+  "summary_implementation_anchor": "scripts/check_developer_tooling_editor_source_truth.py",
+  "summary_path": "tmp/reports/developer-tooling/editor-summary.json",
+  "integration_step_name": "check-editor-tooling-source-truth",
+  "source_truth_model": "checked-in contracts, source scripts, public workflow action registry rows, capability matrix rows, and evidence-map rows own editor tooling claims; tmp reports are replay outputs only",
+  "generated_output_boundary": "generated tmp reports can prove replayability but cannot introduce formatter, LSP, workspace-index, or artifact-inspector support without a checked-in source row and evidence-map row",
+  "expected_capability_rows": [
+    {
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "expected_state": "implemented"
+    },
+    {
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "expected_state": "implemented"
+    }
+  ],
+  "public_actions": [
+    {
+      "action": "inspect-editor-tooling",
+      "backend": "python:scripts/build_objc3c_editor_tooling_surface.py",
+      "pass_through_args": true
+    },
+    {
+      "action": "format-objc3c",
+      "backend": "python:scripts/format_objc3c_source.py",
+      "pass_through_args": true
+    },
+    {
+      "action": "rewrite-objc3c-source",
+      "backend": "python:scripts/rewrite_objc3c_source.py",
+      "pass_through_args": true
+    },
+    {
+      "action": "check-developer-tooling-editor-source-truth",
+      "backend": "python:scripts/check_developer_tooling_editor_source_truth.py",
+      "pass_through_args": false
+    },
+    {
+      "action": "validate-developer-tooling",
+      "backend": "python:scripts/check_objc3c_developer_tooling_integration.py",
+      "pass_through_args": false
+    }
+  ],
+  "source_truth_rows": [
+    {
+      "surface_id": "formatter-source-and-rewrite",
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "required_source_paths": [
+        "scripts/format_objc3c_source.py",
+        "scripts/rewrite_objc3c_source.py",
+        "scripts/check_developer_tooling_formatter_rewrite_surface.py",
+        "scripts/check_developer_tooling_formatter_debug_surface.py",
+        "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+        "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json"
+      ],
+      "public_actions": [
+        "format-objc3c",
+        "rewrite-objc3c-source",
+        "validate-developer-tooling"
+      ],
+      "required_evidence": [
+        {
+          "evidence_kind": "source",
+          "path": "scripts/format_objc3c_source.py"
+        },
+        {
+          "evidence_kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        }
+      ],
+      "generated_outputs": [
+        "tmp/reports/developer-tooling/formatter-debug/formatter_debug_summary.json",
+        "tmp/reports/developer-tooling/formatter-rewrite/formatter_rewrite_summary.json"
+      ],
+      "unsupported_claims": [
+        "full Objective-C 2 formatting",
+        "source rewrites inside comments or strings"
+      ]
+    },
+    {
+      "surface_id": "lsp-navigation-and-diagnostics",
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "required_source_paths": [
+        "scripts/objc3c_editor_tooling/model.py",
+        "scripts/objc3c_editor_tooling/source_index.py",
+        "scripts/objc3c_editor_tooling/diagnostic_bridge.py",
+        "scripts/check_developer_tooling_language_server_navigation.py",
+        "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+        "tests/tooling/test_developer_tooling_editor_diagnostics.py"
+      ],
+      "public_actions": [
+        "inspect-editor-tooling",
+        "check-developer-diagnostic-quality",
+        "validate-developer-tooling"
+      ],
+      "required_evidence": [
+        {
+          "evidence_kind": "source",
+          "path": "scripts/objc3c_editor_tooling/diagnostic_bridge.py"
+        },
+        {
+          "evidence_kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        }
+      ],
+      "generated_outputs": [
+        "tmp/reports/developer-tooling/editor-surface/language-server-capabilities.json",
+        "tmp/reports/developer-tooling/editor-surface/navigation-index.json"
+      ],
+      "unsupported_claims": [
+        "rename",
+        "references",
+        "semantic tokens",
+        "statement-level stepping"
+      ]
+    },
+    {
+      "surface_id": "workspace-index-command-surface",
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "required_source_paths": [
+        "scripts/objc3c_editor_tooling/workspace_index.py",
+        "scripts/check_developer_tooling_workspace_integration.py",
+        "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+        "stdlib/module_inventory.json",
+        "showcase/portfolio.json",
+        "showcase/demo_packages.json"
+      ],
+      "public_actions": [
+        "inspect-editor-tooling",
+        "validate-developer-tooling"
+      ],
+      "required_evidence": [
+        {
+          "evidence_kind": "source",
+          "path": "scripts/objc3c_editor_tooling/workspace_index.py"
+        },
+        {
+          "evidence_kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        }
+      ],
+      "generated_outputs": [
+        "tmp/reports/developer-tooling/editor-surface/workspace-index.json",
+        "tmp/reports/developer-tooling/workspace-integration-summary.json"
+      ],
+      "unsupported_claims": [
+        "network-backed workspace restore",
+        "tmp-only workspace source truth"
+      ]
+    },
+    {
+      "surface_id": "artifact-inspector-command-surface",
+      "capability_id": "tooling.editor.artifact-inspector",
+      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
+      "required_source_paths": [
+        "scripts/objc3c_editor_tooling/artifact_inspector.py",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json",
+        "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+        "tests/tooling/test_developer_tooling_artifact_inspector.py"
+      ],
+      "public_actions": [
+        "inspect-editor-tooling"
+      ],
+      "required_evidence": [
+        {
+          "evidence_kind": "source",
+          "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+        },
+        {
+          "evidence_kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json",
+          "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        }
+      ],
+      "generated_outputs": [
+        "tmp/reports/developer-tooling/editor-surface/artifact-inspector.json"
+      ],
+      "unsupported_claims": [
+        "object symbol inventory without a real object path",
+        "debugger protocol integration"
+      ]
+    },
+    {
+      "surface_id": "editor-source-truth-validator",
+      "capability_id": "tooling.editor.formatter-lsp-workspace",
+      "support_claim": "objc3c.behavior.tooling.formatter-lsp-workspace",
+      "required_source_paths": [
+        "scripts/check_developer_tooling_editor_source_truth.py",
+        "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json",
+        "scripts/objc3c_developer_tooling_integration_check/steps.py",
+        "scripts/objc3c_developer_tooling_integration_check/reports.py",
+        "scripts/objc3c_developer_tooling_integration_check/report_assertions.py"
+      ],
+      "public_actions": [
+        "check-developer-tooling-editor-source-truth",
+        "validate-developer-tooling"
+      ],
+      "required_evidence": [
+        {
+          "evidence_kind": "source",
+          "path": "scripts/check_developer_tooling_editor_source_truth.py",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+        },
+        {
+          "evidence_kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+        }
+      ],
+      "generated_outputs": [
+        "tmp/reports/developer-tooling/editor-summary.json"
+      ],
+      "unsupported_claims": [
+        "generated reports as source authority"
+      ]
+    }
+  ]
+}

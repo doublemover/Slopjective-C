@@ -32,6 +32,7 @@
   "package_bridge": "objc3c",
   "required_actions": [
     "materialize-project-template",
+    "compile-objc3c",
     "materialize-canonical-application-workspace",
     "materialize-playground-workspace",
     "validate-showcase",
@@ -45,6 +46,7 @@
   "artifact_claim_rules": [
     "all milestone evidence reports publish under one generated report root",
     "all machine-owned application-architecture artifacts must be replayable from checked-in source contracts and public workflow actions",
+    "project-template artifacts must publish the compile-objc3c command used to prove the copied source is ready to compile",
     "template, workspace, and canonical-app evidence may reuse showcase and stdlib sources but may not create a second checked-in example taxonomy",
     "package and runnable evidence is invalid if it bypasses the public workflow runner"
   ],

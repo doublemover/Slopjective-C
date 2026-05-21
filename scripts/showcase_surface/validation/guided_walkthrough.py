@@ -27,7 +27,7 @@ def validate_guided_walkthrough_contract(walkthrough_payload: dict[str, Any]) ->
             "id": "compile-auroraBoard",
             "workflow_action": "compile-objc3c",
             "public_command": (
-                "npm run objc3c -- compile-objc3c -- "
+                "npm run objc3c -- compile-objc3c "
                 "showcase/auroraBoard/main.objc3"
             ),
             "example_id": "auroraBoard",
@@ -38,7 +38,7 @@ def validate_guided_walkthrough_contract(walkthrough_payload: dict[str, Any]) ->
             "id": "compile-signalMesh",
             "workflow_action": "compile-objc3c",
             "public_command": (
-                "npm run objc3c -- compile-objc3c -- "
+                "npm run objc3c -- compile-objc3c "
                 "showcase/signalMesh/main.objc3"
             ),
             "example_id": "signalMesh",
@@ -49,7 +49,7 @@ def validate_guided_walkthrough_contract(walkthrough_payload: dict[str, Any]) ->
             "id": "compile-patchKit",
             "workflow_action": "compile-objc3c",
             "public_command": (
-                "npm run objc3c -- compile-objc3c -- "
+                "npm run objc3c -- compile-objc3c "
                 "showcase/patchKit/main.objc3"
             ),
             "example_id": "patchKit",

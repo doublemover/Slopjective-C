@@ -1,0 +1,174 @@
+{
+  "contract_id": "objc3c.abi_governance.source_of_truth.v1",
+  "schema_version": 1,
+  "issue_refs": [
+    "#8173"
+  ],
+  "source_of_truth": {
+    "manifest_path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+    "schema_path": "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+    "checker_path": "scripts/check_objc3c_abi_governance.py",
+    "release_governance_manifest": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+    "release_governance_schema": "schemas/objc3c-abi-api-governance-v1.schema.json"
+  },
+  "governance_posture": {
+    "mode": "source-of-truth-manifest",
+    "failure_mode": "fail-closed",
+    "publication_claim": "exact checked ABI surface only",
+    "compatibility_shims_supported": false,
+    "fallback_routes_supported": false,
+    "unsupported_stability_claims": [
+      "cross-major forward compatibility",
+      "drop-in legacy ABI compatibility",
+      "indefinite support window",
+      "retired ABI accommodation claim",
+      "fallback downgrade route"
+    ]
+  },
+  "governed_surfaces": [
+    {
+      "surface_id": "abi-governance-manifest",
+      "owner": "abi-governance:#8173",
+      "source_path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+      "schema_path": "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+      "identity_path": [
+        "contract_id"
+      ],
+      "expected_identity": "objc3c.abi_governance.source_of_truth.v1",
+      "release_blocker": true,
+      "stability_claim": "exact-current-abi-only",
+      "allowed_transition_set": "abi-governance-manifest"
+    },
+    {
+      "surface_id": "abi-artifact-manifest-schema",
+      "owner": "abi-governance:#8173",
+      "source_path": "schemas/objc3-abi-2025Q4.schema.json",
+      "schema_path": "schemas/objc3-abi-2025Q4.schema.json",
+      "identity_path": [
+        "properties",
+        "manifest_schema",
+        "const"
+      ],
+      "expected_identity": "objc3-abi-2025Q4",
+      "release_blocker": true,
+      "stability_claim": "same-major-checked-manifest-only",
+      "allowed_transition_set": "governed-artifact-schema"
+    },
+    {
+      "surface_id": "release-abi-api-governance",
+      "owner": "abi-governance:#8173",
+      "source_path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+      "schema_path": "schemas/objc3c-abi-api-governance-v1.schema.json",
+      "identity_path": [
+        "contract_id"
+      ],
+      "expected_identity": "objc3c.release.foundation.abi_api_governance.v1",
+      "release_blocker": true,
+      "stability_claim": "same-major-checked-manifest-only",
+      "allowed_transition_set": "abi-api-governance"
+    }
+  ],
+  "surface_extractors": [
+    {
+      "extractor_id": "runtime-public-c-header-symbols",
+      "kind": "c-header-public-symbols",
+      "source_globs": [
+        "native/objc3c/src/runtime/public/*.h",
+        "native/objc3c/src/runtime/stdlib/core_runtime_contract.h"
+      ],
+      "release_blocker": true,
+      "output_policy": "generated-output-only",
+      "expected_count": 124,
+      "expected_digest": "sha256:49c7a0799962b942d9f5e53bea96da5a21ba33cb51e5b75e56df74d1882180ea"
+    },
+    {
+      "extractor_id": "stdlib-module-abi-signatures",
+      "kind": "stdlib-module-abi-signatures",
+      "source_globs": [
+        "stdlib/modules/*/module.json"
+      ],
+      "release_blocker": true,
+      "output_policy": "generated-output-only",
+      "expected_count": 153,
+      "expected_digest": "sha256:e7cfeee8b7730eb073a95ee87d0527cefd93825c8002071126e9df7db8d44adb"
+    },
+    {
+      "extractor_id": "package-lock-abi-identity-schema",
+      "kind": "package-abi-identity-schema",
+      "source_globs": [
+        "schemas/objc3c-package-lock-v1.schema.json"
+      ],
+      "release_blocker": true,
+      "output_policy": "generated-output-only",
+      "expected_count": 3,
+      "expected_digest": "sha256:718262afc9cc3bd0faa270531f106eb3e300666ef20e86f0728deaf2402ccae4"
+    }
+  ],
+  "compatibility_evidence": {
+    "evidence_source": "checked-source-of-truth-manifest",
+    "case_contract": "objc3c.abi_governance.compatibility_case.v1",
+    "cases": [
+      {
+        "case_id": "stable-public-api-removal-without-window",
+        "surface_id": "stdlib-module-abi-signatures",
+        "compatibility_class": "stable-public-api",
+        "transition": "public-symbol-removal-without-deprecation-window",
+        "before": "objc3.collections exports Objc3CollectionsStatusInvalidRange with active deprecation state",
+        "after": "Objc3CollectionsStatusInvalidRange disappears from the public symbol set without a hard-deprecated replay window",
+        "expected_decision": "block-release",
+        "release_blocker_issue_ref": "#8173"
+      },
+      {
+        "case_id": "stable-runtime-abi-signature-drift",
+        "surface_id": "stdlib-module-abi-signatures",
+        "compatibility_class": "stable-runtime-abi",
+        "transition": "signature-change-without-major-line",
+        "before": "objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32",
+        "after": "objc3_runtime_stdlib_collections_array_count_i32(handle: i64) -> i32 inside the same major line",
+        "expected_decision": "block-release",
+        "release_blocker_issue_ref": "#8173"
+      },
+      {
+        "case_id": "package-lockfile-abi-identity-drift",
+        "surface_id": "package-lock-abi-identity-schema",
+        "compatibility_class": "package-lockfile-abi",
+        "transition": "package-abi-identity-drift",
+        "before": "package lockfile ABI identity is objc3-abi-2025Q4",
+        "after": "package lockfile ABI identity changes without a governed ABI manifest revision",
+        "expected_decision": "block-release",
+        "release_blocker_issue_ref": "#8173"
+      },
+      {
+        "case_id": "frontend-c-api-unsupported-downgrade-route",
+        "surface_id": "runtime-public-c-header-symbols",
+        "compatibility_class": "frontend-c-api-exact-abi",
+        "transition": "unsupported-downgrade-route",
+        "before": "frontend C API result ownership uses the exact current ABI contract",
+        "after": "publication advertises a downgrade route through legacy aliases or compatibility shims",
+        "expected_decision": "block-release",
+        "release_blocker_issue_ref": "#8173"
+      }
+    ]
+  },
+  "release_blocked_transitions": [
+    "public-symbol-removal-without-deprecation-window",
+    "runtime-symbol-removal-without-deprecation-window",
+    "signature-change-without-major-line",
+    "private-helper-graduation-without-policy",
+    "unsupported-upgrade-route",
+    "unsupported-downgrade-route",
+    "package-abi-identity-drift",
+    "schema-breaking-change-without-major-line"
+  ],
+  "compatibility_policy": {
+    "supported_major_lines": [
+      1
+    ],
+    "current_minor_line": 0,
+    "shim_policy": "no-compatibility-shims",
+    "fallback_route_policy": "no-fallback-routes",
+    "private_helper_graduation_policy": "requires-approved-governance-record",
+    "claim_source": "checked-source-of-truth-manifest"
+  },
+  "summary_contract": "objc3c.abi_governance.summary.v1"
+}

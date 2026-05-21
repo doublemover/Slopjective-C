@@ -37,6 +37,9 @@ static void DiagnoseOwnershipBorrowedCallArgumentEscape(
     const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
     std::vector<std::string> &diagnostics) {
+  if (IsOwnershipConsumedCallableParameter(contract, index)) {
+    return;
+  }
   if (!IsOwnershipBorrowedExpr(arg, scopes, callable_contracts)) {
     return;
   }
@@ -44,6 +47,43 @@ static void DiagnoseOwnershipBorrowedCallArgumentEscape(
     diagnostics.push_back(MakeDiag(
         arg->line, arg->column, "O3S298",
         "borrowed pointer passed to parameter not proven non-escaping; copy to owned storage, extend owner lifetime, or mark explicitly unsafe"));
+  }
+}
+
+static void DiagnoseOwnershipConsumedIdentifierUse(
+    const Expr *expr, const std::vector<OwnershipBorrowedScope> &scopes,
+    std::vector<std::string> &diagnostics) {
+  if (expr == nullptr || expr->kind != Expr::Kind::Identifier) {
+    return;
+  }
+  const auto *binding = LookupOwnershipBorrowedBinding(scopes, expr->ident);
+  if (binding != nullptr && binding->consumed) {
+    diagnostics.push_back(MakeDiag(
+        expr->line, expr->column, "O3S308",
+        "ownership value used after being consumed; reacquire or assign a new owned value before use"));
+  }
+}
+
+static void DiagnoseOwnershipConsumedCallArgumentTransfer(
+    const Expr *arg, const OwnershipBorrowedCallableContract *contract,
+    std::size_t index, std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
+        &callable_contracts,
+    std::vector<std::string> &diagnostics) {
+  if (!IsOwnershipConsumedCallableParameter(contract, index)) {
+    return;
+  }
+  if (IsOwnershipBorrowedExpr(arg, scopes, callable_contracts)) {
+    diagnostics.push_back(MakeDiag(
+        arg->line, arg->column, "O3S307",
+        "borrowed pointer cannot satisfy a consumed ownership parameter; retain, copy, or extend ownership before transfer"));
+    return;
+  }
+  if (arg != nullptr && arg->kind == Expr::Kind::Identifier) {
+    if (auto *binding = LookupOwnershipBorrowedBinding(scopes, arg->ident)) {
+      binding->consumed = true;
+      binding->borrowed = false;
+    }
   }
 }
 
@@ -85,6 +125,8 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
                                             diagnostics);
         DiagnoseOwnershipBorrowedCallArgumentEscape(
             arg, contract, index, scopes, callable_contracts, diagnostics);
+        DiagnoseOwnershipConsumedCallArgumentTransfer(
+            arg, contract, index, scopes, callable_contracts, diagnostics);
       }
       return;
     }
@@ -118,10 +160,13 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
       }
       return;
     case Expr::Kind::Identifier:
+      DiagnoseOwnershipConsumedIdentifierUse(expr, scopes, diagnostics);
+      return;
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
+    case Expr::Kind::StringLiteral:
       return;
   }
 }
@@ -154,6 +199,7 @@ static void DiagnoseOwnershipBorrowedEscapeForClause(
                                           callable_contracts, diagnostics);
       if (auto *binding = LookupOwnershipBorrowedBinding(scopes, clause.name)) {
         binding->borrowed = value_is_borrowed;
+        binding->consumed = false;
       }
       return;
     }
@@ -193,6 +239,7 @@ static void DiagnoseOwnershipBorrowedEscapeStatement(
                                           callable_contracts, diagnostics);
       if (auto *binding = LookupOwnershipBorrowedBinding(scopes, assign->name)) {
         binding->borrowed = borrowed;
+        binding->consumed = false;
       }
       return;
     }

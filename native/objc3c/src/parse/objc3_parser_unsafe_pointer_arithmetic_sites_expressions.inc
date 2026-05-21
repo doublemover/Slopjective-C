@@ -35,6 +35,7 @@ void CollectPointerArithmeticExprSites(const Expr *expr, std::size_t &sites) {
   case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::NilLiteral:
   case Expr::Kind::Number:
+  case Expr::Kind::StringLiteral:
   default:
     return;
   }

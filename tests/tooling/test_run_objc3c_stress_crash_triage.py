@@ -194,11 +194,22 @@ def test_stress_crash_triage_writes_replayable_signature_indexes() -> None:
         )
         assert summary["signature_count"] == 1
         assert summary["case_count"] == 1
+        assert summary["parser_case_count"] == 1
+        assert summary["semantic_case_count"] == 0
+        assert summary["runtime_case_count"] == 0
+        assert summary["execution_case_count"] == 0
+        assert summary["runtime_execution_case_count"] == 0
+        assert summary["replay_request_count"] == 1
 
         case_index_path = ROOT / summary["case_index_path"]
         case_index = json.loads(case_index_path.read_text(encoding="utf-8"))
         assert case_index[0]["case_id"] == "parser-stability"
+        assert case_index[0]["subsystem"] == "parser"
         assert case_index[0]["signature_sha256"] == SIGNATURE_SHA256
+        replay_request = json.loads(
+            (ROOT / case_index[0]["replay_request_path"]).read_text(encoding="utf-8")
+        )
+        assert replay_request["subsystem"] == "parser"
     finally:
         if summary_out.exists():
             _remove_generated_summary_roots(json.loads(summary_out.read_text(encoding="utf-8")))
@@ -214,8 +225,16 @@ def test_stress_crash_triage_fixture_manifest_validates_checked_in_cases() -> No
 
     assert summary == {
         "contract_id": "objc3c.stress.crash.triage.fixture.manifest.v1",
-        "positive_case_count": 1,
+        "positive_case_count": 2,
         "negative_case_count": 2,
+        "positive_case_subsystem_counts": {
+            "parser": 1,
+            "semantic": 0,
+            "runtime": 0,
+            "execution": 1,
+            "runtime_execution": 1,
+        },
+        "positive_runtime_execution_case_count": 1,
     }
 
 

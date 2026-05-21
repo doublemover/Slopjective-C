@@ -1,0 +1,57 @@
+{
+  "mode": "objc3c-frontend-stage-trace-v1",
+  "semantic_skipped": false,
+  "process_exit_code": 0,
+  "stages": {
+    "lex": {
+      "stage": 0,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "parse": {
+      "stage": 1,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "sema": {
+      "stage": 2,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "lower": {
+      "stage": 3,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "emit": {
+      "stage": 4,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    }
+  }
+}

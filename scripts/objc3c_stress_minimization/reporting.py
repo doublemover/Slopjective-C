@@ -12,6 +12,8 @@ from objc3c_tooling.paths import repo_rel
 from .models import MinCase
 from .paths import SUMMARY_CONTRACT_ID
 
+SUMMARY_SUBSYSTEMS = ("parser", "semantic", "runtime", "execution")
+
 
 def json_text(payload: dict[str, Any]) -> str:
     return json.dumps(payload, indent=2) + "\n"
@@ -30,13 +32,16 @@ def build_invocation_payload(compiler: Path, case: MinCase, timeout_sec: float) 
 
 
 def build_failure_summary(case: MinCase, baseline: dict[str, Any]) -> dict[str, Any]:
-    return {
+    payload = {
         "case_id": case.case_id,
         "subsystem": case.subsystem,
         "returncode": baseline["returncode"],
         "diagnostic_lines": baseline["diagnostic_lines"],
         "signature_sha256": baseline["signature_sha256"],
     }
+    if "failure_stage" in baseline:
+        payload["failure_stage"] = baseline["failure_stage"]
+    return payload
 
 
 def build_reducer_plan(case: MinCase, attempts: list[dict[str, Any]]) -> dict[str, Any]:
@@ -54,7 +59,7 @@ def build_reduced_summary(
     reduced_source: str,
     baseline_signature: str,
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "case_id": case.case_id,
         "original_bytes": len(original_source.encode("utf-8")),
         "reduced_bytes": len(reduced_source.encode("utf-8")),
@@ -62,6 +67,19 @@ def build_reduced_summary(
         "reduced_line_count": len(reduced_source.splitlines()),
         "signature_sha256": baseline_signature,
     }
+    if case.subsystem in {"runtime", "execution"}:
+        payload["subsystem"] = case.subsystem
+    return payload
+
+
+def count_subsystems(case_summaries: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {subsystem: 0 for subsystem in SUMMARY_SUBSYSTEMS}
+    for case in case_summaries:
+        subsystem = case.get("subsystem")
+        if subsystem in counts:
+            counts[subsystem] += 1
+    counts["runtime_execution"] = counts["runtime"] + counts["execution"]
+    return counts
 
 
 def build_summary_payload(
@@ -74,6 +92,7 @@ def build_summary_payload(
     artifact_surface: dict[str, Any],
     case_summaries: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    subsystem_counts = count_subsystems(case_summaries)
     return {
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": generated_at_utc,
@@ -83,6 +102,13 @@ def build_summary_payload(
         "failure_root": repo_rel(failure_root),
         "minimized_root": repo_rel(minimized_root),
         "case_count": len(case_summaries),
+        "parser_case_count": subsystem_counts["parser"],
+        "semantic_case_count": subsystem_counts["semantic"],
+        "runtime_case_count": subsystem_counts["runtime"],
+        "execution_case_count": subsystem_counts["execution"],
+        "runtime_execution_case_count": subsystem_counts["runtime_execution"],
+        "subsystem_case_counts": subsystem_counts,
+        "replay_request_count": 0,
         "artifact_surface_summary_reports": artifact_surface["summary_reports"],
         "case_summaries": case_summaries,
     }
@@ -105,6 +131,7 @@ __all__ = [
     "build_reduced_summary",
     "build_reducer_plan",
     "build_summary_payload",
+    "count_subsystems",
     "emit_result",
     "json_text",
     "render_console_summary",

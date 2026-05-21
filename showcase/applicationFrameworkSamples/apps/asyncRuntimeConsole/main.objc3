@@ -1,0 +1,36 @@
+module AsyncRuntimeConsole;
+
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;
+extern fn route_model_keypath_token() -> i32;
+extern fn adapterMacroValue() -> i32;
+
+async fn refreshRuntimeStatus(seed: i32) -> i32 __attribute__((objc_executor(global))) {
+  let spawned = objc3_runtime_spawn_task_i32(1, seed);
+  return objc3_runtime_executor_hop_i32(spawned + 2, seed);
+}
+
+@interface RuntimeConsole
+- (i32) scheduledStatus:(i32)seed async __attribute__((objc_executor(main)));
+- (i32) currentStatus;
+@end
+
+@implementation RuntimeConsole
+- (i32) scheduledStatus:(i32)seed async __attribute__((objc_executor(main))) {
+  if (objc3_runtime_task_is_cancelled_i32(seed)) {
+    return objc3_runtime_task_on_cancel_i32(seed);
+  }
+  return await refreshRuntimeStatus(seed);
+}
+
+- (i32) currentStatus {
+  return 17 + route_model_keypath_token() + adapterMacroValue();
+}
+@end
+
+fn main() -> i32 {
+  let console = [[RuntimeConsole alloc] init];
+  return [console currentStatus];
+}

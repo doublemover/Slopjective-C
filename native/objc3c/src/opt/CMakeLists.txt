@@ -1,0 +1,6 @@
+add_library(objc3c_opt STATIC
+  objc3_semantic_optimization_executor.cpp
+  objc3_semantic_optimization_executor.h
+)
+objc3c_apply_build_defaults(objc3c_opt)
+objc3c_apply_llvm_direct_config(objc3c_opt)

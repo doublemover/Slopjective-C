@@ -139,6 +139,41 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/native/runtime/object_model/class_realization_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/registration_replay_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
       "owner_phase": "runtime",
       "behavior_family": "storage",

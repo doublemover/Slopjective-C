@@ -1,0 +1,37 @@
+{
+  "mode": "objc3c-frontend-c-api-runner-v1",
+  "input_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+  "out_dir": "tests/tooling/fixtures/developer_tooling/artifact_inspector",
+  "emit_prefix": "module",
+  "status": 0,
+  "success": true,
+  "paths": {
+    "summary": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
+    "diagnostics": "tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json",
+    "manifest": "tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json",
+    "ir": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll",
+    "object": "",
+    "runtime_metadata_binary": "tests/tooling/fixtures/developer_tooling/artifact_inspector/runtime-metadata.bin"
+  },
+  "observability": {
+    "status_name": "ok",
+    "dump_commands": {
+      "summary": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json'",
+      "diagnostics": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json'",
+      "manifest": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json'",
+      "ir": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll'"
+    }
+  },
+  "runtime_imports": [
+    {
+      "module": "objc3.core",
+      "symbol": "objc3_runtime_bootstrap"
+    }
+  ],
+  "runtime_inspector": {
+    "contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
+    "available": false,
+    "dump_commands": {},
+    "availability_reason": "artifact inspector fixture intentionally omits native object bytes"
+  }
+}

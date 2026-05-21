@@ -25,6 +25,12 @@ static bool IsOwnershipBorrowedCallableParameterBorrowed(
          contract->param_borrowed[index];
 }
 
+static bool IsOwnershipConsumedCallableParameter(
+    const OwnershipBorrowedCallableContract *contract, std::size_t index) {
+  return contract != nullptr && index < contract->param_consumed.size() &&
+         contract->param_consumed[index];
+}
+
 static bool IsOwnershipBorrowedExpr(
     const Expr *expr, const std::vector<OwnershipBorrowedScope> &scopes,
     const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
@@ -35,7 +41,7 @@ static bool IsOwnershipBorrowedExpr(
   switch (expr->kind) {
     case Expr::Kind::Identifier: {
       const auto *binding = LookupOwnershipBorrowedBinding(scopes, expr->ident);
-      return binding != nullptr && binding->borrowed;
+      return binding != nullptr && binding->borrowed && !binding->consumed;
     }
     case Expr::Kind::Call:
       return IsOwnershipBorrowedCallableReturnBorrowed(callable_contracts,
@@ -46,6 +52,7 @@ static bool IsOwnershipBorrowedExpr(
                                      callable_contracts);
     case Expr::Kind::Throw:
     case Expr::Kind::KeyPathLiteral:
+    case Expr::Kind::StringLiteral:
       return false;
     case Expr::Kind::Conditional:
       return IsOwnershipBorrowedExpr(expr->right.get(), scopes,

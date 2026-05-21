@@ -48,7 +48,8 @@
       "source_surface_path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
       "report_paths": [
         "tmp/reports/runtime-performance/benchmark-summary.json",
-        "tmp/reports/runtime-performance/integration-summary.json"
+        "tmp/reports/runtime-performance/integration-summary.json",
+        "tmp/reports/runtime-performance/scale-summary.json"
       ],
       "lab_profile_ids": [
         "windows-live-toolchain-lab"
@@ -60,7 +61,12 @@
         "benchmark-runtime-performance",
         "validate-runtime-performance"
       ],
-      "evidence_contract": "runtime-acceptance-probes-plus-hot-path-telemetry"
+      "contract_paths": [
+        "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+        "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+        "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
+      ],
+      "evidence_contract": "runtime-contract-replay-fail-closed-stress-policy-scale-probe-plus-hot-path-telemetry"
     },
     {
       "owner_id": "performance-governance-publication-owner",

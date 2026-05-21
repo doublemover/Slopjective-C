@@ -82,6 +82,13 @@ def main() -> int:
             f"{claimability['manifest_summary_count']} manifest summaries."
         ),
         (
+            "Public suite manifest is "
+            f"{scorecard['upstream_status']['public_suite']} with "
+            f"{claimability['public_suite_case_count']} stable cases across "
+            f"{claimability['public_suite_phase_count']} phases and "
+            f"{claimability['public_suite_profile_count']} profiles."
+        ),
+        (
             "External validation is "
             f"{scorecard['upstream_status']['external_validation_integration']} with "
             f"{claimability['accepted_fixture_count']} accepted {pluralize(claimability['accepted_fixture_count'], 'fixture')}, "
@@ -107,6 +114,7 @@ def main() -> int:
         repo_rel(SCHEMA_SUMMARY),
         repo_rel(SCORECARD_SUMMARY),
         scorecard["upstream_reports"]["corpus_integration"],
+        scorecard["upstream_reports"]["public_suite"],
         scorecard["upstream_reports"]["external_validation_integration"],
         scorecard["upstream_reports"]["external_validation_publication"],
     ]

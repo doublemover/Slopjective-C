@@ -193,12 +193,26 @@ typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   int matched_from_superclass;
   int matched_via_inherited_protocol;
   int malformed_metadata;
+  int witness_metadata_materialized;
+  int witness_metadata_supported;
+  int conformance_edge_materializable;
+  int associated_types_supported;
+  int dynamic_existential_dispatch_supported;
+  int fail_closed_for_unsupported_semantics;
   const char *class_name;
   const char *protocol_name;
   const char *matched_protocol_owner_identity;
   const char *matched_attachment_owner_identity;
   const char *matched_class_name;
   const char *matched_class_owner_identity;
+  const char *existential_canonical_spelling;
+  const char *object_representation;
+  const char *conformance_owner_identity;
+  const char *runtime_lookup_anchor;
+  const char *witness_metadata_key;
+  const char *requirement_resolution_policy;
+  const char *unsupported_associated_type_diagnostic;
+  const char *unsupported_dynamic_dispatch_diagnostic;
   const char *failure_reason;
 } objc3_runtime_protocol_conformance_query_snapshot;
 

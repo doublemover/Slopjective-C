@@ -927,6 +927,89 @@ bool RuntimeProtocolConformanceEdgeIsMaterializable(const char *class_name,
          protocol_name != nullptr && protocol_name[0] != '\0';
 }
 
+bool BuildRuntimeProtocolExistentialWitnessMetadata(
+    const char *class_name,
+    const char *protocol_name,
+    const ProtocolConformanceMatch &match,
+    ProtocolExistentialWitnessMetadata &metadata,
+    std::string &failure_reason) {
+  metadata = {};
+  failure_reason.clear();
+  if (!RuntimeProtocolConformanceEdgeIsMaterializable(class_name,
+                                                      protocol_name)) {
+    failure_reason =
+        "protocol existential witness metadata requires class and protocol names";
+    return false;
+  }
+  if (match.matched_protocol_owner_identity.empty()) {
+    failure_reason =
+        "protocol existential witness metadata requires protocol owner identity";
+    return false;
+  }
+  const std::string conformance_owner_identity =
+      !match.matched_attachment_owner_identity.empty()
+          ? match.matched_attachment_owner_identity
+          : match.matched_class_owner_identity;
+  if (conformance_owner_identity.empty()) {
+    failure_reason =
+        "protocol existential witness metadata requires conformance owner identity";
+    return false;
+  }
+
+  metadata.existential_canonical_spelling =
+      "id<" + std::string(protocol_name) + ">";
+  metadata.object_representation = "id";
+  metadata.conforming_type_canonical_spelling = class_name;
+  metadata.conforming_type_owner_identity = match.matched_class_owner_identity;
+  metadata.protocol_name = protocol_name;
+  metadata.protocol_owner_identity = match.matched_protocol_owner_identity;
+  metadata.conformance_owner_identity = conformance_owner_identity;
+  metadata.attachment_owner_identity = match.matched_attachment_owner_identity;
+  metadata.runtime_lookup_anchor =
+      kObjc3ProtocolExistentialRuntimeLookupAnchor;
+  metadata.witness_metadata_key =
+      kObjc3ProtocolExistentialWitnessMetadataKey;
+  metadata.requirement_resolution_policy =
+      "semantic-requirements-before-runtime-conformance-edge";
+  metadata.unsupported_associated_type_diagnostic =
+      kObjc3ProtocolExistentialAssociatedTypeDiagnosticCode;
+  metadata.unsupported_dynamic_dispatch_diagnostic =
+      kObjc3ProtocolExistentialDynamicDispatchDiagnosticCode;
+  metadata.matched_protocol_depth = match.matched_protocol_depth;
+  metadata.matched_from_category = match.matched_from_category;
+  metadata.matched_from_superclass = match.matched_from_superclass;
+  metadata.matched_via_inherited_protocol =
+      match.matched_via_inherited_protocol;
+  metadata.conformance_edge_materializable = true;
+  metadata.associated_types_supported = false;
+  metadata.dynamic_existential_dispatch_supported = false;
+  metadata.fail_closed_for_unsupported_semantics = true;
+  return true;
+}
+
+bool RuntimeProtocolExistentialWitnessMetadataIsSupported(
+    const ProtocolExistentialWitnessMetadata &metadata) {
+  return !metadata.existential_canonical_spelling.empty() &&
+         metadata.object_representation == "id" &&
+         !metadata.conforming_type_canonical_spelling.empty() &&
+         !metadata.protocol_name.empty() &&
+         !metadata.protocol_owner_identity.empty() &&
+         !metadata.conformance_owner_identity.empty() &&
+         metadata.runtime_lookup_anchor ==
+             kObjc3ProtocolExistentialRuntimeLookupAnchor &&
+         metadata.witness_metadata_key ==
+             kObjc3ProtocolExistentialWitnessMetadataKey &&
+         !metadata.requirement_resolution_policy.empty() &&
+         metadata.unsupported_associated_type_diagnostic ==
+             kObjc3ProtocolExistentialAssociatedTypeDiagnosticCode &&
+         metadata.unsupported_dynamic_dispatch_diagnostic ==
+             kObjc3ProtocolExistentialDynamicDispatchDiagnosticCode &&
+         metadata.conformance_edge_materializable &&
+         !metadata.associated_types_supported &&
+         !metadata.dynamic_existential_dispatch_supported &&
+         metadata.fail_closed_for_unsupported_semantics;
+}
+
 void ClearRuntimeProtocolCategoryDiagnosticFieldsUnlocked(RuntimeState &state) {
   state.last_malformed_class_graph_metadata_surface.clear();
   state.last_malformed_class_graph_target_kind.clear();

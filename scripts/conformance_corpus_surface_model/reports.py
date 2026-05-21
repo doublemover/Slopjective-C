@@ -77,6 +77,7 @@ class ConformanceCorpusSurfaceSummary:
             "support_claim_runnable_evidence_catalog": self.surface[
                 "support_claim_runnable_evidence_catalog"
             ],
+            "public_suite_manifest": self.surface["public_suite_manifest"],
             "primary_buckets": EXPECTED_PRIMARY_BUCKETS,
             "supplemental_buckets": EXPECTED_SUPPLEMENTAL_BUCKETS,
             "bucket_summaries": [summary.to_payload() for summary in self.bucket_summaries],

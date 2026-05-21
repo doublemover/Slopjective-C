@@ -11,10 +11,10 @@ from .ecosystem_publication_owner_contracts import (
 )
 
 
-def run_package_publication_action(action_name: str) -> int:
+def run_package_publication_action(action_name: str, rest: list[str] | None = None) -> int:
     require_ecosystem_publication_owner_contract(action_name)
     contract = PACKAGE_PUBLICATION_ACTION_CONTRACTS[action_name]
-    return run(contract.command())
+    return run([*contract.command(), *(rest or [])])
 
 
 __all__ = ["run_package_publication_action"]

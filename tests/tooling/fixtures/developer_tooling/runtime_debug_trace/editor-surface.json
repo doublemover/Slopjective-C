@@ -1,0 +1,20 @@
+{
+  "contract_id": "objc3c.developer.tooling.editor.surface.v1",
+  "source_path": "tests/tooling/fixtures/native/hello.objc3",
+  "summary_path": "tmp/reports/developer-tooling/editor-surface/hello/compile-summary.json",
+  "manifest_path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.manifest.json",
+  "diagnostics_path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.diagnostics.json",
+  "diagnostics": {
+    "status_name": "ok",
+    "total": 0,
+    "entries": []
+  },
+  "language_server": {},
+  "navigation": {},
+  "artifact_inspector": {},
+  "formatter": {},
+  "debug": {
+    "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
+    "supported": true
+  }
+}

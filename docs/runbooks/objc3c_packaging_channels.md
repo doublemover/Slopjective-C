@@ -126,6 +126,21 @@ The package-channel manifest and summary must also publish
 installer archive digest and fails closed when the signature payload, artifact
 path, or public verification command drifts.
 
+The package-channel manifest must publish `payload_contract` and
+`receipt_contracts` from the checked-in packaging-channel metadata surface. The
+payload contract binds the runnable toolchain manifest path, manifest digest,
+required compiler/runtime/stdlib/docs entries, and per-entry SHA-256 digests.
+The receipt contracts bind the local-installer and offline-bundle receipts to
+the channel id, bootstrap entrypoint, package bridge, runnable package manifest,
+manifest digest, required payload entries, rollback requirement, and no-network
+offline policy.
+
+Package-channel builders must initialize fresh owner-controlled roots under
+`tmp/pkg/objc3c-package-channels/` and `tmp/artifacts/package-channels/` before
+staging channel outputs. A pre-existing `tmp/` artifact may be removed as owned
+scratch, but it must never be treated as source evidence for a package,
+installer, receipt, or archive digest claim.
+
 The package-channel manifest also publishes the package-ecosystem interop loader
 summary from `tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json`.
 That keeps C and Objective-C header import/export support tied to the same

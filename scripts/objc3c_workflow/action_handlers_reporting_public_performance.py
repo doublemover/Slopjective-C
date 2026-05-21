@@ -19,5 +19,6 @@ REPORTING_PUBLIC_PERFORMANCE_HANDLERS: dict[str, ActionHandler] = {
     "publish-performance-report": performance.action_publish_performance_report,
     "validate-performance-governance": performance.action_validate_performance_governance,
     "validate-performance-governance-integration": performance.action_validate_performance_governance_integration,
+    "validate-performance-governance-runtime-contract-linkage": performance.action_validate_performance_governance_runtime_contract_linkage,
     "validate-performance-governance-end-to-end": performance.action_validate_performance_governance_end_to_end,
 }

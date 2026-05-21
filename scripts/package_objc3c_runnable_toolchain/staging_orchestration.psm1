@@ -3,9 +3,19 @@ Set-StrictMode -Version Latest
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
 
 function Get-RunnableToolchainPackagePrivateBuildRoot {
-  param([Parameter(Mandatory = $true)][string]$PackageRoot)
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$PackageRoot
+  )
 
-  return Join-Path $PackageRoot ".b"
+  $normalizedPackageRoot = [System.IO.Path]::GetFullPath($PackageRoot).ToLowerInvariant()
+  $packageRootBytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedPackageRoot)
+  $hashBytes = [System.Security.Cryptography.SHA256]::HashData($packageRootBytes)
+  $hashPrefix = -join (
+    $hashBytes[0..5] |
+      ForEach-Object { $_.ToString("x2") }
+  )
+  return Join-Path (Join-Path $RepoRoot "tmp/b/pkg") $hashPrefix
 }
 
 function Get-RunnableToolchainPackageGeneratedArtifactPaths {
@@ -165,9 +175,14 @@ function Copy-RunnableToolchainPackageRepoSupercleanSurface {
 }
 
 function Remove-RunnableToolchainPackagePrivateBuildRoot {
-  param([Parameter(Mandatory = $true)][string]$PackageRoot)
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$PackageRoot
+  )
 
-  $privateBuildRoot = Get-RunnableToolchainPackagePrivateBuildRoot -PackageRoot $PackageRoot
+  $privateBuildRoot = Get-RunnableToolchainPackagePrivateBuildRoot `
+    -RepoRoot $RepoRoot `
+    -PackageRoot $PackageRoot
   if (!(Test-Path -LiteralPath $privateBuildRoot -PathType Container)) {
     return
   }
@@ -179,10 +194,16 @@ function Invoke-RunnableToolchainPackageBuild {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
-    [Parameter(Mandatory = $true)][string]$BuildScript
+    [Parameter(Mandatory = $true)][string]$BuildScript,
+    [int]$Parallelism = 0
   )
 
-  $privateBuildRoot = Get-RunnableToolchainPackagePrivateBuildRoot -PackageRoot $PackageRoot
+  $privateBuildRoot = Get-RunnableToolchainPackagePrivateBuildRoot `
+    -RepoRoot $RepoRoot `
+    -PackageRoot $PackageRoot
+  Remove-RunnableToolchainPackagePrivateBuildRoot `
+    -RepoRoot $RepoRoot `
+    -PackageRoot $PackageRoot
   $buildDir = Join-Path $privateBuildRoot "b"
   $summaryPath = Join-Path $privateBuildRoot "native_build_summary.json"
   $runtimeOutputDir = Join-Path $PackageRoot "artifacts/bin"
@@ -195,7 +216,8 @@ function Invoke-RunnableToolchainPackageBuild {
     -RuntimeOutputDir $runtimeOutputDir `
     -LibraryOutputDir $libraryOutputDir `
     -FrontendArtifactRoot $frontendArtifactRoot `
-    -SummaryPath $summaryPath |
+    -SummaryPath $summaryPath `
+    -Parallelism $Parallelism |
     ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
@@ -208,7 +230,9 @@ function Invoke-RunnableToolchainPackageBuild {
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -BuildDir $buildDir
-  Remove-RunnableToolchainPackagePrivateBuildRoot -PackageRoot $PackageRoot
+  Remove-RunnableToolchainPackagePrivateBuildRoot `
+    -RepoRoot $RepoRoot `
+    -PackageRoot $PackageRoot
 }
 
 function Get-RunnableToolchainPackageOwnedRunRoot {
@@ -407,14 +431,16 @@ function Invoke-RunnableToolchainPackageStaging {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
-    [Parameter(Mandatory = $true)][string]$BuildScript
+    [Parameter(Mandatory = $true)][string]$BuildScript,
+    [int]$Parallelism = 0
   )
 
   Initialize-RunnableToolchainPackageRoot -RepoRoot $RepoRoot -PackageRoot $PackageRoot
   Invoke-RunnableToolchainPackageBuild `
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
-    -BuildScript $BuildScript
+    -BuildScript $BuildScript `
+    -Parallelism $Parallelism
   $inputFiles = @(Get-RunnableToolchainPackageInputFiles -RepoRoot $RepoRoot)
   $copiedRelativePaths = @(Copy-RunnableToolchainPackageInputs `
     -RepoRoot $RepoRoot `

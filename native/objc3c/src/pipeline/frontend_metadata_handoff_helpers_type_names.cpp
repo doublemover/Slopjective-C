@@ -20,6 +20,8 @@ const char *RuntimeMetadataTypeName(ValueType type) {
       return "instancetype";
     case ValueType::ObjCObjectPtr:
       return "object-pointer";
+    case ValueType::TextHandle:
+      return "Text";
     default:
       return "unknown";
   }

@@ -16,6 +16,6 @@
     "evidence_log_allowed": false,
     "wrapper_only_allowed": false,
     "required_owner_contract_module": "scripts/objc3c_workflow/actions/release_governance_distribution_credibility_owner_contracts.py",
-    "trust_report_boundary": "trust report artifacts must be generated from source, schema, dashboard, release-drill, and release-evidence owner contracts"
+    "trust_report_boundary": "trust report artifacts must be generated from source, schema, dashboard, clean package-install, release-drill, and release-evidence owner contracts"
   }
 }

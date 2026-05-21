@@ -24,11 +24,27 @@ def assert_project_template_manifest_payload(payload: dict[str, Any]) -> None:
     assert payload["template_source"] == (
         "tmp/artifacts/project-template/auroraBoard/src/main.objc3"
     )
+    assert payload["workspace_origin"] == "showcase/auroraBoard/workspace.json"
+    assert payload["template_workspace_manifest"] == (
+        "tmp/artifacts/project-template/auroraBoard/workspace.json"
+    )
     assert payload["application_architecture_testing_contracts"] == {
         "first_party_testing": "contracts/first.json",
         "project_template_workspace": "contracts/workspace.json",
         "canonical_application_architecture": "contracts/canonical.json",
     }
+    assert payload["template_compile_contract"]["compile_action"] == "compile-objc3c"
+    assert payload["template_compile_contract"]["artifact_root"] == (
+        "tmp/artifacts/project-template/auroraBoard/build"
+    )
+    assert payload["clean_room_usability"]["support_claim"] == (
+        "objc3c.behavior.tooling.first-run-product-path"
+    )
+    assert payload["clean_room_usability"]["source_truth_paths"][:2] == [
+        "showcase/auroraBoard/main.objc3",
+        "showcase/auroraBoard/workspace.json",
+    ]
+    assert "compile-objc3c" in payload["public_actions"]
 
 
 def assert_stdlib_workspace_summary_payload(payload: dict[str, Any]) -> None:

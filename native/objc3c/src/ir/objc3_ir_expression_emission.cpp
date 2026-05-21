@@ -9,6 +9,51 @@
 
 namespace {
 
+constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
+    "objc3_runtime_stdlib_text_utf8_storage_i32";
+
+std::string EmitObjc3IRTextStorageLiteral(
+    const Expr &expr, FunctionContext &ctx,
+    const Objc3IRExpressionEmissionCallbacks &callbacks) {
+  const std::string tmp = callbacks.new_temp(ctx);
+  const std::string byte_count =
+      std::to_string(expr.string_literal_byte_count);
+  if (expr.string_literal_value.empty()) {
+    ctx.code_lines.push_back(
+        "  " + tmp + " = call i32 @" +
+        std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
+        "(ptr null, i32 0)");
+    return tmp;
+  }
+
+  const std::string storage =
+      "%text.literal.bytes." + std::to_string(ctx.temp_counter++);
+  const std::string base =
+      "%text.literal.ptr." + std::to_string(ctx.temp_counter++);
+  ctx.entry_lines.push_back("  " + storage + " = alloca [" + byte_count +
+                            " x i8], align 1");
+  ctx.code_lines.push_back("  " + base + " = getelementptr inbounds [" +
+                           byte_count + " x i8], ptr " + storage +
+                           ", i32 0, i32 0");
+  for (std::size_t index = 0; index < expr.string_literal_value.size();
+       ++index) {
+    const std::string byte_ptr =
+        "%text.literal.byte." + std::to_string(ctx.temp_counter++);
+    const int byte_value = static_cast<int>(
+        static_cast<unsigned char>(expr.string_literal_value[index]));
+    ctx.code_lines.push_back("  " + byte_ptr +
+                             " = getelementptr inbounds i8, ptr " + base +
+                             ", i32 " + std::to_string(index));
+    ctx.code_lines.push_back("  store i8 " + std::to_string(byte_value) +
+                             ", ptr " + byte_ptr + ", align 1");
+  }
+  ctx.code_lines.push_back(
+      "  " + tmp + " = call i32 @" +
+      std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) + "(ptr " +
+      base + ", i32 " + byte_count + ")");
+  return tmp;
+}
+
 std::string EmitObjc3IRExprImpl(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRExpressionEmissionCallbacks &callbacks) {
@@ -23,6 +68,9 @@ std::string EmitObjc3IRExprImpl(
       return expr->bool_value ? "1" : "0";
     case Expr::Kind::NilLiteral:
       return "0";
+    case Expr::Kind::StringLiteral: {
+      return EmitObjc3IRTextStorageLiteral(*expr, ctx, callbacks);
+    }
     case Expr::Kind::BlockLiteral:
       if (BlockLiteralSupportsEscapingRuntimeHookLowering(*expr)) {
         const std::string storage_ptr =

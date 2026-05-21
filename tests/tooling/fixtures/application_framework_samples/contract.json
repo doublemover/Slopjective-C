@@ -1,0 +1,68 @@
+{
+  "contract_id": "objc3c.application_framework_samples.contract.v1",
+  "schema_version": 1,
+  "issue": 8178,
+  "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+  "dependency_evidence": "showcase/applicationFrameworkSamples/dependency-evidence.json",
+  "required_sample_kinds": [
+    "library",
+    "cli-application",
+    "runtime-application"
+  ],
+  "required_capabilities": [
+    "protocol-conformance",
+    "typed-keypath-reflection",
+    "foreign-import-metadata",
+    "macro-provenance",
+    "runtime-backed-string-view",
+    "runtime-backed-map-entry-shape",
+    "async-executor-annotation",
+    "executor-hop-helper-surface"
+  ],
+  "required_support_claims": [
+    "objc3c.behavior.application-framework-samples.object-runtime-library",
+    "objc3c.behavior.application-framework-samples.interop-adapter-library",
+    "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli",
+    "objc3c.behavior.application-framework-samples.async-runtime-application"
+  ],
+  "required_tutorials": [
+    "docs/tutorials/application-framework-samples.md"
+  ],
+  "required_tutorial_terms": [
+    "npm run objc3c -- validate-application-framework-samples",
+    "module.ll",
+    "module.manifest.json",
+    "workspace.json",
+    "main.objc3",
+    "Modify"
+  ],
+  "required_package_edges": [
+    {
+      "from": "showcase-framework:workflowStdlibCLI",
+      "to": "stdlib:objc3.core"
+    },
+    {
+      "from": "showcase-framework:workflowStdlibCLI",
+      "to": "showcase-framework:routeModelKit"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "stdlib:objc3.concurrency"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "showcase-framework:routeModelKit"
+    },
+    {
+      "from": "showcase-framework:asyncRuntimeConsole",
+      "to": "showcase-framework:interopAdapterKit"
+    }
+  ],
+  "required_artifacts": [
+    "module.compile-provenance.json",
+    "module.ll",
+    "module.obj",
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json"
+  ]
+}

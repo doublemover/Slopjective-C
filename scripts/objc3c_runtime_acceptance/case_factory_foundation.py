@@ -9,6 +9,7 @@ from objc3c_runtime_acceptance.domains.probe_helpers import (
 )
 from objc3c_runtime_acceptance.domains.stdlib_runtime_cases import (
     check_stdlib_core_runtime_probe_case,
+    check_stdlib_foundation_next_runtime_probe_case,
 )
 
 
@@ -49,6 +50,13 @@ def build_core_case_factories(context: CaseFactoryContext) -> LabeledCaseFactori
         (
             "stdlib-core-runtime-probe",
             lambda: check_stdlib_core_runtime_probe_case(clangxx, run_dir),
+        ),
+        (
+            "stdlib-foundation-next-runtime-probe",
+            lambda: check_stdlib_foundation_next_runtime_probe_case(
+                clangxx,
+                run_dir,
+            ),
         ),
         (
             "compile-backend-parity",

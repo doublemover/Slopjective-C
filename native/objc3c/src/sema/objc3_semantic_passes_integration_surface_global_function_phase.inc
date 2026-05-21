@@ -16,4 +16,5 @@
   }
 
   PopulateSemanticIntegrationSurfaceFunctions(
-      ast, surface, generic_interface_names, arc_mode_enabled, diagnostics);
+      ast, surface, generic_interface_names, protocol_definitions,
+      arc_mode_enabled, diagnostics);

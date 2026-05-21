@@ -122,6 +122,171 @@
         "reflected_property_count",
         "ownership_runtime_hook_profile"
       ]
+    },
+    {
+      "workload_id": "stdlib-core-runtime",
+      "acceptance_case_id": "stdlib-core-runtime-probe",
+      "probe": "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+      "fixture": "stdlib/modules/objc3.core/module.objc3",
+      "hot_path_family": "stdlib-helper-runtime",
+      "owner_phases": [
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "stdlib core helper timing is runtime performance evidence over checked-in stdlib/runtime helper ABIs; support remains owned by stdlib behavior rows and packets stay provenance",
+      "measured_fields": [
+        "total_call_count",
+        "revision_call_count",
+        "capability_call_count",
+        "option_call_count",
+        "count_call_count",
+        "prefix_call_count",
+        "map_call_count",
+        "last_result"
+      ]
+    },
+    {
+      "workload_id": "stdlib-concurrency-runtime",
+      "acceptance_case_id": "stdlib-concurrency-runtime-probe",
+      "probe": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+      "fixture": "stdlib/modules/objc3.concurrency/module.objc3",
+      "hot_path_family": "stdlib-concurrency-runtime",
+      "owner_phases": [
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "stdlib concurrency helper timing is scheduler/task-group/executor runtime evidence over checked-in stdlib/runtime helper ABIs; support remains owned by stdlib behavior rows and packets stay provenance",
+      "measured_fields": [
+        "spawn_call_count",
+        "scope_call_count",
+        "add_task_call_count",
+        "wait_next_call_count",
+        "cancel_all_call_count",
+        "executor_hop_call_count",
+        "scheduler_enqueue_count",
+        "scheduler_dequeue_count",
+        "scheduler_sequence",
+        "last_queue_drain_result"
+      ]
+    },
+    {
+      "workload_id": "registration-replay",
+      "acceptance_case_id": "multi-image-registration-reset-replay",
+      "probe": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+      "hot_path_family": "registration-replay",
+      "owner_phases": [
+        "runtime",
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "registration reset/replay timing is live multi-image runtime evidence over checked-in provider/consumer fixtures; replay packets remain provenance until runtime registration owners claim behavior",
+      "measured_fields": [
+        "provider_compile_ms",
+        "consumer_compile_ms",
+        "probe_link_ms",
+        "probe_run_ms",
+        "case_total_ms",
+        "module_image_count",
+        "first_replay_generation",
+        "second_replay_generation",
+        "blocked_replay_status"
+      ]
+    },
+    {
+      "workload_id": "block-arc-runtime",
+      "acceptance_case_id": "block-helper-runtime-execution",
+      "probe": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+      "hot_path_family": "block-arc-lifetime",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "block/ARC timing covers linked runtime helpers, byref forwarding, copy/dispose, and ownership probes after canonical block/ARC owners claim the behavior; helper counters stay provenance",
+      "measured_fields": [
+        "byref_runtime_exit_code",
+        "owned_runtime_exit_code",
+        "nonowning_runtime_exit_code",
+        "arc_mode_runtime_exit_code",
+        "arc_inference_runtime_exit_code",
+        "arc_cleanup_scope_runtime_exit_code",
+        "arc_implicit_cleanup_runtime_exit_code",
+        "copy_dispose_probe_copy_count_after_promotion",
+        "copy_dispose_probe_invoke_result",
+        "copy_dispose_probe_dispose_count_after_final_release",
+        "copy_dispose_probe_post_release_callback_count",
+        "byref_copy_helper_required_sites",
+        "owned_copy_helper_required_sites",
+        "nonowning_copy_helper_required_sites",
+        "arc_mode_retain_insertions",
+        "arc_inference_retain_insertions",
+        "arc_cleanup_scope_release_insertions",
+        "arc_implicit_cleanup_release_insertions"
+      ]
+    },
+    {
+      "workload_id": "live-error-runtime",
+      "acceptance_case_id": "live-error-runtime-integration",
+      "probe": "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+      "hot_path_family": "error-bridge-runtime",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime"
+      ],
+      "support_boundary": "error bridge timing covers live runtime bridge-state snapshots and throws ABI lowering provenance; status packets do not widen unsupported error semantics",
+      "measured_fields": [
+        "rc",
+        "status",
+        "last_catch_kind_name",
+        "throws_abi_contract"
+      ]
+    },
+    {
+      "workload_id": "async-error-foreign-boundary",
+      "acceptance_case_id": "async-error-foreign-boundary-runtime-trace",
+      "probe": "tests/tooling/runtime/async_error_foreign_boundary_trace_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/async_error_foreign_boundary_trace_positive.objc3",
+      "hot_path_family": "async-error-foreign-boundary",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "async error/foreign-boundary timing couples compile surfaces, IR cleanup order, runtime trace counters, and negative diagnostics; unsupported combinations remain canonical rejection",
+      "measured_fields": [
+        "compile",
+        "ir",
+        "runtime",
+        "negative_diagnostics_batch"
+      ]
+    },
+    {
+      "workload_id": "live-concurrency-runtime",
+      "acceptance_case_id": "live-unified-concurrency-runtime-implementation",
+      "probe": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+      "hot_path_family": "live-concurrency-runtime",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "live concurrency timing covers continuation, task, actor, executor, and mailbox probes through checked-in fixtures; scheduler counters are provenance until concurrency owners claim behavior",
+      "measured_fields": [
+        "continuation_fixture",
+        "task_fixture",
+        "actor_fixture",
+        "continuation_probe",
+        "task_probe",
+        "actor_probe"
+      ]
     }
   ],
   "exact_live_commands": [
@@ -139,6 +304,13 @@
     "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
     "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
-    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/stdlib_core_runtime_probe.cpp",
+    "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+    "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/async_error_foreign_boundary_trace_probe.cpp",
+    "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
   ]
 }

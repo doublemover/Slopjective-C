@@ -9,8 +9,10 @@ from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 from .constants import (
     DIAGNOSTIC_QUALITY_PY,
+    EDITOR_TOOLING_SOURCE_TRUTH_PY,
     FORMATTER_DEBUG_SURFACE_PY,
     FORMATTER_REWRITE_SURFACE_PY,
+    PRODUCT_WORKFLOW_SOURCE_TRUTH_PY,
     ROOT,
     WORKSPACE_INTEGRATION_PY,
 )
@@ -34,8 +36,11 @@ def run_developer_tooling_steps() -> list[dict[str, Any]]:
         run_step("check-formatter-debug-surface", python_script_command(FORMATTER_DEBUG_SURFACE_PY)),
         run_step("check-formatter-rewrite-surface", python_script_command(FORMATTER_REWRITE_SURFACE_PY)),
         run_step("check-diagnostic-quality", python_script_command(DIAGNOSTIC_QUALITY_PY)),
+        run_step("check-editor-tooling-source-truth", python_script_command(EDITOR_TOOLING_SOURCE_TRUTH_PY)),
+        run_step("check-product-workflow-source-truth", python_script_command(PRODUCT_WORKFLOW_SOURCE_TRUTH_PY)),
         run_step("check-workspace-editor-debug-surface", python_script_command(WORKSPACE_INTEGRATION_PY)),
         run_step("inspect-capability-explorer", public_workflow_command("inspect-capability-explorer")),
         run_step("benchmark-runtime-inspector", public_workflow_command("benchmark-runtime-inspector")),
         run_step("trace-compile-stages", public_workflow_command("trace-compile-stages")),
+        run_step("trace-runtime-debug", public_workflow_command("trace-runtime-debug")),
     ]

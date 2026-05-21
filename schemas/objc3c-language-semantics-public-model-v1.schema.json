@@ -1,0 +1,689 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.objc3c.dev/objc3c-language-semantics-public-model-v1.schema.json",
+  "title": "Objective-C 3.0 Public Language Semantics Model",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_mapping",
+    "source_truth",
+    "typed_model_surfaces",
+    "cross_issue_handoffs",
+    "unsupported_policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.language.semantics.public-model.v1"
+    },
+    "issue_mapping": {
+      "type": "object",
+      "required": [
+        "primary_issues",
+        "support_claims",
+        "evidence_ids_required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "primary_issues": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "uniqueItems": true,
+          "minItems": 6
+        },
+        "support_claims": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "minItems": 6
+        },
+        "evidence_ids_required": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "minItems": 6
+        }
+      }
+    },
+    "source_truth": {
+      "type": "object",
+      "required": [
+        "schema_path",
+        "model_header_path",
+        "workflow_action",
+        "source_anchors"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_path": {
+          "const": "schemas/objc3c-language-semantics-public-model-v1.schema.json"
+        },
+        "model_header_path": {
+          "const": "native/objc3c/src/sema/model/language_semantics_public_model.h"
+        },
+        "workflow_action": {
+          "const": "validate-language-semantics-public-model"
+        },
+        "source_anchors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_anchor" },
+          "minItems": 5
+        }
+      }
+    },
+    "typed_model_surfaces": {
+      "type": "object",
+      "required": [
+        "generic_type_system",
+        "protocol_existential_witness_model",
+        "ownership_memory_model",
+        "concurrency_usability_model",
+        "module_identity_visibility_model",
+        "interop_bridge_model",
+        "macro_metaprogramming_public_surface"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generic_type_system": { "$ref": "#/$defs/generic_type_system" },
+        "protocol_existential_witness_model": { "$ref": "#/$defs/protocol_existential_witness_model" },
+        "ownership_memory_model": { "$ref": "#/$defs/ownership_memory_model" },
+        "concurrency_usability_model": { "$ref": "#/$defs/concurrency_usability_model" },
+        "module_identity_visibility_model": { "$ref": "#/$defs/module_identity_visibility_model" },
+        "interop_bridge_model": { "$ref": "#/$defs/interop_bridge_model" },
+        "macro_metaprogramming_public_surface": { "$ref": "#/$defs/macro_metaprogramming_public_surface" }
+      }
+    },
+    "cross_issue_handoffs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/handoff" },
+      "minItems": 4
+    },
+    "unsupported_policy": {
+      "type": "object",
+      "required": [
+        "fallback_or_compatibility_shim_allowed",
+        "legacy_objc2_compatibility_claimed",
+        "higher_kinded_types_claimed",
+        "generic_collection_abi_claimed",
+        "swift_protocol_bridge_claimed",
+        "distributed_actors_claimed",
+        "swift_abi_import_claimed",
+        "cpp_template_import_claimed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fallback_or_compatibility_shim_allowed": { "const": false },
+        "legacy_objc2_compatibility_claimed": { "const": false },
+        "higher_kinded_types_claimed": { "const": false },
+        "generic_collection_abi_claimed": { "const": false },
+        "swift_protocol_bridge_claimed": { "const": false },
+        "distributed_actors_claimed": { "const": false },
+        "swift_abi_import_claimed": { "const": false },
+        "cpp_template_import_claimed": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "source_anchor": {
+      "type": "object",
+      "required": ["path", "tokens"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "tokens": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "surface_state": {
+      "enum": ["supported", "rejected", "reserved", "internal"]
+    },
+    "generic_type_system": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "type_parameters",
+        "specialization_policy",
+        "fail_closed_diagnostics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.language.generics.protocol-qualified-arguments" },
+        "type_parameters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/type_parameter" },
+          "minItems": 1
+        },
+        "specialization_policy": { "$ref": "#/$defs/specialization_policy" },
+        "fail_closed_diagnostics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      }
+    },
+    "type_parameter": {
+      "type": "object",
+      "required": [
+        "name",
+        "variance",
+        "bounds",
+        "canonical_constraint_key",
+        "public_state"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "variance": { "enum": ["invariant", "covariant", "contravariant"] },
+        "bounds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "canonical_constraint_key": { "type": "string", "minLength": 1 },
+        "public_state": { "$ref": "#/$defs/surface_state" }
+      }
+    },
+    "specialization_policy": {
+      "type": "object",
+      "required": [
+        "identity_key_fields",
+        "substitution_key_fields",
+        "runtime_metadata_required",
+        "monomorphization_required",
+        "unsupported_patterns"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "identity_key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "substitution_key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "runtime_metadata_required": { "const": true },
+        "monomorphization_required": { "type": "boolean" },
+        "unsupported_patterns": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      }
+    },
+    "protocol_existential_witness_model": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "existential_identity",
+        "witness_table",
+        "conformance_metadata",
+        "composition_policy",
+        "unsupported_semantics",
+        "fail_closed_diagnostics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.language.protocols.existential-witness-model" },
+        "existential_identity": { "$ref": "#/$defs/identity_policy" },
+        "witness_table": { "$ref": "#/$defs/witness_table" },
+        "conformance_metadata": { "$ref": "#/$defs/conformance_metadata" },
+        "composition_policy": { "$ref": "#/$defs/composition_policy" },
+        "unsupported_semantics": { "$ref": "#/$defs/protocol_unsupported_semantics" },
+        "fail_closed_diagnostics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      }
+    },
+    "identity_policy": {
+      "type": "object",
+      "required": ["canonical_spelling", "key_fields", "public_state"],
+      "additionalProperties": false,
+      "properties": {
+        "canonical_spelling": { "type": "string", "minLength": 1 },
+        "key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "public_state": { "$ref": "#/$defs/surface_state" }
+      }
+    },
+    "witness_table": {
+      "type": "object",
+      "required": [
+        "key_fields",
+        "requirement_resolution",
+        "runtime_lookup_anchor",
+        "associated_type_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "requirement_resolution": { "type": "string", "minLength": 1 },
+        "runtime_lookup_anchor": { "type": "string", "minLength": 1 },
+        "associated_type_policy": { "enum": ["rejected", "reserved"] }
+      }
+    },
+    "conformance_metadata": {
+      "type": "object",
+      "required": ["metadata_key", "runtime_record", "builder", "key_fields"],
+      "additionalProperties": false,
+      "properties": {
+        "metadata_key": { "const": "protocol-witness-conformance-metadata" },
+        "runtime_record": { "const": "ProtocolConformanceMatch" },
+        "builder": { "const": "BuildRuntimeProtocolExistentialWitnessMetadata" },
+        "key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        }
+      }
+    },
+    "composition_policy": {
+      "type": "object",
+      "required": ["duplicates", "unknown_protocols", "conflicting_requirements"],
+      "additionalProperties": false,
+      "properties": {
+        "duplicates": { "enum": ["rejected"] },
+        "unknown_protocols": { "enum": ["rejected"] },
+        "conflicting_requirements": { "enum": ["rejected"] }
+      }
+    },
+    "protocol_unsupported_semantics": {
+      "type": "object",
+      "required": ["associated_types", "dynamic_existential_dispatch"],
+      "additionalProperties": false,
+      "properties": {
+        "associated_types": { "$ref": "#/$defs/unsupported_semantic_policy" },
+        "dynamic_existential_dispatch": { "$ref": "#/$defs/unsupported_semantic_policy" }
+      }
+    },
+    "unsupported_semantic_policy": {
+      "type": "object",
+      "required": ["public_state", "diagnostic_code", "fixture"],
+      "additionalProperties": false,
+      "properties": {
+        "public_state": { "enum": ["rejected", "reserved"] },
+        "diagnostic_code": { "type": "string", "minLength": 1 },
+        "fixture": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ownership_memory_model": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "qualifier_flows",
+        "cleanup_paths",
+        "escape_analysis",
+        "runtime_result_contract"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.language.ownership-memory-model" },
+        "qualifier_flows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/qualifier_flow" },
+          "minItems": 4
+        },
+        "cleanup_paths": {
+          "type": "array",
+          "items": { "enum": ["normal", "error", "async", "interop"] },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "escape_analysis": { "$ref": "#/$defs/escape_analysis" },
+        "runtime_result_contract": { "type": "string", "minLength": 1 }
+      }
+    },
+    "qualifier_flow": {
+      "type": "object",
+      "required": ["qualifier", "transfer", "public_state"],
+      "additionalProperties": false,
+      "properties": {
+        "qualifier": { "enum": ["strong", "weak", "owned", "borrowed", "consumed", "unowned"] },
+        "transfer": { "enum": ["retain", "release", "autorelease", "borrow", "consume", "observe"] },
+        "public_state": { "$ref": "#/$defs/surface_state" }
+      }
+    },
+    "escape_analysis": {
+      "type": "object",
+      "required": ["borrowed_escape", "use_after_consume", "unsafe_async_crossing"],
+      "additionalProperties": false,
+      "properties": {
+        "borrowed_escape": { "enum": ["rejected"] },
+        "use_after_consume": { "enum": ["rejected"] },
+        "unsafe_async_crossing": { "enum": ["rejected"] }
+      }
+    },
+    "concurrency_usability_model": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "public_effects",
+        "executor_policy",
+        "actor_isolation",
+        "task_group_policy",
+        "continuation_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.language.concurrency.public-usability-model" },
+        "public_effects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/public_effect" },
+          "minItems": 5
+        },
+        "executor_policy": { "$ref": "#/$defs/executor_policy" },
+        "actor_isolation": { "$ref": "#/$defs/actor_isolation" },
+        "task_group_policy": { "$ref": "#/$defs/task_group_policy" },
+        "continuation_policy": { "$ref": "#/$defs/continuation_policy" }
+      }
+    },
+    "public_effect": {
+      "type": "object",
+      "required": ["effect", "public_state", "requires_diagnostic"],
+      "additionalProperties": false,
+      "properties": {
+        "effect": { "enum": ["async", "await", "actor", "executor", "task_group", "cancellation", "continuation"] },
+        "public_state": { "$ref": "#/$defs/surface_state" },
+        "requires_diagnostic": { "type": "boolean" }
+      }
+    },
+    "executor_policy": {
+      "type": "object",
+      "required": ["selection", "hop_required_for_cross_executor", "named_executor_policy"],
+      "additionalProperties": false,
+      "properties": {
+        "selection": { "enum": ["explicit-tagged-runtime-helper"] },
+        "hop_required_for_cross_executor": { "const": true },
+        "named_executor_policy": { "enum": ["supported", "reserved"] }
+      }
+    },
+    "actor_isolation": {
+      "type": "object",
+      "required": ["cross_actor_access", "sendability_boundary", "mailbox_runtime_anchor"],
+      "additionalProperties": false,
+      "properties": {
+        "cross_actor_access": { "enum": ["requires-await-or-diagnostic"] },
+        "sendability_boundary": { "const": true },
+        "mailbox_runtime_anchor": { "type": "string", "minLength": 1 }
+      }
+    },
+    "task_group_policy": {
+      "type": "object",
+      "required": ["cancellation_propagates", "wait_next_hops_executor"],
+      "additionalProperties": false,
+      "properties": {
+        "cancellation_propagates": { "const": true },
+        "wait_next_hops_executor": { "const": true }
+      }
+    },
+    "continuation_policy": {
+      "type": "object",
+      "required": ["double_resume", "stale_task_resume", "ownership_handoff"],
+      "additionalProperties": false,
+      "properties": {
+        "double_resume": { "enum": ["rejected"] },
+        "stale_task_resume": { "enum": ["rejected"] },
+        "ownership_handoff": { "enum": ["uses-ownership-memory-model"] }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "required": ["from_issue", "to_issue", "semantic_contract"],
+      "additionalProperties": false,
+      "properties": {
+        "from_issue": { "type": "integer" },
+        "to_issue": { "type": "integer" },
+        "semantic_contract": { "type": "string", "minLength": 1 }
+      }
+    },
+    "module_identity_visibility_model": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "module_identity_key_fields",
+        "visibility_policy",
+        "rebuild_policy",
+        "fail_closed_diagnostics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.modules.visibility-reexport-rebuild-contract" },
+        "module_identity_key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "visibility_policy": { "$ref": "#/$defs/module_visibility_policy" },
+        "rebuild_policy": { "$ref": "#/$defs/module_rebuild_policy" },
+        "fail_closed_diagnostics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      }
+    },
+    "module_visibility_policy": {
+      "type": "object",
+      "required": ["public_imports", "private_imports", "reexports", "hidden_import_access"],
+      "additionalProperties": false,
+      "properties": {
+        "public_imports": { "enum": ["exported-for-dependent-modules"] },
+        "private_imports": { "enum": ["module-local-only"] },
+        "reexports": { "enum": ["public-import-required"] },
+        "hidden_import_access": { "enum": ["rejected"] }
+      }
+    },
+    "module_rebuild_policy": {
+      "type": "object",
+      "required": ["deterministic", "identity_inputs", "invalidation_conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "deterministic": { "const": true },
+        "identity_inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "invalidation_conditions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 5,
+          "uniqueItems": true
+        }
+      }
+    },
+    "interop_bridge_model": {
+      "type": "object",
+      "required": [
+        "support_claim",
+        "lanes",
+        "foreign_type_contract_policy",
+        "unsupported_lane_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claim": { "const": "objc3c.behavior.runtime.interop.package-loader-bridge" },
+        "lanes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/interop_lane" },
+          "minItems": 4
+        },
+        "foreign_type_contract_policy": { "$ref": "#/$defs/foreign_type_contract_policy" },
+        "unsupported_lane_policy": { "$ref": "#/$defs/unsupported_lane_policy" }
+      }
+    },
+    "interop_lane": {
+      "type": "object",
+      "required": ["language", "surface_id", "public_state", "evidence_anchors"],
+      "additionalProperties": false,
+      "properties": {
+        "language": { "enum": ["c", "objc2", "swift", "cpp"] },
+        "surface_id": { "type": "string", "minLength": 1 },
+        "public_state": { "$ref": "#/$defs/surface_state" },
+        "evidence_anchors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "foreign_type_contract_policy": {
+      "type": "object",
+      "required": ["symbol_owner_required", "abi_alignment_required", "ownership_policy_required"],
+      "additionalProperties": false,
+      "properties": {
+        "symbol_owner_required": { "const": true },
+        "abi_alignment_required": { "const": true },
+        "ownership_policy_required": { "const": true }
+      }
+    },
+    "unsupported_lane_policy": {
+      "type": "object",
+      "required": ["swift_abi_import", "cpp_template_instantiation_import", "objc2_retired_source_syntax"],
+      "additionalProperties": false,
+      "properties": {
+        "swift_abi_import": { "enum": ["reserved"] },
+        "cpp_template_instantiation_import": { "enum": ["reserved"] },
+        "objc2_retired_source_syntax": { "enum": ["rejected"] }
+      }
+    },
+    "macro_metaprogramming_public_surface": {
+      "type": "object",
+      "required": [
+        "support_claims",
+        "public_command",
+        "contract_path",
+        "derive_model",
+        "macro_safety_model",
+        "artifact_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_claims": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "objc3c.behavior.language.metaprogramming.derive-expansion-inventory",
+              "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+            ]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "public_command": {
+          "const": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        "contract_path": {
+          "const": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json"
+        },
+        "derive_model": { "$ref": "#/$defs/macro_derive_model" },
+        "macro_safety_model": { "$ref": "#/$defs/macro_safety_model" },
+        "artifact_policy": { "$ref": "#/$defs/macro_artifact_policy" }
+      }
+    },
+    "macro_derive_model": {
+      "type": "object",
+      "required": ["supported_forms", "reserved_forms", "runtime_materialization"],
+      "additionalProperties": false,
+      "properties": {
+        "supported_forms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "reserved_forms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "runtime_materialization": { "enum": ["deferred"] }
+      }
+    },
+    "macro_safety_model": {
+      "type": "object",
+      "required": [
+        "required_metadata_fields",
+        "required_negative_case_ids",
+        "required_diagnostic_codes",
+        "denial_case_ids",
+        "fail_closed_before_expansion",
+        "arbitrary_host_execution_allowed",
+        "network_access_allowed",
+        "deterministic_replay_required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "required_metadata_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 6,
+          "uniqueItems": true
+        },
+        "required_negative_case_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "required_diagnostic_codes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "denial_case_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "fail_closed_before_expansion": { "const": true },
+        "arbitrary_host_execution_allowed": { "const": false },
+        "network_access_allowed": { "const": false },
+        "deterministic_replay_required": { "const": true }
+      }
+    },
+    "macro_artifact_policy": {
+      "type": "object",
+      "required": [
+        "generated_artifacts_are_support_authority",
+        "tmp_report_source_truth_allowed",
+        "third_party_macro_ecosystem_claimed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generated_artifacts_are_support_authority": { "const": false },
+        "tmp_report_source_truth_allowed": { "const": false },
+        "third_party_macro_ecosystem_claimed": { "const": false }
+      }
+    }
+  }
+}

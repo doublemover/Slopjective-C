@@ -20,6 +20,7 @@
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "scripts/objc3c_editor_tooling/workspace_index.py"
   ],
+  "product_workflow_source_truth": "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json",
   "package_bridge": "objc3c",
   "public_actions": [
     "materialize-playground-workspace",
@@ -31,6 +32,7 @@
     "inspect-runtime-inspector",
     "inspect-capability-explorer",
     "benchmark-runtime-inspector",
+    "trace-runtime-debug",
     "trace-compile-stages",
     "validate-developer-tooling",
     "validate-runnable-developer-tooling"
@@ -40,11 +42,13 @@
     "tmp/reports/objc3c-public-workflow/runtime-inspector.json",
     "tmp/reports/objc3c-public-workflow/capability-explorer.json",
     "tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json",
+    "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
     "tmp/reports/objc3c-public-workflow/compile-stage-trace.json",
     "tmp/reports/developer-tooling/integration-summary.json",
     "tmp/reports/developer-tooling/formatter-debug/formatter_debug_summary.json",
     "tmp/reports/developer-tooling/formatter-rewrite/formatter_rewrite_summary.json",
     "tmp/reports/developer-tooling/diagnostic-quality/diagnostic_quality_summary.json",
+    "tmp/reports/developer-tooling/product-workflow-summary.json",
     "tmp/reports/developer-tooling/workspace-integration-summary.json",
     "tmp/reports/runtime/runnable-developer-tooling-e2e/summary.json"
   ],
@@ -56,6 +60,7 @@
     "runtime-inspector",
     "capability-explorer",
     "runtime-inspector-benchmark",
+    "runtime-debug-trace",
     "compile-stage-trace",
     "language-server-capabilities",
     "symbol-navigation",
@@ -77,7 +82,7 @@
     "hosted-execution-without-llc-object-emission",
     "local-only-hosted-proof",
     "source-map-debug-info-stepping",
-    "references-rename-semantic-tokens-code-actions"
+    "references-rename-semantic-tokens-general-code-actions"
   ],
   "successor_issues": [
     "M325-B001",

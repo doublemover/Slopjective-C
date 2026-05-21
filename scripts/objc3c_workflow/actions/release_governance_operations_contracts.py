@@ -27,21 +27,21 @@ RELEASE_OPERATIONS_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
     ),
     ReleaseGovernanceActionContract(
         "build-update-manifest",
-        "derive the machine-owned update manifest from existing release, package-channel, and platform-support artifacts",
+        "derive the machine-owned update and release-channel manifests from existing release, package-channel, and platform-support artifacts",
         "python:scripts/build_objc3c_update_manifest.py",
         "release-operations",
         "repo",
-        "versioned channel metadata fails closed when required upstream artifacts are absent",
+        "versioned channel metadata and local provenance fail closed when required upstream artifacts are absent",
     ),
     ReleaseGovernanceActionContract(
         "publish-release-operations",
-        "publish the machine-owned upgrade-support report and channel catalog",
+        "publish the machine-owned upgrade-support report, channel catalog, and release-channel evidence",
         "python:scripts/publish_objc3c_release_operations_metadata.py",
         "release-operations",
         "repo",
         (
             "release-operations publication stays traceable to checked-in upgrade, "
-            "revert, diagnostics, and channel policy contracts"
+            "rollback, diagnostics, and channel policy contracts"
         ),
     ),
     ReleaseGovernanceActionContract(
@@ -51,7 +51,7 @@ RELEASE_OPERATIONS_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
         "release-operations",
         "nightly",
         (
-            "versioning, upgrade warnings, revert guidance, update metadata, and "
+            "versioning, upgrade warnings, rollback guidance, update metadata, channel manifests, and "
             "public action ownership stay executable on live release surfaces"
         ),
     ),
@@ -63,7 +63,7 @@ RELEASE_OPERATIONS_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
         "full",
         (
             "release-operations metadata stays coherent with live package-channel "
-            "artifacts and fail-closed revert paths"
+            "artifacts, local provenance, and fail-closed rollback paths"
         ),
     ),
 )

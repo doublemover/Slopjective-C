@@ -1,0 +1,11 @@
+module Obj3Next016SemaUnknownSymbolRecovery;
+
+fn known_value() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  return known_vaule();
+}
+
+// Expected diagnostic code(s): O3S203.

@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-22",
+  "title": "Reject associated-type declarations in public protocol existentials",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+    "native/objc3c/src/parse/objc3_parser_core_objc_interface_protocol_declarations_members.inc"
+  ],
+  "source": "// Expected diagnostic code(s): O3P100.\nmodule NegativeProtocolExistentialAssociatedTypeRejected;\n\n@protocol SequenceValue\nassociatedtype Element;\n- (id)next;\n@end\n\nfn consume(value: id<SequenceValue>*?) -> i32 {\n  let item = [value? next];\n  return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3P100",
+        "line": 5,
+        "column": 1
+      }
+    ]
+  }
+}

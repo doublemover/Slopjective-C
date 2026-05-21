@@ -46,6 +46,7 @@
     "contract_id",
     "lockfile_version",
     "workspace",
+    "package_manager",
     "packages",
     "dependencies",
     "provenance",
@@ -86,6 +87,7 @@
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",
+    "validate-package-manager-model",
     "package-runnable-toolchain",
     "validate-stdlib-program",
     "validate-runnable-stdlib-program",
@@ -95,6 +97,7 @@
   "claim_rules": [
     "dependency resolution starts from checked-in local package surfaces",
     "lockfiles must be deterministic and provenance-bearing before registry publication can be claimed",
+    "package manifests must carry strict Objective-C 3.0 language and ABI requirements before dependencies can resolve",
     "network-backed dependency resolution fails closed until represented by replayable evidence",
     "tmp outputs may contain generated locks and reports but may not become source authority"
   ],

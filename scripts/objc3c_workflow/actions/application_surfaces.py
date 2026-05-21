@@ -5,11 +5,13 @@ from __future__ import annotations
 from .application_architecture import (
     action_materialize_canonical_application_workspace,
     action_validate_application_architecture,
+    action_validate_application_framework_samples,
     action_validate_runnable_application_architecture,
 )
 from .application_conformance import (
     action_check_conformance_minima,
     action_validate_conformance_corpus,
+    action_validate_public_conformance_suite,
     action_validate_runnable_conformance_corpus,
 )
 from .application_showcase import (
@@ -31,11 +33,13 @@ from .application_stdlib import (
 )
 from .application_surface_paths import (
     APPLICATION_ARCHITECTURE_INTEGRATION_PY,
+    APPLICATION_FRAMEWORK_SAMPLES_PY,
     CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY,
     CONFORMANCE_CORPUS_INTEGRATION_PY,
     CONFORMANCE_MINIMA_PS1,
     GETTING_STARTED_INTEGRATION_PY,
     MATERIALIZE_STDLIB_PY,
+    PUBLIC_CONFORMANCE_SUITE_MANIFEST_PY,
     RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY,
     RUNNABLE_CONFORMANCE_CORPUS_E2E_PY,
     RUNNABLE_SHOWCASE_E2E_PY,

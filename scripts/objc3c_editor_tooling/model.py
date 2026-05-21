@@ -6,8 +6,11 @@ from typing import Any
 from format_objc3c_source import build_format_summary_for_source
 from objc3c_tooling.paths import display_path
 
+from objc3c_editor_tooling.artifact_inspector import build_artifact_inspector_payload
+from objc3c_editor_tooling.diagnostic_bridge import build_lsp_diagnostic_transport
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
 from objc3c_editor_tooling.paths import EditorToolingPaths
+from objc3c_editor_tooling.source_index import build_source_index
 from objc3c_editor_tooling.validation import diagnostics_entries
 from objc3c_editor_tooling.workspace_index import (
     build_workspace_index,
@@ -20,9 +23,11 @@ class EditorToolingModel:
     language_server: dict[str, Any]
     navigation: dict[str, Any]
     workspace_index: dict[str, Any]
+    artifact_inspector: dict[str, Any]
     formatter: dict[str, Any]
     formatted_source_text: str
     debug: dict[str, Any]
+    source_index: dict[str, Any]
     symbols: list[dict[str, Any]]
 
 
@@ -74,6 +79,10 @@ def build_language_server_payload(
     manifest_path_text: str | None,
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any] | None = None,
+    *,
+    source_path: str = "",
+    diagnostic_entries: list[Any] | None = None,
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest_available = bool(manifest_path_text)
     workspace_index_available = (
@@ -81,29 +90,40 @@ def build_language_server_payload(
         and workspace_index.get("available") is True
         and int(workspace_index.get("package_count", 0) or 0) > 1
     )
-    supported_capabilities = [
-        "publishDiagnostics",
-        "documentSymbol" if manifest_available else None,
-        "workspaceSymbol" if manifest_available and workspace_index_available else None,
-        "definition" if manifest_available and symbols else None,
-    ]
-    supported_capabilities = [capability for capability in supported_capabilities if capability is not None]
-    unpublished_capabilities = [
-        "references",
-        "rename",
-        "semanticTokens",
-        "codeAction",
-        "statementLevelStepping",
-    ]
+    diagnostic_transport = build_lsp_diagnostic_transport(
+        source_path,
+        diagnostic_entries or [],
+    )
+    code_action_available = int(diagnostic_transport["code_action_count"]) > 0
+    source_index_available = bool(source_index) and source_index.get("available") is True
+    hover_available = source_index_available and int(source_index.get("declaration_count", 0) or 0) > 0
+    capability_evidence = {
+        "publishDiagnostics": ["diagnostics-json"],
+        "documentSymbol": ["compile-manifest-declaration-coordinates"],
+        "workspaceSymbol": [
+            "compile-manifest-declaration-coordinates",
+            "workspace-semantic-index-guardrails",
+        ],
+        "definition": ["compile-manifest-declaration-coordinates"],
+        "hover": [
+            "compile-manifest-declaration-coordinates",
+            "source-derived-editor-index",
+        ],
+        "codeAction": ["diagnostics-json-fixits"],
+    }
     capability_statuses = {
         "publishDiagnostics": {
             "supported": True,
             "support_class": "authoritative",
             "evidence": "diagnostics-json",
+            "evidence_ids": capability_evidence["publishDiagnostics"],
+            "fail_closed": False,
         },
         "documentSymbol": {
             "supported": manifest_available,
             "support_class": "manifest-backed" if manifest_available else "fail-closed",
+            "evidence_ids": capability_evidence["documentSymbol"] if manifest_available else [],
+            "fail_closed": not manifest_available,
             "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
         },
         "workspaceSymbol": {
@@ -111,6 +131,10 @@ def build_language_server_payload(
             "support_class": "workspace-index-backed"
             if manifest_available and workspace_index_available
             else "fail-closed",
+            "evidence_ids": capability_evidence["workspaceSymbol"]
+            if manifest_available and workspace_index_available
+            else [],
+            "fail_closed": not (manifest_available and workspace_index_available),
             "unpublished_reason": ""
             if manifest_available and workspace_index_available
             else "disabled until compile emits manifest declarations and workspace package index guardrails pass",
@@ -118,39 +142,82 @@ def build_language_server_payload(
         "definition": {
             "supported": manifest_available and bool(symbols),
             "support_class": "manifest-backed" if manifest_available and symbols else "fail-closed",
+            "evidence_ids": capability_evidence["definition"] if manifest_available and symbols else [],
+            "fail_closed": not (manifest_available and bool(symbols)),
             "unpublished_reason": "" if manifest_available and symbols else "disabled until compile emits declaration coordinates",
+        },
+        "hover": {
+            "supported": hover_available,
+            "support_class": "source-index-backed" if hover_available else "fail-closed",
+            "evidence_ids": capability_evidence["hover"] if hover_available else [],
+            "fail_closed": not hover_available,
+            "unpublished_reason": ""
+            if hover_available
+            else "disabled until the source index has manifest-backed declarations",
         },
         "references": {
             "supported": False,
-            "support_class": "unpublished",
-            "unpublished_reason": "not published; use documentSymbol/workspaceSymbol and definition on compile-owned declarations",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "not published; lexical source references are indexed but no cross-module reference contract is published",
         },
         "rename": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; canonical compile graph has no rename contract yet",
         },
         "semanticTokens": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; no semantic token contract is emitted on the canonical toolchain path",
         },
         "codeAction": {
-            "supported": False,
-            "support_class": "unpublished",
-            "unpublished_reason": "not published; diagnostics remain actionable only through compile output and operator guidance",
+            "supported": code_action_available,
+            "support_class": "diagnostics-fixit-backed"
+            if code_action_available
+            else "fail-closed",
+            "evidence": "diagnostics-json-fixits" if code_action_available else "",
+            "evidence_ids": capability_evidence["codeAction"] if code_action_available else [],
+            "fail_closed": not code_action_available,
+            "unpublished_reason": ""
+            if code_action_available
+            else "disabled until diagnostics emit machine-applicable fix-its",
         },
         "statementLevelStepping": {
             "supported": False,
-            "support_class": "unpublished",
+            "support_class": "fail-closed-unpublished",
+            "evidence_ids": [],
+            "fail_closed": True,
             "unpublished_reason": "not published; statement stepping remains fail-closed pending line-table evidence",
         },
     }
+    supported_capabilities = [
+        capability_id
+        for capability_id, status in capability_statuses.items()
+        if status["supported"] is True
+    ]
+    unpublished_capabilities = [
+        capability_id
+        for capability_id, status in capability_statuses.items()
+        if status["supported"] is False
+    ]
     return {
         "contract_id": "objc3c.developer.tooling.language.server.capability.surface.v1",
         "summary_status_name": summary.get("observability", {}).get("status_name", ""),
         "manifest_backed_navigation": manifest_available,
         "workspace_index_backed_navigation": workspace_index_available,
+        "diagnostic_transport": diagnostic_transport,
+        "source_index_backed_hover": hover_available,
+        "source_index_digest": str(source_index.get("source_index_digest", "") or "")
+        if isinstance(source_index, dict)
+        else "",
+        "capability_evidence_roots": capability_evidence,
+        "publication_boundary": "only diagnostics, compile-owned declaration coordinates, source-index hover, workspace guardrails, and diagnostic fix-its publish positive LSP rows",
         "supported_capability_ids": supported_capabilities,
         "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
@@ -163,6 +230,7 @@ def build_navigation_payload(
     manifest_path_text: str | None,
     symbols: list[dict[str, Any]],
     workspace_index: dict[str, Any],
+    source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     document_symbols = document_symbol_records(source_display, module_name, symbols)
     workspace_symbols = [
@@ -179,6 +247,19 @@ def build_navigation_payload(
         }
         for record in document_symbols
     ]
+    source_index = source_index or {}
+    hover_targets = [
+        {
+            "name": declaration["symbol"],
+            "kind": declaration["kind"],
+            "contents": declaration["hover"]["contents"],
+            "target_uri": declaration["definition"]["target_uri"],
+            "target_range": declaration["definition"]["target_range"],
+            "target_compiler_range": declaration["definition"]["target_compiler_range"],
+        }
+        for declaration in source_index.get("declarations", [])
+        if isinstance(declaration, dict)
+    ]
     return {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
         "source_path": source_display,
@@ -190,6 +271,8 @@ def build_navigation_payload(
         "document_symbols": document_symbols,
         "workspace_symbols": workspace_symbols,
         "definition_targets": definition_targets,
+        "hover_targets": hover_targets,
+        "source_index": source_index,
         "workspace_index": workspace_index,
         "retired_route_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
     }
@@ -214,6 +297,9 @@ def build_debug_payload(
         for symbol in symbols
     ]
     supported = bool(object_path_text) or bool(declaration_breakpoints)
+    evidence_roots = ["compile-manifest-declaration-coordinates"] if declaration_breakpoints else []
+    if object_path_text and object_symbols:
+        evidence_roots.append("runtime-inspector-object-symbol-inventory")
     return {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": supported,
@@ -229,20 +315,51 @@ def build_debug_payload(
         "declaration_breakpoints": declaration_breakpoints,
         "object_section_inventory_command": object_sections,
         "object_symbol_inventory_command": object_symbols,
+        "runtime_debug_trace_command": "npm run objc3c -- trace-runtime-debug",
+        "runtime_debug_trace_path": "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
+        "runtime_debug_trace_schema": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+        "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
         "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
         "artifact_inspection_ready": bool(object_path_text and object_symbols),
+        "evidence_roots": evidence_roots,
+        "reserved_capability_rows": [
+            {
+                "capability_id": "statementLevelStepping",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "line-table evidence is not emitted on the canonical toolchain path",
+            },
+            {
+                "capability_id": "fullSourceMapPublication",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "full source-map metadata is not emitted on the canonical toolchain path",
+            },
+        ],
         "retired_route_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
     }
 
 
 def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingInputs) -> EditorToolingModel:
     symbols = extract_symbols(inputs.manifest)
+    diagnostic_entries = diagnostics_entries(inputs.diagnostics)
     module_name = str(inputs.manifest.get("module") or paths.source.path.stem)
+    summary_paths = inputs.summary.get("paths", {})
+    source_index = build_source_index(
+        source_path=paths.source.display_path,
+        module_name=module_name,
+        source_text=inputs.source_text,
+        manifest_path=inputs.manifest_path_text,
+        symbols=symbols,
+        diagnostics=diagnostic_entries,
+        artifact_paths=summary_paths if isinstance(summary_paths, dict) else {},
+    )
     workspace_index = build_workspace_index(
         paths.source.display_path,
         module_name,
         inputs.manifest_path_text,
         symbols,
+        source_index,
     )
     formatted_text, formatter = build_format_summary_for_source(
         paths.source.display_path,
@@ -255,6 +372,9 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             inputs.manifest_path_text,
             symbols,
             workspace_index,
+            source_path=paths.source.display_path,
+            diagnostic_entries=diagnostic_entries,
+            source_index=source_index,
         ),
         navigation=build_navigation_payload(
             paths.source.display_path,
@@ -262,11 +382,20 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             inputs.manifest_path_text,
             symbols,
             workspace_index,
+            source_index,
         ),
         workspace_index=workspace_index,
+        artifact_inspector=build_artifact_inspector_payload(
+            paths,
+            inputs,
+            symbols,
+            workspace_index,
+            source_index,
+        ),
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(inputs.summary, inputs.object_path_text, symbols),
+        source_index=source_index,
         symbols=symbols,
     )
 

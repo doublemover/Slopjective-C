@@ -1,0 +1,13 @@
+// Expected diagnostic code(s): O3S301.
+module NegativeLanguageSemanticsConflictingCaptureOwnership;
+
+fn helper(owner: id) -> i32 {
+  let closure = ^[weak owner, unowned owner] {
+    return owner;
+  };
+  return closure();
+}
+
+fn main() -> i32 {
+  return helper(11);
+}

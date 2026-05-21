@@ -112,6 +112,10 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
                 "debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
                 "declaration_breakpoint_anchor_count": 2,
                 "statement_level_stepping": False,
+                "runtime_debug_trace_command": "npm run objc3c -- trace-runtime-debug",
+                "runtime_debug_trace_path": "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
+                "runtime_debug_trace_schema": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+                "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
                 "object_symbol_inventory_command": "npm run objc3c -- inspect-runtime",
             },
         },
@@ -131,6 +135,7 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
         "format-objc3c",
         "rewrite-objc3c-source",
         "check-developer-diagnostic-quality",
+        "trace-runtime-debug",
         "trace-compile-stages",
         "validate-developer-tooling",
     ]
@@ -142,6 +147,15 @@ def test_playground_manifest_preserves_public_workspace_shape() -> None:
     assert payload["editor_tooling"]["workspace_package_count"] == 9
     assert payload["workspace_drill_commands"]["workspace_navigation_index"] == (
         "Get-Content -Raw 'tmp/reports/workspace-index.json'"
+    )
+    assert payload["workspace_drill_commands"]["runtime_debug_trace"] == (
+        "npm run objc3c -- trace-runtime-debug"
+    )
+    assert payload["editor_tooling"]["runtime_debug_trace_schema"] == (
+        "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+    )
+    assert payload["editor_tooling"]["runtime_debug_trace_model"] == (
+        "deterministic-runtime-inspector-and-editor-debug-artifact-trace"
     )
     assert payload["workspace_drill_commands"]["object_symbol_inventory"] == (
         "npm run objc3c -- inspect-runtime"

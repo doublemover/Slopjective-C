@@ -1,0 +1,116 @@
+{
+  "contract_id": "objc3c.application_framework_samples.dependency_evidence.v1",
+  "schema_version": 1,
+  "issue": 8178,
+  "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+  "source_root": "showcase/applicationFrameworkSamples",
+  "forbidden_dependency_prefixes": [
+    "hosted-registry:",
+    "package-manager:",
+    "network:"
+  ],
+  "clean_root_replay_policy": {
+    "artifact_root_must_be_removed_before_compile": true,
+    "stale_artifacts_allowed": false,
+    "generated_outputs_are_source_truth": false
+  },
+  "fail_closed_rules": [
+    {
+      "rule_id": "missing-workspace-dependency",
+      "diagnostic_id": "application-sample-workspace-dependency-missing",
+      "trigger": "a sample package dependency is absent from the checked workspace manifest",
+      "required_action": "update workspace.json before claiming the dependency",
+      "blocks_sample_claim": true
+    },
+    {
+      "rule_id": "missing-replay-dependency",
+      "diagnostic_id": "application-sample-replay-dependency-missing",
+      "trigger": "a sample package dependency is absent from replay-contract.json",
+      "required_action": "update replay-contract.json before claiming the dependency",
+      "blocks_sample_claim": true
+    },
+    {
+      "rule_id": "missing-source-dependency-evidence",
+      "diagnostic_id": "application-sample-source-dependency-evidence-missing",
+      "trigger": "a sample package dependency has no checked source term in main.objc3",
+      "required_action": "add a source-level use or remove the dependency claim",
+      "blocks_sample_claim": true
+    },
+    {
+      "rule_id": "unsupported-dependency-boundary",
+      "diagnostic_id": "application-sample-unsupported-dependency-boundary",
+      "trigger": "a sample dependency uses hosted registry, package-manager, or network package syntax",
+      "required_action": "keep application framework samples on checked-in stdlib or showcase-framework dependencies",
+      "blocks_sample_claim": true
+    }
+  ],
+  "sample_dependency_evidence": [
+    {
+      "sample_id": "routeModelKit",
+      "package_id": "showcase-framework:routeModelKit",
+      "dependencies": []
+    },
+    {
+      "sample_id": "interopAdapterKit",
+      "package_id": "showcase-framework:interopAdapterKit",
+      "dependencies": []
+    },
+    {
+      "sample_id": "workflowStdlibCLI",
+      "package_id": "showcase-framework:workflowStdlibCLI",
+      "dependencies": [
+        {
+          "package_id": "stdlib:objc3.core",
+          "relationship": "runtime-backed-stdlib-helper-use",
+          "source_terms": [
+            "objc3_runtime_stdlib_core_count_i32",
+            "objc3_runtime_stdlib_core_map_entry_value_or_i32"
+          ],
+          "requires_manifest_edge": true
+        },
+        {
+          "package_id": "showcase-framework:routeModelKit",
+          "relationship": "application-documents-local-library-dependency",
+          "source_terms": [
+            "extern fn route_model_keypath_token",
+            "route_model_keypath_token()"
+          ],
+          "requires_manifest_edge": true
+        }
+      ]
+    },
+    {
+      "sample_id": "asyncRuntimeConsole",
+      "package_id": "showcase-framework:asyncRuntimeConsole",
+      "dependencies": [
+        {
+          "package_id": "stdlib:objc3.concurrency",
+          "relationship": "runtime-backed-concurrency-helper-use",
+          "source_terms": [
+            "objc3_runtime_spawn_task_i32",
+            "objc3_runtime_executor_hop_i32"
+          ],
+          "requires_manifest_edge": true
+        },
+        {
+          "package_id": "showcase-framework:routeModelKit",
+          "relationship": "application-documents-local-library-dependency",
+          "source_terms": [
+            "extern fn route_model_keypath_token",
+            "route_model_keypath_token()"
+          ],
+          "requires_manifest_edge": true
+        },
+        {
+          "package_id": "showcase-framework:interopAdapterKit",
+          "relationship": "application-documents-interop-adapter-dependency",
+          "source_terms": [
+            "extern fn adapterMacroValue",
+            "adapterMacroValue()"
+          ],
+          "requires_manifest_edge": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 param(
   [string]$PackageRoot = "",
-  [string]$ManifestRelativePath = "artifacts/package/objc3c-runnable-toolchain-package.json"
+  [string]$ManifestRelativePath = "artifacts/package/objc3c-runnable-toolchain-package.json",
+  [int]$Parallelism = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,7 +27,8 @@ $staging = Invoke-RunnableToolchainPackageStaging `
   -RepoRoot $environment.RepoRoot `
   -PackageRoot $environment.PackageRoot `
   -ManifestPath $environment.ManifestPath `
-  -BuildScript $environment.BuildScript
+  -BuildScript $environment.BuildScript `
+  -Parallelism $Parallelism
 
 $manifestPayload = Write-RunnableToolchainPackageManifest `
   -RepoRoot $environment.RepoRoot `

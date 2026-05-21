@@ -42,5 +42,17 @@ TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
             "profiles stay explainable from generated suite reports"
         ),
     ),
+    "trace-runtime-debug": ActionSpec(
+        "trace-runtime-debug",
+        "compose runtime-inspector, compile-stage, and editor debug artifacts into a deterministic runtime debug trace report",
+        "python:scripts/build_objc3c_runtime_debug_trace.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "runtime debug traces stay structured, deterministic, and rooted in "
+            "the real runtime inspector, compile-stage trace, and editor debug "
+            "artifacts without publishing LLDB or statement-stepping claims"
+        ),
+        pass_through_args=True,
+    ),
     "trace-compile-stages": _dump_action_spec(COMPILE_STAGE_TRACE_DUMP),
 }

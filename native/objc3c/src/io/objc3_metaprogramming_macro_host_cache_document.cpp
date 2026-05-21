@@ -40,6 +40,14 @@ std::string BuildObjc3MetaprogrammingMacroHostProcessCacheArtifactDocumentJson(
   artifact.StringField("import_artifact_member_name",
                        inputs.import_artifact_member_name);
   artifact.StringField("artifact", inputs.artifact_relative_path);
+  artifact.StringField("generated_artifact_role",
+                       "metaprogramming-host-cache-provenance-only");
+  artifact.StringField("generated_artifact_owner",
+                       "objc3c-driver-metaprogramming-cache-publication");
+  artifact.StringField(
+      "generated_artifact_source_of_truth",
+      "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry");
+  artifact.BoolField("support_claim_authority", false);
   artifact.StringField("host_executable_relative_path",
                        inputs.host_executable_relative_path);
   artifact.StringField("cache_root_relative_path",

@@ -1,0 +1,46 @@
+{
+  "id": "OBJ3-NEXT-016-PARSE-RECOVERY-01",
+  "title": "Issue #8169 parser recovery keeps missing-semicolon rejection structured",
+  "feature": "structured parser diagnostics and recovery boundaries",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
+  ],
+  "source": "module Obj3Next016ParserMissingSemicolonRecovery;\n\nfn helper() -> i32 {\n  return 1;\n}\n\nfn main() -> i32 {\n  let value = helper();\n  value = value + 1\n  return value;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3P104",
+        "severity": "error",
+        "phase": "parse",
+        "category": "parsing",
+        "span": {
+          "start": { "line": 10, "column": 3 },
+          "end": { "line": 10, "column": 9 }
+        },
+        "message": "missing ';' after assignment",
+        "explanation": "The parser reports the missing statement terminator at the next statement boundary and keeps recovery fail-closed.",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 9, "column": 20 },
+              "end": { "line": 9, "column": 20 }
+            },
+            "replacement": ";"
+          }
+        ],
+        "recovery": {
+          "strategy": "parser-statement-boundary-synchronization",
+          "boundary": "next statement token",
+          "deterministic": true,
+          "accepts_invalid_program": false,
+          "recovery_counts_as_success": false,
+          "native_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3",
+          "expected_native_code": "O3P104"
+        }
+      }
+    ]
+  }
+}

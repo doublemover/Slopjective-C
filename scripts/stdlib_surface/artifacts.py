@@ -12,6 +12,15 @@ from check_stdlib_surface_model import CanonicalModuleSurface, PackageImportSurf
 _DECLARATION_NAME_RE = re.compile(
     r"^\s*(?:extern\s+fn|async\s+fn|fn|let)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
 )
+_SOURCE_EXTERN_RE = re.compile(
+    r"^extern fn (?P<name>[A-Za-z_][A-Za-z0-9_]*)\((?P<params>.*)\) -> i32$"
+)
+_C_RUNTIME_ABI_RE = re.compile(
+    r"\bint\s+(?P<name>objc3_runtime_[A-Za-z0-9_]+)\s*\((?P<params>[^)]*)\)\s*;"
+)
+_STDLIB_RUNTIME_PREFIX_RE = re.compile(
+    r"^objc3_runtime_stdlib_(?P<family>[a-z0-9]+)_"
+)
 
 
 def _normalize_signature_line(line: str) -> str | None:
@@ -39,6 +48,116 @@ def extract_stdlib_abi_signatures(source_text: str) -> dict[str, str]:
             continue
         signatures[match.group("name")] = signature
     return signatures
+
+
+def _source_extern_signature_to_c(signature: str) -> str | None:
+    match = _SOURCE_EXTERN_RE.match(signature)
+    if match is None:
+        return None
+    raw_params = match.group("params").strip()
+    if not raw_params:
+        return f"int {match.group('name')}(void)"
+    c_params: list[str] = []
+    for raw_param in raw_params.split(","):
+        pieces = raw_param.strip().split(":")
+        if len(pieces) != 2:
+            return None
+        param_name = pieces[0].strip()
+        param_type = pieces[1].strip()
+        if not param_name or param_type != "i32":
+            return None
+        c_params.append(f"int {param_name}")
+    return f"int {match.group('name')}({', '.join(c_params)})"
+
+
+def _extract_runtime_c_abi_signatures(header_text: str) -> dict[str, str]:
+    normalized_text = " ".join(header_text.split())
+    signatures: dict[str, str] = {}
+    for match in _C_RUNTIME_ABI_RE.finditer(normalized_text):
+        raw_params = " ".join(match.group("params").split())
+        params = "void" if raw_params == "void" else raw_params
+        signatures[match.group("name")] = f"int {match.group('name')}({params})"
+    return signatures
+
+
+def _stdlib_runtime_contract_header_for_symbol(root: Path, symbol_name: str) -> Path | None:
+    match = _STDLIB_RUNTIME_PREFIX_RE.match(symbol_name)
+    if match is None:
+        return None
+    return (
+        root
+        / "native"
+        / "objc3c"
+        / "src"
+        / "runtime"
+        / "stdlib"
+        / f"{match.group('family')}_runtime_contract.h"
+    )
+
+
+def _validate_runtime_contract_headers(
+    *,
+    root: Path,
+    module_name: str,
+    runtime_abi: list[str],
+    source_signatures: dict[str, str],
+) -> str | None:
+    contract_headers = {
+        header_path
+        for runtime_symbol in runtime_abi
+        if (header_path := _stdlib_runtime_contract_header_for_symbol(root, runtime_symbol))
+        is not None
+    }
+    if not contract_headers:
+        return None
+
+    public_umbrella = (
+        root / "native" / "objc3c" / "src" / "runtime" / "public" / "objc3_runtime_api.h"
+    )
+    if public_umbrella.is_file():
+        public_umbrella_text = public_umbrella.read_text(encoding="utf-8")
+    else:
+        public_umbrella_text = ""
+
+    header_signatures: dict[str, str] = {}
+    for header_path in sorted(contract_headers):
+        if not header_path.is_file():
+            return (
+                "module runtime ABI contract header missing for "
+                f"{module_name}: {header_path.relative_to(root).as_posix()}"
+            )
+        include_path = header_path.relative_to(root / "native" / "objc3c" / "src").as_posix()
+        if public_umbrella_text and f'#include "{include_path}"' not in public_umbrella_text:
+            return (
+                "module runtime ABI contract header is not public for "
+                f"{module_name}: {include_path}"
+            )
+        header_signatures.update(
+            _extract_runtime_c_abi_signatures(header_path.read_text(encoding="utf-8"))
+        )
+
+    for runtime_symbol in runtime_abi:
+        if _stdlib_runtime_contract_header_for_symbol(root, runtime_symbol) is None:
+            continue
+        source_signature = source_signatures.get(runtime_symbol)
+        expected_c_signature = (
+            _source_extern_signature_to_c(source_signature)
+            if source_signature is not None
+            else None
+        )
+        if expected_c_signature is None:
+            return (
+                "module runtime ABI source signature is not C-contract comparable "
+                f"for {module_name}.{runtime_symbol}"
+            )
+        observed_c_signature = header_signatures.get(runtime_symbol)
+        if observed_c_signature != expected_c_signature:
+            return (
+                "module runtime contract header signature drifted for "
+                f"{module_name}.{runtime_symbol}: expected {expected_c_signature!r}, "
+                f"observed {observed_c_signature!r}"
+            )
+    return None
 
 
 def _validate_signature_manifest(
@@ -161,4 +280,12 @@ def validate_module_artifacts(
             )
             if runtime_signature_error is not None:
                 return runtime_signature_error
+            runtime_contract_error = _validate_runtime_contract_headers(
+                root=root,
+                module_name=module_surface.module,
+                runtime_abi=runtime_abi,
+                source_signatures=source_signatures,
+            )
+            if runtime_contract_error is not None:
+                return runtime_contract_error
     return None

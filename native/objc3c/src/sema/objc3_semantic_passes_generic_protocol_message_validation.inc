@@ -19,6 +19,8 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
 
 #include "sema/objc3_semantic_passes_generic_protocol_message_validation_block_captures.inc"
 
+#include "sema/objc3_semantic_passes_generic_function_call_substitution.inc"
+
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
                                      const std::unordered_map<std::string, ValueType> &globals,
                                      const std::unordered_map<std::string, FunctionInfo> &functions,

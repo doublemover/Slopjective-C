@@ -596,14 +596,12 @@
       "id": "runtime.object-model.interface-method-table",
       "title": "Object-model interface method table",
       "state": "implemented",
-      "summary": "The canonical runtime object-model fixture proves interface method table publication, while runtime acceptance surfaces cover private class graph, category attachment, and protocol conformance queries. The broader realization claim and any public reflection surface remain reserved.",
+      "summary": "The canonical runtime fixture proves interface method table publication for declared and implemented methods. Class graph, category/protocol, property/ivar, and replay behavior are claimed only by their sibling rows.",
       "support_claims": [
         "objc3c.behavior.runtime.object-model-interface-method-table"
       ],
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
-        "native/objc3c/src/runtime/classes/category_attachment.cpp",
-        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
         "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
       ],
       "evidence": [
@@ -613,29 +611,8 @@
           "command": "npm run objc3c -- test-behavior-matrix"
         },
         {
-          "kind": "test",
-          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
-          "command": "npm run objc3c -- test-runtime-acceptance-fast"
-        },
-        {
-          "kind": "test",
-          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py"
-        },
-        {
-          "kind": "test",
-          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
-        },
-        {
           "kind": "source",
           "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
-        },
-        {
-          "kind": "source",
-          "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
-        },
-        {
-          "kind": "source",
-          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
         },
         {
           "kind": "source",
@@ -644,10 +621,251 @@
       ]
     },
     {
+      "id": "runtime.object-model.class-realization",
+      "title": "Class and metaclass graph",
+      "state": "implemented",
+      "summary": "Runtime class and metaclass nodes are ordered, realized, snapshotted, and queried from the live registration graph with fail-closed superclass and root-class checks.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-class-realization"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/metaclass_graph.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/class_realization_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/metaclass_graph.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.category-protocol-registration",
+      "title": "Category and protocol registration",
+      "state": "implemented",
+      "summary": "Category attachment and protocol conformance registration are deterministic runtime behaviors with positive probe coverage and strict rejection for unknown owners, duplicate requirements, and malformed metadata.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-category-protocol-registration"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/category_attachment.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/category_attachment.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.property-ivar-reflection",
+      "title": "Property and ivar reflection",
+      "state": "implemented",
+      "summary": "Property accessors, ivar layout, ownership profiles, and private reflection snapshots are derived from realized runtime storage and reflection owners.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-property-ivar-reflection"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp",
+        "native/objc3c/src/runtime/storage/property_lookup.cpp",
+        "native/objc3c/src/runtime/storage/property_value_storage.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
+          "command": "npm run objc3c -- validate-storage-reflection-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/property_layout_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.registration-replay",
+      "title": "Registration reset and replay",
+      "state": "implemented",
+      "summary": "Ordered image registration, reset, replay, and cache rebinding preserve realized class, category, protocol, property, and ivar descriptor state across the live runtime workflow.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-registration-replay"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/images/registration_api.cpp",
+        "native/objc3c/src/runtime/images/registration_snapshots.cpp",
+        "native/objc3c/src/runtime/state/runtime_live_state_reset.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/registration_replay_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_object_model_conformance.py",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/registration_replay_cases/assertions.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/registration_reset_replay_runtime_entrypoints.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/state/runtime_live_state_reset.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.bounded-query-snapshots",
+      "title": "Bounded query snapshots",
+      "state": "implemented",
+      "summary": "Testing-only query snapshots expose bounded class, protocol, selector, dispatch-cache, property, and ivar state derived from the same realized runtime graph without claiming debugger-grade public reflection.",
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model-bounded-query-snapshots"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_implementation.py",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_abi.py"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_surface_query_reflection.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+        }
+      ]
+    },
+    {
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "Parser, semantic, metadata, and owner-module evidence exists for object-model surfaces, but full live class, protocol, category, property, ivar, and reflection runtime behavior remains unclaimed until implemented rows carry executable evidence.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, and bounded query snapshots; debugger-grade public reflection ABI remains reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -666,6 +884,947 @@
         {
           "kind": "doc",
           "path": "docs/runbooks/objc3c_object_model_closure.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_capability_public_split.py"
+        }
+      ]
+    },
+    {
+      "id": "language.protocols.protocol-qualified-existential-value-flow",
+      "title": "Protocol-qualified existential value flow",
+      "state": "implemented",
+      "summary": "Protocol-qualified value flow now includes required/optional member lookup, nullable flow, comma-style multi-protocol composition, semantic diagnostics, cross-module protocol metadata preservation, and runtime witness/conformance metadata evidence. Associated types, dynamic existential invocation dispatch, ampersand-style composition syntax, and cross-module existential invocation ABI remain unclaimed.",
+      "support_claims": [
+        "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc",
+        "native/objc3c/src/sema/objc3_semantic_protocol_composition_parser.cpp",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_type_system_protocol_contract_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-01.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-18.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-25.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-07.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-22.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-21.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_message_send_protocol_qualified.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_protocol.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.protocols.existential-witness-model",
+      "title": "Protocol existential witness model",
+      "state": "implemented",
+      "summary": "Public protocol existential contracts expose deterministic witness/conformance metadata over id<Protocol> values through ProtocolConformanceMatch, the runtime witness metadata builder, conformance-query snapshots, and the language-semantics runtime API. Associated types and dynamic existential invocation dispatch remain rejected with canonical diagnostics.",
+      "support_claims": [
+        "objc3c.behavior.language.protocols.existential-witness-model"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/model/language_semantics_public_model.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.h",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/language_semantics_public_model/public_language_semantics_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-22.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_dynamic_dispatch_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-21.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/model/language_semantics_public_model.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.protocol-qualified-arguments",
+      "title": "Protocol-qualified generic arguments",
+      "state": "implemented",
+      "summary": "The public generic subset validates protocol-qualified type arguments and constrained calls through typed semantic fixtures, stable O3 diagnostics, and canonical type semantic conformance rows.",
+      "support_claims": [
+        "objc3c.behavior.language.generics.protocol-qualified-arguments"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/ir/objc3_ir_type_model.cpp",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-15.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.callable-type-parameters",
+      "title": "Generic callable type parameters",
+      "state": "implemented",
+      "summary": "Generic methods and functions are claimed for checked-in receiver substitution and bounded identity-call fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns.",
+      "support_claims": [
+        "objc3c.behavior.language.generics.callable-type-parameters"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp",
+        "native/objc3c/src/ir/objc3_ir_type_model.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-23.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-24.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_constraint_violation.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.variance-specialization",
+      "title": "Generic variance and specialization policy",
+      "state": "implemented",
+      "summary": "Generic variance and specialization are claimed for the checked-in invariant, nested, and substitution cases with O3S206/O3S216 rejection coverage for unsupported substitutions.",
+      "support_claims": [
+        "objc3c.behavior.language.generics.variance-specialization"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/ir/objc3_ir_type_model.cpp",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-12.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-13.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_type_model.cpp"
+        }
+      ]
+    },
+    {
+      "id": "modules.public-import-lookup",
+      "title": "Public cross-module import lookup",
+      "state": "implemented",
+      "summary": "The current module-import support claim is limited to public import lookup and symbol access through checked-in provider/consumer fixtures, module-roundtrip conformance rows, and duplicate-module rejection evidence.",
+      "support_claims": [
+        "objc3c.behavior.modules.public-import-lookup"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.cpp",
+        "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h",
+        "native/objc3c/src/io/objc3_cross_module_imported_modules_document.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/module_import_lookup_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/module_roundtrip/MOD-53-01.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/module_roundtrip/MOD-53-02.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
+        }
+      ]
+    },
+    {
+      "id": "modules.visibility-reexport-rebuild-contract",
+      "title": "Module visibility and rebuild contract",
+      "state": "implemented",
+      "summary": "The module system publishes a checked import visibility, public reexport, dependency-graph diagnostic, ABI/version identity, bridge metadata, and deterministic rebuild replay contract for the FoundationNext visibility bridge slice. This row is limited to the checked contract and does not claim network package resolution, dynamic plugins, Swift ABI acceptance, C++ template import, or Objective-C 2.0 source compatibility.",
+      "support_claims": [
+        "objc3c.behavior.modules.visibility-reexport-rebuild-contract"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h",
+        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "scripts/check_objc3c_module_interop_contracts.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
+          "command": "npm run objc3c -- validate-module-interop-contracts"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_module_interop_contracts.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_unsafe_mixed_image.objc3"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-module-interop-contract-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_module_interop_contracts.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+        }
+      ]
+    },
+    {
+      "id": "runtime.modules.imported-runtime-packaging-replay",
+      "title": "Imported runtime packaging replay",
+      "state": "implemented",
+      "summary": "Cross-module runtime replay support is claimed for imported runtime package preservation, runtime packaging provider/consumer fixtures, import execution probes, and fail-closed replay proof rejection without claiming registry or plugin loading behavior.",
+      "support_claims": [
+        "objc3c.behavior.runtime.modules.imported-runtime-packaging-replay"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/runtime_import_preservation.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation_readiness.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/artifacts/objc3_frontend_runtime_import_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+          "command": "npm run objc3c -- validate-interop-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_preservation.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_runtime_import_surface.h"
+        }
+      ]
+    },
+    {
+      "id": "runtime.generics.cross-module-metadata",
+      "title": "Cross-module generic metadata replay",
+      "state": "implemented",
+      "summary": "Cross-module generic metadata is claimed for deterministic type identity preservation through runtime import artifacts and checked-in replay manifests, without claiming a broad generic collection ABI.",
+      "support_claims": [
+        "objc3c.behavior.runtime.generics.cross-module-metadata"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_runtime_import_imported_semantic_rules.cpp",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_input.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/semantic/TYP-8013-17.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/objc3c/validation_generic_metadata_abi_contract/replay_run_1/module.manifest.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/objc3c/validation_lightweight_generics_constraints_contract/replay_run_1/module.manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_type_system_preservation_generic.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.string-view-runtime-shape",
+      "title": "Runtime-backed objc3.text UTF-8 record shape",
+      "state": "implemented",
+      "summary": "The objc3.text module publishes runtime-owned UTF-8 text record helpers for literal metadata, owned UTF-8 storage byte retrieval, unit counts, validity checks, prefix clamping, concatenation, and fail-closed status reporting. Source-language text operations beyond decoded literal storage lowering, Unicode scalar iteration, normalization, formatting, interpolation, and NSString bridging remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.string-view-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.text.byte-span-runtime-shape",
+      "title": "Runtime-backed objc3.text byte-count shape",
+      "state": "implemented",
+      "summary": "The objc3.text module exposes byte-count, byte-at-or, and prefix helpers over runtime-owned UTF-8 text records with explicit invalid-handle, unavailable-storage, out-of-bounds, and invalid-shape status reporting. In-place mutable byte buffer ownership, encoding conversion, mutation, iteration protocols, and Foundation NSData bridging remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.text.byte-span-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.text/module.json",
+        "stdlib/modules/objc3.text/module.objc3",
+        "stdlib/modules/objc3.text/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.text/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "language.text.source-string-literal-text-shape-handle",
+      "title": "Source string literal Text shape handles",
+      "state": "implemented",
+      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Source-level mutation, interpolation, formatting, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.",
+      "support_claims": [
+        "objc3c.behavior.language.text.source-string-literal-text-shape-handle"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/lex/objc3_lexer_char_class.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc",
+        "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc",
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc",
+        "native/objc3c/src/ast/objc3_ast_expr_kind_members.h",
+        "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h",
+        "native/objc3c/src/ast/objc3_ast_value_type.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+          "command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.exitcode.txt"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_invalid_escape_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_literal_interpolation_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_source_string_literal_text_support.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/objc3_lexer_char_class.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_value_type.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.array-slice-runtime-shape",
+      "title": "Runtime-backed objc3.collections array and slice shape",
+      "state": "implemented",
+      "summary": "The objc3.collections module publishes runtime-owned concrete i32 array records, slice records, and deterministic array/slice iterators with count, get-or, prefix-count, range, end-of-iteration, and fail-closed status behavior. Array literals, generic element typing, arbitrary-length storage, mutation, and syntax-level for-in integration remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.array-slice-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.array-aggregate-runtime-shape",
+      "title": "Runtime-backed objc3.collections array aggregate shape",
+      "state": "implemented",
+      "summary": "The objc3.collections module publishes a checked concrete i32 array sum helper that aggregates runtime-owned array records through the runtime ABI and fails closed for invalid handles or i32 overflow. Generic reduce callbacks, arbitrary-length storage, array literals, mutation, and syntax-level for-in integration remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.map-entry-runtime-shape",
+      "title": "Runtime-backed objc3.collections map-entry shape",
+      "state": "implemented",
+      "summary": "The objc3.collections module publishes runtime-owned i32 map records with insert/update mutation, count, contains, lookup-or, and fail-closed missing-key/status behavior. Dictionary literals, generic key/value typing, non-i32 hashing, map iteration, and Foundation bridging remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.map-entry-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.collections.set-iteration-runtime-shape",
+      "title": "Runtime-backed objc3.collections set and iteration shape",
+      "state": "implemented",
+      "summary": "The objc3.collections module publishes runtime-owned concrete i32 set records with deduplicated insertion-order storage, contains, insert, deterministic set iterators, and fail-closed missing-value, invalid-count, and mutation-during-iteration status behavior. Set literals, generic element typing, deletion, and syntax-level for-in integration remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.collections/module.json",
+        "stdlib/modules/objc3.collections/module.objc3",
+        "stdlib/modules/objc3.collections/smoke.objc3",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-fast"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_collections_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.collections/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
         }
       ]
     },
@@ -724,15 +1883,908 @@
       ]
     },
     {
+      "id": "stdlib.concurrency.runtime-backed-v1",
+      "title": "Runtime-backed concurrency stdlib v1",
+      "state": "implemented",
+      "summary": "The objc3.concurrency v1 helper tokens are backed by the checked-in task, cancellation, executor-hop, and actor-mailbox runtime helper boundary. This row does not claim generic Task ABI completeness, scheduler fairness guarantees, distributed actors, or broad async language closure.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency-runtime-v1"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/advanced_helper_package_surface.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+        "native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py",
+          "command": "npm run objc3c -- validate-runnable-stdlib-advanced"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/advanced_architecture.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/advanced_helper_package_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.concurrency.public-task-spawn-api",
+      "title": "Public task spawn API",
+      "state": "implemented",
+      "summary": "objc3.concurrency exposes public task spawn, child spawn, detached spawn, and join entrypoints as stable APIs over the checked runtime task lifecycle helper boundary. This row does not claim generic Task ABI completeness, scheduler fairness, distributed actors, or Swift concurrency ABI compatibility.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency.public-task-spawn-api"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/modules/objc3.concurrency/smoke.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/stability_policy.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "title": "Public task-group and cancellation API",
+      "state": "implemented",
+      "summary": "objc3.concurrency exposes public task-group and cancellation entrypoints backed by deterministic task-group scope/add/wait/cancel and cancellation observation helpers. This row stays bounded to the checked helper cluster and does not claim arbitrary typed task groups or broad scheduler propagation.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/modules/objc3.concurrency/smoke.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/stability_policy.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.concurrency.public-executor-hop-api",
+      "title": "Public executor-hop API",
+      "state": "implemented",
+      "summary": "objc3.concurrency exposes a public executor-hop entrypoint backed by the runtime executor hop helper with distinct value and executor-tag operands. This row does not claim OS scheduler integration, fairness, or priority inheritance.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency.public-executor-hop-api"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/modules/objc3.concurrency/smoke.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/stability_policy.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "stdlib.concurrency.public-actor-mailbox-api",
+      "title": "Public actor mailbox API",
+      "state": "implemented",
+      "summary": "objc3.concurrency exposes a public actor mailbox send-and-drain entrypoint backed by bind, enqueue, and drain runtime helpers. This row does not claim distributed actors, cross-process mailboxes, or Swift actor ABI compatibility.",
+      "support_claims": [
+        "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api"
+      ],
+      "owner_modules": [
+        "stdlib/modules/objc3.concurrency/module.json",
+        "stdlib/modules/objc3.concurrency/module.objc3",
+        "stdlib/modules/objc3.concurrency/smoke.objc3",
+        "stdlib/advanced_architecture.json",
+        "stdlib/stability_policy.json",
+        "stdlib/semantic_policy.json",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+          "command": "npm run objc3c -- test-execution-replay"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/stdlib_concurrency_runtime_probe.cpp",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+          "command": "npm run objc3c -- test-runtime-acceptance-concurrency"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.json"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/module.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "stdlib/semantic_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "language.ownership.memory-model",
+      "title": "Ownership and memory model groundwork",
+      "state": "implemented",
+      "summary": "The current ownership-memory model claim is limited to checked-in borrowed/retainable ABI, consumed retainable-family local invalidation, borrowed escape analysis, ARC cleanup/autoreleasepool, sema strong id, lowering ownership, weak/autoreleasepool runtime probe, and block owned-capture lifetime evidence. Unsupported ARC ownership qualifiers remain rejected until the language model widens.",
+      "support_claims": [
+        "objc3c.behavior.language.ownership-memory-model"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_arc_ownership_checks.inc",
+        "native/objc3c/src/lower/contracts/lowering_arc_contracts.h",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/memory/autorelease_pool.cpp",
+        "native/objc3c/src/runtime/storage/weak_slot_registry.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/ownership_memory_model/support_claim_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/ownership_concurrency/async_arc_executor_boundary_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/arc_autoreleasepool_nested_drain_order_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/ownership/strong_id_assignment.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/ownership/retainable_consumed_reassignment.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/memory/arc.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.blocks.escape-capture-legality",
+      "title": "Escaping block capture legality",
+      "state": "implemented",
+      "summary": "Escaping block capture legality is a public semantic claim with explicit retainable-family, byref, and capture-list rejection evidence before runtime helper lowering.",
+      "support_claims": [
+        "objc3c.behavior.language.blocks.escape-capture-legality"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_blocks.inc",
+        "native/objc3c/src/runtime/blocks/block_capture_storage.cpp",
+        "native/objc3c/src/runtime/blocks/block_pointer_capture_storage.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-block-arc"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_body_validation_core_blocks.inc"
+        }
+      ]
+    },
+    {
+      "id": "runtime.blocks.copy-dispose-invoke",
+      "title": "Block copy, dispose, and invoke runtime helpers",
+      "state": "implemented",
+      "summary": "Block runtime helper support is claimed for executable copy, dispose, lifetime, and invoke-thunk behavior with stale-handle and conflicting-capture rejection evidence.",
+      "support_claims": [
+        "objc3c.behavior.runtime.blocks.copy-dispose-invoke"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/blocks/block_invocation.cpp",
+        "native/objc3c/src/runtime/blocks/block_promotion.cpp",
+        "native/objc3c/src/runtime/blocks/block_lifetime.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-block-arc"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/blocks/block_invocation.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/blocks/block_promotion.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.blocks.byref-forwarding",
+      "title": "Block byref forwarding cells",
+      "state": "implemented",
+      "summary": "Byref capture forwarding is claimed for heap-promoted shared cells, copy/dispose forwarding, and malformed explicit byref capture rejection.",
+      "support_claims": [
+        "objc3c.behavior.runtime.blocks.byref-forwarding"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/blocks/block_byref_cells.cpp",
+        "native/objc3c/src/runtime/blocks/block_pointer_capture_cells.h",
+        "native/objc3c/src/runtime/blocks/block_promotion_plan.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance-block-arc"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/negative/byref_capture_missing_identifier.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/blocks/block_byref_cells.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.errors.live-bridge-cleanup",
+      "title": "Live error bridge cleanup",
+      "state": "implemented",
+      "summary": "Live NSError/status bridge cleanup is claimed for executable throw propagation, ARC cleanup interaction, and bridge helper state cleanup without claiming generalized foreign exception ABI.",
+      "support_claims": [
+        "objc3c.behavior.runtime.error-live-bridge-cleanup"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/errors/error_bridge_operations.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_catch_operations.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_state.cpp",
+        "native/objc3c/src/runtime/errors/catch_filter.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+          "command": "npm run objc3c -- validate-error-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_error_runtime_integration_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_catch_operations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.concurrency.task-continuation-lifecycle",
+      "title": "Task continuation lifecycle runtime",
+      "state": "implemented",
+      "summary": "Task continuation lifecycle support is claimed for live continuation helpers, task scheduler/executor integration, cancellation hardening, and strict rejected task-runtime misuse.",
+      "support_claims": [
+        "objc3c.behavior.runtime.concurrency-task-continuation-lifecycle"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/concurrency/continuation_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/continuation_resume_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/task_state.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+          "command": "npm run objc3c -- validate-concurrency-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/continuation_runtime_helper_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/continuation_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.concurrency.actor-mailbox-isolation",
+      "title": "Actor mailbox isolation runtime",
+      "state": "implemented",
+      "summary": "Actor mailbox runtime support is claimed for live mailbox execution, executor contracts, actor isolation enforcement, and non-sendable/illegal-hop rejection evidence.",
+      "support_claims": [
+        "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_guard_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/executor.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+          "command": "npm run objc3c -- validate-concurrency-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_isolation_operations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.metaprogramming.property-behavior-semantics",
+      "title": "Property behavior semantic materialization",
+      "state": "implemented",
+      "summary": "Property behavior support is claimed for legal behavior materialization, runtime semantic modeling, synthesized accessor evidence, and unsupported/non-object/protocol/projected-writable rejection.",
+      "support_claims": [
+        "objc3c.behavior.language.metaprogramming.property-behavior-semantics"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_macro_property_summaries.inc",
+        "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc",
+        "native/objc3c/src/ir/objc3_ir_frontend_metadata_metaprogramming_property_behavior_model.h"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/synthesized_accessor_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_semantic_json_property_behavior.inc"
+        }
+      ]
+    },
+    {
+      "id": "language.metaprogramming.derive-expansion-inventory",
+      "title": "Derive expansion inventory",
+      "state": "implemented",
+      "summary": "The public metaprogramming surface publishes a checked derive expansion inventory for Equality, Hash, and DebugDescription forms, including selector binding, positive native fixtures, and fail-closed unsupported/category/conflict diagnostics. This row does not claim arbitrary macro expansion or third-party macro ecosystem compatibility.",
+      "support_claims": [
+        "objc3c.behavior.language.metaprogramming.derive-expansion-inventory"
+      ],
+      "owner_modules": [
+        "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        "scripts/check_objc3c_metaprogramming_public_surface.py",
+        "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
+        "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_category.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/derive_expansion_inventory_negative_selector_conflict.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_metaprogramming_public_surface.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc"
+        }
+      ]
+    },
+    {
+      "id": "language.metaprogramming.macro-safety-sandbox-determinism",
+      "title": "Macro safety sandbox determinism",
+      "state": "implemented",
+      "summary": "The public macro surface validates deterministic sandbox metadata, trusted package provenance, replay cache keys, and fail-closed denial cases through checked trust-registry fixtures and native macro safety evidence. This row does not allow arbitrary host execution, network access, or unregistered macro execution.",
+      "support_claims": [
+        "objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism"
+      ],
+      "owner_modules": [
+        "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        "scripts/check_objc3c_metaprogramming_public_surface.py",
+        "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
+        "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_protocol_metaprogramming_helpers.inc",
+        "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
+        "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+          "command": "npm run objc3c -- validate-metaprogramming-conformance"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/metaprogramming_macro_safety_negative_cases.py"
+        }
+      ]
+    },
+    {
+      "id": "runtime.metaprogramming.host-cache-boundary",
+      "title": "Metaprogramming host cache boundary",
+      "state": "implemented",
+      "summary": "Macro host/cache runtime support is claimed for expansion-host boundary enforcement, process cache replay, provider/consumer integration, and sandbox/cache-key/package rejection.",
+      "support_claims": [
+        "objc3c.behavior.runtime.metaprogramming.host-cache-boundary"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+        "native/objc3c/src/driver/objc3_driver_metaprogramming_cache_publication.cpp",
+        "native/objc3c/src/pipeline/source_closure/frontend_source_closure_replay_keys_metaprogramming_interop.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+          "command": "npm run objc3c -- test-runtime-acceptance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_host_process_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.interop.package-loader-bridge",
+      "title": "Interop package loader bridge",
+      "state": "implemented",
+      "summary": "Package-loader interop bridge support is claimed for provider/consumer bridge metadata, package loading, header-module bridge probes, and tampered metadata rejection.",
+      "support_claims": [
+        "objc3c.behavior.runtime.interop.package-loader-bridge"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface_packaging_readiness.cpp",
+        "native/objc3c/src/driver/objc3_driver_interop_artifact_publication.cpp",
+        "native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+          "command": "npm run objc3c -- validate-interop-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.interop.mixed-image-replay",
+      "title": "Mixed-image interop replay",
+      "state": "implemented",
+      "summary": "Mixed-image interop replay is claimed for runtime package provider/consumer replay, import execution matrices, reset/replay probes, and fail-closed tamper checks.",
+      "support_claims": [
+        "objc3c.behavior.runtime.interop.mixed-image-replay"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/runtime_import_preservation.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_input_interop.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_runtime_import_artifacts.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+          "command": "npm run objc3c -- validate-interop-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/runtime_packaging_provider.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp"
+        }
+      ]
+    },
+    {
       "id": "language.advanced-runtime-closure",
       "title": "Advanced runtime-backed language closure",
       "state": "reserved",
-      "summary": "Blocks, full ARC automation, throws/error propagation, metaprogramming/property behaviors, and broad interop closure remain unavailable as public support unless a narrower implemented capability row states otherwise.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay; remaining broad runtime closure stays reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/blocks/",
         "native/objc3c/src/runtime/memory/",
         "native/objc3c/src/runtime/errors/",
-        "native/objc3c/src/runtime/concurrency/"
+        "native/objc3c/src/runtime/concurrency/",
+        "native/objc3c/src/runtime/storage/",
+        "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation.cpp"
       ],
       "evidence": [
         {
@@ -750,6 +2802,14 @@
         {
           "kind": "doc",
           "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_capability_public_split.py"
         }
       ]
     },
@@ -967,7 +3027,12 @@
         "native/objc3c/src/io/json/json_schema_type.cpp",
         "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp",
         "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
-        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp"
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp",
+        "schemas/objc3c-abi-api-governance-v1.schema.json",
+        "schemas/objc3c-package-manifest-v1.schema.json",
+        "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+        "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json",
+        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
       ],
       "evidence": [
         {
@@ -1133,6 +3198,26 @@
         {
           "kind": "test",
           "path": "tests/tooling/test_objc3c_shared_json_schema.py"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-abi-api-governance-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
         }
       ]
     },
@@ -1174,6 +3259,1270 @@
         {
           "kind": "doc",
           "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+        }
+      ]
+    },
+    {
+      "id": "diagnostics.parser-sema.recovery-fixits",
+      "title": "Parser/sema recovery fix-it diagnostics",
+      "state": "implemented",
+      "summary": "The diagnostics corpus now includes OBJ3-NEXT-016 parser and semantic recovery fixtures with structured spans, recovery payloads, machine-applicable fix-its where canonical, and native replay fixture links. This row claims diagnostic recovery/fix-it evidence only, not alternate syntax acceptance or alternate parser acceptance.",
+      "support_claims": [
+        "objc3c.behavior.diagnostics.parser-sema-recovery-fixits"
+      ],
+      "owner_modules": [
+        "tests/conformance/diagnostics/manifest.json",
+        "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-RECOVERY-01.json",
+        "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+        "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+        "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-02.json",
+        "native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp",
+        "scripts/check_developer_tooling_diagnostic_quality.py",
+        "scripts/objc3c_native_recovery_contract_runner/fixture_contracts.psm1"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/diagnostics/OBJ3-NEXT-016-PARSE-FIXIT-01.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/diagnostic_quality_contract.json",
+          "command": "npm run objc3c -- check-developer-diagnostic-quality"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py",
+          "command": "npm run objc3c -- check-developer-diagnostic-quality"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/diagnostics/OBJ3-NEXT-016-SEMA-RECOVERY-01.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/objc3_diagnostics_artifact_document.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_developer_tooling_diagnostic_quality.py"
+        },
+        {
+          "kind": "source",
+          "path": "tests/conformance/diagnostics/manifest.json"
+        }
+      ]
+    },
+    {
+      "id": "tooling.editor.artifact-inspector",
+      "title": "Editor artifact inspector",
+      "state": "implemented",
+      "summary": "The editor tooling surface now publishes an artifact inspector payload for summary, diagnostics, manifest, IR, runtime metadata, runtime imports, and source-graph inputs, with object inspection fail-closed unless real object inventory commands are available.",
+      "support_claims": [
+        "objc3c.behavior.tooling.artifact-inspector"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_editor_tooling/artifact_inspector.py",
+        "scripts/objc3c_editor_tooling/model.py",
+        "scripts/objc3c_editor_tooling/publication.py",
+        "scripts/objc3c_editor_tooling/cli.py",
+        "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+        "scripts/objc3c_workflow/actions/developer_tooling_playground_editor.py",
+        "scripts/objc3c_workflow/actions/developer_tooling_playground_manifest.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+          "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector_implementation_contract.json",
+          "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
+          "command": "npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+        },
+        {
+          "kind": "source",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        }
+      ]
+    },
+    {
+      "id": "tooling.editor.formatter-lsp-workspace",
+      "title": "Formatter, LSP diagnostics, and workspace index",
+      "state": "implemented",
+      "summary": "The editor tooling surface publishes stable formatter output, LSP-compatible diagnostics/code actions from deterministic fix-its, manifest-backed hover and definition payloads, and a workspace index rooted in checked package and stdlib inputs. References, rename, semantic tokens, statement stepping, and network-backed workspace restore remain fail-closed.",
+      "support_claims": [
+        "objc3c.behavior.tooling.formatter-lsp-workspace"
+      ],
+      "owner_modules": [
+        "scripts/format_objc3c_source.py",
+        "scripts/rewrite_objc3c_source.py",
+        "scripts/objc3c_editor_tooling/diagnostic_bridge.py",
+        "scripts/objc3c_editor_tooling/model.py",
+        "scripts/objc3c_editor_tooling/workspace_index.py",
+        "scripts/check_developer_tooling_language_server_navigation.py",
+        "scripts/check_developer_tooling_workspace_integration.py",
+        "scripts/check_developer_tooling_editor_source_truth.py",
+        "scripts/check_developer_tooling_product_workflow_source_truth.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/formatter_rewrite_contract.json",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_editor_diagnostics.py",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_developer_tooling_formatter_rewrite_diagnostics.py",
+          "command": "npm run objc3c -- validate-developer-tooling"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/workspace_index.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/diagnostic_bridge.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/format_objc3c_source.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_developer_tooling_product_workflow_source_truth.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_developer_tooling_editor_source_truth.py",
+          "command": "npm run objc3c -- check-developer-tooling-editor-source-truth"
+        }
+      ]
+    },
+    {
+      "id": "tooling.developer-experience.first-run-product-path",
+      "title": "First-run developer product path",
+      "state": "implemented",
+      "summary": "A normal developer can follow the checked-in first-run path to build the toolchain, compile a showcase program, materialize a ready-to-compile project template, inspect structured diagnostics and artifacts, and use the migration analyzer/rewrite examples. This row does not claim a full IDE, full LSP, ObjC2 source acceptance, or debugger stepping.",
+      "support_claims": [
+        "objc3c.behavior.tooling.first-run-product-path"
+      ],
+      "owner_modules": [
+        "scripts/check_getting_started_surface.py",
+        "scripts/materialize_objc3c_project_template.py",
+        "scripts/check_objc3c_migration_workflow.py",
+        "scripts/check_developer_tooling_diagnostic_quality.py",
+        "scripts/showcase_surface/validation/guided_walkthrough.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json",
+          "command": "npm run objc3c -- validate-getting-started"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/first_run_workflow_contract.json",
+          "command": "npm run objc3c -- validate-getting-started"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_getting_started_surface_command_parity.py",
+          "command": "npm run objc3c -- validate-getting-started"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json",
+          "command": "npm run objc3c -- validate-migration-workflow"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3",
+          "command": "npm run objc3c -- validate-migration-workflow"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+          "command": "npm run objc3c -- validate-migration-workflow"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
+          "command": "npm run objc3c -- validate-application-architecture"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/editor_diagnostic_bridge_contract.json",
+          "command": "npm run objc3c -- check-developer-diagnostic-quality"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json"
+        },
+        {
+          "kind": "doc",
+          "path": "README.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/tutorials/getting_started.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/tutorials/objc2_to_objc3_migration.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_getting_started_surface.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/materialize_objc3c_project_template.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_migration_workflow.py"
+        }
+      ]
+    },
+    {
+      "id": "conformance.public.stable-suite-manifest",
+      "title": "Stable public conformance suite manifest",
+      "state": "implemented",
+      "summary": "A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.",
+      "support_claims": [
+        "objc3c.behavior.conformance.public-stable-suite"
+      ],
+      "owner_modules": [
+        "tests/conformance/public_suite_manifest.json",
+        "schemas/objc3c-public-conformance-suite-v1.schema.json",
+        "scripts/check_objc3c_public_conformance_suite_manifest.py",
+        "scripts/check_objc3c_public_conformance_suite.py",
+        "scripts/objc3c_public_conformance_suite/package.py",
+        "tests/conformance/corpus_surface.json",
+        "scripts/check_objc3c_conformance_corpus_integration.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/conformance/public_suite_manifest.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "schemas/objc3c-public-conformance-suite-v1.schema.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/public_suite_package_replay_evidence.json",
+          "command": "npm run objc3c -- validate-public-conformance-suite"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/public_conformance_suite/package_contract.json",
+          "command": "npm run objc3c -- validate-public-conformance-suite"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_public_conformance_suite_package.py",
+          "command": "npm run objc3c -- validate-public-conformance-suite"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_public_conformance_suite.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_public_conformance_suite/package.py"
+        },
+        {
+          "kind": "source",
+          "path": "tests/conformance/corpus_surface.json"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-manager.local-registry",
+      "title": "Local package manager and registry model",
+      "state": "implemented",
+      "summary": "Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, offline mirror metadata, local trust envelopes, and fail-closed language/ABI dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.",
+      "support_claims": [
+        "objc3c.behavior.package.manager-local-registry"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/model.py",
+        "scripts/objc3c_package_manager/registry.py",
+        "scripts/build_objc3c_package_lock.py",
+        "scripts/build_objc3c_package_mirror.py",
+        "scripts/check_objc3c_package_manager_model.py",
+        "schemas/objc3c-package-manifest-v1.schema.json",
+        "schemas/objc3c-package-lock-v1.schema.json",
+        "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "schemas/objc3c-package-local-registry-index-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+          "command": "npm run objc3c -- validate-package-manager-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_manager_model.py",
+          "command": "npm run objc3c -- validate-package-manager-model"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-lock-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-local-registry-index-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/model.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/registry.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_manager_model.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_package_ecosystem.md"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-install.clean-distribution",
+      "title": "Clean package install distribution",
+      "state": "implemented",
+      "summary": "The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, and deterministic update/uninstall operation receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.",
+      "support_claims": [
+        "objc3c.behavior.package.install-clean-distribution"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/install_distribution.py",
+        "scripts/check_objc3c_package_install_distribution_credibility.py",
+        "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+        "scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+          "command": "npm run objc3c -- validate-package-install-distribution"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_install_distribution_credibility.py",
+          "command": "npm run objc3c -- validate-package-install-distribution"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/install_distribution.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_install_distribution_credibility.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_package_ecosystem.md"
+        }
+      ]
+    },
+    {
+      "id": "release.abi.stability-governance",
+      "title": "ABI and API stability governance",
+      "state": "implemented",
+      "summary": "Release publication now has checked ABI/API governance for stdlib public symbols, runtime ABI symbols, frontend C API helpers, compiler artifact schema identity, package lockfile ABI identity, compatibility classes, allowed transitions, and deprecation lifecycles. Unsupported downgrade routes and unreviewed symbol/schema drift remain release blockers.",
+      "support_claims": [
+        "objc3c.behavior.release.abi-stability-governance"
+      ],
+      "owner_modules": [
+        "schemas/objc3c-abi-api-governance-v1.schema.json",
+        "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+        "tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json",
+        "scripts/objc3c_release_manifest/abi_api_drift.py",
+        "scripts/check_objc3c_release_abi_api_drift.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
+          "command": "npm run objc3c -- check-release-abi-api-drift"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json",
+          "command": "npm run objc3c -- check-release-abi-api-drift"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_release_abi_api_drift.py",
+          "command": "npm run objc3c -- check-release-abi-api-drift"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-abi-api-governance-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_release_manifest/abi_api_drift.py"
+        }
+      ]
+    },
+    {
+      "id": "abi.governance.source-truth",
+      "title": "ABI governance source-of-truth manifest",
+      "state": "implemented",
+      "summary": "ABI governance now has a checked source-of-truth manifest and public workflow action that validate governed ABI surfaces, schema identities, public runtime/header symbol digests, stdlib ABI signatures, package ABI identity, and fail-closed compatibility policy. This row is developer-tooling governance evidence and does not perform release channel publication.",
+      "support_claims": [
+        "objc3c.behavior.abi.governance-source-truth"
+      ],
+      "owner_modules": [
+        "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+        "schemas/objc3c-abi-governance-manifest-v1.schema.json",
+        "scripts/check_objc3c_abi_governance.py",
+        "scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py",
+        "scripts/objc3c_workflow/action_handlers_release_foundation.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json",
+          "command": "npm run objc3c -- validate-abi-governance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_abi_governance.py",
+          "command": "npm run objc3c -- validate-abi-governance"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-abi-governance-manifest-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_abi_governance.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py"
+        }
+      ]
+    },
+    {
+      "id": "release.operations.channel-lifecycle",
+      "title": "Release channel operations",
+      "state": "implemented",
+      "summary": "Release operations now define stable, candidate, nightly, and preview channel lifecycles with distinct gates, source-derived release notes policy, update manifest linkage, rollback safety, local provenance requirements, archive digests, installer signature checks, and fail-closed publication diagnostics. Hosted background update services and public production publication remain outside this support row.",
+      "support_claims": [
+        "objc3c.behavior.release.channel-operations"
+      ],
+      "owner_modules": [
+        "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+        "schemas/objc3c-release-channel-operations-v1.schema.json",
+        "scripts/build_objc3c_update_manifest.py",
+        "scripts/publish_objc3c_release_operations_metadata.py",
+        "scripts/check_objc3c_release_operations_end_to_end.py",
+        "scripts/release_operations_publication_contracts.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/release_operations/channel_operations_model.json",
+          "command": "npm run objc3c -- validate-release-operations-end-to-end"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_release_operations_channel_model.py",
+          "command": "npm run objc3c -- validate-release-operations-end-to-end"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-release-channel-operations-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/build_objc3c_update_manifest.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/publish_objc3c_release_operations_metadata.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_release_operations_end_to_end.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_release_operations.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.public-api.reflection",
+      "title": "Public runtime reflection C API",
+      "state": "implemented",
+      "summary": "The runtime now exposes a bounded public C reflection ABI for state, class, property, method, protocol, conformance, category, and selector snapshots, including deterministic indexed enumeration for realized classes, direct properties, direct methods, concrete protocols, attached categories, and selectors. The API uses caller-owned snapshots, runtime-owned borrowed strings, typed status codes, null-output checks, invalid-query checks, and realized runtime state rather than private testing projections.",
+      "support_claims": [
+        "objc3c.behavior.runtime.public-reflection-api"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "scripts/check_objc3c_public_runtime_reflection_api.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+          "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_public_runtime_reflection_api.py",
+          "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+          "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_public_runtime_reflection_api.py"
+        }
+      ]
+    },
+    {
+      "id": "compiler.optimization.semantic-preserving-pipeline",
+      "title": "Semantic-preserving optimization pipeline",
+      "state": "implemented",
+      "summary": "The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.",
+      "support_claims": [
+        "objc3c.behavior.semantic_optimization_pipeline"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h",
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "scripts/objc3c_semantic_optimization_pipeline.py",
+        "scripts/check_objc3c_semantic_optimization_pipeline.py",
+        "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_semantic_optimization_pipeline.py",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+        }
+      ]
+    },
+    {
+      "id": "compiler.optimization.semantic-pass-registry",
+      "title": "Semantic optimization pass registry",
+      "state": "internal",
+      "summary": "The optimization pass registry owns pass ids, ordinals, stages, verifier-only versus mutating modes, explicit invalidation declarations, and reserved-pass metadata. It is compiler ownership evidence, not a separate public language behavior claim.",
+      "owner_modules": [
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h",
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        }
+      ]
+    },
+    {
+      "id": "compiler.optimization.devirtualization",
+      "title": "Devirtualization optimization lane",
+      "state": "reserved",
+      "summary": "Devirtualization is explicitly reserved until closed-world finality, override-set, and ABI-publication proofs exist. The current pipeline records the lane and emits fail-closed skip evidence without publishing a success claim.",
+      "owner_modules": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+        },
+        {
+          "kind": "doc",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        }
+      ]
+    },
+    {
+      "id": "compiler.optimization.method-inlining",
+      "title": "Method inlining optimization lane",
+      "state": "reserved",
+      "summary": "Method inlining is reserved until ownership, source-map, and side-effect replay proofs exist. The semantic optimization registry records the lane as reserved and prevents success claims.",
+      "owner_modules": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+        },
+        {
+          "kind": "doc",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        }
+      ]
+    },
+    {
+      "id": "runtime.optimization.cache-aware-dispatch",
+      "title": "Cache-aware dispatch optimization lane",
+      "state": "reserved",
+      "summary": "Cache-aware dispatch remains reserved behind runtime-owned cache invalidation and ABI-stable helper contracts. The compiler pipeline preserves runtime dispatch semantics and does not materialize private selector-cache helpers in IR.",
+      "owner_modules": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+        },
+        {
+          "kind": "doc",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.structured-inspection",
+      "title": "Structured runtime debug trace",
+      "state": "implemented",
+      "summary": "The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, error/bridge trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, and full source-map publication remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug_trace"
+      ],
+      "owner_modules": [
+        "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+        "scripts/build_objc3c_runtime_debug_trace.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/build_objc3c_runtime_debug_trace.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_debug_trace/payload.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_debug_trace/validation.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.lldb-plugin",
+      "title": "LLDB plugin debug integration",
+      "state": "reserved",
+      "summary": "LLDB plugin integration is reserved until a checked-in plugin and debugger protocol contract exist. Runtime debug trace evidence records this lane as reserved and does not imply debugger plugin support.",
+      "owner_modules": [
+        "scripts/objc3c_runtime_debug_trace/payload.py"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.statement-stepping",
+      "title": "Statement-level debugger stepping",
+      "state": "reserved",
+      "summary": "Statement-level stepping is fail-closed until native line-table and source-map evidence is emitted on the canonical toolchain path. The debug trace records source-to-artifact anchors only.",
+      "owner_modules": [
+        "scripts/objc3c_runtime_debug_trace/payload.py"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.async-tasks",
+      "title": "Async task runtime inspection",
+      "state": "implemented",
+      "summary": "Async task, continuation, actor, and executor inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims source-contract trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug_trace.async_tasks"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp",
+        "scripts/objc3c_runtime_debug_trace/source_contracts.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_debug_trace/source_contracts.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.error-unwind",
+      "title": "Error and unwind runtime tracing",
+      "state": "implemented",
+      "summary": "Error bridge, foreign-exception mapping, thrown-error slot traffic, and catch-filter inspection are published as deterministic source-owned runtime trace contract rows in the runtime debug trace payload. This row claims private snapshot trace metadata only; debugger stepping, LLDB integration, and full source-map publication remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug_trace.error_unwind"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h",
+        "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.cpp",
+        "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+        "scripts/objc3c_runtime_debug_trace/source_contracts.py",
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_runtime_debug_trace/validation.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_debug_trace_surface.py",
+          "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/debug/runtime_debug_trace_contracts.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_debug_trace/source_contracts.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "platform.windows-x64.tier1",
+      "title": "Windows x64 Tier 1 platform support",
+      "state": "implemented",
+      "summary": "Windows x64 is the supported Tier 1 platform because build, package, install, and native execution evidence all replay through public objc3c commands without live network requirements. Non-Windows hosts remain fail-closed until equivalent package/install/native execution evidence exists.",
+      "support_claims": [
+        "objc3c.behavior.platform.windows-x64-tier1"
+      ],
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "scripts/platform_hardening_contracts/support_evidence.py",
+        "scripts/check_platform_hardening_support_evidence.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+          "command": "npm run objc3c -- build-platform-support-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_platform_toolchain_support_evidence.py",
+          "command": "npm run objc3c -- build-platform-support-matrix"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/platform_hardening_contracts/support_evidence.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_platform_hardening_support_evidence.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_platform_hardening.md"
+        }
+      ]
+    },
+    {
+      "id": "platform.linux-x64.unsupported",
+      "title": "Linux x64 platform support",
+      "state": "rejected",
+      "summary": "Linux x64 support remains fail-closed: the support evidence contract records an unsupported-host denial until build, package, install, and native execution evidence exists on a replayable public path.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "platform.darwin-arm64.unsupported",
+      "title": "macOS arm64 platform support",
+      "state": "rejected",
+      "summary": "macOS arm64 support remains fail-closed: the support evidence contract records an unsupported-host denial until package install and native execution evidence exists on a replayable public path.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        }
+      ]
+    },
+    {
+      "id": "toolchain.llvm.current-probed-executable",
+      "title": "Current probed LLVM executable evidence",
+      "state": "internal",
+      "summary": "LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Unsupported versions fail closed without a range claim.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "scripts/probe_objc3c_llvm_capabilities.py"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/probe_objc3c_llvm_capabilities.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_probe_objc3c_llvm_capabilities.py"
+        }
+      ]
+    },
+    {
+      "id": "toolchain.package-bridge.minimum-host-tools",
+      "title": "Package bridge host tool evidence",
+      "state": "internal",
+      "summary": "The package bridge host-tool row records the checked Python, Node/npm, and PowerShell command surface requirements used by package and platform workflows; it does not widen platform support beyond Windows x64 Tier 1.",
+      "owner_modules": [
+        "package.json",
+        "scripts/objc3c_workflow/public_command_api.py",
+        "scripts/platform_hardening_contracts/orchestration.py"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "package.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/public_command_api.py"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        }
+      ]
+    },
+    {
+      "id": "toolchain.sanitizer.address",
+      "title": "AddressSanitizer platform variant",
+      "state": "reserved",
+      "summary": "AddressSanitizer package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "kind": "doc",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        }
+      ]
+    },
+    {
+      "id": "toolchain.sanitizer.undefined",
+      "title": "UndefinedBehaviorSanitizer platform variant",
+      "state": "reserved",
+      "summary": "UBSan package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "kind": "doc",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        }
+      ]
+    },
+    {
+      "id": "applications.framework-samples.object-runtime-library",
+      "title": "Object runtime sample library",
+      "state": "implemented",
+      "summary": "The application framework sample set includes object runtime sample library coverage for protocol conformance, inheritance, synthesized properties, category extension, and typed key-path reflection. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.object-runtime-library"
+      ],
+      "owner_modules": [
+        "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+        "showcase/applicationFrameworkSamples/manifest.json",
+        "tests/tooling/fixtures/application_framework_samples/contract.json",
+        "scripts/check_objc3c_application_framework_samples.py",
+        "scripts/objc3c_application_framework_samples/runner.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/application_framework_samples/contract.json",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_application_framework_samples.py",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "source",
+          "path": "showcase/applicationFrameworkSamples/manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_application_framework_samples.py"
+        },
+        {
+          "kind": "doc",
+          "path": "showcase/applicationFrameworkSamples/README.md"
+        }
+      ]
+    },
+    {
+      "id": "applications.framework-samples.interop-adapter-library",
+      "title": "Interop adapter sample library",
+      "state": "implemented",
+      "summary": "The application framework sample set includes interop adapter sample library coverage for foreign import metadata, header export metadata, Swift/C++ naming metadata, derive metadata, macro provenance, and property behavior. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.interop-adapter-library"
+      ],
+      "owner_modules": [
+        "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+        "showcase/applicationFrameworkSamples/manifest.json",
+        "tests/tooling/fixtures/application_framework_samples/contract.json",
+        "scripts/check_objc3c_application_framework_samples.py",
+        "scripts/objc3c_application_framework_samples/runner.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/application_framework_samples/contract.json",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_application_framework_samples.py",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "source",
+          "path": "showcase/applicationFrameworkSamples/manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_application_framework_samples.py"
+        },
+        {
+          "kind": "doc",
+          "path": "showcase/applicationFrameworkSamples/README.md"
+        }
+      ]
+    },
+    {
+      "id": "applications.framework-samples.stdlib-text-collections-cli",
+      "title": "Stdlib text and collections CLI sample",
+      "state": "implemented",
+      "summary": "The application framework sample set includes stdlib text and collections cli sample coverage for runtime-backed string view, byte span, array shape, map-entry shape, and a CLI entrypoint over local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
+      ],
+      "owner_modules": [
+        "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+        "showcase/applicationFrameworkSamples/manifest.json",
+        "tests/tooling/fixtures/application_framework_samples/contract.json",
+        "scripts/check_objc3c_application_framework_samples.py",
+        "scripts/objc3c_application_framework_samples/runner.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/application_framework_samples/contract.json",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_application_framework_samples.py",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "source",
+          "path": "showcase/applicationFrameworkSamples/manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_application_framework_samples.py"
+        },
+        {
+          "kind": "doc",
+          "path": "showcase/applicationFrameworkSamples/README.md"
+        }
+      ]
+    },
+    {
+      "id": "applications.framework-samples.async-runtime-application",
+      "title": "Async runtime application sample",
+      "state": "implemented",
+      "summary": "The application framework sample set includes async runtime application sample coverage for async executor annotations, task runtime helpers, executor-hop helper surface, runtime-backed main entrypoint, and local package dependencies. The sample is checked in under showcase/applicationFrameworkSamples and validates through the public application framework sample workflow rather than generated replay reports.",
+      "support_claims": [
+        "objc3c.behavior.application-framework-samples.async-runtime-application"
+      ],
+      "owner_modules": [
+        "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+        "showcase/applicationFrameworkSamples/manifest.json",
+        "tests/tooling/fixtures/application_framework_samples/contract.json",
+        "scripts/check_objc3c_application_framework_samples.py",
+        "scripts/objc3c_application_framework_samples/runner.py"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/application_framework_samples/contract.json",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_application_framework_samples.py",
+          "command": "npm run objc3c -- validate-application-framework-samples"
+        },
+        {
+          "kind": "source",
+          "path": "showcase/applicationFrameworkSamples/manifest.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_application_framework_samples.py"
+        },
+        {
+          "kind": "doc",
+          "path": "showcase/applicationFrameworkSamples/README.md"
         }
       ]
     }

@@ -115,36 +115,11 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
       continue;
     }
     if (c == '"') {
-      Advance();
-      std::string value;
-      bool terminated = false;
-      while (index_ < source_.size()) {
-        const char current = source_[index_];
-        if (current == '"') {
-          Advance();
-          terminated = true;
-          break;
-        }
-        if (current == '\\' && index_ + 1 < source_.size()) {
-          Advance();
-          value.push_back(source_[index_]);
-          Advance();
-          continue;
-        }
-        if (current == '\n') {
-          break;
-        }
-        value.push_back(current);
-        Advance();
+      std::string string_token_text;
+      if (ConsumeStringLiteral(string_token_text, diagnostics)) {
+        tokens.push_back(Token{
+            TokenKind::String, string_token_text, token_line, token_column});
       }
-      if (!terminated) {
-        diagnostics.push_back(
-            MakeDiag(token_line, token_column, "O3L005",
-                     "unterminated string literal"));
-        continue;
-      }
-      tokens.push_back(Token{TokenKind::String, EscapeObjc3StringTokenText(value),
-                             token_line, token_column});
       continue;
     }
     if (IsObjc3IdentifierStart(c)) {

@@ -4,6 +4,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -82,11 +83,58 @@ def evidence_paths(
     ]
 
 
+def evidence_artifact(
+    *,
+    artifact_id: str,
+    path: Path | str,
+) -> dict[str, Any]:
+    resolved_path = path if isinstance(path, Path) else ROOT / path
+    if not resolved_path.is_file():
+        raise RuntimeError(f"trust report evidence artifact is missing: {repo_rel(resolved_path)}")
+
+    payload = load_json(resolved_path)
+    artifact: dict[str, Any] = {
+        "artifact_id": artifact_id,
+        "path": repo_rel(resolved_path),
+        "digest_algorithm": "sha256",
+        "sha256": sha256(resolved_path.read_bytes()).hexdigest(),
+    }
+    contract_id = payload.get("contract_id")
+    status = payload.get("status")
+    if isinstance(contract_id, str) and contract_id:
+        artifact["contract_id"] = contract_id
+    if isinstance(status, str) and status:
+        artifact["status"] = status
+    return artifact
+
+
+def evidence_artifacts(
+    *,
+    paths: DistributionTrustReportPaths,
+    dashboard: dict[str, Any],
+) -> list[dict[str, Any]]:
+    upstream_reports = dashboard.get("upstream_reports", {})
+    if not isinstance(upstream_reports, dict):
+        raise RuntimeError("dashboard upstream_reports drifted")
+
+    artifacts = [
+        evidence_artifact(artifact_id="source_surface_summary", path=paths.source_summary),
+        evidence_artifact(artifact_id="schema_surface_summary", path=paths.schema_summary),
+        evidence_artifact(artifact_id="dashboard_summary", path=paths.dashboard_summary),
+    ]
+    artifacts.extend(
+        evidence_artifact(artifact_id=f"upstream_report.{key}", path=str(path))
+        for key, path in sorted(upstream_reports.items())
+    )
+    return artifacts
+
+
 def trust_report_payload(
     *,
     paths: DistributionTrustReportPaths,
     dashboard: dict[str, Any],
     evidence: list[str],
+    artifacts: list[dict[str, Any]],
     generated_at_utc: datetime,
 ) -> dict[str, Any]:
     trust_state = str(dashboard["trust_state"])
@@ -112,6 +160,7 @@ def trust_report_payload(
         "warning_count": dashboard["warning_count"],
         "dashboard_path": repo_rel(paths.published_dashboard),
         "evidence_paths": evidence,
+        "evidence_artifacts": artifacts,
         "trust_signals": trust_signals,
         "required_drill_steps": required_drill_steps,
         "operator_actions": operator_actions,
@@ -141,7 +190,10 @@ def markdown_report(report: dict[str, Any]) -> str:
     lines.extend(["", "## Operator Actions", ""])
     lines.extend(f"- {line}" for line in report["operator_actions"])
     lines.extend(["", "## Evidence", ""])
-    lines.extend(f"- `{path}`" for path in report["evidence_paths"])
+    lines.extend(
+        f"- `{artifact['path']}` (`sha256:{artifact['sha256']}`)"
+        for artifact in report["evidence_artifacts"]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -152,7 +204,14 @@ def publish_distribution_trust_report(paths: DistributionTrustReportPaths) -> di
 
     generated_at_utc = datetime.now(timezone.utc)
     evidence = evidence_paths(paths=paths, dashboard=dashboard)
-    report = trust_report_payload(paths=paths, dashboard=dashboard, evidence=evidence, generated_at_utc=generated_at_utc)
+    artifacts = evidence_artifacts(paths=paths, dashboard=dashboard)
+    report = trust_report_payload(
+        paths=paths,
+        dashboard=dashboard,
+        evidence=evidence,
+        artifacts=artifacts,
+        generated_at_utc=generated_at_utc,
+    )
 
     paths.published_dashboard.parent.mkdir(parents=True, exist_ok=True)
     paths.published_report_json.parent.mkdir(parents=True, exist_ok=True)
@@ -173,6 +232,7 @@ def publish_distribution_trust_report(paths: DistributionTrustReportPaths) -> di
         "headline": report["headline"],
         "trust_state": report["trust_state"],
         "evidence_paths": evidence,
+        "evidence_artifacts": artifacts,
     }
     paths.public_summary.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(paths.public_summary, summary)

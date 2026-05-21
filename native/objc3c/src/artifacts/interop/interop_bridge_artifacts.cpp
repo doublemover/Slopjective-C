@@ -13,6 +13,7 @@ std::string BuildInteropBridgeCType(ValueType type, unsigned pointer_depth,
   std::string base;
   switch (type) {
     case ValueType::I32:
+    case ValueType::TextHandle:
       base = "int32_t";
       break;
     case ValueType::Bool:

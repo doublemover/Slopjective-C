@@ -1,0 +1,20 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericFunctionUnresolvedReturn;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+fn makeGeneric<T : id<Persistable>>() -> T {
+  return nil;
+}
+
+fn consumeUnresolvedGenericFunction() -> i32 {
+  let record = makeGeneric();
+  return 0;
+}

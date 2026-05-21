@@ -1,0 +1,52 @@
+{
+  "id": "OBJ3-NEXT-016-SEMA-RECOVERY-02",
+  "title": "Issue #8169 semantic recovery keeps unresolved callee diagnostics fail-closed",
+  "feature": "structured semantic diagnostics and recovery boundaries",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
+  ],
+  "source": "module Obj3Next016SemaUnknownSymbolRecovery;\n\nfn known_value() -> i32 {\n  return 1;\n}\n\nfn main() -> i32 {\n  return known_vaule();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "O3S203",
+        "severity": "error",
+        "phase": "sema",
+        "category": "semantic-analysis",
+        "span": {
+          "start": { "line": 8, "column": 10 },
+          "end": { "line": 8, "column": 20 }
+        },
+        "message": "unknown function 'known_vaule'",
+        "explanation": "The unresolved callee remains a semantic rejection with stable source span and recovery metadata.",
+        "fixits": [],
+        "suggestions": [
+          {
+            "kind": "nearest-symbol",
+            "symbol_kind": "function",
+            "target": "known_vaule",
+            "replacement": "known_value",
+            "confidence": "high",
+            "range": {
+              "start": { "line": 8, "column": 10 },
+              "end": { "line": 8, "column": 20 }
+            },
+            "explanation": "The only in-scope callable at edit distance two is 'known_value', so tooling can surface it as a nearest-symbol suggestion without accepting the misspelled call."
+          }
+        ],
+        "recovery": {
+          "strategy": "semantic-symbol-resolution-boundary",
+          "boundary": "unresolved callee",
+          "deterministic": true,
+          "accepts_invalid_program": false,
+          "recovery_counts_as_success": false,
+          "native_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_sema_unknown_symbol_recovery.objc3",
+          "expected_native_code": "O3S203"
+        }
+      }
+    ]
+  }
+}

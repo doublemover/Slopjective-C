@@ -48,6 +48,9 @@
   "minimum_claimability": {
     "retained_suite_count": 4,
     "manifest_summary_count": 7,
+    "public_suite_case_count": 8,
+    "public_suite_phase_count": 8,
+    "public_suite_profile_count": 3,
     "accepted_fixture_count": 1
   },
   "deductions": {
@@ -58,6 +61,7 @@
   },
   "fail_closed_conditions": [
     "corpus integration summary must report PASS",
+    "public suite manifest summary must report PASS",
     "external validation integration summary must report PASS",
     "checked-in dashboard and release-evidence schema anchors must exist",
     "public reporting cannot promote quarantined or blocked evidence into claim-ready status"

@@ -11,6 +11,7 @@ from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
+    INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE,
     RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
@@ -48,6 +49,7 @@ def build_runtime_package_loading_interop_implementation_surface(
         "authoritative_probe_paths": [
             INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
             INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
+            INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE,
         ],
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,

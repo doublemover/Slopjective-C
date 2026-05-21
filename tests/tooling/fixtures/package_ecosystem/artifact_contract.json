@@ -6,10 +6,13 @@
   "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
   "local_workspace_mirror_semantics": "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
   "registry_publication_semantics": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+  "install_distribution_credibility": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
   "mixed_image_interop_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
   "schemas": {
+    "package_manifest": "schemas/objc3c-package-manifest-v1.schema.json",
     "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
     "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "local_registry_index": "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json"
   },
   "owner_split_modules": [
@@ -21,10 +24,12 @@
   ],
   "generated_artifact_roots": [
     "tmp/artifacts/package-ecosystem/locks",
+    "tmp/artifacts/package-ecosystem/manifests",
     "tmp/artifacts/package-ecosystem/mirrors",
     "tmp/artifacts/package-ecosystem/mirrors/cache",
     "tmp/artifacts/package-ecosystem/registry",
-    "tmp/artifacts/package-ecosystem/offline-install"
+    "tmp/artifacts/package-ecosystem/offline-install",
+    "tmp/artifacts/package-ecosystem/install-validation"
   ],
   "generated_report_root": "tmp/reports/package-ecosystem",
   "report_slots": [
@@ -33,18 +38,25 @@
     "local-workspace-mirror-semantics-summary.json",
     "registry-publication-semantics-summary.json",
     "artifact-contract-summary.json",
+    "package-manager-model-summary.json",
     "package-lock-summary.json",
     "package-authoring-workflow-summary.json",
     "package-mirror-summary.json",
     "registry-mirror-reproducibility-summary.json",
+    "install-distribution-credibility-summary.json",
     "integration-summary.json",
     "runnable-package-ecosystem-summary.json"
   ],
   "artifact_claim_rules": [
     "lockfiles and mirror indexes are generated artifacts, not checked-in source authority",
+    "package manifests are generated from checked-in source contracts and must preserve language, ABI, digest, and trust metadata",
     "package ecosystem artifacts must validate against checked-in schemas before publication claims",
     "registry metadata must be generated from lock and mirror evidence",
+    "registry indexes must validate exact locked versions, dependency digests, fail-closed hosted/network policy, and replay evidence",
     "offline mirror cache entries and restore receipts must be generated from the same lock-derived mirror index",
+    "clean install validation roots must be re-created before package install credibility is claimed",
+    "install receipts must be generated from lock, mirror, local registry, publication, and restore metadata that agree",
+    "package update and uninstall operation receipts must be deterministic artifact inputs and must preserve locked dependency ordering semantics",
     "mixed-image interop package metadata must be digest-checked across lock, mirror, and local registry artifacts",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
@@ -63,10 +75,12 @@
       "role": "package-ecosystem-lock-owner",
       "source_contracts": [
         "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+        "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
         "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json"
       ],
       "public_actions": [
-        "build-package-lock"
+        "build-package-lock",
+        "validate-package-manager-model"
       ],
       "claim_boundary": "deterministic local lock evidence only; no hosted registry, package-manager parity, or network-dependent install claim"
     },
@@ -74,11 +88,13 @@
       "role": "package-ecosystem-registry-owner",
       "source_contracts": [
         "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+        "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
         "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
         "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
       ],
       "public_actions": [
         "validate-package-mirror",
+        "validate-package-install-distribution",
         "validate-package-ecosystem",
         "validate-runnable-package-ecosystem"
       ],
@@ -109,6 +125,7 @@
       "schema missing for package publication artifact",
       "generated package evidence outside package ecosystem artifact root",
       "offline restore receipt missing cache digest evidence",
+      "clean install, update, or uninstall receipt missing or package metadata disagrees with lock-derived artifacts",
       "hosted registry claim without local package evidence",
       "package publication action has no owner contract",
       "package publication action is wrapper-only"
@@ -117,8 +134,10 @@
   "required_actions": [
     "package-runnable-toolchain",
     "build-package-lock",
+    "validate-package-manager-model",
     "validate-package-authoring",
     "validate-package-mirror",
+    "validate-package-install-distribution",
     "validate-package-ecosystem",
     "validate-runnable-package-ecosystem",
     "build-package-channels",

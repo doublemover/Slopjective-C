@@ -15,6 +15,17 @@ CONFORMANCE_ACTION_SPECS: dict[str, ActionSpec] = {
             "and current gate surfaces stay executable on the live public workflow"
         ),
     ),
+    "validate-public-conformance-suite": ActionSpec(
+        "validate-public-conformance-suite",
+        "validate and stage the stable public conformance suite package, fixture boundary, external-validation intake policy, and release-candidate profile",
+        "python:scripts/check_objc3c_public_conformance_suite.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "public conformance suite taxonomy, package replay evidence, fixture-publication "
+            "boundary, external-validation admission policy, and release-candidate profile stay "
+            "checked-in and executable through the public workflow"
+        ),
+    ),
     "check-conformance-minima": ActionSpec(
         "check-conformance-minima",
         "verify conformance suite minima and required families",

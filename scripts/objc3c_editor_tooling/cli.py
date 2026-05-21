@@ -43,6 +43,7 @@ def main() -> int:
     print(f"capabilities_path: {published.capabilities_path}")
     print(f"navigation_path: {published.navigation_path}")
     print(f"workspace_index_path: {published.workspace_index_path}")
+    print(f"artifact_inspector_path: {published.artifact_inspector_path}")
     print(f"formatter_path: {published.formatter_path}")
     print(f"debug_path: {published.debug_path}")
     return 0

@@ -1,5 +1,6 @@
 struct OwnershipBorrowedBindingState {
   bool borrowed = false;
+  bool consumed = false;
 };
 
 using OwnershipBorrowedScope =
@@ -7,6 +8,7 @@ using OwnershipBorrowedScope =
 
 struct OwnershipBorrowedCallableContract {
   std::vector<bool> param_borrowed;
+  std::vector<bool> param_consumed;
   bool return_borrowed = false;
 };
 
@@ -48,16 +50,35 @@ static void MergeOwnershipBorrowedState(
         continue;
       }
       target_state.borrowed = target_state.borrowed || branch_it->second.borrowed;
+      target_state.consumed =
+          target_state.consumed || branch_it->second.consumed;
     }
   }
+}
+
+static bool IsRetainableFamilyConsumedAliasAttribute(
+    const std::string &attribute_name) {
+  return attribute_name == "os_consumed" ||
+         attribute_name == "cf_consumed" ||
+         attribute_name == "ns_consumed";
 }
 
 static OwnershipBorrowedCallableContract BuildOwnershipBorrowedCallableContract(
     const FunctionDecl &fn) {
   OwnershipBorrowedCallableContract contract;
   contract.param_borrowed.reserve(fn.params.size());
+  contract.param_consumed.reserve(fn.params.size());
+  const bool has_consumed_alias = std::any_of(
+      fn.retainable_c_family_callable_attributes.begin(),
+      fn.retainable_c_family_callable_attributes.end(),
+      [](const std::string &attribute_name) {
+        return IsRetainableFamilyConsumedAliasAttribute(attribute_name);
+      });
   for (const auto &param : fn.params) {
     contract.param_borrowed.push_back(param.borrowed_pointer_qualified);
+    contract.param_consumed.push_back(
+        has_consumed_alias &&
+        IsObjCReferenceSemanticType(MakeSemanticTypeFromParam(param)));
   }
   contract.return_borrowed =
       fn.return_borrowed_pointer_qualified || fn.objc_returns_borrowed_declared;
@@ -106,13 +127,6 @@ static bool IsRetainableFamilyReturnAliasAttribute(
          attribute_name == "cf_returns_not_retained" ||
          attribute_name == "ns_returns_retained" ||
          attribute_name == "ns_returns_not_retained";
-}
-
-static bool IsRetainableFamilyConsumedAliasAttribute(
-    const std::string &attribute_name) {
-  return attribute_name == "os_consumed" ||
-         attribute_name == "cf_consumed" ||
-         attribute_name == "ns_consumed";
 }
 
 template <typename TCallableDecl>

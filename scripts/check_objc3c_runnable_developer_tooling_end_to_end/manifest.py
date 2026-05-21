@@ -22,6 +22,8 @@ PACKAGED_FILE_FIELDS = (
     "developer_tooling_diagnostic_quality_contract",
     "developer_tooling_workspace_contract",
     "developer_tooling_packaged_contract",
+    "developer_tooling_runtime_debug_trace_script",
+    "developer_tooling_runtime_debug_trace_schema",
     "developer_tooling_example_source",
     "developer_tooling_negative_source",
     "developer_tooling_formatter_source",
@@ -79,6 +81,34 @@ def validate_manifest_contract(
             command_name in command_surfaces,
             f"package manifest missing developer tooling command surface: {command_name}",
         )
+    expect(
+        command_surfaces.get("runtime_debug_trace")
+        == contract["expected_runtime_debug_trace_command_surface"],
+        "package manifest runtime debug trace command surface drifted",
+    )
+
+    expected_runtime_fields = {
+        "developer_tooling_runtime_debug_trace_script": "scripts/build_objc3c_runtime_debug_trace.py",
+        "developer_tooling_runtime_debug_trace_schema": contract[
+            "expected_runtime_debug_trace_schema"
+        ],
+        "developer_tooling_runtime_debug_trace_path": contract[
+            "expected_runtime_debug_trace_path"
+        ],
+        "developer_tooling_runtime_debug_trace_model": contract[
+            "expected_runtime_debug_trace_model"
+        ],
+    }
+    for field, expected in expected_runtime_fields.items():
+        expect(
+            manifest.get(field) == expected,
+            f"package manifest {field} drifted",
+        )
+    expect(
+        scripts.get("runtime_debug_trace")
+        == expected_runtime_fields["developer_tooling_runtime_debug_trace_script"],
+        "package manifest runtime debug trace script surface drifted",
+    )
 
     public_actions = manifest.get("developer_tooling_public_actions", [])
     package_bridge = str(contract["package_bridge"])

@@ -48,6 +48,7 @@ def test_application_workspace_catalog_aggregates_owner_catalogs() -> None:
         "materialize-playground-workspace",
         "materialize-canonical-application-workspace",
         "validate-application-architecture",
+        "validate-application-framework-samples",
         "validate-runnable-application-architecture",
         "validate-runnable-developer-tooling",
     )
@@ -171,6 +172,52 @@ def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
         "presentation_readme": "showcase/README.md",
     }
     assert payload["demo_packages_manifest"] == "showcase/demo_packages.json"
+    assert payload["application_framework_samples"] == {
+        "manifest": "showcase/applicationFrameworkSamples/manifest.json",
+        "readme": "showcase/applicationFrameworkSamples/README.md",
+        "tutorial": "docs/tutorials/application-framework-samples.md",
+        "dependency_evidence": "showcase/applicationFrameworkSamples/dependency-evidence.json",
+        "contract_fixture": "tests/tooling/fixtures/application_framework_samples/contract.json",
+        "checker": "scripts/check_objc3c_application_framework_samples.py",
+        "summary": "tmp/reports/application-framework-samples/summary.json",
+        "validate_action": "validate-application-framework-samples",
+        "validate_command": "npm run objc3c -- validate-application-framework-samples",
+        "package_action": "package-runnable-toolchain",
+        "package_command": "npm run objc3c -- package-runnable-toolchain",
+        "runnable_validation_action": "validate-runnable-application-architecture",
+        "runnable_validation_command": (
+            "npm run objc3c -- validate-runnable-application-architecture"
+        ),
+        "manifest_contract_id": "objc3c.application_framework_samples.v1",
+        "contract_fixture_id": "objc3c.application_framework_samples.contract.v1",
+        "package_manifest_fields": [
+            "application_framework_samples",
+            "application_architecture_public_actions",
+            "command_surfaces",
+            "copied_files",
+        ],
+        "sample_ids": [
+            "routeModelKit",
+            "interopAdapterKit",
+            "workflowStdlibCLI",
+            "asyncRuntimeConsole",
+        ],
+        "capability_rows": [
+            "applications.framework-samples.object-runtime-library",
+            "applications.framework-samples.interop-adapter-library",
+            "applications.framework-samples.stdlib-text-collections-cli",
+            "applications.framework-samples.async-runtime-application",
+        ],
+    }
+    for path in (
+        payload["application_framework_samples"]["manifest"],
+        payload["application_framework_samples"]["readme"],
+        payload["application_framework_samples"]["tutorial"],
+        payload["application_framework_samples"]["dependency_evidence"],
+        payload["application_framework_samples"]["contract_fixture"],
+        payload["application_framework_samples"]["checker"],
+    ):
+        assert (ROOT / path).is_file()
 
 
 def test_showcase_demo_packages_publish_reproducible_application_smokes() -> None:

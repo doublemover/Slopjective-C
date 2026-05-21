@@ -1,14 +1,16 @@
 {
   "contract_id": "objc3c.migration_analyzer.contract.v1",
   "schema_version": 1,
-  "issue_ids": [8077, 8078],
+  "issue_ids": [8077, 8078, 8157],
   "owner_section": "migration_analyzer",
   "source_contracts": [
     "tests/tooling/fixtures/adoption_legibility/migration_analyzer_contract.json",
     "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json",
     "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_negative.json",
     "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_positive.m",
-    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m"
+    "tests/tooling/fixtures/adoption_legibility/migration_sources/objc2_swift_cpp_negative.m",
+    "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3",
+    "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json"
   ],
   "public_actions": [
     "analyze-migration-source",
@@ -28,6 +30,7 @@
     "O3M003",
     "O3M005",
     "O3M010",
+    "O3M016",
     "O3M017",
     "O3M101",
     "O3M102",
@@ -35,6 +38,90 @@
     "O3M104",
     "O3M105",
     "O3M210"
+  ],
+  "required_diagnostic_fields": [
+    "code",
+    "severity",
+    "message",
+    "category",
+    "explanation",
+    "next_step",
+    "surface",
+    "range"
+  ],
+  "diagnostic_metadata": [
+    {
+      "code": "O3M002",
+      "category": "input-contract",
+      "explanation": "The input uses an unsupported migration contract.",
+      "next_step": "Use contract_id objc3c.migration_analyzer.input.v1."
+    },
+    {
+      "code": "O3M003",
+      "category": "input-contract",
+      "explanation": "The input does not name a source file to inspect.",
+      "next_step": "Set source_path to a checked-in source file."
+    },
+    {
+      "code": "O3M005",
+      "category": "input-contract",
+      "explanation": "The source language is outside the migration analyzer scope.",
+      "next_step": "Use objective-c-2, swift, c++, or mixed."
+    },
+    {
+      "code": "O3M010",
+      "category": "surface-contract",
+      "explanation": "Required migration surfaces are absent from the request.",
+      "next_step": "Add every required surface before rerunning analysis."
+    },
+    {
+      "code": "O3M016",
+      "category": "foreign-interface",
+      "explanation": "A foreign interface entry has no symbol list to validate.",
+      "next_step": "List at least one non-empty foreign symbol."
+    },
+    {
+      "code": "O3M017",
+      "category": "foreign-interface",
+      "explanation": "A required Swift or C++ boundary is not declared.",
+      "next_step": "Add the missing Swift or C++ foreign interface."
+    },
+    {
+      "code": "O3M101",
+      "category": "surface-evidence",
+      "explanation": "Header import or export evidence was not observed.",
+      "next_step": "Add checked-in import or export evidence for the migrated source."
+    },
+    {
+      "code": "O3M102",
+      "category": "surface-evidence",
+      "explanation": "ABI-sensitive type alignment evidence was not observed.",
+      "next_step": "Add source evidence for migrated ABI-sensitive types."
+    },
+    {
+      "code": "O3M103",
+      "category": "surface-evidence",
+      "explanation": "Foreign type diagnostic evidence was not observed.",
+      "next_step": "Add checked-in Swift, C++, or extern boundary evidence."
+    },
+    {
+      "code": "O3M104",
+      "category": "surface-evidence",
+      "explanation": "Mixed-image loading evidence was not observed.",
+      "next_step": "Declare both Swift and C++ boundaries or add mixed-source evidence."
+    },
+    {
+      "code": "O3M105",
+      "category": "surface-evidence",
+      "explanation": "Packaged execution evidence was not observed.",
+      "next_step": "Add an existing packaged execution manifest."
+    },
+    {
+      "code": "O3M210",
+      "category": "unsafe-loading",
+      "explanation": "The source contains an unsafe mixed-image loading marker.",
+      "next_step": "Replace the marker with explicit imported-module ownership."
+    }
   ],
   "rewrite_rules": [
     {

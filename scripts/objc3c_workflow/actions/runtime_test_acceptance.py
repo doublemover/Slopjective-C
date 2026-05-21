@@ -18,6 +18,9 @@ RUNTIME_ARCHITECTURE_PROOF_PACKET_PY = (
 RUNTIME_ARCHITECTURE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
 )
+PUBLIC_RUNTIME_REFLECTION_API_PY = (
+    ROOT / "scripts" / "check_objc3c_public_runtime_reflection_api.py"
+)
 
 
 def run_python_check(script: Path, *args: str) -> int:
@@ -60,3 +63,7 @@ def action_proof_runtime_architecture(_: list[str]) -> int:
 
 def action_validate_runtime_architecture(_: list[str]) -> int:
     return run_python_check(RUNTIME_ARCHITECTURE_INTEGRATION_PY)
+
+
+def action_validate_public_runtime_reflection_api(_: list[str]) -> int:
+    return run_python_check(PUBLIC_RUNTIME_REFLECTION_API_PY)

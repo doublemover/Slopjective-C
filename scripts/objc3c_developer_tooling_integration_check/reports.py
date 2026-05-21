@@ -10,8 +10,10 @@ from .assertions import expect
 from .constants import (
     DIAGNOSTIC_QUALITY_SUMMARY_PATH,
     EDITOR_SURFACE_PATH,
+    EDITOR_TOOLING_SOURCE_TRUTH_SUMMARY_PATH,
     FORMATTER_DEBUG_SUMMARY_PATH,
     FORMATTER_REWRITE_SUMMARY_PATH,
+    PRODUCT_WORKFLOW_SOURCE_TRUTH_SUMMARY_PATH,
     PUBLIC_WORKFLOW_REPORT_ROOT,
     ROOT,
     WORKSPACE_INTEGRATION_SUMMARY_PATH,
@@ -23,10 +25,13 @@ REPORT_PATHS = {
     "capability_explorer": PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json",
     "runtime_inspector_benchmark": PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-inspector-benchmark.json",
     "compile_stage_trace": PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json",
+    "runtime_debug_trace": PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-debug-trace.json",
     "editor_surface": EDITOR_SURFACE_PATH,
     "formatter_debug_summary": FORMATTER_DEBUG_SUMMARY_PATH,
     "formatter_rewrite_summary": FORMATTER_REWRITE_SUMMARY_PATH,
     "diagnostic_quality_summary": DIAGNOSTIC_QUALITY_SUMMARY_PATH,
+    "editor_tooling_source_truth_summary": EDITOR_TOOLING_SOURCE_TRUTH_SUMMARY_PATH,
+    "product_workflow_source_truth_summary": PRODUCT_WORKFLOW_SOURCE_TRUTH_SUMMARY_PATH,
     "workspace_integration_summary": WORKSPACE_INTEGRATION_SUMMARY_PATH,
 }
 

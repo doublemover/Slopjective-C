@@ -1,0 +1,108 @@
+{
+  "contract_id": "objc3c.platform.support.source_truth.v1",
+  "schema_version": 1,
+  "issue": "OBJ3-NEXT-024",
+  "schema_path": "schemas/objc3c-platform-support-source-truth-v1.schema.json",
+  "source_path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+  "upstream_sources": {
+    "supported_platforms": "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+    "platform_toolchain_support_evidence": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+    "unsupported_host_policy": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+  },
+  "claim_policy": {
+    "supported_rows_require_checked_source": true,
+    "support_claims_require_live_network": false,
+    "generated_reports_are_source_truth": false,
+    "unsupported_host_result": "fail-closed",
+    "unsupported_toolchain_result": "fail-closed-no-range-claim",
+    "toolchain_range_policy": "current-probed-executable-only"
+  },
+  "required_supported_evidence_classes": [
+    "build",
+    "package",
+    "install",
+    "execution"
+  ],
+  "required_auxiliary_evidence_classes": [
+    "toolchain",
+    "hosted_ci",
+    "clean_room"
+  ],
+  "required_toolchain_components": [
+    "llvm",
+    "clang",
+    "cmake",
+    "ninja",
+    "python",
+    "node",
+    "pwsh"
+  ],
+  "supported_rows": [
+    {
+      "row_id": "objc3c.platform.windows-x64.tier1",
+      "platform_id": "windows-x64",
+      "host_os": "windows",
+      "host_arch": "x64",
+      "support_state": "supported",
+      "required_evidence": {
+        "build": "objc3c.evidence.platform.windows-x64.build.native-binaries",
+        "package": "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
+        "install": "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
+        "execution": "objc3c.evidence.platform.windows-x64.execution.native-smoke"
+      },
+      "toolchain_evidence_ids": [
+        "objc3c.evidence.toolchain.llvm.current-probe",
+        "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+        "objc3c.evidence.toolchain.python-node-pwsh.package-bridge"
+      ],
+      "hosted_ci_evidence_ids": [
+        "objc3c.evidence.hosted-ci.test-hosted-execution-smoke"
+      ],
+      "local_clean_room_evidence_ids": [
+        "objc3c.evidence.clean-room.local-offline-install"
+      ],
+      "public_replay_commands": [
+        "npm run objc3c -- build-native-binaries",
+        "npm run objc3c -- package-runnable-toolchain",
+        "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "npm run objc3c -- test-execution-smoke",
+        "npm run objc3c -- test-hosted-execution-smoke",
+        "npm run objc3c -- validate-package-install-distribution --from-nothing",
+        "npm run objc3c -- build-platform-support-matrix"
+      ],
+      "diagnostic": "Windows x64 is supported only because build, package, install, native execution, hosted CI, local clean-room install, and toolchain evidence all resolve to checked source and registered public objc3c actions."
+    }
+  ],
+  "unsupported_rows": [
+    {
+      "row_id": "objc3c.platform.linux-x64.unsupported",
+      "platform_id": "linux-x64",
+      "host_os": "linux",
+      "host_arch": "x64",
+      "support_state": "unsupported",
+      "failure_id": "unsupported-host-linux-x64-denied",
+      "fail_closed_evidence_id": "objc3c.evidence.unsupported.linux-x64.fail-closed",
+      "public_replay_commands": [
+        "npm run objc3c -- build-platform-support-matrix"
+      ],
+      "diagnostic": "Linux x64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
+    },
+    {
+      "row_id": "objc3c.platform.darwin-arm64.unsupported",
+      "platform_id": "darwin-arm64",
+      "host_os": "darwin",
+      "host_arch": "arm64",
+      "support_state": "unsupported",
+      "failure_id": "unsupported-host-darwin-arm64-denied",
+      "fail_closed_evidence_id": "objc3c.evidence.unsupported.darwin-arm64.fail-closed",
+      "public_replay_commands": [
+        "npm run objc3c -- build-platform-support-matrix"
+      ],
+      "diagnostic": "macOS arm64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
+    }
+  ],
+  "report_policy": {
+    "summary_path": "tmp/reports/platform-matrix/matrix-validation-summary.json",
+    "generated_reports_must_not_be_source": true
+  }
+}

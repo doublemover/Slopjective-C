@@ -11,19 +11,32 @@
   },
   "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
   "executable_fixture_manifest": "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
+  "contract_surfaces": [
+    "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+    "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+    "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json"
+  ],
   "report_root": "tmp/reports/runtime-performance",
   "artifact_root": "tmp/artifacts/runtime-performance",
   "summary_reports": [
     "tmp/reports/runtime-performance/benchmark-summary.json",
     "tmp/reports/runtime-performance/integration-summary.json",
-    "tmp/reports/runtime-performance/runnable-end-to-end-summary.json"
+    "tmp/reports/runtime-performance/runnable-end-to-end-summary.json",
+    "tmp/reports/runtime-performance/scale-summary.json"
   ],
   "packet_roots": [
     "tmp/reports/runtime-performance/startup-installation",
     "tmp/reports/runtime-performance/dispatch-cache",
     "tmp/reports/runtime-performance/reflection-query",
     "tmp/reports/runtime-performance/ownership-helpers",
-    "tmp/reports/runtime-performance/storage-ownership-reflection"
+    "tmp/reports/runtime-performance/storage-ownership-reflection",
+    "tmp/reports/runtime-performance/stdlib-core-runtime",
+    "tmp/reports/runtime-performance/stdlib-concurrency-runtime",
+    "tmp/reports/runtime-performance/registration-replay",
+    "tmp/reports/runtime-performance/block-arc-runtime",
+    "tmp/reports/runtime-performance/live-error-runtime",
+    "tmp/reports/runtime-performance/async-error-foreign-boundary",
+    "tmp/reports/runtime-performance/live-concurrency-runtime"
   ],
   "required_packet_fields": [
     "contract_id",
@@ -32,11 +45,13 @@
     "acceptance_case_id",
     "duration_ms",
     "counter_snapshot",
+    "replay_key",
     "summary"
   ],
   "exact_live_paths_for_downstream_work": [
     "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
     "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+    "scripts/probe_objc3c_runtime_scale_evidence.py",
     "tmp/reports/runtime-performance"
   ]
 }

@@ -102,9 +102,10 @@ def test_conformance_stress_catalog_preserves_public_order() -> None:
     }
 
     assert CONFORMANCE_STRESS_ACTION_SPECS == expected
-    assert tuple(CONFORMANCE_STRESS_ACTION_SPECS)[:3] == tuple(
+    assert tuple(CONFORMANCE_STRESS_ACTION_SPECS)[: len(CONFORMANCE_ACTION_SPECS)] == tuple(
         CONFORMANCE_ACTION_SPECS
     )
+    assert "validate-public-conformance-suite" in CONFORMANCE_ACTION_SPECS
     assert "validate-stress" in CONFORMANCE_STRESS_ACTION_SPECS
     assert "validate-external-validation" in CONFORMANCE_STRESS_ACTION_SPECS
 

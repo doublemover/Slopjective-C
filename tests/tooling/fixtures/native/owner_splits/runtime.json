@@ -39,6 +39,11 @@
   ],
   "canonical_evidence": [
     "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+    "tests/native/runtime/object_model/class_realization_contract.objc3",
+    "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+    "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+    "tests/native/runtime/object_model/registration_replay_contract.objc3",
+    "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
     "tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3",
     "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
     "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",

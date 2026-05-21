@@ -17,6 +17,12 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 from objc3c_tooling.subprocesses import python_script_command
+from objc3c_package_manager.model import (
+    LOCAL_PACKAGE_ABI_IDENTITY,
+    LOCAL_PACKAGE_LANGUAGE_VERSION,
+    PACKAGE_MANAGER_TAMPER_CODE,
+    collect_lock_model_failures,
+)
 from package_ecosystem_contracts import PACKAGE_LOADER_INTEROP_TAMPER_CODE
 
 
@@ -64,6 +70,7 @@ def main() -> int:
     provenance = lock.get("provenance", [])
     digest_inputs = lock.get("digest_inputs", [])
     replay = lock.get("replay", {})
+    package_manager = lock.get("package_manager", {})
     interop_loader_metadata = lock.get("interop_loader_metadata", {})
     authoring_check_command = "npm run objc3c -- validate-package-authoring"
     package_bridge = str(contract["package_bridge"])
@@ -79,6 +86,31 @@ def main() -> int:
     expect(isinstance(packages, list) and packages == sorted(packages, key=lambda entry: entry["package_id"]), "lock packages are not sorted", failures)
     expect(isinstance(dependencies, list) and dependencies == sorted(dependencies, key=lambda entry: (entry["from"], entry["to"])), "lock dependencies are not sorted", failures)
     expect(isinstance(replay, dict) and authoring_check_command in replay.get("commands", []), "lock replay commands missing authoring check", failures)
+    expect(
+        isinstance(package_manager, dict)
+        and package_manager.get("language_version") == LOCAL_PACKAGE_LANGUAGE_VERSION,
+        "package manager language version drifted",
+        failures,
+    )
+    expect(
+        isinstance(package_manager, dict)
+        and package_manager.get("abi_identity") == LOCAL_PACKAGE_ABI_IDENTITY,
+        "package manager ABI identity drifted",
+        failures,
+    )
+    expect(
+        isinstance(package_manager, dict)
+        and package_manager.get("network_resolution") == "unsupported-fail-closed",
+        "package manager network resolution must fail closed",
+        failures,
+    )
+    expect(
+        isinstance(package_manager, dict)
+        and package_manager.get("hosted_registry") == "unsupported-fail-closed-if-claimed",
+        "hosted registry claims must fail closed",
+        failures,
+    )
+    failures.extend(collect_lock_model_failures(lock, root=ROOT))
     expect(
         isinstance(interop_loader_metadata, dict)
         and interop_loader_metadata.get("package_count") == lock_summary.get("interop_loader_metadata_package_count"),
@@ -110,6 +142,16 @@ def main() -> int:
         "package_count": len(packages) if isinstance(packages, list) else 0,
         "dependency_count": len(dependencies) if isinstance(dependencies, list) else 0,
         "provenance_count": len(provenance) if isinstance(provenance, list) else 0,
+        "package_manifest_count": (
+            len(package_manager.get("package_manifest_paths", []))
+            if isinstance(package_manager, dict) and isinstance(package_manager.get("package_manifest_paths"), list)
+            else 0
+        ),
+        "language_version": package_manager.get("language_version") if isinstance(package_manager, dict) else None,
+        "abi_identity": package_manager.get("abi_identity") if isinstance(package_manager, dict) else None,
+        "network_resolution": package_manager.get("network_resolution") if isinstance(package_manager, dict) else None,
+        "hosted_registry": package_manager.get("hosted_registry") if isinstance(package_manager, dict) else None,
+        "package_manager_tamper_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
         "interop_loader_metadata_package_count": (
             interop_loader_metadata.get("package_count") if isinstance(interop_loader_metadata, dict) else 0
         ),

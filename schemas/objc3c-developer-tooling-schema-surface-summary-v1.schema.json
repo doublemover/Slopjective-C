@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-developer-tooling-schema-surface-summary-v1.schema.json",
+  "title": "objc3c Developer Tooling Schema Surface Summary",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "status",
+    "ok",
+    "generated_by",
+    "schema_path",
+    "schema_summary_path",
+    "source_path",
+    "editor_surface_path",
+    "checked_payload_paths",
+    "checked_subpayloads",
+    "fail_closed_capabilities",
+    "reserved_debug_capabilities",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.developer.tooling.schema.surface.summary.v1"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "generated_by": {
+      "const": "scripts/check_objc3c_developer_tooling_schema_surface.py"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    "schema_summary_path": {
+      "const": "schemas/objc3c-developer-tooling-schema-surface-summary-v1.schema.json"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "editor_surface_path": {
+      "type": "string"
+    },
+    "checked_payload_paths": {
+      "type": "object",
+      "required": [
+        "capabilities_path",
+        "navigation_path",
+        "workspace_index_path",
+        "artifact_inspector_path",
+        "formatter_path",
+        "debug_path"
+      ],
+      "properties": {
+        "capabilities_path": {
+          "type": "string"
+        },
+        "navigation_path": {
+          "type": "string"
+        },
+        "workspace_index_path": {
+          "type": "string"
+        },
+        "artifact_inspector_path": {
+          "type": "string"
+        },
+        "formatter_path": {
+          "type": "string"
+        },
+        "debug_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "checked_subpayloads": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "language_server",
+          "navigation",
+          "workspace_index",
+          "artifact_inspector",
+          "formatter",
+          "debug"
+        ]
+      },
+      "minItems": 6,
+      "uniqueItems": true
+    },
+    "fail_closed_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "reserved_debug_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

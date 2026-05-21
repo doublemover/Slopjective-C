@@ -1,0 +1,34 @@
+module WorkflowStdlibCLI;
+
+extern fn objc3_runtime_stdlib_core_count_i32(count: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_prefix_count_i32(count: i32, requested: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_map_entry_present_i32(flag: i32) -> i32;
+extern fn objc3_runtime_stdlib_core_map_entry_value_or_i32(flag: i32, value: i32, default_value: i32) -> i32;
+extern fn route_model_keypath_token() -> i32;
+
+fn stringViewUnits(units: i32) -> i32 {
+  return objc3_runtime_stdlib_core_count_i32(units);
+}
+
+fn byteSpanPrefix(bytes: i32, requested: i32) -> i32 {
+  return objc3_runtime_stdlib_core_prefix_count_i32(bytes, requested);
+}
+
+fn workflowItemWindow(total: i32, requested: i32) -> i32 {
+  return objc3_runtime_stdlib_core_prefix_count_i32(total, requested);
+}
+
+fn workflowMapValue(present: i32, value: i32, fallback: i32) -> i32 {
+  if (objc3_runtime_stdlib_core_map_entry_present_i32(present)) {
+    return objc3_runtime_stdlib_core_map_entry_value_or_i32(present, value, fallback);
+  }
+  return fallback;
+}
+
+fn main() -> i32 {
+  return stringViewUnits(8)
+    + byteSpanPrefix(12, 5)
+    + workflowItemWindow(9, 4)
+    + workflowMapValue(1, 7, 2)
+    + route_model_keypath_token();
+}

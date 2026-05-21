@@ -19,6 +19,7 @@ from .performance_governance_workflow import (
     action_validate_performance_governance,
     action_validate_performance_governance_end_to_end,
     action_validate_performance_governance_integration,
+    action_validate_performance_governance_runtime_contract_linkage,
 )
 from .performance_metrics import (
     action_benchmark_performance,
@@ -48,6 +49,7 @@ __all__ = [
     "action_validate_performance_governance",
     "action_validate_performance_governance_end_to_end",
     "action_validate_performance_governance_integration",
+    "action_validate_performance_governance_runtime_contract_linkage",
     "action_validate_runnable_compiler_throughput",
     "action_validate_runnable_performance",
     "action_validate_runnable_runtime_performance",

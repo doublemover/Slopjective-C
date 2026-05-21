@@ -10,6 +10,8 @@ from objc3c_tooling.json_io import load_json_object as load_json
 from .models import MinCase
 from .paths import ROOT
 
+ALLOWED_MINIMIZATION_SUBSYSTEMS = {"parser", "semantic", "runtime", "execution"}
+
 
 def load_manifest(path: Path) -> list[MinCase]:
     payload = load_json(path)
@@ -29,7 +31,7 @@ def load_manifest(path: Path) -> list[MinCase]:
         source_path = item.get("source_path")
         if not isinstance(case_id, str) or not case_id:
             raise RuntimeError("stress minimization manifest case missing case_id")
-        if subsystem not in {"parser", "semantic"}:
+        if subsystem not in ALLOWED_MINIMIZATION_SUBSYSTEMS:
             raise RuntimeError(f"stress minimization manifest case {case_id} has invalid subsystem")
         if not isinstance(source_path, str) or not source_path:
             raise RuntimeError(f"stress minimization manifest case {case_id} missing source_path")

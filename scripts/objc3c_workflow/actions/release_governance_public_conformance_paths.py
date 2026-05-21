@@ -34,6 +34,9 @@ PUBLIC_CONFORMANCE_SCHEMA_SUMMARY = (
 PUBLIC_CONFORMANCE_SCORECARD_SUMMARY = (
     f"{PUBLIC_CONFORMANCE_REPORT_ROOT}/scorecard-summary.json"
 )
+PUBLIC_CONFORMANCE_PUBLIC_SUITE_SUMMARY = (
+    "tmp/reports/conformance/public-suite-summary.json"
+)
 PUBLIC_CONFORMANCE_PUBLIC_SUMMARY = f"{PUBLIC_CONFORMANCE_REPORT_ROOT}/public-summary.json"
 PUBLIC_CONFORMANCE_INTEGRATION_SUMMARY = (
     f"{PUBLIC_CONFORMANCE_REPORT_ROOT}/integration-summary.json"
@@ -59,6 +62,9 @@ PUBLIC_CONFORMANCE_SCHEMA_CHECK_SCRIPT = (
 )
 PUBLIC_CONFORMANCE_SCORECARD_SCRIPT = (
     "scripts/build_objc3c_public_conformance_scorecard.py"
+)
+PUBLIC_CONFORMANCE_PUBLIC_SUITE_SCRIPT = (
+    "scripts/check_objc3c_public_conformance_suite_manifest.py"
 )
 PUBLIC_CONFORMANCE_REPORT_SCRIPT = (
     "scripts/publish_objc3c_public_conformance_report.py"

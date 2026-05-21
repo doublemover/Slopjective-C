@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.application_framework_samples.workspace.v1",
+  "schema_version": 1,
+  "sample_id": "interopAdapterKit",
+  "sample_kind": "library",
+  "package_id": "showcase-framework:interopAdapterKit",
+  "module_name": "InteropAdapterKit",
+  "workspace_root": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit",
+  "entry_source": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3",
+  "replay_contract": "showcase/applicationFrameworkSamples/libraries/interopAdapterKit/replay-contract.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/interopAdapterKit",
+  "emit_prefix": "module",
+  "capabilities": [
+    "foreign-import-metadata",
+    "header-export-metadata",
+    "swift-cxx-name-metadata",
+    "derive-metadata",
+    "macro-provenance",
+    "property-behavior"
+  ],
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.interop-adapter-library"
+  ],
+  "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3 --out-dir tmp/artifacts/application-framework-samples/interopAdapterKit --emit-prefix module"
+}

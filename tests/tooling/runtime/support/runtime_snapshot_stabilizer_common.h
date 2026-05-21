@@ -75,7 +75,15 @@ inline void StabilizeConformanceQuery(
     std::string &attachment_owner_storage,
     std::string *matched_class_storage = nullptr,
     std::string *matched_class_owner_storage = nullptr,
-    std::string *failure_reason_storage = nullptr) {
+    std::string *failure_reason_storage = nullptr,
+    std::string *existential_canonical_spelling_storage = nullptr,
+    std::string *object_representation_storage = nullptr,
+    std::string *conformance_owner_identity_storage = nullptr,
+    std::string *runtime_lookup_anchor_storage = nullptr,
+    std::string *witness_metadata_key_storage = nullptr,
+    std::string *requirement_resolution_policy_storage = nullptr,
+    std::string *associated_type_diagnostic_storage = nullptr,
+    std::string *dynamic_dispatch_diagnostic_storage = nullptr) {
   StabilizeNullableCString(snapshot.class_name, class_storage,
                            snapshot.class_name);
   StabilizeNullableCString(snapshot.protocol_name, protocol_storage,
@@ -100,6 +108,46 @@ inline void StabilizeConformanceQuery(
     StabilizeNullableCString(snapshot.failure_reason,
                              *failure_reason_storage,
                              snapshot.failure_reason);
+  }
+  if (existential_canonical_spelling_storage != nullptr) {
+    StabilizeNullableCString(snapshot.existential_canonical_spelling,
+                             *existential_canonical_spelling_storage,
+                             snapshot.existential_canonical_spelling);
+  }
+  if (object_representation_storage != nullptr) {
+    StabilizeNullableCString(snapshot.object_representation,
+                             *object_representation_storage,
+                             snapshot.object_representation);
+  }
+  if (conformance_owner_identity_storage != nullptr) {
+    StabilizeNullableCString(snapshot.conformance_owner_identity,
+                             *conformance_owner_identity_storage,
+                             snapshot.conformance_owner_identity);
+  }
+  if (runtime_lookup_anchor_storage != nullptr) {
+    StabilizeNullableCString(snapshot.runtime_lookup_anchor,
+                             *runtime_lookup_anchor_storage,
+                             snapshot.runtime_lookup_anchor);
+  }
+  if (witness_metadata_key_storage != nullptr) {
+    StabilizeNullableCString(snapshot.witness_metadata_key,
+                             *witness_metadata_key_storage,
+                             snapshot.witness_metadata_key);
+  }
+  if (requirement_resolution_policy_storage != nullptr) {
+    StabilizeNullableCString(snapshot.requirement_resolution_policy,
+                             *requirement_resolution_policy_storage,
+                             snapshot.requirement_resolution_policy);
+  }
+  if (associated_type_diagnostic_storage != nullptr) {
+    StabilizeNullableCString(snapshot.unsupported_associated_type_diagnostic,
+                             *associated_type_diagnostic_storage,
+                             snapshot.unsupported_associated_type_diagnostic);
+  }
+  if (dynamic_dispatch_diagnostic_storage != nullptr) {
+    StabilizeNullableCString(snapshot.unsupported_dynamic_dispatch_diagnostic,
+                             *dynamic_dispatch_diagnostic_storage,
+                             snapshot.unsupported_dynamic_dispatch_diagnostic);
   }
 }
 

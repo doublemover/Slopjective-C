@@ -23,6 +23,7 @@
     "application_architecture_boundary:tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
     "schema_path:schemas/objc3c-package-lock-v1.schema.json",
     "schema_path:schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "schema_path:schemas/objc3c-package-local-registry-index-v1.schema.json",
     "schema_path:schemas/objc3c-package-install-receipt-v1.schema.json",
     "owner_split_module:scripts/objc3c_workflow/action_catalog_package_lock_contracts.py",
     "owner_split_module:scripts/objc3c_workflow/action_catalog_package_registry_publication.py",

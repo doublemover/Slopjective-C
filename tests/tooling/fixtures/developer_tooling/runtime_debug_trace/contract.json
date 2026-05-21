@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.runtime.debug.trace.fixture.contract.v1",
+  "source_path": "tests/tooling/fixtures/native/hello.objc3",
+  "schema_path": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+  "expected_event_counts": {
+    "compile-stage": 5,
+    "debug-anchor": 3,
+    "reserved-surface": 3,
+    "runtime-actor-snapshot": 1,
+    "runtime-dispatch-snapshot": 1,
+    "runtime-error-snapshot": 1,
+    "runtime-memory-snapshot": 1,
+    "runtime-object-snapshot": 1,
+    "runtime-task-snapshot": 1
+  },
+  "expected_supported_lanes": [
+    "actor_runtime_trace",
+    "async_task_inspection",
+    "dispatch_runtime_trace",
+    "error_unwind_trace",
+    "memory_runtime_trace",
+    "message_send_trace",
+    "object_inspection",
+    "object_runtime_trace",
+    "source_to_artifact_mapping",
+    "task_runtime_trace"
+  ],
+  "expected_reserved_lanes": [
+    "full_source_map_publication",
+    "lldb_plugin",
+    "statement_level_stepping"
+  ],
+  "expected_supported_inspection_queries": [
+    "debug.source-to-artifact.declaration-anchors",
+    "runtime.object-inspection.object-symbols",
+    "runtime.message-send.dispatch-cache-observation",
+    "debug.runtime-trace.composed-event-sequence",
+    "runtime.source-owned-trace-contracts",
+    "runtime.async-task-inspection.source-contracts",
+    "runtime.error-unwind-trace.snapshots",
+    "runtime.memory-inspection.source-contracts"
+  ],
+  "expected_reserved_inspection_queries": [
+    "debug.statement-level-stepping.line-table",
+    "debug.full-source-map.publication",
+    "debug.lldb-plugin.integration"
+  ],
+  "expected_source_span_evidence_count": 3,
+  "expected_source_span_query_ids": [
+    "debug.source-to-artifact.declaration-anchors",
+    "debug.runtime-trace.composed-event-sequence"
+  ],
+  "required_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace",
+    "objc3c.behavior.runtime.debug_trace.lldb_plugin",
+    "objc3c.behavior.runtime.debug_trace.statement_stepping",
+    "objc3c.behavior.runtime.debug_trace.full_source_map",
+    "objc3c.behavior.runtime.debug_trace.async_tasks",
+    "objc3c.behavior.runtime.debug_trace.memory",
+    "objc3c.behavior.runtime.debug_trace.error_unwind"
+  ],
+  "expected_supported_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace",
+    "objc3c.behavior.runtime.debug_trace.async_tasks",
+    "objc3c.behavior.runtime.debug_trace.memory",
+    "objc3c.behavior.runtime.debug_trace.error_unwind"
+  ],
+  "expected_reserved_support_handoff_ids": [
+    "objc3c.behavior.runtime.debug_trace.lldb_plugin",
+    "objc3c.behavior.runtime.debug_trace.statement_stepping",
+    "objc3c.behavior.runtime.debug_trace.full_source_map"
+  ],
+  "diagnostic_codes": [
+    "O3DBG8176"
+  ]
+}

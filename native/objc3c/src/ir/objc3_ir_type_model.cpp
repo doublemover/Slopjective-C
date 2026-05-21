@@ -38,6 +38,10 @@ ValueType RuntimeMetadataValueType(const std::string &type_name) {
   if (type_name == "object-pointer") {
     return ValueType::ObjCObjectPtr;
   }
+  if (type_name == "Text" || type_name == "Objc3Text" ||
+      type_name == "text-handle") {
+    return ValueType::TextHandle;
+  }
   if (type_name == "unknown") {
     return ValueType::Unknown;
   }

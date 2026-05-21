@@ -17,7 +17,7 @@
     "gap_capability:hosted-execution-without-llc-object-emission",
     "gap_capability:local-only-hosted-proof",
     "gap_capability:source-map-debug-info-stepping",
-    "gap_capability:references-rename-semantic-tokens-code-actions",
+    "gap_capability:references-rename-semantic-tokens-general-code-actions",
     "unsupported_claim:hosted LLVM availability",
     "unsupported_claim:hosted object parity without llc --filetype=obj",
     "unsupported_claim:language-server parity without owned implementation evidence",

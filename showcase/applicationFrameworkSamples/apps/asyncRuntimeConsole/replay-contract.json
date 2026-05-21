@@ -1,0 +1,63 @@
+{
+  "contract_id": "objc3c.application_framework_samples.replay_contract.v1",
+  "schema_version": 1,
+  "sample_id": "asyncRuntimeConsole",
+  "package_id": "showcase-framework:asyncRuntimeConsole",
+  "module_name": "AsyncRuntimeConsole",
+  "source": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
+  "workspace_manifest": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/workspace.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/asyncRuntimeConsole",
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.async-runtime-application"
+  ],
+  "package_dependencies": [
+    "stdlib:objc3.concurrency",
+    "showcase-framework:routeModelKit",
+    "showcase-framework:interopAdapterKit"
+  ],
+  "required_source_terms": [
+    "async fn refreshRuntimeStatus",
+    "objc_executor(global)",
+    "objc3_runtime_spawn_task_i32",
+    "route_model_keypath_token",
+    "adapterMacroValue",
+    "await refreshRuntimeStatus(seed)"
+  ],
+  "expected_symbols": {
+    "functions": [
+      "objc3_runtime_spawn_task_i32",
+      "objc3_runtime_executor_hop_i32",
+      "objc3_runtime_task_is_cancelled_i32",
+      "objc3_runtime_task_on_cancel_i32",
+      "route_model_keypath_token",
+      "adapterMacroValue",
+      "refreshRuntimeStatus",
+      "main"
+    ],
+    "interfaces": [
+      "RuntimeConsole"
+    ],
+    "protocols": [],
+    "categories": []
+  },
+  "expected_runtime_registration": {
+    "class_descriptor_count": 2,
+    "protocol_descriptor_count": 0,
+    "category_descriptor_count": 0,
+    "property_descriptor_count": 0,
+    "ivar_descriptor_count": 0,
+    "total_descriptor_count": 2
+  },
+  "expected_compile_output_truthfulness": {
+    "truthful": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32"
+  },
+  "minimum_artifact_count": 17,
+  "required_emitted_artifacts": [
+    "module.ll",
+    "module.obj",
+    "module.manifest.json",
+    "module.runtime-metadata.bin",
+    "module.runtime-import-surface.json"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "contract_id": "objc3c.public_conformance_suite.package_replay_evidence.v1",
+  "schema_version": 1,
+  "suite_id": "objc3-public-conformance-suite",
+  "source_manifest": "tests/conformance/public_suite_manifest.json",
+  "package_stage_root": "tmp/pkg/objc3-public-conformance-suite",
+  "artifact_root": "tmp/artifacts/public-conformance/suite",
+  "report_root": "tmp/reports/conformance",
+  "outside_repo_replay": {
+    "required": true,
+    "model": "copy staged suite package into a clean directory outside the repository root and run only packaged public commands",
+    "source_truth_policy": "checked-in manifests and fixtures define support; generated package and report trees prove replay only",
+    "network_policy": "offline",
+    "tmp_support_claims_allowed": false
+  },
+  "packaged_entrypoints": [
+    {
+      "profile_id": "core",
+      "command": "npm run objc3c -- validate-conformance-corpus",
+      "requires_repo_checkout": false,
+      "requires_network": false
+    },
+    {
+      "profile_id": "stdlib-package",
+      "command": "npm run objc3c -- validate-interop-conformance",
+      "requires_repo_checkout": false,
+      "requires_network": false
+    },
+    {
+      "profile_id": "release-candidate",
+      "command": "npm run objc3c -- validate-release-candidate-conformance",
+      "requires_repo_checkout": false,
+      "requires_network": false
+    }
+  ],
+  "package_manifest_replay": {
+    "package_manifest_contract": "objc3c.public_conformance_suite.package_manifest.v1",
+    "case_manifest_contract": "objc3c.public_conformance_suite.case.v1",
+    "replay_plan_contract": "objc3c.public_conformance_suite.replay_plan.v1",
+    "packaged_replay_summary_contract": "objc3c.public_conformance_suite.packaged_replay.v1",
+    "package_json_script": "python tools/replay_public_conformance_suite.py",
+    "replay_tool": "tools/replay_public_conformance_suite.py",
+    "source_hash_algorithm": "sha256",
+    "selected_case_policy": "profile-intersection",
+    "requires_all_public_stable_cases_for_release_candidate": true,
+    "required_package_files": [
+      "package-manifest.json",
+      "package.json",
+      "replay-plan.json",
+      "README.md",
+      "tools/replay_public_conformance_suite.py",
+      "cases"
+    ],
+    "required_actions": [
+      {
+        "action": "validate-conformance-corpus",
+        "profile_ids": [
+          "core"
+        ]
+      },
+      {
+        "action": "validate-interop-conformance",
+        "profile_ids": [
+          "stdlib-package"
+        ]
+      },
+      {
+        "action": "validate-release-candidate-conformance",
+        "profile_ids": [
+          "release-candidate"
+        ]
+      },
+      {
+        "action": "validate-public-conformance-suite",
+        "profile_ids": [
+          "core",
+          "stdlib-package",
+          "release-candidate"
+        ]
+      }
+    ]
+  },
+  "required_packaged_inputs": [
+    "tests/conformance/public_suite_manifest.json",
+    "tests/conformance/corpus_surface.json",
+    "tests/conformance/support_claim_runnable_evidence_catalog.json",
+    "docs/support/capability_matrix.json",
+    "docs/support/evidence_map.json",
+    "schemas/objc3c-public-conformance-suite-v1.schema.json"
+  ],
+  "required_replay_outputs": [
+    "tmp/reports/conformance/public-suite-summary.json",
+    "tmp/artifacts/public-conformance/suite/manifest.snapshot.json",
+    "tmp/pkg/objc3-public-conformance-suite/package-manifest.json"
+  ],
+  "fail_closed_checks": [
+    "packaged commands must keep the npm public command prefix",
+    "packaged replay must not use tmp artifacts as source truth",
+    "outside-repo replay must not enable compatibility mode, fallback gates, or unsupported claim promotion",
+    "release-candidate replay must include positive and negative evidence for every public-stable case"
+  ]
+}

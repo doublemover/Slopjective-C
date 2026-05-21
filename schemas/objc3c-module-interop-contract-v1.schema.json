@@ -1,0 +1,464 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-module-interop-contract-v1.schema.json",
+  "title": "Objective-C 3 module interop contract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema",
+    "issue_refs",
+    "public_command",
+    "source_authority",
+    "evidence_log_allowed",
+    "checked_source_proofs",
+    "module_identity",
+    "imports",
+    "exports",
+    "dependency_graph",
+    "visibility_access_cases",
+    "incremental_rebuild",
+    "interop",
+    "package_metadata",
+    "unsupported_surfaces",
+    "native_anchors",
+    "fixture_anchors"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.module_interop.import_visibility_bridge_contract.v1"
+    },
+    "schema": {
+      "const": "schemas/objc3c-module-interop-contract-v1.schema.json"
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": { "enum": [8163, 8165] },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "public_command": {
+      "const": "npm run objc3c -- validate-module-interop-contracts"
+    },
+    "source_authority": {
+      "const": "checked-in-module-interop-contract-fixture"
+    },
+    "evidence_log_allowed": {
+      "const": false
+    },
+    "checked_source_proofs": {
+      "type": "array",
+      "minItems": 8,
+      "items": { "$ref": "#/$defs/checkedSourceProof" }
+    },
+    "module_identity": {
+      "type": "object",
+      "required": [
+        "module_name",
+        "metadata_version",
+        "abi_identity",
+        "source_digest",
+        "source_identity_key",
+        "package_lock_identity"
+      ],
+      "properties": {
+        "module_name": { "type": "string", "minLength": 1 },
+        "metadata_version": { "type": "string", "minLength": 1 },
+        "abi_identity": { "type": "string", "minLength": 1 },
+        "source_digest": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "source_identity_key": { "type": "string", "minLength": 1 },
+        "package_lock_identity": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "imports": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/import" }
+    },
+    "exports": {
+      "type": "object",
+      "required": [
+        "public",
+        "private",
+        "duplicate_policy",
+        "hidden_import_access_policy"
+      ],
+      "properties": {
+        "public": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "private": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "duplicate_policy": { "const": "fail-closed" },
+        "hidden_import_access_policy": { "const": "reject" }
+      },
+      "additionalProperties": false
+    },
+    "incremental_rebuild": {
+      "type": "object",
+      "required": [
+        "deterministic",
+        "identity_inputs",
+        "invalidation_conditions",
+        "invalidation_cases",
+        "stale_metadata_diagnostic",
+        "abi_mismatch_diagnostic",
+        "replay_key"
+      ],
+      "properties": {
+        "deterministic": { "const": true },
+        "identity_inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "invalidation_conditions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "invalidation_cases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/invalidationCase" },
+          "minItems": 5
+        },
+        "stale_metadata_diagnostic": { "type": "string", "pattern": "^O3" },
+        "abi_mismatch_diagnostic": { "type": "string", "pattern": "^O3" },
+        "replay_key": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "dependency_graph": {
+      "type": "object",
+      "required": ["edges", "reexported_modules", "diagnostics"],
+      "properties": {
+        "edges": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/dependencyEdge" }
+        },
+        "reexported_modules": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "diagnostics": {
+          "type": "array",
+          "minItems": 6,
+          "items": { "$ref": "#/$defs/moduleDiagnostic" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "visibility_access_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/visibilityAccessCase" }
+    },
+    "interop": {
+      "type": "object",
+      "required": [
+        "bridge_header",
+        "modulemap",
+        "bridge_metadata",
+        "bridge_metadata_digest",
+        "foreign_surfaces",
+        "foreign_type_contracts"
+      ],
+      "properties": {
+        "bridge_header": { "type": "string", "minLength": 1 },
+        "modulemap": { "type": "string", "minLength": 1 },
+        "bridge_metadata": { "type": "string", "minLength": 1 },
+        "bridge_metadata_digest": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "foreign_surfaces": {
+          "type": "array",
+          "minItems": 4,
+          "items": { "$ref": "#/$defs/foreignSurface" }
+        },
+        "foreign_type_contracts": {
+          "type": "array",
+          "minItems": 4,
+          "items": { "$ref": "#/$defs/foreignTypeContract" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "package_metadata": {
+      "type": "object",
+      "required": [
+        "package_name",
+        "module_identity",
+        "package_lock_module_identity",
+        "imported_module_identities",
+        "mixed_image_loader_metadata",
+        "mixed_image_loader_metadata_digest",
+        "bridge_surface_count",
+        "supported_bridge_surface_count",
+        "reserved_bridge_surface_count",
+        "swift_bridge_surface_count",
+        "cpp_bridge_surface_count"
+      ],
+      "properties": {
+        "package_name": { "type": "string", "minLength": 1 },
+        "module_identity": { "type": "string", "minLength": 1 },
+        "package_lock_module_identity": { "type": "string", "minLength": 1 },
+        "imported_module_identities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "mixed_image_loader_metadata": { "type": "string", "minLength": 1 },
+        "mixed_image_loader_metadata_digest": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "bridge_surface_count": { "type": "integer", "minimum": 0 },
+        "supported_bridge_surface_count": { "type": "integer", "minimum": 0 },
+        "reserved_bridge_surface_count": { "type": "integer", "minimum": 0 },
+        "swift_bridge_surface_count": { "type": "integer", "minimum": 0 },
+        "cpp_bridge_surface_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "unsupported_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["surface", "diagnostic", "fail_closed"],
+        "properties": {
+          "surface": { "type": "string", "minLength": 1 },
+          "diagnostic": { "type": "string", "pattern": "^O3" },
+          "fail_closed": { "const": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "native_anchors": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "fixture_anchors": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "checkedSourceProof": {
+      "type": "object",
+      "required": [
+        "case",
+        "diagnostic",
+        "fail_closed",
+        "source_anchor",
+        "source_sha256",
+        "fragments"
+      ],
+      "properties": {
+        "case": {
+          "enum": [
+            "missing-module",
+            "import-cycle",
+            "duplicate-export",
+            "hidden-declaration",
+            "private-reexport",
+            "stale-metadata",
+            "abi-mismatch",
+            "bridge-digest-drift"
+          ]
+        },
+        "diagnostic": { "type": "string", "pattern": "^O3MOD[0-9]+$" },
+        "fail_closed": { "const": true },
+        "source_anchor": { "type": "string", "minLength": 1 },
+        "source_sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "fragments": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "import": {
+      "type": "object",
+      "required": [
+        "module_name",
+        "metadata_version",
+        "abi_identity",
+        "visibility",
+        "reexport",
+        "exported_symbols",
+        "rebuild_affects"
+      ],
+      "properties": {
+        "module_name": { "type": "string", "minLength": 1 },
+        "metadata_version": { "type": "string", "minLength": 1 },
+        "abi_identity": { "type": "string", "minLength": 1 },
+        "visibility": { "enum": ["public", "private", "internal"] },
+        "reexport": { "type": "boolean" },
+        "exported_symbols": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "rebuild_affects": {
+          "type": "array",
+          "items": { "enum": ["semantic", "abi", "link", "package-lock"] },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencyEdge": {
+      "type": "object",
+      "required": ["from", "to", "visibility", "reexport"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "visibility": { "enum": ["public", "private", "internal"] },
+        "reexport": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "moduleDiagnostic": {
+      "type": "object",
+      "required": ["case", "diagnostic"],
+      "properties": {
+        "case": {
+          "enum": [
+            "missing-module",
+            "import-cycle",
+            "stale-metadata",
+            "duplicate-export",
+            "hidden-declaration",
+            "abi-mismatch"
+          ]
+        },
+        "diagnostic": { "type": "string", "pattern": "^O3MOD[0-9]+$" }
+      },
+      "additionalProperties": false
+    },
+    "visibilityAccessCase": {
+      "type": "object",
+      "required": ["symbol", "provided_by", "access", "allowed"],
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1 },
+        "provided_by": { "type": "string", "minLength": 1 },
+        "access": { "type": "string", "minLength": 1 },
+        "allowed": { "type": "boolean" },
+        "diagnostic": { "type": "string", "pattern": "^O3MOD[0-9]+$" }
+      },
+      "additionalProperties": false
+    },
+    "invalidationCase": {
+      "type": "object",
+      "required": [
+        "condition",
+        "mutated_surface",
+        "diagnostic",
+        "rebuild_affects",
+        "fail_closed",
+        "deterministic"
+      ],
+      "properties": {
+        "condition": { "type": "string", "minLength": 1 },
+        "mutated_surface": { "type": "string", "minLength": 1 },
+        "diagnostic": { "type": "string", "pattern": "^O3MOD[0-9]+$" },
+        "rebuild_affects": {
+          "type": "array",
+          "items": { "enum": ["semantic", "abi", "link", "package-lock"] },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "fail_closed": { "const": true },
+        "deterministic": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "foreignSurface": {
+      "type": "object",
+      "required": [
+        "language",
+        "surface_id",
+        "supported",
+        "support_state",
+        "fail_closed",
+        "symbol_owner",
+        "abi_alignment",
+        "bridge_header",
+        "modulemap",
+        "callable_metadata",
+        "source_syntax_policy",
+        "safety_policies",
+        "evidence_anchors"
+      ],
+      "properties": {
+        "language": { "enum": ["c", "objc2", "swift", "cpp"] },
+        "surface_id": { "type": "string", "minLength": 1 },
+        "supported": { "type": "boolean" },
+        "support_state": { "enum": ["supported", "reserved"] },
+        "fail_closed": { "const": true },
+        "symbol_owner": { "type": "string", "minLength": 1 },
+        "abi_alignment": { "type": "integer", "minimum": 1 },
+        "bridge_header": { "type": "string", "minLength": 1 },
+        "modulemap": { "type": "string", "minLength": 1 },
+        "callable_metadata": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "source_syntax_policy": { "type": "string", "minLength": 1 },
+        "reservation_diagnostic": { "type": "string", "pattern": "^O3" },
+        "reservation_reason": { "type": "string", "minLength": 1 },
+        "evidence_anchors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "safety_policies": {
+          "type": "object",
+          "required": ["ownership", "errors", "async", "object_identity"],
+          "properties": {
+            "ownership": { "type": "string", "minLength": 1 },
+            "errors": { "type": "string", "minLength": 1 },
+            "async": { "type": "string", "minLength": 1 },
+            "object_identity": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "foreignTypeContract": {
+      "type": "object",
+      "required": [
+        "type_name",
+        "source_language",
+        "symbol_owner",
+        "abi_alignment",
+        "ownership"
+      ],
+      "properties": {
+        "type_name": { "type": "string", "minLength": 1 },
+        "source_language": { "enum": ["c", "objc2", "swift", "cpp"] },
+        "symbol_owner": { "type": "string", "minLength": 1 },
+        "abi_alignment": { "type": "integer", "minimum": 1 },
+        "ownership": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

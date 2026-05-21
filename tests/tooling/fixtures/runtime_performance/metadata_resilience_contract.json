@@ -1,0 +1,49 @@
+{
+  "contract_id": "objc3c.runtime.performance.metadata.resilience.contract.v1",
+  "schema_version": 1,
+  "contract_kind": "runtime-performance-fail-closed-metadata-and-fuzz-corpus",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "malformed_metadata_cases": [
+    {
+      "case_id": "runtime-performance-truncated-negative-metadata",
+      "workload_id": "dispatch-cache",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.objc3",
+      "metadata_path": "tests/tooling/fixtures/runtime_performance/malformed_metadata/truncated_runtime_dispatch_unresolved_symbol.meta.json.invalid",
+      "malformed_kind": "invalid-json",
+      "expected_stage": "metadata-load",
+      "stable_diagnostic": {
+        "code": "O3PERF8159",
+        "message_fragment": "malformed runtime-performance metadata",
+        "source_range": {
+          "start_line": 1,
+          "start_column": 1,
+          "end_line": 1,
+          "end_column": 1
+        }
+      },
+      "expected_handling": {
+        "fail_closed": true,
+        "packet_written": false,
+        "generated_report_allowed": false,
+        "benchmark_continues": false
+      }
+    }
+  ],
+  "metadata_fuzz_contracts": [
+    {
+      "fuzz_id": "runtime-performance-negative-metadata-corpus",
+      "workload_id": "dispatch-cache",
+      "corpus_paths": [
+        "tests/tooling/fixtures/runtime_performance/malformed_metadata/truncated_runtime_dispatch_unresolved_symbol.meta.json.invalid"
+      ],
+      "max_payload_bytes": 4096,
+      "required_failure_modes": [
+        "json-decode-error",
+        "missing-stable-diagnostic",
+        "unknown-workload-id",
+        "repo-escape-path"
+      ],
+      "support_authority": false
+    }
+  ]
+}

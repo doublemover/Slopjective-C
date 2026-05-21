@@ -1,0 +1,11 @@
+{
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "line": 1,
+      "column": 5,
+      "code": "O3T200",
+      "message": "globalCounter is used by the artifact inspector fixture"
+    }
+  ]
+}

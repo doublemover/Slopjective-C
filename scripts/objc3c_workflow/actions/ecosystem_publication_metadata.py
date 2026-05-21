@@ -17,12 +17,14 @@ PACKAGE_FEED_METADATA: dict[str, PublicationFeedMetadata] = {
         "package-ecosystem",
         (
             "build-package-lock",
+            "validate-package-manager-model",
             "validate-package-authoring",
             "validate-package-mirror",
             "validate-package-ecosystem",
+            "validate-package-install-distribution",
             "validate-runnable-package-ecosystem",
         ),
-        "package lock, authoring workflow, mirror reproducibility, and runnable package ecosystem validation",
+        "package lock, package manager model, authoring workflow, mirror reproducibility, clean install distribution credibility, and runnable package ecosystem validation",
     ),
     "long-horizon-operations": PublicationFeedMetadata(
         "long-horizon-operations",

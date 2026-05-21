@@ -1,0 +1,68 @@
+{
+  "id": "OBJ3-NEXT-016-PARSE-FIXIT-01",
+  "title": "Issue #8169 canonical Optional<T> parser diagnostic carries a deterministic fix-it",
+  "feature": "structured parser diagnostics and fix-it payloads",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
+  ],
+  "source": "module Obj3Next016OptionalAliasFixitRecovery;\n\nfn main(value: optional<int>) -> i32 {\n  return value;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3C004",
+        "severity": "error",
+        "phase": "parse",
+        "category": "configuration",
+        "span": {
+          "start": { "line": 3, "column": 16 },
+          "end": { "line": 3, "column": 24 }
+        },
+        "message": "optional<T> aliases are rejected; use canonical Optional<T> spelling",
+        "explanation": "The rejected alias has a single canonical spelling, so the fix-it is machine-applicable without widening accepted syntax.",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 3, "column": 16 },
+              "end": { "line": 3, "column": 24 }
+            },
+            "replacement": "Optional"
+          }
+        ],
+        "recovery": {
+          "strategy": "parser-canonical-spelling-rejection",
+          "boundary": "canonical type spelling",
+          "deterministic": true,
+          "accepts_invalid_program": false,
+          "recovery_counts_as_success": false,
+          "native_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_optional_alias_fixit_recovery.objc3",
+          "expected_native_code": "O3C004"
+        }
+      },
+      {
+        "code": "O3P100",
+        "severity": "error",
+        "phase": "parse",
+        "category": "parsing",
+        "span": {
+          "start": { "line": 5, "column": 1 },
+          "end": { "line": 5, "column": 2 }
+        },
+        "message": "unsupported Objective-C 3 statement",
+        "explanation": "After the alias rejection, the parser skips only the unsupported top-level fragment instead of treating recovery as success.",
+        "fixits": [],
+        "recovery": {
+          "strategy": "skip-unsupported-top-level-fragment",
+          "boundary": "next-top-level-declaration-or-semicolon",
+          "deterministic": true,
+          "accepts_invalid_program": false,
+          "recovery_counts_as_success": false,
+          "native_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_optional_alias_fixit_recovery.objc3",
+          "expected_native_code": "O3P100"
+        }
+      }
+    ]
+  }
+}

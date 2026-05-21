@@ -23,6 +23,37 @@ from .paths import (
 
 IMPLEMENTED_CHANNELS = ["portable-archive", "local-installer", "offline-bundle"]
 MANIFEST_RELATIVE_PATH = "artifacts/package/objc3c-runnable-toolchain-package.json"
+INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
+INSTALL_RECEIPT_SCHEMA = "schemas/objc3c-package-install-receipt-v1.schema.json"
+INSTALL_RECEIPT_PATH = "objc3c-install-receipt.json"
+INSTALL_COMMAND = "npm run objc3c -- build-package-channels"
+INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
+REQUIRED_RECEIPT_FIELDS = [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "channel_id",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
+    "installed_at_utc",
+]
+REQUIRED_PAYLOAD_ENTRIES = [
+    MANIFEST_RELATIVE_PATH,
+    "artifacts/bin/objc3c-native.exe",
+    "artifacts/lib/objc3_runtime.lib",
+    "stdlib/workspace.json",
+    "stdlib/modules/objc3.core/module.json",
+    "docs/runbooks/objc3c_packaging_channels.md",
+]
+ARCHIVE_DIGEST_FIELDS = {
+    "portable_archive": "portable-archive",
+    "installer_archive": "local-installer",
+    "offline_archive": "offline-bundle",
+}
 
 
 @dataclass(frozen=True)
@@ -79,7 +110,19 @@ def package_channels_manifest_payload(
     inputs: PackageChannelInputs,
     paths: PackageChannelPaths,
     installer_signature: dict[str, Any],
+    archive_digests: dict[str, Any] | None = None,
+    payload_contract: dict[str, Any] | None = None,
+    receipt_contracts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    resolved_archive_digests = (
+        archive_digest_payloads(paths) if archive_digests is None else archive_digests
+    )
+    resolved_payload_contract = (
+        package_payload_contract(paths) if payload_contract is None else payload_contract
+    )
+    resolved_receipt_contracts = (
+        receipt_contract_payloads() if receipt_contracts is None else receipt_contracts
+    )
     return {
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -98,6 +141,9 @@ def package_channels_manifest_payload(
         "implemented_channels": IMPLEMENTED_CHANNELS,
         "interop_loader_metadata": inputs.interop_loader_metadata,
         "installer_signature": installer_signature,
+        "archive_digests": resolved_archive_digests,
+        "payload_contract": resolved_payload_contract,
+        "receipt_contracts": resolved_receipt_contracts,
         "release_foundation_artifacts": {
             "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
             "sbom": repo_rel(RELEASE_FOUNDATION_SBOM),
@@ -130,6 +176,9 @@ def package_channels_report_payload(
         "implemented_channels": manifest_payload["implemented_channels"],
         "interop_loader_metadata": manifest_payload["interop_loader_metadata"],
         "installer_signature": manifest_payload["installer_signature"],
+        "archive_digests": manifest_payload["archive_digests"],
+        "payload_contract": manifest_payload["payload_contract"],
+        "receipt_contracts": manifest_payload["receipt_contracts"],
     }
 
 
@@ -151,3 +200,108 @@ def installer_signature_payload(installer_archive: Path) -> dict[str, Any]:
         "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
         "trust_scope": "checked-in-artifact-digest",
     }
+
+
+def archive_digest_record(*, artifact_role: str, artifact_path: Path) -> dict[str, str]:
+    return {
+        "digest_format": "sha256",
+        "artifact_role": artifact_role,
+        "artifact": repo_rel(artifact_path),
+        "sha256": sha256_file(artifact_path),
+        "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
+        "trust_scope": "checked-in-artifact-digest",
+    }
+
+
+def archive_digest_payloads(paths: PackageChannelPaths) -> dict[str, dict[str, str]]:
+    artifact_paths = {
+        "portable_archive": paths.portable_archive,
+        "installer_archive": paths.installer_archive,
+        "offline_archive": paths.offline_archive,
+    }
+    return {
+        field_name: archive_digest_record(
+            artifact_role=artifact_role,
+            artifact_path=artifact_paths[field_name],
+        )
+        for field_name, artifact_role in ARCHIVE_DIGEST_FIELDS.items()
+    }
+
+
+def package_payload_contract(paths: PackageChannelPaths) -> dict[str, Any]:
+    manifest_path = paths.package_root / MANIFEST_RELATIVE_PATH
+    entry_digests = {
+        relative_path: package_payload_entry_digest(
+            paths=paths,
+            relative_path=relative_path,
+        )
+        for relative_path in REQUIRED_PAYLOAD_ENTRIES
+    }
+    return {
+        "contract_id": "objc3c.packaging.channels.payload-contract.v1",
+        "source": "canonical-runnable-toolchain-package",
+        "manifest_relative_path": MANIFEST_RELATIVE_PATH,
+        "manifest_artifact": repo_rel(manifest_path),
+        "manifest_sha256": entry_digests[MANIFEST_RELATIVE_PATH]["sha256"],
+        "required_entries": REQUIRED_PAYLOAD_ENTRIES,
+        "entry_digests": entry_digests,
+        "clean_room_source_policy": "fresh-owned-tmp-root-only",
+    }
+
+
+def package_payload_entry_digest(
+    *,
+    paths: PackageChannelPaths,
+    relative_path: str,
+) -> dict[str, str]:
+    artifact_path = paths.package_root / relative_path
+    if not artifact_path.is_file():
+        raise RuntimeError(f"package-channels payload missing required entry {relative_path}")
+    return {
+        "digest_format": "sha256",
+        "artifact": relative_path,
+        "sha256": sha256_file(artifact_path),
+    }
+
+
+def receipt_contract_payloads() -> dict[str, dict[str, Any]]:
+    return {
+        "install_receipt": receipt_contract_payload(
+            channel_id="local-installer",
+            emitted_by="Install-objc3c.ps1",
+            network_policy="local-filesystem-only",
+        ),
+        "offline_install_receipt": receipt_contract_payload(
+            channel_id="offline-bundle",
+            emitted_by="OfflineBootstrap-objc3c.ps1",
+            network_policy="no-network",
+            delegates_to="local-installer",
+        ),
+    }
+
+
+def receipt_contract_payload(
+    *,
+    channel_id: str,
+    emitted_by: str,
+    network_policy: str,
+    delegates_to: str | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "contract_id": INSTALL_RECEIPT_CONTRACT_ID,
+        "schema": INSTALL_RECEIPT_SCHEMA,
+        "receipt_path": INSTALL_RECEIPT_PATH,
+        "channel_id": channel_id,
+        "emitted_by": emitted_by,
+        "bootstrap_entrypoint": INSTALL_BOOTSTRAP_ENTRYPOINT,
+        "package_bridge": "objc3c",
+        "install_command": INSTALL_COMMAND,
+        "payload_manifest": MANIFEST_RELATIVE_PATH,
+        "payload_required_entries": REQUIRED_PAYLOAD_ENTRIES,
+        "required_fields": REQUIRED_RECEIPT_FIELDS,
+        "network_policy": network_policy,
+        "rollback_required": True,
+    }
+    if delegates_to is not None:
+        payload["delegates_to"] = delegates_to
+    return payload

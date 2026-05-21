@@ -8,12 +8,14 @@
   ],
   "release_docs": [
     "docs/runbooks/objc3c_packaging_channels.md",
+    "docs/runbooks/objc3c_package_ecosystem.md",
     "docs/runbooks/objc3c_release_operations.md",
     "docs/runbooks/objc3c_release_foundation.md"
   ],
   "trust_report_inputs": [
     "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
     "tmp/reports/package-channels/end-to-end-summary.json",
+    "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
     "checked_outputs/release-evidence/index.json"
   ],

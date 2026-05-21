@@ -153,6 +153,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_manifest_preservation_descriptor_inventory.cpp
   runtime_import_manifest_preservation_linker_flags.cpp
   runtime_import_manifest_preservation_readiness.cpp
+  objc3_module_interop_contract_surface.cpp
   runtime_import_json_helpers.cpp
   runtime_import_json_helpers_accessors.cpp
   runtime_import_json_helpers_parser_values.cpp
@@ -240,6 +241,7 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface_owners.h
   objc3_lowering_pipeline_pass_graph_core_feature_surface_owners.h
   objc3_lowering_pipeline_pass_graph_scaffold_owners.h
+  objc3_semantic_optimization_pipeline.h
   objc3_ownership_aware_lowering_behavior_scaffold_owners.h
   objc3_parse_lowering_readiness_surface.h
   objc3_runtime_import_surface.h
@@ -314,6 +316,7 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_pipeline_pass_graph_scaffold_keys.cpp
   objc3_lowering_pipeline_pass_graph_scaffold.cpp
   objc3_lowering_pipeline_pass_graph_scaffold_readiness_publication.cpp
+  objc3_semantic_optimization_pipeline.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_contract.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_evidence.cpp
   objc3_ownership_aware_lowering_behavior_scaffold_failure_reasons.cpp
@@ -329,6 +332,7 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_sema
   objc3c_lower
   objc3c_ir
+  objc3c_opt
   objc3c_diag
   objc3c_json
   objc3c_pipeline_source_closure_replay_keys

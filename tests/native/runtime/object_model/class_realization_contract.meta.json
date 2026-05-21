@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "fixture": "class_realization_contract.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "runtime",
+  "behavior_family": "object_model",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": []
+  }
+}

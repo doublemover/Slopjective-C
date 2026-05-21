@@ -1,0 +1,825 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-public-conformance-suite-v1.schema.json",
+  "title": "ObjC 3 Public Conformance Suite Manifest (v1)",
+  "description": "Checked-in manifest for the stable public conformance suite taxonomy, package surface, replay commands, and fixture evidence.",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-public-conformance-suite-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.public_conformance_suite.manifest.v1",
+    "registry_owner": "scripts/objc3c_shared/schema_registry.py",
+    "artifact_family": "public-conformance"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "suite_id",
+    "suite_version",
+    "public_status",
+    "artifact_contract",
+    "fixture_provenance_policy",
+    "source_truth",
+    "package_surface",
+    "fixture_boundary",
+    "external_validation_policy",
+    "release_candidate_profile",
+    "phase_taxonomy",
+    "public_profiles",
+    "suite_cases",
+    "strict_rejection_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.public_conformance_suite.manifest.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "suite_id": {
+      "type": "string",
+      "pattern": "^objc3-public-conformance-suite$"
+    },
+    "suite_version": {
+      "type": "string",
+      "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[A-Za-z0-9._-]+$"
+    },
+    "public_status": {
+      "type": "string",
+      "enum": [
+        "stable"
+      ]
+    },
+    "artifact_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_id",
+        "metadata_policy",
+        "source_owned_contracts",
+        "generated_output_policy",
+        "package_replay_boundary"
+      ],
+      "properties": {
+        "issue_id": {
+          "type": "string",
+          "const": "OBJ3-NEXT-018"
+        },
+        "metadata_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stable_case_indices_required",
+            "deterministic_case_order",
+            "deterministic_phase_order",
+            "deterministic_profile_order"
+          ],
+          "properties": {
+            "stable_case_indices_required": {
+              "type": "boolean",
+              "const": true
+            },
+            "deterministic_case_order": {
+              "type": "string",
+              "const": "stable_case_index"
+            },
+            "deterministic_phase_order": {
+              "type": "array",
+              "minItems": 8,
+              "items": {
+                "$ref": "#/$defs/phaseId"
+              }
+            },
+            "deterministic_profile_order": {
+              "type": "array",
+              "minItems": 3,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              }
+            }
+          }
+        },
+        "source_owned_contracts": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "role",
+              "path",
+              "contract_id",
+              "source_owned"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "suite-manifest",
+                  "package-replay-evidence",
+                  "package-contract"
+                ]
+              },
+              "path": {
+                "$ref": "#/$defs/repoPath"
+              },
+              "contract_id": {
+                "type": "string",
+                "pattern": "^objc3c\\.public_conformance_suite\\.[a-z0-9_.-]+\\.v1$"
+              },
+              "source_owned": {
+                "type": "boolean",
+                "const": true
+              }
+            }
+          }
+        },
+        "generated_output_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_generated_roots",
+            "generated_outputs_committable",
+            "generated_outputs_can_define_support"
+          ],
+          "properties": {
+            "allowed_generated_roots": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/tmpPath"
+              }
+            },
+            "generated_outputs_committable": {
+              "type": "boolean",
+              "const": false
+            },
+            "generated_outputs_can_define_support": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        },
+        "package_replay_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "outside_repo_replay_required",
+            "offline_required",
+            "repo_checkout_required",
+            "public_commands_only",
+            "unsupported_fixture_packaging_allowed"
+          ],
+          "properties": {
+            "outside_repo_replay_required": {
+              "type": "boolean",
+              "const": true
+            },
+            "offline_required": {
+              "type": "boolean",
+              "const": true
+            },
+            "repo_checkout_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "public_commands_only": {
+              "type": "boolean",
+              "const": true
+            },
+            "unsupported_fixture_packaging_allowed": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "fixture_provenance_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "allowed_origins",
+        "prohibited_origins",
+        "source_owned_required",
+        "internal_only_allowed",
+        "generated_allowed"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "const": true
+        },
+        "allowed_origins": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "checked-in-public-suite"
+            ]
+          }
+        },
+        "prohibited_origins": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "generated-tmp-report",
+              "internal-owner-debug",
+              "external-unaccepted-evidence"
+            ]
+          }
+        },
+        "source_owned_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "internal_only_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "generated_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "source_truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_surface",
+        "support_claim_runnable_evidence_catalog",
+        "capability_matrix",
+        "evidence_map",
+        "generated_report_boundary",
+        "tmp_source_truth_allowed"
+      ],
+      "properties": {
+        "corpus_surface": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "support_claim_runnable_evidence_catalog": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "capability_matrix": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "evidence_map": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "generated_report_boundary": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "tmp_source_truth_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "package_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_root",
+        "report_root",
+        "package_stage_root",
+        "public_command_prefix",
+        "offline_compatible"
+      ],
+      "properties": {
+        "artifact_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "report_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "package_stage_root": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "public_command_prefix": {
+          "type": "string",
+          "const": "npm run objc3c -- "
+        },
+        "offline_compatible": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "fixture_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_fixture_roots",
+        "internal_only_roots",
+        "expected_output_policy"
+      ],
+      "properties": {
+        "public_fixture_roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "internal_only_roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "expected_output_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "checked_in_expected_outputs_required",
+            "tmp_expected_outputs_allowed",
+            "internal_owner_debug_fixtures_public_claim_allowed",
+            "public_case_expected_fields"
+          ],
+          "properties": {
+            "checked_in_expected_outputs_required": {
+              "type": "boolean",
+              "const": true
+            },
+            "tmp_expected_outputs_allowed": {
+              "type": "boolean",
+              "const": false
+            },
+            "internal_owner_debug_fixtures_public_claim_allowed": {
+              "type": "boolean",
+              "const": false
+            },
+            "public_case_expected_fields": {
+              "type": "array",
+              "minItems": 5,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "expectation",
+                  "runnable_command",
+                  "platform_requirements",
+                  "positive_evidence",
+                  "negative_evidence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "external_validation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_surface",
+        "trust_policy",
+        "intake_manifest",
+        "quarantine_manifest",
+        "support_claim_gate",
+        "replay_command",
+        "publication_command",
+        "admitted_trust_states",
+        "rejected_trust_states",
+        "capability_truth_policy",
+        "external_evidence_can_create_public_support_claim",
+        "tmp_artifact_support_allowed"
+      ],
+      "properties": {
+        "source_surface": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "trust_policy": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "intake_manifest": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "quarantine_manifest": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "support_claim_gate": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "replay_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "publication_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "admitted_trust_states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "accepted"
+            ]
+          }
+        },
+        "rejected_trust_states": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "quarantined",
+              "rejected"
+            ]
+          }
+        },
+        "capability_truth_policy": {
+          "type": "string",
+          "minLength": 32
+        },
+        "external_evidence_can_create_public_support_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "release_candidate_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "gate_command",
+        "runnable_gate_command",
+        "scorecard_command",
+        "package_replay_case_id",
+        "required_phase_ids",
+        "requires_all_public_stable_cases",
+        "consumes_external_validation_policy",
+        "tmp_artifact_support_allowed"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "const": "release-candidate"
+        },
+        "gate_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "runnable_gate_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "scorecard_command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "package_replay_case_id": {
+          "type": "string",
+          "pattern": "^public\\.[a-z0-9.-]+$"
+        },
+        "required_phase_ids": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "$ref": "#/$defs/phaseId"
+          }
+        },
+        "requires_all_public_stable_cases": {
+          "type": "boolean",
+          "const": true
+        },
+        "consumes_external_validation_policy": {
+          "type": "boolean",
+          "const": true
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "phase_taxonomy": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phase_id",
+          "title",
+          "source_manifest",
+          "required_for_release_candidate"
+        ],
+        "properties": {
+          "phase_id": {
+            "$ref": "#/$defs/phaseId"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3
+          },
+          "source_manifest": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "required_for_release_candidate": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "public_profiles": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "title",
+          "required_phase_ids",
+          "default_command",
+          "platform_requirements"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3
+          },
+          "required_phase_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/phaseId"
+            }
+          },
+          "default_command": {
+            "$ref": "#/$defs/publicCommand"
+          },
+          "platform_requirements": {
+            "$ref": "#/$defs/platformRequirements"
+          }
+        }
+      }
+    },
+    "suite_cases": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "phase",
+          "feature_id",
+          "capability_id",
+          "support_claim",
+          "stable_case_index",
+          "fixture_provenance",
+          "expectation",
+          "profile_ids",
+          "source_manifest",
+          "conformance_fixture",
+          "traceability_fixture",
+          "runnable_command",
+          "platform_requirements",
+          "packaging_class",
+          "release_gate",
+          "positive_evidence",
+          "negative_evidence",
+          "source_truth_requirements"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "pattern": "^public\\.[a-z0-9.-]+$"
+          },
+          "phase": {
+            "$ref": "#/$defs/phaseId"
+          },
+          "feature_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "support_claim": {
+            "type": "string",
+            "pattern": "^objc3c\\.behavior\\.[a-z0-9.-]+$"
+          },
+          "stable_case_index": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "fixture_provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "origin",
+              "owner",
+              "source_owned",
+              "internal_only",
+              "generated"
+            ],
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "checked-in-public-suite"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "const": "objc3-public-conformance"
+              },
+              "source_owned": {
+                "type": "boolean",
+                "const": true
+              },
+              "internal_only": {
+                "type": "boolean",
+                "const": false
+              },
+              "generated": {
+                "type": "boolean",
+                "const": false
+              }
+            }
+          },
+          "expectation": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "strict-error",
+              "canonical-rejection",
+              "reserved"
+            ]
+          },
+          "profile_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "source_manifest": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "conformance_fixture": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "traceability_fixture": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "runnable_command": {
+            "$ref": "#/$defs/publicCommand"
+          },
+          "platform_requirements": {
+            "$ref": "#/$defs/platformRequirements"
+          },
+          "packaging_class": {
+            "type": "string",
+            "enum": [
+              "public-stable"
+            ]
+          },
+          "release_gate": {
+            "type": "boolean"
+          },
+          "positive_evidence": {
+            "$ref": "#/$defs/evidencePaths"
+          },
+          "negative_evidence": {
+            "$ref": "#/$defs/evidencePaths"
+          },
+          "source_truth_requirements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 8
+            }
+          }
+        }
+      }
+    },
+    "strict_rejection_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compatibility_mode_allowed",
+        "fallback_gate_allowed",
+        "unsupported_claim_promotion_allowed",
+        "tmp_artifact_support_allowed",
+        "forbidden_claim_patterns",
+        "fail_closed_states"
+      ],
+      "properties": {
+        "compatibility_mode_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "fallback_gate_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "unsupported_claim_promotion_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "tmp_artifact_support_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "forbidden_claim_patterns": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "fail_closed_states": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "strict-error",
+              "canonical-rejection",
+              "reserved",
+              "blocked",
+              "quarantined",
+              "unsupported"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "tmpPath": {
+      "type": "string",
+      "pattern": "^tmp/[A-Za-z0-9._\\-/]+$"
+    },
+    "phaseId": {
+      "type": "string",
+      "enum": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "stdlib",
+        "package",
+        "release_candidate"
+      ]
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [A-Za-z0-9:_\\- ]+$"
+    },
+    "platformRequirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "repo-python",
+          "node-npm",
+          "native-toolchain",
+          "windows",
+          "linux",
+          "macos"
+        ]
+      }
+    },
+    "evidencePaths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/repoPath"
+      }
+    }
+  }
+}

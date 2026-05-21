@@ -45,6 +45,9 @@ PERFORMANCE_SURFACE_FIELDS = (
             "executable_fixture_manifest": "tests/tooling/fixtures/runtime_performance/executable_fixture_manifest.json",
             "artifact_surface_contract": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
             "optimization_policy": "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
+            "workload_replay_contract": "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
+            "metadata_resilience_contract": "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
+            "stress_sanitizer_contract": "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
             "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
             "source_readme": "tests/tooling/fixtures/runtime_performance/README.md",
             "source_roots": [

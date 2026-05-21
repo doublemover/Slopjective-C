@@ -1,0 +1,11 @@
+int globalCounter = 0;
+
+@interface ArtifactWidget
+@end
+
+@implementation ArtifactWidget
+@end
+
+int main() {
+  return globalCounter;
+}

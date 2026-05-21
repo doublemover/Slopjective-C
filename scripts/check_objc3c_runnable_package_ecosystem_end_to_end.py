@@ -60,10 +60,22 @@ def main() -> int:
     public_actions = manifest.get("package_ecosystem_public_actions", [])
     manifest_package_bridge = manifest.get("package_bridge")
     expect(isinstance(package_surface, dict), "package manifest missing package_ecosystem_surface", failures)
-    for action in ("build-package-lock", "validate-package-authoring", "validate-package-mirror", "validate-runnable-package-ecosystem"):
+    for action in (
+        "build-package-lock",
+        "validate-package-manager-model",
+        "validate-package-authoring",
+        "validate-package-mirror",
+        "validate-package-install-distribution",
+        "validate-runnable-package-ecosystem",
+    ):
         expect(action in public_actions, f"package manifest missing public action {action}", failures)
     expect(manifest_package_bridge == "objc3c", "package manifest missing objc3c package bridge", failures)
 
+    packaged_manager = run_capture(
+        packaged_workflow_command("validate-package-manager-model"),
+        cwd=package_root,
+    )
+    expect(packaged_manager.returncode == 0, "packaged package manager model workflow failed", failures)
     packaged_authoring = run_capture(
         packaged_workflow_command("validate-package-authoring"),
         cwd=package_root,
@@ -74,11 +86,28 @@ def main() -> int:
         cwd=package_root,
     )
     expect(packaged_mirror.returncode == 0, "packaged package mirror workflow failed", failures)
+    packaged_install_distribution = run_capture(
+        packaged_workflow_command("validate-package-install-distribution"),
+        cwd=package_root,
+    )
+    expect(
+        packaged_install_distribution.returncode == 0,
+        "packaged package install distribution workflow failed",
+        failures,
+    )
 
+    manager_summary = load_json(package_root / "tmp" / "reports" / "package-ecosystem" / "package-manager-model-summary.json")
     authoring_summary = load_json(package_root / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json")
     mirror_summary = load_json(package_root / "tmp" / "reports" / "package-ecosystem" / "registry-mirror-reproducibility-summary.json")
+    install_distribution_summary = load_json(package_root / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json")
+    expect(manager_summary.get("status") == "PASS", "packaged package manager model summary did not report PASS", failures)
     expect(authoring_summary.get("status") == "PASS", "packaged package authoring summary did not report PASS", failures)
     expect(mirror_summary.get("status") == "PASS", "packaged mirror reproducibility summary did not report PASS", failures)
+    expect(
+        install_distribution_summary.get("status") == "PASS",
+        "packaged package install distribution summary did not report PASS",
+        failures,
+    )
     expect(mirror_summary.get("network_policy") == "no-network-during-validation", "packaged mirror network policy drifted", failures)
     expect(
         mirror_summary.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed",
@@ -94,7 +123,9 @@ def main() -> int:
             "blocker_owner": "package-ecosystem-blockers",
             "blocking_conditions": [
                 "packaged package authoring workflow failed",
+                "packaged package manager model workflow failed",
                 "packaged mirror workflow failed",
+                "packaged package install distribution workflow failed",
                 "runnable package manifest missing package ecosystem owner surface",
                 "packaged hosted registry claim did not fail closed",
             ],
@@ -107,8 +138,10 @@ def main() -> int:
         "packaged_package_bridge": manifest_package_bridge,
         "failures": failures,
         "packaged_reports": {
+            "manager_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "package-manager-model-summary.json"),
             "authoring_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"),
             "mirror_reproducibility_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "registry-mirror-reproducibility-summary.json"),
+            "install_distribution_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"),
         },
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -36,6 +36,7 @@ def main() -> int:
     lock_policy = load_json(ROOT / str(contract["dependency_lock_policy"]))
     mirror_semantics = load_json(ROOT / str(contract["local_workspace_mirror_semantics"]))
     registry_semantics = load_json(ROOT / str(contract["registry_publication_semantics"]))
+    install_distribution = load_json(ROOT / str(contract["install_distribution_credibility"]))
 
     package_scripts = package.get("scripts", {})
     if not isinstance(package_scripts, dict):
@@ -54,24 +55,32 @@ def main() -> int:
         str(contract["dependency_lock_policy"]),
         str(contract["local_workspace_mirror_semantics"]),
         str(contract["registry_publication_semantics"]),
+        str(contract["install_distribution_credibility"]),
         *schema_paths,
     ]
     missing_paths = [path for path in source_contract_paths if not (ROOT / path).is_file()]
     missing_actions = [name for name in required_actions if name not in registered_actions]
 
+    package_manifest_schema = load_json(ROOT / str(schemas.get("package_manifest", ""))) if isinstance(schemas, dict) and schemas.get("package_manifest") else {}
     package_lock_schema = load_json(ROOT / str(schemas.get("package_lock", ""))) if isinstance(schemas, dict) and schemas.get("package_lock") else {}
     mirror_schema = load_json(ROOT / str(schemas.get("offline_mirror_index", ""))) if isinstance(schemas, dict) and schemas.get("offline_mirror_index") else {}
+    local_registry_schema = load_json(ROOT / str(schemas.get("local_registry_index", ""))) if isinstance(schemas, dict) and schemas.get("local_registry_index") else {}
     claim_rules = contract.get("artifact_claim_rules", [])
     checks = {
         "runbook_mentions_artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json" in runbook_text,
+        "runbook_mentions_package_manifest_schema": "schemas/objc3c-package-manifest-v1.schema.json" in runbook_text,
         "runbook_mentions_lock_schema": "schemas/objc3c-package-lock-v1.schema.json" in runbook_text,
         "runbook_mentions_mirror_schema": "schemas/objc3c-package-offline-mirror-index-v1.schema.json" in runbook_text,
+        "runbook_mentions_local_registry_schema": "schemas/objc3c-package-local-registry-index-v1.schema.json" in runbook_text,
         "boundary_contract_linked": boundary.get("contract_id") == "objc3c.package_ecosystem.boundary_inventory.v1",
         "lock_policy_linked": lock_policy.get("contract_id") == "objc3c.package_ecosystem.dependency_lock_policy.v1",
         "mirror_semantics_linked": mirror_semantics.get("contract_id") == "objc3c.package_ecosystem.local_workspace_mirror_semantics.v1",
         "registry_semantics_linked": registry_semantics.get("contract_id") == "objc3c.package_ecosystem.registry_publication_semantics.v1",
+        "install_distribution_linked": install_distribution.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.v1",
+        "package_manifest_schema_contract": package_manifest_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-manifest-v1.schema.json",
         "lock_schema_contract": package_lock_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-lock-v1.schema.json",
         "mirror_schema_contract": mirror_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "local_registry_schema_contract": local_registry_schema.get("$id") == "https://objc3c.dev/schemas/objc3c-package-local-registry-index-v1.schema.json",
         "artifact_roots_under_tmp": all(root.startswith("tmp/artifacts/package-ecosystem/") for root in generated_artifact_roots),
         "report_root_under_tmp": str(contract["generated_report_root"]).startswith("tmp/reports/package-ecosystem"),
         "hosted_registry_claim_blocked": "hosted registry claims remain release-blocking until a later hosted-service evidence path exists" in claim_rules,
@@ -86,7 +95,7 @@ def main() -> int:
         "generated_report_root": str(contract["generated_report_root"]),
         "schema_count": len(schema_paths),
         "report_slot_count": len(report_slots),
-        "source_contract_count": 4,
+        "source_contract_count": 5,
         "generated_artifact_root_count": len(generated_artifact_roots),
         "required_action_count": len(required_actions),
         "package_bridge_count": 1 if package_bridge_exists else 0,

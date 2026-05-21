@@ -14,6 +14,10 @@
       return nullptr;
     }
 
+    if (!ParseFunctionGenericParameterClause(*fn)) {
+      return nullptr;
+    }
+
     if (!ParseFunctionParameterList(*fn)) {
       return nullptr;
     }

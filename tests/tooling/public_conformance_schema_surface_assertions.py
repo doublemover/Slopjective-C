@@ -13,6 +13,9 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     public_scorecard_schema = relative_schema_path(
         "objc3c-public-conformance-scorecard-v1"
     )
+    public_suite_schema = relative_schema_path(
+        "objc3c-public-conformance-suite-v1"
+    )
     public_summary_schema = relative_schema_path(
         "objc3c-public-conformance-summary-v1"
     )
@@ -27,17 +30,20 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
         == "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json"
     )
     assert summary["dashboard_status_schema"] == dashboard_status_schema
+    assert summary["public_suite_schema"] == public_suite_schema
     assert summary["public_scorecard_schema"] == public_scorecard_schema
     assert summary["public_summary_schema"] == public_summary_schema
     assert summary["schemas"] == [
         dashboard_status_schema,
+        public_suite_schema,
         public_scorecard_schema,
         public_summary_schema,
     ]
     assert summary["schema_ids"] == [
-        "https://schemas.slopjective.local/objc3-conformance-dashboard-status-v1.schema.json",
-        "https://schemas.slopjective.local/objc3c-public-conformance-scorecard-v1.schema.json",
-        "https://schemas.slopjective.local/objc3c-public-conformance-summary-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-suite-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-scorecard-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-summary-v1.schema.json",
     ]
 
 

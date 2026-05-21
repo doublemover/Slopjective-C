@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3P100.
+module NegativeProtocolExistentialAssociatedTypeRejected;
+
+@protocol SequenceValue
+associatedtype Element;
+- (id)next;
+@end
+
+fn consume(value: id<SequenceValue>*?) -> i32 {
+  let item = [value? next];
+  return 0;
+}

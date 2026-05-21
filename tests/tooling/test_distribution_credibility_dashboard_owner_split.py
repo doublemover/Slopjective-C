@@ -23,6 +23,9 @@ from scripts.objc3c_workflow.actions.release_governance_distribution_credibility
     DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS,
     require_distribution_credibility_owner_contract,
 )
+from scripts.check_objc3c_distribution_credibility_integration import (
+    package_install_summary_is_from_nothing,
+)
 
 
 OWNER_MODULES = (
@@ -67,6 +70,7 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
             "upstream_surfaces": [
                 "release-foundation",
                 "packaging-channels",
+                "package-ecosystem",
                 "release-operations",
                 "release-evidence",
             ],
@@ -109,6 +113,7 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
             "required_drill_steps": [
                 "stage-package-channels",
                 "verify-install-smoke",
+                "verify-clean-package-install",
                 "verify-rollback-guidance",
                 "verify-update-manifest-coherence",
                 "verify-release-evidence-index",
@@ -142,11 +147,19 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
             "validate_action": "validate-distribution-credibility",
             "integrated_required_steps": [
                 "validate-release-operations",
+                "validate-package-install-distribution",
                 "check-distribution-credibility-surface",
                 "check-distribution-credibility-schema-surface",
                 "build-distribution-credibility-dashboard",
                 "publish-distribution-credibility",
             ],
+            "from_nothing_evidence": {
+                "required_action": "validate-package-install-distribution",
+                "required_flag": "--from-nothing",
+                "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+                "stale_artifacts_allowed": False,
+                "dashboard_blocks_if_missing": True,
+            },
         },
         release_manifest={
             "contract_id": "objc3c.release.foundation.manifest.v1",
@@ -157,9 +170,26 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
         },
         package_channels={
             "status": "PASS",
+            "owner_policy": {
+                "hard_cutover_guardrails": {
+                    "unsupported_host_success_allowed": False,
+                },
+            },
             "portable_archive": "portable.zip",
             "installer_archive": "installer.zip",
             "offline_archive": "offline.zip",
+        },
+        package_install_distribution={
+            "contract_id": "objc3c.package_ecosystem.install_distribution_credibility.summary.v1",
+            "status": "PASS",
+            "network_policy": "no-network-during-validation",
+            "hosted_registry_support": "unsupported-fail-closed-if-claimed",
+            "offline_restore_support": "local-cache-digest-checked",
+            "clean_start": {"stale_artifacts_allowed": False},
+            "generated_paths": [
+                "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json"
+            ],
+            "missing_public_actions": [],
         },
         release_operations_publication={"status": "PASS", "warning_count": 2},
         release_operations_end_to_end={"status": "PASS"},
@@ -181,6 +211,7 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
     assert payload["required_drill_steps"] == [
         "stage-package-channels",
         "verify-install-smoke",
+        "verify-clean-package-install",
         "verify-rollback-guidance",
         "verify-update-manifest-coherence",
         "verify-release-evidence-index",
@@ -198,6 +229,44 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
     assert payload["upstream_reports"]["release_operations_end_to_end"] == (
         "tmp/reports/release-operations/end-to-end-summary.json"
     )
+    assert payload["upstream_reports"]["package_install_distribution"] == (
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    )
+    package_signal = next(
+        signal
+        for signal in payload["trust_signals"]
+        if signal["signal_id"] == "package-channel-install-smoke"
+    )
+    assert package_signal["supporting_source_paths"] == [
+        "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ]
+
+    inputs.package_install_distribution["hosted_registry_support"] = "supported"
+    blocked_payload = dashboard_summary_payload(
+        build_dashboard_model(paths, inputs),
+        generated_at_utc=datetime(2026, 5, 9, tzinfo=timezone.utc),
+    )
+    assert blocked_payload["status"] == "FAIL"
+    assert blocked_payload["trust_state"] == "blocked"
+    assert "package install hosted registry support widened" in blocked_payload["failures"]
+    blocked_package_signal = next(
+        signal
+        for signal in blocked_payload["trust_signals"]
+        if signal["signal_id"] == "package-channel-install-smoke"
+    )
+    assert blocked_package_signal["status"] == "FAIL"
+
+    inputs.package_install_distribution["hosted_registry_support"] = "unsupported-fail-closed-if-claimed"
+    inputs.package_channels["owner_policy"]["hard_cutover_guardrails"][
+        "unsupported_host_success_allowed"
+    ] = True
+    unsupported_platform_payload = dashboard_summary_payload(
+        build_dashboard_model(paths, inputs),
+        generated_at_utc=datetime(2026, 5, 9, tzinfo=timezone.utc),
+    )
+    assert unsupported_platform_payload["status"] == "FAIL"
+    assert unsupported_platform_payload["trust_state"] == "blocked"
+    assert "package channel unsupported host guardrail widened" in unsupported_platform_payload["failures"]
 
 
 def test_distribution_credibility_actions_have_trust_and_release_drill_owner_contracts() -> None:
@@ -260,3 +329,38 @@ def test_distribution_credibility_fixtures_reject_evidence_log_trust_evidence() 
     assert claim_policy["evidence_log_allowed"] is False
     assert claim_policy["wrapper_only_allowed"] is False
     assert "release-drill" in claim_policy["trust_report_boundary"]
+
+    assert workflow_surface["from_nothing_evidence"] == {
+        "required_action": "validate-package-install-distribution",
+        "required_flag": "--from-nothing",
+        "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+        "stale_artifacts_allowed": False,
+        "dashboard_blocks_if_missing": True,
+    }
+
+
+def test_distribution_credibility_integration_requires_from_nothing_package_summary() -> None:
+    valid_summary = {
+        "from_nothing_probe": {
+            "requested": True,
+            "generated_from_clean_owned_outputs": True,
+            "owned_outputs_exist_after_clean": {
+                "tmp/artifacts/package-ecosystem": False,
+                "tmp/reports/package-ecosystem": False,
+            },
+        }
+    }
+
+    assert package_install_summary_is_from_nothing(valid_summary)
+
+    stale_summary = {
+        "from_nothing_probe": {
+            "requested": False,
+            "generated_from_clean_owned_outputs": False,
+            "owned_outputs_exist_after_clean": {
+                "tmp/artifacts/package-ecosystem": True,
+                "tmp/reports/package-ecosystem": True,
+            },
+        }
+    }
+    assert not package_install_summary_is_from_nothing(stale_summary)

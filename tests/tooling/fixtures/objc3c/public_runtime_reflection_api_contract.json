@@ -1,0 +1,69 @@
+{
+  "contract_id": "objc3c.runtime.public.reflection.api.v1",
+  "issue": 8174,
+  "support_claim": "objc3c.behavior.runtime.public-reflection-api",
+  "public_header": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+  "public_umbrella_header": "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+  "implementation": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp",
+  "runtime_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+  "abi_version_macro": "OBJC3_RUNTIME_REFLECTION_ABI_VERSION",
+  "entrypoints": [
+    "objc3_runtime_reflection_api_abi_version",
+    "objc3_runtime_reflection_surface_count",
+    "objc3_runtime_copy_reflection_surface",
+    "objc3_runtime_copy_reflection_surface_by_kind",
+    "objc3_runtime_copy_reflection_state",
+    "objc3_runtime_copy_reflection_class",
+    "objc3_runtime_copy_reflection_class_at",
+    "objc3_runtime_copy_reflection_property",
+    "objc3_runtime_copy_reflection_property_at",
+    "objc3_runtime_copy_reflection_method",
+    "objc3_runtime_copy_reflection_method_at",
+    "objc3_runtime_copy_reflection_protocol",
+    "objc3_runtime_copy_reflection_protocol_at",
+    "objc3_runtime_copy_reflection_protocol_conformance",
+    "objc3_runtime_copy_reflection_category",
+    "objc3_runtime_copy_reflection_category_at",
+    "objc3_runtime_copy_reflection_selector",
+    "objc3_runtime_copy_reflection_selector_at"
+  ],
+  "snapshot_types": [
+    "objc3_runtime_reflection_surface_snapshot",
+    "objc3_runtime_reflection_state_snapshot",
+    "objc3_runtime_reflection_class_snapshot",
+    "objc3_runtime_reflection_property_snapshot",
+    "objc3_runtime_reflection_method_snapshot",
+    "objc3_runtime_reflection_protocol_snapshot",
+    "objc3_runtime_reflection_protocol_conformance_snapshot",
+    "objc3_runtime_reflection_category_snapshot",
+    "objc3_runtime_reflection_selector_snapshot"
+  ],
+  "status_codes": [
+    "OBJC3_RUNTIME_REFLECTION_STATUS_OK",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE",
+    "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+  ],
+  "diagnostic_codes": [
+    "O3RT002",
+    "O3RT004"
+  ],
+  "lifetime_model": "caller-owned snapshots with runtime-owned borrowed strings",
+  "deterministic_enumeration": [
+    "objc3_runtime_copy_reflection_class_at enumerates realized classes in runtime registration order",
+    "objc3_runtime_copy_reflection_property_at enumerates direct realized property accessors in class-local layout order",
+    "objc3_runtime_copy_reflection_method_at enumerates direct realized methods in class-local declaration order for the requested method family",
+    "objc3_runtime_copy_reflection_protocol_at enumerates concrete protocols in runtime image registration order",
+    "objc3_runtime_copy_reflection_category_at enumerates attached categories in runtime attachment order",
+    "objc3_runtime_copy_reflection_selector_at enumerates registered selectors in selector table insertion order"
+  ],
+  "unsupported_metadata_policy": "unsupported and internal metadata returns status without private fields",
+  "forbidden_public_symbols": [
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_property_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "objc3_runtime_copy_selector_lookup_entry_for_testing"
+  ]
+}

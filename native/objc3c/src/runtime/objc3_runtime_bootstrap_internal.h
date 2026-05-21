@@ -4,6 +4,7 @@
 // subsystem headers below so bootstrap no longer owns unrelated ABI surfaces.
 #include "runtime/classes/runtime_object_snapshot_contracts.h"
 #include "runtime/concurrency/runtime_concurrency_snapshot_contracts.h"
+#include "runtime/debug/runtime_debug_trace_contracts.h"
 #include "runtime/dispatch/dispatch_snapshot_contracts.h"
 #include "runtime/errors/error_bridge_snapshot_contracts.h"
 #include "runtime/memory/runtime_ownership_snapshot_contracts.h"

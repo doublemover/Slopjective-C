@@ -14,11 +14,12 @@
           return nullptr;
         }
       }
+      const Token insertion_anchor = Previous();
       auto stmt = BuildObjc3AssignmentStatement(name, op, std::move(value));
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
         diagnostics_.push_back(
-            BuildObjc3MissingSemicolonDiagnostic(token, "assignment"));
+            BuildObjc3MissingSemicolonDiagnostic(token, insertion_anchor, "assignment"));
         return nullptr;
       }
       return stmt;
@@ -33,11 +34,12 @@
         diagnostics_.push_back(MakeDiag(op_token.line, op_token.column, "O3P101", "invalid assignment target"));
         return nullptr;
       }
+      const Token insertion_anchor = Previous();
       auto stmt = BuildObjc3AssignmentStatement(name, op, nullptr);
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
         diagnostics_.push_back(
-            BuildObjc3MissingSemicolonDiagnostic(token, "assignment"));
+            BuildObjc3MissingSemicolonDiagnostic(token, insertion_anchor, "assignment"));
         return nullptr;
       }
       return stmt;

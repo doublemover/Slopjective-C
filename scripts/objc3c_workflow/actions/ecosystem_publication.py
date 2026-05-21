@@ -15,6 +15,7 @@ from .ecosystem_publication_contracts import (
     LONG_HORIZON_OPERATIONS_PUBLICATION_PY,
     PLANNING_ISSUE_PUBLISHER_PY,
     PLANNING_PUBLICATION_AUDIT_PY,
+    POST_CUTOVER_ISSUE_EVIDENCE_PY,
     PUBLICATION_ARTIFACT_CONTRACTS,
     PublicationArtifactContract,
 )
@@ -44,8 +45,10 @@ from .ecosystem_publication_operations import (
 )
 from .ecosystem_publication_package import (
     action_build_package_lock,
+    action_validate_package_manager_model,
     action_validate_package_authoring,
     action_validate_package_ecosystem,
+    action_validate_package_install_distribution,
     action_validate_package_mirror,
     action_validate_runnable_package_ecosystem,
 )
@@ -53,7 +56,9 @@ from .ecosystem_publication_package_contracts import (
     PACKAGE_AUTHORING_WORKFLOW_PY,
     PACKAGE_ECOSYSTEM_INTEGRATION_PY,
     PACKAGE_LOCK_PY,
+    PACKAGE_MANAGER_MODEL_PY,
     PACKAGE_MIRROR_REPRODUCIBILITY_PY,
+    PACKAGE_INSTALL_DISTRIBUTION_PY,
     PACKAGE_PUBLICATION_ACTION_CONTRACTS,
     RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
     PackagePublicationActionContract,
@@ -61,6 +66,7 @@ from .ecosystem_publication_package_contracts import (
 from .ecosystem_publication_planning import (
     action_check_planning_publication_drift,
     action_publish_planning_issues,
+    action_validate_post_cutover_issue_evidence,
 )
 
 
@@ -80,11 +86,14 @@ __all__ = [
     "PACKAGE_FEED_METADATA",
     "PACKAGE_FORBIDDEN_CLAIMS",
     "PACKAGE_LOCK_PY",
+    "PACKAGE_MANAGER_MODEL_PY",
     "PACKAGE_MIRROR_REPRODUCIBILITY_PY",
+    "PACKAGE_INSTALL_DISTRIBUTION_PY",
     "PACKAGE_PUBLICATION_ACTION_CONTRACTS",
     "PACKAGE_SOURCE_CONTRACTS",
     "PLANNING_ISSUE_PUBLISHER_PY",
     "PLANNING_PUBLICATION_AUDIT_PY",
+    "POST_CUTOVER_ISSUE_EVIDENCE_PY",
     "PUBLICATION_ARTIFACT_CONTRACTS",
     "PackagePublicationActionContract",
     "EcosystemPublicationOwnerContract",
@@ -92,16 +101,19 @@ __all__ = [
     "PublicationFeedMetadata",
     "RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY",
     "action_build_package_lock",
+    "action_validate_package_manager_model",
     "action_check_planning_publication_drift",
     "action_publish_adoption_legibility",
     "action_publish_governance_sustainability",
     "action_publish_long_horizon_operations",
     "action_publish_planning_issues",
+    "action_validate_post_cutover_issue_evidence",
     "action_validate_adoption_legibility",
     "action_validate_governance_sustainability",
     "action_validate_long_horizon_operations",
     "action_validate_package_authoring",
     "action_validate_package_ecosystem",
+    "action_validate_package_install_distribution",
     "action_validate_package_mirror",
     "action_validate_runnable_package_ecosystem",
     "ecosystem_publication_owner_contract",

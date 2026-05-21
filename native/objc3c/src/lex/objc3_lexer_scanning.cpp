@@ -104,6 +104,96 @@ std::string Objc3Lexer::ConsumeNumber() {
   return source_.substr(begin, index_ - begin);
 }
 
+bool Objc3Lexer::ConsumeStringLiteral(
+    std::string &token_text, std::vector<std::string> &diagnostics) {
+  token_text.clear();
+  const unsigned token_line = line_;
+  const unsigned token_column = column_;
+  Advance();
+
+  std::string value;
+  bool terminated = false;
+  bool invalid = false;
+  while (index_ < source_.size()) {
+    const char current = source_[index_];
+    if (current == '"') {
+      Advance();
+      terminated = true;
+      break;
+    }
+    if (current == '\n') {
+      break;
+    }
+    if (current == '$' && index_ + 1u < source_.size() &&
+        source_[index_ + 1u] == '{') {
+      diagnostics.push_back(MakeDiag(
+          line_, column_, "O3L011",
+          "string interpolation is unsupported; build text values with explicit objc3.text runtime helpers"));
+      invalid = true;
+      Advance();
+      continue;
+    }
+    if (current == '\\') {
+      const unsigned escape_line = line_;
+      const unsigned escape_column = column_;
+      Advance();
+      if (index_ >= source_.size() || source_[index_] == '\n') {
+        diagnostics.push_back(MakeDiag(
+            token_line, token_column, "O3L005",
+            "unterminated string literal"));
+        return false;
+      }
+      const char escaped = source_[index_];
+      switch (escaped) {
+        case 'n':
+          value.push_back('\n');
+          break;
+        case 'r':
+          value.push_back('\r');
+          break;
+        case 't':
+          value.push_back('\t');
+          break;
+        case '"':
+          value.push_back('"');
+          break;
+        case '\\':
+          value.push_back('\\');
+          break;
+        default:
+          diagnostics.push_back(MakeDiag(
+              escape_line, escape_column, "O3L010",
+              std::string("invalid string escape '\\") + escaped +
+                  "'; supported escapes are \\n, \\r, \\t, \\\", and \\\\"));
+          invalid = true;
+          break;
+      }
+      Advance();
+      continue;
+    }
+    value.push_back(current);
+    Advance();
+  }
+
+  if (!terminated) {
+    diagnostics.push_back(MakeDiag(
+        token_line, token_column, "O3L005", "unterminated string literal"));
+    return false;
+  }
+  int unit_count = 0;
+  if (!TryCountObjc3Utf8Scalars(value, unit_count)) {
+    diagnostics.push_back(MakeDiag(
+        token_line, token_column, "O3L012",
+        "malformed UTF-8 in string literal"));
+    return false;
+  }
+  if (invalid) {
+    return false;
+  }
+  token_text = EscapeObjc3StringTokenText(value);
+  return true;
+}
+
 void Objc3Lexer::Advance() {
   if (index_ >= source_.size()) {
     return;

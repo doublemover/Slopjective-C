@@ -55,6 +55,7 @@ def test_tooling_developer_catalog_preserves_owner_order() -> None:
     assert tuple(TOOLING_DEVELOPER_ACTION_SPECS) == (
         "inspect-bonus-tool-integration",
         "inspect-validation-timing",
+        "trace-runtime-debug",
         "trace-compile-stages",
         "materialize-project-template",
         "test-capability-routed-source-parity",

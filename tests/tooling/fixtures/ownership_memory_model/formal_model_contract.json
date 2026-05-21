@@ -1,0 +1,135 @@
+{
+  "contract_id": "objc3c.ownership.memory-model.formal-slice.v1",
+  "issue_ref": 8166,
+  "support_claim": "objc3c.behavior.language.ownership-memory-model",
+  "source_truth": "checked-in sema, lowering, runtime, fixture, and test contracts only",
+  "ownership_kinds": [
+    "strong_owned",
+    "weak",
+    "unowned",
+    "borrowed_reference",
+    "consumed_value",
+    "autoreleased_result"
+  ],
+  "flow_contracts": {
+    "consumed_values": {
+      "rule": "consumed retainable values transfer ownership at consumed call boundaries and remain unavailable until reassigned",
+      "positive_fixture": "tests/native/sema/ownership/retainable_consumed_reassignment.objc3",
+      "negative_fixture": "tests/native/sema/errors/retainable_consumed_use_after_rejected.objc3",
+      "diagnostic_codes": [
+        "O3S307",
+        "O3S308"
+      ]
+    },
+    "borrowed_references": {
+      "rule": "borrowed references are non-owning and cannot escape through unproven parameters, escaping blocks, or untied borrowed returns",
+      "positive_fixture": "tests/tooling/fixtures/native/borrowed_pointer_escape_analysis_positive.objc3",
+      "diagnostic_codes": [
+        "O3S298",
+        "O3S299",
+        "O3S300",
+        "O3S307"
+      ]
+    },
+    "arc_boundary_lowering": {
+      "rule": "supported ARC boundaries lower through private retain, release, autorelease, weak, autoreleasepool, and block helper contracts",
+      "source": "native/objc3c/src/lower/contracts/arc_runtime_lifetime_lowering_contracts.h",
+      "non_goal": "no public ARC runtime ABI widening, generalized local lifetime inference, or cross-module ARC optimization"
+    },
+    "runtime_public_api": {
+      "rule": "public runtime result and string contracts expose runtime-owned borrowed data with fail-closed ownership diagnostics",
+      "source": "native/objc3c/src/runtime/public/objc3_runtime_result_ownership.cpp"
+    }
+  },
+  "diagnostic_contracts": [
+    {
+      "code": "O3S221",
+      "meaning": "unsupported ownership-qualified executable source remains rejected"
+    },
+    {
+      "code": "O3S298",
+      "meaning": "borrowed pointer passed to parameter not proven non-escaping"
+    },
+    {
+      "code": "O3S299",
+      "meaning": "borrowed pointer captured by escaping block"
+    },
+    {
+      "code": "O3S300",
+      "meaning": "borrowed return lacks valid owner parameter"
+    },
+    {
+      "code": "O3S307",
+      "meaning": "borrowed pointer cannot satisfy consumed parameter"
+    },
+    {
+      "code": "O3S308",
+      "meaning": "ownership value used after being consumed"
+    }
+  ],
+  "source_records": [
+    {
+      "path": "native/objc3c/src/sema/objc3_sema_contract_ownership_memory_model.h",
+      "required_tokens": [
+        "kObjc3OwnershipMemoryModelFormalSliceContractId",
+        "kObjc3OwnershipMemoryModelFormalSliceConsumeRule",
+        "kObjc3OwnershipMemoryModelFormalSliceBorrowRule",
+        "kObjc3OwnershipMemoryModelFormalSliceArcRule",
+        "IsReadyObjc3OwnershipMemoryModelFormalSliceSummary"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics.inc",
+      "required_tokens": [
+        "OwnershipBorrowedBindingState",
+        "param_consumed",
+        "return_borrowed",
+        "BuildOwnershipBorrowedCallableContract"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_diagnostics.inc",
+      "required_tokens": [
+        "O3S298",
+        "O3S299",
+        "O3S300",
+        "O3S307",
+        "O3S308",
+        "ownership value used after being consumed"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/lower/contracts/arc_runtime_lifetime_lowering_contracts.h",
+      "required_tokens": [
+        "kObjc3ArcLoweringAbiCleanupModelContractId",
+        "retain-release-autorelease",
+        "weak-property-and-block-helpers",
+        "no-general-local-lifetime-inference"
+      ]
+    },
+    {
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_ownership.cpp",
+      "required_tokens": [
+        "RuntimeResultDiagnosticOwnerModel",
+        "RuntimeResultFailClosedOwnershipModel",
+        "kObjc3RuntimeFailClosedOwnershipModel"
+      ]
+    },
+    {
+      "path": "docs/spec/ownership.md",
+      "required_tokens": [
+        "objc3c.ownership.memory-model.formal-slice.v1",
+        "O3S308",
+        "O3S298",
+        "private runtime helpers",
+        "runtime-owned borrowed data"
+      ]
+    }
+  ],
+  "fail_closed_drift_checks": [
+    "every source_record path must be checked in source truth, not tmp or generated report output",
+    "every required token must remain present in its source path",
+    "diagnostic codes in flow contracts must be represented in diagnostic_contracts",
+    "unsupported ARC and ownership automation must remain explicit non-goals"
+  ]
+}

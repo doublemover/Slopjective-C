@@ -19,6 +19,9 @@
 
 namespace {
 
+constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
+    "objc3_runtime_stdlib_text_utf8_storage_i32";
+
 bool Objc3IRFunctionRequiresArcHelperDeclarations(
     const FunctionDecl &fn, const Objc3IRFrontendMetadata &frontend_metadata) {
   if (EffectiveArcReturnInsertRetain(fn, frontend_metadata.arc_mode_enabled) ||
@@ -108,6 +111,212 @@ bool Objc3IRRequiresAsyncRuntimeHelperDeclarations(
   return false;
 }
 
+bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
+  if (expr == nullptr) {
+    return false;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::StringLiteral:
+      return true;
+    case Expr::Kind::Binary:
+      return Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->left.get()) ||
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->right.get());
+    case Expr::Kind::Conditional:
+      return Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->left.get()) ||
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->right.get()) ||
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->third.get());
+    case Expr::Kind::Call:
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::MessageSend:
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              expr->receiver.get())) {
+        return true;
+      }
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+    case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
+    case Expr::Kind::BlockLiteral:
+      return false;
+  }
+  return false;
+}
+
+bool Objc3IRForClauseRequiresTextLiteralHelperDeclarations(
+    const ForClause &clause) {
+  return Objc3IRExprRequiresTextLiteralHelperDeclarations(clause.value.get());
+}
+
+bool Objc3IRStmtRequiresTextLiteralHelperDeclarations(const Stmt *stmt) {
+  if (stmt == nullptr) {
+    return false;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      return stmt->let_stmt != nullptr &&
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 stmt->let_stmt->value.get());
+    case Stmt::Kind::Assign:
+      return stmt->assign_stmt != nullptr &&
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 stmt->assign_stmt->value.get());
+    case Stmt::Kind::Return:
+      return stmt->return_stmt != nullptr &&
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 stmt->return_stmt->value.get());
+    case Stmt::Kind::Expr:
+      return stmt->expr_stmt != nullptr &&
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 stmt->expr_stmt->value.get());
+    case Stmt::Kind::If:
+      if (stmt->if_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              stmt->if_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                then_stmt.get())) {
+          return true;
+        }
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                else_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &loop_stmt : stmt->do_while_stmt->body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                loop_stmt.get())) {
+          return true;
+        }
+      }
+      return Objc3IRExprRequiresTextLiteralHelperDeclarations(
+          stmt->do_while_stmt->condition.get());
+    case Stmt::Kind::For:
+      if (stmt->for_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRForClauseRequiresTextLiteralHelperDeclarations(
+              stmt->for_stmt->init) ||
+          Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              stmt->for_stmt->condition.get()) ||
+          Objc3IRForClauseRequiresTextLiteralHelperDeclarations(
+              stmt->for_stmt->step)) {
+        return true;
+      }
+      for (const auto &loop_stmt : stmt->for_stmt->body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                loop_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              stmt->switch_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        for (const auto &case_body_stmt : case_stmt.body) {
+          if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                  case_body_stmt.get())) {
+            return true;
+          }
+        }
+      }
+      return false;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              stmt->while_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &loop_stmt : stmt->while_stmt->body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                loop_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Block:
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &nested_stmt : stmt->block_stmt->body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                nested_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return false;
+  }
+  return false;
+}
+
+bool Objc3IRRequiresTextLiteralHelperDeclarations(
+    const Objc3IRPrototypeDeclarationOptions &options) {
+  for (const auto &global : options.program.globals) {
+    if (Objc3IRExprRequiresTextLiteralHelperDeclarations(global.value.get())) {
+      return true;
+    }
+  }
+  for (const auto &fn : options.program.functions) {
+    for (const auto &stmt : fn.body) {
+      if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(stmt.get())) {
+        return true;
+      }
+    }
+  }
+  for (const auto &implementation : options.program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(stmt.get())) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 bool EmitObjc3IRDeclarationOnce(std::unordered_set<std::string> &declared_symbols,
@@ -141,7 +350,8 @@ bool Objc3IRRequiresRuntimeHelperDeclarations(
              0u ||
          frontend_metadata
                  .block_copy_dispose_lowering_dispose_helper_required_sites >
-             0u;
+             0u ||
+         Objc3IRRequiresTextLiteralHelperDeclarations(options);
 }
 
 void EmitObjc3IRRuntimeHelperDeclarations(
@@ -316,4 +526,10 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       declared_symbols, emitted, out, kObjc3RuntimePopAutoreleasepoolScopeSymbol,
       "declare void @" +
           std::string(kObjc3RuntimePopAutoreleasepoolScopeSymbol) + "()\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextUtf8StorageI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
+          "(ptr, i32)\n");
 }

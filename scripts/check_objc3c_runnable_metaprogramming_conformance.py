@@ -17,8 +17,10 @@ from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION_SCRIPT = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
+PUBLIC_SURFACE_SCRIPT = ROOT / "scripts" / "check_objc3c_metaprogramming_public_surface.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "runtime" / "architecture-integration" / "summary.json"
 ACCEPTANCE_REPORT = ROOT / "tmp" / "reports" / "runtime" / "acceptance" / "summary.json"
+PUBLIC_SURFACE_REPORT = ROOT / "tmp" / "reports" / "metaprogramming-public-surface" / "summary.json"
 REPORT_PATH = (
     ROOT / "tmp" / "reports" / "runtime" / "runnable-metaprogramming-conformance" / "summary.json"
 )
@@ -125,6 +127,10 @@ def main() -> int:
 
     integration_report = load_json(INTEGRATION_REPORT)
     acceptance_report = load_json(ACCEPTANCE_REPORT)
+    public_surface_result = run_capture(python_script_command(PUBLIC_SURFACE_SCRIPT))
+    if public_surface_result.returncode != 0:
+        raise RuntimeError("metaprogramming public surface contract validation failed")
+    public_surface_report = load_json(PUBLIC_SURFACE_REPORT)
     expect(
         integration_report.get("status") == "PASS",
         "runtime architecture integration report did not publish PASS",
@@ -132,6 +138,15 @@ def main() -> int:
     expect(
         acceptance_report.get("status") == "PASS",
         "runtime acceptance report did not publish PASS",
+    )
+    expect(
+        public_surface_report.get("status") == "PASS",
+        "metaprogramming public surface report did not publish PASS",
+    )
+    expect(
+        public_surface_report.get("public_command")
+        == "npm run objc3c -- validate-metaprogramming-conformance",
+        "metaprogramming public surface report drifted from the public command",
     )
 
     cases = acceptance_report.get("cases", [])
@@ -197,7 +212,9 @@ def main() -> int:
         "child_report_paths": [
             repo_rel(INTEGRATION_REPORT),
             repo_rel(ACCEPTANCE_REPORT),
+            repo_rel(PUBLIC_SURFACE_REPORT),
         ],
+        "public_surface_report_path": repo_rel(PUBLIC_SURFACE_REPORT),
         "metaprogramming_runtime_abi_cache_surface": abi_surface,
         "metaprogramming_cache_runtime_integration_implementation_surface": (
             implementation_surface

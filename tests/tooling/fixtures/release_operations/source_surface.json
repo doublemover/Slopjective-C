@@ -5,6 +5,7 @@
   "runbook": "docs/runbooks/objc3c_release_operations.md",
   "versioning_model": "tests/tooling/fixtures/release_operations/versioning_model.json",
   "upgrade_path_surface": "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
+  "channel_operations_model": "tests/tooling/fixtures/release_operations/channel_operations_model.json",
   "checked_in_sources": [
     "docs/runbooks/objc3c_release_operations.md",
     "docs/runbooks/objc3c_release_foundation.md",
@@ -16,6 +17,7 @@
     "docs/runbooks/objc3c_maintainer_workflows.md",
     "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/release_operations/channel_operations_model.json",
     "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
     "tests/tooling/fixtures/release_operations/metadata_surface.json",
     "tests/tooling/fixtures/release_operations/schema_surface.json",
@@ -88,7 +90,8 @@
     "no package-manager-specific upgrade flow",
     "no second payload lineage",
     "no retired update adapter",
-    "no evidence-log support claim"
+    "no evidence-log support claim",
+    "no nightly channel promotion to stable support without stable gate evidence"
   ],
   "hard_cutover_policy": {
     "upstream_artifacts": "required-before-publication",

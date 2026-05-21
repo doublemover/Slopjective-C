@@ -65,7 +65,9 @@
       "channel source contract missing checked-in source",
       "installer policy missing rollback or receipt contract",
       "package channel artifact not derived from runnable package manifest",
-      "platform support matrix absent from package-channel summary"
+      "platform support matrix absent from package-channel summary",
+      "payload manifest digest absent from install receipt",
+      "pre-existing tmp package root accepted as source input"
     ]
   },
   "checked_in_sources": [

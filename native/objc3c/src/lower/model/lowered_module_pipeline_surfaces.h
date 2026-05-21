@@ -2,6 +2,9 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
+
+#include "lower/model/language_semantics_lowering_handoff.h"
 
 struct Objc3LoweringRuntimeStabilityInvariantScaffold {
   bool typed_surface_present = false;
@@ -82,6 +85,30 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   std::string failure_reason;
 };
 
+struct Objc3SemanticOptimizationPipelineSurface {
+  bool lowering_pass_graph_ready = false;
+  bool pass_registry_order_deterministic = false;
+  bool typed_pass_contracts_ready = false;
+  bool semantic_precondition_gate_ready = false;
+  bool direct_dispatch_pass_bound_to_ir = false;
+  bool arc_cleanup_pass_bound_to_ir = false;
+  bool runtime_dispatch_preservation_bound = false;
+  bool reserved_passes_fail_closed = false;
+  bool explicit_invalidation_ready = false;
+  bool verification_after_each_pass_ready = false;
+  bool fail_closed_diagnostics_ready = false;
+  bool benchmark_governance_bound = false;
+  bool semantic_optimization_pipeline_ready = false;
+  std::size_t pass_count = 0;
+  std::size_t enabled_pass_count = 0;
+  std::size_t reserved_pass_count = 0;
+  std::size_t verifier_only_pass_count = 0;
+  std::vector<std::string> pass_order;
+  std::string lowering_pipeline_key;
+  std::string semantic_pipeline_key;
+  std::string failure_reason;
+};
+
 struct Objc3IREmissionCompletenessScaffold {
   bool pass_graph_scaffold_ready = false;
   bool core_feature_ready = false;
@@ -89,6 +116,9 @@ struct Objc3IREmissionCompletenessScaffold {
   bool edge_case_compatibility_ready = false;
   bool metadata_transport_ready = false;
   bool modular_split_ready = false;
+  objc3c::lower::Objc3LanguageSemanticsLoweringHandoffSurface
+      language_semantics_lowering_handoff_surface =
+          objc3c::lower::kObjc3LanguageSemanticsLoweringHandoffSurface;
   std::string pass_graph_key;
   std::string core_feature_key;
   std::string expansion_key;

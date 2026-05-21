@@ -1,0 +1,27 @@
+// Canonical runtime object-model fixture: property and ivar-backed metadata
+// remain part of the realized runtime object graph.
+module RuntimeObjectModelPropertyIvarReflectionContract;
+
+@interface RuntimePropertyBox
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+@property (readonly, getter=token) id token;
+- (i32)value;
+- (id)token;
+@end
+
+@implementation RuntimePropertyBox
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+@property (readonly, getter=token) id token;
+
+- (i32)value {
+  return 23;
+}
+
+- (id)token {
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

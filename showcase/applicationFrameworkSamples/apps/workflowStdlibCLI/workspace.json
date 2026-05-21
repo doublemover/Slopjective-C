@@ -1,0 +1,28 @@
+{
+  "contract_id": "objc3c.application_framework_samples.workspace.v1",
+  "schema_version": 1,
+  "sample_id": "workflowStdlibCLI",
+  "sample_kind": "cli-application",
+  "package_id": "showcase-framework:workflowStdlibCLI",
+  "module_name": "WorkflowStdlibCLI",
+  "workspace_root": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI",
+  "entry_source": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3",
+  "replay_contract": "showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/replay-contract.json",
+  "artifact_root": "tmp/artifacts/application-framework-samples/workflowStdlibCLI",
+  "emit_prefix": "module",
+  "capabilities": [
+    "cli-entrypoint",
+    "runtime-backed-string-view",
+    "runtime-backed-byte-span",
+    "runtime-backed-array-shape",
+    "runtime-backed-map-entry-shape"
+  ],
+  "package_dependencies": [
+    "stdlib:objc3.core",
+    "showcase-framework:routeModelKit"
+  ],
+  "support_claims": [
+    "objc3c.behavior.application-framework-samples.stdlib-text-collections-cli"
+  ],
+  "public_compile_command": "npm run objc3c -- compile-objc3c showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3 --out-dir tmp/artifacts/application-framework-samples/workflowStdlibCLI --emit-prefix module"
+}

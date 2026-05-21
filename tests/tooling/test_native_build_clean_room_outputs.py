@@ -40,6 +40,8 @@ def test_clean_room_roots_route_native_and_frontend_outputs() -> None:
     assert "[string]$LibraryOutputDir = \"\"" in build_script
     assert "[string]$FrontendArtifactRoot = \"\"" in build_script
     assert "[int]$Parallelism = 0" in build_script
+    assert "if ($Parallelism -eq 0) {" in build_script
+    assert "$Parallelism = 4" in build_script
     assert "-CleanRoomRoot $resolvedCleanRoomRoot `" in build_script
     assert "-BuildDir $BuildDir `" in build_script
     assert "-RuntimeOutputDir $RuntimeOutputDir `" in build_script
@@ -66,6 +68,22 @@ def test_native_build_writes_reproducible_summary_manifest() -> None:
     assert "runtime_archive_timestamps_normalized = $RuntimeArchiveNormalized" in build_script
     assert "normalize_coff_archive_timestamps.py" in build_script
     assert "native_build_summary=" in build_script
+
+
+def test_native_binary_builds_are_serialized_per_build_directory() -> None:
+    build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert "function Enter-Objc3cNativeBuildDirectoryLock" in build_script
+    assert "function Exit-Objc3cNativeBuildDirectoryLock" in build_script
+    assert '"OBJC3C_NATIVE_BUILD_LOCK_TIMEOUT_SECONDS must be a positive integer when set"' in build_script
+    assert 'Join-Path $BuildDirPath ".objc3c-native-build.lock"' in build_script
+    assert "[System.IO.FileShare]::None" in build_script
+    assert "native_build_lock_acquired=" in build_script
+    assert "native_build_lock_released=" in build_script
+    assert "native_build_lock_wait_seconds=" in build_script
+    assert "native_build_lock = " in build_script
+    assert "$nativeBuildLockState = Enter-Objc3cNativeBuildDirectoryLock `" in build_script
+    assert "finally {\n    Exit-Objc3cNativeBuildDirectoryLock -LockState $nativeBuildLockState\n  }" in build_script
 
 
 def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
@@ -99,6 +117,9 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "reproducible_build = $true" in fingerprint_module
     assert "source_date_epoch = $SourceDateEpoch" in fingerprint_module
     assert "cmake_build_parallelism=" in (
+        ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
+    ).read_text(encoding="utf-8")
+    assert "--parallel --target" not in (
         ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
     ).read_text(encoding="utf-8")
 

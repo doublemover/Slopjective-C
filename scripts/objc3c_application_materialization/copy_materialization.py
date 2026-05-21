@@ -65,18 +65,21 @@ def project_template_paths(
         template_root=template_root,
         report_root=example_report_root,
         template_source=template_root / "src" / "main.objc3",
+        template_workspace_manifest=template_root / "workspace.json",
         template_readme=template_root / "README.md",
         template_manifest=template_root / "template.json",
+        compile_artifact_root=template_root / "build",
         harness_path=example_report_root / "demo-harness.json",
     )
 
 
 def materialize_project_template_source(
-    *, example_source: Path, paths: ProjectTemplatePaths
+    *, example_source: Path, example_workspace_manifest: Path, paths: ProjectTemplatePaths
 ) -> None:
     paths.template_source.parent.mkdir(parents=True, exist_ok=True)
     paths.report_root.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(example_source, paths.template_source)
+    shutil.copyfile(example_workspace_manifest, paths.template_workspace_manifest)
 
 
 def materialize_canonical_workspace(

@@ -102,6 +102,10 @@ def _stable_payload_digest(payload: object) -> str:
     return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
+def _file_digest(path: Path) -> str:
+    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _require_string(payload: dict[str, Any], key: str, *, surface_name: str) -> str:
     value = payload.get(key)
     if not isinstance(value, str) or not value:
@@ -126,6 +130,10 @@ def _require_string_list(payload: dict[str, Any], key: str, *, surface_name: str
 def _require_source_path(root: Path, raw_path: str, *, surface_name: str) -> None:
     if not (root / raw_path).is_file():
         raise RuntimeError(f"{surface_name} references missing source path: {raw_path}")
+
+
+def _default_root() -> Path:
+    return Path(__file__).resolve().parents[1]
 
 
 def _require_bridge_surfaces(
@@ -269,7 +277,94 @@ def package_loader_metadata_digest_inputs(entry: dict[str, Any]) -> list[str]:
     return sorted(set(inputs))
 
 
-def normalize_package_loader_interop_metadata(entry: dict[str, Any]) -> dict[str, Any]:
+def package_loader_metadata_source_input_digests(
+    entry: dict[str, Any],
+    *,
+    root: Path | None = None,
+) -> list[dict[str, str]]:
+    resolved_root = root or _default_root()
+    return [
+        {
+            "path": raw_path,
+            "sha256": _file_digest(resolved_root / raw_path),
+        }
+        for raw_path in package_loader_metadata_digest_inputs(entry)
+    ]
+
+
+def collect_normalized_package_loader_interop_metadata_failures(
+    metadata: dict[str, Any],
+    *,
+    root: Path | None = None,
+) -> list[str]:
+    failures: list[str] = []
+    resolved_root = root or _default_root()
+    if metadata.get("contract_id") != PACKAGE_LOADER_INTEROP_CONTRACT_ID:
+        failures.append("contract_id drifted")
+
+    digest = metadata.get("digest")
+    if not isinstance(digest, str) or not digest.startswith("sha256:"):
+        failures.append("digest is missing")
+    digest_payload = dict(metadata)
+    digest_payload.pop("digest", None)
+    if isinstance(digest, str) and _stable_payload_digest(digest_payload) != digest:
+        failures.append("digest mismatch")
+
+    source_inputs = metadata.get("source_input_digests")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        failures.append("source input digests are missing")
+        return failures
+
+    seen_paths: set[str] = set()
+    for raw_record in source_inputs:
+        if not isinstance(raw_record, dict):
+            failures.append("source input digest entry is not an object")
+            continue
+        raw_path = raw_record.get("path")
+        recorded_digest = raw_record.get("sha256")
+        if not isinstance(raw_path, str) or not raw_path:
+            failures.append("source input digest path is missing")
+            continue
+        path = Path(raw_path)
+        if path.is_absolute() or "\\" in raw_path or any(part in {"", ".", ".."} for part in path.parts):
+            failures.append(f"source input digest path is not portable-relative: {raw_path}")
+            continue
+        if raw_path in seen_paths:
+            failures.append(f"source input digest path is duplicated: {raw_path}")
+            continue
+        seen_paths.add(raw_path)
+        source_path = resolved_root / raw_path
+        if not source_path.is_file():
+            failures.append(f"source input digest path does not exist: {raw_path}")
+            continue
+        actual_digest = _file_digest(source_path)
+        if recorded_digest != actual_digest:
+            failures.append(f"source digest mismatch for {raw_path}")
+
+    expected_inputs = set()
+    for key in ("source", "positive_fixtures"):
+        value = metadata.get(key)
+        if isinstance(value, str):
+            expected_inputs.add(value)
+        elif isinstance(value, list):
+            expected_inputs.update(str(item) for item in value if isinstance(item, str))
+    package_execution = metadata.get("package_execution")
+    if isinstance(package_execution, dict) and isinstance(package_execution.get("entry_fixture"), str):
+        expected_inputs.add(str(package_execution["entry_fixture"]))
+    for diagnostic in metadata.get("negative_diagnostics", []):
+        if isinstance(diagnostic, dict) and isinstance(diagnostic.get("fixture"), str):
+            expected_inputs.add(str(diagnostic["fixture"]))
+    missing_inputs = sorted(expected_inputs - seen_paths)
+    if missing_inputs:
+        failures.append(f"source input digest coverage missing: {', '.join(missing_inputs)}")
+    return failures
+
+
+def normalize_package_loader_interop_metadata(
+    entry: dict[str, Any],
+    *,
+    root: Path | None = None,
+) -> dict[str, Any]:
     negative_diagnostics = []
     for raw_fixture in entry.get("negative_fixtures", []):
         if not isinstance(raw_fixture, dict):
@@ -287,7 +382,7 @@ def normalize_package_loader_interop_metadata(entry: dict[str, Any]) -> dict[str
         "metadata_id": str(entry.get("metadata_id")),
         "source": PACKAGE_LOADER_INTEROP_METADATA_REL,
         "contract_id": PACKAGE_LOADER_INTEROP_CONTRACT_ID,
-        "digest": _stable_payload_digest(entry),
+        "source_input_digests": package_loader_metadata_source_input_digests(entry, root=root),
         "header_imports": _require_string_list(entry, "header_imports", surface_name="package loader interop metadata"),
         "header_exports": _require_string_list(entry, "header_exports", surface_name="package loader interop metadata"),
         "abi_alignment": sorted(entry.get("abi_alignment", []), key=lambda item: json.dumps(item, sort_keys=True)),
@@ -303,6 +398,7 @@ def normalize_package_loader_interop_metadata(entry: dict[str, Any]) -> dict[str
             "message": str(tamper_rejection.get("message")),
         },
     }
+    normalized["digest"] = _stable_payload_digest(normalized)
     return normalized
 
 
@@ -370,6 +466,7 @@ __all__ = [
     "PACKAGE_LOADER_INTEROP_CHANNEL_SUPPORT",
     "PACKAGE_LOADER_INTEROP_METADATA_REL",
     "PACKAGE_LOADER_INTEROP_TAMPER_CODE",
+    "collect_normalized_package_loader_interop_metadata_failures",
     "load_package_loader_interop_metadata",
     "normalize_package_loader_interop_metadata",
     "package_ecosystem_owner_payload",
@@ -377,6 +474,7 @@ __all__ = [
     "package_loader_metadata_by_package",
     "package_loader_metadata_channel_summary",
     "package_loader_metadata_digest_inputs",
+    "package_loader_metadata_source_input_digests",
     "package_loader_metadata_summary",
     "require_package_ecosystem_blocker_metadata",
     "require_package_ecosystem_owner_policy",

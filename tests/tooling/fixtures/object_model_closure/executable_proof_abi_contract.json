@@ -20,12 +20,14 @@
     "retired_surface_rule": "evidence-log, generated-evidence-log, workflow-label-only, command-wrapper-only, query-only, package-only, gate workflow, retired route workflow, old-mode command, closure-local alternate acceptance, and public ABI widening proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "public_command_surfaces": [
+    "npm run objc3c -- validate-public-runtime-reflection-api",
     "test:objc3c:object-model-conformance",
     "test:objc3c:storage-reflection-conformance",
     "test:objc3c:runnable-object-model",
     "test:objc3c:runnable-storage-reflection"
   ],
   "public_workflow_actions": [
+    "validate-public-runtime-reflection-api",
     "validate-object-model-conformance",
     "validate-storage-reflection-conformance",
     "validate-runnable-object-model",
@@ -35,7 +37,21 @@
     "objc3_runtime_register_image",
     "objc3_runtime_lookup_selector",
     "objc3_runtime_dispatch_i32",
-    "objc3_runtime_reset_for_testing"
+    "objc3_runtime_reset_for_testing",
+    "objc3_runtime_copy_reflection_state",
+    "objc3_runtime_copy_reflection_class",
+    "objc3_runtime_copy_reflection_class_at",
+    "objc3_runtime_copy_reflection_property",
+    "objc3_runtime_copy_reflection_property_at",
+    "objc3_runtime_copy_reflection_method",
+    "objc3_runtime_copy_reflection_method_at",
+    "objc3_runtime_copy_reflection_protocol",
+    "objc3_runtime_copy_reflection_protocol_at",
+    "objc3_runtime_copy_reflection_protocol_conformance",
+    "objc3_runtime_copy_reflection_category",
+    "objc3_runtime_copy_reflection_category_at",
+    "objc3_runtime_copy_reflection_selector",
+    "objc3_runtime_copy_reflection_selector_at"
   ],
   "private_runtime_query_boundary": [
     "objc3_runtime_copy_realized_class_graph_state_for_testing",

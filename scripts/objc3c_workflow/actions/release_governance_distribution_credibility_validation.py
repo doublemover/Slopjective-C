@@ -24,6 +24,7 @@ def action_validate_distribution_credibility(_: list[str]) -> int:
         "validate-distribution-credibility",
         [
             ("validate-release-operations", workflow_command("validate-release-operations")),
+            ("validate-package-install-distribution", workflow_command("validate-package-install-distribution")),
             (
                 "check-distribution-credibility-surface",
                 [sys.executable, str(DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY)],

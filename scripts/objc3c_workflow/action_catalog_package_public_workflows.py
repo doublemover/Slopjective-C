@@ -27,6 +27,7 @@ class PackagePublicWorkflowAction:
     schema_contracts: tuple[PackageSchemaContract, ...] = ()
     source_paths: tuple[str, ...] = ()
     generated_paths: tuple[str, ...] = ()
+    pass_through_args: bool = False
 
     @property
     def backend(self) -> str:
@@ -43,6 +44,7 @@ class PackagePublicWorkflowAction:
             self.backend,
             validation_tier=self.validation_tier,
             guarantee_owner=self.guarantee_owner,
+            pass_through_args=self.pass_through_args,
         )
 
 

@@ -27,6 +27,13 @@ EXPECTED_SCHEMAS = (
         "required_update_manifest_fields",
     ),
     (
+        "release_channel_manifest",
+        "schemas/objc3c-release-channel-operations-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-release-channel-operations-v1.schema.json",
+        "objc3c.release.operations.channel-manifest.v1",
+        None,
+    ),
+    (
         "upgrade_support_report",
         "schemas/objc3c-upgrade-support-report-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-upgrade-support-report-v1.schema.json",
@@ -109,7 +116,10 @@ def main() -> int:
             return fail(f"{expected_path} drifted from expected schema id {expected_schema_url}")
         if property_const(payload, "contract_id") != expected_contract_id:
             return fail(f"{surface_key} contract identity drifted")
-        if not schema_declares_required_fields(payload, metadata_surface.get(required_fields_key)):
+        if required_fields_key is not None and not schema_declares_required_fields(
+            payload,
+            metadata_surface.get(required_fields_key),
+        ):
             return fail(f"{surface_key} schema drifted from {required_fields_key}")
 
         schema_paths.append(expected_path)
@@ -122,6 +132,7 @@ def main() -> int:
         "metadata_surface": repo_rel(METADATA_SURFACE),
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "update_manifest": schema_refs["update_manifest"],
+        "release_channel_manifest": schema_refs["release_channel_manifest"],
         "upgrade_support_report": schema_refs["upgrade_support_report"],
         "schemas": schema_paths,
         "schema_ids": schema_ids,

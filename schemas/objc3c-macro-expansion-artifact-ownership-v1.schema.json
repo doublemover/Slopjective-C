@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-macro-expansion-artifact-ownership-v1",
+  "title": "objc3c macro expansion artifact ownership",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_path",
+    "issue_ref",
+    "public_command",
+    "generated_artifact_boundary",
+    "host_cache_document",
+    "source_anchors",
+    "fail_closed_cases",
+    "non_claims",
+    "forbidden_path_prefixes"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-macro-expansion-artifact-ownership-v1.schema.json"
+    },
+    "issue_ref": {
+      "const": 8168
+    },
+    "public_command": {
+      "const": "npm run objc3c -- validate-metaprogramming-conformance"
+    },
+    "generated_artifact_boundary": {
+      "type": "object",
+      "required": [
+        "artifact_relative_path",
+        "artifact_suffix",
+        "generated_artifact_role",
+        "generated_artifact_owner",
+        "generated_artifact_source_of_truth",
+        "checked_output_family",
+        "checked_in_source_of_truth",
+        "runtime_output_root_policy",
+        "support_claim_authority"
+      ],
+      "properties": {
+        "artifact_relative_path": {
+          "const": "module.metaprogramming-macro-host-cache.json"
+        },
+        "artifact_suffix": {
+          "const": ".metaprogramming-macro-host-cache.json"
+        },
+        "generated_artifact_role": {
+          "const": "metaprogramming-host-cache-provenance-only"
+        },
+        "generated_artifact_owner": {
+          "const": "objc3c-driver-metaprogramming-cache-publication"
+        },
+        "generated_artifact_source_of_truth": {
+          "const": "checked-in-metaprogramming-contracts-and-runtime-import-cache-entry"
+        },
+        "checked_output_family": {
+          "const": "artifacts emitted below tmp/generated are replay outputs, not claim inputs"
+        },
+        "checked_in_source_of_truth": {
+          "const": "schema, contract fixture, native document builder, runtime import surface, trust registry, and runtime acceptance assertions"
+        },
+        "runtime_output_root_policy": {
+          "const": "generated cache entries must stay outside docs/support and release-channel source files"
+        },
+        "support_claim_authority": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "host_cache_document": {
+      "type": "object",
+      "required": [
+        "document_builder",
+        "artifact_builder",
+        "input_contract_source",
+        "publication_owner_path",
+        "required_fields",
+        "checked_true_fields",
+        "cache_hit_stable_fields"
+      ],
+      "properties": {
+        "document_builder": {
+          "type": "string"
+        },
+        "artifact_builder": {
+          "type": "string"
+        },
+        "input_contract_source": {
+          "type": "string"
+        },
+        "publication_owner_path": {
+          "type": "string"
+        },
+        "required_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "checked_true_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "cache_hit_stable_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_anchors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source_anchor" },
+      "minItems": 1
+    },
+    "fail_closed_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "source_path", "tokens"],
+        "properties": {
+          "case_id": { "type": "string" },
+          "source_path": { "type": "string" },
+          "tokens": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "non_claims": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "forbidden_path_prefixes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "source_anchor": {
+      "type": "object",
+      "required": ["path", "tokens"],
+      "properties": {
+        "path": { "type": "string" },
+        "tokens": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

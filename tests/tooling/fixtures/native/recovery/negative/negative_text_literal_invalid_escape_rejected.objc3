@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3L010.
+module NegativeTextLiteralInvalidEscape;
+
+fn main() -> i32 {
+  let text = "bad\q";
+  return 0;
+}

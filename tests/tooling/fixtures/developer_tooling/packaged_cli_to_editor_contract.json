@@ -12,6 +12,7 @@
     "inspect-editor-tooling",
     "format-objc3c",
     "materialize-playground-workspace",
+    "trace-runtime-debug",
     "validate-developer-tooling",
     "validate-runnable-developer-tooling"
   ],
@@ -22,8 +23,14 @@
     "developer_tooling_navigation_contract",
     "developer_tooling_workspace_semantic_navigation_contract",
     "developer_tooling_formatter_debug_contract",
+    "developer_tooling_formatter_rewrite_contract",
+    "developer_tooling_diagnostic_quality_contract",
     "developer_tooling_workspace_contract",
     "developer_tooling_packaged_contract",
+    "developer_tooling_runtime_debug_trace_script",
+    "developer_tooling_runtime_debug_trace_schema",
+    "developer_tooling_runtime_debug_trace_path",
+    "developer_tooling_runtime_debug_trace_model",
     "developer_tooling_example_source",
     "developer_tooling_negative_source",
     "developer_tooling_formatter_source",
@@ -36,6 +43,7 @@
     "build_playground",
     "inspect_editor_tooling",
     "format_objc3c",
+    "runtime_debug_trace",
     "developer_tooling",
     "runnable_developer_tooling"
   ],
@@ -43,5 +51,10 @@
   "format_source": "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
   "expected_formatted_source": "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
   "expected_debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
-  "expected_fail_closed_statement_stepping": true
+  "expected_fail_closed_statement_stepping": true,
+  "expected_runtime_debug_trace_command": "npm run objc3c -- trace-runtime-debug",
+  "expected_runtime_debug_trace_command_surface": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3",
+  "expected_runtime_debug_trace_path": "tmp/reports/objc3c-public-workflow/runtime-debug-trace.json",
+  "expected_runtime_debug_trace_schema": "schemas/objc3c-runtime-debug-trace-v1.schema.json",
+  "expected_runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace"
 }

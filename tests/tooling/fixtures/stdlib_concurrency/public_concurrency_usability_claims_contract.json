@@ -1,0 +1,181 @@
+{
+  "contract_id": "objc3c.stdlib.concurrency.public_usability_claims.v1",
+  "schema_version": 1,
+  "issue_ref": 8167,
+  "module": "objc3.concurrency",
+  "module_manifest": "stdlib/modules/objc3.concurrency/module.json",
+  "module_source": "stdlib/modules/objc3.concurrency/module.objc3",
+  "module_smoke": "stdlib/modules/objc3.concurrency/smoke.objc3",
+  "runtime_acceptance_case": "stdlib-concurrency-runtime-probe",
+  "runnable_command": "npm run objc3c -- test-runtime-acceptance-concurrency",
+  "runtime_probe_payload_requirements": {
+    "spawn_call_count": 3,
+    "scope_call_count": 1,
+    "add_task_call_count": 2,
+    "wait_next_call_count": 2,
+    "cancel_all_call_count": 1,
+    "executor_hop_call_count": 1,
+    "actor_bind_executor_call_count": 1,
+    "actor_mailbox_enqueue_call_count": 1,
+    "actor_mailbox_drain_call_count": 1,
+    "actor_executor_binding_count": 1,
+    "actor_last_bound_executor_tag": 4,
+    "actor_last_mailbox_drained_value": 13,
+    "actor_mailbox_identity_guard_passed": 1,
+    "actor_executor_binding_guard_passed": 1,
+    "unsupported_task_kind_result": -2,
+    "invalid_group_executor_result": -1,
+    "invalid_actor_bind_result": 0,
+    "actor_invalid_handle_failure_code": 2
+  },
+  "diagnostic_evidence": [
+    {
+      "code": "O3S206",
+      "fixture": "tests/tooling/fixtures/native/execution/negative/stdlib_concurrency_runtime_helper_signature_conflict.objc3",
+      "source_token": "fn objc3_runtime_spawn_task_i32(task_kind: bool, executor_tag: i32) -> i32"
+    },
+    {
+      "code": "O3S223",
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_await_outside_async.objc3",
+      "source_token": "return await fetchValue();"
+    },
+    {
+      "code": "O3S224",
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_executor_on_sync_function.objc3",
+      "source_token": "fn runTask() -> i32 __attribute__((objc_executor(main)))"
+    },
+    {
+      "code": "O3S342",
+      "fixture": "tests/tooling/fixtures/native/non_actor_actor_hop_rejected.objc3",
+      "source_token": "hop_to_worker();"
+    },
+    {
+      "code": "O3S343",
+      "fixture": "tests/tooling/fixtures/native/non_actor_non_sendable_crossing_rejected.objc3",
+      "source_token": "cross_actor_non_sendable();"
+    }
+  ],
+  "claims": [
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
+      "capability_id": "stdlib.concurrency.public-task-spawn-api",
+      "api_family": "public-task-spawn",
+      "exports": [
+        "objc3_task_spawn",
+        "objc3_task_spawn_child",
+        "objc3_task_spawn_detached"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_spawn_task_i32"
+      ],
+      "semantic_policy_keys": [
+        "public_task_spawn_api",
+        "spawn_token",
+        "child_spawn_token",
+        "detached_spawn_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "spawn_call_count",
+        "unsupported_task_kind_result"
+      ],
+      "reserved_until_runtime_contract": [
+        "generic Task ABI",
+        "scheduler fairness guarantees",
+        "Swift concurrency ABI compatibility"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api",
+      "capability_id": "stdlib.concurrency.public-task-group-cancellation-api",
+      "api_family": "public-task-group",
+      "exports": [
+        "objc3_task_join",
+        "objc3_task_group_run_two",
+        "objc3_task_group_run_bounded",
+        "objc3_task_is_cancelled",
+        "objc3_task_cancel_if_needed"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_enter_task_group_scope_i32",
+        "objc3_runtime_add_task_group_task_i32",
+        "objc3_runtime_wait_task_group_next_i32",
+        "objc3_runtime_cancel_task_group_i32",
+        "objc3_runtime_task_is_cancelled_i32",
+        "objc3_runtime_task_on_cancel_i32"
+      ],
+      "semantic_policy_keys": [
+        "public_task_join_api",
+        "public_task_group_api",
+        "public_cancellation_api",
+        "task_group_scope_depth",
+        "cancellation_checkpoint"
+      ],
+      "runtime_probe_payload_fields": [
+        "scope_call_count",
+        "add_task_call_count",
+        "wait_next_call_count",
+        "cancel_all_call_count",
+        "invalid_group_executor_result"
+      ],
+      "reserved_until_runtime_contract": [
+        "arbitrary task group result typing",
+        "structured cancellation propagation outside the checked helper cluster"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-executor-hop-api",
+      "capability_id": "stdlib.concurrency.public-executor-hop-api",
+      "api_family": "public-executor-hop",
+      "exports": [
+        "objc3_executor_hop"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_executor_hop_i32"
+      ],
+      "semantic_policy_keys": [
+        "public_executor_api",
+        "executor_hop_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "executor_hop_call_count"
+      ],
+      "reserved_until_runtime_contract": [
+        "OS scheduler integration",
+        "fairness or priority inheritance guarantees"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api",
+      "capability_id": "stdlib.concurrency.public-actor-mailbox-api",
+      "api_family": "public-actor-mailbox",
+      "exports": [
+        "objc3_actor_mailbox_send_and_drain"
+      ],
+      "runtime_abi": [
+        "objc3_runtime_actor_bind_executor_i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ],
+      "semantic_policy_keys": [
+        "public_actor_mailbox_api",
+        "actor_mailbox_token"
+      ],
+      "runtime_probe_payload_fields": [
+        "actor_bind_executor_call_count",
+        "actor_mailbox_enqueue_call_count",
+        "actor_mailbox_drain_call_count",
+        "actor_executor_binding_count",
+        "actor_last_mailbox_drained_value",
+        "actor_mailbox_identity_guard_passed",
+        "actor_executor_binding_guard_passed",
+        "invalid_actor_bind_result",
+        "actor_invalid_handle_failure_code"
+      ],
+      "reserved_until_runtime_contract": [
+        "distributed actors",
+        "cross-process mailboxes",
+        "Swift actor ABI compatibility"
+      ]
+    }
+  ]
+}

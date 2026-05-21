@@ -58,6 +58,8 @@ class Objc3Lexer {
   void SkipTrivia(std::vector<std::string> &diagnostics);
   std::string ConsumeIdentifier();
   std::string ConsumeNumber();
+  bool ConsumeStringLiteral(std::string &token_text,
+                            std::vector<std::string> &diagnostics);
   void Advance();
   bool MatchChar(char expected);
 

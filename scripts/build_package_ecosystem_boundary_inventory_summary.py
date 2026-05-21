@@ -50,8 +50,20 @@ def main() -> int:
 
     runbooks = [str(path) for path in contract["release_and_package_channel_runbooks"]]
     schemas = [str(path) for path in contract["release_and_package_channel_schemas"]]
-    generators = [str(path) for path in contract["package_workflow_generators"]]
-    validation_surfaces = [str(path) for path in contract["existing_package_validation_surfaces"]]
+    generators = [
+        str(path)
+        for path in contract.get(
+            "package_workflow_generators",
+            contract.get("package_workflow_implementation_anchors", []),
+        )
+    ]
+    validation_surfaces = [
+        str(path)
+        for path in contract.get(
+            "existing_package_validation_surfaces",
+            contract.get("package_validation_implementation_anchors", []),
+        )
+    ]
     package_bridge = str(contract["package_bridge"])
     package_bridge_exists = package_bridge in package_scripts
     required_actions = [str(name) for name in contract["required_actions"]]

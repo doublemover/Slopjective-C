@@ -11,6 +11,7 @@ from scripts.objc3c_workflow.actions import (
 
 REPORTING_CONFORMANCE_STRESS_HANDLERS: dict[str, ActionHandler] = {
     "validate-conformance-corpus": application_surfaces.action_validate_conformance_corpus,
+    "validate-public-conformance-suite": application_surfaces.action_validate_public_conformance_suite,
     "check-conformance-minima": application_surfaces.action_check_conformance_minima,
     "validate-runnable-conformance-corpus": application_surfaces.action_validate_runnable_conformance_corpus,
     "check-stress-surface": stress.action_check_stress_surface,

@@ -1,0 +1,81 @@
+{
+  "contract_id": "objc3c.runtime.language-semantics.api.v1",
+  "issues": [8160, 8164, 8166, 8167],
+  "public_header": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.h",
+  "public_umbrella_header": "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+  "implementation": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+  "runtime_probe": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp",
+  "abi_version_macro": "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION",
+  "snapshot_type": "objc3_runtime_language_semantics_surface_snapshot",
+  "entrypoints": [
+    "objc3_runtime_language_semantics_api_abi_version",
+    "objc3_runtime_language_semantics_surface_count",
+    "objc3_runtime_copy_language_semantics_surface",
+    "objc3_runtime_copy_language_semantics_surface_by_kind"
+  ],
+  "status_codes": [
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_OK",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_NOT_FOUND",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_INVALID_OUTPUT",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_INVALID_QUERY"
+  ],
+  "surface_kinds": [
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_GENERIC_RUNTIME_IDENTITY",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE",
+    "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API"
+  ],
+  "surface_rows": [
+    {
+      "issue": 8160,
+      "support_claim": "objc3c.behavior.runtime.generics.cross-module-metadata",
+      "semantic_surface": "generic-runtime-identity-record",
+      "metadata_key": "generic-specialization-metadata",
+      "runtime_anchor": "EmittedKeyPathDescriptor::generic_metadata_replay_key",
+      "positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/neg_param_type_generic.objc3",
+      "diagnostic_code": "O3S206"
+    },
+    {
+      "issue": 8164,
+      "support_claim": "objc3c.behavior.language.protocols.existential-witness-model",
+      "semantic_surface": "protocol-existential-witness-record",
+      "metadata_key": "protocol-witness-conformance-metadata",
+      "runtime_anchor": "BuildRuntimeProtocolExistentialWitnessMetadata+QueryRealizedClassProtocolConformanceUnlocked",
+      "witness_metadata_key": "protocol-witness-conformance-metadata",
+      "conformance_metadata_key": "ProtocolConformanceMatch",
+      "associated_type_support": false,
+      "dynamic_existential_dispatch_support": false,
+      "positive_fixture": "tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_protocol_existential_associated_type_rejected.objc3",
+      "diagnostic_code": "O3S216",
+      "unsupported_associated_type_diagnostic": "O3P100",
+      "unsupported_dynamic_dispatch_diagnostic": "O3S314"
+    },
+    {
+      "issue": 8166,
+      "support_claim": "objc3c.behavior.language.ownership-memory-model",
+      "semantic_surface": "ownership-runtime-edge",
+      "metadata_key": "ownership-cleanup-transfer-metadata",
+      "runtime_anchor": "RuntimeResultFailClosedOwnershipModel",
+      "positive_fixture": "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_conflicting_capture_ownership.objc3",
+      "diagnostic_code": "O3S301"
+    },
+    {
+      "issue": 8167,
+      "support_claim": "objc3c.behavior.language.concurrency.public-usability-model",
+      "semantic_surface": "concurrency-public-api-surface",
+      "metadata_key": "concurrency-executor-effect-metadata",
+      "runtime_anchor": "objc3_runtime_spawn_task_i32+objc3_runtime_executor_hop_i32+actor_mailbox_enqueue",
+      "positive_fixture": "tests/tooling/fixtures/native/stdlib_concurrency_runtime_helper_surface_positive.objc3",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_executor_on_sync_function.objc3",
+      "diagnostic_code": "O3S224"
+    }
+  ],
+  "forbidden_public_symbols": [
+    "objc3_runtime_copy_language_semantics_surface_for_testing",
+    "objc3_runtime_language_semantics_mutate_surface",
+    "objc3_runtime_language_semantics_register_surface"
+  ]
+}

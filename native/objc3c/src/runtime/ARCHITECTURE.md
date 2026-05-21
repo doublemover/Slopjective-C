@@ -470,9 +470,10 @@ Reflection query source of truth:
   ABI surface, property metadata reflection contract, ownership-backed property
   metadata contract, and the private realized-class/property/protocol query
   symbols that current executable probes consume
-- later reflection-query completion and conformance work must extend that
-  private testing surface rather than widening a public reflection ABI or
-  reconstructing query answers from source text
+- public reflection conformance must route through the bounded C ABI in
+  `public/objc3_runtime_reflection.h`; private testing snapshots remain the
+  closure-audit surface and query answers must not be reconstructed from source
+  text
 
 Realization and lookup semantics source of truth:
 

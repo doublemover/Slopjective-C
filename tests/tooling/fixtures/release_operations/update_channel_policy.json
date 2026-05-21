@@ -7,6 +7,7 @@
   "channel_order": [
     "stable",
     "candidate",
+    "nightly",
     "preview"
   ],
   "channels": [
@@ -42,8 +43,24 @@
       "requires_generated_warning": true
     },
     {
-      "channel_id": "preview",
+      "channel_id": "nightly",
       "precedence": 3,
+      "support_status": "nightly",
+      "warning_classes": [
+        "nightly-channel",
+        "nightly-rollback-required",
+        "downgrade-available"
+      ],
+      "permitted_upgrade_targets": [
+        "nightly",
+        "stable"
+      ],
+      "revert_channel": "offline-bundle",
+      "requires_generated_warning": true
+    },
+    {
+      "channel_id": "preview",
+      "precedence": 4,
       "support_status": "blocked",
       "warning_classes": [
         "preview-channel",
@@ -65,6 +82,14 @@
     },
     {
       "warning_id": "preview-channel",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "nightly-channel",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "nightly-rollback-required",
       "severity": "warn"
     },
     {

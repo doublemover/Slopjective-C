@@ -1,0 +1,32 @@
+// Canonical runtime object-model fixture: class and metaclass realization
+// publish stable inherited method tables.
+module RuntimeObjectModelClassRealizationContract;
+
+@interface RuntimeRealizedRoot
+- (i32) rootValue;
++ (i32) typeValue;
+@end
+
+@implementation RuntimeRealizedRoot
+- (i32) rootValue {
+  return 7;
+}
+
++ (i32) typeValue {
+  return 11;
+}
+@end
+
+@interface RuntimeRealizedLeaf : RuntimeRealizedRoot
+- (i32) leafValue;
+@end
+
+@implementation RuntimeRealizedLeaf
+- (i32) leafValue {
+  return 13;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

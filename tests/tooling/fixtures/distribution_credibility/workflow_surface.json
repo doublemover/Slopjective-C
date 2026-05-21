@@ -31,10 +31,12 @@
     "upstream_owner_actions": [
       "validate-release-foundation",
       "validate-packaging-channels",
+      "validate-package-install-distribution",
       "validate-release-operations"
     ],
     "workflow_child_actions": [
       "validate-release-operations",
+      "validate-package-install-distribution",
       "check-distribution-credibility-surface",
       "check-distribution-credibility-schema-surface",
       "build-distribution-credibility-dashboard",
@@ -64,16 +66,24 @@
         "validate-distribution-credibility",
         "validate-distribution-credibility-end-to-end"
       ],
-      "claim_boundary": "release readiness requires package-channel, release-operations, and release-evidence drill outputs"
+      "claim_boundary": "release readiness requires package-channel, clean package install, release-operations, and release-evidence drill outputs"
     }
   },
   "integrated_required_steps": [
     "validate-release-operations",
+    "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",
     "build-distribution-credibility-dashboard",
     "publish-distribution-credibility"
   ],
+  "from_nothing_evidence": {
+    "required_action": "validate-package-install-distribution",
+    "required_flag": "--from-nothing",
+    "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+    "stale_artifacts_allowed": false,
+    "dashboard_blocks_if_missing": true
+  },
   "required_report_contracts": [
     "objc3c.distribution.credibility.source.surface.summary.v1",
     "objc3c.distribution.credibility.schema.surface.summary.v1",
@@ -85,6 +95,7 @@
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels",
+    "validate-package-install-distribution",
     "validate-release-operations"
   ],
   "nightly_action": "test-nightly"

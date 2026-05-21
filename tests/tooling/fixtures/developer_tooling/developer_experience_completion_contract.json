@@ -1,0 +1,187 @@
+{
+  "contract_id": "objc3c.developer.experience.completion.v1",
+  "schema_version": 1,
+  "issue_ids": [
+    8157
+  ],
+  "surface_kind": "product-grade-developer-experience-contract",
+  "template_compile_contract": {
+    "example_id": "auroraBoard",
+    "materializer_action": "materialize-project-template",
+    "compile_action": "compile-objc3c",
+    "source_origin": "showcase/auroraBoard/main.objc3",
+    "materialized_source": "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+    "artifact_root": "tmp/artifacts/project-template/auroraBoard/build",
+    "emit_prefix": "module",
+    "public_compile_command": "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module"
+  },
+  "migration_examples": {
+    "required_public_actions": [
+      "analyze-migration-source",
+      "rewrite-migration-source",
+      "validate-migration-workflow"
+    ],
+    "positive_input": "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json",
+    "expected_rewrite_output": "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_positive_rewritten.objc3",
+    "negative_input": "tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_negative.json",
+    "expected_negative_diagnostics": "tests/tooling/fixtures/adoption_legibility/migration_outputs/objc2_swift_cpp_negative_diagnostics.json",
+    "required_fenced_doc_commands": [
+      {
+        "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+        "command": "npm run objc3c -- analyze-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json"
+      },
+      {
+        "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+        "command": "npm run objc3c -- rewrite-migration-source tests/tooling/fixtures/adoption_legibility/migration_inputs/objc2_swift_cpp_positive.json --output tmp/artifacts/migration-analyzer/objc2-swift-cpp-positive/rewritten.objc3"
+      },
+      {
+        "source_path": "docs/tutorials/objc2_to_objc3_migration.md",
+        "command": "npm run objc3c -- validate-migration-workflow"
+      }
+    ]
+  },
+  "diagnostic_fixit_metadata": {
+    "bridge_contract": "tests/tooling/fixtures/developer_tooling/editor_diagnostic_bridge_contract.json",
+    "required_diagnostic_fields": [
+      "code",
+      "severity",
+      "phase",
+      "category",
+      "span",
+      "message",
+      "explanation",
+      "fixits",
+      "recovery"
+    ],
+    "required_code_action_codes": [
+      "O3C004",
+      "O3P104"
+    ],
+    "minimum_machine_applicable_fixit_count": 2
+  },
+  "clean_room_project_usability": {
+    "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+    "source_truth_paths": [
+      "showcase/auroraBoard/main.objc3",
+      "showcase/auroraBoard/workspace.json",
+      "showcase/portfolio.json",
+      "docs/tutorials/getting_started.md",
+      "tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json"
+    ],
+    "generated_output_paths": [
+      "tmp/artifacts/project-template/auroraBoard",
+      "tmp/artifacts/project-template/auroraBoard/src/main.objc3",
+      "tmp/artifacts/project-template/auroraBoard/workspace.json",
+      "tmp/artifacts/project-template/auroraBoard/build",
+      "tmp/reports/project-template/auroraBoard/demo-harness.json"
+    ],
+    "template_workspace_manifest": "tmp/artifacts/project-template/auroraBoard/workspace.json",
+    "required_template_manifest_fields": [
+      "template_source",
+      "template_workspace_manifest",
+      "template_compile_contract",
+      "clean_room_usability"
+    ],
+    "required_public_commands": [
+      {
+        "stage": "materialize",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- materialize-project-template --example auroraBoard"
+      },
+      {
+        "stage": "compile",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module"
+      },
+      {
+        "stage": "inspect",
+        "source_path": "docs/tutorials/getting_started.md",
+        "command": "npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3"
+      }
+    ],
+    "generated_output_policy": "Generated project-template paths under tmp are reproducible outputs, not authoritative source truth."
+  },
+  "onboarding_command_map": {
+    "support_claim": "objc3c.behavior.tooling.first-run-product-path",
+    "doc_surface": "docs/tutorials/getting_started.md",
+    "source_truth_rule": "The command map is source-truth in docs and checked-in fixtures; tmp paths are generated outputs only.",
+    "forbidden_primary_actions": [
+      "validate-runnable-developer-tooling",
+      "validate-runnable-showcase",
+      "benchmark-runtime-inspector"
+    ],
+    "required_stage_ids": [
+      "bootstrap",
+      "first_compile",
+      "artifact_inspection",
+      "project_template",
+      "template_compile",
+      "onboarding_validation"
+    ],
+    "stages": [
+      {
+        "id": "bootstrap",
+        "intent": "build the native compiler before compiling user code",
+        "command": "npm run objc3c -- build-native-binaries",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "failure_policy": "stop and fix the local build before continuing"
+      },
+      {
+        "id": "first_compile",
+        "intent": "compile one checked-in showcase source",
+        "command": "npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "source_path": "showcase/auroraBoard/main.objc3",
+        "output_paths": [
+          "tmp/artifacts/showcase/auroraBoard"
+        ],
+        "failure_policy": "stop and read the compiler diagnostic before opening deeper runbooks"
+      },
+      {
+        "id": "artifact_inspection",
+        "intent": "inspect the same source through the developer-facing artifact summary",
+        "command": "npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "source_path": "showcase/auroraBoard/main.objc3",
+        "output_paths": [
+          "tmp/reports/public-workflow"
+        ],
+        "failure_policy": "stop because artifact and diagnostic summaries must be available before onboarding claims are valid"
+      },
+      {
+        "id": "project_template",
+        "intent": "materialize a ready-to-compile starter workspace from the same example",
+        "command": "npm run objc3c -- materialize-project-template --example auroraBoard",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "output_paths": [
+          "tmp/artifacts/project-template/auroraBoard",
+          "tmp/reports/project-template/auroraBoard"
+        ],
+        "failure_policy": "stop because the template must be generated by the public materializer"
+      },
+      {
+        "id": "template_compile",
+        "intent": "compile the generated starter workspace through the normal compiler action",
+        "command": "npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "output_paths": [
+          "tmp/artifacts/project-template/auroraBoard/build"
+        ],
+        "requires_prior_stage": "project_template",
+        "failure_policy": "stop because generated templates must stay ready to compile"
+      },
+      {
+        "id": "onboarding_validation",
+        "intent": "replay the checked-in onboarding contract and tutorial checks",
+        "command": "npm run objc3c -- validate-getting-started",
+        "public_doc": "docs/tutorials/getting_started.md",
+        "output_paths": [
+          "tmp/reports/tutorials/getting-started-surface-summary.json",
+          "tmp/reports/tutorials/getting-started-integration-summary.json"
+        ],
+        "failure_policy": "stop because onboarding docs and commands drifted from the public workflow surface"
+      }
+    ]
+  },
+  "support_boundary": "This contract proves a normal developer path over checked-in sources: project templates expose a compile command contract, migration tooling has checked-in input/output examples, and common first-run diagnostics carry structured fix-it and recovery metadata. It does not claim a full IDE, full ObjC2 acceptance, or release-channel behavior."
+}

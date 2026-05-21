@@ -1,0 +1,40 @@
+// Canonical runtime object-model fixture: bounded private query snapshots
+// mirror the realized graph without widening the public reflection ABI.
+module RuntimeObjectModelBoundedQuerySnapshotContract;
+
+@protocol RuntimeQueryable
+@required
+- (i32) queryValue;
+@end
+
+@interface RuntimeQueryRoot <RuntimeQueryable>
+@property (readonly, getter=queryToken) id token;
+- (i32) queryValue;
+- (id)queryToken;
+@end
+
+@implementation RuntimeQueryRoot
+@property (readonly, getter=queryToken) id token;
+
+- (i32) queryValue {
+  return 31;
+}
+
+- (id)queryToken {
+  return 0;
+}
+@end
+
+@interface RuntimeQueryRoot (Snapshot)
+- (bool) queryReady;
+@end
+
+@implementation RuntimeQueryRoot (Snapshot)
+- (bool) queryReady {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

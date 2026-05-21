@@ -1,0 +1,102 @@
+{
+  "contract_id": "objc3c.package_ecosystem.install_distribution_credibility.v1",
+  "surface_kind": "package-ecosystem-install-distribution-credibility",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+  "package_manager_model": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+  "registry_mirror_reproducibility": "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+  "source_contracts": [
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
+  ],
+  "generated_outputs": {
+    "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
+    "package_manifest_root": "tmp/artifacts/package-ecosystem/manifests",
+    "mirror_index": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+    "mirror_cache_root": "tmp/artifacts/package-ecosystem/mirrors/cache",
+    "local_registry_index": "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
+    "publication_metadata": "tmp/artifacts/package-ecosystem/registry/publication-metadata.json",
+    "restore_receipt": "tmp/artifacts/package-ecosystem/offline-install/objc3c-offline-mirror-restore-receipt.json",
+    "clean_install_root": "tmp/artifacts/package-ecosystem/install-validation/clean-root",
+    "clean_install_home": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c",
+    "install_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+    "update_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json",
+    "uninstall_receipt": "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json",
+    "install_verification": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json",
+    "local_package_artifact_root": "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
+    "install_proof_manifest": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
+    "summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+  },
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "package_bridge": "objc3c",
+  "language_version": "3.0",
+  "abi_identity": "objc3-abi-2025Q4",
+  "trust_key_id": "objc3c-local-package-key-v1",
+  "network_policy": "no-network-during-validation",
+  "network_resolution_support": "unsupported",
+  "hosted_registry_support": "unsupported-fail-closed-if-claimed",
+  "offline_restore_support": "local-cache-digest-checked",
+  "tamper_diagnostic": "O3PKG8055",
+  "minimum_package_count": 10,
+  "minimum_dependency_count": 7,
+  "required_public_actions": [
+    "build-package-lock",
+    "validate-package-manager-model",
+    "validate-package-authoring",
+    "validate-package-mirror",
+    "validate-package-install-distribution"
+  ],
+  "required_install_receipt_fields": [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "installed_at_utc"
+  ],
+  "required_operation_receipts": [
+    "update",
+    "uninstall"
+  ],
+  "model_rules": [
+    "clean install validation must remove its owned install root before materializing package evidence",
+    "installed package manifests must byte-equivalently project from generated package manifests and keep lock manifest digests",
+    "installed package order must preserve the dependency-first resolution plan from the generated package lock",
+    "update and uninstall operation receipts must be deterministic, digest-bound to the locked package graph, and stored under the clean install receipt root",
+    "update receipts preserve dependency-first package order while uninstall receipts use reverse dependency order",
+    "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
+    "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
+    "installed package sources, lock entries, mirror entries, local registry entries, publication metadata, and restore receipt counts must agree",
+    "offline mirror cache entries must digest-match the lock-derived mirror index before an install claim can pass",
+    "install receipts must be machine-generated under the package ecosystem validation root and must publish the objc3c package bridge",
+    "network install, hosted registry, and alternate package-manager claims remain fail-closed until separate evidence exists"
+  ],
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "clean install root depends on stale preexisting artifacts",
+      "install receipt missing or not machine-owned",
+      "package manifest, lock, mirror, registry, publication, or restore metadata disagree",
+      "offline mirror cache entry missing or digest-mismatched",
+      "from-nothing install proof manifest missing or report-derived release input accepted",
+      "hosted registry or network install claim widened without evidence",
+      "public package install validation action missing from objc3c bridge",
+      "generated install evidence escaped the package ecosystem artifact root"
+    ]
+  },
+  "claim_boundary": "clean local package install credibility only: checked-in source contracts generate package manifests, a deterministic lock, an offline mirror, local registry metadata, an install receipt, and a clean-root verification record; hosted registry, network dependency resolution, system installer publication, and release-channel operations remain outside this contract"
+}

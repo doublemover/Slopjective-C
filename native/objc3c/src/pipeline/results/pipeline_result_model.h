@@ -45,7 +45,10 @@ struct Objc3FrontendPipelineResult {
   Objc3LoweringPipelinePassGraphScaffold lowering_pipeline_pass_graph_scaffold;
   Objc3LoweringPipelinePassGraphCoreFeatureSurface
       lowering_pipeline_pass_graph_core_feature_surface;
+  Objc3SemanticOptimizationPipelineSurface semantic_optimization_pipeline_surface;
   Objc3IREmissionCompletenessScaffold ir_emission_completeness_scaffold;
+  objc3c::lower::Objc3LanguageSemanticsLoweringHandoffSurface
+      language_semantics_lowering_handoff_surface;
   Objc3LoweringRuntimeDiagnosticsSurfacingScaffold
       lowering_runtime_diagnostics_surfacing_scaffold;
   Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface

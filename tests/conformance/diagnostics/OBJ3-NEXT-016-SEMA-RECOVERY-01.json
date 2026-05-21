@@ -1,0 +1,38 @@
+{
+  "id": "OBJ3-NEXT-016-SEMA-RECOVERY-01",
+  "title": "Issue #8169 semantic recovery preserves missing return-value rejection",
+  "feature": "structured semantic diagnostics and recovery boundaries",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
+  ],
+  "source": "module Obj3Next016SemaMissingReturnValueRecovery;\n\nfn helper() -> i32 {\n  return;\n}\n\nfn main() -> i32 {\n  return helper();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "O3S211",
+        "severity": "error",
+        "phase": "sema",
+        "category": "semantic-analysis",
+        "span": {
+          "start": { "line": 4, "column": 3 },
+          "end": { "line": 4, "column": 9 }
+        },
+        "message": "type mismatch: function 'helper' must return 'i32'",
+        "explanation": "Semantic analysis keeps the non-void return contract diagnostic stable and rejects the function body.",
+        "fixits": [],
+        "recovery": {
+          "strategy": "semantic-return-contract-boundary",
+          "boundary": "function return statement",
+          "deterministic": true,
+          "accepts_invalid_program": false,
+          "recovery_counts_as_success": false,
+          "native_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_sema_missing_return_value_recovery.objc3",
+          "expected_native_code": "O3S211"
+        }
+      }
+    ]
+  }
+}

@@ -54,7 +54,10 @@
       "required_tools": [
         "pwsh",
         "python",
-        "clang++"
+        "node",
+        "clang++",
+        "cmake",
+        "ninja"
       ],
       "unsupported_claims": [
         "system package manager publication",

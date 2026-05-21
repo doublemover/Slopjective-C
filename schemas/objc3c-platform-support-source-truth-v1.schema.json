@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-platform-support-source-truth-v1.schema.json",
+  "title": "objc3c Platform Support Source Truth",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "issue",
+    "schema_path",
+    "source_path",
+    "upstream_sources",
+    "claim_policy",
+    "required_supported_evidence_classes",
+    "required_auxiliary_evidence_classes",
+    "required_toolchain_components",
+    "supported_rows",
+    "unsupported_rows",
+    "report_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.platform.support.source_truth.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "issue": {
+      "const": "OBJ3-NEXT-024"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-platform-support-source-truth-v1.schema.json"
+    },
+    "source_path": {
+      "const": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    "upstream_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported_platforms",
+        "platform_toolchain_support_evidence",
+        "unsupported_host_policy"
+      ],
+      "properties": {
+        "supported_platforms": {
+          "type": "string"
+        },
+        "platform_toolchain_support_evidence": {
+          "type": "string"
+        },
+        "unsupported_host_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "claim_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported_rows_require_checked_source",
+        "support_claims_require_live_network",
+        "generated_reports_are_source_truth",
+        "unsupported_host_result",
+        "unsupported_toolchain_result",
+        "toolchain_range_policy"
+      ],
+      "properties": {
+        "supported_rows_require_checked_source": {
+          "const": true
+        },
+        "support_claims_require_live_network": {
+          "const": false
+        },
+        "generated_reports_are_source_truth": {
+          "const": false
+        },
+        "unsupported_host_result": {
+          "const": "fail-closed"
+        },
+        "unsupported_toolchain_result": {
+          "const": "fail-closed-no-range-claim"
+        },
+        "toolchain_range_policy": {
+          "const": "current-probed-executable-only"
+        }
+      }
+    },
+    "required_supported_evidence_classes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ]
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "required_auxiliary_evidence_classes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "toolchain",
+          "hosted_ci",
+          "clean_room"
+        ]
+      },
+      "minItems": 3,
+      "uniqueItems": true
+    },
+    "required_toolchain_components": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "llvm",
+          "clang",
+          "cmake",
+          "ninja",
+          "python",
+          "node",
+          "pwsh"
+        ]
+      },
+      "minItems": 7,
+      "uniqueItems": true
+    },
+    "supported_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/supportedRow"
+      }
+    },
+    "unsupported_rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unsupportedRow"
+      }
+    },
+    "report_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary_path",
+        "generated_reports_must_not_be_source"
+      ],
+      "properties": {
+        "summary_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-matrix/"
+        },
+        "generated_reports_must_not_be_source": {
+          "const": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceId": {
+      "type": "string",
+      "pattern": "^objc3c\\.evidence\\."
+    },
+    "publicReplayCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*( .*)?$"
+    },
+    "supportedRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "platform_id",
+        "host_os",
+        "host_arch",
+        "support_state",
+        "required_evidence",
+        "toolchain_evidence_ids",
+        "hosted_ci_evidence_ids",
+        "local_clean_room_evidence_ids",
+        "public_replay_commands",
+        "diagnostic"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string"
+        },
+        "platform_id": {
+          "type": "string"
+        },
+        "host_os": {
+          "type": "string"
+        },
+        "host_arch": {
+          "type": "string"
+        },
+        "support_state": {
+          "const": "supported"
+        },
+        "required_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "build",
+            "package",
+            "install",
+            "execution"
+          ],
+          "properties": {
+            "build": {
+              "$ref": "#/$defs/evidenceId"
+            },
+            "package": {
+              "$ref": "#/$defs/evidenceId"
+            },
+            "install": {
+              "$ref": "#/$defs/evidenceId"
+            },
+            "execution": {
+              "$ref": "#/$defs/evidenceId"
+            }
+          }
+        },
+        "toolchain_evidence_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "hosted_ci_evidence_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "local_clean_room_evidence_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "public_replay_commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/publicReplayCommand"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "diagnostic": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "unsupportedRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "platform_id",
+        "host_os",
+        "host_arch",
+        "support_state",
+        "failure_id",
+        "fail_closed_evidence_id",
+        "public_replay_commands",
+        "diagnostic"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string"
+        },
+        "platform_id": {
+          "type": "string"
+        },
+        "host_os": {
+          "type": "string"
+        },
+        "host_arch": {
+          "type": "string"
+        },
+        "support_state": {
+          "const": "unsupported"
+        },
+        "failure_id": {
+          "type": "string",
+          "pattern": "^unsupported-host-"
+        },
+        "fail_closed_evidence_id": {
+          "$ref": "#/$defs/evidenceId"
+        },
+        "public_replay_commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/publicReplayCommand"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "diagnostic": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -71,6 +71,36 @@ following:
 Public reporting must fail closed when upstream evidence is missing, stale,
 quarantined, or not traceable to a checked-in validation family.
 
+## Stable Public Suite Boundary
+
+The checked-in public suite manifest is the source of truth for the packaged
+conformance suite:
+
+- manifest: `tests/conformance/public_suite_manifest.json`
+- schema: `schemas/objc3c-public-conformance-suite-v1.schema.json`
+- manifest check:
+  `npm run objc3c -- validate-public-conformance-suite`
+- package replay evidence:
+  `tests/conformance/public_suite_package_replay_evidence.json`
+
+The suite manifest owns the stable phase taxonomy, public profiles, fixture
+boundary, release-candidate profile, and external-validation intake policy. A
+case is public only when it is listed in `suite_cases`, belongs to the
+`public-stable` packaging class, uses a public `npm run objc3c -- ...`
+command, resolves to an implemented capability row and evidence-map row, and
+does not cite an internal-only fixture root.
+
+External validation is corroborating evidence, not an alternate support truth
+source. Accepted external fixtures must pass through the checked
+`tests/tooling/fixtures/external_validation/` trust policy, intake manifest,
+replay evidence, and support-claim gate before a public report may cite them.
+Candidate, quarantined, rejected, local-only, or generated-`tmp` evidence cannot
+create or widen a public support claim.
+
+The release-candidate profile consumes the same public suite truth. It cannot
+drop public-stable cases, bypass the external-validation policy, or promote
+generated package/report outputs into source truth.
+
 Capability language is strict:
 
 - `claim-ready` means all required upstream evidence owners report `PASS`, no

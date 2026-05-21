@@ -55,6 +55,8 @@
   "publication_rules": [
     "registry metadata must be generated from the lock and mirror evidence",
     "publication metadata may not introduce package identities absent from the lock graph",
+    "registry metadata must preserve package manifest digests, language version, ABI identity, and trust signatures from the lock",
+    "local registry indexes must preserve exact locked target versions, dependency source digests, package manifest digests, and replay commands",
     "interop loader metadata must fail closed when the mirror digest differs from the generated lock",
     "offline restore receipts must fail closed when any mirror cache entry is missing, extra, or digest-mismatched",
     "hosted-registry behavior must fail closed when claimed without checked-in source authority",
@@ -99,6 +101,7 @@
     "blocking_conditions": [
       "hosted registry claimed as supported",
       "publication metadata contains an unlocked package identity",
+      "registry index dependency version drift did not fail closed",
       "offline mirror metadata digest mismatch did not fail closed",
       "offline mirror cache payload mismatch did not fail closed",
       "offline mirror validation requires network access",
@@ -119,6 +122,8 @@
   "release_blocking_conditions": [
     "hosted registry claimed as supported",
     "publication metadata contains an unlocked package identity",
+    "registry index dependency version drift did not fail closed",
+    "publication metadata drops package manifest or trust metadata",
     "offline mirror metadata digest mismatch did not fail closed",
     "offline mirror cache payload mismatch did not fail closed",
     "offline mirror validation requires network access",

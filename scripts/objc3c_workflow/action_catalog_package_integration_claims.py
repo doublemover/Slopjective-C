@@ -6,6 +6,8 @@ from .action_catalog_package_install_receipts import PACKAGE_INSTALL_RECEIPT_SCH
 from .action_catalog_package_lock_contracts import (
     PACKAGE_LOCK_ARTIFACT_PATH,
     PACKAGE_LOCK_SCHEMA,
+    PACKAGE_MANIFEST_ARTIFACT_ROOT,
+    PACKAGE_MANIFEST_SCHEMA,
 )
 from .action_catalog_package_public_workflows import PackagePublicWorkflowAction
 from .action_catalog_package_registry_publication import (
@@ -20,6 +22,7 @@ from .action_catalog_package_registry_publication import (
 PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS = (
     "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
 )
@@ -40,18 +43,55 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
         ),
         schema_contracts=(
             PACKAGE_LOCK_SCHEMA,
+            PACKAGE_MANIFEST_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_INSTALL_RECEIPT_SCHEMA,
         ),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
         generated_paths=(
             PACKAGE_LOCK_ARTIFACT_PATH,
+            PACKAGE_MANIFEST_ARTIFACT_ROOT,
             PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
             PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
             PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,
             PACKAGE_REGISTRY_LOCAL_INDEX_PATH,
             PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
         ),
+    ),
+    PackagePublicWorkflowAction(
+        action="validate-package-install-distribution",
+        summary=(
+            "enforce clean-root package install credibility across generated "
+            "manifests, locks, mirrors, registry metadata, restore receipts, "
+            "and install receipts"
+        ),
+        script_path="scripts/check_objc3c_package_install_distribution_credibility.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package install distribution claims stay grounded in clean local "
+            "install evidence without hosted registry or network resolution "
+            "overclaims"
+        ),
+        schema_contracts=(
+            PACKAGE_LOCK_SCHEMA,
+            PACKAGE_MANIFEST_SCHEMA,
+            PACKAGE_OFFLINE_MIRROR_SCHEMA,
+            PACKAGE_INSTALL_RECEIPT_SCHEMA,
+        ),
+        source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
+        generated_paths=(
+            PACKAGE_LOCK_ARTIFACT_PATH,
+            PACKAGE_MANIFEST_ARTIFACT_ROOT,
+            PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
+            PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
+            PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,
+            PACKAGE_REGISTRY_LOCAL_INDEX_PATH,
+            PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
+            "tmp/artifacts/package-ecosystem/install-validation",
+            "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts",
+            "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json",
+        ),
+        pass_through_args=True,
     ),
     PackagePublicWorkflowAction(
         action="validate-runnable-package-ecosystem",
@@ -67,12 +107,14 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
         ),
         schema_contracts=(
             PACKAGE_LOCK_SCHEMA,
+            PACKAGE_MANIFEST_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_INSTALL_RECEIPT_SCHEMA,
         ),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
         generated_paths=(
             PACKAGE_LOCK_ARTIFACT_PATH,
+            PACKAGE_MANIFEST_ARTIFACT_ROOT,
             PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
             PACKAGE_OFFLINE_MIRROR_CACHE_ROOT,
             PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,

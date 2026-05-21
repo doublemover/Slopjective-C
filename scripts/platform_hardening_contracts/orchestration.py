@@ -52,10 +52,16 @@ def missing_tool_probe(tool_name: str, command_name: str | None = None) -> ToolP
 def required_tool_probes() -> dict[str, dict[str, Any]]:
     pwsh_path = shutil.which("pwsh")
     clang_path = shutil.which("clang++") or shutil.which("clang")
+    cmake_path = shutil.which("cmake")
+    ninja_path = shutil.which("ninja")
+    node_path = shutil.which("node")
     probes = {
         "python": ToolProbe((sys.executable, "--version"), True, 0, sys.version.splitlines()[0]),
         "pwsh": run_probe((pwsh_path, "--version")) if pwsh_path else missing_tool_probe("pwsh"),
         "clang": run_probe((clang_path, "--version")) if clang_path else missing_tool_probe("clang", "clang++"),
+        "cmake": run_probe((cmake_path, "--version")) if cmake_path else missing_tool_probe("cmake"),
+        "ninja": run_probe((ninja_path, "--version")) if ninja_path else missing_tool_probe("ninja"),
+        "node": run_probe((node_path, "--version")) if node_path else missing_tool_probe("node"),
     }
     return {name: probe.as_json() for name, probe in probes.items()}
 

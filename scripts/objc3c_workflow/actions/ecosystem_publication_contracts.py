@@ -30,6 +30,9 @@ PLANNING_ISSUE_PUBLISHER_PY = ROOT / "scripts" / "publish_objc3c_planning_issues
 PLANNING_PUBLICATION_AUDIT_PY = (
     ROOT / "scripts" / "audit_objc3c_planning_publication.py"
 )
+POST_CUTOVER_ISSUE_EVIDENCE_PY = (
+    ROOT / "scripts" / "check_objc3c_post_cutover_issue_evidence.py"
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +71,10 @@ PUBLICATION_ARTIFACT_CONTRACTS: dict[str, PublicationArtifactContract] = {
     "publish-governance-sustainability": PublicationArtifactContract(
         "publish-governance-sustainability",
         GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY,
+    ),
+    "validate-post-cutover-issue-evidence": PublicationArtifactContract(
+        "validate-post-cutover-issue-evidence",
+        POST_CUTOVER_ISSUE_EVIDENCE_PY,
     ),
     "publish-planning-issues": PublicationArtifactContract(
         "publish-planning-issues",

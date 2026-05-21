@@ -82,6 +82,29 @@ immediately:
 - then use `stdlib/README.md` if you want the checked-in stdlib module surface
   that backs the same story
 
+## From-Nothing Command Map
+
+This is the shortest product path from a clean checkout to a generated starter
+workspace. Run it in order and stop on the first failure; every command is part
+of the public `npm run objc3c -- <action>` surface.
+
+```sh
+npm run objc3c -- build-native-binaries
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
+npm run objc3c -- inspect-compile-observability showcase/auroraBoard/main.objc3
+npm run objc3c -- materialize-project-template --example auroraBoard
+npm run objc3c -- compile-objc3c tmp/artifacts/project-template/auroraBoard/src/main.objc3 --out-dir tmp/artifacts/project-template/auroraBoard/build --emit-prefix module
+npm run objc3c -- validate-getting-started
+```
+
+The generated template and reports stay under `tmp/`; the checked-in tutorial,
+showcase source, showcase workspace manifest, and developer-experience contract
+remain the source truth. The materialized template includes both
+`tmp/artifacts/project-template/auroraBoard/src/main.objc3` and
+`tmp/artifacts/project-template/auroraBoard/workspace.json` so the generated
+directory is usable as a clean-room starter workspace, not just a loose copied
+source file.
+
 ## Step 4 Choose The Next Learning Path
 
 Choose the next document based on the question you actually have:

@@ -1,0 +1,94 @@
+{
+  "contract_id": "objc3c.ownership-concurrency-macro.completion.contract.v1",
+  "issue_refs": [
+    8166,
+    8167,
+    8168
+  ],
+  "source_truth": "checked-in source files and checked-in contract fixtures only",
+  "forbidden_source_truth_prefixes": [
+    "tmp/",
+    "temp/",
+    "generated/",
+    "build/",
+    "dist/"
+  ],
+  "issue_invariants": {
+    "8166": {
+      "ownership_qualifiers": [
+        "strong",
+        "weak",
+        "unowned",
+        "borrowed",
+        "consumed",
+        "autoreleased"
+      ],
+      "lifetime_boundaries": [
+        "block_capture_copy_dispose",
+        "runtime_result_fail_closed",
+        "weak_runtime_hooks"
+      ],
+      "runtime_hooks_source_backed": true
+    },
+    "8167": {
+      "public_api_families": [
+        "task_spawn",
+        "task_group_cancellation",
+        "executor_hop",
+        "actor_mailbox"
+      ],
+      "task_actor_runtime_backed": true,
+      "unsupported_broad_async_claims_reserved": true
+    },
+    "8168": {
+      "generated_artifact_support_claim_authority": false,
+      "package_trust_required": true,
+      "sandbox_deny_by_default": true,
+      "unsupported_host_network_filesystem_rejected": true
+    }
+  },
+  "source_surface_groups": [
+    {
+      "group_id": "ownership_qualifiers_lifetimes_block_runtime_hooks",
+      "issue_ref": 8166,
+      "minimum_source_records": 1,
+      "source_records": [
+        {
+          "path": "native/objc3c/src/sema/objc3_sema_contract_ownership_memory_model.h",
+          "required_tokens": [
+            "kObjc3OwnershipMemoryModelFormalSliceConsumeRule",
+            "missing-objc3-ownership-token"
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "public_concurrency_task_actor_usability",
+      "issue_ref": 8167,
+      "minimum_source_records": 1,
+      "source_records": [
+        {
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3",
+          "required_tokens": [
+            "objc3_task_spawn"
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "macro_expansion_artifact_trust_sandbox_boundaries",
+      "issue_ref": 8168,
+      "minimum_source_records": 1,
+      "source_records": [
+        {
+          "path": "docs/runbooks/objc3c_macro_metaprogramming_surface.md",
+          "required_tokens": [
+            "Macro expansion is fail closed"
+          ]
+        }
+      ]
+    }
+  ],
+  "unsupported_behaviors": [],
+  "fail_closed_fixture_cases": []
+}

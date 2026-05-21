@@ -11,6 +11,8 @@
 namespace {
 
 using ScopeStack = std::vector<std::unordered_set<std::string>>;
+constexpr const char *kObjc3RuntimeStdlibTextUtf8LiteralI32 =
+    "objc3_runtime_stdlib_text_utf8_literal_i32";
 
 bool IsNameBoundInScopes(const ScopeStack &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
@@ -42,6 +44,9 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
     case Expr::Kind::Identifier:
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
+      return;
+    case Expr::Kind::StringLiteral:
+      info.called_functions.insert(kObjc3RuntimeStdlibTextUtf8LiteralI32);
       return;
     case Expr::Kind::Binary:
       CollectFunctionEffectExpr(expr->left.get(), scopes, info);

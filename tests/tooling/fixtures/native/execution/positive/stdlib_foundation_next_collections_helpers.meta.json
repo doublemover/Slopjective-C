@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "fixture": "stdlib_foundation_next_collections_helpers.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

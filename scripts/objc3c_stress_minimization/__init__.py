@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .cli import build_arg_parser, main, parse_args
 from .execution import compile_source
+from .execution import run_runtime_or_execution_source
 from .fixtures import load_manifest, validate_artifact_surface
 from .minimization import reduce_source
 from .models import MinCase
@@ -14,6 +15,7 @@ from .reporting import (
     build_reduced_summary,
     build_reducer_plan,
     build_summary_payload,
+    count_subsystems,
     emit_result,
     json_text,
     render_console_summary,
@@ -35,6 +37,7 @@ __all__ = [
     "build_reduced_summary",
     "build_reducer_plan",
     "build_summary_payload",
+    "count_subsystems",
     "compile_source",
     "emit_result",
     "json_text",
@@ -45,6 +48,7 @@ __all__ = [
     "reduce_source",
     "render_console_summary",
     "run_stress_minimization",
+    "run_runtime_or_execution_source",
     "validate_artifact_surface",
     "write_json",
 ]

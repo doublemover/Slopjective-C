@@ -1,0 +1,279 @@
+{
+  "contract_id": "objc3c.ownership-concurrency-macro.completion.contract.v1",
+  "issue_refs": [
+    8166,
+    8167,
+    8168
+  ],
+  "source_truth": "checked-in source files and checked-in contract fixtures only",
+  "forbidden_source_truth_prefixes": [
+    "tmp/",
+    "temp/",
+    "generated/",
+    "build/",
+    "dist/"
+  ],
+  "issue_invariants": {
+    "8166": {
+      "ownership_qualifiers": [
+        "strong",
+        "weak",
+        "unowned",
+        "borrowed",
+        "consumed",
+        "autoreleased"
+      ],
+      "lifetime_boundaries": [
+        "block_capture_copy_dispose",
+        "runtime_result_fail_closed",
+        "weak_runtime_hooks"
+      ],
+      "runtime_hooks_source_backed": true
+    },
+    "8167": {
+      "public_api_families": [
+        "task_spawn",
+        "task_group_cancellation",
+        "executor_hop",
+        "actor_mailbox"
+      ],
+      "task_actor_runtime_backed": true,
+      "unsupported_broad_async_claims_reserved": true
+    },
+    "8168": {
+      "generated_artifact_support_claim_authority": false,
+      "package_trust_required": true,
+      "sandbox_deny_by_default": true,
+      "unsupported_host_network_filesystem_rejected": true
+    }
+  },
+  "source_surface_groups": [
+    {
+      "group_id": "ownership_qualifiers_lifetimes_block_runtime_hooks",
+      "issue_ref": 8166,
+      "minimum_source_records": 6,
+      "source_records": [
+        {
+          "path": "native/objc3c/src/sema/objc3_sema_contract_ownership_memory_model.h",
+          "required_tokens": [
+            "strong-owned-weak-unowned-borrowed-consumed-and-autoreleased",
+            "kObjc3OwnershipMemoryModelFormalSliceConsumeRule",
+            "kObjc3OwnershipMemoryModelFormalSliceBorrowRule",
+            "kObjc3OwnershipMemoryModelFormalSliceFailureRule"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_diagnostics.inc",
+          "required_tokens": [
+            "O3S298",
+            "O3S299",
+            "O3S308",
+            "ownership value used after being consumed"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/ir/objc3_ir_synthesized_property_accessors.cpp",
+          "required_tokens": [
+            "uses_weak_runtime_hooks",
+            "uses_strong_runtime_hooks",
+            "kObjc3RuntimeAutoreleaseI32Symbol"
+          ]
+        },
+        {
+          "path": "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+          "required_tokens": [
+            "ProbeCopy",
+            "ProbeDispose",
+            "objc3_runtime_promote_block_i32",
+            "owned_capture_retain_count_after_promotion"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result_ownership.h",
+          "required_tokens": [
+            "RuntimeResultDiagnosticOwnerModel",
+            "RuntimeResultFailClosedOwnershipModel"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
+          "required_tokens": [
+            "diagnostic_owner_model",
+            "fail_closed_ownership_model",
+            "RuntimeResultFailClosedOwnershipModel"
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "public_concurrency_task_actor_usability",
+      "issue_ref": 8167,
+      "minimum_source_records": 4,
+      "source_records": [
+        {
+          "path": "stdlib/modules/objc3.concurrency/smoke.objc3",
+          "required_tokens": [
+            "objc3_task_spawn",
+            "objc3_task_group_run_two",
+            "objc3_executor_hop",
+            "objc3_actor_mailbox_send_and_drain"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/lower/contracts/concurrency_task_runtime_helper_contracts.h",
+          "required_tokens": [
+            "kObjc3RuntimeSpawnTaskI32Symbol",
+            "kObjc3RuntimeExecutorHopI32Symbol",
+            "no-public-task-scheduler-abi"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+          "required_tokens": [
+            "BindRuntimeActorMailboxExecutor",
+            "RecordRuntimeActorMailboxBindingGuard",
+            "mailbox_identity_guard_passed",
+            "executor_binding_guard_passed"
+          ]
+        },
+        {
+          "path": "tests/tooling/fixtures/stdlib_concurrency/public_concurrency_usability_claims_contract.json",
+          "required_tokens": [
+            "public-task-spawn-api",
+            "public-actor-mailbox-api",
+            "unsupported_task_kind_result",
+            "distributed actors",
+            "Swift concurrency ABI compatibility"
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "macro_expansion_artifact_trust_sandbox_boundaries",
+      "issue_ref": 8168,
+      "minimum_source_records": 6,
+      "source_records": [
+        {
+          "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_expansion_artifact_ownership_contract.json",
+          "required_tokens": [
+            "support_claim_authority",
+            "metaprogramming-host-cache-provenance-only",
+            "no network access from macro expansion"
+          ]
+        },
+        {
+          "path": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+          "required_tokens": [
+            "deny_revoked_provenance",
+            "require_deny_by_default_sandbox",
+            "require_deterministic_replay",
+            "trust_bypass_for_missing_provenance_allowed"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/io/objc3_process_metaprogramming_contracts.h",
+          "required_tokens": [
+            "Objc3MetaprogrammingMacroHostProcessCacheArtifactInputs",
+            "TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact",
+            "deterministic"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/sema/objc3_sema_contract_metaprogramming_surfaces.h",
+          "required_tokens": [
+            "kObjc3MetaprogrammingMacroSafetySandboxDeterminismContractId",
+            "sandbox_policy_deny_by_default_enforced",
+            "macro_execution_deferred"
+          ]
+        },
+        {
+          "path": "native/objc3c/src/lower/contracts/metaprogramming_lowering_contracts.cpp",
+          "required_tokens": [
+            "Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary",
+            "macro_host_execution_ready=true",
+            "runtime_package_loader_ready=false"
+          ]
+        },
+        {
+          "path": "docs/runbooks/objc3c_macro_metaprogramming_surface.md",
+          "required_tokens": [
+            "Macro expansion is fail closed",
+            "network access and filesystem writes are denied",
+            "Generated files under `tmp/` are replay outputs only"
+          ]
+        }
+      ]
+    }
+  ],
+  "unsupported_behaviors": [
+    {
+      "id": "ownership.full_arc_automation",
+      "issue_ref": 8166,
+      "status": "rejected",
+      "anchor": {
+        "path": "docs/spec/ownership.md",
+        "required_tokens": [
+          "Full ARC automation",
+          "public ARC runtime ABI widening",
+          "unsupported ownership-qualified signatures remain fail-closed"
+        ]
+      }
+    },
+    {
+      "id": "concurrency.distributed_actors_and_scheduler_fairness",
+      "issue_ref": 8167,
+      "status": "reserved",
+      "anchor": {
+        "path": "docs/runbooks/objc3c_public_concurrency_usability.md",
+        "required_tokens": [
+          "does not claim scheduler fairness",
+          "distributed actors",
+          "concurrency ABI compatibility"
+        ]
+      }
+    },
+    {
+      "id": "macro.arbitrary_host_network_filesystem_execution",
+      "issue_ref": 8168,
+      "status": "rejected",
+      "anchor": {
+        "path": "docs/runbooks/objc3c_macro_metaprogramming_surface.md",
+        "required_tokens": [
+          "arbitrary compile-time execution",
+          "network access during macro expansion",
+          "filesystem writes during macro expansion"
+        ]
+      }
+    },
+    {
+      "id": "macro.third_party_ecosystem_compatibility",
+      "issue_ref": 8168,
+      "status": "reserved",
+      "anchor": {
+        "path": "tests/tooling/fixtures/metaprogramming_public_surface/macro_metaprogramming_public_surface_contract.json",
+        "required_tokens": [
+          "third_party_macro_ecosystem_compatibility",
+          "\"status\": \"reserved\"",
+          "third-party macro ecosystems require package distribution"
+        ]
+      }
+    }
+  ],
+  "fail_closed_fixture_cases": [
+    {
+      "case_id": "missing_source_token",
+      "path": "tests/tooling/fixtures/ownership_concurrency_macro_completion/fail_closed/missing_source_token.contract.json",
+      "expected_failure_fragment": "missing-objc3-ownership-token"
+    },
+    {
+      "case_id": "tmp_source_truth",
+      "path": "tests/tooling/fixtures/ownership_concurrency_macro_completion/fail_closed/tmp_source_truth.contract.json",
+      "expected_failure_fragment": "forbidden source-truth path tmp/generated-ownership-summary.json"
+    },
+    {
+      "case_id": "unsupported_behavior_widened",
+      "path": "tests/tooling/fixtures/ownership_concurrency_macro_completion/fail_closed/unsupported_behavior_widened.contract.json",
+      "expected_failure_fragment": "unsupported behavior status widened to supported"
+    }
+  ]
+}

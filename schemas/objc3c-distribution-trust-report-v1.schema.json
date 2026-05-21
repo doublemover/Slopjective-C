@@ -13,6 +13,7 @@
     "warning_count",
     "dashboard_path",
     "evidence_paths",
+    "evidence_artifacts",
     "trust_signals",
     "required_drill_steps",
     "operator_actions",
@@ -60,6 +61,45 @@
         "minLength": 1
       }
     },
+    "evidence_artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "path",
+          "digest_algorithm",
+          "sha256"
+        ],
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest_algorithm": {
+            "const": "sha256"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "contract_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
     "trust_signals": {
       "type": "array",
       "minItems": 4,
@@ -85,6 +125,13 @@
           "source_path": {
             "type": "string",
             "minLength": 1
+          },
+          "supporting_source_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "artifact_source": {
             "type": "string"
