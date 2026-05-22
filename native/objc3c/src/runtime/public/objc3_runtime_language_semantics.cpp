@@ -23,6 +23,12 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   bool negative_combination_evidence;
   bool source_identity_evidence;
   bool umbrella_closure_support;
+  bool canonical_source_debug_map_evidence;
+  std::uint32_t combined_runtime_state_record_count;
+  std::uint32_t canonical_source_map_record_count;
+  std::uint32_t canonical_debug_map_record_count;
+  std::uint32_t canonical_native_line_table_record_count;
+  std::uint32_t combined_interaction_record_count;
   const char *support_claim;
   const char *semantic_surface;
   const char *metadata_key;
@@ -38,6 +44,7 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   const char *unsupported_policy;
   const char *combined_fixture;
   const char *combined_contract;
+  const char *canonical_source_debug_map_bundle;
   const char *public_command;
   const char *replay_key;
 };
@@ -62,6 +69,12 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          false,
          false,
          false,
+         false,
+         0u,
+         0u,
+         0u,
+         0u,
+         0u,
          "objc3c.behavior.runtime.generics.cross-module-metadata",
          "generic-runtime-identity-record",
          "generic-specialization-metadata",
@@ -75,6 +88,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          kUnsupportedPatternsPolicy,
+         "",
          "",
          "",
          "npm run objc3c -- validate-type-conformance",
@@ -93,6 +107,12 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          false,
          false,
          false,
+         false,
+         0u,
+         0u,
+         0u,
+         0u,
+         0u,
          "objc3c.behavior.language.protocols.existential-witness-model",
          "protocol-existential-witness-record",
          objc3c::runtime::kObjc3ProtocolExistentialWitnessMetadataKey,
@@ -106,6 +126,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          objc3c::runtime::kObjc3ProtocolExistentialDynamicDispatchDiagnosticCode,
          "",
          kUnsupportedPatternsPolicy,
+         "",
          "",
          "",
          "npm run objc3c -- validate-type-conformance",
@@ -124,6 +145,12 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          false,
          false,
          false,
+         false,
+         0u,
+         0u,
+         0u,
+         0u,
+         0u,
          "objc3c.behavior.language.ownership-memory-model",
          "ownership-runtime-edge",
          "ownership-cleanup-transfer-metadata",
@@ -137,6 +164,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          kUnsupportedPatternsPolicy,
+         "",
          "",
          "",
          "npm run objc3c -- test-runtime-acceptance-block-arc",
@@ -155,6 +183,12 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          false,
          false,
          false,
+         false,
+         0u,
+         0u,
+         0u,
+         0u,
+         0u,
          "objc3c.behavior.language.concurrency.public-usability-model",
          "concurrency-public-api-surface",
          "concurrency-executor-effect-metadata",
@@ -168,6 +202,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          kUnsupportedPatternsPolicy,
+         "",
          "",
          "",
          "npm run objc3c -- validate-concurrency-conformance",
@@ -186,6 +221,12 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          false,
+         true,
+         8u,
+         7u,
+         7u,
+         7u,
+         6u,
          "objc3c.behavior.language.advanced-runtime-closure",
          "advanced-runtime-combined-closure",
          "advanced-runtime-combined-source-identity",
@@ -205,6 +246,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "reserved or rejected",
          "tests/native/runtime/advanced_closure/combined_positive.objc3",
          "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+         "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
          "npm run objc3c -- validate-advanced-runtime-closure",
          "language-semantics:advanced-runtime-combined-closure:v1"},
 };
@@ -249,6 +291,18 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
       record.source_identity_evidence ? 1 : 0;
   snapshot.umbrella_closure_support =
       record.umbrella_closure_support ? 1 : 0;
+  snapshot.canonical_source_debug_map_evidence =
+      record.canonical_source_debug_map_evidence ? 1 : 0;
+  snapshot.combined_runtime_state_record_count =
+      record.combined_runtime_state_record_count;
+  snapshot.canonical_source_map_record_count =
+      record.canonical_source_map_record_count;
+  snapshot.canonical_debug_map_record_count =
+      record.canonical_debug_map_record_count;
+  snapshot.canonical_native_line_table_record_count =
+      record.canonical_native_line_table_record_count;
+  snapshot.combined_interaction_record_count =
+      record.combined_interaction_record_count;
   snapshot.support_claim = record.support_claim;
   snapshot.semantic_surface = record.semantic_surface;
   snapshot.metadata_key = record.metadata_key;
@@ -267,6 +321,8 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
   snapshot.unsupported_policy = record.unsupported_policy;
   snapshot.combined_fixture = record.combined_fixture;
   snapshot.combined_contract = record.combined_contract;
+  snapshot.canonical_source_debug_map_bundle =
+      record.canonical_source_debug_map_bundle;
   snapshot.public_command = record.public_command;
   snapshot.replay_key = record.replay_key;
 }

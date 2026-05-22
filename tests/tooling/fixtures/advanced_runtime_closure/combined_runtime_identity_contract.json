@@ -9,6 +9,8 @@
   "language_semantics_contract": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json",
   "debug_source_map_validator": "scripts/check_objc3c_debug_source_maps.py",
   "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "canonical_compiler_emitted_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+  "canonical_source_debug_map_public_command": "npm run objc3c -- validate-advanced-runtime-closure",
   "forbidden_source_truth_prefixes": [
     "tmp/",
     "temp/",

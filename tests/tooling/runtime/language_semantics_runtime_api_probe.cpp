@@ -29,6 +29,7 @@ bool SnapshotReady(
          snapshot.unsupported_policy != nullptr &&
          snapshot.combined_fixture != nullptr &&
          snapshot.combined_contract != nullptr &&
+         snapshot.canonical_source_debug_map_bundle != nullptr &&
          snapshot.public_command != nullptr &&
          snapshot.replay_key != nullptr;
 }
@@ -55,8 +56,15 @@ bool AdvancedRuntimeClosureSnapshotReady(
          snapshot.negative_combination_evidence == 1 &&
          snapshot.source_identity_evidence == 1 &&
          snapshot.umbrella_closure_support == 0 &&
+         snapshot.canonical_source_debug_map_evidence == 1 &&
+         snapshot.combined_runtime_state_record_count == 8u &&
+         snapshot.canonical_source_map_record_count == 7u &&
+         snapshot.canonical_debug_map_record_count == 7u &&
+         snapshot.canonical_native_line_table_record_count == 7u &&
+         snapshot.combined_interaction_record_count == 6u &&
          snapshot.combined_fixture[0] != '\0' &&
          snapshot.combined_contract[0] != '\0' &&
+         snapshot.canonical_source_debug_map_bundle[0] != '\0' &&
          snapshot.public_command[0] != '\0' &&
          snapshot.unsupported_combination_diagnostic[0] != '\0';
 }
@@ -142,6 +150,14 @@ int main() {
               advanced.source_identity_evidence);
   std::printf("\"advanced_umbrella_closure_support\":%d,",
               advanced.umbrella_closure_support);
+  std::printf("\"advanced_canonical_source_debug_map_evidence\":%d,",
+              advanced.canonical_source_debug_map_evidence);
+  std::printf("\"advanced_canonical_source_map_record_count\":%u,",
+              advanced.canonical_source_map_record_count);
+  std::printf("\"advanced_canonical_debug_map_record_count\":%u,",
+              advanced.canonical_debug_map_record_count);
+  std::printf("\"advanced_canonical_native_line_table_record_count\":%u,",
+              advanced.canonical_native_line_table_record_count);
   std::printf("\"invalid_status\":%d", invalid_status);
   std::printf("}\n");
 

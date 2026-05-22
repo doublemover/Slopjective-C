@@ -9,6 +9,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
+    ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE,
     ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
     ADVANCED_CLOSURE_NEGATIVE_MATRIX,
     REQUIRED_INTERACTION_FEATURE_SETS,
@@ -53,6 +54,13 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
         payload["advanced_runtime_combined_identity_interaction_count"]
         == len(REQUIRED_INTERACTION_FEATURE_SETS)
     )
+    assert (
+        payload["advanced_runtime_canonical_source_debug_map"]
+        == ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE
+    )
+    assert payload["advanced_runtime_canonical_source_map_record_count"] == 7
+    assert payload["advanced_runtime_canonical_debug_map_record_count"] == 7
+    assert payload["advanced_runtime_canonical_native_line_table_record_count"] == 7
 
 
 def test_combined_identity_contract_links_source_graph_debug_map_and_negatives() -> None:
@@ -65,6 +73,7 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     _assert_checked_path(str(contract["negative_matrix"]))
     _assert_checked_path(str(contract["language_semantics_contract"]))
     _assert_checked_path(str(contract["debug_source_map_validator"]))
+    _assert_checked_path(str(contract["canonical_compiler_emitted_source_debug_map_bundle"]))
 
     source_graph_ids = {
         str(record["record_id"])
@@ -86,3 +95,37 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     assert interaction_ids == set(REQUIRED_INTERACTION_FEATURE_SETS)
     for record in contract["interaction_records"]:  # type: ignore[index]
         assert set(record["negative_case_ids"]) <= case_ids
+
+
+def test_canonical_source_debug_map_links_every_combined_identity_record() -> None:
+    contract = _read_json(ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT)
+    bundle = _read_json(ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE)
+
+    source_map_ids = {
+        str(record["entry_id"]) for record in bundle["source_maps"]  # type: ignore[index]
+    }
+    debug_map_ids = {
+        str(record["entry_id"]) for record in bundle["debug_maps"]  # type: ignore[index]
+    }
+    line_table_source_map_ids = {
+        str(record["source_map_entry_id"])
+        for record in bundle["native_line_tables"]  # type: ignore[index]
+    }
+    source_graph_record_kinds = {
+        str(record["record_id"]): str(record["source_map_record_kind"])
+        for record in contract["compiler_owned_source_graph_records"]  # type: ignore[index]
+    }
+    source_map_kinds = {
+        str(record["entry_id"]): str(record["record_kind"])
+        for record in bundle["source_maps"]  # type: ignore[index]
+    }
+
+    for record in contract["debug_map_records"]:  # type: ignore[index]
+        source_map_id = str(record["source_map_entry_id"])
+        assert source_map_id in source_map_ids
+        assert str(record["debug_map_entry_id"]) in debug_map_ids
+        assert source_map_id in line_table_source_map_ids
+        assert (
+            source_map_kinds[source_map_id]
+            == source_graph_record_kinds[str(record["source_graph_record_id"])]
+        )

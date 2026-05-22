@@ -82,6 +82,9 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     assert "combined_runtime_evidence" in header
     assert "negative_combination_evidence" in header
     assert "source_identity_evidence" in header
+    assert "canonical_source_debug_map_evidence" in header
+    assert "canonical_source_map_record_count" in header
+    assert "canonical_native_line_table_record_count" in header
     assert "unsupported_combination_diagnostic" in header
     assert "unsupported_associated_type_diagnostic" in header
     assert "unsupported_dynamic_dispatch_diagnostic" in header
@@ -124,6 +127,8 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
             assert row["combined_fixture"] in implementation
         if "combined_contract" in row:
             assert row["combined_contract"] in implementation
+        if "canonical_source_debug_map_bundle" in row:
+            assert row["canonical_source_debug_map_bundle"] in implementation
         if "public_command" in row:
             assert row["public_command"] in implementation
         for optional_runtime_field in (

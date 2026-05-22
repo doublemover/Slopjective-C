@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION 3u
+#define OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION 4u
 
 typedef enum objc3_runtime_language_semantics_status_code {
   OBJC3_RUNTIME_LANGUAGE_SEMANTICS_STATUS_OK = 0,
@@ -42,6 +42,12 @@ typedef struct objc3_runtime_language_semantics_surface_snapshot {
   int negative_combination_evidence;
   int source_identity_evidence;
   int umbrella_closure_support;
+  int canonical_source_debug_map_evidence;
+  uint32_t combined_runtime_state_record_count;
+  uint32_t canonical_source_map_record_count;
+  uint32_t canonical_debug_map_record_count;
+  uint32_t canonical_native_line_table_record_count;
+  uint32_t combined_interaction_record_count;
   const char *support_claim;
   const char *semantic_surface;
   const char *metadata_key;
@@ -57,6 +63,7 @@ typedef struct objc3_runtime_language_semantics_surface_snapshot {
   const char *unsupported_policy;
   const char *combined_fixture;
   const char *combined_contract;
+  const char *canonical_source_debug_map_bundle;
   const char *public_command;
   const char *replay_key;
 } objc3_runtime_language_semantics_surface_snapshot;

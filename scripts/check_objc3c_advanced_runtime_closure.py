@@ -21,7 +21,11 @@ from scripts.objc3c_runtime_acceptance.domains.advanced_runtime_capability_split
     ADVANCED_RUNTIME_IMPLEMENTED_SUPPORT_CONTRACTS,
     build_advanced_runtime_capability_split_contract,
 )
-from scripts.objc3c_debug_maps.model import REQUIRED_SOURCE_MAP_RECORD_KINDS
+from scripts.objc3c_debug_maps.model import (
+    REQUIRED_SOURCE_MAP_RECORD_KINDS,
+    load_bundle,
+    validate_bundle_path,
+)
 
 LANGUAGE_SEMANTICS_CONTRACT_PATH = (
     ROOT
@@ -66,6 +70,10 @@ ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT = (
 )
 ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT_ID = (
     "objc3c.advanced-runtime.closure.combined-runtime-identity.v1"
+)
+ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE = (
+    "tests/tooling/fixtures/advanced_runtime_closure/"
+    "combined_runtime_source_debug_map.json"
 )
 REQUIRED_CLOSURE_FEATURES = {
     "ownership",
@@ -245,6 +253,132 @@ def _matching_required_interactions(features: set[str]) -> set[str]:
     }
 
 
+def _validate_canonical_source_debug_map_bundle(
+    contract: dict[str, Any],
+    source_graph_by_id: dict[str, dict[str, Any]],
+    debug_map_records: list[dict[str, Any]],
+    failures: list[str],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    bundle_path = str(contract.get("canonical_compiler_emitted_source_debug_map_bundle", ""))
+    if bundle_path != ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE:
+        failures.append(f"{label}: canonical source/debug-map bundle path drifted")
+    if contract.get("canonical_source_debug_map_public_command") != (
+        "npm run objc3c -- validate-advanced-runtime-closure"
+    ):
+        failures.append(f"{label}: canonical source/debug-map public command drifted")
+
+    if not bundle_path:
+        return {
+            "path": bundle_path,
+            "source_map_record_count": 0,
+            "debug_map_record_count": 0,
+            "native_line_table_record_count": 0,
+        }
+    if _is_forbidden_path(bundle_path):
+        failures.append(f"{label}: canonical source/debug-map bundle is not checked source: {bundle_path}")
+        return {
+            "path": bundle_path,
+            "source_map_record_count": 0,
+            "debug_map_record_count": 0,
+            "native_line_table_record_count": 0,
+        }
+
+    resolved_bundle_path = ROOT / bundle_path
+    validation = validate_bundle_path(resolved_bundle_path)
+    if not validation.ok:
+        failures.extend(
+            f"{label}.canonical_source_debug_map: {diagnostic.code}: {diagnostic.message}"
+            for diagnostic in validation.diagnostics
+        )
+        return {
+            "path": bundle_path,
+            "source_map_record_count": 0,
+            "debug_map_record_count": 0,
+            "native_line_table_record_count": 0,
+        }
+
+    bundle = load_bundle(resolved_bundle_path)
+    source_maps = {entry.entry_id: entry for entry in bundle.source_maps}
+    debug_maps = {entry.entry_id: entry for entry in bundle.debug_maps}
+    line_table_source_map_ids = {
+        row.source_map_entry_id for row in bundle.native_line_tables
+    }
+
+    matched_source_map_ids: set[str] = set()
+    matched_debug_map_ids: set[str] = set()
+    matched_line_table_source_map_ids: set[str] = set()
+    for index, record in enumerate(debug_map_records):
+        record_label = f"{label}.canonical_source_debug_map.debug_map_records[{index}]"
+        source_graph_record_id = str(record.get("source_graph_record_id", ""))
+        source_graph_record = source_graph_by_id.get(source_graph_record_id)
+        source_map_entry_id = str(record.get("source_map_entry_id", ""))
+        debug_map_entry_id = str(record.get("debug_map_entry_id", ""))
+        source_graph_node_id = str(record.get("source_graph_node_id", ""))
+        runtime_anchor_ids = tuple(str(item) for item in _as_list(record.get("runtime_anchor_ids")))
+        language_anchor_ids = {
+            str(item) for item in _as_list(record.get("language_anchor_ids"))
+        }
+
+        source_map = source_maps.get(source_map_entry_id)
+        if source_map is None:
+            failures.append(
+                f"{record_label}: canonical source-map entry missing: {source_map_entry_id}"
+            )
+        else:
+            matched_source_map_ids.add(source_map.entry_id)
+            if source_map.source_file != ADVANCED_CLOSURE_POSITIVE_FIXTURE:
+                failures.append(f"{record_label}: source-map fixture path drifted")
+            if source_map.source_graph_node_id != source_graph_node_id:
+                failures.append(f"{record_label}: source-map source graph node drifted")
+            if source_graph_record is not None and source_map.record_kind != str(
+                source_graph_record.get("source_map_record_kind", "")
+            ):
+                failures.append(f"{record_label}: source-map record kind drifted")
+            if source_map.entry_id not in line_table_source_map_ids:
+                failures.append(f"{record_label}: native line-table row is missing")
+            else:
+                matched_line_table_source_map_ids.add(source_map.entry_id)
+            missing_runtime_anchors = set(runtime_anchor_ids) - set(source_map.runtime_anchor_ids)
+            if missing_runtime_anchors:
+                failures.append(
+                    f"{record_label}: source-map runtime anchors missing: "
+                    f"{sorted(missing_runtime_anchors)}"
+                )
+
+        debug_map = debug_maps.get(debug_map_entry_id)
+        if debug_map is None:
+            failures.append(
+                f"{record_label}: canonical debug-map entry missing: {debug_map_entry_id}"
+            )
+        else:
+            matched_debug_map_ids.add(debug_map.entry_id)
+            if debug_map.source_map_entry_id != source_map_entry_id:
+                failures.append(f"{record_label}: debug-map source-map entry drifted")
+            if debug_map.source_graph_node_id != source_graph_node_id:
+                failures.append(f"{record_label}: debug-map source graph node drifted")
+            if tuple(debug_map.runtime_anchor_ids) != runtime_anchor_ids:
+                failures.append(f"{record_label}: debug-map runtime anchors drifted")
+            actual_language_anchors = {
+                debug_map.hover_anchor_id,
+                debug_map.definition_anchor_id,
+            }
+            missing_language_anchors = language_anchor_ids - actual_language_anchors
+            if missing_language_anchors:
+                failures.append(
+                    f"{record_label}: debug-map language anchors missing: "
+                    f"{sorted(missing_language_anchors)}"
+                )
+
+    return {
+        "path": bundle_path,
+        "source_map_record_count": len(matched_source_map_ids),
+        "debug_map_record_count": len(matched_debug_map_ids),
+        "native_line_table_record_count": len(matched_line_table_source_map_ids),
+    }
+
+
 def _validate_combined_positive_fixture(failures: list[str]) -> dict[str, Any]:
     _source_text(
         ADVANCED_CLOSURE_POSITIVE_FIXTURE,
@@ -384,6 +518,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         [
             str(contract.get("language_semantics_contract", "")),
             str(contract.get("debug_source_map_validator", "")),
+            str(contract.get("canonical_compiler_emitted_source_debug_map_bundle", "")),
         ],
         failures,
         label,
@@ -547,6 +682,14 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
     if missing_interactions:
         failures.append(f"{label}: missing interaction records {sorted(missing_interactions)}")
 
+    canonical_source_debug_map = _validate_canonical_source_debug_map_bundle(
+        contract,
+        source_graph_by_id,
+        debug_map_records,
+        failures,
+        label=label,
+    )
+
     return {
         "path": ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
         "runtime_state_record_count": len(runtime_records),
@@ -555,6 +698,16 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         "abi_interaction_record_count": len(abi_records),
         "interaction_count": len(interaction_records),
         "interactions": sorted(seen_interactions),
+        "canonical_source_debug_map": canonical_source_debug_map.get("path"),
+        "canonical_source_map_record_count": canonical_source_debug_map.get(
+            "source_map_record_count"
+        ),
+        "canonical_debug_map_record_count": canonical_source_debug_map.get(
+            "debug_map_record_count"
+        ),
+        "canonical_native_line_table_record_count": canonical_source_debug_map.get(
+            "native_line_table_record_count"
+        ),
     }
 
 
@@ -666,6 +819,9 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
         "runtime_anchor": "build_advanced_runtime_capability_split_contract+combined_runtime_identity_contract",
         "combined_fixture": ADVANCED_CLOSURE_POSITIVE_FIXTURE,
         "combined_contract": ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
+        "canonical_source_debug_map_bundle": (
+            ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE
+        ),
         "positive_fixture": ADVANCED_CLOSURE_POSITIVE_FIXTURE,
         "negative_fixture": ADVANCED_CLOSURE_NEGATIVE_MATRIX,
         "unsupported_combination_diagnostic": "advanced-runtime.unsupported-combination",
@@ -678,9 +834,22 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
         "negative_combination_evidence": True,
         "source_identity_evidence": True,
         "umbrella_closure_support": False,
+        "canonical_source_debug_map_evidence": True,
     }
     for key, expected_value in expected_bool_fields.items():
         if row.get(key) is not expected_value:
+            failures.append(
+                f"#8199 language semantics row {key} must be {expected_value}"
+            )
+    expected_int_fields = {
+        "combined_runtime_state_record_count": 8,
+        "canonical_source_map_record_count": 7,
+        "canonical_debug_map_record_count": 7,
+        "canonical_native_line_table_record_count": 7,
+        "combined_interaction_record_count": len(REQUIRED_INTERACTION_FEATURE_SETS),
+    }
+    for key, expected_value in expected_int_fields.items():
+        if row.get(key) != expected_value:
             failures.append(
                 f"#8199 language semantics row {key} must be {expected_value}"
             )
@@ -688,6 +857,7 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
         [
             str(row.get("combined_fixture", "")),
             str(row.get("combined_contract", "")),
+            str(row.get("canonical_source_debug_map_bundle", "")),
             str(row.get("positive_fixture", "")),
             str(row.get("negative_fixture", "")),
         ],
@@ -747,6 +917,18 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
         ),
         "advanced_runtime_combined_identity_interaction_count": combined_identity.get(
             "interaction_count"
+        ),
+        "advanced_runtime_canonical_source_debug_map": combined_identity.get(
+            "canonical_source_debug_map"
+        ),
+        "advanced_runtime_canonical_source_map_record_count": combined_identity.get(
+            "canonical_source_map_record_count"
+        ),
+        "advanced_runtime_canonical_debug_map_record_count": combined_identity.get(
+            "canonical_debug_map_record_count"
+        ),
+        "advanced_runtime_canonical_native_line_table_record_count": combined_identity.get(
+            "canonical_native_line_table_record_count"
         ),
         "language_semantics_issue": language_row.get("issue"),
         "language_semantics_support_claim": language_row.get("support_claim"),
