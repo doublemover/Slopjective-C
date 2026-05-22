@@ -41,6 +41,11 @@ std::unique_ptr<Expr> BuildObjc3StringLiteralExpr(
     int unit_count,
     const Objc3LexToken &token);
 
+std::unique_ptr<Expr> BuildObjc3StringInterpolationExpr(
+    std::vector<std::string> segments,
+    std::vector<std::unique_ptr<Expr>> payloads,
+    const Objc3LexToken &token);
+
 std::unique_ptr<Expr> BuildObjc3CollectionLiteralExpr(
     Expr::CollectionLiteralKind kind,
     const Objc3LexToken &token,

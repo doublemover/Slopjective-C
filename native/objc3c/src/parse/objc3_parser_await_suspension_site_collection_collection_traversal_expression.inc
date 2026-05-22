@@ -50,6 +50,11 @@ void CollectAwaitSuspensionExprSites(
     CollectAwaitSuspensionExprSites(expr->left.get(), counts);
     CollectAwaitSuspensionExprSites(expr->right.get(), counts);
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      CollectAwaitSuspensionExprSites(arg.get(), counts);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

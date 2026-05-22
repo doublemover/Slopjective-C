@@ -73,6 +73,11 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     DiagnoseUnsupportedFeatureClaimsInExpr(
         expr->right.get(), diagnostics, stats, context);
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
+    }
+    return;
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

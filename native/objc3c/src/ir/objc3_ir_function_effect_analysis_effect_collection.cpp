@@ -13,6 +13,14 @@ namespace {
 using ScopeStack = std::vector<std::unordered_set<std::string>>;
 constexpr const char *kObjc3RuntimeStdlibTextUtf8LiteralI32 =
     "objc3_runtime_stdlib_text_utf8_literal_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderI32 =
+    "objc3_runtime_stdlib_text_builder_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendTextI32 =
+    "objc3_runtime_stdlib_text_builder_append_text_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendI32I32 =
+    "objc3_runtime_stdlib_text_builder_append_i32_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderBuildI32 =
+    "objc3_runtime_stdlib_text_builder_build_i32";
 
 bool IsNameBoundInScopes(const ScopeStack &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
@@ -47,6 +55,15 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
       return;
     case Expr::Kind::StringLiteral:
       info.called_functions.insert(kObjc3RuntimeStdlibTextUtf8LiteralI32);
+      return;
+    case Expr::Kind::StringInterpolation:
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderI32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderAppendTextI32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderAppendI32I32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderBuildI32);
+      for (const auto &arg : expr->args) {
+        CollectFunctionEffectExpr(arg.get(), scopes, info);
+      }
       return;
     case Expr::Kind::CollectionLiteral:
       for (const auto &key : expr->collection_keys) {

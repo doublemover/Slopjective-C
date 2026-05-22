@@ -175,6 +175,12 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
                                             callable_contracts, diagnostics);
       }
       return;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        DiagnoseOwnershipBorrowedEscapeExpr(arg.get(), scopes,
+                                            callable_contracts, diagnostics);
+      }
+      return;
     case Expr::Kind::Identifier:
       DiagnoseOwnershipConsumedIdentifierUse(expr, scopes, diagnostics);
       return;

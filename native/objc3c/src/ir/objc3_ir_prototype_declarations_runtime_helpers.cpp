@@ -21,6 +21,14 @@ namespace {
 
 constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
     "objc3_runtime_stdlib_text_utf8_storage_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderI32Symbol =
+    "objc3_runtime_stdlib_text_builder_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_text_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_i32_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderBuildI32Symbol =
+    "objc3_runtime_stdlib_text_builder_build_i32";
 constexpr const char *kObjc3RuntimeStdlibCollectionsArray3I32Symbol =
     "objc3_runtime_stdlib_collections_array3_i32";
 constexpr const char *kObjc3RuntimeStdlibCollectionsArrayStorageI32Symbol =
@@ -160,6 +168,8 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
   switch (expr->kind) {
     case Expr::Kind::StringLiteral:
       return true;
+    case Expr::Kind::StringInterpolation:
+      return true;
     case Expr::Kind::Binary:
       return Objc3IRExprRequiresTextLiteralHelperDeclarations(
                  expr->left.get()) ||
@@ -254,6 +264,13 @@ bool Objc3IRExprRequiresCollectionHelperDeclarations(const Expr *expr) {
               expr->receiver.get())) {
         return true;
       }
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::StringInterpolation:
       for (const auto &arg : expr->args) {
         if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
           return true;
@@ -820,6 +837,29 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       "declare i32 @" +
           std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
           "(ptr, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderI32Symbol) + "()\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderBuildI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderBuildI32Symbol) +
+          "(i32)\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeStdlibCollectionsArray3I32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimeStdlibCollectionsArray3I32Symbol) +

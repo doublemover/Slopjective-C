@@ -188,6 +188,11 @@ void AccumulateDispatchSurfaceClassificationExpr(
       AccumulateDispatchSurfaceClassificationExpr(expr->left.get(), contract);
       AccumulateDispatchSurfaceClassificationExpr(expr->right.get(), contract);
       return;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        AccumulateDispatchSurfaceClassificationExpr(arg.get(), contract);
+      }
+      return;
     case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Number:

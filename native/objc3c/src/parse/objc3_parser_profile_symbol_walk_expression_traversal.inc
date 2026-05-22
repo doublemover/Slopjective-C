@@ -45,6 +45,11 @@ void WalkObjc3ProfileSymbolsInExpr(
     WalkObjc3ProfileSymbolsInExpr(expr->left.get(), walker);
     WalkObjc3ProfileSymbolsInExpr(expr->right.get(), walker);
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      WalkObjc3ProfileSymbolsInExpr(arg.get(), walker);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

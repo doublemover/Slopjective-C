@@ -64,6 +64,7 @@ void EmitObjc3IRParameterStores(
     ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
     callbacks.emit_typed_param_store(param, i, ptr, ctx);
     ctx.scopes.back()[param.name] = ptr;
+    ctx.value_type_by_ptr[ptr] = param.type;
     const Expr::CollectionLiteralKind collection_kind =
         Objc3IRCollectionKindFromDeclaredType(param);
     if (collection_kind != Expr::CollectionLiteralKind::None) {

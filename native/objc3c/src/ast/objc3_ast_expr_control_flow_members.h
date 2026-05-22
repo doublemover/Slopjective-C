@@ -9,6 +9,8 @@
   int string_literal_byte_count = 0;
   int string_literal_unit_count = 0;
   bool string_literal_valid_utf8 = false;
+  std::vector<std::string> string_interpolation_segments;
+  mutable std::vector<bool> string_interpolation_payload_is_text;
   CollectionLiteralKind collection_literal_kind =
       CollectionLiteralKind::None;
   bool collection_literal_mutable = false;

@@ -38,6 +38,11 @@ void CollectBlockLiteralExprIdentifiers(
       CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
     }
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
+    }
+    return;
   case Expr::Kind::MessageSend:
     CollectBlockLiteralExprIdentifiers(expr->receiver.get(), used_identifiers);
     for (const auto &arg : expr->args) {

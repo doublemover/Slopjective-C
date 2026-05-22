@@ -41,6 +41,11 @@ void CollectResultLikeExprProfile(const Expr *expr,
       CollectResultLikeExprProfile(arg.get(), profile);
     }
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      CollectResultLikeExprProfile(arg.get(), profile);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

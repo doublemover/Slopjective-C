@@ -46,6 +46,13 @@ std::size_t CountFailableCallSitesInExpr(const Expr *expr) {
   case Expr::Kind::IndexAccess:
     return CountFailableCallSitesInExpr(expr->left.get()) +
            CountFailableCallSitesInExpr(expr->right.get());
+  case Expr::Kind::StringInterpolation: {
+    std::size_t count = 0;
+    for (const auto &arg : expr->args) {
+      count += CountFailableCallSitesInExpr(arg.get());
+    }
+    return count;
+  }
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

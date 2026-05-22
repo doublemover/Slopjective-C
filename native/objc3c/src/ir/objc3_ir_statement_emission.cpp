@@ -64,6 +64,63 @@ void RecordCollectionBinding(const LetStmt &let, const std::string &ptr,
   }
 }
 
+ValueType InferObjc3IRLocalBindingValueType(const Expr *expr,
+                                            const FunctionContext &ctx) {
+  if (expr == nullptr) {
+    return ValueType::Unknown;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::Number:
+      return ValueType::I32;
+    case Expr::Kind::BoolLiteral:
+      return ValueType::Bool;
+    case Expr::Kind::StringLiteral:
+    case Expr::Kind::StringInterpolation:
+      return ValueType::TextHandle;
+    case Expr::Kind::Identifier:
+      for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+        const auto found_ptr = it->find(expr->ident);
+        if (found_ptr == it->end()) {
+          continue;
+        }
+        const auto found_type = ctx.value_type_by_ptr.find(found_ptr->second);
+        if (found_type != ctx.value_type_by_ptr.end()) {
+          return found_type->second;
+        }
+        break;
+      }
+      return ValueType::Unknown;
+    case Expr::Kind::NilLiteral:
+      return ValueType::ObjCId;
+    case Expr::Kind::Conditional:
+      if (expr->right != nullptr && expr->third != nullptr) {
+        const ValueType then_type =
+            InferObjc3IRLocalBindingValueType(expr->right.get(), ctx);
+        const ValueType else_type =
+            InferObjc3IRLocalBindingValueType(expr->third.get(), ctx);
+        if (then_type == else_type) {
+          return then_type;
+        }
+      }
+      return ValueType::Unknown;
+    case Expr::Kind::Binary:
+      if (expr->op == "==" || expr->op == "!=" || expr->op == "<" ||
+          expr->op == "<=" || expr->op == ">" || expr->op == ">=" ||
+          expr->op == "&&" || expr->op == "||") {
+        return ValueType::Bool;
+      }
+      if (expr->op == "+" || expr->op == "-" || expr->op == "*" ||
+          expr->op == "/" || expr->op == "%" || expr->op == "&" ||
+          expr->op == "|" || expr->op == "^" || expr->op == "<<" ||
+          expr->op == ">>") {
+        return ValueType::I32;
+      }
+      return ValueType::Unknown;
+    default:
+      return ValueType::Unknown;
+  }
+}
+
 }  // namespace
 
 void EmitObjc3IRStatement(
@@ -121,6 +178,8 @@ void EmitObjc3IRStatement(
           "%" + let->name + ".addr." + std::to_string(ctx.temp_counter++);
       ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
       ctx.scopes.back()[let->name] = ptr;
+      ctx.value_type_by_ptr[ptr] =
+          InferObjc3IRLocalBindingValueType(let->value.get(), ctx);
       RecordCollectionBinding(*let, ptr, ctx);
       if (has_let_nil_value) {
         ctx.nil_bound_ptrs.insert(ptr);

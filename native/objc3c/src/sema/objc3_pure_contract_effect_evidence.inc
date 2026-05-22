@@ -265,6 +265,11 @@ static void CollectPureContractEffectExpr(
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
       return;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        CollectPureContractEffectExpr(arg.get(), scopes, info);
+      }
+      return;
     case Expr::Kind::CollectionLiteral:
       for (const auto &key : expr->collection_keys) {
         CollectPureContractEffectExpr(key.get(), scopes, info);

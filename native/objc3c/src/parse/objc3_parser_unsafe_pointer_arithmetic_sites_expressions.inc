@@ -41,6 +41,11 @@ void CollectPointerArithmeticExprSites(const Expr *expr, std::size_t &sites) {
       CollectPointerArithmeticExprSites(arg.get(), sites);
     }
     return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      CollectPointerArithmeticExprSites(arg.get(), sites);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

@@ -11,6 +11,7 @@
     BoolLiteral,
     NilLiteral,
     StringLiteral,
+    StringInterpolation,
     CollectionLiteral,
     Identifier,
     IndexAccess,

@@ -148,6 +148,11 @@ static void DiagnoseOwnershipResourceMoveExpr(
         DiagnoseOwnershipResourceMoveExpr(arg.get(), scopes, diagnostics);
       }
       return;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        DiagnoseOwnershipResourceMoveExpr(arg.get(), scopes, diagnostics);
+      }
+      return;
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:

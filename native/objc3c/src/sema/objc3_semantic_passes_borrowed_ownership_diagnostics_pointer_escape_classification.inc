@@ -53,6 +53,7 @@ static bool IsOwnershipBorrowedExpr(
     case Expr::Kind::Throw:
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::StringLiteral:
+    case Expr::Kind::StringInterpolation:
       return false;
     case Expr::Kind::Conditional:
       return IsOwnershipBorrowedExpr(expr->right.get(), scopes,

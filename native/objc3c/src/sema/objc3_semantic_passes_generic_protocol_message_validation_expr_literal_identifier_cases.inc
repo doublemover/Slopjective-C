@@ -4,6 +4,30 @@
       return MakeScalarSemanticType(ValueType::Bool);
     case Expr::Kind::StringLiteral:
       return MakeScalarSemanticType(ValueType::TextHandle);
+    case Expr::Kind::StringInterpolation: {
+      expr->string_interpolation_payload_is_text.clear();
+      expr->string_interpolation_payload_is_text.reserve(expr->args.size());
+      for (const auto &payload : expr->args) {
+        const SemanticTypeInfo payload_type = ValidateExpr(
+            payload.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
+        const bool payload_is_text =
+            IsScalarSemanticType(payload_type) &&
+            payload_type.type == ValueType::TextHandle;
+        const bool payload_is_i32 =
+            IsScalarSemanticType(payload_type) &&
+            payload_type.type == ValueType::I32;
+        expr->string_interpolation_payload_is_text.push_back(payload_is_text);
+        if (!IsUnknownSemanticType(payload_type) && !payload_is_text &&
+            !payload_is_i32) {
+          diagnostics.push_back(MakeDiag(
+              payload != nullptr ? payload->line : expr->line,
+              payload != nullptr ? payload->column : expr->column, "O3S206",
+              "type mismatch: string interpolation payloads support only Text and i32"));
+        }
+      }
+      return MakeScalarSemanticType(ValueType::TextHandle);
+    }
     case Expr::Kind::NilLiteral: {
       SemanticTypeInfo nil_type = MakeScalarSemanticType(ValueType::ObjCId);
       nil_type.canonical_type.nullability =

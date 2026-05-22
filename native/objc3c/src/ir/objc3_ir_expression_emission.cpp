@@ -11,6 +11,14 @@ namespace {
 
 constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
     "objc3_runtime_stdlib_text_utf8_storage_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderI32Symbol =
+    "objc3_runtime_stdlib_text_builder_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_text_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_i32_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderBuildI32Symbol =
+    "objc3_runtime_stdlib_text_builder_build_i32";
 constexpr const char *kObjc3RuntimeCollectionsArray3I32Symbol =
     "objc3_runtime_stdlib_collections_array3_i32";
 constexpr const char *kObjc3RuntimeCollectionsArrayStorageI32Symbol =
@@ -34,6 +42,10 @@ constexpr const char *kObjc3RuntimeCollectionsSetStorageI32Symbol =
 
 std::string EmitObjc3IRExprImpl(
     const Expr *expr, FunctionContext &ctx,
+    const Objc3IRExpressionEmissionCallbacks &callbacks);
+
+std::string EmitObjc3IRTextStorageBytes(
+    const std::string &value, int byte_count_value, FunctionContext &ctx,
     const Objc3IRExpressionEmissionCallbacks &callbacks);
 
 std::string LookupObjc3IRLocalPtr(const FunctionContext &ctx,
@@ -68,10 +80,17 @@ Expr::CollectionLiteralKind CollectionKindForExpr(const Expr *expr,
 std::string EmitObjc3IRTextStorageLiteral(
     const Expr &expr, FunctionContext &ctx,
     const Objc3IRExpressionEmissionCallbacks &callbacks) {
+  return EmitObjc3IRTextStorageBytes(
+      expr.string_literal_value, expr.string_literal_byte_count, ctx,
+      callbacks);
+}
+
+std::string EmitObjc3IRTextStorageBytes(
+    const std::string &value, int byte_count_value, FunctionContext &ctx,
+    const Objc3IRExpressionEmissionCallbacks &callbacks) {
   const std::string tmp = callbacks.new_temp(ctx);
-  const std::string byte_count =
-      std::to_string(expr.string_literal_byte_count);
-  if (expr.string_literal_value.empty()) {
+  const std::string byte_count = std::to_string(byte_count_value);
+  if (value.empty()) {
     ctx.code_lines.push_back(
         "  " + tmp + " = call i32 @" +
         std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
@@ -88,12 +107,11 @@ std::string EmitObjc3IRTextStorageLiteral(
   ctx.code_lines.push_back("  " + base + " = getelementptr inbounds [" +
                            byte_count + " x i8], ptr " + storage +
                            ", i32 0, i32 0");
-  for (std::size_t index = 0; index < expr.string_literal_value.size();
-       ++index) {
+  for (std::size_t index = 0; index < value.size(); ++index) {
     const std::string byte_ptr =
         "%text.literal.byte." + std::to_string(ctx.temp_counter++);
     const int byte_value = static_cast<int>(
-        static_cast<unsigned char>(expr.string_literal_value[index]));
+        static_cast<unsigned char>(value[index]));
     ctx.code_lines.push_back("  " + byte_ptr +
                              " = getelementptr inbounds i8, ptr " + base +
                              ", i32 " + std::to_string(index));
@@ -140,6 +158,86 @@ std::string EmitObjc3IRValuesStorageCall(
   ctx.code_lines.push_back("  " + tmp + " = call i32 @" + symbol +
                            "(ptr " + base + ", i32 " + count + ")");
   return tmp;
+}
+
+ValueType InferObjc3IRInterpolationPayloadType(const Expr *expr,
+                                               const FunctionContext &ctx) {
+  if (expr == nullptr) {
+    return ValueType::Unknown;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::StringLiteral:
+    case Expr::Kind::StringInterpolation:
+      return ValueType::TextHandle;
+    case Expr::Kind::Number:
+      return ValueType::I32;
+    case Expr::Kind::Identifier:
+      for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+        const auto found_ptr = it->find(expr->ident);
+        if (found_ptr == it->end()) {
+          continue;
+        }
+        const auto found_type = ctx.value_type_by_ptr.find(found_ptr->second);
+        if (found_type != ctx.value_type_by_ptr.end()) {
+          return found_type->second;
+        }
+        break;
+      }
+      return ValueType::Unknown;
+    default:
+      return ValueType::Unknown;
+  }
+}
+
+std::string EmitObjc3IRStringInterpolation(
+    const Expr &expr, FunctionContext &ctx,
+    const Objc3IRExpressionEmissionCallbacks &callbacks) {
+  const std::string builder = callbacks.new_temp(ctx);
+  ctx.code_lines.push_back("  " + builder + " = call i32 @" +
+                           std::string(kObjc3RuntimeStdlibTextBuilderI32Symbol) +
+                           "()");
+  for (std::size_t index = 0; index < expr.string_interpolation_segments.size();
+       ++index) {
+    const std::string &segment = expr.string_interpolation_segments[index];
+    if (!segment.empty()) {
+      const std::string segment_handle = EmitObjc3IRTextStorageBytes(
+          segment, static_cast<int>(segment.size()), ctx, callbacks);
+      const std::string ignored = callbacks.new_temp(ctx);
+      ctx.code_lines.push_back(
+          "  " + ignored + " = call i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol) +
+          "(i32 " + builder + ", i32 " + segment_handle + ")");
+    }
+    if (index >= expr.args.size()) {
+      continue;
+    }
+    const std::string payload =
+        EmitObjc3IRExprImpl(expr.args[index].get(), ctx, callbacks);
+    const bool sema_marked_text =
+        index < expr.string_interpolation_payload_is_text.size() &&
+        expr.string_interpolation_payload_is_text[index];
+    const ValueType inferred_type =
+        sema_marked_text ? ValueType::TextHandle
+                         : InferObjc3IRInterpolationPayloadType(
+                               expr.args[index].get(), ctx);
+    const std::string ignored = callbacks.new_temp(ctx);
+    if (inferred_type == ValueType::TextHandle) {
+      ctx.code_lines.push_back(
+          "  " + ignored + " = call i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol) +
+          "(i32 " + builder + ", i32 " + payload + ")");
+    } else {
+      ctx.code_lines.push_back(
+          "  " + ignored + " = call i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol) +
+          "(i32 " + builder + ", i32 " + payload + ")");
+    }
+  }
+  const std::string result = callbacks.new_temp(ctx);
+  ctx.code_lines.push_back("  " + result + " = call i32 @" +
+                           std::string(kObjc3RuntimeStdlibTextBuilderBuildI32Symbol) +
+                           "(i32 " + builder + ")");
+  return result;
 }
 
 std::string EmitObjc3IRCollectionLiteral(
@@ -248,6 +346,8 @@ std::string EmitObjc3IRExprImpl(
     case Expr::Kind::StringLiteral: {
       return EmitObjc3IRTextStorageLiteral(*expr, ctx, callbacks);
     }
+    case Expr::Kind::StringInterpolation:
+      return EmitObjc3IRStringInterpolation(*expr, ctx, callbacks);
     case Expr::Kind::CollectionLiteral:
       return EmitObjc3IRCollectionLiteral(*expr, ctx, callbacks);
     case Expr::Kind::BlockLiteral:

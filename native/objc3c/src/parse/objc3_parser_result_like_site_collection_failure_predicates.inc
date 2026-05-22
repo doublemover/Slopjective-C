@@ -15,6 +15,7 @@ bool IsResultLikeFailureExpr(const Expr *expr) {
   case Expr::Kind::CollectionLiteral:
   case Expr::Kind::IndexAccess:
   case Expr::Kind::StringLiteral:
+  case Expr::Kind::StringInterpolation:
     return false;
   default:
     return false;

@@ -110,6 +110,7 @@ struct FunctionContext {
   std::unordered_map<std::string, int> const_value_ptrs;
   std::unordered_map<std::string, Expr::CollectionLiteralKind>
       collection_kind_by_ptr;
+  std::unordered_map<std::string, ValueType> value_type_by_ptr;
   std::unordered_set<std::string> mutable_collection_ptrs;
   std::unordered_map<std::string, int> immediate_identifiers;
   std::vector<std::string> arc_owned_cleanup_ptrs;
