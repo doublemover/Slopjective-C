@@ -94,3 +94,80 @@ def test_debug_payload_reserves_stepping_and_full_source_map_rows() -> None:
     assert reserved["statementLevelStepping"]["fail_closed"] is True
     assert reserved["fullSourceMapPublication"]["status"] == "reserved"
     assert reserved["fullSourceMapPublication"]["fail_closed"] is True
+
+
+def test_debug_payload_publishes_object_model_source_identity_from_manifest() -> None:
+    source_path = "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+    manifest = {
+        "source": source_path,
+        "interfaces": [{"name": "RuntimeFullWidget", "line": 28, "column": 1}],
+        "categories": [
+            {
+                "class_name": "RuntimeFullWidget",
+                "category_name": "ReplayReflection",
+                "line": 53,
+                "column": 1,
+            }
+        ],
+        "protocols": [{"name": "RuntimeFullTraceable", "line": 6, "column": 1}],
+        "runtime_metadata_source_records": {
+            "properties": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "property_name": "value",
+                    "line": 29,
+                    "column": 1,
+                }
+            ],
+            "ivars": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "ivar_name": "value",
+                    "line": 29,
+                    "column": 1,
+                }
+            ],
+            "methods": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "selector": "setValue:",
+                    "line": 40,
+                    "column": 1,
+                }
+            ],
+        },
+    }
+
+    debug_payload = build_debug_payload(
+        {
+            "runtime_inspector": {
+                "contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
+                "dump_commands": {"object_symbols": "llvm-nm module.obj"},
+            }
+        },
+        "tmp/artifacts/module.obj",
+        [{"name": "RuntimeFullWidget", "kind": "interface", "line": 28, "column": 1}],
+        manifest=manifest,
+        source_graph={"source_graph_digest": "a" * 64},
+        source_path=source_path,
+    )
+
+    source_identity = debug_payload["object_model_source_identity"]
+    assert "object-model-production-source-identity" in debug_payload["evidence_roots"]
+    assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
+    assert source_identity["source_map_records_supported"] is True
+    assert source_identity["native_line_table_projection_supported"] is True
+    assert source_identity["runtime_debug_trace_statement_stepping"] is False
+    assert set(source_identity["required_identity_kinds_present"]) == {
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method",
+    }
+    assert {
+        row["expected_native_symbol"]
+        for row in source_identity["native_line_table_rows"]
+        if row["runtime_identity_kind"] == "method"
+    } == {"objc3_method_RuntimeFullWidget_instance_setValue_"}

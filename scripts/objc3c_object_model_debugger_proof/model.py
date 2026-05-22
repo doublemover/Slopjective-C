@@ -22,6 +22,7 @@ from scripts.objc3c_debugger_integration import validate_replay_path
 CONTRACT_ID = "objc3c.object_model.debugger_value_inspection_replay.v1"
 VALIDATION_CONTRACT_ID = "objc3c.object_model.debugger_value_inspection.validation.v1"
 PRODUCTION_PROBE_CONTRACT_ID = "objc3c.object_model.production_artifact_probe.v1"
+PRODUCTION_SOURCE_IDENTITY_CONTRACT_ID = "objc3c.object_model.production.source_identity.v1"
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -1153,6 +1154,214 @@ def _validate_count_at_least(
         diagnostics.append(_diag(code, f"{message}: expected >= {minimum}, got {actual}", path))
 
 
+def _validate_production_source_identity_payload(
+    debug_map: dict[str, Any],
+    probe: dict[str, Any],
+    expected_source: str,
+    diagnostics: list[Diagnostic],
+) -> None:
+    source_identity = _object(debug_map.get("object_model_source_identity"))
+    if not source_identity:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-missing",
+                "production debug map must publish object-model source identity records",
+                "production_artifact_probe.debug_map.object_model_source_identity",
+            )
+        )
+        return
+
+    if source_identity.get("contract_id") != PRODUCTION_SOURCE_IDENTITY_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-contract-id",
+                "production object-model source identity contract id drifted",
+                "production_artifact_probe.debug_map.object_model_source_identity.contract_id",
+            )
+        )
+    if source_identity.get("supported") is not True:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-unavailable",
+                "production object-model source identity must be supported by the canonical manifest",
+                "production_artifact_probe.debug_map.object_model_source_identity.supported",
+            )
+        )
+    if source_identity.get("runs_on_canonical_frontend_manifest") is not True:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-not-compiler-owned",
+                "production object-model source identity must come from the canonical frontend manifest",
+                "production_artifact_probe.debug_map.object_model_source_identity.runs_on_canonical_frontend_manifest",
+            )
+        )
+    if _safe_str(source_identity.get("source_path")).replace("\\", "/") != expected_source:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-source-drift",
+                "production object-model source identity source path drifted",
+                "production_artifact_probe.debug_map.object_model_source_identity.source_path",
+            )
+        )
+
+    required_true = (
+        "source_map_records_supported",
+        "native_line_table_projection_supported",
+        "method_stepping_candidates_supported",
+    )
+    for key in required_true:
+        if source_identity.get(key) is not True:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-incomplete",
+                    f"production object-model source identity must publish {key}",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.{key}",
+                )
+            )
+    required_false = (
+        "full_source_map_publication",
+        "runtime_debug_trace_statement_stepping",
+        "native_debug_info_emitted",
+    )
+    for key in required_false:
+        if source_identity.get(key) is not False:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-overclaimed",
+                    f"production object-model source identity must keep reserved boundary false: {key}",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.{key}",
+                )
+            )
+
+    minimums = _object(probe.get("object_model_source_identity_minimums"))
+    records = _list(source_identity.get("source_map_records"))
+    rows = _list(source_identity.get("native_line_table_rows"))
+    stepping_candidates = _list(source_identity.get("stepping_candidates"))
+    _validate_count_at_least(
+        source_identity.get("source_map_record_count"),
+        minimums.get("source_map_records"),
+        diagnostics,
+        code="production-source-identity-incomplete",
+        message="production source identity lacks source-map records",
+        path="production_artifact_probe.debug_map.object_model_source_identity.source_map_record_count",
+    )
+    _validate_count_at_least(
+        len(records),
+        minimums.get("source_map_records"),
+        diagnostics,
+        code="production-source-identity-incomplete",
+        message="production source identity lacks concrete source-map records",
+        path="production_artifact_probe.debug_map.object_model_source_identity.source_map_records",
+    )
+    _validate_count_at_least(
+        source_identity.get("native_line_table_row_count"),
+        minimums.get("native_line_table_rows"),
+        diagnostics,
+        code="production-source-identity-incomplete",
+        message="production source identity lacks native line-table projection rows",
+        path="production_artifact_probe.debug_map.object_model_source_identity.native_line_table_row_count",
+    )
+    _validate_count_at_least(
+        len(rows),
+        minimums.get("native_line_table_rows"),
+        diagnostics,
+        code="production-source-identity-incomplete",
+        message="production source identity lacks concrete native line-table rows",
+        path="production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows",
+    )
+    _validate_count_at_least(
+        source_identity.get("stepping_candidate_count"),
+        minimums.get("stepping_candidates"),
+        diagnostics,
+        code="production-source-identity-incomplete",
+        message="production source identity lacks method stepping candidates",
+        path="production_artifact_probe.debug_map.object_model_source_identity.stepping_candidate_count",
+    )
+
+    required_kinds = set(_safe_str(item) for item in _list(minimums.get("required_identity_kinds")))
+    if not required_kinds:
+        required_kinds = set(REQUIRED_IDENTITY_KINDS)
+    present_kinds = set(_safe_str(item) for item in _list(source_identity.get("required_identity_kinds_present")))
+    record_kinds = {
+        _safe_str(_object(record).get("runtime_identity_kind"))
+        for record in records
+    }
+    missing_kinds = sorted(required_kinds - present_kinds)
+    missing_record_kinds = sorted(required_kinds - record_kinds)
+    if missing_kinds or missing_record_kinds:
+        diagnostics.append(
+            _diag(
+                "production-source-identity-kind-missing",
+                "production object-model source identity is missing required runtime identity kinds",
+                "production_artifact_probe.debug_map.object_model_source_identity.required_identity_kinds_present",
+            )
+        )
+
+    row_ids = {
+        _safe_str(_object(row).get("row_id"))
+        for row in rows
+        if _safe_str(_object(row).get("row_id"))
+    }
+    record_ids: set[str] = set()
+    for index, record_item in enumerate(records):
+        record = _object(record_item)
+        record_id = _safe_str(record.get("source_map_record_id"))
+        row_id = _safe_str(record.get("native_line_table_row_id"))
+        record_ids.add(record_id)
+        if not record_id or record.get("runtime_identity_kind") not in required_kinds or row_id not in row_ids:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-record-invalid",
+                    "production object-model source identity record must link a required kind to a line-table row",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}",
+                )
+            )
+        if _safe_str(record.get("source_path")).replace("\\", "/") != expected_source:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-source-drift",
+                    "production source identity record source path drifted",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.source_path",
+                )
+            )
+    for index, row_item in enumerate(rows):
+        row = _object(row_item)
+        if _safe_str(row.get("source_map_record_id")) not in record_ids:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-row-unlinked",
+                    "production native line-table projection row must link back to a source-map record",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}",
+                )
+            )
+        if row.get("native_debug_info_emitted") is not False:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-overclaimed",
+                    "production native line-table projection row must not claim emitted native debug info",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_emitted",
+                )
+            )
+    for index, candidate_item in enumerate(stepping_candidates):
+        candidate = _object(candidate_item)
+        if _safe_str(candidate.get("source_map_record_id")) not in record_ids:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-stepping-unlinked",
+                    "production method stepping candidate must link back to a source-map record",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}",
+                )
+            )
+        if "blocked" not in _safe_str(candidate.get("status")):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-overclaimed",
+                    "production method stepping candidate must stay blocked until stepping integration lands",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
+                )
+            )
+
+
 def _validate_production_probe_artifacts(
     probe: dict[str, Any],
     compatibility: dict[str, Any],
@@ -1383,6 +1592,12 @@ def _validate_production_probe_artifacts(
         code="production-debug-map-incomplete",
         message="production debug map lacks declaration breakpoint anchors",
         path="production_artifact_probe.debug_map.declaration_breakpoint_anchor_count",
+    )
+    _validate_production_source_identity_payload(
+        debug_map,
+        probe,
+        expected_source,
+        diagnostics,
     )
 
 

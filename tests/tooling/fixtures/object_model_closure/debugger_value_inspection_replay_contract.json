@@ -31,10 +31,23 @@
       "source_graph_nodes": 6,
       "declaration_breakpoint_anchors": 6
     },
+    "object_model_source_identity_minimums": {
+      "source_map_records": 6,
+      "native_line_table_rows": 6,
+      "stepping_candidates": 4,
+      "required_identity_kinds": [
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method"
+      ]
+    },
     "debug_map_boundary": {
       "full_source_map_publication": "fail-closed",
       "statement_stepping": "fail-closed",
-      "boundary_reason": "the production compiler path must publish manifest/source-graph/runtime inventory proof now, while full source maps, native line tables, and debugger stepping remain blocked until they are emitted by that same path"
+      "boundary_reason": "the production compiler path must publish object-model source identity rows from the canonical manifest now, while full source-map publication, emitted native debug line tables, and debugger stepping remain blocked until they are emitted by that same path"
     }
   },
   "reflection_abi_governance": {
