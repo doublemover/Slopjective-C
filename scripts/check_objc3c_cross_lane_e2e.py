@@ -210,6 +210,13 @@ def require_string_list(value: Any, field: str) -> list[str]:
     ]
 
 
+def manifest_family(row: Any, field: str) -> dict[str, Any]:
+    row_object = require_object(row, field)
+    if "family" in row_object:
+        return require_object(row_object.get("family"), f"{field}.family")
+    return row_object
+
+
 def normalize_path(path: str) -> str:
     return path.replace("\\", "/").strip("/")
 
@@ -1762,11 +1769,10 @@ def require_release_operations_preflight(
 
 def prepare_release_operations_preflight(families: list[Any]) -> dict[str, Any]:
     for index, raw_row in enumerate(families):
-        row = require_object(raw_row, f"families[{index}]")
-        family = require_object(row.get("family"), f"families[{index}].family")
+        family = manifest_family(raw_row, f"families[{index}]")
         family_id = require_nonempty_string(
             family.get("family_id"),
-            f"families[{index}].family.family_id",
+            f"families[{index}].family_id",
         )
         if family_id != "distribution_package_lifecycle":
             continue
@@ -2528,20 +2534,24 @@ def validate_manifest() -> dict[str, Any]:
         raise RuntimeError("claim_policy must reject tmp source truth")
 
     families = require_list(manifest.get("families"), "families")
-    family_ids = [require_nonempty_string(require_object(row, "family").get("family_id"), "family.family_id") for row in families]
+    family_rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(families)]
+    family_ids = [
+        require_nonempty_string(family.get("family_id"), f"families[{index}].family_id")
+        for index, family in enumerate(family_rows)
+    ]
     if tuple(family_ids) != REQUIRED_FAMILY_IDS:
         raise RuntimeError(
             "cross-lane E2E families must stay in required #8200 order: "
             + ", ".join(REQUIRED_FAMILY_IDS)
         )
 
-    release_operations_preflight = prepare_release_operations_preflight(families)
+    release_operations_preflight = prepare_release_operations_preflight(family_rows)
     family_summaries = [
         validate_family(
-            require_object(row, "family"),
+            family,
             release_operations_preflight=release_operations_preflight,
         )
-        for row in families
+        for family in family_rows
     ]
     workflow_action_glue = validate_workflow_action_glue()
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
