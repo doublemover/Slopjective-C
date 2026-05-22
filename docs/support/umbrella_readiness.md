@@ -7,6 +7,7 @@ why broad capability rows remain reserved or when they are ready for
 promotion. It does not create public Objective-C 3.0 behavior claims.
 
 Authoritative inputs:
+
 - `docs/support/umbrella_readiness.json`
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`

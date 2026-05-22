@@ -13,7 +13,7 @@ summarize support, but they must not widen it beyond these files.
 | `capability_matrix.md`               | Human-readable projection of the capability matrix.                                                                    |
 | `evidence_map.json`                  | Machine-readable flattened capability-to-evidence rows.                                                                |
 | `evidence_map.md`                    | Human-readable evidence table.                                                                                         |
-| `umbrella_readiness.json`            | Machine-readable readiness gates for broad reserved umbrella capability rows.                                           |
+| `umbrella_readiness.json`            | Machine-readable readiness gates for broad reserved umbrella capability rows.                                          |
 | `umbrella_readiness.md`              | Human-readable projection of umbrella promotion blockers and final criteria.                                           |
 | `capability_schema_examples.md`      | Examples and anti-examples for matrix and evidence rows.                                                               |
 | `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated-output rows.   |
