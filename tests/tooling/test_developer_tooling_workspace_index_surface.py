@@ -150,12 +150,48 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
         manifest=manifest,
         source_graph={"source_graph_digest": "a" * 64},
         source_path=source_path,
+        native_debug_info_evidence={
+            "contract_id": "objc3c.object_model.production.native_debug_info_evidence.v1",
+            "evidence_id": "object-model.native-debug-info.production-object-section-probe",
+            "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+            "object_artifact_present": True,
+            "object_path": "tmp/artifacts/module.obj",
+            "object_format": "coff",
+            "object_sha256": "a" * 64,
+            "object_section_inventory_command": "llvm-readobj --sections tmp/artifacts/module.obj",
+            "object_section_names": [".text", ".rdata", ".pdata", ".xdata"],
+            "native_debug_sections": [],
+            "native_line_table_sections": [],
+            "native_debug_section_count": 0,
+            "native_line_table_section_count": 0,
+            "ir_path": "tmp/artifacts/module.ll",
+            "ir_debug_metadata_model": "no-llvm-di-debug-locations",
+            "llvm_debug_metadata_present": False,
+            "llvm_debug_location_count": 0,
+            "emitted_native_debug_info_supported": False,
+            "native_line_table_supported": False,
+            "statement_stepping_supported": False,
+            "fail_closed": True,
+            "fail_closed_reason": "native object lacks debug info and debug line-table sections",
+            "blocked_by": [
+                "native-object-lacks-debug-info-section",
+                "native-object-lacks-debug-line-section",
+                "compiler-ir-lacks-llvm-di-locations",
+                "runtime-debug-trace-statement-stepping-integration",
+            ],
+        },
     )
 
     source_identity = debug_payload["object_model_source_identity"]
     assert "object-model-production-source-identity" in debug_payload["evidence_roots"]
     assert "object-model-production-source-map-native-line-table" in debug_payload["evidence_roots"]
+    assert "native-debug-info-artifact-evidence" in debug_payload["evidence_roots"]
     assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
+    assert source_identity["native_debug_info_evidence"]["native_debug_section_count"] == 0
+    assert source_identity["native_debug_info_evidence"]["native_line_table_section_count"] == 0
+    assert source_identity["native_debug_info_fail_closed_reason"] == (
+        "native object lacks debug info and debug line-table sections"
+    )
     assert source_identity["source_map_records_supported"] is True
     assert source_identity["native_line_table_projection_supported"] is True
     assert source_identity["source_map_publication_supported"] is True
@@ -172,6 +208,12 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     assert publication["native_line_table_publication_supported"] is True
     assert publication["emitted_native_debug_info_supported"] is False
     assert publication["statement_stepping_supported"] is False
+    assert publication["native_debug_info_evidence"]["blocked_by"] == [
+        "native-object-lacks-debug-info-section",
+        "native-object-lacks-debug-line-section",
+        "compiler-ir-lacks-llvm-di-locations",
+        "runtime-debug-trace-statement-stepping-integration",
+    ]
     assert set(publication["source_map_record_ids"]) == {
         record["source_map_record_id"]
         for record in source_identity["source_map_records"]
@@ -193,3 +235,7 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
         for row in source_identity["native_line_table_rows"]
         if row["runtime_identity_kind"] == "method"
     } == {"objc3_method_RuntimeFullWidget_instance_setValue_"}
+    assert {
+        row["native_debug_info_blocker"]
+        for row in source_identity["native_line_table_rows"]
+    } == {"native object lacks debug info and debug line-table sections"}

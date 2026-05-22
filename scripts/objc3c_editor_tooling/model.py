@@ -21,6 +21,9 @@ OBJECT_MODEL_SOURCE_IDENTITY_CONTRACT_ID = "objc3c.object_model.production.sourc
 OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
     "objc3c.object_model.production.source_map_native_line_table.v1"
 )
+OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
+    "objc3c.object_model.production.native_debug_info_evidence.v1"
+)
 OBJECT_MODEL_SOURCE_IDENTITY_KINDS = ("class", "category", "protocol", "property", "ivar", "method")
 
 
@@ -328,6 +331,52 @@ def _safe_text(value: Any) -> str:
     return value if isinstance(value, str) else ""
 
 
+def _default_native_debug_info_evidence() -> dict[str, Any]:
+    return {
+        "contract_id": OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID,
+        "evidence_id": "object-model.native-debug-info.unavailable",
+        "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+        "object_artifact_present": False,
+        "object_path": "",
+        "object_format": "",
+        "object_sha256": "",
+        "object_section_inventory_command": "",
+        "object_section_names": [],
+        "native_debug_sections": [],
+        "native_line_table_sections": [],
+        "native_debug_section_count": 0,
+        "native_line_table_section_count": 0,
+        "ir_path": "",
+        "ir_debug_metadata_model": "unavailable",
+        "llvm_debug_metadata_present": False,
+        "llvm_debug_location_count": 0,
+        "emitted_native_debug_info_supported": False,
+        "native_line_table_supported": False,
+        "statement_stepping_supported": False,
+        "fail_closed": True,
+        "fail_closed_reason": "native debug-info artifact evidence is unavailable",
+        "blocked_by": [
+            "native-object-artifact-missing",
+            "runtime-debug-trace-statement-stepping-integration",
+        ],
+    }
+
+
+def _normalize_native_debug_info_evidence(value: Any) -> dict[str, Any]:
+    evidence = dict(value) if isinstance(value, dict) else _default_native_debug_info_evidence()
+    if evidence.get("contract_id") != OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID:
+        evidence["contract_id"] = OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID
+    if not _safe_text(evidence.get("evidence_id")):
+        evidence["evidence_id"] = "object-model.native-debug-info.unavailable"
+    blocked_by = _as_list(evidence.get("blocked_by"))
+    if not blocked_by:
+        evidence["blocked_by"] = [
+            "native-object-debug-info-evidence-missing",
+            "runtime-debug-trace-statement-stepping-integration",
+        ]
+    return evidence
+
+
 def _first_text(record: dict[str, Any], *keys: str) -> str:
     for key in keys:
         value = record.get(key)
@@ -416,6 +465,7 @@ def _append_source_identity_record(
     manifest_record_index: int,
     record: dict[str, Any],
     source_path: str,
+    native_debug_info_evidence: dict[str, Any],
 ) -> None:
     display_name = _runtime_identity_display_name(identity_kind, record)
     if not display_name:
@@ -424,6 +474,10 @@ def _append_source_identity_record(
     record_slug = _identity_slug(identity_kind, manifest_section, display_name, str(manifest_record_index))
     source_map_record_id = f"object-model.source-map.{record_slug}"
     line_row_id = f"object-model.native-line-table.{record_slug}"
+    native_debug_info_evidence_id = _safe_text(native_debug_info_evidence.get("evidence_id"))
+    native_debug_info_emitted = native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
+    native_line_table_supported = native_debug_info_evidence.get("native_line_table_supported") is True
+    native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
     selector = _first_text(record, "selector", "method_name", "name") if identity_kind == "method" else ""
     source_map_record = {
         "source_map_record_id": source_map_record_id,
@@ -454,7 +508,11 @@ def _append_source_identity_record(
             "line": line,
             "column": column,
             "native_line_table_model": "canonical-frontend-source-map-native-line-table-publication",
-            "native_debug_info_emitted": False,
+            "native_debug_info_emitted": native_debug_info_emitted,
+            "native_debug_info_evidence_id": native_debug_info_evidence_id,
+            "native_line_table_evidence_id": native_debug_info_evidence_id,
+            "native_line_table_emitted": native_line_table_supported,
+            "native_debug_info_blocker": native_debug_info_blocker,
             "expected_native_symbol": _method_native_symbol(record) if identity_kind == "method" else "",
         }
     )
@@ -484,6 +542,7 @@ def _build_object_model_source_map_publication(
     *,
     source_path: str,
     source_graph: dict[str, Any],
+    native_debug_info_evidence: dict[str, Any],
 ) -> dict[str, Any]:
     record_ids = sorted(
         record["source_map_record_id"]
@@ -497,6 +556,12 @@ def _build_object_model_source_map_publication(
     )
     identity_kinds = sorted({record["runtime_identity_kind"] for record in records})
     supported = bool(records and rows and source_path)
+    emitted_native_debug_info_supported = (
+        native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
+    )
+    native_debug_info_fail_closed_reason = _safe_text(
+        native_debug_info_evidence.get("fail_closed_reason")
+    )
     return {
         "contract_id": OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID,
         "supported": supported,
@@ -505,8 +570,9 @@ def _build_object_model_source_map_publication(
         "publication_model": "canonical-frontend-manifest-source-map-native-line-table",
         "source_map_publication_supported": supported,
         "native_line_table_publication_supported": supported,
-        "emitted_native_debug_info_supported": False,
+        "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
         "statement_stepping_supported": False,
+        "native_debug_info_evidence": native_debug_info_evidence,
         "source_map_record_count": len(records),
         "native_line_table_row_count": len(rows),
         "source_map_record_ids": record_ids,
@@ -520,13 +586,17 @@ def _build_object_model_source_map_publication(
                 "capability_id": "emittedNativeDebugInfo",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "object artifact native debug-info emission is not published by this surface",
+                "unpublished_reason": native_debug_info_fail_closed_reason
+                or "object artifact native debug-info emission is not published by this surface",
             },
             {
                 "capability_id": "statementLevelStepping",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "runtime-debug trace statement stepping is not integrated with emitted native debug info",
+                "unpublished_reason": (
+                    "runtime-debug trace statement stepping is not integrated "
+                    "with emitted native debug info"
+                ),
             },
         ],
     }
@@ -536,9 +606,11 @@ def build_object_model_source_identity_payload(
     manifest: dict[str, Any] | None,
     source_graph: dict[str, Any] | None,
     source_path: str,
+    native_debug_info_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest = _as_dict(manifest)
     source_graph = _as_dict(source_graph)
+    native_debug_info_evidence = _normalize_native_debug_info_evidence(native_debug_info_evidence)
     manifest_source = _safe_text(manifest.get("source"))
     resolved_source_path = source_path or manifest_source
     records: list[dict[str, Any]] = []
@@ -552,8 +624,18 @@ def build_object_model_source_identity_payload(
             manifest_record_index=index,
             record=record,
             source_path=resolved_source_path,
+            native_debug_info_evidence=native_debug_info_evidence,
         )
     row_ids = {row["row_id"] for row in rows}
+    native_debug_info_evidence_id = _safe_text(native_debug_info_evidence.get("evidence_id"))
+    native_debug_info_emitted = native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
+    native_line_table_emitted = native_debug_info_evidence.get("native_line_table_supported") is True
+    native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
+    stepping_blockers = [
+        _safe_text(item)
+        for item in _as_list(native_debug_info_evidence.get("blocked_by"))
+        if _safe_text(item)
+    ]
     stepping_candidates = [
         {
             "source_map_record_id": record["source_map_record_id"],
@@ -565,10 +647,11 @@ def build_object_model_source_identity_payload(
             "column": record["column"],
             "runtime_debug_trace_step_id": f"object-model.step.{_identity_slug(record['owner_name'], record['selector'])}",
             "status": "source-identity-ready-stepping-blocked",
-            "blocked_by": [
-                "emitted-native-debug-info",
-                "runtime-debug-trace-statement-stepping-integration",
-            ],
+            "native_debug_info_evidence_id": native_debug_info_evidence_id,
+            "native_debug_info_emitted": native_debug_info_emitted,
+            "native_line_table_emitted": native_line_table_emitted,
+            "native_debug_info_blocker": native_debug_info_blocker,
+            "blocked_by": stepping_blockers,
         }
         for record in records
         if record["runtime_identity_kind"] == "method"
@@ -581,6 +664,7 @@ def build_object_model_source_identity_payload(
         rows,
         source_path=resolved_source_path,
         source_graph=source_graph,
+        native_debug_info_evidence=native_debug_info_evidence,
     )
     return {
         "contract_id": OBJECT_MODEL_SOURCE_IDENTITY_CONTRACT_ID,
@@ -598,7 +682,10 @@ def build_object_model_source_identity_payload(
         "method_stepping_candidates_supported": bool(stepping_candidates),
         "full_source_map_publication": False,
         "runtime_debug_trace_statement_stepping": False,
-        "native_debug_info_emitted": False,
+        "native_debug_info_emitted": native_debug_info_emitted,
+        "native_debug_info_evidence_id": native_debug_info_evidence_id,
+        "native_debug_info_evidence": native_debug_info_evidence,
+        "native_debug_info_fail_closed_reason": native_debug_info_blocker,
         "source_map_record_count": len(records),
         "native_line_table_row_count": len(rows),
         "stepping_candidate_count": len(stepping_candidates),
@@ -615,13 +702,17 @@ def build_object_model_source_identity_payload(
                 "capability_id": "fullSourceMapPublication",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "full source-map metadata is not emitted on the canonical toolchain path",
+                "unpublished_reason": native_debug_info_blocker
+                or "full source-map metadata is not emitted on the canonical toolchain path",
             },
             {
                 "capability_id": "statementLevelStepping",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "runtime-debug trace statement stepping is not integrated with emitted native debug info",
+                "unpublished_reason": (
+                    "runtime-debug trace statement stepping is not integrated "
+                    "with emitted native debug info"
+                ),
             },
         ],
     }
@@ -635,6 +726,7 @@ def build_debug_payload(
     manifest: dict[str, Any] | None = None,
     source_graph: dict[str, Any] | None = None,
     source_path: str = "",
+    native_debug_info_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     runtime_inspector = summary.get("runtime_inspector", {})
     dump_commands = runtime_inspector.get("dump_commands", {}) if isinstance(runtime_inspector, dict) else {}
@@ -653,18 +745,23 @@ def build_debug_payload(
     evidence_roots = ["compile-manifest-declaration-coordinates"] if declaration_breakpoints else []
     if object_path_text and object_symbols:
         evidence_roots.append("runtime-inspector-object-symbol-inventory")
+    native_debug_info_evidence = _normalize_native_debug_info_evidence(native_debug_info_evidence)
     object_model_source_identity = build_object_model_source_identity_payload(
         manifest,
         source_graph,
         source_path,
+        native_debug_info_evidence=native_debug_info_evidence,
     )
     if object_model_source_identity["supported"]:
         evidence_roots.append("object-model-production-source-identity")
+    if native_debug_info_evidence.get("object_artifact_present") is True:
+        evidence_roots.append("native-debug-info-artifact-evidence")
     source_map_publication = _as_dict(
         object_model_source_identity.get("source_map_native_line_table_publication")
     )
     if source_map_publication.get("supported") is True:
         evidence_roots.append("object-model-production-source-map-native-line-table")
+    native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
     return {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": supported,
@@ -673,7 +770,12 @@ def build_debug_payload(
         "source_map_supported": False,
         "source_map_model": "declaration-coordinate-only",
         "statement_level_stepping": False,
-        "stepping_retired_route_reason": "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
+        "stepping_retired_route_reason": (
+            "statement-level stepping remains fail-closed: "
+            f"{native_debug_info_blocker}"
+        )
+        if native_debug_info_blocker
+        else "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
         "object_artifact_present": bool(object_path_text),
         "object_path": object_path_text,
         "declaration_breakpoint_anchor_count": len(declaration_breakpoints),
@@ -686,6 +788,7 @@ def build_debug_payload(
         "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
         "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
         "artifact_inspection_ready": bool(object_path_text and object_symbols),
+        "native_debug_info_evidence": native_debug_info_evidence,
         "object_model_source_identity": object_model_source_identity,
         "evidence_roots": evidence_roots,
         "reserved_capability_rows": [
@@ -693,13 +796,15 @@ def build_debug_payload(
                 "capability_id": "statementLevelStepping",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "line-table evidence is not emitted on the canonical toolchain path",
+                "unpublished_reason": native_debug_info_blocker
+                or "line-table evidence is not emitted on the canonical toolchain path",
             },
             {
                 "capability_id": "fullSourceMapPublication",
                 "status": "reserved",
                 "fail_closed": True,
-                "unpublished_reason": "full source-map metadata is not emitted on the canonical toolchain path",
+                "unpublished_reason": native_debug_info_blocker
+                or "full source-map metadata is not emitted on the canonical toolchain path",
             },
         ],
         "retired_route_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
@@ -741,6 +846,14 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
         inputs.source_text,
         display_path(paths.formatted_source),
     )
+    artifact_inspector = build_artifact_inspector_payload(
+        paths,
+        inputs,
+        symbols,
+        workspace_index,
+        source_index,
+        source_graph,
+    )
     return EditorToolingModel(
         language_server=build_language_server_payload(
             inputs.summary,
@@ -762,14 +875,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             source_graph,
         ),
         workspace_index=workspace_index,
-        artifact_inspector=build_artifact_inspector_payload(
-            paths,
-            inputs,
-            symbols,
-            workspace_index,
-            source_index,
-            source_graph,
-        ),
+        artifact_inspector=artifact_inspector,
         formatter=formatter,
         formatted_source_text=formatted_text,
         debug=build_debug_payload(
@@ -779,6 +885,7 @@ def build_editor_tooling_model(paths: EditorToolingPaths, inputs: EditorToolingI
             manifest=inputs.manifest,
             source_graph=source_graph,
             source_path=paths.source.display_path,
+            native_debug_info_evidence=artifact_inspector.get("native_debug_info_evidence"),
         ),
         source_index=source_index,
         source_graph=source_graph,

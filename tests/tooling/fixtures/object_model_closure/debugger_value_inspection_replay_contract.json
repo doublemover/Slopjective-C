@@ -59,7 +59,8 @@
     "debug_map_boundary": {
       "full_source_map_publication": "fail-closed",
       "statement_stepping": "fail-closed",
-      "boundary_reason": "the production compiler path must publish object-model source-map records and native line-table rows from the canonical manifest now, while emitted native debug info and debugger stepping remain blocked until they are integrated by that same path"
+      "native_debug_info_evidence": "required",
+      "boundary_reason": "the production compiler path must publish object-model source-map records and native line-table rows from the canonical manifest now, and native debug-info failure must be tied to emitted object section and IR debug-metadata evidence before debugger stepping can open"
     }
   },
   "reflection_abi_governance": {

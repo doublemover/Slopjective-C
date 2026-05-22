@@ -26,6 +26,9 @@ PRODUCTION_SOURCE_IDENTITY_CONTRACT_ID = "objc3c.object_model.production.source_
 PRODUCTION_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
     "objc3c.object_model.production.source_map_native_line_table.v1"
 )
+PRODUCTION_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
+    "objc3c.object_model.production.native_debug_info_evidence.v1"
+)
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -1101,6 +1104,14 @@ def _validate_production_probe_contract(
                 "production_artifact_probe.debug_map_boundary.statement_stepping",
             )
         )
+    if _object(probe.get("debug_map_boundary")).get("native_debug_info_evidence") != "required":
+        diagnostics.append(
+            _diag(
+                "production-debug-map-boundary-missing",
+                "production artifact probe must require emitted object native debug-info evidence",
+                "production_artifact_probe.debug_map_boundary.native_debug_info_evidence",
+            )
+        )
     return probe
 
 
@@ -1169,6 +1180,109 @@ def _validate_count_at_least(
         minimum = 0
     if actual < minimum:
         diagnostics.append(_diag(code, f"{message}: expected >= {minimum}, got {actual}", path))
+
+
+def _validate_native_debug_info_evidence(
+    evidence: dict[str, Any],
+    diagnostics: list[Diagnostic],
+    *,
+    path: str,
+) -> None:
+    if not evidence:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-missing",
+                "production source-map/native-line-table publication must carry native debug-info artifact evidence",
+                path,
+            )
+        )
+        return
+    if evidence.get("contract_id") != PRODUCTION_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-contract-id",
+                "production native debug-info evidence contract id drifted",
+                f"{path}.contract_id",
+            )
+        )
+    if not _safe_str(evidence.get("evidence_id")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must publish an evidence id",
+                f"{path}.evidence_id",
+            )
+        )
+    if evidence.get("object_artifact_present") is not True:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must inspect the emitted object artifact",
+                f"{path}.object_artifact_present",
+            )
+        )
+    if not _safe_str(evidence.get("object_path")) or not _safe_str(evidence.get("object_sha256")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must publish object path and digest",
+                path,
+            )
+        )
+    if not _list(evidence.get("object_section_names")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must include emitted object section names",
+                f"{path}.object_section_names",
+            )
+        )
+    if evidence.get("emitted_native_debug_info_supported") is not False:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-overclaimed",
+                "production native debug-info evidence must not claim emitted native debug info yet",
+                f"{path}.emitted_native_debug_info_supported",
+            )
+        )
+    if evidence.get("native_line_table_supported") is not False:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-overclaimed",
+                "production native debug-info evidence must not claim native line-table debug sections yet",
+                f"{path}.native_line_table_supported",
+            )
+        )
+    if evidence.get("statement_stepping_supported") is not False:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-overclaimed",
+                "production native debug-info evidence must not claim statement stepping",
+                f"{path}.statement_stepping_supported",
+            )
+        )
+    blocked_by = set(_safe_str(item) for item in _list(evidence.get("blocked_by")))
+    required_blockers = {
+        "native-object-lacks-debug-line-section",
+        "compiler-ir-lacks-llvm-di-locations",
+        "runtime-debug-trace-statement-stepping-integration",
+    }
+    if not required_blockers.issubset(blocked_by):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must name the exact fail-closed blockers",
+                f"{path}.blocked_by",
+            )
+        )
+    if not _safe_str(evidence.get("fail_closed_reason")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must carry a fail-closed reason",
+                f"{path}.fail_closed_reason",
+            )
+        )
 
 
 def _validate_fail_closed_publication_boundaries(
@@ -1256,6 +1370,12 @@ def _validate_production_source_map_publication_payload(
                 f"{path}.source_graph_digest",
             )
         )
+
+    _validate_native_debug_info_evidence(
+        _object(publication.get("native_debug_info_evidence")),
+        diagnostics,
+        path=f"{path}.native_debug_info_evidence",
+    )
 
     for key in ("source_map_publication_supported", "native_line_table_publication_supported"):
         if publication.get(key) is not True:
@@ -1430,6 +1550,26 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.{key}",
                 )
             )
+    native_debug_info_evidence = _object(source_identity.get("native_debug_info_evidence"))
+    _validate_native_debug_info_evidence(
+        native_debug_info_evidence,
+        diagnostics,
+        path="production_artifact_probe.debug_map.object_model_source_identity.native_debug_info_evidence",
+    )
+    native_debug_info_evidence_id = _safe_str(
+        native_debug_info_evidence.get("evidence_id")
+    )
+    if (
+        native_debug_info_evidence_id
+        and source_identity.get("native_debug_info_evidence_id") != native_debug_info_evidence_id
+    ):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-drift",
+                "production source identity native debug-info evidence id drifted",
+                "production_artifact_probe.debug_map.object_model_source_identity.native_debug_info_evidence_id",
+            )
+        )
 
     minimums = _object(probe.get("object_model_source_identity_minimums"))
     publication_minimums = _object(probe.get("source_map_native_line_table_minimums"))
@@ -1541,6 +1681,25 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_emitted",
                 )
             )
+        if (
+            native_debug_info_evidence_id
+            and row.get("native_debug_info_evidence_id") != native_debug_info_evidence_id
+        ):
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-drift",
+                    "production native line-table row must link the native debug-info evidence id",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_evidence_id",
+                )
+            )
+        if not _safe_str(row.get("native_debug_info_blocker")):
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-incomplete",
+                    "production native line-table row must carry the native debug-info blocker",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_blocker",
+                )
+            )
     for index, candidate_item in enumerate(stepping_candidates):
         candidate = _object(candidate_item)
         if _safe_str(candidate.get("source_map_record_id")) not in record_ids:
@@ -1557,6 +1716,28 @@ def _validate_production_source_identity_payload(
                     "production-source-identity-overclaimed",
                     "production method stepping candidate must stay blocked until stepping integration lands",
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
+                )
+            )
+        if (
+            native_debug_info_evidence_id
+            and candidate.get("native_debug_info_evidence_id") != native_debug_info_evidence_id
+        ):
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-drift",
+                    "production stepping candidate must link the native debug-info evidence id",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.native_debug_info_evidence_id",
+                )
+            )
+        candidate_blockers = set(
+            _safe_str(item) for item in _list(candidate.get("blocked_by"))
+        )
+        if "native-object-lacks-debug-line-section" not in candidate_blockers:
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-incomplete",
+                    "production stepping candidate must name the native line-table blocker",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.blocked_by",
                 )
             )
 
@@ -1794,6 +1975,11 @@ def _validate_production_probe_artifacts(
                 "production_artifact_probe.debug_map.statement_level_stepping",
             )
         )
+    _validate_native_debug_info_evidence(
+        _object(debug_map.get("native_debug_info_evidence")),
+        diagnostics,
+        path="production_artifact_probe.debug_map.native_debug_info_evidence",
+    )
     _validate_count_at_least(
         debug_map.get("declaration_breakpoint_anchor_count"),
         minimums.get("declaration_breakpoint_anchors"),

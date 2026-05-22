@@ -50,6 +50,16 @@ EXPORTED_SYMBOL_MARKERS = {
     "t",
 }
 OBJECT_FORMATS_WITH_SYMBOL_TABLES = {"elf", "mach-o", "coff"}
+OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
+    "objc3c.object_model.production.native_debug_info_evidence.v1"
+)
+NATIVE_DEBUG_SECTION_PREFIXES = (".debug", ".zdebug", "__debug")
+NATIVE_LINE_TABLE_SECTION_NAMES = {
+    ".debug_line",
+    ".zdebug_line",
+    "__debug_line",
+    ".debug$s",
+}
 LLVM_TOOL_FALLBACK_DIRS = (
     ROOT / "artifacts" / "bin",
     Path("C:/Program Files/LLVM/bin"),
@@ -674,6 +684,20 @@ def _manifest_payload(
 def _ir_payload(record: dict[str, Any]) -> dict[str, Any]:
     text = _read_text(record)
     lines = text.splitlines()
+    llvm_debug_metadata_markers = (
+        "!dbg",
+        "llvm.dbg.",
+        "DICompileUnit",
+        "DISubprogram",
+        "DILocation",
+    )
+    llvm_debug_location_count = sum(
+        line.count("!dbg")
+        + line.count("DILocation")
+        + line.count("llvm.dbg.")
+        for line in lines
+    )
+    llvm_debug_metadata_present = any(marker in text for marker in llvm_debug_metadata_markers)
     return {
         "available": record["available"],
         "path": record["path"],
@@ -681,7 +705,102 @@ def _ir_payload(record: dict[str, Any]) -> dict[str, Any]:
         "function_definition_count": sum(1 for line in lines if re.match(r"^\s*define\b", line)),
         "external_declaration_count": sum(1 for line in lines if re.match(r"^\s*declare\b", line)),
         "global_record_count": sum(1 for line in lines if re.match(r"^\s*@", line)),
+        "llvm_debug_metadata_present": llvm_debug_metadata_present,
+        "llvm_debug_location_count": llvm_debug_location_count,
+        "debug_metadata_model": "llvm-di-metadata-present"
+        if llvm_debug_metadata_present
+        else "no-llvm-di-debug-locations",
         "retired_route_reason": record["retired_route_reason"],
+    }
+
+
+def _section_name(section: Any) -> str:
+    if isinstance(section, dict):
+        return str(section.get("name", "") or "")
+    return str(section or "")
+
+
+def _is_native_debug_section(section_name: str) -> bool:
+    lowered = section_name.lower()
+    return lowered.startswith(NATIVE_DEBUG_SECTION_PREFIXES)
+
+
+def _is_native_line_table_section(section_name: str) -> bool:
+    lowered = section_name.lower()
+    return lowered in NATIVE_LINE_TABLE_SECTION_NAMES or lowered.startswith(".debug_line")
+
+
+def _native_debug_info_evidence_payload(
+    object_payload: dict[str, Any],
+    ir_payload: dict[str, Any],
+) -> dict[str, Any]:
+    section_names = sorted(
+        {
+            name
+            for section in _as_list(object_payload.get("sections"))
+            for name in [_section_name(section)]
+            if name
+        }
+    )
+    native_debug_sections = [
+        name for name in section_names if _is_native_debug_section(name)
+    ]
+    native_line_table_sections = [
+        name for name in section_names if _is_native_line_table_section(name)
+    ]
+    llvm_debug_metadata_present = ir_payload.get("llvm_debug_metadata_present") is True
+    emitted_native_debug_info_supported = bool(
+        native_debug_sections and llvm_debug_metadata_present
+    )
+    native_line_table_supported = bool(
+        native_line_table_sections and llvm_debug_metadata_present
+    )
+    blocked_by: list[str] = []
+    if object_payload.get("available") is not True:
+        blocked_by.append("native-object-artifact-missing")
+    if not native_debug_sections:
+        blocked_by.append("native-object-lacks-debug-info-section")
+    if not native_line_table_sections:
+        blocked_by.append("native-object-lacks-debug-line-section")
+    if not llvm_debug_metadata_present:
+        blocked_by.append("compiler-ir-lacks-llvm-di-locations")
+    blocked_by.append("runtime-debug-trace-statement-stepping-integration")
+    fail_closed_reason = (
+        "native object lacks debug info and debug line-table sections"
+        if not native_debug_sections and not native_line_table_sections
+        else "native object lacks debug line-table sections"
+        if not native_line_table_sections
+        else "compiler IR lacks LLVM DI locations"
+        if not llvm_debug_metadata_present
+        else "runtime debug trace is not integrated with emitted native debug info"
+    )
+    evidence_id = "object-model.native-debug-info.production-object-section-probe"
+    return {
+        "contract_id": OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID,
+        "evidence_id": evidence_id,
+        "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+        "object_artifact_present": object_payload.get("available") is True,
+        "object_path": str(object_payload.get("path", "") or ""),
+        "object_format": str(object_payload.get("object_format", "") or ""),
+        "object_sha256": str(object_payload.get("sha256", "") or ""),
+        "object_section_inventory_command": str(
+            object_payload.get("object_section_inventory_command", "") or ""
+        ),
+        "object_section_names": section_names,
+        "native_debug_sections": native_debug_sections,
+        "native_line_table_sections": native_line_table_sections,
+        "native_debug_section_count": len(native_debug_sections),
+        "native_line_table_section_count": len(native_line_table_sections),
+        "ir_path": str(ir_payload.get("path", "") or ""),
+        "ir_debug_metadata_model": str(ir_payload.get("debug_metadata_model", "") or ""),
+        "llvm_debug_metadata_present": llvm_debug_metadata_present,
+        "llvm_debug_location_count": int(ir_payload.get("llvm_debug_location_count", 0) or 0),
+        "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
+        "native_line_table_supported": native_line_table_supported,
+        "statement_stepping_supported": False,
+        "fail_closed": True,
+        "fail_closed_reason": fail_closed_reason,
+        "blocked_by": blocked_by,
     }
 
 
@@ -1341,6 +1460,11 @@ def build_artifact_inspector_payload(
     manifest = _manifest_payload(records["manifest"], inputs.manifest, symbols)
     runtime_commands = _runtime_dump_commands(inputs.summary)
     object_payload = _object_payload(records["object"], runtime_commands, inputs.summary)
+    ir_payload = _ir_payload(records["ir"])
+    native_debug_info_evidence = _native_debug_info_evidence_payload(
+        object_payload,
+        ir_payload,
+    )
     runtime_inventory = _runtime_inventory_payload(
         records["runtime_metadata_binary"],
         inputs.summary,
@@ -1369,8 +1493,9 @@ def build_artifact_inspector_payload(
         "unsupported_artifact_kinds": sorted(unsupported_kinds),
         "diagnostics": _diagnostics_payload(records["diagnostics"], inputs.diagnostics),
         "manifest": manifest,
-        "ir": _ir_payload(records["ir"]),
+        "ir": ir_payload,
         "object": object_payload,
+        "native_debug_info_evidence": native_debug_info_evidence,
         "runtime_imports": _runtime_imports_payload(
             records["runtime_metadata_binary"],
             inputs.summary,

@@ -98,7 +98,13 @@ def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None
         assert trace_lanes[lane]["status"] == "reserved"
     assert payload["support_boundary"]["debug_metadata_public_abi"] is False
     assert payload["support_boundary"]["statement_level_stepping"] is False
+    assert payload["support_boundary"]["native_debug_info_fail_closed_reason"] == (
+        "native object lacks debug info and debug line-table sections"
+    )
     assert payload["source_mapping"]["full_source_map_status"] == "reserved"
+    assert payload["source_mapping"]["native_debug_info_evidence_id"] == (
+        "runtime-debug-trace.native-debug-info.fixture-object-section-probe"
+    )
     assert payload["inspection_commands"]["runtime_debug_trace"].startswith(
         "npm run objc3c -- trace-runtime-debug"
     )
@@ -123,6 +129,9 @@ def test_runtime_debug_trace_inspection_queries_are_public_and_fail_closed() -> 
         assert query["status"] == "reserved"
         assert query["public_command"] == ""
         assert query["unpublished_reason"]
+    assert queries["debug.statement-level-stepping.line-table"]["unpublished_reason"] == (
+        "native object lacks debug info and debug line-table sections"
+    )
     assert (
         queries["debug.runtime-trace.composed-event-sequence"]["schema_path"]
         == "schemas/objc3c-runtime-debug-trace-v1.schema.json"

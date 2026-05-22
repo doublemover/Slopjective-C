@@ -38,5 +38,40 @@
   "runtime_debug_trace_model": "deterministic-runtime-inspector-and-editor-debug-artifact-trace",
   "runtime_inspector_contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
   "artifact_inspection_ready": true,
+  "native_debug_info_evidence": {
+    "contract_id": "objc3c.object_model.production.native_debug_info_evidence.v1",
+    "evidence_id": "runtime-debug-trace.native-debug-info.fixture-object-section-probe",
+    "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+    "object_artifact_present": true,
+    "object_path": "tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
+    "object_format": "coff",
+    "object_sha256": "fixture-runtime-debug-trace-object",
+    "object_section_inventory_command": "llvm-objdump -h tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.obj",
+    "object_section_names": [
+      ".text",
+      ".rdata",
+      ".pdata",
+      ".xdata"
+    ],
+    "native_debug_sections": [],
+    "native_line_table_sections": [],
+    "native_debug_section_count": 0,
+    "native_line_table_section_count": 0,
+    "ir_path": "tmp/artifacts/objc3c-public-workflow/inspect-runtime-inspector/module.ll",
+    "ir_debug_metadata_model": "no-llvm-di-debug-locations",
+    "llvm_debug_metadata_present": false,
+    "llvm_debug_location_count": 0,
+    "emitted_native_debug_info_supported": false,
+    "native_line_table_supported": false,
+    "statement_stepping_supported": false,
+    "fail_closed": true,
+    "fail_closed_reason": "native object lacks debug info and debug line-table sections",
+    "blocked_by": [
+      "native-object-lacks-debug-info-section",
+      "native-object-lacks-debug-line-section",
+      "compiler-ir-lacks-llvm-di-locations",
+      "runtime-debug-trace-statement-stepping-integration"
+    ]
+  },
   "retired_route_reason": ""
 }

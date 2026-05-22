@@ -164,11 +164,12 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
         "debug_map_boundary": {
             "full_source_map_publication": "fail-closed",
             "statement_stepping": "fail-closed",
+            "native_debug_info_evidence": "required",
             "boundary_reason": (
                 "the production compiler path must publish object-model source-map "
                 "records and native line-table rows from the canonical manifest now, "
-                "while emitted native debug info and debugger stepping remain blocked "
-                "until they are integrated by that same path"
+                "and native debug-info failure must be tied to emitted object section "
+                "and IR debug-metadata evidence before debugger stepping can open"
             ),
         },
     }
@@ -235,6 +236,7 @@ def _fake_production_artifacts(
     )
     existing_path = source_path
     source_identity = _fake_object_model_source_identity(source_path)
+    native_debug_info_evidence = source_identity["native_debug_info_evidence"]
     debug_map = {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": True,
@@ -242,6 +244,7 @@ def _fake_production_artifacts(
         "source_map_supported": False,
         "statement_level_stepping": False,
         "declaration_breakpoint_anchor_count": 6,
+        "native_debug_info_evidence": native_debug_info_evidence,
         "object_model_source_identity": source_identity,
     }
     debug_map.update(debug_map_overrides or {})
@@ -304,6 +307,36 @@ def _fake_production_artifacts(
 
 
 def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
+    native_debug_info_evidence = {
+        "contract_id": "objc3c.object_model.production.native_debug_info_evidence.v1",
+        "evidence_id": "object-model.native-debug-info.production-object-section-probe",
+        "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+        "object_artifact_present": True,
+        "object_path": "tmp/artifacts/module.obj",
+        "object_format": "coff",
+        "object_sha256": "a" * 64,
+        "object_section_inventory_command": "llvm-readobj --sections tmp/artifacts/module.obj",
+        "object_section_names": [".text", ".rdata", ".pdata", ".xdata"],
+        "native_debug_sections": [],
+        "native_line_table_sections": [],
+        "native_debug_section_count": 0,
+        "native_line_table_section_count": 0,
+        "ir_path": "tmp/artifacts/module.ll",
+        "ir_debug_metadata_model": "no-llvm-di-debug-locations",
+        "llvm_debug_metadata_present": False,
+        "llvm_debug_location_count": 0,
+        "emitted_native_debug_info_supported": False,
+        "native_line_table_supported": False,
+        "statement_stepping_supported": False,
+        "fail_closed": True,
+        "fail_closed_reason": "native object lacks debug info and debug line-table sections",
+        "blocked_by": [
+            "native-object-lacks-debug-info-section",
+            "native-object-lacks-debug-line-section",
+            "compiler-ir-lacks-llvm-di-locations",
+            "runtime-debug-trace-statement-stepping-integration",
+        ],
+    }
     identity_kinds = [
         "class",
         "category",
@@ -339,6 +372,10 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
                 "line": index + 1,
                 "column": 1,
                 "native_debug_info_emitted": False,
+                "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
+                "native_line_table_evidence_id": native_debug_info_evidence["evidence_id"],
+                "native_line_table_emitted": False,
+                "native_debug_info_blocker": native_debug_info_evidence["fail_closed_reason"],
             }
         )
     stepping_candidates = [
@@ -346,6 +383,11 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
             "source_map_record_id": record["source_map_record_id"],
             "native_line_table_row_id": record["native_line_table_row_id"],
             "status": "source-identity-ready-stepping-blocked",
+            "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
+            "native_debug_info_emitted": False,
+            "native_line_table_emitted": False,
+            "native_debug_info_blocker": native_debug_info_evidence["fail_closed_reason"],
+            "blocked_by": native_debug_info_evidence["blocked_by"],
         }
         for record in source_map_records
         if record["runtime_identity_kind"] == "method"
@@ -360,6 +402,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "native_line_table_publication_supported": True,
         "emitted_native_debug_info_supported": False,
         "statement_stepping_supported": False,
+        "native_debug_info_evidence": native_debug_info_evidence,
         "source_map_record_count": len(source_map_records),
         "native_line_table_row_count": len(native_line_table_rows),
         "source_map_record_ids": [
@@ -403,6 +446,9 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "full_source_map_publication": False,
         "runtime_debug_trace_statement_stepping": False,
         "native_debug_info_emitted": False,
+        "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
+        "native_debug_info_evidence": native_debug_info_evidence,
+        "native_debug_info_fail_closed_reason": native_debug_info_evidence["fail_closed_reason"],
         "source_map_record_count": len(source_map_records),
         "native_line_table_row_count": len(native_line_table_rows),
         "stepping_candidate_count": len(stepping_candidates),
