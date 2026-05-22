@@ -47,32 +47,32 @@
           "capability_id": "stdlib.text.runtime-builder-interpolation",
           "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
           "status": "implemented",
-          "claim_boundary": "runtime builder support executes with source-level collection iteration; interpolation sugar and debug-source-map publication remain outside this claim"
+          "claim_boundary": "runtime builder support executes with source-level collection iteration and declaration debug anchors; interpolation sugar, full source maps, and statement stepping remain outside this claim"
         },
         {
           "capability_id": "language.collections.literal-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
           "status": "implemented",
-          "claim_boundary": "array, map, and set literals execute in the integrated fixture without promoting direct stdlib module import syntax"
+          "claim_boundary": "array, map, and set literals execute in the integrated fixture and are source-graph anchored without promoting direct stdlib module import syntax"
         },
         {
           "capability_id": "language.collections.for-in-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
           "status": "implemented",
-          "claim_boundary": "source-level for-in over array, set, and map values executes in this fixture without promoting unrelated debugger or direct module import rows"
+          "claim_boundary": "source-level for-in over array, set, and map values executes in this fixture with declaration debug anchors without promoting statement stepping or direct module import rows"
         },
         {
           "capability_id": "runtime.interop.package-loader-bridge",
           "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
           "status": "implemented",
-          "claim_boundary": "linked provider import-surface metadata resolves the package seed; direct @import syntax and hosted package lifecycle remain blocked elsewhere"
+          "claim_boundary": "linked provider import-surface metadata resolves the package seed and missing-provider linking rejects fail-closed; direct @import syntax and hosted package lifecycle remain blocked elsewhere"
         }
       ],
       "blockers": [
         {
-          "blocker_id": "cross-lane-text-package-debug-source-map",
+          "blocker_id": "cross-lane-text-package-direct-import-full-source-map-reserved",
           "domain": "parser/sema diagnostic",
-          "reason": "direct @import module syntax and interpolated collection debug/source-map publication remain blocked even though source literals, for-in, package metadata, and runtime execution now compile, link, and run together"
+          "reason": "direct @import module syntax and full source-map/statement-stepping publication remain unpromoted even though source literals, for-in, package metadata, bounded source graph nodes, declaration debug anchors, missing-provider rejection, and runtime execution are checked"
         }
       ]
     },

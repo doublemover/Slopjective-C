@@ -9,12 +9,17 @@
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
   "boundary": {
     "canonical_behavior_source": true,
-    "behavior_contract": "cross-lane-partial-executable",
+    "behavior_contract": "cross-lane-partial-executable-with-artifact-proof",
     "reserved_support_promoted": false,
     "runtime_support_claimed": true,
     "source_collection_literals_claimed": true,
     "source_for_in_claimed": true,
     "package_import_metadata_claimed": true,
+    "source_graph_package_nodes_claimed": true,
+    "debug_map_declaration_anchors_claimed": true,
+    "missing_provider_link_rejection_claimed": true,
+    "full_source_map_publication_promoted": false,
+    "statement_stepping_promoted": false,
     "direct_module_import_syntax_promoted": false
   },
   "expected": {

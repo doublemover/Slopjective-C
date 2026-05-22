@@ -10,13 +10,15 @@
   "responsible_domains": [
     "parser/sema diagnostic",
     "runtime status",
-    "package trust diagnostic"
+    "package trust diagnostic",
+    "source-map/debug diagnostic",
+    "capability/evidence mismatch"
   ],
   "blockers": [
     {
-      "blocker_id": "cross-lane-text-package-debug-source-map",
+      "blocker_id": "cross-lane-text-package-direct-import-full-source-map-reserved",
       "domain": "parser/sema diagnostic",
-      "reason": "direct @import module syntax and interpolated collection debug/source-map publication remain blocked while source collection literals, for-in, package import metadata, and runtime execution are proven"
+      "reason": "direct @import module syntax and full source-map/statement-stepping publication remain unpromoted while metadata import closure, bounded source graph publication, declaration debug anchors, and runtime execution are proven"
     }
   ],
   "diagnostics": {
@@ -53,37 +55,97 @@
     "expected_path": "tmp/artifacts/cross-lane-e2e/text-collections-package/compile/module.manifest.json"
   },
   "source_graph": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-package-debug-source-map",
+    "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "source graph edges for direct @import stdlib module syntax are expected but not yet emitted",
+    "reason": "the production editor-tooling path must publish source graph package nodes for the text/collections stdlib prerequisites while the source-owned workspace manifest validates the package edges and unsupported reference consumers remain fail-closed",
     "source_truth": false,
-    "expected_edges": [
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/text-collections-package-9d5978280b54/source-graph.json",
+    "expected_package_nodes": [
+      "source:tests/native/e2e/cross_lane/text_collections_package.objc3",
+      "stdlib:objc3.text",
+      "stdlib:objc3.collections"
+    ],
+    "expected_workspace_edges": [
       "cross-lane:text-collections-package -> stdlib:objc3.text",
-      "cross-lane:text-collections-package -> stdlib:objc3.collections"
-    ]
+      "cross-lane:text-collections-package -> stdlib:objc3.collections",
+      "cross-lane:text-collections-package -> package:cross-lane-fixture-provider"
+    ],
+    "semantic_reference_closure_supported": false
   },
   "debug_source_map": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-package-debug-source-map",
+    "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "source-map anchors for interpolated collection iteration are not yet emitted",
-    "source_truth": false
+    "reason": "the production artifact path must publish declaration breakpoint anchors and object-symbol inspection for the text/collections/package fixture while keeping full source maps and statement stepping fail-closed",
+    "source_truth": false,
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/text-collections-package-9d5978280b54/debug-map.json",
+    "source_map_supported": false,
+    "statement_level_stepping": false,
+    "required_declaration_breakpoints": [
+      "importedPackageSeed",
+      "summarizeImportedCollections",
+      "objc3_runtime_stdlib_text_builder_append_i32_i32",
+      "main"
+    ]
   },
   "optimization_trace": {
     "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-package-debug-source-map",
+    "blocker_id": "cross-lane-text-package-not-optimization-owner",
     "responsible_domain": "optimization proof diagnostic",
     "reason": "no optimization proof is required for the text, collections, and package family",
     "source_truth": false
   },
+  "text_collections_package_proof": {
+    "contract_id": "objc3c.cross_lane_e2e.text_collections_package_proof.v1",
+    "status": "expected-pass",
+    "runs_canonical_frontend": true,
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "metadata_import_surface": "objc_import_module(named(\"CrossLaneFixtureProvider\"))",
+    "direct_module_import_syntax_promoted": false,
+    "required_artifact_kinds": [
+      "summary",
+      "manifest",
+      "ir",
+      "object",
+      "runtime-metadata-binary",
+      "runtime-import-surface",
+      "cross-module-runtime-link-plan",
+      "source-graph",
+      "artifact-inspector",
+      "debug-map"
+    ],
+    "minimums": {
+      "source_graph_nodes": 12,
+      "package_nodes": 3,
+      "declaration_breakpoint_anchors": 4
+    },
+    "reserved_rows_not_promoted": [
+      "modules.public-import-lookup",
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.full-source-map-publication"
+    ],
+    "claim_boundary": "metadata import-surface package closure, workspace package edges, production source graph package nodes, declaration debug-map anchors, and missing-provider link rejection are checked; direct @import syntax, semantic reference closure, full source maps, and statement stepping remain unpromoted"
+  },
   "negative_cases": [
     {
       "case_id": "text-collection-package-missing-import",
-      "status": "scaffold-blocked",
-      "blocker_id": "cross-lane-text-package-debug-source-map",
+      "status": "expected-pass",
       "responsible_domain": "package trust diagnostic",
-      "reason": "missing imported package should fail closed before runtime execution"
+      "reason": "linking the executable fixture without the CrossLaneFixtureProvider package object must fail before runtime execution",
+      "expected_failure_stage": "link"
+    },
+    {
+      "case_id": "text-collection-package-direct-import-syntax-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-text-package-direct-import-full-source-map-reserved",
+      "responsible_domain": "parser/sema diagnostic",
+      "reason": "direct @import syntax is not promoted by this metadata import-surface proof"
+    },
+    {
+      "case_id": "text-collection-package-full-source-map-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-text-package-direct-import-full-source-map-reserved",
+      "responsible_domain": "source-map/debug diagnostic",
+      "reason": "full source-map publication and statement-level stepping remain reserved even though declaration debug anchors are emitted"
     }
   ],
   "capability_boundary": {
@@ -94,6 +156,6 @@
       "language.collections.for-in-syntax-runtime-backed",
       "runtime.interop.package-loader-bridge"
     ],
-    "claim_boundary": "this fixture proves source collection literals, source for-in, runtime-backed text builders, and objc_import_module linked-provider execution; direct @import syntax and interpolated collection source-map publication remain blocked"
+    "claim_boundary": "this fixture proves source collection literals, source for-in, runtime-backed text builders, objc_import_module linked-provider execution, bounded package source graph, declaration debug-map anchors, and missing-provider link rejection; direct @import syntax, semantic reference closure, full source maps, and statement stepping remain unpromoted"
   }
 }

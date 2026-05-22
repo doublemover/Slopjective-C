@@ -109,6 +109,9 @@ PUBLIC_COMMAND = "npm run objc3c -- validate-cross-lane-e2e"
 OBJECT_REFLECTION_DEBUGGER_PROOF_CONTRACT_ID = (
     "objc3c.cross_lane_e2e.object_reflection_debugger_proof.v1"
 )
+TEXT_COLLECTIONS_PACKAGE_PROOF_CONTRACT_ID = (
+    "objc3c.cross_lane_e2e.text_collections_package_proof.v1"
+)
 
 REQUIRED_FAMILY_IDS = (
     "text_collections_package",
@@ -752,6 +755,349 @@ def validate_object_reflection_debugger_proof(
         "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
         "public_runtime_reflection_report": repo_rel(public_reflection_report_path),
         "object_model_debugger_contract": repo_rel(debugger_contract),
+        "reserved_rows_not_promoted": reserved_rows,
+    }
+
+
+def _require_expected_generated_path(
+    *,
+    actual_path: str,
+    expected_path: Any,
+    field: str,
+) -> None:
+    actual = normalize_path(actual_path)
+    expected = normalize_path(require_nonempty_string(expected_path, field))
+    if actual != expected:
+        raise RuntimeError(f"{field} drifted: expected {expected}, got {actual}")
+    require_artifact(ROOT / expected, field)
+
+
+def _require_expected_string_members(
+    *,
+    actual_values: set[str],
+    expected_values: list[Any],
+    field: str,
+) -> list[str]:
+    expected = [
+        require_nonempty_string(value, f"{field}[{index}]")
+        for index, value in enumerate(expected_values)
+    ]
+    missing = sorted(set(expected).difference(actual_values))
+    if missing:
+        raise RuntimeError(f"{field} missing expected values: " + ", ".join(missing))
+    return expected
+
+
+def _workspace_edge_labels(workspace: dict[str, Any], family_id: str) -> set[str]:
+    labels: set[str] = set()
+    for index, raw_edge in enumerate(
+        require_list(workspace.get("package_edges"), f"{family_id}.workspace.package_edges")
+    ):
+        edge = require_object(raw_edge, f"{family_id}.workspace.package_edges[{index}]")
+        labels.add(
+            require_nonempty_string(edge.get("from"), f"{family_id}.workspace.package_edges[{index}].from")
+            + " -> "
+            + require_nonempty_string(edge.get("to"), f"{family_id}.workspace.package_edges[{index}].to")
+        )
+    return labels
+
+
+def _require_no_direct_import_statement(family_id: str, source_text: str) -> None:
+    for line_number, line in enumerate(source_text.splitlines(), start=1):
+        if line.strip().startswith("@import "):
+            raise RuntimeError(
+                f"{family_id} must not promote direct @import syntax on line {line_number}"
+            )
+
+
+def _validate_missing_provider_link_failure(
+    family_id: str,
+    executable_proof: dict[str, Any],
+    artifact_dir: Path,
+) -> dict[str, Any]:
+    compile_dir = ROOT / normalize_path(
+        require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
+    )
+    obj_path = compile_dir / "module.obj"
+    require_artifact(obj_path, "text package missing-provider object")
+    runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
+    missing_provider_exe = artifact_dir / "missing-provider.exe"
+    missing_provider_log = artifact_dir / "missing-provider-link.log"
+    result = run_checked(
+        [
+            resolve_clangxx(),
+            *link_driver_args(),
+            str(obj_path),
+            str(runtime_library),
+            *driver_flags,
+            "-o",
+            str(missing_provider_exe),
+            "-fno-color-diagnostics",
+        ],
+        cwd=ROOT,
+        log_path=missing_provider_log,
+        domain=f"{family_id}.package trust diagnostic",
+        check=False,
+    )
+    if result.returncode == 0:
+        raise RuntimeError(f"{family_id}.package trust diagnostic linked without provider package")
+    return {
+        "status": "PASS",
+        "expected_failure_stage": "link",
+        "actual_exit_code": result.returncode,
+        "log": repo_rel(missing_provider_log),
+    }
+
+
+def validate_text_collections_package_proof(
+    family_id: str,
+    source_path: Path,
+    expectation: dict[str, Any],
+    workspace: dict[str, Any],
+    executable_proof: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if family_id != "text_collections_package":
+        return None
+
+    proof = require_object(
+        expectation.get("text_collections_package_proof"),
+        f"{family_id}.text_collections_package_proof",
+    )
+    if proof.get("contract_id") != TEXT_COLLECTIONS_PACKAGE_PROOF_CONTRACT_ID:
+        raise RuntimeError(f"{family_id}.text_collections_package_proof contract_id drifted")
+    if executable_proof is None:
+        raise RuntimeError(f"{family_id}.text collections package proof requires executable runtime proof")
+    if proof.get("runs_canonical_frontend") is not True:
+        raise RuntimeError(f"{family_id}.text package proof must run the canonical frontend")
+    if proof.get("direct_module_import_syntax_promoted") is not False:
+        raise RuntimeError(f"{family_id}.text package proof must keep direct @import unpromoted")
+
+    source_text = source_path.read_text(encoding="utf-8")
+    _require_no_direct_import_statement(family_id, source_text)
+    if 'objc_import_module(named("CrossLaneFixtureProvider"))' not in source_text:
+        raise RuntimeError(f"{family_id} source must use the checked metadata import surface")
+
+    source_graph = require_object(expectation["source_graph"], f"{family_id}.source_graph")
+    debug_source_map = require_object(expectation["debug_source_map"], f"{family_id}.debug_source_map")
+    require_expected_pass_section(source_graph, f"{family_id}.source_graph")
+    require_expected_pass_section(debug_source_map, f"{family_id}.debug_source_map")
+
+    expected_workspace_edges = _require_expected_string_members(
+        actual_values=_workspace_edge_labels(workspace, family_id),
+        expected_values=require_list(source_graph.get("expected_workspace_edges"), f"{family_id}.source_graph.expected_workspace_edges"),
+        field=f"{family_id}.source_graph.expected_workspace_edges",
+    )
+
+    artifact_dir = ARTIFACT_ROOT / slug_from_family_id(family_id)
+    compile_dir = ROOT / normalize_path(
+        require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
+    )
+    link_plan_path = compile_dir / "module.cross-module-runtime-link-plan.json"
+    link_plan = _require_json_artifact(link_plan_path, "text package cross-module runtime link plan")
+    if link_plan.get("ready") is not True:
+        raise RuntimeError(f"{family_id}.package trust diagnostic link plan must be ready")
+    imported_modules = require_list(link_plan.get("imported_modules"), f"{family_id}.link_plan.imported_modules")
+    imported_module_names = {
+        require_nonempty_string(
+            require_object(module, f"{family_id}.link_plan.imported_modules[]").get("module_name"),
+            f"{family_id}.link_plan.imported_modules[].module_name",
+        )
+        for module in imported_modules
+    }
+    if "CrossLaneFixtureProvider" not in imported_module_names:
+        raise RuntimeError(f"{family_id}.package trust diagnostic did not import CrossLaneFixtureProvider")
+
+    package_module_proofs = require_list(
+        executable_proof.get("package_module_proofs"),
+        f"{family_id}.executable_proof.package_module_proofs",
+    )
+    provider_proof = None
+    for raw_provider in package_module_proofs:
+        provider = require_object(raw_provider, f"{family_id}.package_module_proofs[]")
+        if provider.get("module_name") == "CrossLaneFixtureProvider":
+            provider_proof = provider
+            break
+    if provider_proof is None:
+        raise RuntimeError(f"{family_id}.package trust diagnostic missing provider proof")
+    provider_surface_path = ROOT / normalize_path(
+        require_nonempty_string(
+            provider_proof.get("runtime_import_surface"),
+            f"{family_id}.provider.runtime_import_surface",
+        )
+    )
+    provider_surface = _require_json_artifact(provider_surface_path, "text package provider import surface")
+    if provider_surface.get("module_name") != "CrossLaneFixtureProvider":
+        raise RuntimeError(f"{family_id}.provider import surface module drifted")
+    if provider_surface.get("ready_for_import_artifact_emission") is not True:
+        raise RuntimeError(f"{family_id}.provider import surface is not artifact-emission ready")
+    if provider_surface.get("ready_for_frontend_module_consumption") is not True:
+        raise RuntimeError(f"{family_id}.provider import surface is not frontend-consumption ready")
+    if int(provider_surface.get("function_decl_count", 0) or 0) < 1:
+        raise RuntimeError(f"{family_id}.provider import surface must export at least one function")
+
+    paths = paths_for_source(resolve_source(repo_rel(source_path)))
+    compile_result = run_frontend_compile(paths)
+    if compile_result.returncode != 0 or not compile_result.summary_available:
+        raise RuntimeError(
+            f"{family_id}.source-map/debug diagnostic production frontend probe failed "
+            f"with exit {compile_result.returncode}"
+        )
+    inputs = load_editor_tooling_inputs(paths)
+    model = build_editor_tooling_model(paths, inputs)
+    published = publish_editor_tooling_surface(paths=paths, inputs=inputs, model=model)
+    if inputs.summary.get("success") is not True or inputs.summary.get("status") != 0:
+        raise RuntimeError(f"{family_id}.production frontend summary must report success")
+    if normalize_path(str(inputs.summary.get("input_path", ""))) != repo_rel(source_path):
+        raise RuntimeError(f"{family_id}.production frontend summary input path drifted")
+
+    summary_paths = require_object(inputs.summary.get("paths"), f"{family_id}.compile_summary.paths")
+    artifact_path_keys = {
+        "manifest": "manifest",
+        "ir": "ir",
+        "object": "object",
+        "runtime-metadata-binary": "runtime_metadata_binary",
+    }
+    emitted_artifacts: dict[str, str] = {}
+    for index, raw_kind in enumerate(
+        require_list(proof.get("required_artifact_kinds"), f"{family_id}.required_artifact_kinds")
+    ):
+        kind = require_nonempty_string(raw_kind, f"{family_id}.required_artifact_kinds[{index}]")
+        if kind == "summary":
+            candidate = paths.compile_summary
+        elif kind == "source-graph":
+            candidate = paths.source_graph
+        elif kind == "artifact-inspector":
+            candidate = paths.artifact_inspector
+        elif kind == "debug-map":
+            candidate = paths.debug_map
+        elif kind == "runtime-import-surface":
+            candidate = compile_dir / "module.runtime-import-surface.json"
+        elif kind == "cross-module-runtime-link-plan":
+            candidate = link_plan_path
+        else:
+            path_key = artifact_path_keys.get(kind)
+            if path_key is None:
+                raise RuntimeError(f"{family_id}.text package proof unknown artifact kind: {kind}")
+            candidate = ROOT / normalize_path(
+                require_nonempty_string(summary_paths.get(path_key), f"{family_id}.summary.paths.{path_key}")
+            )
+        require_artifact(candidate, f"text package {kind}")
+        emitted_artifacts[kind] = repo_rel(candidate)
+
+    _require_expected_generated_path(
+        actual_path=published.source_graph_path,
+        expected_path=source_graph.get("expected_path"),
+        field=f"{family_id}.source_graph.expected_path",
+    )
+    _require_expected_generated_path(
+        actual_path=published.debug_path,
+        expected_path=debug_source_map.get("expected_path"),
+        field=f"{family_id}.debug_source_map.expected_path",
+    )
+
+    graph = require_object(model.source_graph, f"{family_id}.source_graph.payload")
+    if graph.get("available") is not True:
+        raise RuntimeError(f"{family_id}.source graph must be available on the production artifact path")
+    if graph.get("fail_closed") is not True:
+        raise RuntimeError(f"{family_id}.source graph must keep unsupported reference consumers fail-closed")
+    evidence = require_object(graph.get("evidence"), f"{family_id}.source_graph.evidence")
+    if evidence.get("native_compiler_source_graph_present") is not True:
+        raise RuntimeError(f"{family_id}.source graph must expose native compiler source graph fields")
+    if evidence.get("semantic_reference_closure") is not False:
+        raise RuntimeError(f"{family_id}.source graph must not claim semantic reference closure")
+    graph_nodes = require_list(graph.get("nodes"), f"{family_id}.source_graph.nodes")
+    package_node_ids = {
+        str(require_object(node, f"{family_id}.source_graph.nodes[]").get("owning_package", ""))
+        for node in graph_nodes
+        if isinstance(node, dict) and node.get("symbol_kind") == "package"
+    }
+    expected_package_nodes = _require_expected_string_members(
+        actual_values=package_node_ids,
+        expected_values=require_list(
+            source_graph.get("expected_package_nodes"),
+            f"{family_id}.source_graph.expected_package_nodes",
+        ),
+        field=f"{family_id}.source_graph.expected_package_nodes",
+    )
+    minimums = require_object(proof.get("minimums"), f"{family_id}.text_collections_package_proof.minimums")
+    source_graph_nodes = validate_minimum_count(
+        family_id=family_id,
+        actual=graph.get("node_count"),
+        minimums=minimums,
+        minimum_key="source_graph_nodes",
+        domain="source graph",
+    )
+    package_nodes = validate_minimum_count(
+        family_id=family_id,
+        actual=graph.get("package_node_count"),
+        minimums=minimums,
+        minimum_key="package_nodes",
+        domain="source graph",
+    )
+
+    debug_map = require_object(model.debug, f"{family_id}.debug_source_map.payload")
+    if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
+        raise RuntimeError(f"{family_id}.debug map must be tied to the emitted object artifact")
+    if debug_map.get("source_map_supported") is not False:
+        raise RuntimeError(f"{family_id}.debug map must keep full source maps fail-closed")
+    if debug_map.get("statement_level_stepping") is not False:
+        raise RuntimeError(f"{family_id}.debug map must keep statement stepping fail-closed")
+    declaration_breakpoint_anchors = validate_minimum_count(
+        family_id=family_id,
+        actual=debug_map.get("declaration_breakpoint_anchor_count"),
+        minimums=minimums,
+        minimum_key="declaration_breakpoint_anchors",
+        domain="debug map",
+    )
+    actual_debug_anchors = {
+        str(require_object(anchor, f"{family_id}.debug_map.declaration_breakpoints[]").get("symbol", ""))
+        for anchor in require_list(
+            debug_map.get("declaration_breakpoints"),
+            f"{family_id}.debug_map.declaration_breakpoints",
+        )
+    }
+    required_debug_anchors = _require_expected_string_members(
+        actual_values=actual_debug_anchors,
+        expected_values=require_list(
+            debug_source_map.get("required_declaration_breakpoints"),
+            f"{family_id}.debug_source_map.required_declaration_breakpoints",
+        ),
+        field=f"{family_id}.debug_source_map.required_declaration_breakpoints",
+    )
+
+    reserved_rows = require_list(
+        proof.get("reserved_rows_not_promoted"),
+        f"{family_id}.text_collections_package_proof.reserved_rows_not_promoted",
+    )
+    for required_row in (
+        "modules.public-import-lookup",
+        "runtime.debug-trace.statement-stepping",
+        "runtime.debug-trace.full-source-map-publication",
+    ):
+        if required_row not in reserved_rows:
+            raise RuntimeError(f"{family_id}.text package proof must keep {required_row} unpromoted")
+
+    missing_provider = _validate_missing_provider_link_failure(
+        family_id,
+        executable_proof,
+        artifact_dir,
+    )
+
+    return {
+        "status": "PASS",
+        "compile_summary": repo_rel(paths.compile_summary),
+        "source_graph": published.source_graph_path,
+        "debug_map": published.debug_path,
+        "emitted_artifacts": emitted_artifacts,
+        "provider_import_surface": repo_rel(provider_surface_path),
+        "cross_module_runtime_link_plan": repo_rel(link_plan_path),
+        "workspace_edges": expected_workspace_edges,
+        "source_graph_nodes": source_graph_nodes,
+        "package_nodes": package_nodes,
+        "expected_package_nodes": expected_package_nodes,
+        "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
+        "required_debug_anchors": required_debug_anchors,
+        "missing_provider_negative_case": missing_provider,
         "reserved_rows_not_promoted": reserved_rows,
     }
 
@@ -1405,6 +1751,7 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
     meta = validate_native_meta(family_id, meta_path, source_path)
     expectation = validate_expectation(family, expectation_path, source_path, workspace_path)
     executable_proof: dict[str, Any] | None = None
+    text_collections_package_proof: dict[str, Any] | None = None
     object_reflection_debugger_proof: dict[str, Any] | None = None
     advanced_runtime_contract_proof: dict[str, Any] | None = None
     optimization_trace_proof: dict[str, Any] | None = None
@@ -1422,6 +1769,13 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
         family_id,
         source_path,
         expectation,
+        executable_proof,
+    )
+    text_collections_package_proof = validate_text_collections_package_proof(
+        family_id,
+        source_path,
+        expectation,
+        workspace,
         executable_proof,
     )
     if require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
@@ -1472,6 +1826,7 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
         "negative_case_count": len(expectation.get("negative_cases", [])),
         "meta_fixture_kind": meta.get("fixture_kind"),
         "executable_proof": executable_proof,
+        "text_collections_package_proof": text_collections_package_proof,
         "object_reflection_debugger_proof": object_reflection_debugger_proof,
         "advanced_runtime_contract_proof": advanced_runtime_contract_proof,
         "optimization_trace_proof": optimization_trace_proof,

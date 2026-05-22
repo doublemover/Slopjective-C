@@ -738,8 +738,8 @@
       ],
       "source_truth_requirements": [
         "Cross-lane public conformance references the checked #8200 manifest and executable text/collections fixture.",
-        "The runtime-backed text builder, source collection literals, for-in loops, and linked package-provider import surface are public-command verified by validate-cross-lane-e2e.",
-        "Direct @import syntax, debugger maps, advanced runtime closure, and distribution lifecycle rows remain blocked or reserved in their own expectation files."
+        "The runtime-backed text builder, source collection literals, for-in loops, linked package-provider import surface, bounded source graph, declaration debug anchors, and missing-provider rejection are public-command verified by validate-cross-lane-e2e.",
+        "Direct @import syntax, full source-map publication, statement stepping, advanced runtime closure, and external distribution rows remain blocked or reserved in their own expectation files."
       ]
     },
     {
