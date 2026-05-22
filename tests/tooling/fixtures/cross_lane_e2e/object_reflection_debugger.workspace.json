@@ -30,6 +30,11 @@
       "from": "cross-lane:object-reflection-debugger",
       "to": "developer-tooling:artifact-inspector",
       "relationship": "runtime-inventory-and-object-artifact-inspection-prerequisite"
+    },
+    {
+      "from": "cross-lane:object-reflection-debugger",
+      "to": "type-system:objc3.keypath",
+      "relationship": "single-component-object-property-keypath-runtime-descriptor-prerequisite"
     }
   ],
   "canonical_production_evidence": {
@@ -37,7 +42,8 @@
     "object_model_debugger_command": "npm run objc3c -- validate-object-model-debugger-proof",
     "public_runtime_reflection_command": "npm run objc3c -- validate-public-runtime-reflection-api",
     "frontend_artifact_surface": "inspect-editor-tooling",
-    "typed_keypath_lowering_status": "reserved",
+    "typed_keypath_lowering_status": "single-component-object-property-runtime-descriptor-checked",
+    "unsupported_typed_keypath_shape_status": "reserved",
     "statement_stepping_status": "reserved",
     "full_source_map_publication_status": "reserved",
     "full_realization_promoted": false

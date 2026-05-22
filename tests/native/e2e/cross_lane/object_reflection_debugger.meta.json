@@ -12,6 +12,8 @@
     "behavior_contract": "cross-lane-executable-artifact-proof",
     "reserved_support_promoted": false,
     "runtime_support_claimed": true,
+    "typed_keypath_single_component_object_property_runtime_descriptor_claimed": true,
+    "broad_typed_keypath_shapes_promoted": false,
     "object_model_full_realization_promoted": false,
     "full_source_map_publication_promoted": false,
     "statement_stepping_promoted": false
@@ -24,6 +26,7 @@
       "category",
       "protocol",
       "property/ivar",
+      "typed keypath descriptor",
       "runtime reflection",
       "debug-map output",
       "statement stepping reserved"

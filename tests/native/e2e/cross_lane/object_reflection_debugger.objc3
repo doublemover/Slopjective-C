@@ -1,9 +1,14 @@
 // #8200 cross-lane executable: object model + reflection + debugger artifacts.
 // Runtime reflection is validated through the public reflection API gate
 // (objc3_runtime_copy_reflection_class / objc3_runtime_copy_reflection_property).
-// Debugger artifact identity is validated through the object-model debugger proof;
-// statement stepping and full source maps remain fail-closed.
+// Debugger artifact identity is validated through the object-model debugger proof.
+// A bounded single-component typed keypath is checked through the native runtime
+// helper path; statement stepping, full source maps, and broader keypath shapes
+// remain fail-closed.
 module CrossLaneObjectReflectionDebugger;
+
+extern fn objc3_runtime_keypath_component_count_for_testing(path: id) -> i32;
+extern fn objc3_runtime_keypath_root_is_self_for_testing(path: id) -> bool;
 
 @protocol DebuggableSubject
 @required
@@ -70,7 +75,25 @@ module CrossLaneObjectReflectionDebugger;
 }
 @end
 
+fn validateObjectReflectionKeypath() -> i32 {
+  let path = @keypath(CrossLaneDebugSubject, token);
+  if (path == nil) {
+    return 31;
+  }
+  if (objc3_runtime_keypath_component_count_for_testing(path) != 1) {
+    return 32;
+  }
+  if (objc3_runtime_keypath_root_is_self_for_testing(path)) {
+    return 33;
+  }
+  return 0;
+}
+
 fn main() -> i32 {
+  let keypathStatus = validateObjectReflectionKeypath();
+  if (keypathStatus != 0) {
+    return keypathStatus;
+  }
   let score = [CrossLaneDebugSubject reflectedDebugStatus];
   if (score != 47) {
     return score;

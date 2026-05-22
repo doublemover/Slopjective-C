@@ -91,6 +91,8 @@
         "@property",
         "@implementation",
         "reflectedDebugScore",
+        "@keypath(CrossLaneDebugSubject, token)",
+        "objc3_runtime_keypath_component_count_for_testing",
         "objc3_runtime_copy_reflection_class",
         "debugger artifacts"
       ],
@@ -126,7 +128,7 @@
           "capability_id": "runtime.object-model.property-ivar-reflection",
           "support_claim": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
           "status": "implemented",
-          "claim_boundary": "runtime inventory exposes synthesized property and ivar records through artifact inspection; instance property execution remains outside this family proof"
+          "claim_boundary": "runtime inventory exposes synthesized property and ivar records through artifact inspection, and the combined fixture now checks a single-component typed keypath descriptor for the reflected property; instance property dispatch remains outside this family proof"
         },
         {
           "capability_id": "runtime.public-api.reflection",
@@ -151,7 +153,7 @@
         {
           "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
           "domain": "source-map/debug",
-          "reason": "the executable object/reflection/debugger path now compiles, runs, and emits declaration debug anchors, but full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
+          "reason": "the executable object/reflection/debugger path now compiles, runs, emits declaration debug anchors, and checks a bounded single-component typed keypath descriptor, but full source-map publication, broad keypath shapes, and statement stepping remain reserved"
         }
       ]
     },

@@ -712,6 +712,126 @@ def validate_minimum_count(
     return actual
 
 
+def validate_object_typed_keypath_reflection_proof(
+    *,
+    family_id: str,
+    source_text: str,
+    proof: dict[str, Any],
+    emitted_artifacts: dict[str, str],
+) -> dict[str, Any]:
+    typed_keypath = require_object(
+        proof.get("typed_keypath_object_reflection"),
+        f"{family_id}.object_reflection_debugger_proof.typed_keypath_object_reflection",
+    )
+    if typed_keypath.get("status") != "expected-pass":
+        raise RuntimeError(f"{family_id}.typed keypath object reflection proof must be expected-pass")
+    source_literal = require_nonempty_string(
+        typed_keypath.get("source_literal"),
+        f"{family_id}.typed_keypath_object_reflection.source_literal",
+    )
+    if source_literal not in source_text:
+        raise RuntimeError(f"{family_id}.typed keypath source literal is missing: {source_literal}")
+    expected_component_count = typed_keypath.get("expected_component_count")
+    if expected_component_count != 1:
+        raise RuntimeError(f"{family_id}.typed keypath proof must stay single-component")
+    if typed_keypath.get("expected_root_is_self") is not False:
+        raise RuntimeError(f"{family_id}.typed keypath proof must stay class-root scoped")
+    for raw_symbol in require_list(
+        typed_keypath.get("required_runtime_helper_symbols"),
+        f"{family_id}.typed_keypath_object_reflection.required_runtime_helper_symbols",
+    ):
+        symbol = require_nonempty_string(
+            raw_symbol,
+            f"{family_id}.typed_keypath_object_reflection.required_runtime_helper_symbols[]",
+        )
+        if symbol not in source_text:
+            raise RuntimeError(f"{family_id}.typed keypath runtime helper missing from source: {symbol}")
+
+    manifest_path = ROOT / normalize_path(
+        require_nonempty_string(emitted_artifacts.get("manifest"), f"{family_id}.emitted_artifacts.manifest")
+    )
+    manifest = _require_json_artifact(manifest_path, "object typed keypath manifest")
+    frontend = require_object(manifest.get("frontend"), f"{family_id}.manifest.frontend")
+    pipeline = require_object(frontend.get("pipeline"), f"{family_id}.manifest.frontend.pipeline")
+    semantic_surface = require_object(
+        pipeline.get("semantic_surface"),
+        f"{family_id}.manifest.frontend.pipeline.semantic_surface",
+    )
+    semantic_model = require_object(
+        semantic_surface.get("objc_type_system_type_semantic_model"),
+        f"{family_id}.manifest.semantic_surface.objc_type_system_type_semantic_model",
+    )
+    lowering_contract = require_object(
+        semantic_surface.get("objc_type_system_optional_keypath_lowering_contract"),
+        f"{family_id}.manifest.semantic_surface.objc_type_system_optional_keypath_lowering_contract",
+    )
+    runtime_helper_contract = require_object(
+        semantic_surface.get("objc_type_system_optional_keypath_runtime_helper_contract"),
+        f"{family_id}.manifest.semantic_surface.objc_type_system_optional_keypath_runtime_helper_contract",
+    )
+    minimums = require_object(
+        typed_keypath.get("minimums"),
+        f"{family_id}.typed_keypath_object_reflection.minimums",
+    )
+    semantic_typed_keypath_literal_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=semantic_model.get("typed_keypath_literal_sites"),
+        minimums=minimums,
+        minimum_key="semantic_typed_keypath_literal_sites",
+        domain="typed keypath semantic model",
+    )
+    lowering_typed_keypath_literal_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_literal_sites"),
+        minimums=minimums,
+        minimum_key="lowering_typed_keypath_literal_sites",
+        domain="typed keypath lowering contract",
+    )
+    live_typed_keypath_artifact_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("live_typed_keypath_artifact_sites"),
+        minimums=minimums,
+        minimum_key="live_typed_keypath_artifact_sites",
+        domain="typed keypath lowering contract",
+    )
+    if runtime_helper_contract.get("typed_keypath_descriptor_handles_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath descriptor handles must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_runtime_execution_helper_landed") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath runtime helper must be landed")
+
+    ir_path = ROOT / normalize_path(
+        require_nonempty_string(emitted_artifacts.get("ir"), f"{family_id}.emitted_artifacts.ir")
+    )
+    require_artifact(ir_path, "object typed keypath IR")
+    ir_text = ir_path.read_text(encoding="utf-8")
+    required_ir_tokens = [
+        require_nonempty_string(
+            raw_token,
+            f"{family_id}.typed_keypath_object_reflection.required_ir_tokens[]",
+        )
+        for raw_token in require_list(
+            typed_keypath.get("required_ir_tokens"),
+            f"{family_id}.typed_keypath_object_reflection.required_ir_tokens",
+        )
+    ]
+    for token in required_ir_tokens:
+        if token not in ir_text:
+            raise RuntimeError(f"{family_id}.typed keypath IR missing required token: {token}")
+
+    return {
+        "status": "PASS",
+        "source_literal": source_literal,
+        "expected_component_count": expected_component_count,
+        "expected_root_is_self": False,
+        "semantic_typed_keypath_literal_sites": semantic_typed_keypath_literal_sites,
+        "lowering_typed_keypath_literal_sites": lowering_typed_keypath_literal_sites,
+        "live_typed_keypath_artifact_sites": live_typed_keypath_artifact_sites,
+        "descriptor_handles_ready": True,
+        "runtime_execution_helper_landed": True,
+        "required_ir_tokens": required_ir_tokens,
+    }
+
+
 def validate_object_reflection_debugger_proof(
     family_id: str,
     source_path: Path,
@@ -735,6 +855,7 @@ def validate_object_reflection_debugger_proof(
         raise RuntimeError(f"{family_id}.object reflection debugger proof must require public runtime reflection")
     if proof.get("requires_object_model_debugger_proof") is not True:
         raise RuntimeError(f"{family_id}.object reflection debugger proof must require object-model debugger proof")
+    source_text = source_path.read_text(encoding="utf-8")
 
     paths = paths_for_source(resolve_source(repo_rel(source_path)))
     compile_result = run_frontend_compile(paths)
@@ -877,6 +998,12 @@ def validate_object_reflection_debugger_proof(
         minimum_key="declaration_breakpoint_anchors",
         domain="debug map",
     )
+    typed_keypath_object_reflection = validate_object_typed_keypath_reflection_proof(
+        family_id=family_id,
+        source_text=source_text,
+        proof=proof,
+        emitted_artifacts=emitted_artifacts,
+    )
 
     debugger_contract = ROOT / normalize_path(
         str(proof.get("object_model_debugger_contract") or repo_rel(OBJECT_MODEL_DEBUGGER_CONTRACT_PATH))
@@ -920,6 +1047,7 @@ def validate_object_reflection_debugger_proof(
         "runtime_inventory_counts": runtime_counts,
         "source_graph_nodes": source_graph_nodes,
         "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
+        "typed_keypath_object_reflection": typed_keypath_object_reflection,
         "public_runtime_reflection_report": repo_rel(public_reflection_report_path),
         "object_model_debugger_contract": repo_rel(debugger_contract),
         "reserved_rows_not_promoted": reserved_rows,

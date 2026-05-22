@@ -16,7 +16,7 @@
     {
       "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
       "domain": "source-map/debug",
-      "reason": "the executable object/reflection program now compiles, runs, and emits artifact-backed debug anchors, but full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
+      "reason": "the executable object/reflection program now compiles, runs, emits artifact-backed debug anchors, and checks bounded single-component typed keypath descriptor handles, but full source-map publication, broad keypath shapes, and statement stepping remain reserved"
     }
   ],
   "diagnostics": {
@@ -29,6 +29,7 @@
       "category",
       "protocol",
       "property/ivar",
+      "typed keypath descriptor",
       "runtime reflection",
       "debug-map output"
     ]
@@ -36,7 +37,7 @@
   "runtime": {
     "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "class-method dispatch executes through the native runtime and returns the checked status while category, protocol, property, and debugger evidence is validated through production artifact surfaces",
+    "reason": "class-method dispatch and a single-component typed keypath descriptor execute through the native runtime and return the checked status while category, protocol, property, and debugger evidence is validated through production artifact surfaces",
     "source_truth": false,
     "expected_exit_code": 0,
     "required_artifacts": [
@@ -111,12 +112,33 @@
       "source_graph_nodes": 6,
       "declaration_breakpoint_anchors": 6
     },
+    "typed_keypath_object_reflection": {
+      "status": "expected-pass",
+      "source_literal": "@keypath(CrossLaneDebugSubject, token)",
+      "expected_component_count": 1,
+      "expected_root_is_self": false,
+      "minimums": {
+        "semantic_typed_keypath_literal_sites": 1,
+        "lowering_typed_keypath_literal_sites": 1,
+        "live_typed_keypath_artifact_sites": 1
+      },
+      "required_runtime_helper_symbols": [
+        "objc3_runtime_keypath_component_count_for_testing",
+        "objc3_runtime_keypath_root_is_self_for_testing"
+      ],
+      "required_ir_tokens": [
+        "typed_keypath_artifact_emission",
+        "@__objc3_sec_keypath_descriptors",
+        "@__objc3_keypath_desc_"
+      ],
+      "claim_boundary": "the combined object/reflection fixture proves one class-root, single-component typed keypath descriptor handle on the reflected object property through the native compile/link/run path; nested chains, self-root instance paths, broad keypath evaluation, full source maps, and statement stepping remain unpromoted"
+    },
     "reserved_rows_not_promoted": [
       "runtime.object-model.full-realization",
       "runtime.debug-trace.statement-stepping",
       "runtime.debug-trace.full-source-map-publication"
     ],
-    "claim_boundary": "executable class-method runtime behavior, public reflection API evidence, production artifact inspection, source graph, and declaration debug-map anchors are checked; instance allocation dispatch, category dispatch execution, full realization, full source maps, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
+    "claim_boundary": "executable class-method runtime behavior, single-component typed keypath descriptor handles, public reflection API evidence, production artifact inspection, source graph, and declaration debug-map anchors are checked; instance allocation dispatch, category dispatch execution, full realization, broad keypath shapes, full source maps, and statement stepping remain reserved"
   },
   "negative_cases": [
     {
@@ -134,11 +156,11 @@
       "reason": "full source-map publication remains reserved even though declaration debug anchors are emitted"
     },
     {
-      "case_id": "object-reflection-debugger-typed-keypath-lowering-reserved",
+      "case_id": "object-reflection-debugger-unsupported-typed-keypath-shapes-reserved",
       "status": "reserved",
       "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
       "responsible_domain": "lowering/IR diagnostic",
-      "reason": "typed keypath lowering is not complete for this combined object-model fixture and must fail closed"
+      "reason": "only the class-root single-component object property keypath is proven here; nested chains, self-root instance paths, and broad keypath evaluation remain reserved"
     }
   ],
   "capability_boundary": {
@@ -151,6 +173,6 @@
       "runtime.debug-trace.structured-inspection",
       "runtime.debug-trace.statement-stepping"
     ],
-    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, public reflection API proof, source graph, artifact inspector, and declaration debug-map anchors can be cited; instance allocation dispatch, category dispatch execution, runtime.object-model.full-realization, full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
+    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, bounded single-component typed keypath descriptor handling, public reflection API proof, source graph, artifact inspector, and declaration debug-map anchors can be cited; instance allocation dispatch, category dispatch execution, runtime.object-model.full-realization, full source-map publication, broad keypath shapes, and statement stepping remain reserved"
   }
 }
