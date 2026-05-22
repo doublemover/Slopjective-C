@@ -154,7 +154,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Task and actor runtime sources remain checked in. (path: `native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp`)
 - `satisfied` Error bridge runtime source remains checked in. (path: `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`)
 - `satisfied` Combined runtime closure is traceable through checked compiler-owned source graph, runtime-state, ABI, and debug-map contract records. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
-- `blocked` The native compiler still must emit the combined source graph and debug-map records on the canonical artifact path. (blocker_id: `advanced-runtime-combined-source-identity`)
+- `satisfied` The #8199 validator checks canonical source/debug-map, native line-table, runtime-state, ABI, and compiler-owned source graph records for the combined runtime fixture. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json`)
 
 #### Public Commands
 
@@ -173,12 +173,12 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Weak object capture mutation remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3`)
 - `satisfied` Missing runtime replay proof remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3`)
 - `satisfied` The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
-- `satisfied` The #8199 native executable fail-closed contract checks the combined fixture against the real native compiler path while preserving the unclaimed native compile/link/run boundary. (path: `tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json`)
+- `satisfied` The #8199 native artifact contract checks the combined fixture against the real direct-native compiler path and requires object, LLVM IR, manifest, runtime registration, runtime metadata, and error replay artifacts while preserving the unclaimed native link/run boundary. (path: `tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json`)
 
 #### Runtime Probes
 
 - `satisfied` Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners without promoting the native executable umbrella. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
-- `blocked` Native compile/link/run for the full advanced-runtime umbrella fixture remains unclaimed. (blocker_id: `advanced-runtime-cross-lane-native-compile-run`)
+- `blocked` Native executable link/run for the full advanced-runtime umbrella fixture remains unclaimed. (blocker_id: `advanced-runtime-native-link-run`)
 
 #### Abi Governance Rows
 
@@ -205,13 +205,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `advanced-runtime-cross-lane-native-compile-run`: Checked positive, runtime-state, source-graph, source/debug-map, ABI, native executable fail-closed, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.
-  - Canonical native compile manifest and executable runtime acceptance for the integrated advanced-runtime umbrella fixture.
+- `advanced-runtime-native-link-run`: Checked positive, runtime-state, source-graph, source/debug-map, ABI, native object/IR/manifest artifact, and 17-case negative-matrix proof exists, but native executable link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.
+  - Canonical native executable link/run acceptance for the integrated advanced-runtime umbrella fixture.
   - Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations.
-- `advanced-runtime-combined-source-identity`: Checked combined source identity and ABI interaction proof exists, but native compiler emission still has to publish those source/debug records on the canonical artifact path.
-  - Canonical compiler-emitted source graph records for the combined runtime fixture.
-  - Canonical source-map/debug-map output for cross-feature lowering.
-  - Public command evidence that the emitted records match the checked #8199 identity contract.
 
 ### Final Promotion Criteria
 
@@ -220,4 +216,4 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - All readiness requirements are satisfied.
 - No promotion blockers remain.
 - Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.
-- Native compile/link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth.
+- Native executable link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth.

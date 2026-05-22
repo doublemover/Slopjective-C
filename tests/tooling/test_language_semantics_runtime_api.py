@@ -71,7 +71,13 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     probe = _read(PROBE_PATH)
 
     assert contract["contract_id"] == "objc3c.runtime.language-semantics.api.v1"
+    assert contract["abi_version"] == 5
     assert set(contract["issues"]) == {8160, 8164, 8166, 8167, 8199}
+    assert set(contract["advanced_runtime_native_snapshot_fields"]) == {
+        "native_artifact_evidence",
+        "native_executable_umbrella_support",
+        "native_artifact_contract",
+    }
     assert '#include "runtime/public/objc3_runtime_language_semantics.h"' in umbrella
     assert "public/objc3_runtime_language_semantics.cpp" in cmake
     assert "public/objc3_runtime_language_semantics.h" in cmake
@@ -83,8 +89,11 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     assert "negative_combination_evidence" in header
     assert "source_identity_evidence" in header
     assert "canonical_source_debug_map_evidence" in header
+    assert "native_artifact_evidence" in header
+    assert "native_executable_umbrella_support" in header
     assert "canonical_source_map_record_count" in header
     assert "canonical_native_line_table_record_count" in header
+    assert "native_artifact_contract" in header
     assert "unsupported_combination_diagnostic" in header
     assert "unsupported_associated_type_diagnostic" in header
     assert "unsupported_dynamic_dispatch_diagnostic" in header
@@ -129,6 +138,8 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
             assert row["combined_contract"] in implementation
         if "canonical_source_debug_map_bundle" in row:
             assert row["canonical_source_debug_map_bundle"] in implementation
+        if "native_artifact_contract" in row:
+            assert row["native_artifact_contract"] in implementation
         if "public_command" in row:
             assert row["public_command"] in implementation
         for optional_runtime_field in (

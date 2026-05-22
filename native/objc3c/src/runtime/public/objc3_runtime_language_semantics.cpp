@@ -24,6 +24,8 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   bool source_identity_evidence;
   bool umbrella_closure_support;
   bool canonical_source_debug_map_evidence;
+  bool native_artifact_evidence;
+  bool native_executable_umbrella_support;
   std::uint32_t combined_runtime_state_record_count;
   std::uint32_t canonical_source_map_record_count;
   std::uint32_t canonical_debug_map_record_count;
@@ -45,6 +47,7 @@ struct RuntimeLanguageSemanticsSurfaceRecord {
   const char *combined_fixture;
   const char *combined_contract;
   const char *canonical_source_debug_map_bundle;
+  const char *native_artifact_contract;
   const char *public_command;
   const char *replay_key;
 };
@@ -63,6 +66,8 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
          false,
          false,
          false,
@@ -91,6 +96,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          "",
+         "",
          "npm run objc3c -- validate-type-conformance",
          "language-semantics:generic-runtime-identity:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_PROTOCOL_EXISTENTIAL_WITNESS,
@@ -101,6 +107,8 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
          false,
          false,
          false,
@@ -129,6 +137,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          "",
+         "",
          "npm run objc3c -- validate-type-conformance",
          "language-semantics:protocol-existential-witness:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_OWNERSHIP_MEMORY_EDGE,
@@ -139,6 +148,8 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
          false,
          false,
          false,
@@ -167,6 +178,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          "",
+         "",
          "npm run objc3c -- test-runtime-acceptance-block-arc",
          "language-semantics:ownership-memory-edge:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_CONCURRENCY_PUBLIC_API,
@@ -177,6 +189,8 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
+         false,
+         false,
          false,
          false,
          false,
@@ -205,6 +219,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "",
          "",
+         "",
          "npm run objc3c -- validate-concurrency-conformance",
          "language-semantics:concurrency-public-api-surface:v1"},
         {OBJC3_RUNTIME_LANGUAGE_SEMANTICS_SURFACE_ADVANCED_RUNTIME_CLOSURE,
@@ -222,6 +237,8 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          false,
          true,
+         true,
+         false,
          8u,
          7u,
          7u,
@@ -247,6 +264,7 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "tests/native/runtime/advanced_closure/combined_positive.objc3",
          "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
          "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+         "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
          "npm run objc3c -- validate-advanced-runtime-closure",
          "language-semantics:advanced-runtime-combined-closure:v1"},
 };
@@ -293,6 +311,10 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
       record.umbrella_closure_support ? 1 : 0;
   snapshot.canonical_source_debug_map_evidence =
       record.canonical_source_debug_map_evidence ? 1 : 0;
+  snapshot.native_artifact_evidence =
+      record.native_artifact_evidence ? 1 : 0;
+  snapshot.native_executable_umbrella_support =
+      record.native_executable_umbrella_support ? 1 : 0;
   snapshot.combined_runtime_state_record_count =
       record.combined_runtime_state_record_count;
   snapshot.canonical_source_map_record_count =
@@ -323,6 +345,7 @@ void PopulateRuntimeLanguageSemanticsSnapshot(
   snapshot.combined_contract = record.combined_contract;
   snapshot.canonical_source_debug_map_bundle =
       record.canonical_source_debug_map_bundle;
+  snapshot.native_artifact_contract = record.native_artifact_contract;
   snapshot.public_command = record.public_command;
   snapshot.replay_key = record.replay_key;
 }

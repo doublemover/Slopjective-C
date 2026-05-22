@@ -87,9 +87,11 @@ identity, and invalidation proof exist. Distribution lifecycle evidence proves
 local clean install, release-operation rollback safety, and tampered installed
 package rejection without promoting a public hosted registry, network install,
 background updater, or public production release channel. Advanced-runtime
-native executable evidence is likewise fail-closed: it proves the unsupported
-combined native compile path rejects before object/link/run artifacts are
-published, not native executable umbrella support.
+native artifact evidence is likewise bounded: it proves the combined fixture
+compiles through the real direct-native path and publishes object, LLVM IR,
+manifest, runtime registration, runtime metadata, and error replay artifacts
+from a fresh generated-attempt directory. It does not promote native executable
+link/run support or the broad advanced-runtime umbrella.
 
 ## Documentation Rule
 

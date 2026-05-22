@@ -387,9 +387,9 @@
         },
         {
           "id": "compiler-emitted-source-debug-map",
-          "description": "The native compiler still must emit the combined source graph and debug-map records on the canonical artifact path.",
-          "status": "blocked",
-          "blocker_id": "advanced-runtime-combined-source-identity"
+          "description": "The #8199 validator checks canonical source/debug-map, native line-table, runtime-state, ABI, and compiler-owned source graph records for the combined runtime fixture.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
         }
       ],
       "required_public_commands": [
@@ -452,10 +452,10 @@
           "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
         },
         {
-          "id": "native-executable-fail-closed",
-          "description": "The #8199 native executable fail-closed contract checks the combined fixture against the real native compiler path while preserving the unclaimed native compile/link/run boundary.",
+          "id": "native-artifact-compile-output",
+          "description": "The #8199 native artifact contract checks the combined fixture against the real direct-native compiler path and requires object, LLVM IR, manifest, runtime registration, runtime metadata, and error replay artifacts while preserving the unclaimed native link/run boundary.",
           "status": "satisfied",
-          "path": "tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json"
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json"
         }
       ],
       "required_runtime_probes": [
@@ -466,10 +466,10 @@
           "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
         },
         {
-          "id": "native-executable-umbrella-probe",
-          "description": "Native compile/link/run for the full advanced-runtime umbrella fixture remains unclaimed.",
+          "id": "native-link-run-umbrella-probe",
+          "description": "Native executable link/run for the full advanced-runtime umbrella fixture remains unclaimed.",
           "status": "blocked",
-          "blocker_id": "advanced-runtime-cross-lane-native-compile-run"
+          "blocker_id": "advanced-runtime-native-link-run"
         }
       ],
       "required_abi_governance_rows": [
@@ -525,21 +525,11 @@
       },
       "promotion_blockers": [
         {
-          "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
-          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, native executable fail-closed, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
+          "blocker_id": "advanced-runtime-native-link-run",
+          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, native object/IR/manifest artifact, and 17-case negative-matrix proof exists, but native executable link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
           "missing_work": [
-            "Canonical native compile manifest and executable runtime acceptance for the integrated advanced-runtime umbrella fixture.",
+            "Canonical native executable link/run acceptance for the integrated advanced-runtime umbrella fixture.",
             "Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations."
-          ],
-          "tracking_issue": "#8199"
-        },
-        {
-          "blocker_id": "advanced-runtime-combined-source-identity",
-          "summary": "Checked combined source identity and ABI interaction proof exists, but native compiler emission still has to publish those source/debug records on the canonical artifact path.",
-          "missing_work": [
-            "Canonical compiler-emitted source graph records for the combined runtime fixture.",
-            "Canonical source-map/debug-map output for cross-feature lowering.",
-            "Public command evidence that the emitted records match the checked #8199 identity contract."
           ],
           "tracking_issue": "#8199"
         }
@@ -550,7 +540,7 @@
         "All readiness requirements are satisfied.",
         "No promotion blockers remain.",
         "Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.",
-        "Native compile/link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth."
+        "Native executable link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth."
       ]
     }
   ]

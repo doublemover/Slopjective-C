@@ -5,8 +5,14 @@
   "public_umbrella_header": "native/objc3c/src/runtime/public/objc3_runtime_api.h",
   "implementation": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
   "runtime_probe": "tests/tooling/runtime/language_semantics_runtime_api_probe.cpp",
+  "abi_version": 5,
   "abi_version_macro": "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION",
   "snapshot_type": "objc3_runtime_language_semantics_surface_snapshot",
+  "advanced_runtime_native_snapshot_fields": [
+    "native_artifact_evidence",
+    "native_executable_umbrella_support",
+    "native_artifact_contract"
+  ],
   "entrypoints": [
     "objc3_runtime_language_semantics_api_abi_version",
     "objc3_runtime_language_semantics_surface_count",
