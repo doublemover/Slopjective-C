@@ -28,6 +28,7 @@ from capability_docs_validator.errors import CapabilityDocsError
 from capability_docs_validator.matrix import (
     _require_matrix_shape,
     _validate_evidence_rows,
+    _validate_foundation_boundary_rows,
     _validate_object_model_scope,
 )
 from capability_docs_validator.rendering import (
@@ -78,6 +79,7 @@ def _load_validated_inputs() -> CapabilityDocsInputs:
     rows = _require_matrix_shape(matrix)
     _validate_evidence_rows(rows)
     _validate_object_model_scope(rows)
+    _validate_foundation_boundary_rows(rows)
     _validate_evidence_map_projection(rows, evidence_map)
     _validate_support_claim_links(rows, manifest)
     _validate_conformance_manifest_links(manifest, phase_owner_contracts)

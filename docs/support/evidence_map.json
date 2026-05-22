@@ -1127,6 +1127,17 @@
       "path": "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
     },
     {
+      "capability_id": "modules.direct-import-syntax",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
       "capability_id": "modules.visibility-reexport-rebuild-contract",
       "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
       "evidence_kind": "test",
@@ -4073,6 +4084,17 @@
       "path": "docs/runbooks/objc3c_package_ecosystem.md"
     },
     {
+      "capability_id": "ecosystem.package-manager.public-hosted-registry",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.public-hosted-registry",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_package_ecosystem.md"
+    },
+    {
       "capability_id": "ecosystem.package-install.clean-distribution",
       "support_claim": "objc3c.behavior.package.install-clean-distribution",
       "evidence_kind": "test",
@@ -4409,6 +4431,22 @@
       "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
     },
     {
+      "capability_id": "compiler.optimization.method-inlining",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "evidence_kind": "diagnostic",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "evidence_kind": "diagnostic",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+    },
+    {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
       "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
       "evidence_kind": "source",
@@ -4519,6 +4557,22 @@
     {
       "capability_id": "runtime.debug-trace.structured-inspection",
       "support_claim": "objc3c.behavior.runtime.debug_trace",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_developer_tooling.md"
+    },
+    {
+      "capability_id": "runtime.debug-trace.full-source-map-publication",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+    },
+    {
+      "capability_id": "runtime.debug-trace.full-source-map-publication",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "runtime.debug-trace.full-source-map-publication",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_developer_tooling.md"
     },

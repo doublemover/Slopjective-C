@@ -447,29 +447,23 @@
         },
         {
           "id": "combined-runtime-negative-boundaries",
-          "description": "Cross-feature negative cases are issue-scoped to ownership, blocks, async, actor, cancellation, error, property, macro, and package replay boundaries.",
+          "description": "The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries.",
           "status": "satisfied",
           "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
         }
       ],
       "required_runtime_probes": [
         {
-          "id": "block-copy-dispose-probe",
-          "description": "Block runtime copy/dispose/invoke probe remains checked in.",
+          "id": "combined-runtime-state-contract",
+          "description": "Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners without promoting the native executable umbrella.",
           "status": "satisfied",
-          "path": "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp"
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
         },
         {
-          "id": "actor-mailbox-probe",
-          "description": "Actor mailbox runtime probe remains checked in.",
-          "status": "satisfied",
-          "path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
-        },
-        {
-          "id": "combined-runtime-probe",
-          "description": "Integrated runtime closure probe must cover combined behavior, not isolated rows.",
+          "id": "native-executable-umbrella-probe",
+          "description": "Native compile/link/run for the full advanced-runtime umbrella fixture remains unclaimed.",
           "status": "blocked",
-          "blocker_id": "advanced-runtime-cross-lane-e2e"
+          "blocker_id": "advanced-runtime-cross-lane-native-compile-run"
         }
       ],
       "required_abi_governance_rows": [
@@ -525,10 +519,11 @@
       },
       "promotion_blockers": [
         {
-          "blocker_id": "advanced-runtime-cross-lane-e2e",
-          "summary": "The combined runtime closure has checked positive and negative fixture coverage, but still lacks integrated runtime state proof.",
+          "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
+          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
           "missing_work": [
-            "Runtime equivalence or state probes for the integrated program."
+            "Canonical native compile manifest and executable runtime acceptance for the integrated advanced-runtime umbrella fixture.",
+            "Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations."
           ],
           "tracking_issue": "#8199"
         },
@@ -548,7 +543,8 @@
         "All required prerequisite rows remain implemented with evidence-map rows.",
         "All readiness requirements are satisfied.",
         "No promotion blockers remain.",
-        "Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands."
+        "Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.",
+        "Native compile/link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth."
       ]
     }
   ]

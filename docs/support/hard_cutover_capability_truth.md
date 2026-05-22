@@ -63,6 +63,7 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 | Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers                                                     | `internal`                                       | Treat as owner/evidence surfaces, not language features.                           |
 | Object-model interface method table and private class/category/protocol query evidence                                                                | `implemented` where the matrix has behavior rows | Claim only the narrow matrix row; do not promote it to broader runtime behavior.   |
 | Full object-model runtime realization                                                                                                                 | `reserved` until its own matrix row changes      | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
+| Direct `@import` module syntax, full source-map publication, statement stepping, LLDB plugin integration, and public hosted package registries         | `reserved`                                       | Describe as unavailable even when metadata import, source-graph, local registry, or debug-anchor evidence exists. |
 | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure                                   | `reserved` unless separately implemented         | Describe as unavailable or reserved spec surface, not runnable support.            |
 | Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.    |
 
@@ -77,6 +78,15 @@ non-claiming unless a future matrix row changes state:
 - `runtime.concurrency.broad-async-actor-closure`
 - `runtime.metaprogramming.arbitrary-macro-ecosystem`
 - `runtime.interop.broad-runtime-closure`
+
+The #8200 cross-lane evidence is still row-scoped. Text/package source-graph
+and declaration-debug-anchor proof does not promote direct `@import` syntax,
+full source-map publication, or statement stepping. Optimization runtime
+equivalence keeps method inlining fail-closed until inline-frame, callee-body
+identity, and invalidation proof exist. Distribution lifecycle evidence proves
+local clean install, release-operation rollback safety, and tampered installed
+package rejection without promoting a public hosted registry, network install,
+background updater, or public production release channel.
 
 ## Documentation Rule
 

@@ -208,6 +208,8 @@ diagnostic, documentation, or boundary evidence only.
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `test` | `tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3` |  |
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h` |  |
 | `modules.public-import-lookup` | `objc3c.behavior.modules.public-import-lookup` | `source` | `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h` |  |
+| `modules.direct-import-syntax` |  | `diagnostic` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `modules.direct-import-syntax` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` | `npm run objc3c -- validate-module-interop-contracts` |
 | `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/test_objc3c_module_interop_contracts.py` |  |
 | `modules.visibility-reexport-rebuild-contract` | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_objcxx_swift_bridge_conflicting_metadata.objc3` |  |
@@ -697,6 +699,8 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/objc3c_package_manager/registry.py` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `source` | `scripts/check_objc3c_package_manager_model.py` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
+| `ecosystem.package-manager.public-hosted-registry` |  | `diagnostic` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `ecosystem.package-manager.public-hosted-registry` |  | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/test_package_install_distribution_credibility.py` | `npm run objc3c -- validate-package-install-distribution` |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
@@ -750,6 +754,9 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json` |  |
 | `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
+| `compiler.optimization.method-inlining` |  | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll` |  |
+| `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
@@ -768,6 +775,9 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/validation.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
+| `runtime.debug-trace.full-source-map-publication` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |
+| `runtime.debug-trace.full-source-map-publication` |  | `diagnostic` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `runtime.debug-trace.full-source-map-publication` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.lldb-plugin` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` |  |
 | `runtime.debug-trace.lldb-plugin` |  | `doc` | `docs/runbooks/objc3c_developer_tooling.md` |  |
 | `runtime.debug-trace.statement-stepping` |  | `diagnostic` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json` |  |

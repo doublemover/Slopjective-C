@@ -172,13 +172,12 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Weak object capture mutation remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3`)
 - `satisfied` Missing runtime replay proof remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3`)
-- `satisfied` Cross-feature negative cases are issue-scoped to ownership, blocks, async, actor, cancellation, error, property, macro, and package replay boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
+- `satisfied` The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
 
 #### Runtime Probes
 
-- `satisfied` Block runtime copy/dispose/invoke probe remains checked in. (path: `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp`)
-- `satisfied` Actor mailbox runtime probe remains checked in. (path: `tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp`)
-- `blocked` Integrated runtime closure probe must cover combined behavior, not isolated rows. (blocker_id: `advanced-runtime-cross-lane-e2e`)
+- `satisfied` Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners without promoting the native executable umbrella. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
+- `blocked` Native compile/link/run for the full advanced-runtime umbrella fixture remains unclaimed. (blocker_id: `advanced-runtime-cross-lane-native-compile-run`)
 
 #### Abi Governance Rows
 
@@ -205,8 +204,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `advanced-runtime-cross-lane-e2e`: The combined runtime closure has checked positive and negative fixture coverage, but still lacks integrated runtime state proof.
-  - Runtime equivalence or state probes for the integrated program.
+- `advanced-runtime-cross-lane-native-compile-run`: Checked positive, runtime-state, source-graph, source/debug-map, ABI, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.
+  - Canonical native compile manifest and executable runtime acceptance for the integrated advanced-runtime umbrella fixture.
+  - Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations.
 - `advanced-runtime-combined-source-identity`: Checked combined source identity and ABI interaction proof exists, but native compiler emission still has to publish those source/debug records on the canonical artifact path.
   - Canonical compiler-emitted source graph records for the combined runtime fixture.
   - Canonical source-map/debug-map output for cross-feature lowering.
@@ -219,3 +219,4 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - All readiness requirements are satisfied.
 - No promotion blockers remain.
 - Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.
+- Native compile/link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth.

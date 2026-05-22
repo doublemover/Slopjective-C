@@ -742,6 +742,19 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h`
   - source: `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h`
 
+### Direct module import syntax
+
+- Capability ID: `modules.direct-import-syntax`
+- State: `reserved`
+- Support claims: None
+- Summary: Direct @import module syntax remains reserved. Current import/package evidence uses checked metadata import surfaces, public cross-module lookup, and package workspace edges; the #8200 text/package proof validates objc_import_module metadata closure and fail-closed missing-provider rejection without promoting direct import syntax.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_type_feature_module_profiles_import_graph.inc`
+  - `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.cpp`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - doc: `docs/support/hard_cutover_capability_truth.md`
+
 ### Module visibility and rebuild contract
 
 - Capability ID: `modules.visibility-reexport-rebuild-contract`
@@ -932,7 +945,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `stdlib.text.runtime-builder-interpolation`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.text.runtime-builder-interpolation`
-- Summary: The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation is covered by the separate language text interpolation claim that lowers into this builder ABI; arbitrary object interpolation remains outside this claim.
+- Summary: The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. The #8200 cross-lane text/collections/package proof exercises the builder with package source-graph nodes and declaration debug anchors. Source-level interpolation is covered by the separate language text interpolation claim that lowers into this builder ABI; arbitrary object interpolation, full source-map publication, and statement stepping remain outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.text/module.json`
   - `stdlib/modules/objc3.text/module.objc3`
@@ -1136,7 +1149,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.collections.literal-syntax-runtime-backed`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.collections.literal-syntax-runtime-backed`
-- Summary: #array, #map, and #set literals lower to checked runtime-owned concrete i32 collection handles over the objc3.collections substrate. Generic element/key/value typing, nested collection typing, Foundation bridging, non-i32 hashing, and display/string interpolation remain outside this claim.
+- Summary: #array, #map, and #set literals lower to checked runtime-owned concrete i32 collection handles over the objc3.collections substrate. The #8200 text/collections/package proof anchors those literals in the bounded package source graph without promoting direct @import module syntax. Generic element/key/value typing, nested collection typing, Foundation bridging, non-i32 hashing, and display/string interpolation remain outside this claim.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc`
   - `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp`
@@ -1181,7 +1194,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.collections.for-in-syntax-runtime-backed`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.collections.for-in-syntax-runtime-backed`
-- Summary: Syntax-level for-in lowers array and set value iteration plus map key/value iteration through deterministic runtime iterators while preserving fail-closed iterator status behavior for invalid handles, stale iterators, and mutation during iteration.
+- Summary: Syntax-level for-in lowers array and set value iteration plus map key/value iteration through deterministic runtime iterators while preserving fail-closed iterator status behavior for invalid handles, stale iterators, and mutation during iteration. The #8200 cross-lane proof adds declaration debug anchors for this integrated text/collections/package path, but statement-level stepping remains reserved.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc`
   - `native/objc3c/src/ast/objc3_ast_stmt_nodes.h`
@@ -1582,7 +1595,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.interop.package-loader-bridge`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.interop.package-loader-bridge`
-- Summary: Package-loader interop bridge support is claimed for provider/consumer bridge metadata, package loading, header-module bridge probes, and tampered metadata rejection.
+- Summary: Package-loader interop bridge support is claimed for provider/consumer bridge metadata, package loading through the checked metadata import surface, header-module bridge probes, missing-provider link rejection, and tampered metadata rejection. Direct @import syntax, hosted package registries, and hosted package lifecycle behavior remain outside this claim.
 - Owner modules:
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface_packaging_readiness.cpp`
   - `native/objc3c/src/driver/objc3_driver_interop_artifact_publication.cpp`
@@ -1620,7 +1633,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.advanced-runtime-closure`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, and negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, and 17-case negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
@@ -2001,7 +2014,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `conformance.public.stable-suite-manifest`
 - State: `implemented`
 - Support claims: `objc3c.behavior.conformance.public-stable-suite`
-- Summary: A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, cross-lane E2E replay entries, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.
+- Summary: A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, cross-lane E2E replay entries, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. The #8200 entries cover text/package source-graph and declaration-debug-anchor proof, method-inlining fail-closed proof, advanced-runtime negative-matrix proof, and distribution tamper/release proof without using tmp reports as support truth.
 - Owner modules:
   - `tests/conformance/public_suite_manifest.json`
   - `schemas/objc3c-public-conformance-suite-v1.schema.json`
@@ -2057,12 +2070,25 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_package_manager_model.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 
+### Public hosted package registry
+
+- Capability ID: `ecosystem.package-manager.public-hosted-registry`
+- State: `reserved`
+- Support claims: None
+- Summary: Public hosted package registry support remains reserved. Current package-manager evidence is limited to source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, and fail-closed hosted-registry/network-install overclaim checks.
+- Owner modules:
+  - `scripts/objc3c_package_manager/registry.py`
+  - `docs/runbooks/objc3c_package_ecosystem.md`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - doc: `docs/runbooks/objc3c_package_ecosystem.md`
+
 ### Clean package install distribution
 
 - Capability ID: `ecosystem.package-install.clean-distribution`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.install-clean-distribution`
-- Summary: The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, and deterministic update/uninstall operation receipts. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
+- Summary: The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, deterministic update/uninstall operation receipts, tampered installed-package rejection, and executable compile/run of the installed package slice. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
 - Owner modules:
   - `scripts/objc3c_package_manager/install_distribution.py`
   - `scripts/check_objc3c_package_install_distribution_credibility.py`
@@ -2120,7 +2146,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `release.operations.channel-lifecycle`
 - State: `implemented`
 - Support claims: `objc3c.behavior.release.channel-operations`
-- Summary: Release operations now define stable, candidate, nightly, and preview channel lifecycles with distinct gates, source-derived release notes policy, update manifest linkage, rollback safety, local provenance requirements, archive digests, installer signature checks, and fail-closed publication diagnostics. Hosted background update services and public production publication remain outside this support row.
+- Summary: Release operations now define stable, candidate, nightly, and preview channel lifecycles with distinct gates, source-derived release notes policy, update manifest linkage, rollback safety, local provenance requirements, archive digests, installer signature checks, end-to-end release-operation proof, and fail-closed publication diagnostics. Hosted background update services and public production publication remain outside this support row.
 - Owner modules:
   - `tests/tooling/fixtures/release_operations/channel_operations_model.json`
   - `schemas/objc3c-release-channel-operations-v1.schema.json`
@@ -2222,12 +2248,15 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `compiler.optimization.method-inlining`
 - State: `reserved`
 - Support claims: None
-- Summary: Method inlining is reserved until ownership, source-map, and side-effect replay proofs exist. The semantic optimization registry records the lane as reserved and prevents success claims.
+- Summary: Method inlining is reserved until ownership, source-map inline-frame, callee-body identity, and side-effect/invalidation replay proofs exist. The #8200 optimization/runtime proof now checks that production IR still retains the method-inlining candidate call and lacks inline-frame or global invalidation anchors, so the lane fails closed and publishes no success claim.
 - Owner modules:
   - `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - diagnostic: `tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll`
+  - diagnostic: `tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll`
 
 ### Cache-aware dispatch optimization lane
 
@@ -2274,6 +2303,20 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_runtime_debug_trace/validation.py`
   - doc: `docs/runbooks/objc3c_developer_tooling.md`
 
+### Full source-map publication
+
+- Capability ID: `runtime.debug-trace.full-source-map-publication`
+- State: `reserved`
+- Support claims: None
+- Summary: Full source-map publication remains reserved until source maps and native line tables are emitted by the canonical production artifact path for the relevant integrated programs. Current debug evidence may publish bounded source-to-artifact anchors and declaration debug-map entries, but those anchors do not enable full source maps or statement stepping.
+- Owner modules:
+  - `scripts/objc3c_runtime_debug_trace/payload.py`
+  - `scripts/objc3c_editor_tooling/source_index.py`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json`
+  - diagnostic: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - doc: `docs/runbooks/objc3c_developer_tooling.md`
+
 ### LLDB plugin debug integration
 
 - Capability ID: `runtime.debug-trace.lldb-plugin`
@@ -2291,7 +2334,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.statement-stepping`
 - State: `reserved`
 - Support claims: None
-- Summary: Statement-level stepping is fail-closed until native line-table and source-map evidence is emitted on the canonical toolchain path. The debug trace records source-to-artifact anchors only.
+- Summary: Statement-level debugger stepping is fail-closed until full source-map publication, native line-table evidence, and debugger stepping integration are emitted on the canonical toolchain path. The debug trace records source-to-artifact anchors only.
 - Owner modules:
   - `scripts/objc3c_runtime_debug_trace/payload.py`
 - Evidence:
