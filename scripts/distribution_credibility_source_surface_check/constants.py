@@ -41,6 +41,7 @@ EXPECTED_WORKFLOW_ACTIONS = [
 
 EXPECTED_INTEGRATED_STEPS = [
     "validate-release-operations",
+    "validate-packaging-channels-end-to-end",
     "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",

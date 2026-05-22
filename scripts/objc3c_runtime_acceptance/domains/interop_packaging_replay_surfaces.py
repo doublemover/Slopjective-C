@@ -37,10 +37,9 @@ def build_runtime_cross_language_replay_import_surface_preservation_surface(
         ],
         "compile_artifact_set": [
             "<emit-prefix>.runtime-import-surface.json",
-            "<emit-prefix>.cross-module-runtime-link-plan.json",
         ],
         "preservation_model": (
-            "provider-runtime-import-replay-keys-for-c-cpp-and-swift-interop-survive-consumer-import-surface-consumption-and-cross-module-link-plan-preservation"
+            "provider-runtime-import-replay-keys-for-c-cpp-and-swift-interop-survive-in-the-deferred-import-surface-while-consumer-cross-module-link-planning-fails-closed-until-live-bridge-generation-is-active"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -53,7 +52,8 @@ def build_runtime_cross_language_replay_import_surface_preservation_surface(
             INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
+        "requires_fail_closed_consumer_import": True,
         "requires_real_compile_output": True,
     }
 

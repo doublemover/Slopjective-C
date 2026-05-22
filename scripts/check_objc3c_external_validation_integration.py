@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,20 +53,40 @@ def workflow_report_path(validate_action: str) -> Path:
     )
 
 
-def ensure_validate_report(validate_action: str) -> dict[str, Any]:
+def ensure_validate_report(validate_action: str, *, use_existing: bool) -> dict[str, Any]:
     report_path = workflow_report_path(validate_action)
-    completed = run_capture(public_workflow_command(validate_action))
-    expect(completed.returncode == 0, f"{validate_action} command failed during integration validation")
+    if not use_existing:
+        completed = run_capture(public_workflow_command(validate_action))
+        expect(completed.returncode == 0, f"{validate_action} command failed during integration validation")
+    else:
+        expect(
+            report_path.is_file(),
+            f"{validate_action} workflow report is missing for existing-report integration validation",
+        )
     return load_json(report_path)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--use-existing-validate-report",
+        action="store_true",
+        help="validate the already-produced validate-external-validation workflow report instead of invoking it",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     workflow_surface = load_workflow_surface()
     validate_action = str(workflow_surface["validate_action"])
     required_steps = list(workflow_surface["validate_child_actions"])
     required_child_reports = dict(workflow_surface["required_child_reports"])
     validate_report_path = workflow_report_path(validate_action)
-    workflow_report = ensure_validate_report(validate_action)
+    workflow_report = ensure_validate_report(
+        validate_action,
+        use_existing=bool(args.use_existing_validate_report),
+    )
     expect(workflow_report.get("status") == "PASS", "validate-external-validation workflow report did not pass")
     steps = workflow_report.get("steps", [])
     expect(isinstance(steps, list), "validate-external-validation workflow report steps drifted")

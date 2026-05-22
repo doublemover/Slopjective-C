@@ -11,8 +11,8 @@ from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )
+from ..fixture_compilation import compile_fixture_expect_failure
 from ..fixture_compilation import compile_fixture_outputs_with_args
-from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 
 
@@ -28,27 +28,30 @@ def check_mixed_image_package_lowering_bridge_emission_case(
         case_dir / "provider",
         ["--objc3-bootstrap-registration-order-ordinal", "1"],
     )
-    compile_fixture_with_args(
+    consumer_import_negative = compile_fixture_expect_failure(
         consumer_fixture,
         case_dir / "consumer",
-        [
+        expected_snippets=[
+            "cross-module runtime link-plan Part 11 ffi preservation surface incomplete"
+        ],
+        expected_codes=[],
+        extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(case_dir / "provider" / "module.runtime-import-surface.json"),
         ],
+        allow_missing_structured_diagnostics=True,
     )
 
     provider_ll = provider_ll_path.read_text(encoding="utf-8")
-    provider_bridge_json = json.loads(
-        ((case_dir / "provider") / "module.interop-bridge.json").read_text(
+    provider_import_surface = json.loads(
+        ((case_dir / "provider") / "module.runtime-import-surface.json").read_text(
             encoding="utf-8"
         )
     )
-    link_plan = json.loads(
-        (
-            (case_dir / "consumer") / "module.cross-module-runtime-link-plan.json"
-        ).read_text(encoding="utf-8")
+    provider_bridge_surface = provider_import_surface.get(
+        "objc_interop_header_module_and_bridge_generation", {}
     )
 
     for needle, label in (
@@ -69,29 +72,25 @@ def check_mixed_image_package_lowering_bridge_emission_case(
             f"expected provider lowering to publish the {label} in LLVM IR",
         )
     expect(
-        isinstance(provider_bridge_json.get("foreign_callables"), list)
-        and {entry.get("name") for entry in provider_bridge_json["foreign_callables"]}
-        == {"ffiInbound", "ffiHeaderBridge"},
-        "expected provider bridge emission to publish both interop callables",
+        provider_bridge_surface.get("local_foreign_callable_count") == 2
+        and provider_bridge_surface.get("header_artifact_relative_path")
+        == "module.interop-bridge.h"
+        and provider_bridge_surface.get("module_artifact_relative_path")
+        == "module.interop-bridge.modulemap"
+        and provider_bridge_surface.get("bridge_artifact_relative_path")
+        == "module.interop-bridge.json",
+        "expected provider bridge-generation surface to preserve both interop callables and deferred bridge paths",
     )
     expect(
-        link_plan.get("interop_header_module_bridge_imported_module_count") == 1
-        and link_plan.get("interop_ffi_imported_module_count") == 1,
-        "expected mixed-image consumer packaging to preserve one imported interop module across both bridge surfaces",
-    )
-    expect(
-        link_plan.get("expected_interop_bridge_artifact_relative_path")
-        == "module.interop-bridge.json"
-        and "m274_header_module_bridge_provider"
-        in link_plan.get(
-            "interop_header_module_bridge_imported_module_names_lexicographic", []
-        ),
-        "expected mixed-image consumer packaging to preserve the emitted bridge artifact identity",
+        provider_bridge_surface.get("runtime_generation_ready") is False
+        and provider_bridge_surface.get("cross_module_packaging_ready") is False
+        and provider_bridge_surface.get("deterministic") is False,
+        "expected provider lowering to preserve deferred bridge metadata without claiming emitted bridge artifacts",
     )
 
     return CaseResult(
         case_id="mixed-image-package-lowering-bridge-emission",
-        probe="compile-llvm-ir-runtime-import-surface-and-cross-module-link-plan",
+        probe="compile-llvm-ir-runtime-import-surface-and-fail-closed-consumer-import",
         fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
@@ -99,12 +98,10 @@ def check_mixed_image_package_lowering_bridge_emission_case(
             "provider_ll_path": str(provider_ll_path.relative_to(ROOT)).replace(
                 "\\", "/"
             ),
-            "foreign_callable_count": len(
-                provider_bridge_json.get("foreign_callables", [])
+            "foreign_callable_count": provider_bridge_surface.get(
+                "local_foreign_callable_count"
             ),
-            "imported_bridge_module_count": link_plan.get(
-                "interop_header_module_bridge_imported_module_count"
-            ),
+            "consumer_import_returncode": consumer_import_negative["returncode"],
         },
     )
 

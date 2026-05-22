@@ -30,9 +30,11 @@ int main() {
       packaging_snapshot.header_generation_ready == 0 &&
       packaging_snapshot.module_generation_ready == 0 &&
       packaging_snapshot.bridge_generation_ready == 0 &&
-      bridge_snapshot.header_generation_ready == 1 &&
-      bridge_snapshot.module_generation_ready == 1 &&
-      bridge_snapshot.bridge_generation_ready == 1;
+      bridge_snapshot.runtime_generation_ready == 0 &&
+      bridge_snapshot.cross_module_packaging_ready == 0 &&
+      bridge_snapshot.header_generation_ready == 0 &&
+      bridge_snapshot.module_generation_ready == 0 &&
+      bridge_snapshot.bridge_generation_ready == 0;
 
   std::cout << "packaging_null_status=" << packaging_null_status << "\n";
   std::cout << "bridge_null_status=" << bridge_null_status << "\n";

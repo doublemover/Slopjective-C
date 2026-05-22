@@ -88,19 +88,19 @@
   ],
   "negative_cases": [
     {
-      "case_id": "unsupported-throws-feature-claim",
+      "case_id": "throwing-call-requires-try-negative",
       "workload_id": "dispatch-cache",
-      "source_path": "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_throws.objc3",
-      "metadata_path": "tests/tooling/fixtures/native/execution/negative/unsupported_feature_claim_throws.meta.json",
+      "source_path": "tests/tooling/fixtures/native/execution/negative/throwing_call_requires_try_negative.objc3",
+      "metadata_path": "tests/tooling/fixtures/native/execution/negative/throwing_call_requires_try_negative.meta.json",
       "public_workflow_action": "compile-objc3c",
       "expected_stage": "compile",
       "stable_diagnostic": {
-        "code": "O3S221",
+        "code": "O3S341",
         "source_range": {
-          "start_line": 3,
-          "start_column": 12,
-          "end_line": 3,
-          "end_column": 17
+          "start_line": 8,
+          "start_column": 10,
+          "end_line": 8,
+          "end_column": 11
         }
       }
     },

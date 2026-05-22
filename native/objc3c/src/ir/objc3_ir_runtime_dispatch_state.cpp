@@ -33,4 +33,5 @@ void Objc3IRRuntimeDispatchCallState::NoteCacheAwareDispatchCall() {
       kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol);
   runtime_dispatch_symbols_used.insert(
       kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol);
+  runtime_dispatch_symbols_used.insert(kObjc3RuntimeAbortDispatchStatusI32Symbol);
 }

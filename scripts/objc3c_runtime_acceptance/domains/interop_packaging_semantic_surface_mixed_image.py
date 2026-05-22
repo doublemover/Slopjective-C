@@ -35,17 +35,18 @@ def build_runtime_mixed_image_interop_semantics_surface(
         ],
         "compile_artifact_set": [
             "<emit-prefix>.runtime-import-surface.json",
-            "<emit-prefix>.cross-module-runtime-link-plan.json",
             "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
         ],
         "language_profile_model": (
-            "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-interop-boundary-through-runtime-import-surfaces-and-cross-module-link-plans"
+            "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-deferred-interop-boundary-through-runtime-import-surfaces-without claiming generated bridge artifacts or installing a ready cross-module link plan"
         ),
         "diagnostic_model": (
-            "duplicate-registration-order-or-import-surface-drift-rejects-the-consumer-before-cross-module-link-plan-installation-advances"
+            "duplicate-registration-order-or-incomplete-interop-import-surface-rejects-the-consumer-before-cross-module-link-plan-installation-advances"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -58,7 +59,8 @@ def build_runtime_mixed_image_interop_semantics_surface(
             INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
+        "requires_fail_closed_consumer_import": True,
         "requires_real_compile_output": True,
     }
 

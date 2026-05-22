@@ -13,7 +13,7 @@
     "negative/return_nonvoid_missing_value.meta.json",
     "negative/switch_return_missing_default.meta.json",
     "negative/while_identifier_reassigned_body_return_conservative_reject.meta.json",
-    "negative/unsupported_feature_claim_throws.meta.json",
+    "negative/throwing_call_requires_try_negative.meta.json",
     "negative/unsupported_feature_claim_arc_parameter_ownership.meta.json",
     "negative/unsupported_feature_claim_arc_return_ownership.meta.json"
   ],

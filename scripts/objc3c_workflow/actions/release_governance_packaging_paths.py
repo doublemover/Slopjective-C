@@ -8,6 +8,9 @@ PACKAGING_CHANNELS_SOURCE_SURFACE_PY = (
     ROOT / "scripts" / "check_packaging_channels_source_surface.py"
 )
 PACKAGE_CHANNELS_BUILD_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
+RELEASE_FOUNDATION_INTEGRATION_PY = (
+    ROOT / "scripts" / "check_objc3c_release_foundation_integration.py"
+)
 PACKAGING_CHANNELS_END_TO_END_PY = (
     ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"
 )

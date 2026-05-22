@@ -20,6 +20,9 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     if (symbol == kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol) {
       out << "declare i32 @" << symbol << "(ptr, ptr, ptr, i32, i32)\n";
       continue;
+    } else if (symbol == kObjc3RuntimeAbortDispatchStatusI32Symbol) {
+      out << "declare void @" << symbol << "(i32)\n";
+      continue;
     } else if (symbol == kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol) {
       out << "declare " << Objc3IRRuntimeDispatchI32ResultType() << " @"
           << symbol << "(i32, ptr";

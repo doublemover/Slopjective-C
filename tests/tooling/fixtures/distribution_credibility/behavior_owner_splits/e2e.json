@@ -46,9 +46,11 @@
     "public_action:publish-distribution-credibility",
     "public_action:validate-distribution-credibility",
     "public_action:validate-distribution-credibility-end-to-end",
-    "workflow_child_actions:validate-release-operations->check-distribution-credibility-surface->check-distribution-credibility-schema-surface->build-distribution-credibility-dashboard->publish-distribution-credibility",
+    "workflow_child_actions:validate-release-operations->validate-packaging-channels-end-to-end->validate-package-install-distribution->check-distribution-credibility-surface->check-distribution-credibility-schema-surface->build-distribution-credibility-dashboard->publish-distribution-credibility",
     "upstream_validate_action:validate-release-foundation",
     "upstream_validate_action:validate-packaging-channels",
+    "upstream_validate_action:validate-packaging-channels-end-to-end",
+    "upstream_validate_action:validate-package-install-distribution",
     "upstream_validate_action:validate-release-operations",
     "package_bridge:objc3c"
   ],

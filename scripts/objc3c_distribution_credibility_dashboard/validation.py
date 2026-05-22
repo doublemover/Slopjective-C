@@ -11,6 +11,7 @@ EXPECTED_TRUST_SIGNAL_IDS = [
 
 EXPECTED_WORKFLOW_STEPS = [
     "validate-release-operations",
+    "validate-packaging-channels-end-to-end",
     "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",

@@ -21,6 +21,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "integrat
 
 REQUIRED_STEPS = [
     "validate-release-operations",
+    "validate-packaging-channels-end-to-end",
     "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",

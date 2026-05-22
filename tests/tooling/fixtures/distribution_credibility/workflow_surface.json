@@ -31,11 +31,13 @@
     "upstream_owner_actions": [
       "validate-release-foundation",
       "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
       "validate-package-install-distribution",
       "validate-release-operations"
     ],
     "workflow_child_actions": [
       "validate-release-operations",
+      "validate-packaging-channels-end-to-end",
       "validate-package-install-distribution",
       "check-distribution-credibility-surface",
       "check-distribution-credibility-schema-surface",
@@ -71,6 +73,7 @@
   },
   "integrated_required_steps": [
     "validate-release-operations",
+    "validate-packaging-channels-end-to-end",
     "validate-package-install-distribution",
     "check-distribution-credibility-surface",
     "check-distribution-credibility-schema-surface",
@@ -95,6 +98,7 @@
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels",
+    "validate-packaging-channels-end-to-end",
     "validate-package-install-distribution",
     "validate-release-operations"
   ],

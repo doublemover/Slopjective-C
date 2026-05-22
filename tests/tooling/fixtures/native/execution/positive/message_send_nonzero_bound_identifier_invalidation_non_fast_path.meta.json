@@ -1,7 +1,10 @@
 {
   "fixture": "message_send_nonzero_bound_identifier_invalidation_non_fast_path.objc3",
   "execution": {
-    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
-    "requires_live_runtime_dispatch": true
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbols": [
+      "objc3_runtime_prepare_cache_aware_dispatch_descriptor",
+      "objc3_runtime_cache_aware_dispatch_i32_checked"
+    ]
   }
 }

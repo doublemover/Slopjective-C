@@ -22,7 +22,7 @@ def _assert_return_await_cleanup_ordering(ir_text: str) -> list[str]:
     push_symbol = "objc3_runtime_push_autoreleasepool_scope"
     pop_symbol = "objc3_runtime_pop_autoreleasepool_scope"
     function_blocks = re.findall(
-        r"define\s+[^@]+@([^(]+)\([^)]*\)\s*\{\n(.*?)\n\}",
+        r"define\s+[^@]+@([^(]+)\([^)]*\)[^{]*\{\n(.*?)\n\}",
         ir_text,
         flags=re.DOTALL,
     )

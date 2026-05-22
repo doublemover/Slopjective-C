@@ -12,10 +12,10 @@
   },
   "expected": {
     "stage": "compile",
-    "diagnostic_code": "O3S221",
+    "diagnostic_code": "O3S341",
     "required_tokens": [
-      "O3S221",
-      "unsupported feature claim: 'throws' is not yet runnable in Objective-C 3 native mode"
+      "O3S341",
+      "throwing function 'risky' must be called with try, try?, or try!"
     ]
   }
 }

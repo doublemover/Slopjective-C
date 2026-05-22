@@ -190,10 +190,14 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
             upstream_owner_actions=(
                 "validate-release-foundation",
                 "validate-packaging-channels",
+                "validate-packaging-channels-end-to-end",
+                "validate-package-install-distribution",
                 "validate-release-operations",
             ),
             workflow_child_actions=(
                 "validate-release-operations",
+                "validate-packaging-channels-end-to-end",
+                "validate-package-install-distribution",
                 "check-distribution-credibility-surface",
                 "check-distribution-credibility-schema-surface",
                 "build-distribution-credibility-dashboard",

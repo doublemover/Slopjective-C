@@ -91,3 +91,7 @@ def test_composite_report_failed_treats_missing_or_unreadable_payload_as_not_fai
 
 def test_validate_stress_budget_covers_cold_native_build_lane() -> None:
     assert composite_elapsed_threshold_seconds("validate-stress") == 900.0
+
+
+def test_public_full_budget_covers_cold_developer_validation_lane() -> None:
+    assert composite_elapsed_threshold_seconds("test-full") == 180.0

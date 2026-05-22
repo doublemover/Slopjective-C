@@ -81,7 +81,16 @@ def execute_fixture(fixture: BehaviorFixture, case_dir: Path) -> dict[str, objec
                 f"link failed before run for {fixture.relative_source}:\n{bounded_text(link_text)}"
             )
         run_result = run_executable(fixture, case_dir)
-        run_text = "\n".join(part for part in (run_result.stdout, run_result.stderr) if part)
+        run_text = "\n".join(
+            part
+            for part in (
+                run_result.stdout,
+                run_result.stderr,
+                f"run.exit_code:{run_result.returncode}",
+                "run.exit:nonzero" if run_result.returncode != 0 else "run.exit:zero",
+            )
+            if part
+        )
         if fixture.fixture_kind in {"negative", "strict-error", "rejection"}:
             if run_result.returncode == 0:
                 raise BehaviorMatrixFailure(f"expected run failure for {fixture.relative_source}")

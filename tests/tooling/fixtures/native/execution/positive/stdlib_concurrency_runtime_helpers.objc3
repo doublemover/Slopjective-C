@@ -13,7 +13,7 @@ extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag:
 extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
 extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32;
 
-fn main() -> i32 {
+async fn runConcurrencyRuntimeHelpers() -> i32 __attribute__((objc_executor(global))) {
   let spawn = objc3_runtime_spawn_task_i32(1, 4);
   if (spawn != 111) {
     return 1;
@@ -90,4 +90,8 @@ fn main() -> i32 {
   }
 
   return 0;
+}
+
+fn main() -> i32 {
+  return runConcurrencyRuntimeHelpers();
 }

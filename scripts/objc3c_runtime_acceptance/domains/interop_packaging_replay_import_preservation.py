@@ -11,6 +11,7 @@ from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )
+from ..fixture_compilation import compile_fixture_expect_failure
 from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 
@@ -34,27 +35,21 @@ def check_cross_language_replay_import_surface_preservation_case(
         )
     )
     consumer_compile_dir = case_dir / "consumer"
-    compile_fixture_with_args(
+    consumer_import_negative = compile_fixture_expect_failure(
         consumer_fixture,
         consumer_compile_dir,
-        [
+        expected_snippets=[
+            "cross-module runtime link-plan Part 11 ffi preservation surface incomplete"
+        ],
+        expected_codes=[],
+        extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(provider_compile_dir / "module.runtime-import-surface.json"),
         ],
+        allow_missing_structured_diagnostics=True,
     )
-    link_plan = json.loads(
-        (
-            consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
-        ).read_text(encoding="utf-8")
-    )
-    imported_modules = link_plan.get("imported_modules", [])
-    expect(
-        isinstance(imported_modules, list) and len(imported_modules) == 1,
-        "expected replay-preservation consumer compile to publish one imported module",
-    )
-    imported_module = imported_modules[0]
     provider_ffi_surface = provider_import_surface.get(
         "objc_interop_foreign_surface_interface_and_module_preservation", {}
     )
@@ -63,44 +58,36 @@ def check_cross_language_replay_import_surface_preservation_case(
     )
 
     expect(
-        imported_module.get("interop_ffi_replay_key")
-        == provider_bridge_surface.get("preservation_replay_key")
-        and imported_module.get("interop_ffi_lowering_replay_key")
-        in imported_module.get("interop_ffi_replay_key", ""),
-        "expected consumer link plan to preserve the imported ffi replay and lowering replay keys",
+        provider_ffi_surface.get("replay_key")
+        and provider_ffi_surface.get("foreign_import_source_replay_key")
+        and provider_ffi_surface.get("cpp_swift_source_replay_key"),
+        "expected provider import surface to preserve foreign/C++/Swift replay keys",
     )
     expect(
-        imported_module.get("interop_header_module_bridge_replay_key")
-        == provider_bridge_surface.get("replay_key")
-        and imported_module.get("interop_header_module_bridge_preservation_replay_key")
-        == provider_bridge_surface.get("preservation_replay_key"),
-        "expected consumer link plan to preserve the imported bridge replay and preservation replay keys",
-    )
-    expect(
-        imported_module.get("interop_ffi_preservation_replay_key")
-        == provider_ffi_surface.get("replay_key"),
-        "expected consumer link plan to preserve the imported ffi preservation replay key through the full ffi preservation packet",
-    )
-    expect(
-        imported_module.get("interop_ffi_source_contract_id")
-        == "objc3c.interop.foreign.call.and.lifetime.lowering.v1"
-        and imported_module.get("interop_header_module_bridge_source_contract_id")
+        provider_bridge_surface.get("replay_key")
+        and provider_bridge_surface.get("preservation_replay_key")
+        and provider_bridge_surface.get("source_contract_id")
         == "objc3c.interop.bridge.packaging.and.toolchain.contract.v1",
-        "expected consumer link plan to preserve the imported replay source contracts",
+        "expected provider import surface to preserve bridge replay and source contract keys",
+    )
+    expect(
+        provider_bridge_surface.get("runtime_generation_ready") is False
+        and provider_bridge_surface.get("cross_module_packaging_ready") is False
+        and provider_bridge_surface.get("deterministic") is False,
+        "expected replay preservation to remain deferred until bridge generation is active",
     )
 
     return CaseResult(
         case_id="cross-language-replay-import-surface-preservation",
-        probe="compile-runtime-import-surface-and-cross-module-link-plan-replay-key-inspection",
+        probe="compile-runtime-import-surface-replay-key-and-fail-closed-import-inspection",
         fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
-            "imported_module_name": imported_module.get("module_name"),
-            "ffi_replay_key": imported_module.get("interop_ffi_replay_key"),
-            "bridge_replay_key": imported_module.get(
-                "interop_header_module_bridge_replay_key"
-            ),
+            "provider_module_name": provider_import_surface.get("module_name"),
+            "ffi_replay_key": provider_ffi_surface.get("replay_key"),
+            "bridge_replay_key": provider_bridge_surface.get("replay_key"),
+            "consumer_import_returncode": consumer_import_negative["returncode"],
         },
     )
 

@@ -48,11 +48,11 @@ int main() {
                                                       : "")
             << "\n";
 
-  return (copy_status == 0 && snapshot.runtime_generation_ready == 1 &&
-          snapshot.cross_module_packaging_ready == 1 &&
-          snapshot.header_generation_ready == 1 &&
-          snapshot.module_generation_ready == 1 &&
-          snapshot.bridge_generation_ready == 1 && snapshot.deterministic == 1)
+  return (copy_status == 0 && snapshot.runtime_generation_ready == 0 &&
+          snapshot.cross_module_packaging_ready == 0 &&
+          snapshot.header_generation_ready == 0 &&
+          snapshot.module_generation_ready == 0 &&
+          snapshot.bridge_generation_ready == 0 && snapshot.deterministic == 0)
              ? 0
              : 1;
 }

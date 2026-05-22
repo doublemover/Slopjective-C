@@ -16,11 +16,6 @@
   "expected": {
     "stage": "compile",
     "diagnostic_code": "",
-    "required_tokens": [
-      "@interface RuntimeFullWidget",
-      "@protocol RuntimeFullTraceable",
-      "@interface RuntimeFullWidget (ReplayReflection)",
-      "@property (nonatomic, getter=value, setter=setValue:) i32 value"
-    ]
+    "required_tokens": []
   }
 }

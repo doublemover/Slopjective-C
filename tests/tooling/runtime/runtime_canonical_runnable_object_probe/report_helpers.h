@@ -29,7 +29,17 @@ struct ConformanceQueryStorage {
   std::string protocol;
   std::string protocol_owner;
   std::string attachment_owner;
+  std::string matched_class_name;
+  std::string matched_class_owner;
   std::string failure_reason;
+  std::string existential_canonical_spelling;
+  std::string object_representation;
+  std::string conformance_owner_identity;
+  std::string runtime_lookup_anchor;
+  std::string witness_metadata_key;
+  std::string requirement_resolution_policy;
+  std::string unsupported_associated_type_diagnostic;
+  std::string unsupported_dynamic_dispatch_diagnostic;
 };
 
 struct ProbeReportStorage {
@@ -74,7 +84,13 @@ inline void StabilizeConformanceQuerySnapshot(
     ConformanceQueryStorage &storage) {
   ::objc3c::runtime::probe::StabilizeConformanceQuery(
       query, storage.class_name, storage.protocol, storage.protocol_owner,
-      storage.attachment_owner, nullptr, nullptr, &storage.failure_reason);
+      storage.attachment_owner, &storage.matched_class_name,
+      &storage.matched_class_owner, &storage.failure_reason,
+      &storage.existential_canonical_spelling, &storage.object_representation,
+      &storage.conformance_owner_identity, &storage.runtime_lookup_anchor,
+      &storage.witness_metadata_key, &storage.requirement_resolution_policy,
+      &storage.unsupported_associated_type_diagnostic,
+      &storage.unsupported_dynamic_dispatch_diagnostic);
 }
 
 inline void StabilizeMethodCacheStateSnapshot(

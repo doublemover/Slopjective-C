@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
+from collections.abc import Sequence
+
 from .commands import build_release_foundation_artifacts, build_runnable_package, build_support_matrix
 from .loading import load_package_channel_inputs, load_package_channel_surface_inputs
 from .model import (
@@ -22,11 +25,24 @@ from .publication import (
 from .validation import validate_manifest_required_fields
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--reuse-release-foundation-artifacts",
+        action="store_true",
+        help="Use the already validated release-foundation integration outputs instead of rebuilding them.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     surface_inputs = load_package_channel_surface_inputs()
     build_support_matrix()
     inputs = load_package_channel_inputs(surface_inputs)
-    build_release_foundation_artifacts()
+    build_release_foundation_artifacts(
+        reuse_existing=bool(args.reuse_release_foundation_artifacts)
+    )
 
     paths = package_channel_paths(package_channel_run_id())
     prepare_package_channel_workspace(paths)

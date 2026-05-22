@@ -19,6 +19,8 @@ inline constexpr const char *kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol =
 inline constexpr const char
     *kObjc3RuntimePrepareCacheAwareDispatchDescriptorSymbol =
         "objc3_runtime_prepare_cache_aware_dispatch_descriptor";
+inline constexpr const char *kObjc3RuntimeAbortDispatchStatusI32Symbol =
+    "objc3_runtime_abort_dispatch_status_i32";
 inline constexpr bool kObjc3RuntimeCacheAwareDispatchAbiAvailable = true;
 inline constexpr int kObjc3RuntimeCacheAwareDispatchAbiVersion = 1;
 inline constexpr int kObjc3RuntimeCacheAwareDispatchRequireSelectorStableIdFlag =

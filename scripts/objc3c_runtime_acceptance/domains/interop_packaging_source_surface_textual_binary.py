@@ -25,6 +25,8 @@ def build_runtime_textual_binary_interface_parity_source_surface(
         "compile_artifact_set": [
             "<emit-prefix>.manifest.json",
             "<emit-prefix>.runtime-import-surface.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
@@ -45,14 +47,15 @@ def build_runtime_textual_binary_interface_parity_source_surface(
             "frontend.pipeline.semantic_surface.objc_interop_header_module_and_bridge_generation",
         ],
         "parity_surface_model": (
-            "generated-bridge-header-modulemap-bridge-json-and-runtime-import-surface-preserve-one-foreign-cpp-and-swift-facing-interface-shape-without-textual-binary-drift"
+            "runtime-import-surface-and-source-manifest-preserve-one-foreign-cpp-and-swift-facing-interface-shape-plus-deferred-bridge-artifact-paths-without-claiming-generated-header-modulemap-or-bridge-json-artifacts"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         ],
         "requires_runtime_import_surface": True,
-        "requires_textual_bridge_artifacts": True,
+        "requires_textual_bridge_artifacts": False,
+        "requires_deferred_bridge_paths": True,
         "requires_real_compile_output": True,
     }
 

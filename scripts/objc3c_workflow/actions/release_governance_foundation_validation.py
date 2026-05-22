@@ -7,6 +7,7 @@ import sys
 from ..commands import workflow_command
 from ..composite_validation import run_composite_validation
 from .release_governance_foundation_paths import (
+    PERFORMANCE_GOVERNANCE_INTEGRATION_PY,
     RELEASE_ABI_API_DRIFT_PY,
     RELEASE_EVIDENCE_PY,
     RELEASE_MANIFEST_PY,
@@ -15,11 +16,22 @@ from .release_governance_foundation_paths import (
 from .schema_surfaces import RELEASE_FOUNDATION_SCHEMA_SURFACE_PY
 
 
-def action_validate_release_foundation(_: list[str]) -> int:
+def action_validate_release_foundation(rest: list[str]) -> int:
+    reuse_upstream_report = False
+    if rest == ["--reuse-upstream-report"]:
+        reuse_upstream_report = True
+    elif rest:
+        raise RuntimeError(f"unexpected validate-release-foundation arguments: {rest}")
+
+    performance_governance_command = (
+        [sys.executable, str(PERFORMANCE_GOVERNANCE_INTEGRATION_PY)]
+        if reuse_upstream_report
+        else workflow_command("validate-performance-governance")
+    )
     return run_composite_validation(
         "validate-release-foundation",
         [
-            ("validate-performance-governance", workflow_command("validate-performance-governance")),
+            ("validate-performance-governance", performance_governance_command),
             ("validate-runnable-release-candidate", workflow_command("validate-runnable-release-candidate")),
             (
                 "check-release-evidence",

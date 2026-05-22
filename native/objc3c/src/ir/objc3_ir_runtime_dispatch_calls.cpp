@@ -87,8 +87,14 @@ std::vector<std::string> BuildObjc3IRCacheAwareDispatchCall(
   lines.push_back("  " + request.prepare_status_ok_value + " = icmp sge i32 " +
                   request.prepare_status_value + ", 0");
   const std::string dispatch_label = value_label + ".dispatch";
+  const std::string prepare_failure_label = strict_failure_label + ".prepare";
   lines.push_back("  br i1 " + request.prepare_status_ok_value + ", label %" +
-                  dispatch_label + ", label %" + strict_failure_label);
+                  dispatch_label + ", label %" + prepare_failure_label);
+  lines.push_back(prepare_failure_label + ":");
+  lines.push_back("  call void @" +
+                  std::string(kObjc3RuntimeAbortDispatchStatusI32Symbol) +
+                  "(i32 " + request.prepare_status_value + ")");
+  lines.push_back("  unreachable");
   lines.push_back(dispatch_label + ":");
 
   std::ostringstream call;
@@ -107,7 +113,9 @@ std::vector<std::string> BuildObjc3IRCacheAwareDispatchCall(
   lines.push_back("  br i1 " + request.status_ok_value + ", label %" +
                   value_label + ", label %" + strict_failure_label);
   lines.push_back(strict_failure_label + ":");
-  lines.push_back("  call void @abort()");
+  lines.push_back("  call void @" +
+                  std::string(kObjc3RuntimeAbortDispatchStatusI32Symbol) +
+                  "(i32 " + request.status_value + ")");
   lines.push_back("  unreachable");
   lines.push_back(value_label + ":");
   lines.push_back("  " + request.result_value + " = extractvalue " +

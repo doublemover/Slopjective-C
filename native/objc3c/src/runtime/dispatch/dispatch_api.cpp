@@ -146,3 +146,10 @@ extern "C" int objc3_runtime_prepare_cache_aware_dispatch_descriptor(
   return objc3c::runtime::PrepareRuntimeCacheAwareDispatchDescriptor(
       descriptor, selector, source_path, source_line, source_column);
 }
+
+extern "C" void objc3_runtime_abort_dispatch_status_i32(int status_code) {
+  objc3c::runtime::AbortRuntimeDispatchFailure(
+      objc3c::runtime::MakeRuntimeDispatchI32TypedResult(
+          static_cast<objc3_runtime_dispatch_status_code>(status_code), 0,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32));
+}

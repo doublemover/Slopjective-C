@@ -73,11 +73,17 @@ def build_validation_timing_dashboard_payload() -> dict[str, object]:
         or reports["test_full"].get("elapsed_seconds")
         or reports["test_smoke"].get("elapsed_seconds")
     )
+    composite_action = None
+    if reports["test_full"].get("status") != "MISSING":
+        composite_action = "test-full"
+    elif reports["test_smoke"].get("status") != "MISSING":
+        composite_action = "test-smoke"
     budgets = validation_speed_budgets(
         runtime_report if runtime_report.get("status") != "MISSING" else None,
         smoke_report if smoke_report.get("status") != "MISSING" else None,
         replay_report if replay_report.get("status") != "MISSING" else None,
         total_seconds,
+        composite_action=composite_action,
     )
     budget_violations = validation_budget_violations(budgets)
     return {

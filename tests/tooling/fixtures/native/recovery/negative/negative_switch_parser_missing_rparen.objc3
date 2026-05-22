@@ -1,4 +1,4 @@
-// Expected diagnostic code(s): O3P109, O3P103, O3P100.
+// Expected diagnostic code(s): O3P109.
 module NegativeSwitchParserMissingRParen;
 
 fn main() -> i32 {

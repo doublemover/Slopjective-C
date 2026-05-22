@@ -17,17 +17,24 @@ function Assert-RuntimeDispatchParityFromLl {
     "objc3_runtime_dispatch_i32",
     "objc3_runtime_dispatch_i32_from_class",
     "objc3_runtime_dispatch_typed_value",
-    "objc3_runtime_dispatch_typed_value_from_class"
+    "objc3_runtime_dispatch_typed_value_from_class",
+    "objc3_runtime_prepare_cache_aware_dispatch_descriptor",
+    "objc3_runtime_cache_aware_dispatch_i32_checked"
   )
   $symbolsToCheck = @($RuntimeDispatchSymbols)
   if (-not $RequiresLiveRuntimeDispatch) {
     $symbolsToCheck = @($allowedRuntimeDispatchSymbols)
   }
   foreach ($runtimeDispatchSymbol in @($symbolsToCheck)) {
-    $declareToken = "declare i32 @$runtimeDispatchSymbol("
-    $callToken = "call i32 @$runtimeDispatchSymbol("
-    $hasDeclare = $llCodeText.IndexOf($declareToken, [System.StringComparison]::Ordinal) -ge 0
-    $hasCall = $llCodeText.IndexOf($callToken, [System.StringComparison]::Ordinal) -ge 0
+    $escapedSymbol = [System.Text.RegularExpressions.Regex]::Escape($runtimeDispatchSymbol)
+    $hasDeclare = [System.Text.RegularExpressions.Regex]::IsMatch(
+      $llCodeText,
+      "(?m)^\s*declare\s+.+@$escapedSymbol\("
+    )
+    $hasCall = [System.Text.RegularExpressions.Regex]::IsMatch(
+      $llCodeText,
+      "(?m)\bcall\s+.+@$escapedSymbol\("
+    )
 
     if ($RequiresLiveRuntimeDispatch) {
       if (-not $hasDeclare -or -not $hasCall) {

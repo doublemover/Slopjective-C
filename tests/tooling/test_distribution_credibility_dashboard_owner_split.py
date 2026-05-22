@@ -147,6 +147,7 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
             "validate_action": "validate-distribution-credibility",
             "integrated_required_steps": [
                 "validate-release-operations",
+                "validate-packaging-channels-end-to-end",
                 "validate-package-install-distribution",
                 "check-distribution-credibility-surface",
                 "check-distribution-credibility-schema-surface",

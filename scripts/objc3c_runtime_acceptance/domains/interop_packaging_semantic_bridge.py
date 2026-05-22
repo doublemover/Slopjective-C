@@ -11,7 +11,7 @@ from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )
-from ..fixture_compile_runner import run_fixture_compile
+from ..fixture_compilation import compile_fixture_expect_failure
 from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 
@@ -21,7 +21,14 @@ def _write_tampered_bridge_import_surface(
     target_path: Path,
 ) -> None:
     payload = json.loads(source_path.read_text(encoding="utf-8"))
+    ffi_surface = payload["objc_interop_ffi_metadata_and_interface_preservation"]
+    ffi_surface["runtime_import_artifact_ready"] = True
+    ffi_surface["separate_compilation_preservation_ready"] = True
+    ffi_surface["deterministic"] = True
     bridge_surface = payload["objc_interop_header_module_and_bridge_generation"]
+    bridge_surface["runtime_generation_ready"] = True
+    bridge_surface["cross_module_packaging_ready"] = True
+    bridge_surface["deterministic"] = True
     bridge_surface["header_artifact_relative_path"] = (
         "../tampered/module.interop-bridge.h"
     )
@@ -49,20 +56,17 @@ def check_c_cpp_swift_bridge_semantics_case(
             encoding="utf-8"
         )
     )
-    provider_bridge_header = (provider_compile_dir / "module.interop-bridge.h").read_text(
-        encoding="utf-8"
-    )
-    provider_bridge_json = json.loads(
-        (provider_compile_dir / "module.interop-bridge.json").read_text(
-            encoding="utf-8"
-        )
-    )
     provider_ffi_surface = provider_import_surface.get(
         "objc_interop_foreign_surface_interface_and_module_preservation", {}
     )
     provider_bridge_surface = provider_import_surface.get(
         "objc_interop_header_module_and_bridge_generation", {}
     )
+    provider_bridge_paths = [
+        provider_compile_dir / "module.interop-bridge.h",
+        provider_compile_dir / "module.interop-bridge.modulemap",
+        provider_compile_dir / "module.interop-bridge.json",
+    ]
 
     expect(
         provider_ffi_surface.get("local_foreign_callable_count") == 2
@@ -76,68 +80,33 @@ def check_c_cpp_swift_bridge_semantics_case(
         == ['"BridgeProviderKit"'],
         "expected provider bridge-generation surface to preserve the import-module name",
     )
+    for artifact_path in provider_bridge_paths:
+        expect(
+            not artifact_path.exists(),
+            "expected C/C++/Swift source-surface provider not to publish deferred bridge artifacts",
+        )
     expect(
-        "ffiHeaderBridge" in provider_bridge_header
-        and "BridgeProviderExtrasGate" in provider_bridge_header
-        and "ffiInbound" in provider_bridge_header
-        and "BridgeProvider.forward" in provider_bridge_header,
-        "expected generated bridge header to preserve the C, C++, and Swift-facing bridge names",
-    )
-    expect(
-        isinstance(provider_bridge_json.get("foreign_callables"), list)
-        and len(provider_bridge_json["foreign_callables"]) == 2,
-        "expected provider bridge json to publish two foreign callables",
+        provider_bridge_surface.get("runtime_generation_ready") is False
+        and provider_bridge_surface.get("cross_module_packaging_ready") is False
+        and provider_bridge_surface.get("deterministic") is False,
+        "expected provider bridge-generation surface to preserve bridge paths without claiming generated artifacts",
     )
 
     consumer_compile_dir = case_dir / "consumer"
-    compile_fixture_with_args(
+    consumer_import_negative = compile_fixture_expect_failure(
         consumer_fixture,
         consumer_compile_dir,
-        [
+        expected_snippets=[
+            "cross-module runtime link-plan Part 11 ffi preservation surface incomplete"
+        ],
+        expected_codes=[],
+        extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(provider_compile_dir / "module.runtime-import-surface.json"),
         ],
-    )
-    link_plan = json.loads(
-        (
-            consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
-        ).read_text(encoding="utf-8")
-    )
-    imported_modules = link_plan.get("imported_modules", [])
-    expect(
-        isinstance(imported_modules, list) and len(imported_modules) == 1,
-        "expected interop-boundary consumer compile to publish one imported module",
-    )
-    imported_module = imported_modules[0]
-    expect(
-        link_plan.get("interop_ffi_imported_module_count") == 1
-        and link_plan.get("interop_header_module_bridge_imported_module_count") == 1,
-        "expected consumer link plan to preserve one imported ffi/bridge provider module",
-    )
-    expect(
-        imported_module.get("interop_ffi_local_interface_annotation_sites") == 12
-        and imported_module.get("interop_ffi_local_metadata_preservation_sites") == 2,
-        "expected consumer link plan to preserve the imported C/C++/Swift annotation footprint",
-    )
-    expect(
-        imported_module.get("interop_header_module_bridge_local_foreign_callable_count")
-        == 2
-        and imported_module.get("interop_bridge_header_artifact_relative_path")
-        == "module.interop-bridge.h"
-        and imported_module.get("interop_bridge_module_artifact_relative_path")
-        == "module.interop-bridge.modulemap"
-        and imported_module.get("interop_bridge_artifact_relative_path")
-        == "module.interop-bridge.json",
-        "expected consumer link plan to preserve the imported bridge callable count and artifact paths",
-    )
-    expect(
-        imported_module.get("interop_ffi_preservation_contract_id")
-        == "objc3c.interop.foreign.surface.interface.preservation.v1"
-        and imported_module.get("interop_header_module_bridge_contract_id")
-        == "objc3c.interop.header.module.and.bridge.generation.v1",
-        "expected consumer link plan to preserve the imported ffi and bridge contracts",
+        allow_missing_structured_diagnostics=True,
     )
 
     tampered_surface = (
@@ -147,36 +116,25 @@ def check_c_cpp_swift_bridge_semantics_case(
         provider_compile_dir / "module.runtime-import-surface.json",
         tampered_surface,
     )
-    tampered_result, _ = run_fixture_compile(
+    tampered_result = compile_fixture_expect_failure(
         consumer_fixture,
         case_dir / "consumer-tampered-bridge-path",
+        expected_snippets=[
+            "active Part 11 header/module/bridge generation header artifact path must not traverse directories"
+        ],
+        expected_codes=[],
         extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(tampered_surface),
         ],
-        write_provenance=False,
-    )
-    tampered_diagnostics = (
-        case_dir / "consumer-tampered-bridge-path" / "module.diagnostics.txt"
-    )
-    tampered_output = f"{tampered_result.stderr}\n{tampered_result.stdout}"
-    if tampered_diagnostics.is_file():
-        tampered_output += "\n" + tampered_diagnostics.read_text(encoding="utf-8")
-    expect(
-        tampered_result.returncode != 0,
-        "expected consumer compile to fail closed on tampered bridge artifact metadata",
-    )
-    expect(
-        "active Part 11 header/module/bridge generation header artifact path must not traverse directories"
-        in tampered_output,
-        "expected consumer compile to report fail-closed bridge artifact path validation",
+        allow_missing_structured_diagnostics=True,
     )
 
     return CaseResult(
         case_id="c-cpp-swift-interop-boundary-semantics",
-        probe="compile-runtime-import-surface-bridge-artifacts-and-cross-module-link-plan",
+        probe="compile-runtime-import-surface-and-fail-closed-bridge-boundary",
         fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
@@ -191,9 +149,8 @@ def check_c_cpp_swift_bridge_semantics_case(
             "swift_name_annotation_count": provider_ffi_surface.get(
                 "local_swift_name_annotation_count"
             ),
-            "bridge_imported_module_count": link_plan.get(
-                "interop_header_module_bridge_imported_module_count"
-            ),
+            "consumer_import_returncode": consumer_import_negative["returncode"],
+            "tampered_bridge_path_returncode": tampered_result["returncode"],
         },
     )
 

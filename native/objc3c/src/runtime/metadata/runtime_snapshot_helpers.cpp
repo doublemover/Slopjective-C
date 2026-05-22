@@ -86,19 +86,19 @@ extern "C" int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  snapshot->runtime_generation_ready = 1;
-  snapshot->cross_module_packaging_ready = 1;
-  snapshot->header_generation_ready = 1;
-  snapshot->module_generation_ready = 1;
-  snapshot->bridge_generation_ready = 1;
-  snapshot->deterministic = 1;
+  snapshot->runtime_generation_ready = 0;
+  snapshot->cross_module_packaging_ready = 0;
+  snapshot->header_generation_ready = 0;
+  snapshot->module_generation_ready = 0;
+  snapshot->bridge_generation_ready = 0;
+  snapshot->deterministic = 0;
   snapshot->header_artifact_relative_path = "module.interop-bridge.h";
   snapshot->module_artifact_relative_path = "module.interop-bridge.modulemap";
   snapshot->bridge_artifact_relative_path = "module.interop-bridge.json";
   snapshot->generation_model =
-      "compiler-emits-deterministic-interop-bridge-header-modulemap-and-bridge-json-artifacts-for-supported-foreign-callable-surfaces";
+      "compiler-preserves-deferred-interop-bridge-header-modulemap-and-bridge-json-paths-without-claiming-generated-artifacts";
   snapshot->packaging_model =
-      "runtime-import-surfaces-and-cross-module-link-plans-preserve-interop-bridge-artifact-paths-for-mixed-module-consumption";
+      "runtime-import-surfaces-preserve-interop-bridge-artifact-paths-while-cross-module-live-bridge-packaging-remains-disabled";
   snapshot->fail_closed_model =
       "missing-generated-artifacts-or-drifted-import-surface-paths-disable-live-interop-bridge-generation-claims";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
