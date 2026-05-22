@@ -93,6 +93,18 @@
     "object_model_source_map_native_line_table": "required",
     "full_source_map_publication": "fail-closed"
   },
+  "statement_step_reservation_contract": {
+    "contract_id": "objc3c.object_model.statement_step_reservation.fail_closed.v1",
+    "status": "reserved",
+    "fail_closed": true,
+    "required_candidate_status": "native-line-table-ready-stepping-blocked",
+    "requires_exact_source_native_line_anchor": true,
+    "requires_source_map_row_identity_alignment": true,
+    "requires_emitted_native_debug_info": true,
+    "blocked_by": [
+      "runtime-debug-trace-statement-stepping-integration"
+    ]
+  },
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
   "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
   "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
@@ -331,6 +343,210 @@
       "value_record_id": "inspect.selector-message-send.debug-anchor"
     }
   ],
+  "runtime_proof_axes": [
+    {
+      "axis_id": "class-registration",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "native/objc3c/src/runtime/classes/class_graph.cpp"
+      ]
+    },
+    {
+      "axis_id": "metaclass-registration",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
+        "native/objc3c/src/runtime/classes/metaclass_graph.cpp"
+      ]
+    },
+    {
+      "axis_id": "superclass-root-checks",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp"
+      ]
+    },
+    {
+      "axis_id": "interface-method-tables",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "instance-method-lookup",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "class-method-lookup",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "categories",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "native/objc3c/src/runtime/classes/category_attachment.cpp"
+      ]
+    },
+    {
+      "axis_id": "protocols",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+      ]
+    },
+    {
+      "axis_id": "protocol-conformance",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+      ]
+    },
+    {
+      "axis_id": "properties",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+      ]
+    },
+    {
+      "axis_id": "ivars",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+      ]
+    },
+    {
+      "axis_id": "selector-table",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+        "native/objc3c/src/runtime/selectors/selector_table.cpp"
+      ]
+    },
+    {
+      "axis_id": "registration-replay",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/registration_replay_contract.objc3",
+        "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+      ]
+    },
+    {
+      "axis_id": "reset-reload-boundaries",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/runtime/deterministic_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe/reset_replay_assertions.h"
+      ]
+    },
+    {
+      "axis_id": "imported-runtime-packages",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+        "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json"
+      ]
+    },
+    {
+      "axis_id": "reflection-result-lifetime",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+        "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    }
+  ],
+  "unsupported_runtime_boundaries": [
+    {
+      "boundary_id": "objective-c2-runtime-compatibility",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "foreign-runtime-mirroring",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+      ]
+    },
+    {
+      "boundary_id": "swift-cxx-abi-import",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+      ]
+    },
+    {
+      "boundary_id": "dynamic-forwarding",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json"
+      ]
+    },
+    {
+      "boundary_id": "private-testing-snapshots-public-api",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "malformed-metadata-acceptance",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    }
+  ],
   "negative_cases": [
     {
       "case_id": "source-map-runtime-anchor-drift",
@@ -400,6 +616,51 @@
       "mutation_path": [
         "artifact_inspector_compatibility",
         "required_support_class"
+      ]
+    },
+    {
+      "case_id": "runtime-proof-axis-drift",
+      "expected_code": "runtime-proof-axis-missing",
+      "mutation_path": [
+        "runtime_proof_axes",
+        13,
+        "axis_id"
+      ]
+    },
+    {
+      "case_id": "runtime-proof-evidence-drift",
+      "expected_code": "runtime-proof-axis-evidence-missing",
+      "mutation_path": [
+        "runtime_proof_axes",
+        15,
+        "evidence",
+        0
+      ]
+    },
+    {
+      "case_id": "unsupported-runtime-boundary-drift",
+      "expected_code": "unsupported-runtime-boundary-missing",
+      "mutation_path": [
+        "unsupported_runtime_boundaries",
+        1,
+        "boundary_id"
+      ]
+    },
+    {
+      "case_id": "unsupported-runtime-boundary-overclaim",
+      "expected_code": "unsupported-runtime-boundary-overclaimed",
+      "mutation_path": [
+        "unsupported_runtime_boundaries",
+        2,
+        "public_claim"
+      ]
+    },
+    {
+      "case_id": "statement-step-reservation-contract-drift",
+      "expected_code": "statement-step-reservation-contract-drift",
+      "mutation_path": [
+        "statement_step_reservation_contract",
+        "required_candidate_status"
       ]
     }
   ],

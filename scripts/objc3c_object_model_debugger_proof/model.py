@@ -29,6 +29,15 @@ PRODUCTION_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
 PRODUCTION_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
     "objc3c.object_model.production.native_debug_info_evidence.v1"
 )
+STATEMENT_STEP_RESERVATION_CONTRACT_ID = (
+    "objc3c.object_model.statement_step_reservation.fail_closed.v1"
+)
+REQUIRED_STEPPING_BLOCKER = "runtime-debug-trace-statement-stepping-integration"
+REQUIRED_SOURCE_TRUTH_KIND = "canonical-frontend-runtime-metadata-manifest"
+REQUIRED_NATIVE_LINE_TABLE_MODEL = (
+    "canonical-frontend-source-map-native-line-table-publication"
+)
+REQUIRED_STEPPING_STATUS = "native-line-table-ready-stepping-blocked"
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -66,6 +75,36 @@ ABI_MACRO_PATTERN = re.compile(
 )
 REQUIRED_DEBUG_ANCHOR_NEGATIVE_CASES = frozenset(
     {"missing-anchor", "stale-generation", "malformed-metadata"}
+)
+REQUIRED_RUNTIME_PROOF_AXES = frozenset(
+    {
+        "class-registration",
+        "metaclass-registration",
+        "superclass-root-checks",
+        "interface-method-tables",
+        "instance-method-lookup",
+        "class-method-lookup",
+        "categories",
+        "protocols",
+        "protocol-conformance",
+        "properties",
+        "ivars",
+        "selector-table",
+        "registration-replay",
+        "reset-reload-boundaries",
+        "imported-runtime-packages",
+        "reflection-result-lifetime",
+    }
+)
+REQUIRED_UNSUPPORTED_RUNTIME_BOUNDARIES = frozenset(
+    {
+        "objective-c2-runtime-compatibility",
+        "foreign-runtime-mirroring",
+        "swift-cxx-abi-import",
+        "dynamic-forwarding",
+        "private-testing-snapshots-public-api",
+        "malformed-metadata-acceptance",
+    }
 )
 REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS = frozenset(
     {
@@ -219,6 +258,29 @@ def _contract_value_records(payload: dict[str, Any]) -> dict[str, dict[str, Any]
 def _path_exists_in_repo(raw_path: object) -> bool:
     path_text = _safe_str(raw_path)
     return bool(path_text and resolve_repo_path(path_text).is_file())
+
+
+def _path_exists(raw_path: object) -> bool:
+    path_text = _safe_str(raw_path)
+    if not path_text:
+        return False
+    return resolve_repo_path(path_text).exists()
+
+
+def _positive_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _source_map_record_kind_for_identity(identity_kind: str) -> str:
+    if identity_kind in {"class", "category", "protocol"}:
+        return "declaration"
+    if identity_kind == "property":
+        return "property-access"
+    if identity_kind == "ivar":
+        return "generated-accessor"
+    if identity_kind == "method":
+        return "method"
+    return ""
 
 
 def _repo_path_text(path: Path | str) -> str:
@@ -954,6 +1016,141 @@ def _validate_source_backed_debug_anchors(
         )
 
 
+def _validate_runtime_proof_axes(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> None:
+    axes = {
+        _safe_str(axis.get("axis_id")): axis
+        for axis in (
+            _object(item) for item in _list(payload.get("runtime_proof_axes"))
+        )
+        if _safe_str(axis.get("axis_id"))
+    }
+    if not axes:
+        diagnostics.append(
+            _diag(
+                "runtime-proof-axis-missing",
+                "object-model debugger proof must declare runtime proof axes",
+                "runtime_proof_axes",
+            )
+        )
+        return
+
+    for axis_id in sorted(REQUIRED_RUNTIME_PROOF_AXES):
+        axis = axes.get(axis_id)
+        if axis is None:
+            diagnostics.append(
+                _diag(
+                    "runtime-proof-axis-missing",
+                    f"runtime proof axis is missing: {axis_id}",
+                    "runtime_proof_axes",
+                )
+            )
+            continue
+        if axis.get("status") != "bounded-supported":
+            diagnostics.append(
+                _diag(
+                    "runtime-proof-axis-not-supported",
+                    f"runtime proof axis must be bounded-supported: {axis_id}",
+                    f"runtime_proof_axes.{axis_id}.status",
+                )
+            )
+        if axis.get("support_claim_published") is not False:
+            diagnostics.append(
+                _diag(
+                    "runtime-proof-axis-overclaimed",
+                    f"runtime proof axis must not publish the umbrella support claim: {axis_id}",
+                    f"runtime_proof_axes.{axis_id}.support_claim_published",
+                )
+            )
+        evidence = _list(axis.get("evidence"))
+        if not evidence:
+            diagnostics.append(
+                _diag(
+                    "runtime-proof-axis-evidence-missing",
+                    f"runtime proof axis lacks evidence paths: {axis_id}",
+                    f"runtime_proof_axes.{axis_id}.evidence",
+                )
+            )
+            continue
+        for index, evidence_path in enumerate(evidence):
+            if not _path_exists(evidence_path):
+                diagnostics.append(
+                    _diag(
+                        "runtime-proof-axis-evidence-missing",
+                        f"runtime proof axis evidence path is missing: {axis_id}",
+                        f"runtime_proof_axes.{axis_id}.evidence[{index}]",
+                    )
+                )
+
+
+def _validate_unsupported_runtime_boundaries(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    boundaries = {
+        _safe_str(boundary.get("boundary_id")): boundary
+        for boundary in (
+            _object(item) for item in _list(payload.get("unsupported_runtime_boundaries"))
+        )
+        if _safe_str(boundary.get("boundary_id"))
+    }
+    if not boundaries:
+        diagnostics.append(
+            _diag(
+                "unsupported-runtime-boundary-missing",
+                "object-model debugger proof must declare unsupported runtime boundaries",
+                "unsupported_runtime_boundaries",
+            )
+        )
+        return
+
+    for boundary_id in sorted(REQUIRED_UNSUPPORTED_RUNTIME_BOUNDARIES):
+        boundary = boundaries.get(boundary_id)
+        if boundary is None:
+            diagnostics.append(
+                _diag(
+                    "unsupported-runtime-boundary-missing",
+                    f"unsupported runtime boundary is missing: {boundary_id}",
+                    "unsupported_runtime_boundaries",
+                )
+            )
+            continue
+        if boundary.get("fail_closed") is not True:
+            diagnostics.append(
+                _diag(
+                    "unsupported-runtime-boundary-open",
+                    f"unsupported runtime boundary must fail closed: {boundary_id}",
+                    f"unsupported_runtime_boundaries.{boundary_id}.fail_closed",
+                )
+            )
+        if boundary.get("public_claim") is not False:
+            diagnostics.append(
+                _diag(
+                    "unsupported-runtime-boundary-overclaimed",
+                    f"unsupported runtime boundary must not publish support: {boundary_id}",
+                    f"unsupported_runtime_boundaries.{boundary_id}.public_claim",
+                )
+            )
+        evidence = _list(boundary.get("evidence"))
+        if not evidence:
+            diagnostics.append(
+                _diag(
+                    "unsupported-runtime-boundary-evidence-missing",
+                    f"unsupported runtime boundary lacks evidence paths: {boundary_id}",
+                    f"unsupported_runtime_boundaries.{boundary_id}.evidence",
+                )
+            )
+            continue
+        for index, evidence_path in enumerate(evidence):
+            if not _path_exists(evidence_path):
+                diagnostics.append(
+                    _diag(
+                        "unsupported-runtime-boundary-evidence-missing",
+                        f"unsupported runtime boundary evidence path is missing: {boundary_id}",
+                        f"unsupported_runtime_boundaries.{boundary_id}.evidence[{index}]",
+                    )
+                )
+
+
 def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> None:
     if payload.get("support_claim_published") is not False:
         diagnostics.append(
@@ -963,6 +1160,8 @@ def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic])
                 "support_claim_published",
             )
         )
+    _validate_runtime_proof_axes(payload, diagnostics)
+    _validate_unsupported_runtime_boundaries(payload, diagnostics)
     boundaries = _object(payload.get("boundaries"))
     required_false = (
         "uses_private_testing_snapshots_as_public_truth",
@@ -1165,6 +1364,83 @@ def _validate_artifact_inspector_compatibility_contract(
     return compatibility
 
 
+def _validate_statement_step_reservation_contract(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> dict[str, Any]:
+    contract = _object(payload.get("statement_step_reservation_contract"))
+    path = "statement_step_reservation_contract"
+    if not contract:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-missing",
+                "object-model debugger proof must declare the reserved statement-step contract",
+                path,
+            )
+        )
+        return {}
+    expected = {
+        "contract_id": STATEMENT_STEP_RESERVATION_CONTRACT_ID,
+        "status": "reserved",
+        "required_candidate_status": REQUIRED_STEPPING_STATUS,
+    }
+    for key, expected_value in expected.items():
+        if contract.get(key) != expected_value:
+            diagnostics.append(
+                _diag(
+                    "statement-step-reservation-contract-drift",
+                    f"statement-step reservation contract drifted: {key}",
+                    f"{path}.{key}",
+                )
+            )
+    if contract.get("fail_closed") is not True:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-drift",
+                "statement-step reservation contract must fail closed",
+                f"{path}.fail_closed",
+            )
+        )
+    if contract.get("requires_exact_source_native_line_anchor") is not True:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-drift",
+                "statement-step reservation must require exact source/native line anchors",
+                f"{path}.requires_exact_source_native_line_anchor",
+            )
+        )
+    if contract.get("requires_source_map_row_identity_alignment") is not True:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-drift",
+                "statement-step reservation must require source-map/native-row identity alignment",
+                f"{path}.requires_source_map_row_identity_alignment",
+            )
+        )
+    if contract.get("requires_emitted_native_debug_info") is not True:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-drift",
+                "statement-step reservation must require emitted native debug-info evidence",
+                f"{path}.requires_emitted_native_debug_info",
+            )
+        )
+    blockers = {
+        _safe_str(item)
+        for item in _list(contract.get("blocked_by"))
+        if _safe_str(item)
+    }
+    if REQUIRED_STEPPING_BLOCKER not in blockers:
+        diagnostics.append(
+            _diag(
+                "statement-step-reservation-contract-drift",
+                "statement-step reservation must keep runtime trace integration as the blocker",
+                f"{path}.blocked_by",
+            )
+        )
+    return contract
+
+
 def _validate_count_at_least(
     actual: object,
     minimum: object,
@@ -1309,8 +1585,16 @@ def _validate_native_debug_info_evidence(
                 f"{path}.statement_stepping_supported",
             )
         )
+    if evidence.get("fail_closed") is not True:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-overclaimed",
+                "production native debug-info evidence must keep statement stepping fail-closed",
+                f"{path}.fail_closed",
+            )
+        )
     blocked_by = set(_safe_str(item) for item in _list(evidence.get("blocked_by")))
-    if "runtime-debug-trace-statement-stepping-integration" not in blocked_by:
+    if REQUIRED_STEPPING_BLOCKER not in blocked_by:
         diagnostics.append(
             _diag(
                 "production-native-debug-info-evidence-incomplete",
@@ -1559,6 +1843,7 @@ def _validate_production_source_map_publication_payload(
 def _validate_production_source_identity_payload(
     debug_map: dict[str, Any],
     probe: dict[str, Any],
+    step_reservation: dict[str, Any],
     expected_source: str,
     diagnostics: list[Diagnostic],
 ) -> None:
@@ -1727,18 +2012,58 @@ def _validate_production_source_identity_payload(
         for row in rows
         if _safe_str(_object(row).get("row_id"))
     }
+    rows_by_id = {
+        _safe_str(_object(row).get("row_id")): _object(row)
+        for row in rows
+        if _safe_str(_object(row).get("row_id"))
+    }
+    if len(rows_by_id) != len(rows):
+        diagnostics.append(
+            _diag(
+                "production-source-identity-row-drift",
+                "production native line-table row ids must be unique",
+                "production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows",
+            )
+        )
+    records_by_id: dict[str, dict[str, Any]] = {}
     record_ids: set[str] = set()
     for index, record_item in enumerate(records):
         record = _object(record_item)
         record_id = _safe_str(record.get("source_map_record_id"))
         row_id = _safe_str(record.get("native_line_table_row_id"))
         record_ids.add(record_id)
-        if not record_id or record.get("runtime_identity_kind") not in required_kinds or row_id not in row_ids:
+        identity_kind = _safe_str(record.get("runtime_identity_kind"))
+        records_by_id[record_id] = record
+        if (
+            not record_id
+            or identity_kind not in required_kinds
+            or row_id not in row_ids
+        ):
             diagnostics.append(
                 _diag(
                     "production-source-identity-record-invalid",
                     "production object-model source identity record must link a required kind to a line-table row",
                     f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}",
+                )
+            )
+        if _safe_str(record.get("source_truth_kind")) != REQUIRED_SOURCE_TRUTH_KIND:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-record-stale",
+                    "production source-map record must be compiler-owned manifest source truth",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.source_truth_kind",
+                )
+            )
+        expected_record_kind = _source_map_record_kind_for_identity(identity_kind)
+        if (
+            expected_record_kind
+            and _safe_str(record.get("source_map_record_kind")) != expected_record_kind
+        ):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-record-stale",
+                    "production source-map record kind drifted from its runtime identity kind",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.source_map_record_kind",
                 )
             )
         if _safe_str(record.get("source_path")).replace("\\", "/") != expected_source:
@@ -1749,14 +2074,62 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.source_path",
                 )
             )
+        if not _positive_int(record.get("line")) or not _positive_int(record.get("column")):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-record-stale",
+                    "production source-map record must carry exact source line and column anchors",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}",
+                )
+            )
+        if not _safe_str(record.get("display_name")):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-record-stale",
+                    "production source-map record must carry a runtime identity display name",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.display_name",
+                )
+            )
     for index, row_item in enumerate(rows):
         row = _object(row_item)
-        if _safe_str(row.get("source_map_record_id")) not in record_ids:
+        linked_record = records_by_id.get(_safe_str(row.get("source_map_record_id")))
+        if linked_record is None:
             diagnostics.append(
                 _diag(
                     "production-source-identity-row-unlinked",
                     "production native line-table projection row must link back to a source-map record",
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}",
+                )
+            )
+        else:
+            for key in ("runtime_identity_kind", "source_path", "line", "column"):
+                row_value = row.get(key)
+                record_value = linked_record.get(key)
+                if key == "source_path":
+                    row_value = _safe_str(row_value).replace("\\", "/")
+                    record_value = _safe_str(record_value).replace("\\", "/")
+                if row_value != record_value:
+                    diagnostics.append(
+                        _diag(
+                            "production-source-identity-row-drift",
+                            "production native line-table row must exactly mirror its source-map anchor",
+                            f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.{key}",
+                        )
+                    )
+            if _safe_str(linked_record.get("native_line_table_row_id")) != _safe_str(row.get("row_id")):
+                diagnostics.append(
+                    _diag(
+                        "production-source-identity-row-drift",
+                        "production source-map record and native line-table row must point at each other",
+                        f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.row_id",
+                    )
+                )
+        if _safe_str(row.get("native_line_table_model")) != REQUIRED_NATIVE_LINE_TABLE_MODEL:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-row-stale",
+                    "production native line-table row must use the canonical publication model",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_line_table_model",
                 )
             )
         if row.get("native_debug_info_emitted") is not True:
@@ -1786,6 +2159,17 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_evidence_id",
                 )
             )
+        if (
+            native_debug_info_evidence_id
+            and row.get("native_line_table_evidence_id") != native_debug_info_evidence_id
+        ):
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-drift",
+                    "production native line-table row must link the native line-table evidence id",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_line_table_evidence_id",
+                )
+            )
         if not _safe_str(row.get("native_debug_info_blocker")):
             diagnostics.append(
                 _diag(
@@ -1794,9 +2178,22 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_blocker",
                 )
             )
+        if _safe_str(row.get("runtime_identity_kind")) == "method" and not _safe_str(row.get("expected_native_symbol")):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-row-stale",
+                    "production method native line-table row must carry the expected native symbol",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.expected_native_symbol",
+                )
+            )
+    required_candidate_status = _safe_str(
+        step_reservation.get("required_candidate_status")
+    ) or REQUIRED_STEPPING_STATUS
     for index, candidate_item in enumerate(stepping_candidates):
         candidate = _object(candidate_item)
-        if _safe_str(candidate.get("source_map_record_id")) not in record_ids:
+        candidate_record = records_by_id.get(_safe_str(candidate.get("source_map_record_id")))
+        candidate_row = rows_by_id.get(_safe_str(candidate.get("native_line_table_row_id")))
+        if candidate_record is None:
             diagnostics.append(
                 _diag(
                     "production-source-identity-stepping-unlinked",
@@ -1804,12 +2201,68 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}",
                 )
             )
-        if "blocked" not in _safe_str(candidate.get("status")):
+        if candidate_row is None:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-stepping-unlinked",
+                    "production method stepping candidate must link back to a native line-table row",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.native_line_table_row_id",
+                )
+            )
+        if candidate_record is not None and candidate_row is not None:
+            if _safe_str(candidate_record.get("runtime_identity_kind")) != "method":
+                diagnostics.append(
+                    _diag(
+                        "production-source-identity-stepping-anchor-drift",
+                        "production statement-step candidate must be backed by a method source-map record",
+                        f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.source_map_record_id",
+                    )
+                )
+            if candidate_row.get("source_map_record_id") != candidate.get("source_map_record_id"):
+                diagnostics.append(
+                    _diag(
+                        "production-source-identity-stepping-anchor-drift",
+                        "production statement-step candidate source-map and native-line row links drifted",
+                        f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.native_line_table_row_id",
+                    )
+                )
+            for key in ("source_path", "line", "column"):
+                candidate_value = candidate.get(key)
+                row_value = candidate_row.get(key)
+                if key == "source_path":
+                    candidate_value = _safe_str(candidate_value).replace("\\", "/")
+                    row_value = _safe_str(row_value).replace("\\", "/")
+                if candidate_value != row_value:
+                    diagnostics.append(
+                        _diag(
+                            "production-source-identity-stepping-anchor-drift",
+                            "production statement-step candidate must carry exact source/native line anchors from its row",
+                            f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.{key}",
+                        )
+                    )
+            for key in ("owner_name", "selector"):
+                if _safe_str(candidate.get(key)) != _safe_str(candidate_record.get(key)):
+                    diagnostics.append(
+                        _diag(
+                            "production-source-identity-stepping-anchor-drift",
+                            "production statement-step candidate identity drifted from its method record",
+                            f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.{key}",
+                        )
+                    )
+        if candidate.get("status") != required_candidate_status:
             diagnostics.append(
                 _diag(
                     "production-source-identity-overclaimed",
-                    "production method stepping candidate must stay blocked until stepping integration lands",
+                    "production method stepping candidate must stay in the reserved native-line-table-ready state",
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
+                )
+            )
+        if not _safe_str(candidate.get("runtime_debug_trace_step_id")):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-stepping-anchor-drift",
+                    "production method stepping candidate must reserve a runtime debug trace step id",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.runtime_debug_trace_step_id",
                 )
             )
         if (
@@ -1837,7 +2290,7 @@ def _validate_production_source_identity_payload(
         candidate_blockers = set(
             _safe_str(item) for item in _list(candidate.get("blocked_by"))
         )
-        if "runtime-debug-trace-statement-stepping-integration" not in candidate_blockers:
+        if REQUIRED_STEPPING_BLOCKER not in candidate_blockers:
             diagnostics.append(
                 _diag(
                     "production-native-debug-info-evidence-incomplete",
@@ -1872,6 +2325,7 @@ def _validate_production_source_identity_payload(
 def _validate_production_probe_artifacts(
     probe: dict[str, Any],
     compatibility: dict[str, Any],
+    step_reservation: dict[str, Any],
     artifacts: ProductionProbeArtifacts,
     diagnostics: list[Diagnostic],
 ) -> None:
@@ -2108,6 +2562,7 @@ def _validate_production_probe_artifacts(
     _validate_production_source_identity_payload(
         debug_map,
         probe,
+        step_reservation,
         expected_source,
         diagnostics,
     )
@@ -2121,6 +2576,9 @@ def _validate_production_artifact_probe(
 ) -> None:
     probe = _validate_production_probe_contract(payload, diagnostics)
     compatibility = _validate_artifact_inspector_compatibility_contract(
+        payload, diagnostics
+    )
+    step_reservation = _validate_statement_step_reservation_contract(
         payload, diagnostics
     )
     if not probe or not run_production_probe:
@@ -2137,7 +2595,7 @@ def _validate_production_artifact_probe(
         )
         return
     _validate_production_probe_artifacts(
-        probe, compatibility, artifacts, diagnostics
+        probe, compatibility, step_reservation, artifacts, diagnostics
     )
 
 

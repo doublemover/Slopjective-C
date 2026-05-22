@@ -28,7 +28,10 @@
     "ivar",
     "selector",
     "public-reflection",
-    "registration-replay"
+    "registration-replay",
+    "reset-reload-boundaries",
+    "imported-runtime-packages",
+    "reflection-result-lifetime"
   ],
   "source_anchors": [
     {
@@ -96,6 +99,8 @@
     "debug_anchor_replay_backed": true,
     "artifact_runtime_reflection_linked": true,
     "production_artifact_probe_backed": true,
+    "lifecycle_import_lifetime_axes_backed": true,
+    "unsupported_runtime_boundaries_fail_closed": true,
     "replayable_public_command": "npm run objc3c -- validate-object-model-debugger-proof",
     "covered_identity_kinds": [
       "class",
@@ -145,6 +150,30 @@
         "tests/tooling/runtime/multi_image_registration_reset_replay_probe/reset_replay_assertions.h",
         "native/objc3c/src/runtime/classes/runtime_object_snapshot_contracts.h",
         "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+      ]
+    },
+    {
+      "boundary_id": "objective-c2-runtime-compatibility-not-supported",
+      "policy": "Objective-C 2 runtime compatibility is not a declared Objective-C 3.0 object-model support claim",
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "foreign-swift-cxx-runtime-mirroring-not-supported",
+      "policy": "foreign runtime mirroring and Swift/C++ ABI import are explicit non-goals for this umbrella proof",
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "dynamic-forwarding-not-supported",
+      "policy": "dynamic forwarding is not opened by selector, dispatch, or debugger reflection evidence",
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
       ]
     }
   ],

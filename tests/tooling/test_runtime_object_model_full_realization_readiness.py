@@ -79,6 +79,9 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
         "selector",
         "public-reflection",
         "registration-replay",
+        "reset-reload-boundaries",
+        "imported-runtime-packages",
+        "reflection-result-lifetime",
     ]
 
     for key in (
@@ -209,6 +212,18 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     assert contract["artifact_inspector_compatibility"][
         "object_model_source_map_native_line_table"
     ] == "required"
+    assert contract["statement_step_reservation_contract"] == {
+        "contract_id": "objc3c.object_model.statement_step_reservation.fail_closed.v1",
+        "status": "reserved",
+        "fail_closed": True,
+        "required_candidate_status": "native-line-table-ready-stepping-blocked",
+        "requires_exact_source_native_line_anchor": True,
+        "requires_source_map_row_identity_alignment": True,
+        "requires_emitted_native_debug_info": True,
+        "blocked_by": [
+            "runtime-debug-trace-statement-stepping-integration",
+        ],
+    }
     assert {
         anchor["runtime_identity_kind"]
         for anchor in contract["source_backed_debug_anchors"]
@@ -224,6 +239,48 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
         "runtime.anchor.object_model.ivar",
         "runtime.anchor.object_model.method",
     }
+    assert {
+        axis["axis_id"]
+        for axis in contract["runtime_proof_axes"]
+    } == {
+        "class-registration",
+        "metaclass-registration",
+        "superclass-root-checks",
+        "interface-method-tables",
+        "instance-method-lookup",
+        "class-method-lookup",
+        "categories",
+        "protocols",
+        "protocol-conformance",
+        "properties",
+        "ivars",
+        "selector-table",
+        "registration-replay",
+        "reset-reload-boundaries",
+        "imported-runtime-packages",
+        "reflection-result-lifetime",
+    }
+    for axis in contract["runtime_proof_axes"]:
+        assert axis["status"] == "bounded-supported"
+        assert axis["support_claim_published"] is False
+        for evidence_path in axis["evidence"]:
+            assert _repo_path(str(evidence_path)).exists(), evidence_path
+    assert {
+        boundary["boundary_id"]
+        for boundary in contract["unsupported_runtime_boundaries"]
+    } == {
+        "objective-c2-runtime-compatibility",
+        "foreign-runtime-mirroring",
+        "swift-cxx-abi-import",
+        "dynamic-forwarding",
+        "private-testing-snapshots-public-api",
+        "malformed-metadata-acceptance",
+    }
+    for boundary in contract["unsupported_runtime_boundaries"]:
+        assert boundary["fail_closed"] is True
+        assert boundary["public_claim"] is False
+        for evidence_path in boundary["evidence"]:
+            assert _repo_path(str(evidence_path)).exists(), evidence_path
 
 
 def _fake_production_artifacts(
@@ -364,13 +421,35 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
     for index, identity_kind in enumerate(identity_kinds):
         source_map_record_id = f"fake.source-map.{identity_kind}.{index}"
         row_id = f"fake.native-line-table.{identity_kind}.{index}"
+        display_name = f"Fake{identity_kind.title()}{index}"
+        owner_name = "RuntimeFullWidget" if identity_kind == "method" else ""
+        selector = f"fakeSelector{index}" if identity_kind == "method" else ""
         source_map_records.append(
             {
                 "source_map_record_id": source_map_record_id,
                 "runtime_identity_kind": identity_kind,
+                "source_map_record_kind": (
+                    "declaration"
+                    if identity_kind in {"class", "category", "protocol"}
+                    else "property-access"
+                    if identity_kind == "property"
+                    else "generated-accessor"
+                    if identity_kind == "ivar"
+                    else "method"
+                ),
+                "source_truth_kind": "canonical-frontend-runtime-metadata-manifest",
                 "source_path": source_path,
                 "line": index + 1,
                 "column": 1,
+                "end_line": index + 1,
+                "end_column": 1 + len(display_name),
+                "display_name": display_name,
+                "owner_name": owner_name,
+                "selector": selector,
+                "property_name": display_name if identity_kind == "property" else "",
+                "ivar_name": display_name if identity_kind == "ivar" else "",
+                "manifest_section": f"fake.{identity_kind}",
+                "manifest_record_index": index,
                 "native_line_table_row_id": row_id,
             }
         )
@@ -382,17 +461,31 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
                 "source_path": source_path,
                 "line": index + 1,
                 "column": 1,
+                "native_line_table_model": "canonical-frontend-source-map-native-line-table-publication",
                 "native_debug_info_emitted": True,
                 "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
                 "native_line_table_evidence_id": native_debug_info_evidence["evidence_id"],
                 "native_line_table_emitted": True,
                 "native_debug_info_blocker": native_debug_info_evidence["fail_closed_reason"],
+                "expected_native_symbol": (
+                    f"objc3_method_RuntimeFullWidget_instance_{selector}"
+                    if identity_kind == "method"
+                    else ""
+                ),
             }
         )
     stepping_candidates = [
         {
             "source_map_record_id": record["source_map_record_id"],
             "native_line_table_row_id": record["native_line_table_row_id"],
+            "owner_name": record["owner_name"],
+            "selector": record["selector"],
+            "source_path": record["source_path"],
+            "line": record["line"],
+            "column": record["column"],
+            "runtime_debug_trace_step_id": (
+                f"object-model.step.{record['owner_name']}.{record['selector']}"
+            ),
             "status": "native-line-table-ready-stepping-blocked",
             "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
             "native_debug_info_emitted": True,
@@ -656,6 +749,87 @@ def test_object_model_debugger_proof_rejects_stale_native_debug_blockers(
     }
 
 
+def test_object_model_debugger_proof_rejects_source_native_row_anchor_drift(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity["native_line_table_rows"][0]["line"] += 1
+
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-source-identity-row-drift" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
+def test_object_model_debugger_proof_rejects_stale_source_map_rows(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity["source_map_records"][0]["source_truth_kind"] = "stale-fixture-row"
+
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-source-identity-record-stale" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
+def test_object_model_debugger_proof_rejects_statement_step_anchor_drift(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity["stepping_candidates"][0]["line"] += 1
+
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-source-identity-stepping-anchor-drift" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
 def test_object_model_debugger_proof_public_action_is_registered() -> None:
     action = ACTION_SPECS["validate-object-model-debugger-proof"]
 
@@ -736,6 +910,9 @@ def test_negative_boundaries_remain_non_public_and_fail_closed() -> None:
         "private-snapshots-not-public-reflection",
         "malformed-metadata-fails-closed",
         "stale-generation-replay-does-not-promote-support",
+        "objective-c2-runtime-compatibility-not-supported",
+        "foreign-swift-cxx-runtime-mirroring-not-supported",
+        "dynamic-forwarding-not-supported",
     }
 
     assert "_for_testing" not in probe
