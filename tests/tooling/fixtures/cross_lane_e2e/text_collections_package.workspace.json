@@ -10,6 +10,14 @@
     "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
     "package_id": "cross-lane:text-collections-package"
   },
+  "package_modules": [
+    {
+      "module_name": "CrossLaneFixtureProvider",
+      "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
+      "package_id": "package:cross-lane-fixture-provider",
+      "relationship": "linked-provider-runtime-import-surface"
+    }
+  ],
   "package_edges": [
     {
       "from": "cross-lane:text-collections-package",

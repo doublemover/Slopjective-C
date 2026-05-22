@@ -14,30 +14,27 @@
   ],
   "blockers": [
     {
-      "blocker_id": "cross-lane-text-collections-package-runtime",
+      "blocker_id": "cross-lane-text-package-debug-source-map",
       "domain": "parser/sema diagnostic",
-      "reason": "source-level package import, collection literals, and for-in remain blocked while runtime-backed text and collections execute together"
+      "reason": "direct @import module syntax and interpolated collection debug/source-map publication remain blocked while source collection literals, for-in, package import metadata, and runtime execution are proven"
     }
   ],
   "diagnostics": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-collections-package-runtime",
+    "status": "expected-pass",
     "responsible_domain": "parser/sema diagnostic",
-    "reason": "source-level package import, collection literals, for-in, and interpolation sugar are not yet a claimable diagnostic-free path",
-    "expected_codes": [
-      "O3E2E8200TEXT"
-    ],
+    "reason": "the executable source now parses collection literals, for-in loops, and objc_import_module package metadata without diagnostics",
+    "expected_codes": [],
     "required_tokens": [
       "text interpolation",
       "array/map/set literal",
       "for-in",
-      "package import"
+      "package import metadata"
     ]
   },
   "runtime": {
     "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "runtime-backed text builders, collection handles, iterator traversal, map lookup, set membership, and local package seed behavior must compile, link, and run together",
+    "reason": "runtime-backed text builders, source-level collection literals, for-in traversal, map lookup, set membership, and linked provider package seed behavior must compile, link, and run together",
     "source_truth": false,
     "expected_exit_code": 0,
     "required_artifacts": [
@@ -57,9 +54,9 @@
   },
   "source_graph": {
     "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-collections-package-runtime",
+    "blocker_id": "cross-lane-text-package-debug-source-map",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "source graph edges for package import and stdlib module syntax are expected but not yet emitted",
+    "reason": "source graph edges for direct @import stdlib module syntax are expected but not yet emitted",
     "source_truth": false,
     "expected_edges": [
       "cross-lane:text-collections-package -> stdlib:objc3.text",
@@ -68,23 +65,23 @@
   },
   "debug_source_map": {
     "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-collections-package-runtime",
+    "blocker_id": "cross-lane-text-package-debug-source-map",
     "responsible_domain": "source-map/debug diagnostic",
     "reason": "source-map anchors for interpolated collection iteration are not yet emitted",
     "source_truth": false
   },
   "optimization_trace": {
     "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-collections-package-runtime",
+    "blocker_id": "cross-lane-text-package-debug-source-map",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "no optimization proof is required for this family until runtime execution exists",
+    "reason": "no optimization proof is required for the text, collections, and package family",
     "source_truth": false
   },
   "negative_cases": [
     {
       "case_id": "text-collection-package-missing-import",
       "status": "scaffold-blocked",
-      "blocker_id": "cross-lane-text-collections-package-runtime",
+      "blocker_id": "cross-lane-text-package-debug-source-map",
       "responsible_domain": "package trust diagnostic",
       "reason": "missing imported package should fail closed before runtime execution"
     }
@@ -97,6 +94,6 @@
       "language.collections.for-in-syntax-runtime-backed",
       "runtime.interop.package-loader-bridge"
     ],
-    "claim_boundary": "this fixture proves runtime-backed text plus collection execution only; source-level literals, for-in, and package import remain blocked"
+    "claim_boundary": "this fixture proves source collection literals, source for-in, runtime-backed text builders, and objc_import_module linked-provider execution; direct @import syntax and interpolated collection source-map publication remain blocked"
   }
 }

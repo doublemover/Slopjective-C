@@ -939,6 +939,7 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - Evidence:
   - test: `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` via `npm run objc3c -- validate-stdlib-foundation`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/runtime/string_text_model_runtime_probe.cpp` via `npm run objc3c -- validate-string-text-model-runtime`
   - test: `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json`
   - test: `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` via `npm run objc3c -- test-execution-replay`
@@ -1142,6 +1143,7 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
 - Evidence:
   - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt`
   - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc`
   - source: `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp`
@@ -1185,6 +1187,7 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
 - Evidence:
   - test: `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3`
   - source: `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc`
   - source: `native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp`
@@ -1582,6 +1585,7 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/artifacts/interop/interop_bridge_artifacts.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` via `npm run objc3c -- validate-interop-conformance`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3`
   - test: `tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp`
   - test: `tests/tooling/runtime/header_module_bridge_generation_probe.cpp`
@@ -2010,6 +2014,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/test_public_conformance_suite_package.py` via `npm run objc3c -- validate-public-conformance-suite`
   - test: `tests/tooling/fixtures/cross_lane_e2e/manifest.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `scripts/check_objc3c_public_conformance_suite_manifest.py`
   - source: `scripts/check_objc3c_public_conformance_suite.py`
   - source: `scripts/check_objc3c_cross_lane_e2e.py`
@@ -2156,6 +2161,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/test_semantic_optimization_pipeline.py` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
   - source: `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
   - source: `tests/tooling/fixtures/performance_governance/budget_model.json`
@@ -2196,6 +2202,7 @@ the canonical manifest fixture and public npm command above.
   - source: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
 
 ### Method inlining optimization lane
 
@@ -2229,6 +2236,7 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h`
   - test: `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp` via `npm run objc3c -- validate-cache-aware-dispatch`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/test_runtime_cache_invalidation_generations.py`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 

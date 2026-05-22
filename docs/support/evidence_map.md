@@ -272,6 +272,7 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime.cpp` |  |
 | `stdlib.text.equality-comparison` | `objc3c.behavior.stdlib.text.equality-comparison` | `source` | `native/objc3c/src/runtime/stdlib/text_runtime_contract.h` |  |
 | `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` |
+| `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/runtime/string_text_model_runtime_probe.cpp` | `npm run objc3c -- validate-string-text-model-runtime` |
 | `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/stdlib_text/runtime_backed_text_claims_contract.json` |  |
 | `stdlib.text.runtime-builder-interpolation` | `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `test` | `tests/tooling/fixtures/native/execution/negative/stdlib_foundation_next_text_helper_signature_conflict.objc3` | `npm run objc3c -- test-execution-replay` |
@@ -352,6 +353,7 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
 | `stdlib.collections.set-iteration-runtime-shape` | `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
 | `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt` |  |
 | `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions.inc` |  |
 | `language.collections.literal-syntax-runtime-backed` | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_expression_nodes.cpp` |  |
@@ -365,6 +367,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
 | `language.collections.mutation-syntax-runtime-backed` | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
 | `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `test` | `tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3` |  |
 | `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/parse/objc3_parser_core_statement_do_for_parsing_for_header.inc` |  |
 | `language.collections.for-in-syntax-runtime-backed` | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `source` | `native/objc3c/src/ir/objc3_ir_statement_loop_emission.cpp` |  |
@@ -495,6 +498,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `test` | `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp` |  |
 | `runtime.metaprogramming.host-cache-boundary` | `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `source` | `native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp` |  |
 | `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` |
+| `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3` |  |
 | `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp` |  |
 | `runtime.interop.package-loader-bridge` | `objc3c.behavior.runtime.interop.package-loader-bridge` | `test` | `tests/tooling/runtime/header_module_bridge_generation_probe.cpp` |  |
@@ -669,6 +673,7 @@ diagnostic, documentation, or boundary evidence only.
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/test_public_conformance_suite_package.py` | `npm run objc3c -- validate-public-conformance-suite` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/manifest.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite_manifest.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_cross_lane_e2e.py` |  |
@@ -714,6 +719,7 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/test_semantic_optimization_pipeline.py` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/compiler_throughput/workload_manifest.json` |  |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/runtime_performance/workload_manifest.json` |  |
 | `compiler.optimization.semantic-preserving-pipeline` | `objc3c.behavior.semantic_optimization_pipeline` | `source` | `tests/tooling/fixtures/performance_governance/budget_model.json` |  |
@@ -728,6 +734,7 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `source` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `compiler.optimization.method-inlining` |  | `diagnostic` | `tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json` |  |
 | `compiler.optimization.method-inlining` |  | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp` |  |
@@ -737,6 +744,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp` | `npm run objc3c -- validate-cache-aware-dispatch` |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/tooling/test_runtime_cache_invalidation_generations.py` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |

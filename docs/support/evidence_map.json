@@ -1530,6 +1530,13 @@
       "capability_id": "stdlib.text.runtime-builder-interpolation",
       "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "stdlib.text.runtime-builder-interpolation",
+      "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "evidence_kind": "test",
       "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
       "command": "npm run objc3c -- validate-string-text-model-runtime"
     },
@@ -2027,6 +2034,13 @@
       "capability_id": "language.collections.literal-syntax-runtime-backed",
       "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "language.collections.literal-syntax-runtime-backed",
+      "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt"
     },
     {
@@ -2103,6 +2117,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
       "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.collections.for-in-syntax-runtime-backed",
+      "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "language.collections.for-in-syntax-runtime-backed",
@@ -2926,6 +2947,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
       "command": "npm run objc3c -- validate-interop-conformance"
+    },
+    {
+      "capability_id": "runtime.interop.package-loader-bridge",
+      "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.interop.package-loader-bridge",
@@ -3895,6 +3923,13 @@
     {
       "capability_id": "conformance.public.stable-suite-manifest",
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
     },
@@ -4182,6 +4217,13 @@
     {
       "capability_id": "compiler.optimization.semantic-preserving-pipeline",
       "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
     },
@@ -4263,6 +4305,13 @@
       "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
     },
     {
+      "capability_id": "compiler.optimization.devirtualization",
+      "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
       "capability_id": "compiler.optimization.method-inlining",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
@@ -4315,6 +4364,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
       "command": "npm run objc3c -- validate-cache-aware-dispatch"
+    },
+    {
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",

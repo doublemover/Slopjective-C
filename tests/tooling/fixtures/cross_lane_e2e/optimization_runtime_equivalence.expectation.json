@@ -14,19 +14,16 @@
   ],
   "blockers": [
     {
-      "blocker_id": "cross-lane-optimization-runtime-equivalence",
+      "blocker_id": "cross-lane-optimization-method-inlining-reserved",
       "domain": "optimization proof",
-      "reason": "before/after IR and runtime equivalence proof are not yet generated for the integrated program"
+      "reason": "runtime equivalence, direct dispatch, and cache-aware dispatch are proven, but method inlining remains reserved and must not be promoted by the integrated program"
     }
   ],
   "diagnostics": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "optimization candidate selection must remain explicit until the proof trace is generated",
-    "expected_codes": [
-      "O3E2E8200OPT"
-    ],
+    "reason": "the executable optimization/runtime fixture compiles without diagnostics while keeping the reserved method-inlining lane explicit",
+    "expected_codes": [],
     "required_tokens": [
       "exact devirtualization",
       "method inlining",
@@ -35,26 +32,30 @@
     ]
   },
   "runtime": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "optimized and unoptimized executions have no checked equality report in this scaffold slice",
+    "reason": "direct exact calls and cache-aware dispatch execute through the native runtime and return the checked equivalence status",
     "source_truth": false,
-    "expected_exit_code": null
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
   },
   "compile_manifest": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "compile manifest must eventually include before/after IR and optimization trace artifact paths",
+    "reason": "public validation must generate the native compile manifest for the executable optimization/runtime slice",
     "source_truth": false,
-    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/module.manifest.json"
+    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/compile/module.manifest.json"
   },
   "source_graph": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "source graph must preserve exact receiver proof and cache-aware dispatch dependency",
+    "reason": "generated metadata must preserve exact receiver proof and cache-aware dispatch dependency",
     "source_truth": false,
     "expected_edges": [
       "CrossLaneOptimizedCounter -> runtime:cache-aware-dispatch",
@@ -62,17 +63,15 @@
     ]
   },
   "debug_source_map": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "optimized source-map preservation is a condition of the future equivalence proof",
+    "reason": "the generated IR must include the cache-aware dispatch source-map anchor checked by the optimization trace",
     "source_truth": false
   },
   "optimization_trace": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-optimization-runtime-equivalence",
+    "status": "expected-pass",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "before/after IR and runtime equivalence trace are not checked in as generated outputs",
+    "reason": "public validation must generate a before/after IR and runtime-equivalence trace without using tmp artifacts as source truth",
     "source_truth": false,
     "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/optimization-trace.json"
   },
@@ -80,7 +79,7 @@
     {
       "case_id": "optimization-runtime-method-inlining-reserved",
       "status": "reserved",
-      "blocker_id": "cross-lane-optimization-runtime-equivalence",
+      "blocker_id": "cross-lane-optimization-method-inlining-reserved",
       "responsible_domain": "optimization proof diagnostic",
       "reason": "method inlining remains reserved and must fail closed in the integrated proof"
     }
@@ -93,6 +92,6 @@
       "compiler.optimization.method-inlining",
       "runtime.optimization.cache-aware-dispatch"
     ],
-    "claim_boundary": "semantic optimization support is not enough without integrated before/after IR and runtime equivalence"
+    "claim_boundary": "this fixture proves direct exact-call evidence, cache-aware dispatch lowering, before/after IR references, and runtime equivalence; method inlining remains reserved"
   }
 }

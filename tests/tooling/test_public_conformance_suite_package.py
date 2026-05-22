@@ -39,8 +39,8 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
 
     assert summary["contract_id"] == "objc3c.public_conformance_suite.package_replay.summary.v1"
     assert summary["status"] == "PASS"
-    assert summary["case_count"] == 11
-    assert summary["verified_case_count"] == 11
+    assert summary["case_count"] == 12
+    assert summary["verified_case_count"] == 12
     assert summary["source_file_count"] == summary["verified_source_file_count"]
     assert summary["offline_compatible"] is True
     assert summary["tmp_source_truth_allowed"] is False
@@ -81,9 +81,9 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
         "validate-public-conformance-suite": ("core", "stdlib-package", "release-candidate"),
     }
     assert package_manifest["artifact_contract"]["package_replay_boundary"]["public_commands_only"] is True
-    assert package_manifest["case_count"] == len(package_manifest["cases"]) == 11
+    assert package_manifest["case_count"] == len(package_manifest["cases"]) == 12
     assert all(case["release_gate"] is True for case in package_manifest["cases"])
-    assert [case["stable_case_index"] for case in package_manifest["cases"]] == list(range(1, 12))
+    assert [case["stable_case_index"] for case in package_manifest["cases"]] == list(range(1, 13))
     assert all(
         source["package_path"].startswith("sources/")
         and not source["repo_path"].startswith("tmp/")
@@ -124,7 +124,7 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
     )
     assert replay_summary["contract_id"] == "objc3c.public_conformance_suite.packaged_replay.v1"
     assert replay_summary["status"] == "PASS"
-    assert replay_summary["case_count"] == 11
+    assert replay_summary["case_count"] == 12
     assert replay_summary["generated_reports_are_evidence_only"] is True
 
     completed = subprocess.run(
@@ -143,7 +143,7 @@ def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_
         package_root / "tmp" / "reports" / "conformance" / "validate-public-conformance-suite.json"
     )
     assert replay_summary["contract_id"] == "objc3c.public_conformance_suite.packaged_replay.v1"
-    assert replay_summary["case_count"] == 11
+    assert replay_summary["case_count"] == 12
 
 
 def test_public_conformance_suite_package_contract_is_checked_source_truth() -> None:

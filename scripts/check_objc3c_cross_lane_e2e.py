@@ -20,6 +20,8 @@ MANIFEST_PATH = ROOT / "tests" / "tooling" / "fixtures" / "cross_lane_e2e" / "ma
 REPORT_PATH = ROOT / "tmp" / "reports" / "conformance" / "cross-lane-e2e-summary.json"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "cross-lane-e2e"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "conformance-minima.yml"
+OPTIMIZATION_BEFORE_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.before.ll"
+OPTIMIZATION_AFTER_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.after.ll"
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
@@ -186,10 +188,65 @@ def load_runtime_launch_inputs(compile_dir: Path) -> tuple[Path, list[str]]:
     return runtime_library, driver_flags
 
 
+def compile_native_module(
+    *,
+    source_path: Path,
+    compile_dir: Path,
+    compile_log: Path,
+    family_id: str,
+    domain: str,
+    import_surfaces: list[Path] | None = None,
+    bootstrap_order_ordinal: int | None = None,
+) -> dict[str, Any]:
+    if compile_dir.exists():
+        shutil.rmtree(compile_dir)
+    compile_dir.mkdir(parents=True, exist_ok=True)
+    native_exe = resolve_native_exe()
+    command = [
+        str(native_exe),
+        str(source_path),
+        "--out-dir",
+        str(compile_dir),
+        "--emit-prefix",
+        "module",
+    ]
+    if bootstrap_order_ordinal is not None:
+        command.extend(["--objc3-bootstrap-registration-order-ordinal", str(bootstrap_order_ordinal)])
+    for surface_path in import_surfaces or []:
+        command.extend(["--objc3-import-runtime-surface", str(surface_path)])
+    command.extend(["--llc", resolve_llc()])
+
+    run_checked(
+        command,
+        cwd=ROOT,
+        log_path=compile_log,
+        domain=f"{family_id}.{domain}",
+    )
+
+    obj_path = compile_dir / "module.obj"
+    ll_path = compile_dir / "module.ll"
+    import_surface_path = compile_dir / "module.runtime-import-surface.json"
+    require_artifact(obj_path, "native object")
+    require_artifact(ll_path, "LLVM IR")
+    require_artifact(import_surface_path, "runtime import surface")
+    runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
+    return {
+        "source": repo_rel(source_path),
+        "compile_dir": repo_rel(compile_dir),
+        "compile_log": repo_rel(compile_log),
+        "obj_path": obj_path,
+        "ll_path": ll_path,
+        "import_surface_path": import_surface_path,
+        "runtime_library": runtime_library,
+        "driver_flags": driver_flags,
+    }
+
+
 def validate_executable_runtime_proof(
     family_id: str,
     source_path: Path,
     expectation: dict[str, Any],
+    workspace: dict[str, Any],
 ) -> dict[str, Any]:
     runtime = require_object(expectation["runtime"], f"{family_id}.runtime")
     expected_exit_code = runtime.get("expected_exit_code")
@@ -197,32 +254,74 @@ def validate_executable_runtime_proof(
         raise RuntimeError(f"{family_id}.runtime.expected_exit_code must be an integer for expected-pass")
 
     artifact_dir = ARTIFACT_ROOT / slug_from_family_id(family_id)
+    if artifact_dir.exists():
+        shutil.rmtree(artifact_dir)
     compile_dir = artifact_dir / "compile"
     compile_dir.mkdir(parents=True, exist_ok=True)
 
-    native_exe = resolve_native_exe()
+    provider_proofs: list[dict[str, Any]] = []
+    provider_objects: list[Path] = []
+    import_surfaces: list[Path] = []
+    provider_driver_flags: list[str] = []
+    provider_runtime_libraries: list[Path] = []
+    package_modules = workspace.get("package_modules", [])
+    if isinstance(package_modules, list):
+        for index, raw_module in enumerate(package_modules):
+            module = require_object(raw_module, f"{family_id}.workspace.package_modules[{index}]")
+            module_name = require_nonempty_string(
+                module.get("module_name"),
+                f"{family_id}.workspace.package_modules[{index}].module_name",
+            )
+            provider_source = require_source_owned_path(
+                str(module.get("source", "")),
+                f"{family_id}.workspace.package_modules[{index}].source",
+            )
+            provider_dir = artifact_dir / "packages" / module_name
+            provider_dir.mkdir(parents=True, exist_ok=True)
+            provider_compile_log = provider_dir / "compile.log"
+            provider_compile = compile_native_module(
+                source_path=provider_source,
+                compile_dir=provider_dir,
+                compile_log=provider_compile_log,
+                family_id=family_id,
+                domain="package trust diagnostic",
+                bootstrap_order_ordinal=index + 1,
+            )
+            provider_objects.append(provider_compile["obj_path"])
+            import_surfaces.append(provider_compile["import_surface_path"])
+            provider_driver_flags.extend(provider_compile["driver_flags"])
+            provider_runtime_libraries.append(provider_compile["runtime_library"])
+            provider_proofs.append(
+                {
+                    "module_name": module_name,
+                    "source": provider_compile["source"],
+                    "compile_dir": provider_compile["compile_dir"],
+                    "compile_log": provider_compile["compile_log"],
+                    "runtime_import_surface": repo_rel(provider_compile["import_surface_path"]),
+                    "object": repo_rel(provider_compile["obj_path"]),
+                }
+            )
+
     compile_log = artifact_dir / "compile.log"
-    run_checked(
-        [
-            str(native_exe),
-            str(source_path),
-            "--out-dir",
-            str(compile_dir),
-            "--emit-prefix",
-            "module",
-            "--llc",
-            resolve_llc(),
-        ],
-        cwd=ROOT,
-        log_path=compile_log,
-        domain=f"{family_id}.lowering/IR diagnostic",
+    main_compile = compile_native_module(
+        source_path=source_path,
+        compile_dir=compile_dir,
+        compile_log=compile_log,
+        family_id=family_id,
+        domain="lowering/IR diagnostic",
+        import_surfaces=import_surfaces,
+        bootstrap_order_ordinal=len(provider_objects) + 1,
     )
 
-    obj_path = compile_dir / "module.obj"
-    ll_path = compile_dir / "module.ll"
-    require_artifact(obj_path, "native object")
-    require_artifact(ll_path, "LLVM IR")
-    runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
+    obj_path = main_compile["obj_path"]
+    runtime_library = main_compile["runtime_library"]
+    driver_flags = list(main_compile["driver_flags"])
+    for provider_runtime_library in provider_runtime_libraries:
+        if provider_runtime_library != runtime_library:
+            raise RuntimeError(
+                f"{family_id}.package trust diagnostic resolved mismatched runtime support library"
+            )
+    all_driver_flags = [*driver_flags, *provider_driver_flags]
 
     exe_path = artifact_dir / "module.exe"
     link_log = artifact_dir / "link.log"
@@ -231,8 +330,9 @@ def validate_executable_runtime_proof(
             resolve_clangxx(),
             *link_driver_args(),
             str(obj_path),
+            *[str(provider_obj) for provider_obj in provider_objects],
             str(runtime_library),
-            *driver_flags,
+            *all_driver_flags,
             "-o",
             str(exe_path),
             "-fno-color-diagnostics",
@@ -272,6 +372,73 @@ def validate_executable_runtime_proof(
         "compile_log": repo_rel(compile_log),
         "link_log": repo_rel(link_log),
         "run_log": repo_rel(run_log),
+        "package_module_proofs": provider_proofs,
+    }
+
+
+def validate_optimization_trace_proof(
+    family_id: str,
+    expectation: dict[str, Any],
+    executable_proof: dict[str, Any],
+) -> dict[str, Any]:
+    trace = require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace")
+    expected_path = require_nonempty_string(trace.get("expected_path"), f"{family_id}.optimization_trace.expected_path")
+    trace_path = ROOT / normalize_path(expected_path)
+    compile_dir = ROOT / normalize_path(require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir"))
+    ll_path = compile_dir / "module.ll"
+    require_artifact(ll_path, "optimization runtime LLVM IR")
+    require_artifact(OPTIMIZATION_BEFORE_IR_PATH, "semantic optimization before IR reference")
+    require_artifact(OPTIMIZATION_AFTER_IR_PATH, "semantic optimization after IR reference")
+
+    ll_text = ll_path.read_text(encoding="utf-8")
+    required_ir_tokens = {
+        "direct_exact_call": "call i32 @objc3_method_CrossLaneOptimizedCounter_class_exactValue()",
+        "direct_candidate_call": "call i32 @objc3_method_CrossLaneOptimizedCounter_class_inlineCandidate_",
+        "cache_prepare": "objc3_runtime_prepare_cache_aware_dispatch_descriptor",
+        "cache_checked_dispatch": "objc3_runtime_cache_aware_dispatch_i32_checked",
+        "cache_source_map_anchor": "source-map.cache-aware-dispatch",
+        "cache_optimization_anchor": "semantic-optimization.cache-aware-dispatch",
+    }
+    missing = [label for label, token in required_ir_tokens.items() if token not in ll_text]
+    if missing:
+        raise RuntimeError(
+            f"{family_id}.optimization proof diagnostic missing IR tokens: " + ", ".join(missing)
+        )
+
+    payload = {
+        "contract_id": "objc3c.cross_lane_e2e.optimization_trace.v1",
+        "schema_version": 1,
+        "issue": 8200,
+        "family_id": family_id,
+        "status": "PASS",
+        "source_truth": False,
+        "source": expectation["source"],
+        "runtime_equivalence_exit_code": executable_proof["actual_exit_code"],
+        "generated_ir": repo_rel(ll_path),
+        "before_ir_reference": repo_rel(OPTIMIZATION_BEFORE_IR_PATH),
+        "after_ir_reference": repo_rel(OPTIMIZATION_AFTER_IR_PATH),
+        "direct_dispatch_evidence": {
+            "exact_devirtualization_candidate": required_ir_tokens["direct_exact_call"],
+            "method_candidate_site": required_ir_tokens["direct_candidate_call"],
+        },
+        "cache_aware_dispatch_evidence": {
+            "prepare_descriptor": required_ir_tokens["cache_prepare"],
+            "checked_dispatch": required_ir_tokens["cache_checked_dispatch"],
+            "source_map_anchor": required_ir_tokens["cache_source_map_anchor"],
+            "optimization_anchor": required_ir_tokens["cache_optimization_anchor"],
+        },
+        "reserved_rows_not_promoted": [
+            "compiler.optimization.method-inlining"
+        ],
+    }
+    write_json_file(trace_path, payload)
+    return {
+        "status": "PASS",
+        "trace": repo_rel(trace_path),
+        "generated_ir": repo_rel(ll_path),
+        "before_ir_reference": repo_rel(OPTIMIZATION_BEFORE_IR_PATH),
+        "after_ir_reference": repo_rel(OPTIMIZATION_AFTER_IR_PATH),
+        "reserved_rows_not_promoted": payload["reserved_rows_not_promoted"],
     }
 
 
@@ -325,6 +492,26 @@ def validate_workspace(family_id: str, workspace_path: Path, expected_source: st
             edge.get("relationship"),
             f"{family_id}.workspace.package_edges[{index}].relationship",
         )
+    package_modules = workspace.get("package_modules", [])
+    if package_modules:
+        module_names: set[str] = set()
+        for index, raw_module in enumerate(require_list(package_modules, f"{family_id}.workspace.package_modules")):
+            package_module = require_object(raw_module, f"{family_id}.workspace.package_modules[{index}]")
+            module_name = require_nonempty_string(
+                package_module.get("module_name"),
+                f"{family_id}.workspace.package_modules[{index}].module_name",
+            )
+            if module_name in module_names:
+                raise RuntimeError(f"{repo_rel(workspace_path)} duplicate package module {module_name}")
+            module_names.add(module_name)
+            require_nonempty_string(
+                package_module.get("package_id"),
+                f"{family_id}.workspace.package_modules[{index}].package_id",
+            )
+            require_source_owned_path(
+                str(package_module.get("source", "")),
+                f"{family_id}.workspace.package_modules[{index}].source",
+            )
     return workspace
 
 
@@ -477,8 +664,13 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
     meta = validate_native_meta(family_id, meta_path, source_path)
     expectation = validate_expectation(family, expectation_path, source_path, workspace_path)
     executable_proof: dict[str, Any] | None = None
+    optimization_trace_proof: dict[str, Any] | None = None
     if require_object(expectation["runtime"], f"{family_id}.runtime").get("status") == "expected-pass":
-        executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation)
+        executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
+    if require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
+        if executable_proof is None:
+            raise RuntimeError(f"{family_id}.optimization proof diagnostic requires executable runtime proof")
+        optimization_trace_proof = validate_optimization_trace_proof(family_id, expectation, executable_proof)
 
     capability_rows = require_list(family.get("capability_rows"), f"{family_id}.capability_rows")
     support_claims = require_list(family.get("support_claims"), f"{family_id}.support_claims")
@@ -514,6 +706,7 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
         "negative_case_count": len(expectation.get("negative_cases", [])),
         "meta_fixture_kind": meta.get("fixture_kind"),
         "executable_proof": executable_proof,
+        "optimization_trace_proof": optimization_trace_proof,
     }
 
 

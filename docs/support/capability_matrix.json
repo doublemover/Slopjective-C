@@ -1750,6 +1750,11 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/runtime/string_text_model_runtime_probe.cpp",
           "command": "npm run objc3c -- validate-string-text-model-runtime"
         },
@@ -2238,6 +2243,11 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.exitcode.txt"
         },
         {
@@ -2328,6 +2338,11 @@
           "kind": "test",
           "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
           "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "test",
@@ -3230,6 +3245,11 @@
           "kind": "test",
           "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
           "command": "npm run objc3c -- validate-interop-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "test",
@@ -4250,6 +4270,11 @@
           "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
         },
@@ -4576,6 +4601,11 @@
           "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
         },
@@ -4663,6 +4693,11 @@
           "kind": "test",
           "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
           "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         }
       ]
     },
@@ -4727,6 +4762,11 @@
           "kind": "test",
           "path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
           "command": "npm run objc3c -- validate-cache-aware-dispatch"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "test",

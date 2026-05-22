@@ -22,11 +22,12 @@
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
       "expected_state": "scaffold-blocked",
       "required_source_tokens": [
+        "#array",
+        "#map",
+        "#set",
+        "for (",
+        "objc_import_module",
         "objc3_runtime_stdlib_text_builder_append_i32_i32",
-        "objc3_runtime_stdlib_collections_array3_i32",
-        "objc3_runtime_stdlib_collections_map_lookup_or_i32",
-        "objc3_runtime_stdlib_collections_set_contains_i32",
-        "objc3_runtime_stdlib_collections_iterator_next_or_i32",
         "importedPackageSeed"
       ],
       "capability_rows": [
@@ -46,26 +47,32 @@
           "capability_id": "stdlib.text.runtime-builder-interpolation",
           "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
           "status": "implemented",
-          "claim_boundary": "runtime builder support exists; source-level interpolation across collection iteration remains expected-blocked in this family"
+          "claim_boundary": "runtime builder support executes with source-level collection iteration; interpolation sugar and debug-source-map publication remain outside this claim"
+        },
+        {
+          "capability_id": "language.collections.literal-syntax-runtime-backed",
+          "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
+          "status": "implemented",
+          "claim_boundary": "array, map, and set literals execute in the integrated fixture without promoting direct stdlib module import syntax"
         },
         {
           "capability_id": "language.collections.for-in-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
           "status": "implemented",
-          "claim_boundary": "iterator-backed collection execution is proven in this fixture; source-level for-in syntax remains blocked in the expectation"
+          "claim_boundary": "source-level for-in over array, set, and map values executes in this fixture without promoting unrelated debugger or direct module import rows"
         },
         {
           "capability_id": "runtime.interop.package-loader-bridge",
           "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
-          "status": "blocked",
-          "claim_boundary": "the executable fixture keeps package seed behavior local; package import and loader replay remain blocked"
+          "status": "implemented",
+          "claim_boundary": "linked provider import-surface metadata resolves the package seed; direct @import syntax and hosted package lifecycle remain blocked elsewhere"
         }
       ],
       "blockers": [
         {
-          "blocker_id": "cross-lane-text-collections-package-runtime",
+          "blocker_id": "cross-lane-text-package-debug-source-map",
           "domain": "parser/sema diagnostic",
-          "reason": "source-level package import, collection literals, and for-in syntax are not yet diagnostic-free even though runtime-backed text and collections now compile, link, and run together"
+          "reason": "direct @import module syntax and interpolated collection debug/source-map publication remain blocked even though source literals, for-in, package metadata, and runtime execution now compile, link, and run together"
         }
       ]
     },
@@ -156,20 +163,32 @@
           "capability_id": "compiler.optimization.devirtualization",
           "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
           "status": "implemented",
-          "claim_boundary": "exact-target optimization support must still prove runtime equivalence for this integrated program"
+          "claim_boundary": "the integrated program now proves exact direct-call evidence and runtime equivalence without promoting method inlining"
+        },
+        {
+          "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+          "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+          "status": "implemented",
+          "claim_boundary": "the cross-lane trace references checked before/after IR and generated runtime IR while keeping generated outputs non-source-truth"
         },
         {
           "capability_id": "compiler.optimization.method-inlining",
           "support_claim": "objc3c.behavior.semantic_optimization.method_inlining",
           "status": "reserved",
           "claim_boundary": "method inlining is reserved and must remain a blocker in this cross-lane family"
+        },
+        {
+          "capability_id": "runtime.optimization.cache-aware-dispatch",
+          "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+          "status": "implemented",
+          "claim_boundary": "cache-aware dispatch lowering and runtime equivalence execute through the native runtime in this fixture"
         }
       ],
       "blockers": [
         {
-          "blocker_id": "cross-lane-optimization-runtime-equivalence",
+          "blocker_id": "cross-lane-optimization-method-inlining-reserved",
           "domain": "optimization proof",
-          "reason": "before/after IR and runtime equivalence are scaffolded but not yet generated by the public compiler path"
+          "reason": "method inlining remains reserved even though direct dispatch, cache-aware dispatch, before/after IR references, and runtime equivalence are now checked"
         }
       ]
     },

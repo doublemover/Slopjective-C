@@ -1,59 +1,55 @@
-// #8200 cross-lane partial executable: runtime-backed text builders and
-// collection handles interact in one Objective-C 3 program.
-// Reserved source syntax remains blocked here: import objc3.text,
-// import objc3.collections, #array, #map, #set, and source-level for-in.
+// #8200 cross-lane executable: source-level collection literals, for-in,
+// runtime-backed text builders, and package import metadata interact in one
+// Objective-C 3 program. Direct @import module syntax remains reserved.
 module CrossLaneTextCollectionsPackage;
 
-extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
 extern fn objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle: i32, text_handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_array3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_array_iterator_i32(handle: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_iterator_next_or_i32(handle: i32, default_value: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_map_entry_i32(key: i32, value: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_map_insert_i32(handle: i32, key: i32, value: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_map_lookup_or_i32(handle: i32, key: i32, default_value: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_set3_i32(first: i32, second: i32, third: i32, count: i32) -> i32;
-extern fn objc3_runtime_stdlib_collections_set_contains_i32(handle: i32, value: i32) -> i32;
 
-fn importedPackageSeed() -> i32 {
-  return 3;
-}
+extern fn importedPackageSeed() -> i32
+    __attribute__((objc_foreign, objc_import_module(named("CrossLaneFixtureProvider"))));
 
 fn summarizeImportedCollections() -> i32 {
-  let labels = objc3_runtime_stdlib_collections_array3_i32(2, 3, 5, 3);
-  let label_iterator = objc3_runtime_stdlib_collections_array_iterator_i32(labels);
-  let weights = objc3_runtime_stdlib_collections_map_entry_i32(2, 4);
-  let required = objc3_runtime_stdlib_collections_set3_i32(2, 5, 5, 3);
-  var total = importedPackageSeed();
+  var labels = #array[2, 3, 5];
+  var weights = #map[2: 4, 5: 8];
+  var required = #set[2, 5, 5];
 
-  let first_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
-  let second_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
-  let third_label = objc3_runtime_stdlib_collections_iterator_next_or_i32(label_iterator, 0);
-  if (first_label + second_label + third_label != 10) {
+  var label_total = 0;
+  for (label in labels) {
+    label_total += label;
+  }
+  if (label_total != 10) {
     return 11;
   }
 
-  if (objc3_runtime_stdlib_collections_map_insert_i32(weights, 5, 8) != 2) {
+  var required_total = 0;
+  for (item in required) {
+    required_total += item;
+  }
+  if (required_total != 7) {
     return 12;
   }
-  if (objc3_runtime_stdlib_collections_set_contains_i32(required, first_label) != 1) {
+
+  var weight_total = 0;
+  for (key, value in weights) {
+    weight_total += key + value;
+  }
+  if (weight_total != 19) {
     return 13;
   }
-  if (objc3_runtime_stdlib_collections_set_contains_i32(required, second_label) != 0) {
+
+  if (weights[2] != 4) {
     return 14;
   }
-  if (objc3_runtime_stdlib_collections_set_contains_i32(required, third_label) != 1) {
+  if (weights[5] != 8) {
     return 15;
   }
 
-  total = total + objc3_runtime_stdlib_collections_map_lookup_or_i32(weights, first_label, 0);
-  total = total + objc3_runtime_stdlib_collections_map_lookup_or_i32(weights, third_label, 0);
-  return total;
+  return importedPackageSeed() + weights[2] + weights[5];
 }
 
 fn main() -> i32 {

@@ -12,16 +12,21 @@
     "behavior_contract": "cross-lane-partial-executable",
     "reserved_support_promoted": false,
     "runtime_support_claimed": true,
-    "unsupported_source_syntax_promoted": false
+    "source_collection_literals_claimed": true,
+    "source_for_in_claimed": true,
+    "package_import_metadata_claimed": true,
+    "direct_module_import_syntax_promoted": false
   },
   "expected": {
     "stage": "compile-link-run",
     "diagnostic_code": "",
     "required_tokens": [
+      "#array",
+      "#map",
+      "#set",
+      "for (",
+      "objc_import_module",
       "objc3_runtime_stdlib_text_builder_append_i32_i32",
-      "objc3_runtime_stdlib_collections_array3_i32",
-      "objc3_runtime_stdlib_collections_map_lookup_or_i32",
-      "objc3_runtime_stdlib_collections_set_contains_i32",
       "importedPackageSeed"
     ]
   },
