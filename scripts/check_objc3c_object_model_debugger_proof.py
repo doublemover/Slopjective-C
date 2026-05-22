@@ -33,7 +33,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    results = [validate_contract_path(path).to_payload() for path in args.fixtures]
+    results = [
+        validate_contract_path(path, run_production_probe=True).to_payload()
+        for path in args.fixtures
+    ]
     ok = all(result["ok"] is True for result in results)
     payload = {
         "ok": ok,

@@ -20,6 +20,7 @@ from scripts.objc3c_debugger_integration import validate_replay_path
 
 CONTRACT_ID = "objc3c.object_model.debugger_value_inspection_replay.v1"
 VALIDATION_CONTRACT_ID = "objc3c.object_model.debugger_value_inspection.validation.v1"
+PRODUCTION_PROBE_CONTRACT_ID = "objc3c.object_model.production_artifact_probe.v1"
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -40,6 +41,17 @@ DEBUG_ANCHOR_KIND_BY_IDENTITY = {
     "ivar": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR",
     "method": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD",
 }
+REQUIRED_PRODUCTION_ARTIFACT_KINDS = frozenset(
+    {
+        "manifest",
+        "ir",
+        "object",
+        "runtime-metadata-binary",
+        "source-graph",
+        "artifact-inspector",
+        "debug-map",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -69,6 +81,15 @@ class ValidationResult:
             "debugger_replay_path": self.debugger_replay_path,
             "diagnostics": [diagnostic.to_payload() for diagnostic in self.diagnostics],
         }
+
+
+@dataclass(frozen=True)
+class ProductionProbeArtifacts:
+    summary: dict[str, Any]
+    manifest: dict[str, Any]
+    source_graph: dict[str, Any]
+    artifact_inspector: dict[str, Any]
+    debug_map: dict[str, Any]
 
 
 def _diag(code: str, message: str, path: str) -> Diagnostic:
@@ -164,6 +185,15 @@ def _contract_value_records(payload: dict[str, Any]) -> dict[str, dict[str, Any]
         )
         if _safe_str(record.get("record_id"))
     }
+
+
+def _path_exists_in_repo(raw_path: object) -> bool:
+    path_text = _safe_str(raw_path)
+    return bool(path_text and resolve_repo_path(path_text).is_file())
+
+
+def _repo_path_text(path: Path | str) -> str:
+    return display_path(resolve_repo_path(path)).replace("\\", "/")
 
 
 def _validate_required_sets(
@@ -456,7 +486,384 @@ def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic])
         )
 
 
-def validate_contract_path(path: Path | str = DEFAULT_CONTRACT_PATH) -> ValidationResult:
+def _build_production_probe_artifacts(probe: dict[str, Any]) -> ProductionProbeArtifacts:
+    from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
+    from objc3c_editor_tooling.model import build_editor_tooling_model
+    from objc3c_editor_tooling.paths import paths_for_source, resolve_source
+    from objc3c_editor_tooling.publication import publish_editor_tooling_surface
+
+    source_fixture = _safe_str(probe.get("source_fixture"))
+    paths = paths_for_source(resolve_source(source_fixture))
+    compile_result = run_frontend_compile(paths)
+    if not compile_result.summary_available:
+        raise RuntimeError(
+            "frontend production probe did not publish compile summary "
+            f"(exit={compile_result.returncode})"
+        )
+    inputs = load_editor_tooling_inputs(paths)
+    model = build_editor_tooling_model(paths, inputs)
+    publish_editor_tooling_surface(paths=paths, inputs=inputs, model=model)
+    return ProductionProbeArtifacts(
+        summary=inputs.summary,
+        manifest=inputs.manifest,
+        source_graph=model.source_graph,
+        artifact_inspector=model.artifact_inspector,
+        debug_map=model.debug,
+    )
+
+
+def _validate_production_probe_contract(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> dict[str, Any]:
+    probe = _object(payload.get("production_artifact_probe"))
+    if not probe:
+        diagnostics.append(
+            _diag(
+                "production-probe-missing",
+                "object-model debugger proof must declare a production artifact probe",
+                "production_artifact_probe",
+            )
+        )
+        return {}
+
+    if probe.get("contract_id") != PRODUCTION_PROBE_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "production-probe-contract-id",
+                f"production artifact probe contract_id must be {PRODUCTION_PROBE_CONTRACT_ID}",
+                "production_artifact_probe.contract_id",
+            )
+        )
+    source_fixture = _safe_str(probe.get("source_fixture"))
+    if not source_fixture:
+        diagnostics.append(
+            _diag(
+                "production-source-fixture-missing",
+                "production artifact probe must name the integrated object-model source fixture",
+                "production_artifact_probe.source_fixture",
+            )
+        )
+    elif source_fixture.startswith(("tmp/", "tmp\\")) or not _path_exists_in_repo(source_fixture):
+        diagnostics.append(
+            _diag(
+                "production-source-fixture-invalid",
+                "production artifact probe source fixture must be checked in and outside tmp",
+                "production_artifact_probe.source_fixture",
+            )
+        )
+
+    public_command = _safe_str(probe.get("public_command"))
+    if "validate-object-model-debugger-proof" not in public_command:
+        diagnostics.append(
+            _diag(
+                "production-public-command-missing",
+                "production artifact probe must be replayable through validate-object-model-debugger-proof",
+                "production_artifact_probe.public_command",
+            )
+        )
+    if probe.get("runs_canonical_frontend") is not True:
+        diagnostics.append(
+            _diag(
+                "production-frontend-not-required",
+                "production artifact probe must require the canonical frontend path",
+                "production_artifact_probe.runs_canonical_frontend",
+            )
+        )
+    artifact_kinds = set(_safe_str(item) for item in _list(probe.get("required_artifact_kinds")))
+    for artifact_kind in sorted(REQUIRED_PRODUCTION_ARTIFACT_KINDS - artifact_kinds):
+        diagnostics.append(
+            _diag(
+                "production-artifact-kind-missing",
+                f"production artifact probe must require artifact kind: {artifact_kind}",
+                "production_artifact_probe.required_artifact_kinds",
+            )
+        )
+    if _object(probe.get("debug_map_boundary")).get("full_source_map_publication") != "fail-closed":
+        diagnostics.append(
+            _diag(
+                "production-debug-map-boundary-missing",
+                "production artifact probe must keep full source-map publication fail-closed",
+                "production_artifact_probe.debug_map_boundary.full_source_map_publication",
+            )
+        )
+    if _object(probe.get("debug_map_boundary")).get("statement_stepping") != "fail-closed":
+        diagnostics.append(
+            _diag(
+                "production-debug-map-boundary-missing",
+                "production artifact probe must keep statement stepping fail-closed",
+                "production_artifact_probe.debug_map_boundary.statement_stepping",
+            )
+        )
+    return probe
+
+
+def _validate_count_at_least(
+    actual: object,
+    minimum: object,
+    diagnostics: list[Diagnostic],
+    *,
+    code: str,
+    message: str,
+    path: str,
+) -> None:
+    if not isinstance(actual, int) or isinstance(actual, bool):
+        actual = 0
+    if not isinstance(minimum, int) or isinstance(minimum, bool):
+        minimum = 0
+    if actual < minimum:
+        diagnostics.append(_diag(code, f"{message}: expected >= {minimum}, got {actual}", path))
+
+
+def _validate_production_probe_artifacts(
+    probe: dict[str, Any],
+    artifacts: ProductionProbeArtifacts,
+    diagnostics: list[Diagnostic],
+) -> None:
+    expected_source = _repo_path_text(_safe_str(probe.get("source_fixture")))
+    minimums = _object(probe.get("runtime_inventory_minimums"))
+
+    summary = artifacts.summary
+    summary_paths = _object(summary.get("paths"))
+    if summary.get("success") is not True or summary.get("status") != 0:
+        diagnostics.append(
+            _diag(
+                "production-compile-failed",
+                "production artifact probe must compile the object-model fixture successfully",
+                "production_artifact_probe.compile_summary",
+            )
+        )
+    if _safe_str(summary.get("input_path")).replace("\\", "/") != expected_source:
+        diagnostics.append(
+            _diag(
+                "production-source-drift",
+                "production compile summary input path drifted from the object-model fixture",
+                "production_artifact_probe.compile_summary.input_path",
+            )
+        )
+    for key in ("manifest", "ir", "object", "runtime_metadata_binary"):
+        if not _path_exists_in_repo(summary_paths.get(key)):
+            diagnostics.append(
+                _diag(
+                    "production-artifact-missing",
+                    f"production compile summary did not publish artifact: {key}",
+                    f"production_artifact_probe.compile_summary.paths.{key}",
+                )
+            )
+
+    manifest = artifacts.manifest
+    if _safe_str(manifest.get("source")).replace("\\", "/") != expected_source:
+        diagnostics.append(
+            _diag(
+                "production-manifest-source-drift",
+                "production manifest source drifted from the object-model fixture",
+                "production_artifact_probe.manifest.source",
+            )
+        )
+    runtime_records = _object(manifest.get("runtime_metadata_source_records"))
+    if runtime_records.get("deterministic") is not True:
+        diagnostics.append(
+            _diag(
+                "production-runtime-records-not-deterministic",
+                "production manifest runtime metadata source records must be deterministic",
+                "production_artifact_probe.manifest.runtime_metadata_source_records",
+            )
+        )
+    manifest_counts = {
+        "class_records": len(_list(manifest.get("interfaces"))),
+        "protocol_records": len(_list(manifest.get("protocols"))),
+        "category_records": len(_list(manifest.get("categories"))),
+        "property_records": len(_list(runtime_records.get("properties"))),
+        "ivar_records": len(_list(runtime_records.get("ivars"))),
+        "method_records": len(_list(runtime_records.get("methods"))),
+    }
+    for key, actual in manifest_counts.items():
+        _validate_count_at_least(
+            actual,
+            minimums.get(key),
+            diagnostics,
+            code="production-runtime-inventory-incomplete",
+            message=f"production manifest lacks required object-model {key}",
+            path=f"production_artifact_probe.manifest.{key}",
+        )
+
+    source_graph = artifacts.source_graph
+    if source_graph.get("contract_id") != "objc3c.developer.tooling.source.graph.v1":
+        diagnostics.append(
+            _diag(
+                "production-source-graph-contract-id",
+                "production source graph contract id drifted",
+                "production_artifact_probe.source_graph.contract_id",
+            )
+        )
+    if source_graph.get("available") is not True or not _safe_str(source_graph.get("source_graph_digest")):
+        diagnostics.append(
+            _diag(
+                "production-source-graph-unavailable",
+                "production source graph must be available and digest-backed",
+                "production_artifact_probe.source_graph",
+            )
+        )
+    if _safe_str(source_graph.get("source_path")).replace("\\", "/") != expected_source:
+        diagnostics.append(
+            _diag(
+                "production-source-graph-source-drift",
+                "production source graph source path drifted from the object-model fixture",
+                "production_artifact_probe.source_graph.source_path",
+            )
+        )
+    _validate_count_at_least(
+        source_graph.get("node_count"),
+        minimums.get("source_graph_nodes"),
+        diagnostics,
+        code="production-source-graph-incomplete",
+        message="production source graph lacks required object-model nodes",
+        path="production_artifact_probe.source_graph.node_count",
+    )
+
+    artifact_inspector = artifacts.artifact_inspector
+    if artifact_inspector.get("contract_id") != "objc3c.developer.tooling.artifact.inspector.v1":
+        diagnostics.append(
+            _diag(
+                "production-artifact-inspector-contract-id",
+                "production artifact inspector contract id drifted",
+                "production_artifact_probe.artifact_inspector.contract_id",
+            )
+        )
+    if artifact_inspector.get("supported") is not True:
+        diagnostics.append(
+            _diag(
+                "production-artifact-inspector-unavailable",
+                "production artifact inspector must be supported for the object-model fixture",
+                "production_artifact_probe.artifact_inspector.supported",
+            )
+        )
+    if artifact_inspector.get("support_class") != "compile-artifact-inspector":
+        diagnostics.append(
+            _diag(
+                "production-artifact-inspector-fail-closed",
+                "production artifact inspector must have a ready compile artifact inventory",
+                "production_artifact_probe.artifact_inspector.support_class",
+            )
+        )
+    inventory_validation = _object(artifact_inspector.get("inventory_validation"))
+    if inventory_validation.get("inventory_ready") is not True or inventory_validation.get("fail_closed") is True:
+        diagnostics.append(
+            _diag(
+                "production-artifact-inventory-not-ready",
+                "production artifact inspector inventory must be ready and non-fail-closed",
+                "production_artifact_probe.artifact_inspector.inventory_validation",
+            )
+        )
+    runtime_inventory = _object(artifact_inspector.get("runtime_inventory"))
+    if runtime_inventory.get("available") is not True:
+        diagnostics.append(
+            _diag(
+                "production-runtime-inventory-unavailable",
+                "production artifact inspector must publish runtime inventory",
+                "production_artifact_probe.artifact_inspector.runtime_inventory",
+            )
+        )
+    if not _safe_str(runtime_inventory.get("reflection_abi_version")):
+        diagnostics.append(
+            _diag(
+                "production-runtime-abi-version-missing",
+                "production runtime inventory must expose the reflection ABI version source",
+                "production_artifact_probe.artifact_inspector.runtime_inventory.reflection_abi_version",
+            )
+        )
+    for key in ("class_record_count", "protocol_record_count", "category_record_count", "property_record_count", "method_record_count"):
+        minimum_key = key.replace("_count", "s")
+        _validate_count_at_least(
+            runtime_inventory.get(key),
+            minimums.get(minimum_key),
+            diagnostics,
+            code="production-runtime-inventory-incomplete",
+            message=f"production artifact inspector lacks required object-model {minimum_key}",
+            path=f"production_artifact_probe.artifact_inspector.runtime_inventory.{key}",
+        )
+    artifact_links = _object(artifact_inspector.get("artifact_links"))
+    for key in ("manifest_link", "ir_link", "runtime_metadata_link", "source_graph_link", "debug_map_link"):
+        if not _path_exists_in_repo(artifact_links.get(key)):
+            diagnostics.append(
+                _diag(
+                    "production-artifact-link-missing",
+                    f"production artifact inspector link is missing or stale: {key}",
+                    f"production_artifact_probe.artifact_inspector.artifact_links.{key}",
+                )
+            )
+
+    debug_map = artifacts.debug_map
+    if debug_map.get("contract_id") != "objc3c.developer.tooling.debug.map.surface.v1":
+        diagnostics.append(
+            _diag(
+                "production-debug-map-contract-id",
+                "production debug-map contract id drifted",
+                "production_artifact_probe.debug_map.contract_id",
+            )
+        )
+    if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
+        diagnostics.append(
+            _diag(
+                "production-debug-map-unavailable",
+                "production debug map must stay tied to the emitted object artifact",
+                "production_artifact_probe.debug_map",
+            )
+        )
+    if debug_map.get("source_map_supported") is not False:
+        diagnostics.append(
+            _diag(
+                "production-debug-map-overclaimed",
+                "production debug map must not claim full source-map support before line-table emission lands",
+                "production_artifact_probe.debug_map.source_map_supported",
+            )
+        )
+    if debug_map.get("statement_level_stepping") is not False:
+        diagnostics.append(
+            _diag(
+                "production-debug-map-overclaimed",
+                "production debug map must not claim statement stepping before debugger integration lands",
+                "production_artifact_probe.debug_map.statement_level_stepping",
+            )
+        )
+    _validate_count_at_least(
+        debug_map.get("declaration_breakpoint_anchor_count"),
+        minimums.get("declaration_breakpoint_anchors"),
+        diagnostics,
+        code="production-debug-map-incomplete",
+        message="production debug map lacks declaration breakpoint anchors",
+        path="production_artifact_probe.debug_map.declaration_breakpoint_anchor_count",
+    )
+
+
+def _validate_production_artifact_probe(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+    *,
+    run_production_probe: bool,
+) -> None:
+    probe = _validate_production_probe_contract(payload, diagnostics)
+    if not probe or not run_production_probe:
+        return
+    try:
+        artifacts = _build_production_probe_artifacts(probe)
+    except Exception as exc:  # pragma: no cover - deterministic guard for local toolchain failures.
+        diagnostics.append(
+            _diag(
+                "production-probe-run-failed",
+                f"unable to run production artifact probe: {type(exc).__name__}: {exc}",
+                "production_artifact_probe",
+            )
+        )
+        return
+    _validate_production_probe_artifacts(probe, artifacts, diagnostics)
+
+
+def validate_contract_path(
+    path: Path | str = DEFAULT_CONTRACT_PATH,
+    *,
+    run_production_probe: bool = False,
+) -> ValidationResult:
     contract_path, payload, load_diagnostics = _load_json(path)
     diagnostics: list[Diagnostic] = [*load_diagnostics]
 
@@ -552,6 +959,11 @@ def validate_contract_path(path: Path | str = DEFAULT_CONTRACT_PATH) -> Validati
         )
 
     _validate_boundaries(payload, diagnostics)
+    _validate_production_artifact_probe(
+        payload,
+        diagnostics,
+        run_production_probe=run_production_probe,
+    )
 
     if source_bundle is not None:
         source_maps = {entry.entry_id: entry for entry in source_bundle.source_maps}

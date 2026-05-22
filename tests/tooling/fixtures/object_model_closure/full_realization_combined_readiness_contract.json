@@ -95,6 +95,7 @@
     "source_map_line_table_backed": true,
     "debug_anchor_replay_backed": true,
     "artifact_runtime_reflection_linked": true,
+    "production_artifact_probe_backed": true,
     "replayable_public_command": "npm run objc3c -- validate-object-model-debugger-proof",
     "covered_identity_kinds": [
       "class",
@@ -150,7 +151,7 @@
   "remaining_blockers": [
     {
       "blocker_id": "object-model-debugger-source-identity",
-      "summary": "Bounded runtime debug-anchor identity and replayable object-model debugger value inspection are now covered; canonical compiler-emitted native line tables, statement stepping, and debugger reflection ABI governance remain required before this reserved umbrella can become implemented."
+      "summary": "Bounded runtime debug-anchor identity, replayable object-model debugger value inspection, and production frontend artifact/runtime inventory proof are now covered; full compiler-emitted source maps, native line tables, statement stepping, and debugger reflection ABI governance remain required before this reserved umbrella can become implemented."
     }
   ]
 }

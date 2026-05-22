@@ -6,6 +6,37 @@
   "support_claim_published": false,
   "readiness_role": "checked object-model debugger proof composition for the reserved full-realization umbrella",
   "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+  "production_artifact_probe": {
+    "contract_id": "objc3c.object_model.production_artifact_probe.v1",
+    "source_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+    "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "runs_canonical_frontend": true,
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "required_artifact_kinds": [
+      "manifest",
+      "ir",
+      "object",
+      "runtime-metadata-binary",
+      "source-graph",
+      "artifact-inspector",
+      "debug-map"
+    ],
+    "runtime_inventory_minimums": {
+      "class_records": 2,
+      "protocol_records": 1,
+      "category_records": 1,
+      "property_records": 4,
+      "ivar_records": 2,
+      "method_records": 8,
+      "source_graph_nodes": 6,
+      "declaration_breakpoint_anchors": 6
+    },
+    "debug_map_boundary": {
+      "full_source_map_publication": "fail-closed",
+      "statement_stepping": "fail-closed",
+      "boundary_reason": "the production compiler path must publish manifest/source-graph/runtime inventory proof now, while full source maps, native line tables, and debugger stepping remain blocked until they are emitted by that same path"
+    }
+  },
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
   "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
   "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",

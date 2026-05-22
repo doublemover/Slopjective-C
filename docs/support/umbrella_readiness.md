@@ -49,13 +49,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
 - `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
-- `blocked` Canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, and fail-closed debug-map boundary. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
+- `blocked` Full canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
-- `satisfied` Object-model debugger source-map, line-table, debug-anchor, and value-inspection linkage remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
+- `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, and production frontend artifact/runtime inventory proof remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
 - `blocked` Debugger-grade statement stepping must be completed on the production compiler artifact path. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Positive Fixtures
@@ -78,7 +79,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Public reflection API probe remains checked in. (path: `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp`)
 - `satisfied` Registration reset/replay generation probe remains checked in for lifecycle boundary evidence. (path: `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp`)
 - `satisfied` Runtime-owned debug-anchor replay probe ties reflection rows to source/debug identity and missing/stale anchor boundaries. (path: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`)
-- `satisfied` Debugger value inspection proves runtime metadata through a checked source-map and debug-anchor replay fixture. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
+- `satisfied` Debugger value inspection proves runtime metadata through a checked source-map/debug-anchor replay fixture plus a canonical frontend artifact-inspector probe over the integrated object-model source. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 
 #### Abi Governance Rows
 
@@ -105,8 +106,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity and replayable object-model value inspection exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.
-  - Canonical compiler-owned source-map publication and native line tables for the integrated object-model program.
+- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, and a canonical frontend artifact/runtime inventory probe exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.
+  - Full canonical compiler-owned source-map publication and native line tables for the integrated object-model program.
   - Production debugger statement-stepping integration over those emitted line tables.
   - Debugger reflection ABI governance for any public object-inspection ABI additions.
 

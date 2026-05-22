@@ -103,8 +103,14 @@
           "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         },
         {
+          "id": "production-object-model-artifact-probe",
+          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, and fail-closed debug-map boundary.",
+          "status": "satisfied",
+          "path": "scripts/check_objc3c_object_model_debugger_proof.py"
+        },
+        {
           "id": "debugger-source-identity",
-          "description": "Canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path.",
+          "description": "Full canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -124,7 +130,7 @@
         },
         {
           "id": "object-model-debugger-proof",
-          "description": "Object-model debugger source-map, line-table, debug-anchor, and value-inspection linkage remains replayable through the npm bridge.",
+          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, and production frontend artifact/runtime inventory proof remain replayable through the npm bridge.",
           "status": "satisfied",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
         },
@@ -214,7 +220,7 @@
         },
         {
           "id": "debugger-runtime-value-probe",
-          "description": "Debugger value inspection proves runtime metadata through a checked source-map and debug-anchor replay fixture.",
+          "description": "Debugger value inspection proves runtime metadata through a checked source-map/debug-anchor replay fixture plus a canonical frontend artifact-inspector probe over the integrated object-model source.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         }
@@ -273,9 +279,9 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity and replayable object-model value inspection exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.",
+          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, and a canonical frontend artifact/runtime inventory probe exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.",
           "missing_work": [
-            "Canonical compiler-owned source-map publication and native line tables for the integrated object-model program.",
+            "Full canonical compiler-owned source-map publication and native line tables for the integrated object-model program.",
             "Production debugger statement-stepping integration over those emitted line tables.",
             "Debugger reflection ABI governance for any public object-inspection ABI additions."
           ],

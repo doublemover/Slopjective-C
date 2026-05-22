@@ -9,6 +9,7 @@ from scripts.objc3c_workflow.actions import (
     application_surfaces,
     developer_tooling_bonus,
     developer_tooling_dump_actions,
+    developer_tooling_playground,
     developer_tooling_llvm_parity,
     validation_timing,
 )
@@ -53,6 +54,9 @@ def _action_validate_debugger_integration(rest: list[str]) -> int:
 
 
 def _action_validate_object_model_debugger_proof(rest: list[str]) -> int:
+    rc = developer_tooling_playground.ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
     return _run_python_script_with_args(CHECK_OBJECT_MODEL_DEBUGGER_PROOF_PY, *rest)
 
 
