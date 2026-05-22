@@ -154,10 +154,32 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
 
     source_identity = debug_payload["object_model_source_identity"]
     assert "object-model-production-source-identity" in debug_payload["evidence_roots"]
+    assert "object-model-production-source-map-native-line-table" in debug_payload["evidence_roots"]
     assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
     assert source_identity["source_map_records_supported"] is True
     assert source_identity["native_line_table_projection_supported"] is True
+    assert source_identity["source_map_publication_supported"] is True
+    assert source_identity["native_line_table_publication_supported"] is True
     assert source_identity["runtime_debug_trace_statement_stepping"] is False
+    publication = source_identity["source_map_native_line_table_publication"]
+    assert publication["contract_id"] == (
+        "objc3c.object_model.production.source_map_native_line_table.v1"
+    )
+    assert publication["publication_model"] == (
+        "canonical-frontend-manifest-source-map-native-line-table"
+    )
+    assert publication["source_map_publication_supported"] is True
+    assert publication["native_line_table_publication_supported"] is True
+    assert publication["emitted_native_debug_info_supported"] is False
+    assert publication["statement_stepping_supported"] is False
+    assert set(publication["source_map_record_ids"]) == {
+        record["source_map_record_id"]
+        for record in source_identity["source_map_records"]
+    }
+    assert set(publication["native_line_table_row_ids"]) == {
+        row["row_id"]
+        for row in source_identity["native_line_table_rows"]
+    }
     assert set(source_identity["required_identity_kinds_present"]) == {
         "class",
         "category",

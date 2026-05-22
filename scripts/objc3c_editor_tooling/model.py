@@ -18,6 +18,9 @@ from objc3c_editor_tooling.workspace_index import (
 )
 
 OBJECT_MODEL_SOURCE_IDENTITY_CONTRACT_ID = "objc3c.object_model.production.source_identity.v1"
+OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
+    "objc3c.object_model.production.source_map_native_line_table.v1"
+)
 OBJECT_MODEL_SOURCE_IDENTITY_KINDS = ("class", "category", "protocol", "property", "ivar", "method")
 
 
@@ -450,7 +453,7 @@ def _append_source_identity_record(
             "source_path": source_path,
             "line": line,
             "column": column,
-            "native_line_table_model": "compiler-manifest-coordinate-projection",
+            "native_line_table_model": "canonical-frontend-source-map-native-line-table-publication",
             "native_debug_info_emitted": False,
             "expected_native_symbol": _method_native_symbol(record) if identity_kind == "method" else "",
         }
@@ -473,6 +476,60 @@ def _iter_manifest_identity_records(manifest: dict[str, Any]) -> list[tuple[str,
             if isinstance(record, dict):
                 entries.append((identity_kind, section, index, record))
     return entries
+
+
+def _build_object_model_source_map_publication(
+    records: list[dict[str, Any]],
+    rows: list[dict[str, Any]],
+    *,
+    source_path: str,
+    source_graph: dict[str, Any],
+) -> dict[str, Any]:
+    record_ids = sorted(
+        record["source_map_record_id"]
+        for record in records
+        if _safe_text(record.get("source_map_record_id"))
+    )
+    row_ids = sorted(
+        row["row_id"]
+        for row in rows
+        if _safe_text(row.get("row_id"))
+    )
+    identity_kinds = sorted({record["runtime_identity_kind"] for record in records})
+    supported = bool(records and rows and source_path)
+    return {
+        "contract_id": OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID,
+        "supported": supported,
+        "source_path": source_path,
+        "source_graph_digest": _safe_text(source_graph.get("source_graph_digest")),
+        "publication_model": "canonical-frontend-manifest-source-map-native-line-table",
+        "source_map_publication_supported": supported,
+        "native_line_table_publication_supported": supported,
+        "emitted_native_debug_info_supported": False,
+        "statement_stepping_supported": False,
+        "source_map_record_count": len(records),
+        "native_line_table_row_count": len(rows),
+        "source_map_record_ids": record_ids,
+        "native_line_table_row_ids": row_ids,
+        "published_identity_kinds": identity_kinds,
+        "required_identity_kinds_present": [
+            kind for kind in OBJECT_MODEL_SOURCE_IDENTITY_KINDS if kind in identity_kinds
+        ],
+        "fail_closed_boundaries": [
+            {
+                "capability_id": "emittedNativeDebugInfo",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "object artifact native debug-info emission is not published by this surface",
+            },
+            {
+                "capability_id": "statementLevelStepping",
+                "status": "reserved",
+                "fail_closed": True,
+                "unpublished_reason": "runtime-debug trace statement stepping is not integrated with emitted native debug info",
+            },
+        ],
+    }
 
 
 def build_object_model_source_identity_payload(
@@ -509,7 +566,7 @@ def build_object_model_source_identity_payload(
             "runtime_debug_trace_step_id": f"object-model.step.{_identity_slug(record['owner_name'], record['selector'])}",
             "status": "source-identity-ready-stepping-blocked",
             "blocked_by": [
-                "native-debug-line-emission",
+                "emitted-native-debug-info",
                 "runtime-debug-trace-statement-stepping-integration",
             ],
         }
@@ -519,6 +576,12 @@ def build_object_model_source_identity_payload(
     ]
     identity_kinds = sorted({record["runtime_identity_kind"] for record in records})
     supported = bool(records and rows and resolved_source_path)
+    source_map_publication = _build_object_model_source_map_publication(
+        records,
+        rows,
+        source_path=resolved_source_path,
+        source_graph=source_graph,
+    )
     return {
         "contract_id": OBJECT_MODEL_SOURCE_IDENTITY_CONTRACT_ID,
         "supported": supported,
@@ -528,6 +591,10 @@ def build_object_model_source_identity_payload(
         "runs_on_canonical_frontend_manifest": bool(manifest),
         "source_map_records_supported": bool(records),
         "native_line_table_projection_supported": bool(rows),
+        "source_map_publication_supported": source_map_publication["source_map_publication_supported"],
+        "native_line_table_publication_supported": source_map_publication[
+            "native_line_table_publication_supported"
+        ],
         "method_stepping_candidates_supported": bool(stepping_candidates),
         "full_source_map_publication": False,
         "runtime_debug_trace_statement_stepping": False,
@@ -541,6 +608,7 @@ def build_object_model_source_identity_payload(
         ],
         "source_map_records": records,
         "native_line_table_rows": rows,
+        "source_map_native_line_table_publication": source_map_publication,
         "stepping_candidates": stepping_candidates,
         "fail_closed_boundaries": [
             {
@@ -592,6 +660,11 @@ def build_debug_payload(
     )
     if object_model_source_identity["supported"]:
         evidence_roots.append("object-model-production-source-identity")
+    source_map_publication = _as_dict(
+        object_model_source_identity.get("source_map_native_line_table_publication")
+    )
+    if source_map_publication.get("supported") is True:
+        evidence_roots.append("object-model-production-source-map-native-line-table")
     return {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": supported,

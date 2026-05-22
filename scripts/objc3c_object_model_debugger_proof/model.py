@@ -23,6 +23,9 @@ CONTRACT_ID = "objc3c.object_model.debugger_value_inspection_replay.v1"
 VALIDATION_CONTRACT_ID = "objc3c.object_model.debugger_value_inspection.validation.v1"
 PRODUCTION_PROBE_CONTRACT_ID = "objc3c.object_model.production_artifact_probe.v1"
 PRODUCTION_SOURCE_IDENTITY_CONTRACT_ID = "objc3c.object_model.production.source_identity.v1"
+PRODUCTION_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
+    "objc3c.object_model.production.source_map_native_line_table.v1"
+)
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -1069,6 +1072,19 @@ def _validate_production_probe_contract(
                 "production_artifact_probe.required_artifact_kinds",
             )
         )
+    for minimums_key in (
+        "runtime_inventory_minimums",
+        "object_model_source_identity_minimums",
+        "source_map_native_line_table_minimums",
+    ):
+        if not _object(probe.get(minimums_key)):
+            diagnostics.append(
+                _diag(
+                    "production-probe-minimums-missing",
+                    f"production artifact probe must declare {minimums_key}",
+                    f"production_artifact_probe.{minimums_key}",
+                )
+            )
     if _object(probe.get("debug_map_boundary")).get("full_source_map_publication") != "fail-closed":
         diagnostics.append(
             _diag(
@@ -1107,6 +1123,7 @@ def _validate_artifact_inspector_compatibility_contract(
         "required_contract_id": "objc3c.developer.tooling.artifact.inspector.v1",
         "required_support_class": "compile-artifact-inspector",
         "required_runtime_inventory_reflection_abi_version": "manifest-derived-runtime-metadata",
+        "object_model_source_map_native_line_table": "required",
         "full_source_map_publication": "fail-closed",
     }
     for key, expected_value in expected.items():
@@ -1152,6 +1169,185 @@ def _validate_count_at_least(
         minimum = 0
     if actual < minimum:
         diagnostics.append(_diag(code, f"{message}: expected >= {minimum}, got {actual}", path))
+
+
+def _validate_fail_closed_publication_boundaries(
+    publication: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    boundaries = {
+        _safe_str(_object(boundary).get("capability_id")): _object(boundary)
+        for boundary in _list(publication.get("fail_closed_boundaries"))
+    }
+    for capability_id in ("emittedNativeDebugInfo", "statementLevelStepping"):
+        boundary = boundaries.get(capability_id, {})
+        if boundary.get("status") != "reserved" or boundary.get("fail_closed") is not True:
+            diagnostics.append(
+                _diag(
+                    "production-source-map-publication-boundary-missing",
+                    f"production source-map/native-line-table publication must keep {capability_id} reserved",
+                    "production_artifact_probe.debug_map.object_model_source_identity.source_map_native_line_table_publication.fail_closed_boundaries",
+                )
+            )
+
+
+def _validate_production_source_map_publication_payload(
+    source_identity: dict[str, Any],
+    *,
+    records: list[Any],
+    rows: list[Any],
+    required_kinds: set[str],
+    minimums: dict[str, Any],
+    expected_source: str,
+    diagnostics: list[Diagnostic],
+) -> None:
+    path = (
+        "production_artifact_probe.debug_map.object_model_source_identity"
+        ".source_map_native_line_table_publication"
+    )
+    publication = _object(source_identity.get("source_map_native_line_table_publication"))
+    if not publication:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-missing",
+                "production object-model source identity must publish a source-map/native-line-table surface",
+                path,
+            )
+        )
+        return
+
+    if publication.get("contract_id") != PRODUCTION_SOURCE_MAP_PUBLICATION_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-contract-id",
+                "production source-map/native-line-table contract id drifted",
+                f"{path}.contract_id",
+            )
+        )
+    if publication.get("supported") is not True:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-unavailable",
+                "production source-map/native-line-table publication must be supported",
+                f"{path}.supported",
+            )
+        )
+    if publication.get("publication_model") != "canonical-frontend-manifest-source-map-native-line-table":
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-model-drift",
+                "production source-map/native-line-table publication model drifted",
+                f"{path}.publication_model",
+            )
+        )
+    if _safe_str(publication.get("source_path")).replace("\\", "/") != expected_source:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-source-drift",
+                "production source-map/native-line-table source path drifted",
+                f"{path}.source_path",
+            )
+        )
+    if not _safe_str(publication.get("source_graph_digest")):
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-source-graph-missing",
+                "production source-map/native-line-table publication must carry the source graph digest",
+                f"{path}.source_graph_digest",
+            )
+        )
+
+    for key in ("source_map_publication_supported", "native_line_table_publication_supported"):
+        if publication.get(key) is not True:
+            diagnostics.append(
+                _diag(
+                    "production-source-map-publication-incomplete",
+                    f"production source-map/native-line-table publication must set {key}",
+                    f"{path}.{key}",
+                )
+            )
+    for key in ("emitted_native_debug_info_supported", "statement_stepping_supported"):
+        if publication.get(key) is not False:
+            diagnostics.append(
+                _diag(
+                    "production-source-map-publication-overclaimed",
+                    f"production source-map/native-line-table publication must not claim {key}",
+                    f"{path}.{key}",
+                )
+            )
+
+    record_ids = {
+        _safe_str(_object(record).get("source_map_record_id"))
+        for record in records
+        if _safe_str(_object(record).get("source_map_record_id"))
+    }
+    row_ids = {
+        _safe_str(_object(row).get("row_id"))
+        for row in rows
+        if _safe_str(_object(row).get("row_id"))
+    }
+    published_record_ids = {
+        _safe_str(item)
+        for item in _list(publication.get("source_map_record_ids"))
+        if _safe_str(item)
+    }
+    published_row_ids = {
+        _safe_str(item)
+        for item in _list(publication.get("native_line_table_row_ids"))
+        if _safe_str(item)
+    }
+    if publication.get("source_map_record_count") != len(record_ids) or published_record_ids != record_ids:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-record-drift",
+                "production source-map publication record ids drifted from source identity records",
+                f"{path}.source_map_record_ids",
+            )
+        )
+    if publication.get("native_line_table_row_count") != len(row_ids) or published_row_ids != row_ids:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-row-drift",
+                "production native line-table publication row ids drifted from source identity rows",
+                f"{path}.native_line_table_row_ids",
+            )
+        )
+    _validate_count_at_least(
+        publication.get("source_map_record_count"),
+        minimums.get("source_map_records"),
+        diagnostics,
+        code="production-source-map-publication-incomplete",
+        message="production source-map publication lacks source-map records",
+        path=f"{path}.source_map_record_count",
+    )
+    _validate_count_at_least(
+        publication.get("native_line_table_row_count"),
+        minimums.get("native_line_table_rows"),
+        diagnostics,
+        code="production-source-map-publication-incomplete",
+        message="production native line-table publication lacks rows",
+        path=f"{path}.native_line_table_row_count",
+    )
+
+    publication_required_kinds = set(
+        _safe_str(item)
+        for item in _list(minimums.get("required_identity_kinds"))
+        if _safe_str(item)
+    ) or required_kinds
+    published_kinds = {
+        _safe_str(item)
+        for item in _list(publication.get("required_identity_kinds_present"))
+        if _safe_str(item)
+    }
+    if publication_required_kinds - published_kinds:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-kind-missing",
+                "production source-map/native-line-table publication is missing required identity kinds",
+                f"{path}.required_identity_kinds_present",
+            )
+        )
+    _validate_fail_closed_publication_boundaries(publication, diagnostics)
 
 
 def _validate_production_source_identity_payload(
@@ -1207,6 +1403,8 @@ def _validate_production_source_identity_payload(
     required_true = (
         "source_map_records_supported",
         "native_line_table_projection_supported",
+        "source_map_publication_supported",
+        "native_line_table_publication_supported",
         "method_stepping_candidates_supported",
     )
     for key in required_true:
@@ -1234,6 +1432,7 @@ def _validate_production_source_identity_payload(
             )
 
     minimums = _object(probe.get("object_model_source_identity_minimums"))
+    publication_minimums = _object(probe.get("source_map_native_line_table_minimums"))
     records = _list(source_identity.get("source_map_records"))
     rows = _list(source_identity.get("native_line_table_rows"))
     stepping_candidates = _list(source_identity.get("stepping_candidates"))
@@ -1360,6 +1559,16 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
                 )
             )
+
+    _validate_production_source_map_publication_payload(
+        source_identity,
+        records=records,
+        rows=rows,
+        required_kinds=required_kinds,
+        minimums=publication_minimums,
+        expected_source=expected_source,
+        diagnostics=diagnostics,
+    )
 
 
 def _validate_production_probe_artifacts(

@@ -104,13 +104,13 @@
         },
         {
           "id": "production-object-model-artifact-probe",
-          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, and compiler-owned object-model source identity rows.",
+          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication.",
           "status": "satisfied",
           "path": "scripts/check_objc3c_object_model_debugger_proof.py"
         },
         {
           "id": "debugger-source-identity",
-          "description": "Full canonical source-map publication, emitted native debug line tables, and debugger stepping integration must still be owned by the production artifact path.",
+          "description": "Full source-map publication beyond bounded identity rows, emitted native debug info, and debugger stepping integration must still be owned by the production artifact path.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -130,7 +130,7 @@
         },
         {
           "id": "object-model-debugger-proof",
-          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, and compiler-owned object-model source identity rows remain replayable through the npm bridge.",
+          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge.",
           "status": "satisfied",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
         },
@@ -220,7 +220,7 @@
         },
         {
           "id": "debugger-runtime-value-probe",
-          "description": "Debugger value inspection proves runtime metadata through a checked source-map/debug-anchor replay fixture plus a canonical frontend artifact-inspector and object-model source-identity probe over the integrated object-model source.",
+          "description": "Debugger value inspection proves runtime metadata through a checked source-map/debug-anchor replay fixture plus a canonical frontend artifact-inspector, bounded object-model source-identity, and source-map/native-line-table publication probe over the integrated object-model source.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         }
@@ -279,10 +279,10 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, and compiler-owned source identity rows now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
+          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, and production source-map/native-line-table publication now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
           "missing_work": [
-            "Full canonical source-map publication and emitted native debug line tables for the integrated object-model program.",
-            "Production debugger statement-stepping integration over those emitted native debug line tables."
+            "Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.",
+            "Production debugger statement-stepping integration over emitted native debug info."
           ],
           "tracking_issue": "#8198"
         }

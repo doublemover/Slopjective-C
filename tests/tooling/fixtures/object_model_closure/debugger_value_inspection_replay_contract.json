@@ -44,10 +44,22 @@
         "method"
       ]
     },
+    "source_map_native_line_table_minimums": {
+      "source_map_records": 6,
+      "native_line_table_rows": 6,
+      "required_identity_kinds": [
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method"
+      ]
+    },
     "debug_map_boundary": {
       "full_source_map_publication": "fail-closed",
       "statement_stepping": "fail-closed",
-      "boundary_reason": "the production compiler path must publish object-model source identity rows from the canonical manifest now, while full source-map publication, emitted native debug line tables, and debugger stepping remain blocked until they are emitted by that same path"
+      "boundary_reason": "the production compiler path must publish object-model source-map records and native line-table rows from the canonical manifest now, while emitted native debug info and debugger stepping remain blocked until they are integrated by that same path"
     }
   },
   "reflection_abi_governance": {
@@ -77,6 +89,7 @@
     "required_runtime_inventory_reflection_abi_version": "manifest-derived-runtime-metadata",
     "requires_runtime_inventory": true,
     "requires_debug_map_link": true,
+    "object_model_source_map_native_line_table": "required",
     "full_source_map_publication": "fail-closed"
   },
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",

@@ -149,14 +149,26 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
                 "method",
             ],
         },
+        "source_map_native_line_table_minimums": {
+            "source_map_records": 6,
+            "native_line_table_rows": 6,
+            "required_identity_kinds": [
+                "class",
+                "category",
+                "protocol",
+                "property",
+                "ivar",
+                "method",
+            ],
+        },
         "debug_map_boundary": {
             "full_source_map_publication": "fail-closed",
             "statement_stepping": "fail-closed",
             "boundary_reason": (
-                "the production compiler path must publish object-model source identity "
-                "rows from the canonical manifest now, while full source-map publication, "
-                "emitted native debug line tables, and debugger stepping remain blocked "
-                "until they are emitted by that same path"
+                "the production compiler path must publish object-model source-map "
+                "records and native line-table rows from the canonical manifest now, "
+                "while emitted native debug info and debugger stepping remain blocked "
+                "until they are integrated by that same path"
             ),
         },
     }
@@ -193,6 +205,9 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     assert contract["artifact_inspector_compatibility"][
         "required_runtime_inventory_reflection_abi_version"
     ] == "manifest-derived-runtime-metadata"
+    assert contract["artifact_inspector_compatibility"][
+        "object_model_source_map_native_line_table"
+    ] == "required"
     assert {
         anchor["runtime_identity_kind"]
         for anchor in contract["source_backed_debug_anchors"]
@@ -335,13 +350,55 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         for record in source_map_records
         if record["runtime_identity_kind"] == "method"
     ]
+    source_map_publication = {
+        "contract_id": "objc3c.object_model.production.source_map_native_line_table.v1",
+        "supported": True,
+        "source_path": source_path,
+        "source_graph_digest": "a" * 64,
+        "publication_model": "canonical-frontend-manifest-source-map-native-line-table",
+        "source_map_publication_supported": True,
+        "native_line_table_publication_supported": True,
+        "emitted_native_debug_info_supported": False,
+        "statement_stepping_supported": False,
+        "source_map_record_count": len(source_map_records),
+        "native_line_table_row_count": len(native_line_table_rows),
+        "source_map_record_ids": [
+            record["source_map_record_id"] for record in source_map_records
+        ],
+        "native_line_table_row_ids": [
+            row["row_id"] for row in native_line_table_rows
+        ],
+        "required_identity_kinds_present": [
+            "class",
+            "category",
+            "protocol",
+            "property",
+            "ivar",
+            "method",
+        ],
+        "fail_closed_boundaries": [
+            {
+                "capability_id": "emittedNativeDebugInfo",
+                "status": "reserved",
+                "fail_closed": True,
+            },
+            {
+                "capability_id": "statementLevelStepping",
+                "status": "reserved",
+                "fail_closed": True,
+            },
+        ],
+    }
     return {
         "contract_id": "objc3c.object_model.production.source_identity.v1",
         "supported": True,
         "source_path": source_path,
+        "source_graph_digest": "a" * 64,
         "runs_on_canonical_frontend_manifest": True,
         "source_map_records_supported": True,
         "native_line_table_projection_supported": True,
+        "source_map_publication_supported": True,
+        "native_line_table_publication_supported": True,
         "method_stepping_candidates_supported": True,
         "full_source_map_publication": False,
         "runtime_debug_trace_statement_stepping": False,
@@ -359,6 +416,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         ],
         "source_map_records": source_map_records,
         "native_line_table_rows": native_line_table_rows,
+        "source_map_native_line_table_publication": source_map_publication,
         "stepping_candidates": stepping_candidates,
     }
 
@@ -419,6 +477,60 @@ def test_object_model_debugger_proof_rejects_missing_production_source_identity(
     ).diagnostics
 
     assert "production-source-identity-missing" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
+def test_object_model_debugger_proof_rejects_missing_production_source_map_publication(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity.pop("source_map_native_line_table_publication")
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-source-map-publication-missing" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
+def test_object_model_debugger_proof_rejects_production_source_map_publication_overclaim(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity["source_map_native_line_table_publication"][
+        "statement_stepping_supported"
+    ] = True
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-source-map-publication-overclaimed" in {
         diagnostic.code for diagnostic in diagnostics
     }
 
