@@ -23,8 +23,10 @@ void RecordStatusCounter(RuntimeStdlibCollectionsState &state, int status) {
       ++state.stale_handle_failure_count;
       break;
     case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR:
-    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH:
       ++state.malformed_descriptor_failure_count;
+      break;
+    case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH:
+      ++state.descriptor_mismatch_failure_count;
       break;
     case OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED:
       ++state.capacity_failure_count;
@@ -105,6 +107,50 @@ int StatusForLookup(storage::LookupStatus status) {
   }
 }
 
+CollectionDescriptorShape MakeDescriptorShape(int descriptor_kind,
+                                              int key_type,
+                                              int value_type) {
+  return CollectionDescriptorShape{descriptor_kind, key_type, value_type};
+}
+
+CollectionDescriptorShape DescriptorShapeFromRecord(
+    const CollectionRecord &record) {
+  return MakeDescriptorShape(record.collection_descriptor_kind,
+                             record.collection_descriptor_key_type,
+                             record.collection_descriptor_value_type);
+}
+
+CollectionDescriptorShape DefaultDescriptorShapeForKind(
+    storage::DescriptorKind kind) {
+  const int descriptor_kind = DescriptorKindForStorageKind(kind);
+  const int value_type =
+      descriptor_kind == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP
+          ? OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32
+          : OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE;
+  return MakeDescriptorShape(
+      descriptor_kind, OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+      value_type);
+}
+
+bool DescriptorShapeMatches(CollectionDescriptorShape left,
+                            CollectionDescriptorShape right) {
+  return left.kind == right.kind && left.key_type == right.key_type &&
+         left.value_type == right.value_type;
+}
+
+void RecordDescriptorEvent(RuntimeStdlibCollectionsState &state,
+                           int descriptor_handle,
+                           CollectionDescriptorShape actual,
+                           CollectionDescriptorShape expected,
+                           int status,
+                           int result) {
+  state.last_descriptor_handle = descriptor_handle;
+  state.last_descriptor_actual = actual;
+  state.last_descriptor_expected = expected;
+  state.last_descriptor_status = status;
+  state.last_descriptor_result = result;
+}
+
 bool IsValidDescriptorShape(int descriptor_kind,
                             int key_type,
                             int value_type) {
@@ -130,24 +176,14 @@ void AssignDescriptor(CollectionRecord &record,
 
 void AssignDefaultDescriptor(CollectionRecord &record,
                              storage::DescriptorKind kind) {
-  const int descriptor_kind = DescriptorKindForStorageKind(kind);
-  const int value_type =
-      descriptor_kind == OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP
-          ? OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32
-          : OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE;
-  AssignDescriptor(record, descriptor_kind,
-                   OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
-                   value_type);
+  const CollectionDescriptorShape shape = DefaultDescriptorShapeForKind(kind);
+  AssignDescriptor(record, shape.kind, shape.key_type, shape.value_type);
 }
 
 bool DescriptorMatchesRecord(const CollectionRecord &descriptor,
                              const CollectionRecord &record) {
-  return descriptor.collection_descriptor_kind ==
-             record.collection_descriptor_kind &&
-         descriptor.collection_descriptor_key_type ==
-             record.collection_descriptor_key_type &&
-         descriptor.collection_descriptor_value_type ==
-             record.collection_descriptor_value_type;
+  return DescriptorShapeMatches(DescriptorShapeFromRecord(descriptor),
+                                DescriptorShapeFromRecord(record));
 }
 
 CollectionRecord MakeArrayRecord(const int *values,

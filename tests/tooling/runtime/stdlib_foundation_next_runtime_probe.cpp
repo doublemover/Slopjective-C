@@ -110,6 +110,71 @@ int main() {
     return Fail("array invalid count did not fail closed");
   }
 
+  const int array_descriptor = objc3_runtime_stdlib_collections_descriptor_i32(
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE);
+  const int map_descriptor = objc3_runtime_stdlib_collections_descriptor_i32(
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32);
+  const int set_descriptor = objc3_runtime_stdlib_collections_descriptor_i32(
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_SET,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+      OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE);
+  if (array_descriptor <= 0 || map_descriptor <= 0 || set_descriptor <= 0) {
+    return Fail("collection descriptor handles were not runtime-owned ids");
+  }
+  if (objc3_runtime_stdlib_collections_descriptor_i32(
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP,
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_I32,
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_TYPE_NONE) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MALFORMED_DESCRIPTOR) {
+    return Fail("malformed map descriptor shape did not fail closed");
+  }
+
+  const int described_array =
+      objc3_runtime_stdlib_collections_array3_descriptor_i32(
+          array_descriptor, 1, 2, 0, 2);
+  if (described_array <= 0 ||
+      objc3_runtime_stdlib_collections_array_count_i32(described_array) != 2 ||
+      objc3_runtime_stdlib_collections_descriptor_matches_i32(
+          array_descriptor, described_array) != 1) {
+    return Fail("descriptor-backed array identity drifted");
+  }
+  const int described_map =
+      objc3_runtime_stdlib_collections_map_entry_descriptor_i32(
+          map_descriptor, 2, 30);
+  if (described_map <= 0 ||
+      objc3_runtime_stdlib_collections_map_lookup_or_i32(
+          described_map, 2, 0) != 30 ||
+      objc3_runtime_stdlib_collections_descriptor_matches_i32(
+          map_descriptor, described_map) != 1) {
+    return Fail("descriptor-backed map identity drifted");
+  }
+  const int described_set =
+      objc3_runtime_stdlib_collections_set3_descriptor_i32(
+          set_descriptor, 4, 4, 5, 3);
+  if (described_set <= 0 ||
+      objc3_runtime_stdlib_collections_set_count_i32(described_set) != 2 ||
+      objc3_runtime_stdlib_collections_descriptor_matches_i32(
+          set_descriptor, described_set) != 1) {
+    return Fail("descriptor-backed set identity drifted");
+  }
+  if (objc3_runtime_stdlib_collections_array3_descriptor_i32(
+          map_descriptor, 1, 2, 3, 3) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH) {
+    return Fail("descriptor-backed array mismatch did not fail closed");
+  }
+  if (objc3_runtime_stdlib_collections_descriptor_matches_i32(
+          map_descriptor, described_array) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH) {
+    return Fail("descriptor query mismatch did not fail closed");
+  }
+
   const int slice = objc3_runtime_stdlib_collections_array_slice_i32(array, 1, 2);
   if (slice <= 0) {
     return Fail("slice handle was not a runtime-owned positive id");
@@ -190,6 +255,51 @@ int main() {
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_HANDLE) {
     return Fail("map invalid handle did not fail closed");
   }
+  const int map_key_iterator =
+      objc3_runtime_stdlib_collections_map_key_iterator_i32(map);
+  if (map_key_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_key_iterator, 99) != 7 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_key_iterator, 99) != 8 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_key_iterator, 99) != 99) {
+    return Fail("map key iterator did not preserve insertion order");
+  }
+  const int map_value_iterator =
+      objc3_runtime_stdlib_collections_map_value_iterator_i32(map);
+  if (map_value_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_value_iterator, 99) != 45 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_value_iterator, 99) != 64 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          map_value_iterator, 99) != 99) {
+    return Fail("map value iterator did not preserve insertion order");
+  }
+  const int map_delete_remaining_count =
+      objc3_runtime_stdlib_collections_map_delete_i32(map, 8);
+  if (map_delete_remaining_count != 1 ||
+      objc3_runtime_stdlib_collections_map_contains_i32(map, 8) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
+    return Fail("map delete did not remove the requested key");
+  }
+  if (objc3_runtime_stdlib_collections_map_delete_i32(map, 8) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
+    return Fail("map delete missing-key status did not fail closed");
+  }
+  const int invalidated_map_iterator =
+      objc3_runtime_stdlib_collections_map_key_iterator_i32(map);
+  if (invalidated_map_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_map_insert_i32(map, 9, 81) != 2 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          invalidated_map_iterator, 99) != 99 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION) {
+    return Fail("map mutation during iteration did not fail closed");
+  }
 
   const int set = objc3_runtime_stdlib_collections_set3_i32(7, 7, 9, 3);
   if (set <= 0) {
@@ -207,9 +317,44 @@ int main() {
   const int set_iterator =
       objc3_runtime_stdlib_collections_set_iterator_i32(set);
   if (set_iterator <= 0 ||
-      objc3_runtime_stdlib_collections_set_insert_i32(set, 11) != 3 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(set_iterator,
+                                                           99) != 7 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(set_iterator,
+                                                           99) != 9 ||
       objc3_runtime_stdlib_collections_iterator_next_or_i32(set_iterator,
                                                            99) != 99 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_ITERATION_END) {
+    return Fail("set iterator did not preserve insertion order");
+  }
+  const int set_delete_remaining_count =
+      objc3_runtime_stdlib_collections_set_delete_i32(set, 7);
+  if (set_delete_remaining_count != 1 ||
+      objc3_runtime_stdlib_collections_set_contains_i32(set, 7) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
+    return Fail("set delete did not remove the requested value");
+  }
+  if (objc3_runtime_stdlib_collections_set_delete_i32(set, 7) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_NOT_FOUND) {
+    return Fail("set delete missing-value status did not fail closed");
+  }
+  const int set_after_delete_iterator =
+      objc3_runtime_stdlib_collections_set_iterator_i32(set);
+  if (set_after_delete_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          set_after_delete_iterator, 99) != 9 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          set_after_delete_iterator, 99) != 99) {
+    return Fail("set iterator did not reflect delete mutation");
+  }
+  const int invalidated_set_iterator =
+      objc3_runtime_stdlib_collections_set_iterator_i32(set);
+  if (invalidated_set_iterator <= 0 ||
+      objc3_runtime_stdlib_collections_set_insert_i32(set, 11) != 2 ||
+      objc3_runtime_stdlib_collections_iterator_next_or_i32(
+          invalidated_set_iterator, 99) != 99 ||
       objc3_runtime_stdlib_collections_last_status_i32() !=
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_MUTATED_DURING_ITERATION) {
     return Fail("set mutation during iteration did not fail closed");
@@ -225,25 +370,37 @@ int main() {
           &collections_snapshot) != 0) {
     return Fail("collections snapshot copy failed");
   }
-  if (collections_snapshot.total_call_count != 59 ||
-      collections_snapshot.array_create_call_count != 3 ||
-      collections_snapshot.array_query_call_count != 7 ||
-      collections_snapshot.map_create_call_count != 1 ||
-      collections_snapshot.map_query_call_count != 10 ||
-      collections_snapshot.map_mutation_call_count != 3 ||
-      collections_snapshot.set_create_call_count != 2 ||
-      collections_snapshot.set_query_call_count != 3 ||
-      collections_snapshot.set_mutation_call_count != 1 ||
+  if (collections_snapshot.total_call_count != 107 ||
+      collections_snapshot.array_create_call_count != 5 ||
+      collections_snapshot.array_query_call_count != 8 ||
+      collections_snapshot.map_create_call_count != 2 ||
+      collections_snapshot.map_query_call_count != 12 ||
+      collections_snapshot.map_mutation_call_count != 6 ||
+      collections_snapshot.set_create_call_count != 3 ||
+      collections_snapshot.set_query_call_count != 5 ||
+      collections_snapshot.set_mutation_call_count != 3 ||
       collections_snapshot.slice_create_call_count != 2 ||
       collections_snapshot.slice_query_call_count != 3 ||
-      collections_snapshot.iterator_create_call_count != 3 ||
-      collections_snapshot.iterator_query_call_count != 8 ||
-      collections_snapshot.status_call_count != 13 ||
-      collections_snapshot.array_record_count != 2 ||
-      collections_snapshot.map_record_count != 1 ||
-      collections_snapshot.set_record_count != 1 ||
+      collections_snapshot.iterator_create_call_count != 8 ||
+      collections_snapshot.iterator_query_call_count != 20 ||
+      collections_snapshot.descriptor_create_call_count != 4 ||
+      collections_snapshot.descriptor_query_call_count != 4 ||
+      collections_snapshot.status_call_count != 22 ||
+      collections_snapshot.array_record_count != 3 ||
+      collections_snapshot.map_record_count != 2 ||
+      collections_snapshot.set_record_count != 2 ||
       collections_snapshot.slice_record_count != 1 ||
-      collections_snapshot.iterator_record_count != 3) {
+      collections_snapshot.iterator_record_count != 8 ||
+      collections_snapshot.descriptor_record_count != 3 ||
+      collections_snapshot.malformed_descriptor_failure_count != 1 ||
+      collections_snapshot.descriptor_mismatch_failure_count != 2 ||
+      collections_snapshot.iterator_invalidation_count != 2 ||
+      collections_snapshot.last_descriptor_status !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_DESCRIPTOR_MISMATCH ||
+      collections_snapshot.last_descriptor_actual_kind !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_MAP ||
+      collections_snapshot.last_descriptor_expected_kind !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY) {
     return Fail("collections runtime call counters drifted");
   }
 
@@ -255,12 +412,32 @@ int main() {
             << collections_snapshot.total_call_count
             << ",\"array_record_count\":"
             << collections_snapshot.array_record_count
+            << ",\"descriptor_record_count\":"
+            << collections_snapshot.descriptor_record_count
+            << ",\"descriptor_create_call_count\":"
+            << collections_snapshot.descriptor_create_call_count
+            << ",\"descriptor_query_call_count\":"
+            << collections_snapshot.descriptor_query_call_count
+            << ",\"descriptor_mismatch_failure_count\":"
+            << collections_snapshot.descriptor_mismatch_failure_count
+            << ",\"last_descriptor_status\":"
+            << collections_snapshot.last_descriptor_status
+            << ",\"last_descriptor_actual_kind\":"
+            << collections_snapshot.last_descriptor_actual_kind
+            << ",\"last_descriptor_expected_kind\":"
+            << collections_snapshot.last_descriptor_expected_kind
             << ",\"map_record_count\":"
             << collections_snapshot.map_record_count
             << ",\"map_mutation_call_count\":"
             << collections_snapshot.map_mutation_call_count
+            << ",\"map_delete_remaining_count\":"
+            << map_delete_remaining_count
             << ",\"set_record_count\":"
             << collections_snapshot.set_record_count
+            << ",\"set_mutation_call_count\":"
+            << collections_snapshot.set_mutation_call_count
+            << ",\"set_delete_remaining_count\":"
+            << set_delete_remaining_count
             << ",\"slice_record_count\":"
             << collections_snapshot.slice_record_count
             << ",\"iterator_record_count\":"

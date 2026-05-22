@@ -16,6 +16,12 @@ struct MapEntry {
   int value = 0;
 };
 
+struct CollectionDescriptorShape {
+  int kind = 0;
+  int key_type = 0;
+  int value_type = 0;
+};
+
 struct CollectionRecord {
   storage::RecordHeader header;
   std::vector<int> values;
@@ -60,6 +66,7 @@ struct RuntimeStdlibCollectionsState {
   std::uint64_t cross_kind_handle_failure_count = 0;
   std::uint64_t stale_handle_failure_count = 0;
   std::uint64_t malformed_descriptor_failure_count = 0;
+  std::uint64_t descriptor_mismatch_failure_count = 0;
   std::uint64_t capacity_failure_count = 0;
   std::uint64_t iterator_invalidation_count = 0;
   int last_handle = 0;
@@ -68,6 +75,11 @@ struct RuntimeStdlibCollectionsState {
   int last_input_c = 0;
   int last_status = OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK;
   int last_result = 0;
+  int last_descriptor_handle = 0;
+  int last_descriptor_status = OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK;
+  int last_descriptor_result = 0;
+  CollectionDescriptorShape last_descriptor_actual;
+  CollectionDescriptorShape last_descriptor_expected;
 };
 
 RuntimeStdlibCollectionsState &State();
@@ -80,6 +92,21 @@ void RecordCall(RuntimeStdlibCollectionsState &state,
                 int status,
                 int result);
 int StatusForLookup(storage::LookupStatus status);
+CollectionDescriptorShape MakeDescriptorShape(int descriptor_kind,
+                                              int key_type,
+                                              int value_type);
+CollectionDescriptorShape DescriptorShapeFromRecord(
+    const CollectionRecord &record);
+CollectionDescriptorShape DefaultDescriptorShapeForKind(
+    storage::DescriptorKind kind);
+bool DescriptorShapeMatches(CollectionDescriptorShape left,
+                            CollectionDescriptorShape right);
+void RecordDescriptorEvent(RuntimeStdlibCollectionsState &state,
+                           int descriptor_handle,
+                           CollectionDescriptorShape actual,
+                           CollectionDescriptorShape expected,
+                           int status,
+                           int result);
 bool IsValidDescriptorShape(int descriptor_kind, int key_type, int value_type);
 void AssignDescriptor(CollectionRecord &record,
                       int descriptor_kind,

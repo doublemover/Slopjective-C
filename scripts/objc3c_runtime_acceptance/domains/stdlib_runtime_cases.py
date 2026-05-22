@@ -76,21 +76,71 @@ def check_stdlib_foundation_next_runtime_probe_case(
     expect_equal(payload.get("text_record_count"), 4, "stdlib text record count drifted")
     expect_equal(
         payload.get("collections_total_call_count"),
-        59,
+        107,
         "stdlib collections calls drifted",
     )
-    expect_equal(payload.get("array_record_count"), 2, "stdlib array record count drifted")
-    expect_equal(payload.get("map_record_count"), 1, "stdlib map record count drifted")
+    expect_equal(payload.get("array_record_count"), 3, "stdlib array record count drifted")
+    expect_equal(
+        payload.get("descriptor_record_count"),
+        3,
+        "stdlib collection descriptor record count drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_create_call_count"),
+        4,
+        "stdlib collection descriptor create calls drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_query_call_count"),
+        4,
+        "stdlib collection descriptor query calls drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_mismatch_failure_count"),
+        2,
+        "stdlib collection descriptor mismatch evidence drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_status"),
+        30641,
+        "stdlib collection last descriptor status drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_actual_kind"),
+        4,
+        "stdlib collection actual descriptor kind drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_expected_kind"),
+        1,
+        "stdlib collection expected descriptor kind drifted",
+    )
+    expect_equal(payload.get("map_record_count"), 2, "stdlib map record count drifted")
     expect_equal(
         payload.get("map_mutation_call_count"),
-        3,
+        6,
         "stdlib map mutation calls drifted",
     )
-    expect_equal(payload.get("set_record_count"), 1, "stdlib set record count drifted")
+    expect_equal(
+        payload.get("map_delete_remaining_count"),
+        1,
+        "stdlib map delete result drifted",
+    )
+    expect_equal(payload.get("set_record_count"), 2, "stdlib set record count drifted")
+    expect_equal(
+        payload.get("set_mutation_call_count"),
+        3,
+        "stdlib set mutation calls drifted",
+    )
+    expect_equal(
+        payload.get("set_delete_remaining_count"),
+        1,
+        "stdlib set delete result drifted",
+    )
     expect_equal(payload.get("slice_record_count"), 1, "stdlib slice record count drifted")
     expect_equal(
         payload.get("iterator_record_count"),
-        3,
+        8,
         "stdlib iterator record count drifted",
     )
     expect_equal(
@@ -123,15 +173,25 @@ def check_stdlib_foundation_next_runtime_probe_case(
                 "objc3_runtime_stdlib_collections_array_sum_i32",
                 "objc3_runtime_stdlib_collections_map_lookup_or_i32",
                 "objc3_runtime_stdlib_collections_map_insert_i32",
+                "objc3_runtime_stdlib_collections_map_delete_i32",
+                "objc3_runtime_stdlib_collections_map_key_iterator_i32",
+                "objc3_runtime_stdlib_collections_map_value_iterator_i32",
                 "objc3_runtime_stdlib_collections_set3_i32",
+                "objc3_runtime_stdlib_collections_set_delete_i32",
+                "objc3_runtime_stdlib_collections_set_iterator_i32",
                 "objc3_runtime_stdlib_collections_array_slice_i32",
                 "objc3_runtime_stdlib_collections_iterator_next_or_i32",
             ],
             "text_record_count": payload.get("text_record_count"),
             "array_record_count": payload.get("array_record_count"),
+            "descriptor_record_count": payload.get("descriptor_record_count"),
+            "descriptor_mismatch_failure_count": payload.get(
+                "descriptor_mismatch_failure_count"
+            ),
             "map_record_count": payload.get("map_record_count"),
             "map_mutation_call_count": payload.get("map_mutation_call_count"),
             "set_record_count": payload.get("set_record_count"),
+            "set_mutation_call_count": payload.get("set_mutation_call_count"),
             "slice_record_count": payload.get("slice_record_count"),
             "iterator_record_count": payload.get("iterator_record_count"),
         },

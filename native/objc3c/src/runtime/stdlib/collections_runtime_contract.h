@@ -77,6 +77,18 @@ typedef struct objc3_runtime_stdlib_collections_snapshot {
   int mutable_array_record_count;
   int descriptor_record_count;
   int stale_record_count;
+  uint64_t descriptor_create_call_count;
+  uint64_t descriptor_query_call_count;
+  uint64_t descriptor_mismatch_failure_count;
+  int last_descriptor_handle;
+  int last_descriptor_status;
+  int last_descriptor_result;
+  int last_descriptor_actual_kind;
+  int last_descriptor_actual_key_type;
+  int last_descriptor_actual_value_type;
+  int last_descriptor_expected_kind;
+  int last_descriptor_expected_key_type;
+  int last_descriptor_expected_value_type;
 } objc3_runtime_stdlib_collections_snapshot;
 
 int objc3_runtime_stdlib_collections_array3_i32(int first,
