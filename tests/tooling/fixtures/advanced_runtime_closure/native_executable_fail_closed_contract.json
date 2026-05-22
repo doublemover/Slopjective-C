@@ -1,0 +1,78 @@
+{
+  "contract_id": "objc3c.advanced-runtime.closure.native-executable-fail-closed.v1",
+  "issue_ref": 8199,
+  "status": "fail_closed",
+  "blocker_id": "advanced-runtime-native-executable-unsupported-language-features",
+  "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+  "generated_attempt_dir": "tmp/artifacts/advanced-runtime-closure/native-executable-umbrella/compile",
+  "expected_compile_backend": "direct-native",
+  "expected_exit_code": 1,
+  "native_compile_claimed": false,
+  "native_link_claimed": false,
+  "native_run_claimed": false,
+  "native_executable_umbrella_promoted": false,
+  "umbrella_support_promoted": false,
+  "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "boundary": "The combined positive fixture is now checked against the real native compiler path, but native executable umbrella support remains unclaimed because Objective-C 3 native mode still rejects throws, throw statements, try expressions, do/catch statements, and NSError/status bridge legality before object emission.",
+  "expected_diagnostics": [
+    {
+      "code": "O3S221",
+      "line": 25,
+      "column": 4,
+      "message_contains": "'throws' is not yet runnable"
+    },
+    {
+      "code": "O3S221",
+      "line": 97,
+      "column": 4,
+      "message_contains": "'throws' is not yet runnable"
+    },
+    {
+      "code": "O3S273",
+      "line": 27,
+      "column": 5,
+      "message_contains": "throw statements are not yet runnable"
+    },
+    {
+      "code": "O3S270",
+      "line": 99,
+      "column": 17,
+      "message_contains": "try expressions are not yet runnable"
+    },
+    {
+      "code": "O3S270",
+      "line": 100,
+      "column": 16,
+      "message_contains": "try expressions are not yet runnable"
+    },
+    {
+      "code": "O3S267",
+      "line": 101,
+      "column": 3,
+      "message_contains": "do/catch statements are not yet runnable"
+    },
+    {
+      "code": "O3S285",
+      "line": 32,
+      "column": 4,
+      "message_contains": "NSError/status bridge legality is not yet runnable"
+    }
+  ],
+  "absent_diagnostic_codes": [
+    "O3S303",
+    "O3S323"
+  ],
+  "forbidden_success_artifacts": [
+    "module.obj",
+    "module.ll",
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json",
+    "module.exe"
+  ],
+  "parallelism_caps": {
+    "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+    "CL_MPCount": "4",
+    "LLVM_PARALLEL_COMPILE_JOBS": "4",
+    "OBJC3C_NATIVE_BUILD_PARALLELISM": "4"
+  }
+}

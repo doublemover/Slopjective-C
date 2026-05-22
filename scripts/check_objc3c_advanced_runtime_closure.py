@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -25,6 +28,10 @@ from scripts.objc3c_debug_maps.model import (
     REQUIRED_SOURCE_MAP_RECORD_KINDS,
     load_bundle,
     validate_bundle_path,
+)
+from scripts.objc3c_runtime_acceptance.compile_backends import (
+    DIRECT_COMPILE_BACKEND,
+    compile_command,
 )
 
 LANGUAGE_SEMANTICS_CONTRACT_PATH = (
@@ -75,6 +82,16 @@ ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE = (
     "tests/tooling/fixtures/advanced_runtime_closure/"
     "combined_runtime_source_debug_map.json"
 )
+ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT = (
+    "tests/tooling/fixtures/advanced_runtime_closure/"
+    "native_executable_fail_closed_contract.json"
+)
+ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT_ID = (
+    "objc3c.advanced-runtime.closure.native-executable-fail-closed.v1"
+)
+ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR = (
+    "tmp/artifacts/advanced-runtime-closure/native-executable-umbrella/compile"
+)
 REQUIRED_CLOSURE_FEATURES = {
     "ownership",
     "blocks",
@@ -118,6 +135,57 @@ REQUIRED_LITERAL_NEGATIVE_CASE_IDS = {
     "property_behavior_conflict",
     "scheduler_guarantee_overclaim",
 }
+NATIVE_PARALLELISM_CAP_ENV = {
+    "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+    "CL_MPCount": "4",
+    "LLVM_PARALLEL_COMPILE_JOBS": "4",
+    "OBJC3C_NATIVE_BUILD_PARALLELISM": "4",
+}
+EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS = (
+    {
+        "code": "O3S221",
+        "line": 25,
+        "column": 4,
+        "message_contains": "'throws' is not yet runnable",
+    },
+    {
+        "code": "O3S221",
+        "line": 97,
+        "column": 4,
+        "message_contains": "'throws' is not yet runnable",
+    },
+    {
+        "code": "O3S273",
+        "line": 27,
+        "column": 5,
+        "message_contains": "throw statements are not yet runnable",
+    },
+    {
+        "code": "O3S270",
+        "line": 99,
+        "column": 17,
+        "message_contains": "try expressions are not yet runnable",
+    },
+    {
+        "code": "O3S270",
+        "line": 100,
+        "column": 16,
+        "message_contains": "try expressions are not yet runnable",
+    },
+    {
+        "code": "O3S267",
+        "line": 101,
+        "column": 3,
+        "message_contains": "do/catch statements are not yet runnable",
+    },
+    {
+        "code": "O3S285",
+        "line": 32,
+        "column": 4,
+        "message_contains": "NSError/status bridge legality is not yet runnable",
+    },
+)
+EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES = {"O3S303", "O3S323"}
 REQUIRED_POSITIVE_FEATURE_TOKENS = {
     "ownership": (
         "borrowed id *",
@@ -157,7 +225,7 @@ REQUIRED_POSITIVE_FEATURE_TOKENS = {
     ),
     "macro": (
         "objc_macro_package(named(\"std.metaprogramming.advanced-runtime\"))",
-        "objc_macro_provenance(named(\"sha256:advanced-runtime-closure\"))",
+        "objc_macro_provenance(named(\"sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f\"))",
         "objc_macro_sandbox(named(\"deterministic\"))",
     ),
     "package_replay": (
@@ -825,6 +893,201 @@ def _validate_negative_matrix(failures: list[str]) -> dict[str, Any]:
     }
 
 
+def _parallelism_cap_env() -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(NATIVE_PARALLELISM_CAP_ENV)
+    return env
+
+
+def _safe_clean_generated_attempt_dir(path: Path, failures: list[str], label: str) -> bool:
+    expected_root = (ROOT / "tmp" / "artifacts" / "advanced-runtime-closure").resolve()
+    resolved = path.resolve()
+    if not str(resolved).startswith(str(expected_root)):
+        failures.append(f"{label}: generated attempt dir is outside #8199 tmp root")
+        return False
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return True
+
+
+def _diagnostic_signature(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "code": str(record.get("code", "")),
+        "line": int(record.get("line", 0)),
+        "column": int(record.get("column", 0)),
+        "message": str(record.get("message", "")),
+    }
+
+
+def _expected_native_diagnostic_signature(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "code": str(record.get("code", "")),
+        "line": int(record.get("line", 0)),
+        "column": int(record.get("column", 0)),
+        "message_contains": str(record.get("message_contains", "")),
+    }
+
+
+def _validate_native_executable_fail_closed_contract(
+    failures: list[str],
+) -> dict[str, Any]:
+    contract_path = ROOT / ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT
+    contract = _load_json(contract_path)
+    label = "advanced_runtime_closure.native_executable_fail_closed"
+    if contract.get("contract_id") != ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT_ID:
+        failures.append(f"{label}: contract_id drifted")
+    if int(contract.get("issue_ref", 0)) != 8199:
+        failures.append(f"{label}: issue_ref must be #8199")
+    if contract.get("status") != "fail_closed":
+        failures.append(f"{label}: status must stay fail_closed")
+    if contract.get("positive_fixture") != ADVANCED_CLOSURE_POSITIVE_FIXTURE:
+        failures.append(f"{label}: positive_fixture drifted")
+    if contract.get("generated_attempt_dir") != ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR:
+        failures.append(f"{label}: generated_attempt_dir drifted")
+    if contract.get("expected_compile_backend") != DIRECT_COMPILE_BACKEND:
+        failures.append(f"{label}: expected_compile_backend drifted")
+    if int(contract.get("expected_exit_code", -1)) != 1:
+        failures.append(f"{label}: expected_exit_code must remain 1")
+    false_claim_fields = (
+        "native_compile_claimed",
+        "native_link_claimed",
+        "native_run_claimed",
+        "native_executable_umbrella_promoted",
+        "umbrella_support_promoted",
+    )
+    for field in false_claim_fields:
+        if contract.get(field) is not False:
+            failures.append(f"{label}: {field} must remain false")
+
+    expected_diagnostics = [
+        _expected_native_diagnostic_signature(record)
+        for record in _as_list(contract.get("expected_diagnostics"))
+        if isinstance(record, dict)
+    ]
+    if expected_diagnostics != list(EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS):
+        failures.append(f"{label}: expected diagnostics drifted")
+    absent_codes = {str(code) for code in _as_list(contract.get("absent_diagnostic_codes"))}
+    if absent_codes != EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES:
+        failures.append(f"{label}: absent diagnostic code guard drifted")
+
+    generated_dir = ROOT / ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR
+    if not _safe_clean_generated_attempt_dir(generated_dir, failures, label):
+        return {
+            "path": ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT,
+            "status": "not_run",
+            "compile_exit_code": None,
+            "diagnostic_count": 0,
+            "diagnostic_codes": [],
+            "diagnostics_path": "",
+            "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
+            "native_executable_umbrella_promoted": False,
+        }
+
+    command, selected_backend = compile_command(
+        ROOT / ADVANCED_CLOSURE_POSITIVE_FIXTURE,
+        generated_dir,
+        backend=DIRECT_COMPILE_BACKEND,
+    )
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(ROOT),
+            env=_parallelism_cap_env(),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as exc:
+        failures.append(f"{label}: unable to launch native compiler: {exc}")
+        return {
+            "path": ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT,
+            "status": "launch_failed",
+            "compile_exit_code": None,
+            "diagnostic_count": 0,
+            "diagnostic_codes": [],
+            "diagnostics_path": "",
+            "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
+            "native_executable_umbrella_promoted": False,
+        }
+
+    if selected_backend != DIRECT_COMPILE_BACKEND:
+        failures.append(f"{label}: native attempt did not use direct-native backend")
+    if result.returncode != 1:
+        failures.append(
+            f"{label}: expected native compile to fail closed with exit 1, "
+            f"got {result.returncode}"
+        )
+    if result.returncode == 0:
+        failures.append(
+            f"{label}: native compile unexpectedly passed; do not promote the "
+            "umbrella without updating #8199 support boundaries"
+        )
+
+    forbidden_outputs = [
+        str(path) for path in _as_list(contract.get("forbidden_success_artifacts"))
+    ]
+    for artifact_name in forbidden_outputs:
+        if (generated_dir / artifact_name).exists():
+            failures.append(f"{label}: forbidden success artifact exists: {artifact_name}")
+
+    diagnostics_path = generated_dir / "module.diagnostics.json"
+    if not diagnostics_path.is_file():
+        failures.append(f"{label}: native compile did not emit module.diagnostics.json")
+        diagnostics: list[dict[str, Any]] = []
+    else:
+        diagnostics_payload = _load_json(diagnostics_path)
+        diagnostics = [
+            diagnostic
+            for diagnostic in _as_list(diagnostics_payload.get("diagnostics"))
+            if isinstance(diagnostic, dict)
+        ]
+
+    actual_signatures = [_diagnostic_signature(diagnostic) for diagnostic in diagnostics]
+    if len(actual_signatures) != len(expected_diagnostics):
+        failures.append(
+            f"{label}: expected {len(expected_diagnostics)} native diagnostics, "
+            f"got {len(actual_signatures)}"
+        )
+    for index, expected in enumerate(expected_diagnostics):
+        if index >= len(actual_signatures):
+            break
+        actual = actual_signatures[index]
+        if (
+            actual["code"] != expected["code"]
+            or actual["line"] != expected["line"]
+            or actual["column"] != expected["column"]
+            or expected["message_contains"] not in actual["message"]
+        ):
+            failures.append(
+                f"{label}: native diagnostic[{index}] drifted from expected "
+                f"{expected}"
+            )
+
+    actual_codes = {str(signature["code"]) for signature in actual_signatures}
+    allowed_codes = {record["code"] for record in EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS}
+    unexpected_codes = actual_codes - allowed_codes
+    if unexpected_codes:
+        failures.append(f"{label}: unexpected native diagnostics {sorted(unexpected_codes)}")
+    present_absent_codes = actual_codes & EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES
+    if present_absent_codes:
+        failures.append(
+            f"{label}: fixture hygiene diagnostics came back "
+            f"{sorted(present_absent_codes)}"
+        )
+
+    return {
+        "path": ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT,
+        "status": "fail_closed",
+        "compile_exit_code": result.returncode,
+        "diagnostic_count": len(actual_signatures),
+        "diagnostic_codes": sorted(actual_codes),
+        "diagnostics_path": _repo_rel(diagnostics_path) if diagnostics_path.exists() else "",
+        "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
+        "native_executable_umbrella_promoted": False,
+    }
+
+
 def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
     contract_path = ROOT / ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT
     contract = _load_json(contract_path)
@@ -841,6 +1104,8 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         failures.append(f"{label}: negative_matrix drifted")
     if contract.get("umbrella_support_promoted") is not False:
         failures.append(f"{label}: umbrella support must remain unpromoted")
+    if contract.get("native_executable_umbrella_promoted") is not False:
+        failures.append(f"{label}: native executable umbrella must remain unpromoted")
     if contract.get("source_truth") != "checked-in source files and checked-in contract fixtures only":
         failures.append(f"{label}: source_truth must stay checked-in")
 
@@ -858,6 +1123,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
             str(contract.get("language_semantics_contract", "")),
             str(contract.get("debug_source_map_validator", "")),
             str(contract.get("canonical_compiler_emitted_source_debug_map_bundle", "")),
+            str(contract.get("native_executable_fail_closed_contract", "")),
         ],
         failures,
         label,
@@ -1236,6 +1502,9 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
         "canonical_source_debug_map_bundle": (
             ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE
         ),
+        "native_executable_fail_closed_contract": (
+            ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT
+        ),
         "positive_fixture": ADVANCED_CLOSURE_POSITIVE_FIXTURE,
         "negative_fixture": ADVANCED_CLOSURE_NEGATIVE_MATRIX,
         "unsupported_combination_diagnostic": "advanced-runtime.unsupported-combination",
@@ -1249,6 +1518,8 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
         "source_identity_evidence": True,
         "umbrella_closure_support": False,
         "canonical_source_debug_map_evidence": True,
+        "native_executable_fail_closed_evidence": True,
+        "native_executable_umbrella_support": False,
     }
     for key, expected_value in expected_bool_fields.items():
         if row.get(key) is not expected_value:
@@ -1272,6 +1543,7 @@ def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
             str(row.get("combined_fixture", "")),
             str(row.get("combined_contract", "")),
             str(row.get("canonical_source_debug_map_bundle", "")),
+            str(row.get("native_executable_fail_closed_contract", "")),
             str(row.get("positive_fixture", "")),
             str(row.get("negative_fixture", "")),
         ],
@@ -1294,6 +1566,7 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
     positive_fixture = _validate_combined_positive_fixture(failures)
     negative_matrix = _validate_negative_matrix(failures)
     combined_identity = _validate_combined_identity_contract(failures)
+    native_fail_closed = _validate_native_executable_fail_closed_contract(failures)
     _validate_docs_support_rows(failures)
     return {
         "contract_id": CONTRACT_ID,
@@ -1346,6 +1619,27 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
         ),
         "advanced_runtime_runtime_source_debug_link_count": combined_identity.get(
             "runtime_source_debug_link_count"
+        ),
+        "advanced_runtime_native_executable_fail_closed_contract": native_fail_closed.get(
+            "path"
+        ),
+        "advanced_runtime_native_compile_attempt_status": native_fail_closed.get(
+            "status"
+        ),
+        "advanced_runtime_native_compile_attempt_exit_code": native_fail_closed.get(
+            "compile_exit_code"
+        ),
+        "advanced_runtime_native_compile_attempt_diagnostic_count": native_fail_closed.get(
+            "diagnostic_count"
+        ),
+        "advanced_runtime_native_compile_attempt_diagnostic_codes": native_fail_closed.get(
+            "diagnostic_codes"
+        ),
+        "advanced_runtime_native_compile_attempt_diagnostics_path": native_fail_closed.get(
+            "diagnostics_path"
+        ),
+        "advanced_runtime_native_executable_umbrella_promoted": native_fail_closed.get(
+            "native_executable_umbrella_promoted"
         ),
         "language_semantics_issue": language_row.get("issue"),
         "language_semantics_support_claim": language_row.get("support_claim"),
