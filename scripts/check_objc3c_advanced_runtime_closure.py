@@ -178,12 +178,6 @@ EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS = (
         "column": 3,
         "message_contains": "do/catch statements are not yet runnable",
     },
-    {
-        "code": "O3S285",
-        "line": 32,
-        "column": 4,
-        "message_contains": "NSError/status bridge legality is not yet runnable",
-    },
 )
 EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES = {"O3S303", "O3S323"}
 REQUIRED_POSITIVE_FEATURE_TOKENS = {

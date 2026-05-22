@@ -13,7 +13,7 @@
   "native_executable_umbrella_promoted": false,
   "umbrella_support_promoted": false,
   "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
-  "boundary": "The combined positive fixture is now checked against the real native compiler path, but native executable umbrella support remains unclaimed because Objective-C 3 native mode still rejects throws, throw statements, try expressions, do/catch statements, and NSError/status bridge legality before object emission.",
+  "boundary": "The combined positive fixture is now checked against the real native compiler path, but native executable umbrella support remains unclaimed because Objective-C 3 native mode still rejects throws, throw statements, try expressions, and do/catch statements before object emission. The valid objc_status_code bridge marker itself is no longer a native-mode blocker.",
   "expected_diagnostics": [
     {
       "code": "O3S221",
@@ -50,12 +50,6 @@
       "line": 101,
       "column": 3,
       "message_contains": "do/catch statements are not yet runnable"
-    },
-    {
-      "code": "O3S285",
-      "line": 32,
-      "column": 4,
-      "message_contains": "NSError/status bridge legality is not yet runnable"
     }
   ],
   "absent_diagnostic_codes": [

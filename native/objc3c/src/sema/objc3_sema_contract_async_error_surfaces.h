@@ -245,7 +245,7 @@ inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummarySurfac
 inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryRule =
     "nserror-and-status-bridge-markers-undergo-deterministic-semantic-legality-checking-before-lowering-and-only-semantically-valid-bridge-surfaces-qualify-for-try";
 inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryDeferredRule =
-    "status-to-error-execution-bridge-temporaries-native-error-abi-and-runnable-bridge-lowering-remain-deferred-to-lanes-c-and-d";
+    "validated-nserror-and-status-bridge-markers-are-native-lowering-ready-while-generalized-foreign-exception-abi-and-broad-error-runtime-claims-remain-deferred";
 
 struct Objc3ErrorHandlingErrorBridgeLegalitySummary {
   std::string contract_id = kObjc3ErrorHandlingErrorBridgeLegalitySummaryContractId;
