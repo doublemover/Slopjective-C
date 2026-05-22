@@ -87,6 +87,24 @@ REQUIRED_CLOSURE_FEATURES = {
     "package_replay",
 }
 REQUIRED_PROOF_AXES = {"runtime_state", "source_graph", "debug_map", "abi_surface"}
+REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS = {
+    "runtime-source-debug.ownership-block": frozenset({"ownership", "blocks"}),
+    "runtime-source-debug.async-cancellation": frozenset({"async", "cancellation"}),
+    "runtime-source-debug.actor-mailbox": frozenset({"actor", "async"}),
+    "runtime-source-debug.error-bridge": frozenset({"error", "async"}),
+    "runtime-source-debug.property-behavior": frozenset({"property"}),
+    "runtime-source-debug.macro-provenance": frozenset({"macro"}),
+    "runtime-source-debug.package-replay": frozenset({"package_replay"}),
+}
+REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS = {
+    "runtime-state.combined-language-semantics"
+}
+REQUIRED_UNSUPPORTED_RESERVED_CLAIMS = {
+    "swift-abi",
+    "distributed-actors",
+    "broad-scheduler-guarantees",
+    "arbitrary-macro-host-execution",
+}
 REQUIRED_INTERACTION_FEATURE_SETS = {
     "ownership-block": frozenset({"ownership", "blocks"}),
     "block-async-error": frozenset({"blocks", "async", "error"}),
@@ -253,10 +271,289 @@ def _matching_required_interactions(features: set[str]) -> set[str]:
     }
 
 
+def _index_json_records(
+    records: list[dict[str, Any]],
+    *,
+    key: str,
+    failures: list[str],
+    label: str,
+) -> dict[str, dict[str, Any]]:
+    indexed: dict[str, dict[str, Any]] = {}
+    for index, record in enumerate(records):
+        record_label = f"{label}[{index}]"
+        record_id = str(record.get(key, ""))
+        if not record_id:
+            failures.append(f"{record_label}: {key} is required")
+            continue
+        if record_id in indexed:
+            failures.append(f"{record_label}: duplicate {key} {record_id}")
+            continue
+        indexed[record_id] = record
+    return indexed
+
+
+def _validate_unsupported_combination_policy(
+    contract: dict[str, Any],
+    failures: list[str],
+    *,
+    label: str,
+) -> None:
+    policy = contract.get("unsupported_combination_policy")
+    if not isinstance(policy, dict):
+        failures.append(f"{label}: unsupported_combination_policy is required")
+        return
+    if policy.get("diagnostic") != "advanced-runtime.unsupported-combination":
+        failures.append(f"{label}: unsupported combination diagnostic drifted")
+    statuses = {str(status) for status in _as_list(policy.get("unsupported_statuses"))}
+    if statuses != ALLOWED_NEGATIVE_STATUSES:
+        failures.append(
+            f"{label}: unsupported statuses must stay {sorted(ALLOWED_NEGATIVE_STATUSES)}"
+        )
+    reserved_claims = {
+        str(claim) for claim in _as_list(policy.get("reserved_claims"))
+    }
+    missing_claims = REQUIRED_UNSUPPORTED_RESERVED_CLAIMS - reserved_claims
+    extra_claims = reserved_claims - REQUIRED_UNSUPPORTED_RESERVED_CLAIMS
+    if missing_claims:
+        failures.append(
+            f"{label}: unsupported policy missing reserved claims "
+            f"{sorted(missing_claims)}"
+        )
+    if extra_claims:
+        failures.append(
+            f"{label}: unsupported policy has unexpected reserved claims "
+            f"{sorted(extra_claims)}"
+        )
+    if "Objective-C 3 runtime surfaces only" not in str(
+        policy.get("source_debug_policy", "")
+    ):
+        failures.append(f"{label}: source/debug policy must stay Objective-C 3 scoped")
+
+
+def _validate_runtime_source_debug_links(
+    contract_links: list[dict[str, Any]],
+    bundle_links: list[dict[str, Any]],
+    runtime_records_by_id: dict[str, dict[str, Any]],
+    source_graph_by_id: dict[str, dict[str, Any]],
+    debug_map_records_by_id: dict[str, dict[str, Any]],
+    abi_records_by_id: dict[str, dict[str, Any]],
+    source_maps: dict[str, Any],
+    debug_maps: dict[str, Any],
+    line_rows: dict[str, Any],
+    failures: list[str],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    link_label = f"{label}.runtime_state_source_debug_links"
+    contract_by_id = _index_json_records(
+        contract_links,
+        key="link_id",
+        failures=failures,
+        label=link_label,
+    )
+    bundle_by_id = _index_json_records(
+        bundle_links,
+        key="link_id",
+        failures=failures,
+        label=f"{label}.canonical_source_debug_map.runtime_state_links",
+    )
+
+    expected_ids = set(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
+    missing_contract_links = expected_ids - set(contract_by_id)
+    extra_contract_links = set(contract_by_id) - expected_ids
+    if missing_contract_links:
+        failures.append(
+            f"{link_label}: missing required links {sorted(missing_contract_links)}"
+        )
+    if extra_contract_links:
+        failures.append(
+            f"{link_label}: unexpected links {sorted(extra_contract_links)}"
+        )
+    missing_bundle_links = expected_ids - set(bundle_by_id)
+    extra_bundle_links = set(bundle_by_id) - expected_ids
+    if missing_bundle_links:
+        failures.append(
+            f"{label}.canonical_source_debug_map.runtime_state_links: "
+            f"missing required links {sorted(missing_bundle_links)}"
+        )
+    if extra_bundle_links:
+        failures.append(
+            f"{label}.canonical_source_debug_map.runtime_state_links: "
+            f"unexpected links {sorted(extra_bundle_links)}"
+        )
+
+    covered_runtime_state_ids: set[str] = set()
+    matched_ids: set[str] = set()
+    for link_id in sorted(expected_ids & set(contract_by_id)):
+        record = contract_by_id[link_id]
+        record_label = f"{link_label}.{link_id}"
+        required_features = REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS[link_id]
+        features = _validate_feature_list(
+            record.get("features"),
+            failures,
+            label=record_label,
+            minimum=len(required_features),
+        )
+        if features != required_features:
+            failures.append(f"{record_label}: features drifted")
+
+        bundle_record = bundle_by_id.get(link_id)
+        if bundle_record is None:
+            continue
+        matched_ids.add(link_id)
+        bundle_features = {
+            str(feature) for feature in _as_list(bundle_record.get("features"))
+        }
+        if bundle_features != features:
+            failures.append(f"{record_label}: bundle features drifted")
+
+        source_graph_record_id = str(record.get("source_graph_record_id", ""))
+        source_graph_record = source_graph_by_id.get(source_graph_record_id)
+        debug_map_record_id = str(record.get("debug_map_record_id", ""))
+        debug_record = debug_map_records_by_id.get(debug_map_record_id)
+        source_graph_node_id = str(record.get("source_graph_node_id", ""))
+        source_map_entry_id = str(record.get("source_map_entry_id", ""))
+        debug_map_entry_id = str(record.get("debug_map_entry_id", ""))
+        native_line_table_row_ids = tuple(
+            str(row_id) for row_id in _as_list(record.get("native_line_table_row_ids"))
+        )
+        runtime_anchor_ids = tuple(
+            str(anchor_id) for anchor_id in _as_list(record.get("runtime_anchor_ids"))
+        )
+        runtime_state_record_ids = tuple(
+            str(runtime_id)
+            for runtime_id in _as_list(record.get("runtime_state_record_ids"))
+        )
+        abi_record_ids = tuple(
+            str(abi_id) for abi_id in _as_list(record.get("abi_record_ids"))
+        )
+
+        for key in (
+            "runtime_state_record_ids",
+            "source_graph_record_id",
+            "debug_map_record_id",
+            "abi_record_ids",
+            "source_graph_node_id",
+            "source_map_entry_id",
+            "debug_map_entry_id",
+            "native_line_table_row_ids",
+            "runtime_anchor_ids",
+        ):
+            contract_value = record.get(key)
+            bundle_value = bundle_record.get(key)
+            if contract_value != bundle_value:
+                failures.append(f"{record_label}: bundle {key} drifted")
+
+        if source_graph_record is None:
+            failures.append(
+                f"{record_label}: missing source graph record {source_graph_record_id}"
+            )
+        elif source_graph_record.get("source_graph_node_id") != source_graph_node_id:
+            failures.append(f"{record_label}: source graph node drifted")
+        else:
+            source_features = {
+                str(feature) for feature in _as_list(source_graph_record.get("features"))
+            }
+            if not source_features <= features:
+                failures.append(f"{record_label}: source graph features drifted")
+
+        if debug_record is None:
+            failures.append(f"{record_label}: missing debug map record {debug_map_record_id}")
+        else:
+            if debug_record.get("source_graph_record_id") != source_graph_record_id:
+                failures.append(f"{record_label}: debug record source graph drifted")
+            if debug_record.get("source_graph_node_id") != source_graph_node_id:
+                failures.append(f"{record_label}: debug record source node drifted")
+            if debug_record.get("source_map_entry_id") != source_map_entry_id:
+                failures.append(f"{record_label}: debug record source-map entry drifted")
+            if debug_record.get("debug_map_entry_id") != debug_map_entry_id:
+                failures.append(f"{record_label}: debug record debug-map entry drifted")
+            if tuple(_as_list(debug_record.get("runtime_anchor_ids"))) != runtime_anchor_ids:
+                failures.append(f"{record_label}: debug record runtime anchors drifted")
+
+        source_map = source_maps.get(source_map_entry_id)
+        if source_map is None:
+            failures.append(f"{record_label}: canonical source-map entry missing")
+        else:
+            if source_map.source_graph_node_id != source_graph_node_id:
+                failures.append(f"{record_label}: source-map source node drifted")
+            missing_source_map_anchors = set(runtime_anchor_ids) - set(
+                source_map.runtime_anchor_ids
+            )
+            if missing_source_map_anchors:
+                failures.append(
+                    f"{record_label}: source-map runtime anchors missing "
+                    f"{sorted(missing_source_map_anchors)}"
+                )
+
+        debug_map = debug_maps.get(debug_map_entry_id)
+        if debug_map is None:
+            failures.append(f"{record_label}: canonical debug-map entry missing")
+        else:
+            if debug_map.source_map_entry_id != source_map_entry_id:
+                failures.append(f"{record_label}: debug-map source-map entry drifted")
+            if debug_map.source_graph_node_id != source_graph_node_id:
+                failures.append(f"{record_label}: debug-map source node drifted")
+            if tuple(debug_map.runtime_anchor_ids) != runtime_anchor_ids:
+                failures.append(f"{record_label}: debug-map runtime anchors drifted")
+
+        if not native_line_table_row_ids:
+            failures.append(f"{record_label}: native line-table row ids are required")
+        for row_id in native_line_table_row_ids:
+            line_row = line_rows.get(row_id)
+            if line_row is None:
+                failures.append(f"{record_label}: missing native line-table row {row_id}")
+                continue
+            if line_row.source_map_entry_id != source_map_entry_id:
+                failures.append(f"{record_label}: line-table source-map entry drifted")
+            if line_row.source_graph_node_id != source_graph_node_id:
+                failures.append(f"{record_label}: line-table source node drifted")
+
+        if not runtime_state_record_ids:
+            failures.append(f"{record_label}: runtime_state_record_ids are required")
+        for runtime_id in runtime_state_record_ids:
+            runtime_record = runtime_records_by_id.get(runtime_id)
+            if runtime_record is None:
+                failures.append(f"{record_label}: missing runtime state record {runtime_id}")
+                continue
+            covered_runtime_state_ids.add(runtime_id)
+            runtime_features = {
+                str(feature) for feature in _as_list(runtime_record.get("features"))
+            }
+            if not runtime_features & features:
+                failures.append(
+                    f"{record_label}: runtime state record {runtime_id} "
+                    "does not intersect link features"
+                )
+
+        if not abi_record_ids:
+            failures.append(f"{record_label}: abi_record_ids are required")
+        for abi_id in abi_record_ids:
+            abi_record = abi_records_by_id.get(abi_id)
+            if abi_record is None:
+                failures.append(f"{record_label}: missing ABI record {abi_id}")
+                continue
+            abi_features = {
+                str(feature) for feature in _as_list(abi_record.get("features"))
+            }
+            if not abi_features & features:
+                failures.append(
+                    f"{record_label}: ABI record {abi_id} does not intersect link features"
+                )
+
+    return {
+        "link_count": len(matched_ids),
+        "covered_runtime_state_record_ids": sorted(covered_runtime_state_ids),
+    }
+
+
 def _validate_canonical_source_debug_map_bundle(
     contract: dict[str, Any],
+    runtime_records_by_id: dict[str, dict[str, Any]],
     source_graph_by_id: dict[str, dict[str, Any]],
-    debug_map_records: list[dict[str, Any]],
+    debug_map_records_by_id: dict[str, dict[str, Any]],
+    abi_records_by_id: dict[str, dict[str, Any]],
+    runtime_source_debug_links: list[dict[str, Any]],
     failures: list[str],
     *,
     label: str,
@@ -275,6 +572,8 @@ def _validate_canonical_source_debug_map_bundle(
             "source_map_record_count": 0,
             "debug_map_record_count": 0,
             "native_line_table_record_count": 0,
+            "runtime_source_debug_link_count": 0,
+            "covered_runtime_state_record_ids": [],
         }
     if _is_forbidden_path(bundle_path):
         failures.append(f"{label}: canonical source/debug-map bundle is not checked source: {bundle_path}")
@@ -283,6 +582,8 @@ def _validate_canonical_source_debug_map_bundle(
             "source_map_record_count": 0,
             "debug_map_record_count": 0,
             "native_line_table_record_count": 0,
+            "runtime_source_debug_link_count": 0,
+            "covered_runtime_state_record_ids": [],
         }
 
     resolved_bundle_path = ROOT / bundle_path
@@ -297,19 +598,27 @@ def _validate_canonical_source_debug_map_bundle(
             "source_map_record_count": 0,
             "debug_map_record_count": 0,
             "native_line_table_record_count": 0,
+            "runtime_source_debug_link_count": 0,
+            "covered_runtime_state_record_ids": [],
         }
 
     bundle = load_bundle(resolved_bundle_path)
     source_maps = {entry.entry_id: entry for entry in bundle.source_maps}
     debug_maps = {entry.entry_id: entry for entry in bundle.debug_maps}
+    line_rows = {entry.row_id: entry for entry in bundle.native_line_tables}
     line_table_source_map_ids = {
         row.source_map_entry_id for row in bundle.native_line_tables
     }
+    bundle_runtime_source_debug_links = [
+        record
+        for record in _as_list(bundle.payload.get("runtime_state_links"))
+        if isinstance(record, dict)
+    ]
 
     matched_source_map_ids: set[str] = set()
     matched_debug_map_ids: set[str] = set()
     matched_line_table_source_map_ids: set[str] = set()
-    for index, record in enumerate(debug_map_records):
+    for index, record in enumerate(debug_map_records_by_id.values()):
         record_label = f"{label}.canonical_source_debug_map.debug_map_records[{index}]"
         source_graph_record_id = str(record.get("source_graph_record_id", ""))
         source_graph_record = source_graph_by_id.get(source_graph_record_id)
@@ -371,11 +680,29 @@ def _validate_canonical_source_debug_map_bundle(
                     f"{sorted(missing_language_anchors)}"
                 )
 
+    runtime_source_debug = _validate_runtime_source_debug_links(
+        runtime_source_debug_links,
+        bundle_runtime_source_debug_links,
+        runtime_records_by_id,
+        source_graph_by_id,
+        debug_map_records_by_id,
+        abi_records_by_id,
+        source_maps,
+        debug_maps,
+        line_rows,
+        failures,
+        label=label,
+    )
+
     return {
         "path": bundle_path,
         "source_map_record_count": len(matched_source_map_ids),
         "debug_map_record_count": len(matched_debug_map_ids),
         "native_line_table_record_count": len(matched_line_table_source_map_ids),
+        "runtime_source_debug_link_count": runtime_source_debug.get("link_count"),
+        "covered_runtime_state_record_ids": runtime_source_debug.get(
+            "covered_runtime_state_record_ids"
+        ),
     }
 
 
@@ -513,6 +840,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
     missing_axes = REQUIRED_PROOF_AXES - proof_axes
     if missing_axes:
         failures.append(f"{label}: missing proof axes {sorted(missing_axes)}")
+    _validate_unsupported_combination_policy(contract, failures, label=label)
 
     _paths_exist(
         [
@@ -539,6 +867,16 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         for record in _as_list(contract.get("debug_map_records"))
         if isinstance(record, dict)
     ]
+    runtime_source_debug_links = [
+        record
+        for record in _as_list(contract.get("runtime_state_source_debug_links"))
+        if isinstance(record, dict)
+    ]
+    runtime_source_debug_exemptions = [
+        record
+        for record in _as_list(contract.get("runtime_state_source_debug_exemptions"))
+        if isinstance(record, dict)
+    ]
     abi_records = [
         record
         for record in _as_list(contract.get("abi_interaction_records"))
@@ -551,6 +889,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
     ]
 
     runtime_ids: set[str] = set()
+    runtime_records_by_id: dict[str, dict[str, Any]] = {}
     for index, record in enumerate(runtime_records):
         record_label = f"{label}.runtime_state_records[{index}]"
         record_id = str(record.get("record_id", ""))
@@ -559,6 +898,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         elif record_id in runtime_ids:
             failures.append(f"{record_label}: duplicate record_id {record_id}")
         runtime_ids.add(record_id)
+        runtime_records_by_id[record_id] = record
         _validate_feature_list(record.get("features"), failures, label=record_label)
         _validate_required_tokens(
             _normalized(str(record.get("source_path", ""))),
@@ -594,6 +934,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         )
 
     debug_ids: set[str] = set()
+    debug_map_records_by_id: dict[str, dict[str, Any]] = {}
     for index, record in enumerate(debug_map_records):
         record_label = f"{label}.debug_map_records[{index}]"
         record_id = str(record.get("record_id", ""))
@@ -602,6 +943,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         elif record_id in debug_ids:
             failures.append(f"{record_label}: duplicate record_id {record_id}")
         debug_ids.add(record_id)
+        debug_map_records_by_id[record_id] = record
         source_graph_record_id = str(record.get("source_graph_record_id", ""))
         source_graph_record = source_graph_by_id.get(source_graph_record_id)
         if source_graph_record is None:
@@ -617,6 +959,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
             failures.append(f"{record_label}: language_anchor_ids are required")
 
     abi_ids: set[str] = set()
+    abi_records_by_id: dict[str, dict[str, Any]] = {}
     for index, record in enumerate(abi_records):
         record_label = f"{label}.abi_interaction_records[{index}]"
         record_id = str(record.get("record_id", ""))
@@ -625,6 +968,7 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         elif record_id in abi_ids:
             failures.append(f"{record_label}: duplicate record_id {record_id}")
         abi_ids.add(record_id)
+        abi_records_by_id[record_id] = record
         _validate_feature_list(record.get("features"), failures, label=record_label)
         _validate_required_tokens(
             _normalized(str(record.get("source_path", ""))),
@@ -639,6 +983,11 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         str(case.get("case_id", ""))
         for case in _as_list(matrix.get("cases"))
         if isinstance(case, dict)
+    }
+    available_runtime_source_debug_link_ids = {
+        str(record.get("link_id", ""))
+        for record in runtime_source_debug_links
+        if isinstance(record, dict)
     }
     seen_interactions: set[str] = set()
     for index, record in enumerate(interaction_records):
@@ -677,6 +1026,21 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         for abi_id in _as_list(record.get("abi_record_ids")):
             if str(abi_id) not in abi_ids:
                 failures.append(f"{record_label}: missing ABI record {abi_id}")
+        runtime_source_debug_link_ids = {
+            str(link_id)
+            for link_id in _as_list(record.get("runtime_source_debug_link_ids"))
+        }
+        if not runtime_source_debug_link_ids:
+            failures.append(f"{record_label}: runtime source/debug link ids are required")
+        for link_id in runtime_source_debug_link_ids:
+            if link_id not in REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS:
+                failures.append(
+                    f"{record_label}: missing runtime source/debug link {link_id}"
+                )
+            if link_id not in available_runtime_source_debug_link_ids:
+                failures.append(
+                    f"{record_label}: runtime source/debug link not declared {link_id}"
+                )
 
     missing_interactions = set(REQUIRED_INTERACTION_FEATURE_SETS) - seen_interactions
     if missing_interactions:
@@ -684,11 +1048,47 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
 
     canonical_source_debug_map = _validate_canonical_source_debug_map_bundle(
         contract,
+        runtime_records_by_id,
         source_graph_by_id,
-        debug_map_records,
+        debug_map_records_by_id,
+        abi_records_by_id,
+        runtime_source_debug_links,
         failures,
         label=label,
     )
+    covered_runtime_ids = {
+        str(runtime_id)
+        for runtime_id in _as_list(
+            canonical_source_debug_map.get("covered_runtime_state_record_ids")
+        )
+    }
+    exemption_ids: set[str] = set()
+    for index, record in enumerate(runtime_source_debug_exemptions):
+        record_label = f"{label}.runtime_state_source_debug_exemptions[{index}]"
+        runtime_id = str(record.get("runtime_state_record_id", ""))
+        if runtime_id not in runtime_ids:
+            failures.append(f"{record_label}: missing runtime state record {runtime_id}")
+        exemption_ids.add(runtime_id)
+        if not str(record.get("reason", "")):
+            failures.append(f"{record_label}: reason is required")
+    missing_exemptions = REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS - exemption_ids
+    extra_exemptions = exemption_ids - REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS
+    if missing_exemptions:
+        failures.append(
+            f"{label}: missing runtime source/debug exemptions "
+            f"{sorted(missing_exemptions)}"
+        )
+    if extra_exemptions:
+        failures.append(
+            f"{label}: unexpected runtime source/debug exemptions "
+            f"{sorted(extra_exemptions)}"
+        )
+    unlinked_runtime_ids = runtime_ids - covered_runtime_ids - exemption_ids
+    if unlinked_runtime_ids:
+        failures.append(
+            f"{label}: runtime state records lack source/debug proof "
+            f"{sorted(unlinked_runtime_ids)}"
+        )
 
     return {
         "path": ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
@@ -707,6 +1107,9 @@ def _validate_combined_identity_contract(failures: list[str]) -> dict[str, Any]:
         ),
         "canonical_native_line_table_record_count": canonical_source_debug_map.get(
             "native_line_table_record_count"
+        ),
+        "runtime_source_debug_link_count": canonical_source_debug_map.get(
+            "runtime_source_debug_link_count"
         ),
     }
 
@@ -929,6 +1332,9 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
         ),
         "advanced_runtime_canonical_native_line_table_record_count": combined_identity.get(
             "canonical_native_line_table_record_count"
+        ),
+        "advanced_runtime_runtime_source_debug_link_count": combined_identity.get(
+            "runtime_source_debug_link_count"
         ),
         "language_semantics_issue": language_row.get("issue"),
         "language_semantics_support_claim": language_row.get("support_claim"),

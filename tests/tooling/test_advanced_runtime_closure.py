@@ -13,6 +13,9 @@ from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
     ADVANCED_CLOSURE_NEGATIVE_MATRIX,
     REQUIRED_INTERACTION_FEATURE_SETS,
+    REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS,
+    REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS,
+    REQUIRED_UNSUPPORTED_RESERVED_CLAIMS,
     ROOT,
     validate_advanced_runtime_closure,
 )
@@ -61,6 +64,10 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
     assert payload["advanced_runtime_canonical_source_map_record_count"] == 7
     assert payload["advanced_runtime_canonical_debug_map_record_count"] == 7
     assert payload["advanced_runtime_canonical_native_line_table_record_count"] == 7
+    assert (
+        payload["advanced_runtime_runtime_source_debug_link_count"]
+        == len(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
+    )
 
 
 def test_combined_identity_contract_links_source_graph_debug_map_and_negatives() -> None:
@@ -74,6 +81,22 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     _assert_checked_path(str(contract["language_semantics_contract"]))
     _assert_checked_path(str(contract["debug_source_map_validator"]))
     _assert_checked_path(str(contract["canonical_compiler_emitted_source_debug_map_bundle"]))
+
+    unsupported_policy = contract["unsupported_combination_policy"]  # type: ignore[index]
+    assert unsupported_policy["diagnostic"] == "advanced-runtime.unsupported-combination"
+    assert set(unsupported_policy["unsupported_statuses"]) == {"rejected", "reserved"}
+    assert set(unsupported_policy["reserved_claims"]) == REQUIRED_UNSUPPORTED_RESERVED_CLAIMS
+
+    runtime_source_debug_link_ids = {
+        str(record["link_id"])
+        for record in contract["runtime_state_source_debug_links"]  # type: ignore[index]
+    }
+    assert runtime_source_debug_link_ids == set(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
+    runtime_source_debug_exemptions = {
+        str(record["runtime_state_record_id"])
+        for record in contract["runtime_state_source_debug_exemptions"]  # type: ignore[index]
+    }
+    assert runtime_source_debug_exemptions == REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS
 
     source_graph_ids = {
         str(record["record_id"])
@@ -95,6 +118,7 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     assert interaction_ids == set(REQUIRED_INTERACTION_FEATURE_SETS)
     for record in contract["interaction_records"]:  # type: ignore[index]
         assert set(record["negative_case_ids"]) <= case_ids
+        assert set(record["runtime_source_debug_link_ids"]) <= runtime_source_debug_link_ids
 
 
 def test_canonical_source_debug_map_links_every_combined_identity_record() -> None:
@@ -119,6 +143,19 @@ def test_canonical_source_debug_map_links_every_combined_identity_record() -> No
         str(record["entry_id"]): str(record["record_kind"])
         for record in bundle["source_maps"]  # type: ignore[index]
     }
+    line_table_rows = {
+        str(record["row_id"]): record
+        for record in bundle["native_line_tables"]  # type: ignore[index]
+    }
+    contract_runtime_links = {
+        str(record["link_id"]): record
+        for record in contract["runtime_state_source_debug_links"]  # type: ignore[index]
+    }
+    bundle_runtime_links = {
+        str(record["link_id"]): record
+        for record in bundle["runtime_state_links"]  # type: ignore[index]
+    }
+    assert set(bundle_runtime_links) == set(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
 
     for record in contract["debug_map_records"]:  # type: ignore[index]
         source_map_id = str(record["source_map_entry_id"])
@@ -129,3 +166,13 @@ def test_canonical_source_debug_map_links_every_combined_identity_record() -> No
             source_map_kinds[source_map_id]
             == source_graph_record_kinds[str(record["source_graph_record_id"])]
         )
+
+    for link_id, record in contract_runtime_links.items():
+        bundle_record = bundle_runtime_links[link_id]
+        assert bundle_record == record
+        assert str(record["source_map_entry_id"]) in source_map_ids
+        assert str(record["debug_map_entry_id"]) in debug_map_ids
+        for row_id in record["native_line_table_row_ids"]:
+            line_row = line_table_rows[str(row_id)]
+            assert line_row["source_map_entry_id"] == record["source_map_entry_id"]
+            assert line_row["source_graph_node_id"] == record["source_graph_node_id"]
