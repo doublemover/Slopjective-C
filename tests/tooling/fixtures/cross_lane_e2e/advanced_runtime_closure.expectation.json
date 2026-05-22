@@ -7,85 +7,132 @@
   "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
   "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.workspace.json",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "canonical_production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+    "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "umbrella_support_promoted": false,
+    "proof_axes": [
+      "runtime_state",
+      "source_graph",
+      "debug_map",
+      "abi_surface"
+    ]
+  },
   "responsible_domains": [
     "runtime status",
+    "source-map/debug diagnostic",
     "parser/sema diagnostic",
-    "capability/evidence mismatch"
+    "capability/evidence mismatch",
+    "lowering/IR diagnostic"
   ],
   "blockers": [
     {
-      "blocker_id": "advanced-runtime-cross-lane-e2e",
-      "domain": "runtime",
-      "reason": "combined advanced runtime behavior remains an umbrella blocker, not an implemented support claim"
+      "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
+      "domain": "lowering/IR diagnostic",
+      "reason": "the contract-backed runtime-state, source-graph, and source/debug-map proof is integrated, but the advanced runtime umbrella fixture is not yet a native compile/link/run claim"
+    },
+    {
+      "blocker_id": "advanced-runtime-unsupported-combination-matrix",
+      "domain": "parser/sema diagnostic",
+      "reason": "unsupported advanced-runtime feature combinations remain deterministic rejected or reserved blockers in the #8199 negative matrix"
     }
   ],
   "diagnostics": {
-    "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "status": "expected-pass",
     "responsible_domain": "parser/sema diagnostic",
-    "reason": "combined ownership, block, async, actor, cancellation, property behavior, and macro provenance is not yet diagnostic-free",
-    "expected_codes": [
-      "O3E2E8200ADV"
-    ],
+    "reason": "the public advanced-runtime closure validator checks the combined positive fixture and deterministic unsupported-combination matrix without promoting the umbrella row",
+    "expected_codes": [],
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "negative_matrix_case_count": 14,
     "required_tokens": [
       "ownership",
-      "block",
+      "blocks",
       "async",
       "actor",
       "cancellation",
-      "property behavior",
-      "macro provenance"
+      "error",
+      "property",
+      "macro",
+      "package_replay"
     ]
   },
   "runtime": {
-    "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "advanced runtime closure must run as one integrated program before the umbrella blocker can move",
+    "reason": "checked-in runtime-state records tie block ownership, task cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and combined language semantics to production runtime sources",
     "source_truth": false,
-    "expected_exit_code": null
+    "proof_kind": "advanced-runtime-combined-runtime-state",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "runtime_state_record_count": 8,
+    "language_semantics_support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+    "umbrella_support_promoted": false
   },
   "compile_manifest": {
     "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "compile manifest must eventually publish block, async, actor, cancellation, property behavior, and macro provenance artifacts",
+    "reason": "the current production path proves the combined closure through source-truth contracts and runtime-state evidence, not a generated native compile manifest for the reserved umbrella fixture",
     "source_truth": false,
-    "expected_path": "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/module.manifest.json"
+    "expected_path": "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/compile/module.manifest.json"
   },
   "source_graph": {
-    "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "combined runtime semantics are not yet tied to compiler-owned source identity",
+    "reason": "the combined identity contract validates compiler-owned source graph records for every advanced-runtime interaction lane",
     "source_truth": false,
+    "proof_kind": "advanced-runtime-compiler-owned-source-graph",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "source_graph_record_count": 7,
     "expected_edges": [
-      "CrossLaneClosureActor -> runtime:concurrency-actors",
-      "CrossLaneClosureActor -> runtime:blocks-arc",
-      "CrossLaneClosureActor -> metaprogramming:macro-provenance"
+      "source-graph.ownership-block",
+      "source-graph.async-cancellation",
+      "source-graph.actor-mailbox",
+      "source-graph.error-bridge",
+      "source-graph.property-behavior",
+      "source-graph.macro-provenance",
+      "source-graph.package-replay"
     ]
   },
   "debug_source_map": {
-    "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "source-map coverage for cross-feature lowering remains part of the combined source identity blocker",
-    "source_truth": false
+    "reason": "the canonical source/debug-map bundle validates source-map, debug-map, and native line-table rows for the combined closure without claiming statement stepping",
+    "source_truth": false,
+    "proof_kind": "advanced-runtime-canonical-source-debug-map",
+    "canonical_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "source_map_record_count": 7,
+    "debug_map_record_count": 7,
+    "native_line_table_record_count": 7,
+    "reserved_debug_capabilities": [
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.lldb-plugin"
+    ]
   },
   "optimization_trace": {
-    "status": "scaffold-blocked",
-    "blocker_id": "advanced-runtime-cross-lane-e2e",
+    "status": "reserved",
+    "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "no optimization proof should claim this advanced runtime umbrella row",
+    "reason": "source/debug-map preservation references optimization-safe anchors, but this family must not publish a generated optimization trace for the reserved advanced-runtime umbrella",
     "source_truth": false
   },
   "negative_cases": [
     {
-      "case_id": "advanced-runtime-unsafe-cancelled-owned-block",
-      "status": "scaffold-blocked",
-      "blocker_id": "advanced-runtime-cross-lane-e2e",
+      "case_id": "advanced-runtime-unsupported-combination-matrix",
+      "status": "expected-pass",
+      "responsible_domain": "parser/sema diagnostic",
+      "reason": "validate-advanced-runtime-closure checks every unsupported combination as rejected or reserved and keeps those combinations fail-closed",
+      "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+      "expected_case_count": 14
+    },
+    {
+      "case_id": "advanced-runtime-native-executable-umbrella",
+      "status": "reserved",
+      "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
       "responsible_domain": "runtime status",
-      "reason": "unsafe cancellation plus owned escaping block combination must fail closed when implemented"
+      "reason": "native compile/link/run for the full advanced-runtime umbrella remains unclaimed until the owning capability row promotes it"
     }
   ],
   "capability_boundary": {
@@ -95,9 +142,14 @@
       "runtime.blocks.copy-dispose-invoke",
       "runtime.concurrency.async-actors",
       "runtime.concurrency.actor-mailbox-isolation",
+      "runtime.errors.status-bridge",
       "language.metaprogramming.property-behavior-semantics",
-      "runtime.metaprogramming.host-cache-boundary"
+      "runtime.metaprogramming.host-cache-boundary",
+      "runtime.interop.package-loader-bridge",
+      "compiler.artifacts.source-map",
+      "compiler.artifacts.native-line-table",
+      "tooling.debug.debug-map"
     ],
-    "claim_boundary": "narrow runtime rows can be referenced, but the umbrella closure remains reserved"
+    "claim_boundary": "the cross-lane family proves checked-in advanced-runtime runtime-state, compiler-owned source graph, canonical source/debug-map, and deterministic negative-matrix evidence; the language.advanced-runtime-closure umbrella, native executable, statement stepping, and unsupported combinations remain blocked or reserved"
   }
 }

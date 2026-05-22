@@ -10,6 +10,20 @@
     "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
     "package_id": "cross-lane:advanced-runtime-closure"
   },
+  "canonical_production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+    "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "umbrella_support_promoted": false,
+    "proof_axes": [
+      "runtime_state",
+      "source_graph",
+      "debug_map",
+      "abi_surface"
+    ]
+  },
   "package_edges": [
     {
       "from": "cross-lane:advanced-runtime-closure",
@@ -25,6 +39,21 @@
       "from": "cross-lane:advanced-runtime-closure",
       "to": "metaprogramming:property-behavior-macro-provenance",
       "relationship": "property-behavior-and-macro-provenance-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:errors-status-bridge",
+      "relationship": "error-bridge-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:package-replay",
+      "relationship": "package-replay-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "language:advanced-runtime-closure",
+      "relationship": "reserved-umbrella-boundary-not-promoted"
     }
   ]
 }

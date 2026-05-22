@@ -204,46 +204,94 @@
       "required_source_tokens": [
         "__strong",
         "^",
-        "async",
-        "actor",
-        "cancel",
-        "@propertyBehavior",
-        "@derive"
+        "async fn asyncCancellationLane",
+        "actor class CrossLaneAdvancedRuntimeClosureActor",
+        "objc3_runtime_task_is_cancelled_i32",
+        "objc_status_code",
+        "behavior=Observed",
+        "objc_macro_provenance",
+        "objc_import_module",
+        "objc_package_entry"
       ],
       "capability_rows": [
         "language.advanced-runtime-closure",
         "runtime.blocks.copy-dispose-invoke",
         "runtime.concurrency.async-actors",
         "runtime.concurrency.actor-mailbox-isolation",
+        "runtime.errors.status-bridge",
         "language.metaprogramming.property-behavior-semantics",
-        "runtime.metaprogramming.host-cache-boundary"
+        "runtime.metaprogramming.host-cache-boundary",
+        "runtime.interop.package-loader-bridge",
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
       ],
       "support_claims": [
         "objc3c.behavior.language.advanced-runtime-closure",
         "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
         "objc3c.behavior.runtime.concurrency-async-actors",
         "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
-        "objc3c.behavior.language.metaprogramming.property-behavior-semantics"
+        "objc3c.behavior.runtime.errors.status-bridge",
+        "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
+        "objc3c.behavior.runtime.interop.package-loader-bridge",
+        "objc3c.behavior.compiler.artifacts.source-map",
+        "objc3c.behavior.compiler.artifacts.native-line-table",
+        "objc3c.behavior.tooling.debug.debug-map"
       ],
       "evidence_map_refs": [
         {
           "capability_id": "language.advanced-runtime-closure",
           "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
           "status": "reserved",
-          "claim_boundary": "umbrella advanced runtime support remains reserved even when narrower rows are referenced"
+          "claim_boundary": "umbrella advanced runtime support remains reserved even though cross-lane runtime-state, source graph, source/debug-map, and negative-matrix evidence are validated"
+        },
+        {
+          "capability_id": "runtime.blocks.copy-dispose-invoke",
+          "support_claim": "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
+          "status": "implemented",
+          "claim_boundary": "block copy/dispose/invoke runtime evidence is consumed from the combined runtime identity contract; it does not promote native execution for the full umbrella fixture"
         },
         {
           "capability_id": "runtime.concurrency.async-actors",
           "support_claim": "objc3c.behavior.runtime.concurrency-async-actors",
           "status": "implemented",
-          "claim_boundary": "async actor support is a prerequisite only and does not prove the combined closure fixture"
+          "claim_boundary": "async actor and actor mailbox runtime-state evidence is validated as part of the combined identity contract without promoting unsupported advanced-runtime combinations"
+        },
+        {
+          "capability_id": "runtime.errors.status-bridge",
+          "support_claim": "objc3c.behavior.runtime.errors.status-bridge",
+          "status": "implemented",
+          "claim_boundary": "status-bridge evidence is one checked runtime-state/source-graph lane in the combined proof, not an umbrella compile/run claim"
+        },
+        {
+          "capability_id": "language.metaprogramming.property-behavior-semantics",
+          "support_claim": "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
+          "status": "implemented",
+          "claim_boundary": "property behavior and macro provenance are validated through checked-in source graph and source/debug-map records while host/runtime unsupported cases remain fail-closed"
+        },
+        {
+          "capability_id": "compiler.artifacts.source-map",
+          "support_claim": "objc3c.behavior.compiler.artifacts.source-map",
+          "status": "implemented",
+          "claim_boundary": "canonical source-map records are validated from checked-in compiler-owned evidence and remain non-source-truth generated artifact proof"
+        },
+        {
+          "capability_id": "tooling.debug.debug-map",
+          "support_claim": "objc3c.behavior.tooling.debug.debug-map",
+          "status": "implemented",
+          "claim_boundary": "debug-map anchors for the combined advanced-runtime lanes are checked, while statement stepping and LLDB plugin support remain reserved"
         }
       ],
       "blockers": [
         {
-          "blocker_id": "advanced-runtime-cross-lane-e2e",
-          "domain": "runtime",
-          "reason": "the combined ownership, block, async, actor, cancellation, property behavior, and macro provenance program is intentionally blocker-explicit"
+          "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
+          "domain": "lowering/IR diagnostic",
+          "reason": "contract-backed runtime-state, source-graph, and source/debug-map evidence is integrated, but native compile/link/run for the language.advanced-runtime-closure umbrella remains blocked"
+        },
+        {
+          "blocker_id": "advanced-runtime-unsupported-combination-matrix",
+          "domain": "parser/sema diagnostic",
+          "reason": "unsupported advanced-runtime feature combinations remain rejected or reserved by the deterministic negative matrix"
         }
       ]
     },

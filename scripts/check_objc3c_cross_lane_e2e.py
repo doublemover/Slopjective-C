@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from check_objc3c_advanced_runtime_closure import validate_advanced_runtime_closure
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.paths import repo_rel
 
@@ -22,6 +23,16 @@ ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "cross-lane-e2e"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "conformance-minima.yml"
 OPTIMIZATION_BEFORE_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.before.ll"
 OPTIMIZATION_AFTER_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.after.ll"
+ADVANCED_RUNTIME_FAMILY_ID = "advanced_runtime_closure"
+ADVANCED_RUNTIME_PUBLIC_COMMAND = "npm run objc3c -- validate-advanced-runtime-closure"
+ADVANCED_RUNTIME_POSITIVE_FIXTURE = "tests/native/runtime/advanced_closure/combined_positive.objc3"
+ADVANCED_RUNTIME_NEGATIVE_MATRIX = "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT = (
+    "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+)
+ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE = (
+    "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
+)
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
@@ -442,6 +453,171 @@ def validate_optimization_trace_proof(
     }
 
 
+def require_expected_pass_section(section: dict[str, Any], field: str) -> None:
+    if section.get("status") != "expected-pass":
+        raise RuntimeError(f"{field}.status must be expected-pass for contract-backed proof")
+
+
+def require_blocked_section(section: dict[str, Any], field: str) -> None:
+    if section.get("status") not in BLOCKED_STATES:
+        raise RuntimeError(f"{field}.status must remain blocker-explicit")
+
+
+def require_path_field(section: dict[str, Any], field: str, expected_path: str) -> Path:
+    actual = normalize_path(require_nonempty_string(section.get(field), field))
+    expected = normalize_path(expected_path)
+    if actual != expected:
+        raise RuntimeError(f"{field} drifted: expected {expected}, got {actual}")
+    return require_source_owned_path(actual, field)
+
+
+def require_int_field(section: dict[str, Any], field: str, expected: int) -> None:
+    actual = section.get(field)
+    if actual != expected:
+        raise RuntimeError(f"{field} must be {expected}, got {actual!r}")
+
+
+def validate_advanced_runtime_contract_backed_proof(
+    family_id: str,
+    expectation: dict[str, Any],
+    workspace: dict[str, Any],
+) -> dict[str, Any]:
+    evidence = require_object(
+        workspace.get("canonical_production_evidence"),
+        f"{family_id}.workspace.canonical_production_evidence",
+    )
+    if evidence.get("public_replay_command") != ADVANCED_RUNTIME_PUBLIC_COMMAND:
+        raise RuntimeError(f"{family_id}.workspace canonical evidence command drifted")
+    if evidence.get("umbrella_support_promoted") is not False:
+        raise RuntimeError(f"{family_id}.workspace must not promote advanced-runtime umbrella support")
+    require_path_field(evidence, "positive_fixture", ADVANCED_RUNTIME_POSITIVE_FIXTURE)
+    require_path_field(
+        evidence,
+        "combined_identity_contract",
+        ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT,
+    )
+    require_path_field(
+        evidence,
+        "canonical_source_debug_map_bundle",
+        ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE,
+    )
+    require_path_field(evidence, "negative_matrix", ADVANCED_RUNTIME_NEGATIVE_MATRIX)
+
+    expected_evidence = require_object(
+        expectation.get("canonical_production_evidence"),
+        f"{family_id}.canonical_production_evidence",
+    )
+    if expected_evidence != evidence:
+        raise RuntimeError(f"{family_id}.canonical_production_evidence drifted from workspace")
+
+    diagnostics = require_object(expectation["diagnostics"], f"{family_id}.diagnostics")
+    runtime = require_object(expectation["runtime"], f"{family_id}.runtime")
+    compile_manifest = require_object(expectation["compile_manifest"], f"{family_id}.compile_manifest")
+    source_graph = require_object(expectation["source_graph"], f"{family_id}.source_graph")
+    debug_source_map = require_object(expectation["debug_source_map"], f"{family_id}.debug_source_map")
+    optimization_trace = require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace")
+
+    require_expected_pass_section(diagnostics, f"{family_id}.diagnostics")
+    require_expected_pass_section(runtime, f"{family_id}.runtime")
+    require_expected_pass_section(source_graph, f"{family_id}.source_graph")
+    require_expected_pass_section(debug_source_map, f"{family_id}.debug_source_map")
+    require_blocked_section(compile_manifest, f"{family_id}.compile_manifest")
+    require_blocked_section(optimization_trace, f"{family_id}.optimization_trace")
+
+    if runtime.get("proof_kind") != "advanced-runtime-combined-runtime-state":
+        raise RuntimeError(f"{family_id}.runtime.proof_kind drifted")
+    if source_graph.get("proof_kind") != "advanced-runtime-compiler-owned-source-graph":
+        raise RuntimeError(f"{family_id}.source_graph.proof_kind drifted")
+    if debug_source_map.get("proof_kind") != "advanced-runtime-canonical-source-debug-map":
+        raise RuntimeError(f"{family_id}.debug_source_map.proof_kind drifted")
+    if runtime.get("umbrella_support_promoted") is not False:
+        raise RuntimeError(f"{family_id}.runtime must not promote advanced-runtime umbrella support")
+    if source_graph.get("source_truth") is True or debug_source_map.get("source_truth") is True:
+        raise RuntimeError(f"{family_id} generated evidence must not be marked source truth")
+
+    require_path_field(runtime, "combined_identity_contract", ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT)
+    require_path_field(source_graph, "combined_identity_contract", ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT)
+    require_path_field(debug_source_map, "canonical_bundle", ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE)
+    require_path_field(diagnostics, "negative_matrix", ADVANCED_RUNTIME_NEGATIVE_MATRIX)
+
+    payload = validate_advanced_runtime_closure()
+    if payload.get("status") != "PASS":
+        failures = payload.get("failures", [])
+        failure_text = "; ".join(str(item) for item in failures) if failures else "unknown failure"
+        raise RuntimeError(f"{family_id}.advanced-runtime closure proof failed: {failure_text}")
+
+    expected_counts = {
+        "runtime.runtime_state_record_count": (
+            runtime,
+            "runtime_state_record_count",
+            "advanced_runtime_combined_identity_runtime_state_record_count",
+        ),
+        "source_graph.source_graph_record_count": (
+            source_graph,
+            "source_graph_record_count",
+            "advanced_runtime_combined_identity_source_graph_record_count",
+        ),
+        "debug_source_map.source_map_record_count": (
+            debug_source_map,
+            "source_map_record_count",
+            "advanced_runtime_canonical_source_map_record_count",
+        ),
+        "debug_source_map.debug_map_record_count": (
+            debug_source_map,
+            "debug_map_record_count",
+            "advanced_runtime_canonical_debug_map_record_count",
+        ),
+        "debug_source_map.native_line_table_record_count": (
+            debug_source_map,
+            "native_line_table_record_count",
+            "advanced_runtime_canonical_native_line_table_record_count",
+        ),
+        "diagnostics.negative_matrix_case_count": (
+            diagnostics,
+            "negative_matrix_case_count",
+            "advanced_runtime_negative_matrix_case_count",
+        ),
+    }
+    for field_label, (section, field_name, payload_key) in expected_counts.items():
+        expected = payload.get(payload_key)
+        if not isinstance(expected, int):
+            raise RuntimeError(f"{family_id}.{payload_key} was not reported as an integer")
+        require_int_field(section, field_name, expected)
+        if field_label.endswith("negative_matrix_case_count"):
+            for index, raw_case in enumerate(require_list(expectation["negative_cases"], f"{family_id}.negative_cases")):
+                case = require_object(raw_case, f"{family_id}.negative_cases[{index}]")
+                if case.get("case_id") == "advanced-runtime-unsupported-combination-matrix":
+                    require_int_field(case, "expected_case_count", expected)
+
+    if payload.get("advanced_runtime_combined_identity_contract") != ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT:
+        raise RuntimeError(f"{family_id}.combined identity contract path drifted")
+    if payload.get("advanced_runtime_canonical_source_debug_map") != ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE:
+        raise RuntimeError(f"{family_id}.canonical source/debug-map bundle path drifted")
+    if payload.get("advanced_runtime_negative_matrix") != ADVANCED_RUNTIME_NEGATIVE_MATRIX:
+        raise RuntimeError(f"{family_id}.negative matrix path drifted")
+    if payload.get("language_semantics_support_claim") != "objc3c.behavior.language.advanced-runtime-closure":
+        raise RuntimeError(f"{family_id}.language semantics support claim drifted")
+
+    return {
+        "status": "PASS",
+        "public_command": ADVANCED_RUNTIME_PUBLIC_COMMAND,
+        "combined_identity_contract": ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT,
+        "canonical_source_debug_map": ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE,
+        "negative_matrix": ADVANCED_RUNTIME_NEGATIVE_MATRIX,
+        "runtime_state_record_count": payload["advanced_runtime_combined_identity_runtime_state_record_count"],
+        "source_graph_record_count": payload["advanced_runtime_combined_identity_source_graph_record_count"],
+        "debug_map_record_count": payload["advanced_runtime_combined_identity_debug_map_record_count"],
+        "canonical_source_map_record_count": payload["advanced_runtime_canonical_source_map_record_count"],
+        "canonical_native_line_table_record_count": payload[
+            "advanced_runtime_canonical_native_line_table_record_count"
+        ],
+        "negative_matrix_case_count": payload["advanced_runtime_negative_matrix_case_count"],
+        "compile_manifest_status": compile_manifest["status"],
+        "optimization_trace_status": optimization_trace["status"],
+        "umbrella_support_promoted": False,
+    }
+
+
 def require_source_owned_path(relative_path: str, field: str) -> Path:
     path_text = normalize_path(require_nonempty_string(relative_path, field))
     if path_text.startswith(FORBIDDEN_SOURCE_PREFIXES):
@@ -664,9 +840,17 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
     meta = validate_native_meta(family_id, meta_path, source_path)
     expectation = validate_expectation(family, expectation_path, source_path, workspace_path)
     executable_proof: dict[str, Any] | None = None
+    advanced_runtime_contract_proof: dict[str, Any] | None = None
     optimization_trace_proof: dict[str, Any] | None = None
     if require_object(expectation["runtime"], f"{family_id}.runtime").get("status") == "expected-pass":
-        executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
+        if family_id == ADVANCED_RUNTIME_FAMILY_ID:
+            advanced_runtime_contract_proof = validate_advanced_runtime_contract_backed_proof(
+                family_id,
+                expectation,
+                workspace,
+            )
+        else:
+            executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
     if require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
         if executable_proof is None:
             raise RuntimeError(f"{family_id}.optimization proof diagnostic requires executable runtime proof")
@@ -706,6 +890,7 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
         "negative_case_count": len(expectation.get("negative_cases", [])),
         "meta_fixture_kind": meta.get("fixture_kind"),
         "executable_proof": executable_proof,
+        "advanced_runtime_contract_proof": advanced_runtime_contract_proof,
         "optimization_trace_proof": optimization_trace_proof,
     }
 
