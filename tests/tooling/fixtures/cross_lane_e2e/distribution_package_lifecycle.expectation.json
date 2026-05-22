@@ -3,30 +3,21 @@
   "schema_version": 1,
   "issue": 8200,
   "family_id": "distribution_package_lifecycle",
-  "expectation_state": "scaffold-blocked",
+  "expectation_state": "expected-pass",
   "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
   "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.workspace.json",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
   "responsible_domains": [
     "package trust diagnostic",
+    "release operations diagnostic",
     "runtime status",
     "capability/evidence mismatch"
   ],
-  "blockers": [
-    {
-      "blocker_id": "cross-lane-distribution-package-lifecycle",
-      "domain": "package trust",
-      "reason": "package signing, publish, clean install, update, rollback, and installed compile/run are not yet one replayable path"
-    }
-  ],
   "diagnostics": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "expected-pass",
     "responsible_domain": "package trust diagnostic",
-    "reason": "distribution lifecycle support must fail closed until package trust artifacts are present",
-    "expected_codes": [
-      "O3E2E8200PKG"
-    ],
+    "reason": "distribution lifecycle source now compiles without diagnostics while package trust and release-operation proof remain explicit generated evidence",
+    "expected_codes": [],
     "required_tokens": [
       "package signing",
       "package publish",
@@ -37,53 +28,70 @@
     ]
   },
   "runtime": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "compile/run from the installed package root is not yet executed by this scaffold",
+    "reason": "the linked provider module and distribution lifecycle program compile, link, and run after the package lifecycle proof completes",
     "source_truth": false,
-    "expected_exit_code": null
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
   },
   "compile_manifest": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "expected-pass",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "compile manifest must eventually come from the installed package root rather than the source checkout",
+    "reason": "the public cross-lane validator generates the native compile manifest for the executable lifecycle fixture",
     "source_truth": false,
-    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/module.manifest.json"
+    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/compile/module.manifest.json"
   },
   "source_graph": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "source graph must prove installed package identity after update and rollback",
+    "reason": "the generated lifecycle trace binds the checked source fixture to package-install, release-operations, update, rollback, and linked-provider evidence",
     "source_truth": false,
     "expected_edges": [
       "cross-lane:distribution-package-lifecycle -> package:local-distribution-root",
-      "cross-lane:distribution-package-lifecycle -> release:channel-operations"
+      "cross-lane:distribution-package-lifecycle -> release:channel-operations",
+      "cross-lane:distribution-package-lifecycle -> package:cross-lane-published-toolchain"
     ]
   },
   "debug_source_map": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "reserved",
+    "blocker_id": "cross-lane-distribution-debug-source-map-not-required",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "debug source-map output is not required until installed compile/run exists",
+    "reason": "debug source-map output is not a package lifecycle support claim",
     "source_truth": false
   },
   "optimization_trace": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-distribution-package-lifecycle",
+    "status": "reserved",
+    "blocker_id": "cross-lane-distribution-optimization-not-required",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "optimization proof is outside the package lifecycle owner until installed execution exists",
+    "reason": "optimization proof is outside the package lifecycle owner",
     "source_truth": false
+  },
+  "distribution_lifecycle": {
+    "status": "expected-pass",
+    "responsible_domain": "package trust diagnostic",
+    "reason": "public validation runs the from-nothing package install proof, release-operations rollback proof, and executable package lifecycle fixture together",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/distribution-lifecycle-trace.json"
   },
   "negative_cases": [
     {
       "case_id": "distribution-package-tampered-signature",
-      "status": "scaffold-blocked",
-      "blocker_id": "cross-lane-distribution-package-lifecycle",
+      "status": "expected-pass",
       "responsible_domain": "package trust diagnostic",
-      "reason": "tampered package signatures must fail closed before publish, install, update, rollback, or installed compile/run"
+      "reason": "the lifecycle trace records the package-manager tamper diagnostic that would reject a drifted installed trust signature"
+    },
+    {
+      "case_id": "distribution-package-hosted-registry-overclaim",
+      "status": "expected-pass",
+      "responsible_domain": "package trust diagnostic",
+      "reason": "hosted registry and network install remain fail-closed in the package install verification"
     }
   ],
   "capability_boundary": {
@@ -93,6 +101,6 @@
       "release.operations.channel-lifecycle",
       "release.abi.stability-governance"
     ],
-    "claim_boundary": "clean local install and release operations are prerequisites, not proof of full hosted distribution lifecycle support"
+    "claim_boundary": "this fixture proves clean local package install, local publication metadata, deterministic update/uninstall receipts, release-operation rollback safety, installer signature evidence, and executable compile/run; hosted registry, network install, background updater, and public production release publication remain out of scope"
   }
 }

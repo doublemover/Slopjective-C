@@ -482,6 +482,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/native/runtime/object_model/class_realization_contract.objc3` via `npm run objc3c -- test-behavior-matrix`
   - test: `tests/tooling/runtime/class_realization_runtime_probe.cpp` via `npm run objc3c -- validate-object-model-conformance`
   - test: `scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py` via `npm run objc3c -- test-runtime-acceptance-fast`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `native/objc3c/src/runtime/classes/class_graph.cpp`
   - source: `native/objc3c/src/runtime/classes/metaclass_graph.cpp`
   - source: `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp`
@@ -500,6 +501,7 @@ the canonical manifest fixture and public npm command above.
   - test: `scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py` via `npm run objc3c -- test-runtime-acceptance-fast`
   - test: `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp`
   - test: `tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `native/objc3c/src/runtime/classes/category_attachment.cpp`
   - source: `native/objc3c/src/runtime/classes/protocol_conformance.cpp`
 
@@ -522,6 +524,7 @@ the canonical manifest fixture and public npm command above.
   - test: `scripts/check_objc3c_runnable_storage_reflection_conformance.py` via `npm run objc3c -- validate-storage-reflection-conformance`
   - test: `tests/tooling/runtime/property_layout_runtime_probe.cpp`
   - test: `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
   - test: `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
   - source: `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
@@ -573,7 +576,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, and value-inspection records together. Full production-path debugger stepping, canonical compiler-emitted object-model line tables, and debugger reflection ABI governance remain reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, and debug-anchor ABI governance together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, full source-map publication, typed keypath lowering in the combined fixture, and statement-level debugger stepping remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -589,6 +592,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
   - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`
   - test: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
@@ -1616,7 +1620,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.advanced-runtime-closure`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay; remaining broad runtime closure stays reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, and negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
@@ -1636,6 +1640,8 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/native/runtime/advanced_closure/combined_positive.objc3`
   - test: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`
+  - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
 
 ### Native compiler module decomposition
 
@@ -2015,6 +2021,9 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/cross_lane_e2e/manifest.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `scripts/check_objc3c_public_conformance_suite_manifest.py`
   - source: `scripts/check_objc3c_public_conformance_suite.py`
   - source: `scripts/check_objc3c_cross_lane_e2e.py`
@@ -2062,6 +2071,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` via `npm run objc3c -- validate-package-install-distribution`
   - test: `tests/tooling/test_package_install_distribution_credibility.py` via `npm run objc3c -- validate-package-install-distribution`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `scripts/objc3c_package_manager/install_distribution.py`
   - source: `scripts/check_objc3c_package_install_distribution_credibility.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
@@ -2082,6 +2092,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/release_foundation/abi_api_governance.json` via `npm run objc3c -- check-release-abi-api-drift`
   - test: `tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json` via `npm run objc3c -- check-release-abi-api-drift`
   - test: `tests/tooling/test_release_abi_api_drift.py` via `npm run objc3c -- check-release-abi-api-drift`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - schema: `schemas/objc3c-abi-api-governance-v1.schema.json`
   - source: `scripts/objc3c_release_manifest/abi_api_drift.py`
 
@@ -2120,6 +2131,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/release_operations/channel_operations_model.json` via `npm run objc3c -- validate-release-operations-end-to-end`
   - test: `tests/tooling/test_release_operations_channel_model.py` via `npm run objc3c -- validate-release-operations-end-to-end`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - schema: `schemas/objc3c-release-channel-operations-v1.schema.json`
   - source: `scripts/build_objc3c_update_manifest.py`
   - source: `scripts/publish_objc3c_release_operations_metadata.py`
@@ -2141,6 +2153,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json` via `npm run objc3c -- validate-public-runtime-reflection-api`
   - test: `tests/tooling/test_public_runtime_reflection_api.py` via `npm run objc3c -- validate-public-runtime-reflection-api`
   - test: `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp` via `npm run objc3c -- validate-public-runtime-reflection-api`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
   - source: `scripts/check_objc3c_public_runtime_reflection_api.py`
@@ -2254,6 +2267,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
   - test: `tests/tooling/test_runtime_debug_trace_surface.py` via `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - schema: `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - source: `scripts/build_objc3c_runtime_debug_trace.py`
   - source: `scripts/objc3c_runtime_debug_trace/payload.py`

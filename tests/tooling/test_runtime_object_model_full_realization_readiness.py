@@ -170,6 +170,30 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
         link["runtime_identity_kind"]
         for link in contract["artifact_runtime_reflection_links"]
     } >= set(contract["required_runtime_identity_kinds"])
+    assert contract["reflection_abi_governance"][
+        "expected_debug_anchor_abi_version"
+    ] == 2
+    assert contract["reflection_abi_governance"][
+        "expected_debug_anchor_min_reader_abi_version"
+    ] == 2
+    assert contract["artifact_inspector_compatibility"][
+        "required_runtime_inventory_reflection_abi_version"
+    ] == "manifest-derived-runtime-metadata"
+    assert {
+        anchor["runtime_identity_kind"]
+        for anchor in contract["source_backed_debug_anchors"]
+    } == set(contract["required_runtime_identity_kinds"])
+    assert {
+        anchor["runtime_anchor_id"]
+        for anchor in contract["source_backed_debug_anchors"]
+    } == {
+        "runtime.anchor.object_model.class",
+        "runtime.anchor.object_model.category",
+        "runtime.anchor.object_model.protocol",
+        "runtime.anchor.object_model.property",
+        "runtime.anchor.object_model.ivar",
+        "runtime.anchor.object_model.method",
+    }
 
 
 def _fake_production_artifacts(

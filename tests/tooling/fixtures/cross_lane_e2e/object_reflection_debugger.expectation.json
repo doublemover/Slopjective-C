@@ -14,19 +14,16 @@
   ],
   "blockers": [
     {
-      "blocker_id": "cross-lane-object-reflection-debug-map",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
       "domain": "source-map/debug",
-      "reason": "debug/source-map output for the combined object reflection program has not been emitted on the public path"
+      "reason": "the executable object/reflection program now compiles, runs, and emits artifact-backed debug anchors, but full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
     }
   ],
   "diagnostics": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "class/category/protocol/property reflection is present as source, but debugger source-map support remains blocked",
-    "expected_codes": [
-      "O3E2E8200DBG"
-    ],
+    "reason": "the executable object/reflection/debugger fixture must compile without diagnostics while keeping unsupported debugger rows explicit",
+    "expected_codes": [],
     "required_tokens": [
       "class",
       "category",
@@ -37,54 +34,111 @@
     ]
   },
   "runtime": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "runtime reflection and debug-map output are not yet validated as one run",
+    "reason": "class-method dispatch executes through the native runtime and returns the checked status while category, protocol, property, and debugger evidence is validated through production artifact surfaces",
     "source_truth": false,
-    "expected_exit_code": null
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
   },
   "compile_manifest": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "status": "expected-pass",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "compile manifest must eventually publish object reflection and debug-map artifact identities",
+    "reason": "public validation must generate the native compile manifest for the executable object/reflection/debugger slice",
     "source_truth": false,
-    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/module.manifest.json"
+    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/compile/module.manifest.json"
   },
   "source_graph": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "source graph identity for class, category, protocol, property, ivar, and reflection remains expected-only",
+    "reason": "the production editor-tooling path must publish a source graph with object-model declarations while keeping unsupported reference consumers fail-closed",
     "source_truth": false,
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/object-reflection-debugger-1c676f56f741/source-graph.json",
     "expected_edges": [
       "CrossLaneDebugSubject -> DebuggableSubject",
-      "CrossLaneDebugSubject(Inspection) -> DebuggableSubject"
+      "CrossLaneDebugSubject(Inspection) -> DebuggableSubject",
+      "CrossLaneDebugSubject -> CrossLaneDebugRoot"
     ]
   },
   "debug_source_map": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "debug-map output is the family blocker and cannot be counted as source truth",
+    "reason": "the production artifact path must publish declaration breakpoint anchors and object-symbol inspection while keeping full source maps and statement stepping fail-closed",
     "source_truth": false,
-    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/module.debug-map.json"
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/object-reflection-debugger-1c676f56f741/debug-map.json",
+    "source_map_supported": false,
+    "statement_level_stepping": false
   },
   "optimization_trace": {
     "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-object-reflection-debug-map",
+    "blocker_id": "cross-lane-object-reflection-not-optimization-owner",
     "responsible_domain": "optimization proof diagnostic",
-    "reason": "optimization trace is not the owning proof for this family",
+    "reason": "optimization traces are not the owning proof for the object/reflection/debugger family",
     "source_truth": false
+  },
+  "object_reflection_debugger_proof": {
+    "contract_id": "objc3c.cross_lane_e2e.object_reflection_debugger_proof.v1",
+    "status": "expected-pass",
+    "runs_canonical_frontend": true,
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "requires_public_runtime_reflection_api": true,
+    "public_runtime_reflection_command": "npm run objc3c -- validate-public-runtime-reflection-api",
+    "requires_object_model_debugger_proof": true,
+    "object_model_debugger_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "object_model_debugger_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+    "required_artifact_kinds": [
+      "summary",
+      "manifest",
+      "ir",
+      "object",
+      "runtime-metadata-binary",
+      "source-graph",
+      "artifact-inspector",
+      "debug-map"
+    ],
+    "runtime_inventory_minimums": {
+      "class_records": 2,
+      "protocol_records": 1,
+      "category_records": 1,
+      "property_records": 4,
+      "method_records": 8,
+      "source_graph_nodes": 6,
+      "declaration_breakpoint_anchors": 6
+    },
+    "reserved_rows_not_promoted": [
+      "runtime.object-model.full-realization",
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.full-source-map-publication"
+    ],
+    "claim_boundary": "executable class-method runtime behavior, public reflection API evidence, production artifact inspection, source graph, and declaration debug-map anchors are checked; instance allocation dispatch, category dispatch execution, full realization, full source maps, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
   },
   "negative_cases": [
     {
-      "case_id": "object-reflection-debugger-reserved-stepping",
+      "case_id": "object-reflection-debugger-statement-stepping-reserved",
       "status": "reserved",
-      "blocker_id": "cross-lane-object-reflection-debug-map",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
       "responsible_domain": "source-map/debug diagnostic",
       "reason": "statement-level debugger stepping remains reserved and must fail closed"
+    },
+    {
+      "case_id": "object-reflection-debugger-full-source-map-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "responsible_domain": "source-map/debug diagnostic",
+      "reason": "full source-map publication remains reserved even though declaration debug anchors are emitted"
+    },
+    {
+      "case_id": "object-reflection-debugger-typed-keypath-lowering-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "responsible_domain": "lowering/IR diagnostic",
+      "reason": "typed keypath lowering is not complete for this combined object-model fixture and must fail closed"
     }
   ],
   "capability_boundary": {
@@ -97,6 +151,6 @@
       "runtime.debug-trace.structured-inspection",
       "runtime.debug-trace.statement-stepping"
     ],
-    "claim_boundary": "object and reflection rows can be cited, but debugger-grade source maps and stepping remain blocked or reserved"
+    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, public reflection API proof, source graph, artifact inspector, and declaration debug-map anchors can be cited; instance allocation dispatch, category dispatch execution, runtime.object-model.full-realization, full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
   }
 }

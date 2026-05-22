@@ -90,9 +90,9 @@
         "@protocol",
         "@property",
         "@implementation",
-        "@keypath",
-        "objc3_runtime_reflection_snapshot",
-        "objc3_debug_map_anchor"
+        "reflectedDebugScore",
+        "objc3_runtime_copy_reflection_class",
+        "debugger artifacts"
       ],
       "capability_rows": [
         "runtime.object-model.class-realization",
@@ -111,10 +111,34 @@
       ],
       "evidence_map_refs": [
         {
+          "capability_id": "runtime.object-model.class-realization",
+          "support_claim": "objc3c.behavior.runtime.object-model-class-realization",
+          "status": "implemented",
+          "claim_boundary": "the executable cross-lane fixture dispatches class methods and emits class runtime metadata without promoting the full-realization umbrella"
+        },
+        {
+          "capability_id": "runtime.object-model.category-protocol-registration",
+          "support_claim": "objc3c.behavior.runtime.object-model-category-protocol-registration",
+          "status": "implemented",
+          "claim_boundary": "the category/protocol edge appears in source and production artifact inventory while full source-map and stepping rows remain reserved"
+        },
+        {
+          "capability_id": "runtime.object-model.property-ivar-reflection",
+          "support_claim": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
+          "status": "implemented",
+          "claim_boundary": "runtime inventory exposes synthesized property and ivar records through artifact inspection; instance property execution remains outside this family proof"
+        },
+        {
           "capability_id": "runtime.public-api.reflection",
           "support_claim": "objc3c.behavior.runtime.public-reflection-api",
           "status": "implemented",
-          "claim_boundary": "public reflection API evidence is a prerequisite only; debugger source-map and statement stepping remain reserved"
+          "claim_boundary": "public reflection API validation is run as a cross-lane prerequisite; it does not promote runtime.object-model.full-realization"
+        },
+        {
+          "capability_id": "runtime.debug-trace.structured-inspection",
+          "support_claim": "objc3c.behavior.runtime.debug_trace",
+          "status": "implemented",
+          "claim_boundary": "declaration debug anchors and object-symbol inspection are emitted on the production artifact path while full source-map publication remains reserved"
         },
         {
           "capability_id": "runtime.debug-trace.statement-stepping",
@@ -125,9 +149,9 @@
       ],
       "blockers": [
         {
-          "blocker_id": "cross-lane-object-reflection-debug-map",
+          "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
           "domain": "source-map/debug",
-          "reason": "object reflection plus debugger source-map output is not yet validated as one public E2E artifact set"
+          "reason": "the executable object/reflection/debugger path now compiles, runs, and emits declaration debug anchors, but full source-map publication, typed keypath lowering in this combined fixture, and statement stepping remain reserved"
         }
       ]
     },
@@ -303,14 +327,16 @@
       "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.workspace.json",
       "expectation": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
-      "expected_state": "scaffold-blocked",
+      "expected_state": "expected-pass",
       "required_source_tokens": [
         "package signing",
         "package publish",
         "install from clean root",
         "update",
         "rollback",
-        "compile/run installed package"
+        "compile/run installed package",
+        "objc_import_module",
+        "publishedLifecycleSeed"
       ],
       "capability_rows": [
         "ecosystem.package-install.clean-distribution",
@@ -327,20 +353,19 @@
           "capability_id": "ecosystem.package-install.clean-distribution",
           "support_claim": "objc3c.behavior.package.install-clean-distribution",
           "status": "implemented",
-          "claim_boundary": "clean local install evidence is a prerequisite only; signing, public publish, update, rollback, and installed compile/run are blocked here"
+          "claim_boundary": "from-nothing clean install, local package signing trust, local publication metadata, update/uninstall receipts, and executable compile/run are validated together without hosted registry or network install support"
         },
         {
           "capability_id": "release.operations.channel-lifecycle",
           "support_claim": "objc3c.behavior.release.channel-operations",
           "status": "implemented",
-          "claim_boundary": "release operations evidence does not claim hosted production publication"
-        }
-      ],
-      "blockers": [
+          "claim_boundary": "release-operation update manifests, rollback diagnostics, and local installer/offline bundle rollback channels are validated without hosted background updater support"
+        },
         {
-          "blocker_id": "cross-lane-distribution-package-lifecycle",
-          "domain": "package trust",
-          "reason": "sign, publish, clean install, update, rollback, and installed compile/run are not yet replayed as one public E2E lifecycle"
+          "capability_id": "release.abi.stability-governance",
+          "support_claim": "objc3c.behavior.release.abi-stability-governance",
+          "status": "implemented",
+          "claim_boundary": "package ABI identity and installer signature evidence are checked as lifecycle prerequisites without broad external release certification"
         }
       ]
     }

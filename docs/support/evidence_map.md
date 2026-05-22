@@ -97,6 +97,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `test` | `tests/native/runtime/object_model/class_realization_contract.objc3` | `npm run objc3c -- test-behavior-matrix` |
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `test` | `tests/tooling/runtime/class_realization_runtime_probe.cpp` | `npm run objc3c -- validate-object-model-conformance` |
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `test` | `scripts/objc3c_runtime_acceptance/domains/object_model_surface_class_cases.py` | `npm run objc3c -- test-runtime-acceptance-fast` |
+| `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `source` | `native/objc3c/src/runtime/classes/class_graph.cpp` |  |
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `source` | `native/objc3c/src/runtime/classes/metaclass_graph.cpp` |  |
 | `runtime.object-model.class-realization` | `objc3c.behavior.runtime.object-model-class-realization` | `source` | `native/objc3c/src/runtime/classes/class_graph_snapshots.cpp` |  |
@@ -104,6 +105,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `test` | `scripts/objc3c_runtime_acceptance/domains/object_model_category_attachment_cases.py` | `npm run objc3c -- test-runtime-acceptance-fast` |
 | `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `test` | `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp` |  |
 | `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `test` | `tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp` |  |
+| `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `source` | `native/objc3c/src/runtime/classes/category_attachment.cpp` |  |
 | `runtime.object-model.category-protocol-registration` | `objc3c.behavior.runtime.object-model-category-protocol-registration` | `source` | `native/objc3c/src/runtime/classes/protocol_conformance.cpp` |  |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3` | `npm run objc3c -- test-behavior-matrix` |
@@ -111,6 +113,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `scripts/check_objc3c_runnable_storage_reflection_conformance.py` | `npm run objc3c -- validate-storage-reflection-conformance` |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/tooling/runtime/property_layout_runtime_probe.cpp` |  |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp` |  |
+| `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp` |  |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `test` | `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp` |  |
 | `runtime.object-model.property-ivar-reflection` | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `source` | `native/objc3c/src/runtime/storage/property_layout_realization.cpp` |  |
@@ -136,6 +139,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
+| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp` |  |
@@ -520,6 +524,8 @@ diagnostic, documentation, or boundary evidence only.
 | `language.advanced-runtime-closure` |  | `test` | `tests/native/runtime/advanced_closure/combined_positive.objc3` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/native/runtime/advanced_closure/negative_matrix.contract.json` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json` |  |
+| `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json` |  |
+| `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/config/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/ast/CMakeLists.txt` |  |
@@ -674,6 +680,9 @@ diagnostic, documentation, or boundary evidence only.
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/manifest.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite_manifest.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_cross_lane_e2e.py` |  |
@@ -690,12 +699,14 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/test_package_install_distribution_credibility.py` | `npm run objc3c -- validate-package-install-distribution` |
+| `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `test` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `source` | `scripts/objc3c_package_manager/install_distribution.py` |  |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `source` | `scripts/check_objc3c_package_install_distribution_credibility.py` |  |
 | `ecosystem.package-install.clean-distribution` | `objc3c.behavior.package.install-clean-distribution` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/fixtures/release_foundation/abi_api_governance.json` | `npm run objc3c -- check-release-abi-api-drift` |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/fixtures/release_foundation/abi_api_governance_cases.json` | `npm run objc3c -- check-release-abi-api-drift` |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/test_release_abi_api_drift.py` | `npm run objc3c -- check-release-abi-api-drift` |
+| `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `test` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `schema` | `schemas/objc3c-abi-api-governance-v1.schema.json` |  |
 | `release.abi.stability-governance` | `objc3c.behavior.release.abi-stability-governance` | `source` | `scripts/objc3c_release_manifest/abi_api_drift.py` |  |
 | `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `test` | `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json` | `npm run objc3c -- validate-abi-governance` |
@@ -705,6 +716,7 @@ diagnostic, documentation, or boundary evidence only.
 | `abi.governance.source-truth` | `objc3c.behavior.abi.governance-source-truth` | `source` | `scripts/objc3c_workflow/actions/release_governance_foundation_contracts.py` |  |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/fixtures/release_operations/channel_operations_model.json` | `npm run objc3c -- validate-release-operations-end-to-end` |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/test_release_operations_channel_model.py` | `npm run objc3c -- validate-release-operations-end-to-end` |
+| `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `test` | `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `schema` | `schemas/objc3c-release-channel-operations-v1.schema.json` |  |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `source` | `scripts/build_objc3c_update_manifest.py` |  |
 | `release.operations.channel-lifecycle` | `objc3c.behavior.release.channel-operations` | `source` | `scripts/publish_objc3c_release_operations_metadata.py` |  |
@@ -713,6 +725,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json` | `npm run objc3c -- validate-public-runtime-reflection-api` |
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/test_public_runtime_reflection_api.py` | `npm run objc3c -- validate-public-runtime-reflection-api` |
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp` | `npm run objc3c -- validate-public-runtime-reflection-api` |
+| `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
 | `runtime.public-api.reflection` | `objc3c.behavior.runtime.public-reflection-api` | `source` | `scripts/check_objc3c_public_runtime_reflection_api.py` |  |
@@ -749,6 +762,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
+| `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `schema` | `schemas/objc3c-runtime-debug-trace-v1.schema.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/build_objc3c_runtime_debug_trace.py` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `source` | `scripts/objc3c_runtime_debug_trace/payload.py` |  |

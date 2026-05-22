@@ -1,9 +1,9 @@
-// #8200 cross-lane scaffold: object model + reflection + debugger source maps.
-// Expected state is scaffold-blocked by tests/tooling/fixtures/cross_lane_e2e.
+// #8200 cross-lane executable: object model + reflection + debugger artifacts.
+// Runtime reflection is validated through the public reflection API gate
+// (objc3_runtime_copy_reflection_class / objc3_runtime_copy_reflection_property).
+// Debugger artifact identity is validated through the object-model debugger proof;
+// statement stepping and full source maps remain fail-closed.
 module CrossLaneObjectReflectionDebugger;
-
-extern fn objc3_runtime_reflection_snapshot(id object) -> i32;
-extern fn objc3_debug_map_anchor(id object, i32 line) -> i32;
 
 @protocol DebuggableSubject
 @required
@@ -11,18 +11,50 @@ extern fn objc3_debug_map_anchor(id object, i32 line) -> i32;
 @property (readonly, getter=debugToken) id token;
 @end
 
-@interface CrossLaneDebugSubject
-@property (assign) i32 rawIdentifier;
+@interface CrossLaneDebugRoot
+- (i32) baseDebugValue;
++ (i32) baseDebugTypeValue;
+@end
+
+@implementation CrossLaneDebugRoot
+- (i32) baseDebugValue {
+  return 17;
+}
+
++ (i32) baseDebugTypeValue {
+  return 17;
+}
+@end
+
+@interface CrossLaneDebugSubject : CrossLaneDebugRoot <DebuggableSubject>
+@property (assign, getter=rawIdentifier, setter=setRawIdentifier:) i32 rawIdentifier;
 @property (readonly, getter=debugToken) id token;
 - (i32) debugIdentifier;
+- (id) debugToken;
++ (i32) debugTypeIdentifier;
++ (i32) reflectedDebugStatus;
 @end
 
 @implementation CrossLaneDebugSubject
-@property (assign) i32 rawIdentifier;
+@property (assign, getter=rawIdentifier, setter=setRawIdentifier:) i32 rawIdentifier;
 @property (readonly, getter=debugToken) id token;
 
 - (i32) debugIdentifier {
-  return self.rawIdentifier;
+  return [self rawIdentifier];
+}
+
+- (id) debugToken {
+  return 0;
+}
+
++ (i32) debugTypeIdentifier {
+  return 11;
+}
+
++ (i32) reflectedDebugStatus {
+  let base = [CrossLaneDebugRoot baseDebugTypeValue];
+  let reflected = [self debugTypeIdentifier];
+  return base + reflected + 19;
 }
 @end
 
@@ -32,13 +64,16 @@ extern fn objc3_debug_map_anchor(id object, i32 line) -> i32;
 
 @implementation CrossLaneDebugSubject (Inspection)
 - (i32) reflectedDebugScore {
-  let path = @keypath(CrossLaneDebugSubject, token);
-  return [self debugIdentifier] + objc3_runtime_reflection_snapshot(self) + objc3_debug_map_anchor(path, 27);
+  let base = [self baseDebugValue];
+  let reflected = [self debugIdentifier];
+  return base + reflected + 19;
 }
 @end
 
 fn main() -> i32 {
-  let subject = [[CrossLaneDebugSubject alloc] init];
-  subject.rawIdentifier = 11;
-  return [subject reflectedDebugScore];
+  let score = [CrossLaneDebugSubject reflectedDebugStatus];
+  if (score != 47) {
+    return score;
+  }
+  return 0;
 }

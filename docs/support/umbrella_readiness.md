@@ -84,7 +84,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 #### Abi Governance Rows
 
 - `satisfied` Public reflection ABI is represented by the current public reflection API row. (capability_id: `runtime.public-api.reflection`)
-- `blocked` Debugger-grade reflection ABI additions must be represented in ABI governance before umbrella promotion. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Debugger-grade reflection ABI additions are governed through debug-anchor ABI v2, minimum reader ABI v2, caller snapshot-size negotiation, and append-only source/debug artifact fields. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 
 #### Docs
 
@@ -109,7 +109,6 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, and a canonical frontend artifact/runtime inventory probe exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.
   - Full canonical compiler-owned source-map publication and native line tables for the integrated object-model program.
   - Production debugger statement-stepping integration over those emitted line tables.
-  - Debugger reflection ABI governance for any public object-inspection ABI additions.
 
 ### Final Promotion Criteria
 

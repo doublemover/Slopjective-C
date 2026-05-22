@@ -203,9 +203,23 @@ int Fail(const char *message) {
 }
 
 bool HasCommonDebugIdentity(
-    const objc3_runtime_reflection_debug_anchor_snapshot &snapshot) {
+    const objc3_runtime_reflection_debug_anchor_snapshot &snapshot,
+    const char *expected_source_anchor_kind,
+    const char *expected_source_map_record_kind,
+    const char *expected_debug_projection_key) {
   return snapshot.found == 1 && snapshot.runtime_owned == 1 &&
          snapshot.source_identity_backed == 1 && snapshot.replayable == 1 &&
+         snapshot.snapshot_size ==
+             sizeof(objc3_runtime_reflection_debug_anchor_snapshot) &&
+         snapshot.abi_governance_policy != nullptr &&
+         snapshot.source_anchor_kind != nullptr &&
+         std::strcmp(snapshot.source_anchor_kind,
+                     expected_source_anchor_kind) == 0 &&
+         snapshot.source_map_record_kind != nullptr &&
+         std::strcmp(snapshot.source_map_record_kind,
+                     expected_source_map_record_kind) == 0 &&
+         snapshot.source_map_anchor_policy != nullptr &&
+         snapshot.artifact_inspector_compatibility != nullptr &&
          snapshot.module_name != nullptr &&
          std::strcmp(snapshot.module_name, kModuleName) == 0 &&
          snapshot.translation_unit_identity_key != nullptr &&
@@ -214,7 +228,15 @@ bool HasCommonDebugIdentity(
          snapshot.source_path != nullptr &&
          std::strcmp(snapshot.source_path, kTranslationUnit) == 0 &&
          snapshot.runtime_identity_key != nullptr &&
-         snapshot.debug_projection_key != nullptr;
+         snapshot.debug_projection_key != nullptr &&
+         std::strcmp(snapshot.debug_projection_key,
+                     expected_debug_projection_key) == 0;
+}
+
+void RequestFullDebugAnchorSnapshot(
+    objc3_runtime_reflection_debug_anchor_snapshot &snapshot) {
+  snapshot.snapshot_size =
+      sizeof(objc3_runtime_reflection_debug_anchor_snapshot);
 }
 
 } // namespace
@@ -237,10 +259,23 @@ int main() {
   objc3_runtime_reflection_debug_anchor_snapshot indexed_anchor{};
   objc3_runtime_reflection_debug_anchor_snapshot missing_anchor{};
   objc3_runtime_reflection_debug_anchor_snapshot stale_anchor{};
+  objc3_runtime_reflection_debug_anchor_snapshot legacy_anchor{};
+  RequestFullDebugAnchorSnapshot(class_anchor);
+  RequestFullDebugAnchorSnapshot(category_anchor);
+  RequestFullDebugAnchorSnapshot(protocol_anchor);
+  RequestFullDebugAnchorSnapshot(property_anchor);
+  RequestFullDebugAnchorSnapshot(ivar_anchor);
+  RequestFullDebugAnchorSnapshot(method_anchor);
+  RequestFullDebugAnchorSnapshot(indexed_anchor);
+  RequestFullDebugAnchorSnapshot(missing_anchor);
+  RequestFullDebugAnchorSnapshot(stale_anchor);
 
   const int class_status = objc3_runtime_copy_reflection_debug_anchor(
       OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS, kWidgetClassName, nullptr,
       OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INVALID, &class_anchor);
+  const int legacy_status = objc3_runtime_copy_reflection_debug_anchor(
+      OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS, kWidgetClassName, nullptr,
+      OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INVALID, &legacy_anchor);
   const int category_status = objc3_runtime_copy_reflection_debug_anchor(
       OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY, kWidgetClassName,
       kTracingCategoryName, OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INVALID,
@@ -274,6 +309,7 @@ int main() {
           class_anchor.anchor_generation + 1u, &stale_anchor);
 
   if (class_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK ||
+      legacy_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK ||
       category_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK ||
       protocol_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK ||
       property_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK ||
@@ -282,12 +318,25 @@ int main() {
       indexed_status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
     return Fail("debug anchor status drifted");
   }
-  if (!HasCommonDebugIdentity(class_anchor) ||
-      !HasCommonDebugIdentity(category_anchor) ||
-      !HasCommonDebugIdentity(protocol_anchor) ||
-      !HasCommonDebugIdentity(property_anchor) ||
-      !HasCommonDebugIdentity(ivar_anchor) ||
-      !HasCommonDebugIdentity(method_anchor)) {
+  if (legacy_anchor.snapshot_size >=
+          sizeof(objc3_runtime_reflection_debug_anchor_snapshot) ||
+      legacy_anchor.debug_projection_key == nullptr ||
+      legacy_anchor.abi_governance_policy != nullptr) {
+    return Fail("debug anchor legacy ABI prefix drifted");
+  }
+  if (!HasCommonDebugIdentity(class_anchor, "class", "declaration",
+                              "runtime.anchor.object_model.class") ||
+      !HasCommonDebugIdentity(category_anchor, "category", "declaration",
+                              "runtime.anchor.object_model.category") ||
+      !HasCommonDebugIdentity(protocol_anchor, "protocol", "declaration",
+                              "runtime.anchor.object_model.protocol") ||
+      !HasCommonDebugIdentity(property_anchor, "property",
+                              "property-access",
+                              "runtime.anchor.object_model.property") ||
+      !HasCommonDebugIdentity(ivar_anchor, "ivar", "generated-accessor",
+                              "runtime.anchor.object_model.ivar") ||
+      !HasCommonDebugIdentity(method_anchor, "method", "method",
+                              "runtime.anchor.object_model.method")) {
     return Fail("debug anchor source identity drifted");
   }
   if (class_anchor.anchor_kind != OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS ||
@@ -321,7 +370,10 @@ int main() {
     return Fail("debug anchor negative boundary drifted");
   }
   if (objc3_runtime_reflection_debug_anchor_count() < 6u ||
-      objc3_runtime_reflection_debug_anchor_abi_version() == 0u) {
+      objc3_runtime_reflection_debug_anchor_abi_version() !=
+          OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION ||
+      objc3_runtime_reflection_debug_anchor_min_reader_abi_version() !=
+          OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_MIN_READER_VERSION) {
     return Fail("debug anchor replay surface drifted");
   }
 
@@ -329,6 +381,8 @@ int main() {
   std::printf("\"registration_status\":%d,", registration_status);
   std::printf("\"debug_anchor_abi_version\":%u,",
               objc3_runtime_reflection_debug_anchor_abi_version());
+  std::printf("\"debug_anchor_min_reader_abi_version\":%u,",
+              objc3_runtime_reflection_debug_anchor_min_reader_abi_version());
   std::printf("\"debug_anchor_count\":%llu,",
               static_cast<unsigned long long>(
                   objc3_runtime_reflection_debug_anchor_count()));

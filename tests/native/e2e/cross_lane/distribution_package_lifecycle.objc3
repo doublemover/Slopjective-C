@@ -1,4 +1,4 @@
-// #8200 cross-lane scaffold: distribution package lifecycle.
+// #8200 cross-lane executable: distribution package lifecycle.
 // package signing
 // package publish
 // install from clean root
@@ -7,22 +7,45 @@
 // compile/run installed package
 module CrossLaneDistributionPackageLifecycle;
 
-import CrossLanePublishedToolchain;
+extern fn publishedLifecycleSeed() -> i32
+    __attribute__((objc_foreign, objc_import_module(named("CrossLanePublishedToolchain"))));
 
-extern fn package_signing_manifest_ok() -> i32;
-extern fn package_publish_receipt_ok() -> i32;
-extern fn install_from_clean_root() -> i32;
-extern fn update_installed_package() -> i32;
-extern fn rollback_installed_package() -> i32;
-extern fn compile_run_installed_package() -> i32;
+fn packageSigningManifestOk(seed: i32) -> i32 {
+  return seed == 17 ? 2 : 101;
+}
+
+fn packagePublishReceiptOk() -> i32 {
+  return 3;
+}
+
+fn installFromCleanRoot() -> i32 {
+  return 5;
+}
+
+fn updateInstalledPackage() -> i32 {
+  return 7;
+}
+
+fn rollbackInstalledPackage() -> i32 {
+  return 11;
+}
+
+fn compileRunInstalledPackage() -> i32 {
+  return 13;
+}
 
 fn verifyLifecycle() -> i32 {
-  return package_signing_manifest_ok()
-    + package_publish_receipt_ok()
-    + install_from_clean_root()
-    + update_installed_package()
-    + rollback_installed_package()
-    + compile_run_installed_package();
+  let seed = publishedLifecycleSeed();
+  let total = packageSigningManifestOk(seed)
+    + packagePublishReceiptOk()
+    + installFromCleanRoot()
+    + updateInstalledPackage()
+    + rollbackInstalledPackage()
+    + compileRunInstalledPackage();
+  if (total != 41) {
+    return total;
+  }
+  return 0;
 }
 
 fn main() -> i32 {

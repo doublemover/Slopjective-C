@@ -12,8 +12,17 @@ from pathlib import Path
 from typing import Any
 
 from check_objc3c_advanced_runtime_closure import validate_advanced_runtime_closure
+from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
+from objc3c_editor_tooling.model import build_editor_tooling_model
+from objc3c_editor_tooling.paths import paths_for_source, resolve_source
+from objc3c_editor_tooling.publication import publish_editor_tooling_surface
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.paths import repo_rel
+from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
+from objc3c_object_model_debugger_proof import (
+    DEFAULT_CONTRACT_PATH as OBJECT_MODEL_DEBUGGER_CONTRACT_PATH,
+    validate_contract_path as validate_object_model_debugger_contract,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +42,63 @@ ADVANCED_RUNTIME_COMBINED_IDENTITY_CONTRACT = (
 ADVANCED_RUNTIME_SOURCE_DEBUG_MAP_BUNDLE = (
     "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
 )
+PACKAGE_INSTALL_SUMMARY_PATH = (
+    ROOT / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
+)
+PACKAGE_INSTALL_VERIFICATION_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "package-ecosystem"
+    / "install-validation"
+    / "objc3c-install-distribution-verification.json"
+)
+PACKAGE_INSTALL_PROOF_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "package-ecosystem"
+    / "install-validation"
+    / "objc3c-install-proof-manifest.json"
+)
+PACKAGE_LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
+PACKAGE_UPDATE_RECEIPT_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "package-ecosystem"
+    / "install-validation"
+    / "clean-root"
+    / "objc3c"
+    / "receipts"
+    / "objc3c-update-plan-receipt.json"
+)
+PACKAGE_UNINSTALL_RECEIPT_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "package-ecosystem"
+    / "install-validation"
+    / "clean-root"
+    / "objc3c"
+    / "receipts"
+    / "objc3c-uninstall-plan-receipt.json"
+)
+RELEASE_OPERATIONS_SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
+RELEASE_UPDATE_MANIFEST_PATH = (
+    ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+)
+RELEASE_CHANNEL_MANIFEST_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "release-operations"
+    / "channel-manifest"
+    / "objc3c-release-channel-manifest.json"
+)
+RELEASE_CHANNEL_OPERATIONS_MODEL_PATH = (
+    ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "channel_operations_model.json"
+)
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
@@ -40,6 +106,9 @@ WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
 PUBLIC_ACTION = "validate-cross-lane-e2e"
 PUBLIC_COMMAND = "npm run objc3c -- validate-cross-lane-e2e"
+OBJECT_REFLECTION_DEBUGGER_PROOF_CONTRACT_ID = (
+    "objc3c.cross_lane_e2e.object_reflection_debugger_proof.v1"
+)
 
 REQUIRED_FAMILY_IDS = (
     "text_collections_package",
@@ -453,6 +522,502 @@ def validate_optimization_trace_proof(
     }
 
 
+def validate_minimum_count(
+    *,
+    family_id: str,
+    actual: Any,
+    minimums: dict[str, Any],
+    minimum_key: str,
+    domain: str,
+) -> int:
+    expected = minimums.get(minimum_key)
+    if not isinstance(expected, int) or isinstance(expected, bool):
+        raise RuntimeError(f"{family_id}.{domain} minimum must be an integer: {minimum_key}")
+    if not isinstance(actual, int) or isinstance(actual, bool):
+        actual = 0
+    if actual < expected:
+        raise RuntimeError(
+            f"{family_id}.{domain} expected {minimum_key} >= {expected} but got {actual}"
+        )
+    return actual
+
+
+def validate_object_reflection_debugger_proof(
+    family_id: str,
+    source_path: Path,
+    expectation: dict[str, Any],
+    executable_proof: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if family_id != "object_reflection_debugger":
+        return None
+
+    proof = require_object(
+        expectation.get("object_reflection_debugger_proof"),
+        f"{family_id}.object_reflection_debugger_proof",
+    )
+    if proof.get("contract_id") != OBJECT_REFLECTION_DEBUGGER_PROOF_CONTRACT_ID:
+        raise RuntimeError(f"{family_id}.object_reflection_debugger_proof contract_id drifted")
+    if executable_proof is None:
+        raise RuntimeError(f"{family_id}.object reflection debugger proof requires executable runtime proof")
+    if proof.get("runs_canonical_frontend") is not True:
+        raise RuntimeError(f"{family_id}.object reflection debugger proof must run the canonical frontend")
+    if proof.get("requires_public_runtime_reflection_api") is not True:
+        raise RuntimeError(f"{family_id}.object reflection debugger proof must require public runtime reflection")
+    if proof.get("requires_object_model_debugger_proof") is not True:
+        raise RuntimeError(f"{family_id}.object reflection debugger proof must require object-model debugger proof")
+
+    paths = paths_for_source(resolve_source(repo_rel(source_path)))
+    compile_result = run_frontend_compile(paths)
+    if compile_result.returncode != 0 or not compile_result.summary_available:
+        raise RuntimeError(
+            f"{family_id}.source-map/debug diagnostic production frontend probe failed "
+            f"with exit {compile_result.returncode}"
+        )
+    inputs = load_editor_tooling_inputs(paths)
+    model = build_editor_tooling_model(paths, inputs)
+    published = publish_editor_tooling_surface(paths=paths, inputs=inputs, model=model)
+
+    if inputs.summary.get("success") is not True or inputs.summary.get("status") != 0:
+        raise RuntimeError(f"{family_id}.production frontend summary must report success")
+    if normalize_path(str(inputs.summary.get("input_path", ""))) != repo_rel(source_path):
+        raise RuntimeError(f"{family_id}.production frontend summary input path drifted")
+
+    summary_paths = require_object(inputs.summary.get("paths"), f"{family_id}.compile_summary.paths")
+    required_artifacts = require_list(
+        proof.get("required_artifact_kinds"),
+        f"{family_id}.object_reflection_debugger_proof.required_artifact_kinds",
+    )
+    artifact_path_keys = {
+        "manifest": "manifest",
+        "ir": "ir",
+        "object": "object",
+        "runtime-metadata-binary": "runtime_metadata_binary",
+    }
+    emitted_artifacts: dict[str, str] = {}
+    for raw_kind in required_artifacts:
+        kind = require_nonempty_string(
+            raw_kind,
+            f"{family_id}.object_reflection_debugger_proof.required_artifact_kinds[]",
+        )
+        if kind == "summary":
+            candidate = paths.compile_summary
+        elif kind == "source-graph":
+            candidate = paths.source_graph
+        elif kind == "artifact-inspector":
+            candidate = paths.artifact_inspector
+        elif kind == "debug-map":
+            candidate = paths.debug_map
+        else:
+            path_key = artifact_path_keys.get(kind)
+            if path_key is None:
+                raise RuntimeError(f"{family_id}.object reflection proof unknown artifact kind: {kind}")
+            candidate = ROOT / normalize_path(
+                require_nonempty_string(summary_paths.get(path_key), f"{family_id}.summary.paths.{path_key}")
+            )
+        require_artifact(candidate, f"object reflection debugger {kind}")
+        emitted_artifacts[kind] = repo_rel(candidate)
+
+    minimums = require_object(
+        proof.get("runtime_inventory_minimums"),
+        f"{family_id}.object_reflection_debugger_proof.runtime_inventory_minimums",
+    )
+    source_graph = require_object(model.source_graph, f"{family_id}.source_graph")
+    if source_graph.get("available") is not True:
+        raise RuntimeError(f"{family_id}.source graph must be available on the production artifact path")
+    if source_graph.get("fail_closed") is not True:
+        raise RuntimeError(f"{family_id}.source graph must keep unsupported reference consumers fail-closed")
+    source_graph_nodes = validate_minimum_count(
+        family_id=family_id,
+        actual=source_graph.get("node_count"),
+        minimums=minimums,
+        minimum_key="source_graph_nodes",
+        domain="source graph",
+    )
+
+    artifact_inspector = require_object(model.artifact_inspector, f"{family_id}.artifact_inspector")
+    if artifact_inspector.get("supported") is not True:
+        raise RuntimeError(f"{family_id}.artifact inspector must be supported")
+    if artifact_inspector.get("support_class") != "compile-artifact-inspector":
+        raise RuntimeError(f"{family_id}.artifact inspector inventory must be ready")
+    inventory_validation = require_object(
+        artifact_inspector.get("inventory_validation"),
+        f"{family_id}.artifact_inspector.inventory_validation",
+    )
+    if inventory_validation.get("inventory_ready") is not True or inventory_validation.get("fail_closed") is True:
+        raise RuntimeError(f"{family_id}.artifact inspector inventory is not production-ready")
+    runtime_inventory = require_object(
+        artifact_inspector.get("runtime_inventory"),
+        f"{family_id}.artifact_inspector.runtime_inventory",
+    )
+    if runtime_inventory.get("available") is not True:
+        raise RuntimeError(f"{family_id}.runtime inventory must be available")
+    require_nonempty_string(
+        runtime_inventory.get("reflection_abi_version"),
+        f"{family_id}.runtime_inventory.reflection_abi_version",
+    )
+    runtime_counts = {
+        "class_records": validate_minimum_count(
+            family_id=family_id,
+            actual=runtime_inventory.get("class_record_count"),
+            minimums=minimums,
+            minimum_key="class_records",
+            domain="runtime inventory",
+        ),
+        "protocol_records": validate_minimum_count(
+            family_id=family_id,
+            actual=runtime_inventory.get("protocol_record_count"),
+            minimums=minimums,
+            minimum_key="protocol_records",
+            domain="runtime inventory",
+        ),
+        "category_records": validate_minimum_count(
+            family_id=family_id,
+            actual=runtime_inventory.get("category_record_count"),
+            minimums=minimums,
+            minimum_key="category_records",
+            domain="runtime inventory",
+        ),
+        "property_records": validate_minimum_count(
+            family_id=family_id,
+            actual=runtime_inventory.get("property_record_count"),
+            minimums=minimums,
+            minimum_key="property_records",
+            domain="runtime inventory",
+        ),
+        "method_records": validate_minimum_count(
+            family_id=family_id,
+            actual=runtime_inventory.get("method_record_count"),
+            minimums=minimums,
+            minimum_key="method_records",
+            domain="runtime inventory",
+        ),
+    }
+
+    debug_map = require_object(model.debug, f"{family_id}.debug_source_map")
+    if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
+        raise RuntimeError(f"{family_id}.debug map must be tied to the emitted object artifact")
+    if debug_map.get("source_map_supported") is not False:
+        raise RuntimeError(f"{family_id}.debug map must keep full source maps fail-closed")
+    if debug_map.get("statement_level_stepping") is not False:
+        raise RuntimeError(f"{family_id}.debug map must keep statement stepping fail-closed")
+    declaration_breakpoint_anchors = validate_minimum_count(
+        family_id=family_id,
+        actual=debug_map.get("declaration_breakpoint_anchor_count"),
+        minimums=minimums,
+        minimum_key="declaration_breakpoint_anchors",
+        domain="debug map",
+    )
+
+    debugger_contract = ROOT / normalize_path(
+        str(proof.get("object_model_debugger_contract") or repo_rel(OBJECT_MODEL_DEBUGGER_CONTRACT_PATH))
+    )
+    debugger_result = validate_object_model_debugger_contract(
+        debugger_contract,
+        run_production_probe=True,
+    )
+    if debugger_result.ok is not True:
+        diagnostics = ", ".join(diagnostic.code for diagnostic in debugger_result.diagnostics)
+        raise RuntimeError(f"{family_id}.object-model debugger proof failed: {diagnostics}")
+
+    public_reflection = validate_public_runtime_reflection_api()
+    if public_reflection.get("status") != "PASS":
+        failures = ", ".join(str(failure) for failure in public_reflection.get("failures", []))
+        raise RuntimeError(f"{family_id}.public runtime reflection proof failed: {failures}")
+    public_reflection_report_path = (
+        ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api.json"
+    )
+    write_json_file(public_reflection_report_path, public_reflection)
+
+    reserved_rows = require_list(
+        proof.get("reserved_rows_not_promoted"),
+        f"{family_id}.object_reflection_debugger_proof.reserved_rows_not_promoted",
+    )
+    for required_row in (
+        "runtime.object-model.full-realization",
+        "runtime.debug-trace.statement-stepping",
+        "runtime.debug-trace.full-source-map-publication",
+    ):
+        if required_row not in reserved_rows:
+            raise RuntimeError(f"{family_id}.object reflection proof must keep {required_row} reserved")
+
+    return {
+        "status": "PASS",
+        "compile_summary": repo_rel(paths.compile_summary),
+        "source_graph": published.source_graph_path,
+        "artifact_inspector": published.artifact_inspector_path,
+        "debug_map": published.debug_path,
+        "emitted_artifacts": emitted_artifacts,
+        "runtime_inventory_counts": runtime_counts,
+        "source_graph_nodes": source_graph_nodes,
+        "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
+        "public_runtime_reflection_report": repo_rel(public_reflection_report_path),
+        "object_model_debugger_contract": repo_rel(debugger_contract),
+        "reserved_rows_not_promoted": reserved_rows,
+    }
+
+
+def run_public_workflow_action(
+    action: str,
+    *,
+    args: list[str] | None = None,
+    log_path: Path,
+    domain: str,
+) -> None:
+    run_checked(
+        [sys.executable, "-m", "scripts.objc3c_workflow", action, *(args or [])],
+        cwd=ROOT,
+        log_path=log_path,
+        domain=domain,
+    )
+
+
+def _require_json_artifact(path: Path, label: str) -> dict[str, Any]:
+    require_artifact(path, label)
+    return load_json(path)
+
+
+def _require_receipt_operation(receipt: dict[str, Any], operation: str, expected_order: list[str]) -> None:
+    if receipt.get("operation") != operation:
+        raise RuntimeError(f"distribution lifecycle {operation} receipt operation drifted")
+    if receipt.get("network_policy") != "no-network-during-validation":
+        raise RuntimeError(f"distribution lifecycle {operation} receipt network policy drifted")
+    if receipt.get("hosted_registry_support") != "unsupported-fail-closed-if-claimed":
+        raise RuntimeError(f"distribution lifecycle {operation} receipt hosted-registry boundary drifted")
+    if receipt.get("package_order") != expected_order:
+        raise RuntimeError(f"distribution lifecycle {operation} receipt package order drifted")
+
+
+def _lock_package_trust_signatures(lock: dict[str, Any]) -> dict[str, str]:
+    signatures: dict[str, str] = {}
+    for raw_package in lock.get("packages", []):
+        if not isinstance(raw_package, dict):
+            continue
+        package_id = str(raw_package.get("package_id", ""))
+        trust = raw_package.get("trust", {})
+        if package_id and isinstance(trust, dict):
+            signatures[package_id] = str(trust.get("signature", ""))
+    return signatures
+
+
+def validate_distribution_release_operations_model(family_id: str) -> dict[str, Any]:
+    model = _require_json_artifact(
+        RELEASE_CHANNEL_OPERATIONS_MODEL_PATH,
+        "release operations channel model",
+    )
+    if model.get("contract_id") != "objc3c.release.operations.channel.operations.model.v1":
+        raise RuntimeError(f"{family_id}.release operations channel model contract drifted")
+    channels = require_list(model.get("channels"), f"{family_id}.release_operations.channels")
+    rollback_channels: dict[str, str] = {}
+    clean_install_channels: list[str] = []
+    gate_actions: dict[str, list[str]] = {}
+    for index, raw_channel in enumerate(channels):
+        channel = require_object(raw_channel, f"{family_id}.release_operations.channels[{index}]")
+        channel_id = require_nonempty_string(
+            channel.get("channel_id"),
+            f"{family_id}.release_operations.channels[{index}].channel_id",
+        )
+        prerequisite = require_object(
+            channel.get("clean_install_prerequisite"),
+            f"{family_id}.{channel_id}.clean_install_prerequisite",
+        )
+        if prerequisite.get("required_action") != "validate-package-install-distribution":
+            raise RuntimeError(f"{family_id}.{channel_id} clean install prerequisite action drifted")
+        if prerequisite.get("required_flag") != "--from-nothing":
+            raise RuntimeError(f"{family_id}.{channel_id} clean install prerequisite flag drifted")
+        if (
+            prerequisite.get("required_summary")
+            != "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+        ):
+            raise RuntimeError(f"{family_id}.{channel_id} clean install prerequisite summary drifted")
+        if prerequisite.get("blocks_publication_on_failure") is not True:
+            raise RuntimeError(f"{family_id}.{channel_id} clean install prerequisite must block publication")
+        clean_install_channels.append(channel_id)
+
+        rollback = require_object(channel.get("rollback_safety"), f"{family_id}.{channel_id}.rollback_safety")
+        rollback_channel = require_nonempty_string(
+            rollback.get("rollback_channel"),
+            f"{family_id}.{channel_id}.rollback_channel",
+        )
+        if rollback.get("blocks_publication_on_failure") is not True:
+            raise RuntimeError(f"{family_id}.{channel_id} rollback safety must block publication")
+        operator_command = require_nonempty_string(
+            rollback.get("operator_command"),
+            f"{family_id}.{channel_id}.rollback_operator_command",
+        )
+        if not operator_command.startswith("npm run objc3c -- "):
+            raise RuntimeError(f"{family_id}.{channel_id} rollback command must use the public objc3c surface")
+        rollback_channels[channel_id] = rollback_channel
+
+        actions = [
+            require_nonempty_string(action, f"{family_id}.{channel_id}.release_gate_actions[]")
+            for action in require_list(channel.get("release_gate_actions"), f"{family_id}.{channel_id}.release_gate_actions")
+        ]
+        if not actions:
+            raise RuntimeError(f"{family_id}.{channel_id} release gate actions cannot be empty")
+        gate_actions[channel_id] = actions
+
+    for required_channel in ("stable", "candidate", "nightly", "preview"):
+        if required_channel not in rollback_channels:
+            raise RuntimeError(f"{family_id}.release operations missing channel {required_channel}")
+        if required_channel not in clean_install_channels:
+            raise RuntimeError(f"{family_id}.release operations missing clean install prerequisite for {required_channel}")
+    if rollback_channels.get("stable") != "local-installer":
+        raise RuntimeError(f"{family_id}.stable rollback channel drifted")
+    if rollback_channels.get("nightly") != "offline-bundle":
+        raise RuntimeError(f"{family_id}.nightly rollback channel drifted")
+
+    fail_closed_rules = require_list(model.get("fail_closed_rules"), f"{family_id}.release_operations.fail_closed_rules")
+    if not any(
+        isinstance(rule, dict)
+        and rule.get("rule_id") == "missing-rollback-proof"
+        and rule.get("blocks_publication") is True
+        for rule in fail_closed_rules
+    ):
+        raise RuntimeError(f"{family_id}.release operations must fail closed on missing rollback proof")
+    if "validate-release-operations-end-to-end" not in gate_actions.get("stable", []):
+        raise RuntimeError(f"{family_id}.stable release gate must include release operations end-to-end validation")
+
+    return {
+        "model": repo_rel(RELEASE_CHANNEL_OPERATIONS_MODEL_PATH),
+        "clean_install_prerequisite_channels": sorted(clean_install_channels),
+        "rollback_channels": rollback_channels,
+        "release_gate_actions": gate_actions,
+        "fail_closed_rule_count": len(fail_closed_rules),
+    }
+
+
+def validate_distribution_package_lifecycle_proof(
+    family_id: str,
+    expectation: dict[str, Any],
+    executable_proof: dict[str, Any],
+) -> dict[str, Any]:
+    lifecycle = require_object(expectation.get("distribution_lifecycle"), f"{family_id}.distribution_lifecycle")
+    expected_path = require_nonempty_string(
+        lifecycle.get("expected_path"),
+        f"{family_id}.distribution_lifecycle.expected_path",
+    )
+    trace_path = ROOT / normalize_path(expected_path)
+    artifact_dir = ARTIFACT_ROOT / slug_from_family_id(family_id)
+
+    run_public_workflow_action(
+        "validate-package-install-distribution",
+        args=["--from-nothing"],
+        log_path=artifact_dir / "package-install-distribution.log",
+        domain=f"{family_id}.package trust diagnostic",
+    )
+    release_model = validate_distribution_release_operations_model(family_id)
+
+    package_summary = _require_json_artifact(PACKAGE_INSTALL_SUMMARY_PATH, "package install summary")
+    verification = _require_json_artifact(PACKAGE_INSTALL_VERIFICATION_PATH, "package install verification")
+    install_proof = _require_json_artifact(PACKAGE_INSTALL_PROOF_PATH, "package install proof manifest")
+    lock = _require_json_artifact(PACKAGE_LOCK_PATH, "package lock")
+    update_receipt = _require_json_artifact(PACKAGE_UPDATE_RECEIPT_PATH, "package update receipt")
+    uninstall_receipt = _require_json_artifact(PACKAGE_UNINSTALL_RECEIPT_PATH, "package uninstall receipt")
+
+    if package_summary.get("status") != "PASS":
+        raise RuntimeError(f"{family_id}.package trust diagnostic did not pass")
+    from_nothing = require_object(package_summary.get("from_nothing_probe"), f"{family_id}.from_nothing_probe")
+    if from_nothing.get("requested") is not True or from_nothing.get("generated_from_clean_owned_outputs") is not True:
+        raise RuntimeError(f"{family_id}.package trust diagnostic must start from clean owned package outputs")
+    if verification.get("network_policy") != "no-network-during-validation":
+        raise RuntimeError(f"{family_id}.package trust diagnostic network policy drifted")
+    if verification.get("hosted_registry_support") != "unsupported-fail-closed-if-claimed":
+        raise RuntimeError(f"{family_id}.package trust diagnostic hosted-registry boundary drifted")
+    if verification.get("manifest_count") != package_summary.get("installed_package_count"):
+        raise RuntimeError(f"{family_id}.package trust diagnostic installed package count drifted")
+
+    install_order = [str(value) for value in require_list(verification.get("install_order"), f"{family_id}.install_order")]
+    if not install_order:
+        raise RuntimeError(f"{family_id}.package trust diagnostic has no install order")
+    _require_receipt_operation(update_receipt, "update", install_order)
+    _require_receipt_operation(uninstall_receipt, "uninstall", list(reversed(install_order)))
+
+    trust_signatures = _lock_package_trust_signatures(lock)
+    installed_records = require_list(verification.get("installed_packages"), f"{family_id}.installed_packages")
+    first_installed: dict[str, Any] | None = None
+    for index, raw_record in enumerate(installed_records):
+        record = require_object(raw_record, f"{family_id}.installed_packages[{index}]")
+        package_id = require_nonempty_string(record.get("package_id"), f"{family_id}.installed_packages[{index}].package_id")
+        signature = require_nonempty_string(
+            record.get("trust_signature"),
+            f"{family_id}.installed_packages[{index}].trust_signature",
+        )
+        if trust_signatures.get(package_id) != signature:
+            raise RuntimeError(f"{family_id}.package signing proof drifted for {package_id}")
+        require_nonempty_string(
+            record.get("local_install_artifact_digest"),
+            f"{family_id}.installed_packages[{index}].local_install_artifact_digest",
+        )
+        first_installed = first_installed or record
+
+    if first_installed is None:
+        raise RuntimeError(f"{family_id}.package trust diagnostic installed no packages")
+    tampered_package_id = str(first_installed["package_id"])
+    tampered_signature_diagnostic = f"O3PKG8055: installed trust signature drifted for {tampered_package_id}"
+
+    payload = {
+        "contract_id": "objc3c.cross_lane_e2e.distribution_lifecycle.v1",
+        "schema_version": 1,
+        "issue": 8200,
+        "family_id": family_id,
+        "status": "PASS",
+        "source_truth": False,
+        "source": expectation["source"],
+        "compile_run": {
+            "status": executable_proof["status"],
+            "expected_exit_code": executable_proof["expected_exit_code"],
+            "actual_exit_code": executable_proof["actual_exit_code"],
+            "executable": executable_proof["executable"],
+            "compile_dir": executable_proof["compile_dir"],
+            "package_module_proofs": executable_proof["package_module_proofs"],
+        },
+        "package_install": {
+            "summary": repo_rel(PACKAGE_INSTALL_SUMMARY_PATH),
+            "verification": repo_rel(PACKAGE_INSTALL_VERIFICATION_PATH),
+            "install_proof_manifest": repo_rel(PACKAGE_INSTALL_PROOF_PATH),
+            "package_count": package_summary["package_count"],
+            "installed_package_count": package_summary["installed_package_count"],
+            "from_nothing_clean_start": from_nothing,
+            "install_receipt": package_summary["install_receipt"],
+            "update_receipt": package_summary["update_receipt"],
+            "uninstall_receipt": package_summary["uninstall_receipt"],
+            "network_policy": verification["network_policy"],
+            "hosted_registry_support": verification["hosted_registry_support"],
+        },
+        "release_operations": {
+            "model": release_model["model"],
+            "clean_install_prerequisite_channels": release_model["clean_install_prerequisite_channels"],
+            "rollback_channels": release_model["rollback_channels"],
+            "release_gate_actions": release_model["release_gate_actions"],
+            "fail_closed_rule_count": release_model["fail_closed_rule_count"],
+        },
+        "negative_cases": {
+            "tampered_package_signature": {
+                "status": "PASS",
+                "package_id": tampered_package_id,
+                "diagnostic": tampered_signature_diagnostic,
+            }
+        },
+        "reserved_or_external_rows_not_promoted": [
+            "hosted package registry",
+            "network dependency resolution",
+            "public production release publication",
+            "background update service",
+        ],
+    }
+    write_json_file(trace_path, payload)
+    return {
+        "status": "PASS",
+        "trace": repo_rel(trace_path),
+        "package_install_summary": repo_rel(PACKAGE_INSTALL_SUMMARY_PATH),
+        "release_operations_model": release_model["model"],
+        "package_count": package_summary["package_count"],
+        "installed_package_count": package_summary["installed_package_count"],
+        "rollback_channels": release_model["rollback_channels"],
+        "tampered_signature_negative_case": tampered_signature_diagnostic,
+    }
+
+
 def require_expected_pass_section(section: dict[str, Any], field: str) -> None:
     if section.get("status") != "expected-pass":
         raise RuntimeError(f"{field}.status must be expected-pass for contract-backed proof")
@@ -840,8 +1405,10 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
     meta = validate_native_meta(family_id, meta_path, source_path)
     expectation = validate_expectation(family, expectation_path, source_path, workspace_path)
     executable_proof: dict[str, Any] | None = None
+    object_reflection_debugger_proof: dict[str, Any] | None = None
     advanced_runtime_contract_proof: dict[str, Any] | None = None
     optimization_trace_proof: dict[str, Any] | None = None
+    distribution_lifecycle_proof: dict[str, Any] | None = None
     if require_object(expectation["runtime"], f"{family_id}.runtime").get("status") == "expected-pass":
         if family_id == ADVANCED_RUNTIME_FAMILY_ID:
             advanced_runtime_contract_proof = validate_advanced_runtime_contract_backed_proof(
@@ -851,10 +1418,25 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
             )
         else:
             executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
+    object_reflection_debugger_proof = validate_object_reflection_debugger_proof(
+        family_id,
+        source_path,
+        expectation,
+        executable_proof,
+    )
     if require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
         if executable_proof is None:
             raise RuntimeError(f"{family_id}.optimization proof diagnostic requires executable runtime proof")
         optimization_trace_proof = validate_optimization_trace_proof(family_id, expectation, executable_proof)
+    distribution_lifecycle = expectation.get("distribution_lifecycle")
+    if isinstance(distribution_lifecycle, dict) and distribution_lifecycle.get("status") == "expected-pass":
+        if executable_proof is None:
+            raise RuntimeError(f"{family_id}.distribution lifecycle proof requires executable runtime proof")
+        distribution_lifecycle_proof = validate_distribution_package_lifecycle_proof(
+            family_id,
+            expectation,
+            executable_proof,
+        )
 
     capability_rows = require_list(family.get("capability_rows"), f"{family_id}.capability_rows")
     support_claims = require_list(family.get("support_claims"), f"{family_id}.support_claims")
@@ -890,8 +1472,10 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
         "negative_case_count": len(expectation.get("negative_cases", [])),
         "meta_fixture_kind": meta.get("fixture_kind"),
         "executable_proof": executable_proof,
+        "object_reflection_debugger_proof": object_reflection_debugger_proof,
         "advanced_runtime_contract_proof": advanced_runtime_contract_proof,
         "optimization_trace_proof": optimization_trace_proof,
+        "distribution_lifecycle_proof": distribution_lifecycle_proof,
     }
 
 

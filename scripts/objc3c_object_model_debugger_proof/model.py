@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -52,6 +53,23 @@ REQUIRED_PRODUCTION_ARTIFACT_KINDS = frozenset(
         "debug-map",
     }
 )
+ABI_MACRO_PATTERN = re.compile(
+    r"^\s*#define\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s+"
+    r"(?P<value>[0-9]+)u?\s*$"
+)
+REQUIRED_DEBUG_ANCHOR_NEGATIVE_CASES = frozenset(
+    {"missing-anchor", "stale-generation", "malformed-metadata"}
+)
+REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS = frozenset(
+    {
+        "abi_governance_policy",
+        "source_anchor_kind",
+        "source_map_record_kind",
+        "source_map_anchor_policy",
+        "artifact_inspector_compatibility",
+    }
+)
+DEBUG_ANCHOR_SIZE_NEGOTIATION_POLICY = "snapshot_size-zero-means-v1-prefix"
 
 
 @dataclass(frozen=True)
@@ -106,6 +124,10 @@ def _list(value: object) -> list[Any]:
 
 def _safe_str(value: object) -> str:
     return value if isinstance(value, str) else ""
+
+
+def _safe_int(value: object) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
 
 
 def _load_json(path: Path | str) -> tuple[Path, dict[str, Any], tuple[Diagnostic, ...]]:
@@ -194,6 +216,35 @@ def _path_exists_in_repo(raw_path: object) -> bool:
 
 def _repo_path_text(path: Path | str) -> str:
     return display_path(resolve_repo_path(path)).replace("\\", "/")
+
+
+def _read_header_macros(raw_path: object) -> tuple[Path, dict[str, int], str, tuple[Diagnostic, ...]]:
+    path_text = _safe_str(raw_path)
+    if not path_text:
+        return ROOT, {}, "", (
+            _diag(
+                "reflection-abi-governance-drift",
+                "reflection ABI governance must name the public header",
+                "reflection_abi_governance.public_header",
+            ),
+        )
+    resolved = resolve_repo_path(path_text)
+    try:
+        text = resolved.read_text(encoding="utf-8")
+    except OSError as exc:
+        return resolved, {}, "", (
+            _diag(
+                "reflection-abi-governance-drift",
+                f"unable to read reflection ABI header: {exc}",
+                display_path(resolved),
+            ),
+        )
+    macros: dict[str, int] = {}
+    for line in text.splitlines():
+        match = ABI_MACRO_PATTERN.match(line)
+        if match is not None:
+            macros[match.group("name")] = int(match.group("value"))
+    return resolved, macros, text, ()
 
 
 def _validate_required_sets(
@@ -458,6 +509,444 @@ def _validate_artifact_links(
         )
 
 
+def _validate_reflection_abi_governance(
+    payload: dict[str, Any],
+    debug_anchor_payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    governance = _object(payload.get("reflection_abi_governance"))
+    if not governance:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-missing",
+                "object-model debugger proof must declare reflection ABI governance",
+                "reflection_abi_governance",
+            )
+        )
+        return
+
+    _, macros, header_text, header_diagnostics = _read_header_macros(
+        governance.get("public_header")
+    )
+    diagnostics.extend(header_diagnostics)
+    for macro_key, expected_key in (
+        ("public_reflection_abi_version_macro", "expected_public_reflection_abi_version"),
+        ("debug_anchor_abi_version_macro", "expected_debug_anchor_abi_version"),
+        (
+            "debug_anchor_min_reader_abi_version_macro",
+            "expected_debug_anchor_min_reader_abi_version",
+        ),
+    ):
+        macro_name = _safe_str(governance.get(macro_key))
+        expected = _safe_int(governance.get(expected_key))
+        actual = macros.get(macro_name)
+        if not macro_name or actual != expected or expected <= 0:
+            diagnostics.append(
+                _diag(
+                    "reflection-abi-governance-drift",
+                    f"reflection ABI macro drifted: {macro_name or macro_key}",
+                    f"reflection_abi_governance.{expected_key}",
+                )
+            )
+
+    if _safe_int(governance.get("expected_debug_anchor_min_reader_abi_version")) > _safe_int(
+        governance.get("expected_debug_anchor_abi_version")
+    ):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor minimum reader ABI cannot exceed the current ABI version",
+                "reflection_abi_governance.expected_debug_anchor_min_reader_abi_version",
+            )
+        )
+
+    snapshot_type = _safe_str(governance.get("snapshot_type"))
+    if not snapshot_type or snapshot_type not in header_text:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                f"reflection ABI governance snapshot type is missing from the header: {snapshot_type}",
+                "reflection_abi_governance.snapshot_type",
+            )
+        )
+
+    snapshot_fields = set(_safe_str(item) for item in _list(governance.get("snapshot_fields")))
+    for field in sorted(REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS - snapshot_fields):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                f"reflection ABI governance must require snapshot field: {field}",
+                "reflection_abi_governance.snapshot_fields",
+            )
+        )
+    for field in sorted(snapshot_fields):
+        if field and field not in header_text:
+            diagnostics.append(
+                _diag(
+                    "reflection-abi-governance-drift",
+                    f"reflection ABI governance field is missing from the header: {field}",
+                    "reflection_abi_governance.snapshot_fields",
+                )
+            )
+
+    runtime_api = _object(debug_anchor_payload.get("runtime_anchor_api"))
+    if governance.get("caller_size_negotiation") != DEBUG_ANCHOR_SIZE_NEGOTIATION_POLICY:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor ABI governance must declare caller snapshot-size negotiation",
+                "reflection_abi_governance.caller_size_negotiation",
+            )
+        )
+    if runtime_api.get("caller_size_negotiation") != DEBUG_ANCHOR_SIZE_NEGOTIATION_POLICY:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor identity contract must declare caller snapshot-size negotiation",
+                "debug_anchor_identity_contract.runtime_anchor_api.caller_size_negotiation",
+            )
+        )
+    if "snapshot_size" not in header_text:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor snapshot must carry caller-provided snapshot_size",
+                "reflection_abi_governance.snapshot_type",
+            )
+        )
+    v1_prefix_last_field = _safe_str(governance.get("v1_prefix_last_field"))
+    if v1_prefix_last_field != _safe_str(runtime_api.get("v1_prefix_last_field")):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor v1 prefix boundary drifted between governance contracts",
+                "reflection_abi_governance.v1_prefix_last_field",
+            )
+        )
+    if not v1_prefix_last_field or v1_prefix_last_field not in header_text:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor ABI governance must name the v1 prefix boundary field",
+                "reflection_abi_governance.v1_prefix_last_field",
+            )
+        )
+    else:
+        prefix_index = header_text.index(v1_prefix_last_field)
+        for field in sorted(REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS):
+            if field in header_text and header_text.index(field) < prefix_index:
+                diagnostics.append(
+                    _diag(
+                        "reflection-abi-governance-drift",
+                        f"debug-anchor v2 field must be appended after the v1 prefix: {field}",
+                        "reflection_abi_governance.snapshot_fields",
+                    )
+                )
+    appended_fields = set(_safe_str(item) for item in _list(runtime_api.get("v2_appended_fields")))
+    if appended_fields != REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor identity contract appended fields drifted",
+                "debug_anchor_identity_contract.runtime_anchor_api.v2_appended_fields",
+            )
+        )
+    if runtime_api.get("abi_version_macro") != governance.get("debug_anchor_abi_version_macro"):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor identity contract ABI macro drifted from debugger proof governance",
+                "debug_anchor_identity_contract.runtime_anchor_api.abi_version_macro",
+            )
+        )
+    if runtime_api.get("min_reader_abi_version_macro") != governance.get(
+        "debug_anchor_min_reader_abi_version_macro"
+    ):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor identity contract minimum reader ABI macro drifted",
+                "debug_anchor_identity_contract.runtime_anchor_api.min_reader_abi_version_macro",
+            )
+        )
+    entrypoints = set(_safe_str(item) for item in _list(runtime_api.get("entrypoints")))
+    if "objc3_runtime_reflection_debug_anchor_min_reader_abi_version" not in entrypoints:
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "debug-anchor ABI governance must expose the minimum reader version entrypoint",
+                "debug_anchor_identity_contract.runtime_anchor_api.entrypoints",
+            )
+        )
+    if not _safe_str(governance.get("versioning_policy")):
+        diagnostics.append(
+            _diag(
+                "reflection-abi-governance-drift",
+                "reflection ABI governance must publish a versioning policy",
+                "reflection_abi_governance.versioning_policy",
+            )
+        )
+
+
+def _validate_debug_anchor_contract(
+    payload: dict[str, Any],
+    debug_anchor_payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    runtime_api = _object(debug_anchor_payload.get("runtime_anchor_api"))
+    status_codes = set(_safe_str(item) for item in _list(runtime_api.get("status_codes")))
+    for status in (
+        "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+        "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA",
+        "OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR",
+        "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY",
+        "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT",
+    ):
+        if status not in status_codes:
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-boundary-missing",
+                    f"debug-anchor identity contract lacks status boundary: {status}",
+                    "debug_anchor_identity_contract.runtime_anchor_api.status_codes",
+                )
+            )
+
+    runtime_owned_fields = set(
+        _safe_str(item) for item in _list(debug_anchor_payload.get("runtime_owned_fields"))
+    )
+    for field in sorted(REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS - runtime_owned_fields):
+        diagnostics.append(
+            _diag(
+                "debug-anchor-source-field-missing",
+                f"debug-anchor identity contract lacks runtime-owned source field: {field}",
+                "debug_anchor_identity_contract.runtime_owned_fields",
+            )
+        )
+
+    positive_queries = _debug_anchor_queries(debug_anchor_payload)
+    for identity_kind, anchor_kind in sorted(DEBUG_ANCHOR_KIND_BY_IDENTITY.items()):
+        if not any(key[0] == anchor_kind for key in positive_queries):
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-query-missing",
+                    f"debug-anchor replay contract lacks positive query for {identity_kind}",
+                    "debug_anchor_identity_contract.positive_replay_queries",
+                )
+            )
+
+    negative_queries = {
+        _safe_str(item.get("case_id")): _object(item)
+        for item in (
+            _object(item) for item in _list(debug_anchor_payload.get("negative_replay_queries"))
+        )
+        if _safe_str(item.get("case_id"))
+    }
+    required_negative_cases = {
+        _safe_str(item.get("case_id")): _object(item)
+        for item in (
+            _object(item) for item in _list(payload.get("required_debug_anchor_negative_cases"))
+        )
+        if _safe_str(item.get("case_id"))
+    }
+    for case_id in sorted(REQUIRED_DEBUG_ANCHOR_NEGATIVE_CASES):
+        required = required_negative_cases.get(case_id)
+        observed = negative_queries.get(case_id)
+        if required is None or observed is None:
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-boundary-missing",
+                    f"debug-anchor negative boundary is missing: {case_id}",
+                    "required_debug_anchor_negative_cases",
+                )
+            )
+            continue
+        if _safe_str(required.get("expected_status")) != _safe_str(observed.get("expected_status")):
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-boundary-missing",
+                    f"debug-anchor negative boundary status drifted: {case_id}",
+                    "required_debug_anchor_negative_cases",
+                )
+            )
+        expected_field = _safe_str(required.get("expected_snapshot_field"))
+        if expected_field and expected_field != _safe_str(observed.get("expected_snapshot_field")):
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-boundary-missing",
+                    f"debug-anchor negative boundary field drifted: {case_id}",
+                    "required_debug_anchor_negative_cases",
+                )
+            )
+
+    boundaries = _object(debug_anchor_payload.get("boundaries"))
+    for key in (
+        "does_not_promote_umbrella",
+        "does_not_expose_private_testing_snapshots",
+        "does_not_claim_statement_stepping",
+        "does_not_claim_lldb_plugin",
+        "does_not_create_dynamic_runtime_state",
+    ):
+        if boundaries.get(key) is not True:
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-boundary-missing",
+                    f"debug-anchor boundary must remain true: {key}",
+                    f"debug_anchor_identity_contract.boundaries.{key}",
+                )
+            )
+
+
+def _validate_source_backed_debug_anchors(
+    payload: dict[str, Any],
+    *,
+    source_maps: dict[str, Any],
+    debug_maps: dict[str, Any],
+    line_rows: dict[str, Any],
+    debug_anchor_queries: dict[tuple[str, str], dict[str, Any]],
+    diagnostics: list[Diagnostic],
+) -> None:
+    artifact_links = {
+        (
+            _safe_str(link.get("runtime_identity_kind")),
+            _safe_str(link.get("runtime_anchor_id")),
+        ): link
+        for link in (_object(item) for item in _list(payload.get("artifact_runtime_reflection_links")))
+    }
+    requirements = _list(payload.get("source_backed_debug_anchors"))
+    if not requirements:
+        diagnostics.append(
+            _diag(
+                "source-backed-anchor-missing",
+                "object-model debugger proof must declare source-backed debug anchors",
+                "source_backed_debug_anchors",
+            )
+        )
+        return
+    seen_runtime_anchors: set[str] = set()
+    seen_identity_kinds: set[str] = set()
+    for index, item in enumerate(requirements):
+        requirement = _object(item)
+        path = f"source_backed_debug_anchors[{index}]"
+        identity_kind = _safe_str(requirement.get("runtime_identity_kind"))
+        anchor_kind = _safe_str(requirement.get("anchor_kind"))
+        runtime_anchor_id = _safe_str(requirement.get("runtime_anchor_id"))
+        reflection_entrypoint = _safe_str(requirement.get("reflection_entrypoint"))
+        expected_anchor_kind = DEBUG_ANCHOR_KIND_BY_IDENTITY.get(identity_kind, "")
+        if identity_kind not in REQUIRED_IDENTITY_KINDS or anchor_kind != expected_anchor_kind:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-backed anchor kind drifted for identity kind: {identity_kind}",
+                    path,
+                )
+            )
+        if not runtime_anchor_id.startswith("runtime.anchor.object_model."):
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-backed anchor must use object-model runtime anchor id: {runtime_anchor_id}",
+                    path,
+                )
+            )
+        if runtime_anchor_id in seen_runtime_anchors:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-backed anchor runtime id is not unique: {runtime_anchor_id}",
+                    path,
+                )
+            )
+        seen_runtime_anchors.add(runtime_anchor_id)
+        seen_identity_kinds.add(identity_kind)
+
+        source_entry = source_maps.get(_safe_str(requirement.get("source_map_entry_id")))
+        debug_map = debug_maps.get(_safe_str(requirement.get("debug_map_entry_id")))
+        line_row = line_rows.get(_safe_str(requirement.get("native_line_table_row_id")))
+        required_record_kind = _safe_str(requirement.get("required_source_map_record_kind"))
+        if source_entry is None or source_entry.record_kind != required_record_kind:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-backed anchor lacks required source-map record kind: {identity_kind}",
+                    path,
+                )
+            )
+            continue
+        if runtime_anchor_id not in source_entry.runtime_anchor_ids:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-map entry does not carry source-backed runtime anchor: {runtime_anchor_id}",
+                    path,
+                )
+            )
+        if debug_map is None or debug_map.source_map_entry_id != source_entry.entry_id:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"debug map does not carry source-backed entry: {identity_kind}",
+                    path,
+                )
+            )
+        elif runtime_anchor_id not in debug_map.runtime_anchor_ids:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"debug map does not carry source-backed runtime anchor: {runtime_anchor_id}",
+                    path,
+                )
+            )
+        if line_row is None or line_row.source_map_entry_id != source_entry.entry_id:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"native line table row does not carry source-backed entry: {identity_kind}",
+                    path,
+                )
+            )
+        if (anchor_kind, reflection_entrypoint) not in debug_anchor_queries:
+            diagnostics.append(
+                _diag(
+                    "debug-anchor-query-missing",
+                    f"source-backed anchor lacks matching debug-anchor replay query: {identity_kind}",
+                    path,
+                )
+            )
+        link = artifact_links.get((identity_kind, runtime_anchor_id))
+        if link is None:
+            diagnostics.append(
+                _diag(
+                    "source-backed-anchor-drift",
+                    f"source-backed anchor lacks artifact/runtime reflection link: {identity_kind}",
+                    path,
+                )
+            )
+            continue
+        for key in (
+            "source_map_entry_id",
+            "debug_map_entry_id",
+            "native_line_table_row_id",
+            "reflection_entrypoint",
+        ):
+            if _safe_str(link.get(key)) != _safe_str(requirement.get(key)):
+                diagnostics.append(
+                    _diag(
+                        "source-backed-anchor-drift",
+                        f"source-backed artifact link drifted for {identity_kind}: {key}",
+                        path,
+                    )
+                )
+
+    for identity_kind in sorted(REQUIRED_IDENTITY_KINDS - seen_identity_kinds):
+        diagnostics.append(
+            _diag(
+                "source-backed-anchor-missing",
+                f"source-backed debug anchor is missing identity kind: {identity_kind}",
+                "source_backed_debug_anchors",
+            )
+        )
+
+
 def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> None:
     if payload.get("support_claim_published") is not False:
         diagnostics.append(
@@ -598,6 +1087,55 @@ def _validate_production_probe_contract(
     return probe
 
 
+def _validate_artifact_inspector_compatibility_contract(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> dict[str, Any]:
+    compatibility = _object(payload.get("artifact_inspector_compatibility"))
+    if not compatibility:
+        diagnostics.append(
+            _diag(
+                "artifact-inspector-compatibility-contract",
+                "object-model debugger proof must declare artifact-inspector compatibility",
+                "artifact_inspector_compatibility",
+            )
+        )
+        return {}
+    expected = {
+        "contract_id": "objc3c.object_model.debugger_artifact_inspector.compatibility.v1",
+        "required_contract_id": "objc3c.developer.tooling.artifact.inspector.v1",
+        "required_support_class": "compile-artifact-inspector",
+        "required_runtime_inventory_reflection_abi_version": "manifest-derived-runtime-metadata",
+        "full_source_map_publication": "fail-closed",
+    }
+    for key, expected_value in expected.items():
+        if compatibility.get(key) != expected_value:
+            diagnostics.append(
+                _diag(
+                    "artifact-inspector-compatibility-contract",
+                    f"artifact-inspector compatibility drifted: {key}",
+                    f"artifact_inspector_compatibility.{key}",
+                )
+            )
+    if compatibility.get("requires_runtime_inventory") is not True:
+        diagnostics.append(
+            _diag(
+                "artifact-inspector-compatibility-contract",
+                "artifact-inspector compatibility must require runtime inventory",
+                "artifact_inspector_compatibility.requires_runtime_inventory",
+            )
+        )
+    if compatibility.get("requires_debug_map_link") is not True:
+        diagnostics.append(
+            _diag(
+                "artifact-inspector-compatibility-contract",
+                "artifact-inspector compatibility must require a debug-map link",
+                "artifact_inspector_compatibility.requires_debug_map_link",
+            )
+        )
+    return compatibility
+
+
 def _validate_count_at_least(
     actual: object,
     minimum: object,
@@ -617,6 +1155,7 @@ def _validate_count_at_least(
 
 def _validate_production_probe_artifacts(
     probe: dict[str, Any],
+    compatibility: dict[str, Any],
     artifacts: ProductionProbeArtifacts,
     diagnostics: list[Diagnostic],
 ) -> None:
@@ -722,7 +1261,7 @@ def _validate_production_probe_artifacts(
     )
 
     artifact_inspector = artifacts.artifact_inspector
-    if artifact_inspector.get("contract_id") != "objc3c.developer.tooling.artifact.inspector.v1":
+    if artifact_inspector.get("contract_id") != compatibility.get("required_contract_id"):
         diagnostics.append(
             _diag(
                 "production-artifact-inspector-contract-id",
@@ -738,7 +1277,7 @@ def _validate_production_probe_artifacts(
                 "production_artifact_probe.artifact_inspector.supported",
             )
         )
-    if artifact_inspector.get("support_class") != "compile-artifact-inspector":
+    if artifact_inspector.get("support_class") != compatibility.get("required_support_class"):
         diagnostics.append(
             _diag(
                 "production-artifact-inspector-fail-closed",
@@ -764,11 +1303,22 @@ def _validate_production_probe_artifacts(
                 "production_artifact_probe.artifact_inspector.runtime_inventory",
             )
         )
+    expected_reflection_abi = _safe_str(
+        compatibility.get("required_runtime_inventory_reflection_abi_version")
+    )
     if not _safe_str(runtime_inventory.get("reflection_abi_version")):
         diagnostics.append(
             _diag(
                 "production-runtime-abi-version-missing",
                 "production runtime inventory must expose the reflection ABI version source",
+                "production_artifact_probe.artifact_inspector.runtime_inventory.reflection_abi_version",
+            )
+        )
+    elif expected_reflection_abi and runtime_inventory.get("reflection_abi_version") != expected_reflection_abi:
+        diagnostics.append(
+            _diag(
+                "production-runtime-abi-version-drift",
+                "production runtime inventory reflection ABI version source drifted",
                 "production_artifact_probe.artifact_inspector.runtime_inventory.reflection_abi_version",
             )
         )
@@ -843,6 +1393,9 @@ def _validate_production_artifact_probe(
     run_production_probe: bool,
 ) -> None:
     probe = _validate_production_probe_contract(payload, diagnostics)
+    compatibility = _validate_artifact_inspector_compatibility_contract(
+        payload, diagnostics
+    )
     if not probe or not run_production_probe:
         return
     try:
@@ -856,7 +1409,9 @@ def _validate_production_artifact_probe(
             )
         )
         return
-    _validate_production_probe_artifacts(probe, artifacts, diagnostics)
+    _validate_production_probe_artifacts(
+        probe, compatibility, artifacts, diagnostics
+    )
 
 
 def validate_contract_path(
@@ -958,6 +1513,8 @@ def validate_contract_path(
             )
         )
 
+    _validate_reflection_abi_governance(payload, debug_anchor_payload, diagnostics)
+    _validate_debug_anchor_contract(payload, debug_anchor_payload, diagnostics)
     _validate_boundaries(payload, diagnostics)
     _validate_production_artifact_probe(
         payload,
@@ -971,6 +1528,14 @@ def validate_contract_path(
         line_rows = {row.row_id: row for row in source_bundle.native_line_tables}
         source_record_kinds = {entry.record_kind for entry in source_bundle.source_maps}
         _validate_required_sets(payload, replay_payload, source_record_kinds, diagnostics)
+        _validate_source_backed_debug_anchors(
+            payload,
+            source_maps=source_maps,
+            debug_maps=debug_maps,
+            line_rows=line_rows,
+            debug_anchor_queries=_debug_anchor_queries(debug_anchor_payload),
+            diagnostics=diagnostics,
+        )
         _validate_artifact_links(
             payload,
             source_maps=source_maps,

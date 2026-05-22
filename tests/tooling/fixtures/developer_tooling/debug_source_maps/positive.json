@@ -584,7 +584,10 @@
       ],
       "optimization_claim_ids": [],
       "runtime_anchor_ids": [
-        "runtime.anchor.declaration"
+        "runtime.anchor.declaration",
+        "runtime.anchor.object_model.class",
+        "runtime.anchor.object_model.category",
+        "runtime.anchor.object_model.protocol"
       ],
       "package_boundary_id": "pkg.debugmaps.foundation",
       "native_line_table_row_ids": [
@@ -750,7 +753,8 @@
         "opt.devirtualization"
       ],
       "runtime_anchor_ids": [
-        "runtime.anchor.method"
+        "runtime.anchor.method",
+        "runtime.anchor.object_model.method"
       ],
       "package_boundary_id": "pkg.debugmaps.foundation",
       "native_line_table_row_ids": [
@@ -832,7 +836,8 @@
       ],
       "optimization_claim_ids": [],
       "runtime_anchor_ids": [
-        "runtime.anchor.property_access"
+        "runtime.anchor.property_access",
+        "runtime.anchor.object_model.property"
       ],
       "package_boundary_id": "pkg.debugmaps.foundation",
       "native_line_table_row_ids": [
@@ -872,7 +877,8 @@
       ],
       "optimization_claim_ids": [],
       "runtime_anchor_ids": [
-        "runtime.anchor.generated_accessor"
+        "runtime.anchor.generated_accessor",
+        "runtime.anchor.object_model.ivar"
       ],
       "package_boundary_id": "pkg.debugmaps.foundation",
       "native_line_table_row_ids": [
@@ -1188,7 +1194,10 @@
       "native_symbol": "_objc3_DebugMaps_Foundation_declaration",
       "object_debug_line_anchor": "obj.line.declaration",
       "runtime_anchor_ids": [
-        "runtime.anchor.declaration"
+        "runtime.anchor.declaration",
+        "runtime.anchor.object_model.class",
+        "runtime.anchor.object_model.category",
+        "runtime.anchor.object_model.protocol"
       ],
       "hover_anchor_id": "hover.declaration",
       "definition_anchor_id": "definition.declaration"
@@ -1244,7 +1253,8 @@
       "native_symbol": "_objc3_DebugMaps_Foundation_method",
       "object_debug_line_anchor": "obj.line.method",
       "runtime_anchor_ids": [
-        "runtime.anchor.method"
+        "runtime.anchor.method",
+        "runtime.anchor.object_model.method"
       ],
       "hover_anchor_id": "hover.method",
       "definition_anchor_id": "definition.method"
@@ -1272,7 +1282,8 @@
       "native_symbol": "_objc3_DebugMaps_Foundation_property_access",
       "object_debug_line_anchor": "obj.line.property_access",
       "runtime_anchor_ids": [
-        "runtime.anchor.property_access"
+        "runtime.anchor.property_access",
+        "runtime.anchor.object_model.property"
       ],
       "hover_anchor_id": "hover.property_access",
       "definition_anchor_id": "definition.property_access"
@@ -1286,7 +1297,8 @@
       "native_symbol": "_objc3_DebugMaps_Foundation_generated_accessor",
       "object_debug_line_anchor": "obj.line.generated_accessor",
       "runtime_anchor_ids": [
-        "runtime.anchor.generated_accessor"
+        "runtime.anchor.generated_accessor",
+        "runtime.anchor.object_model.ivar"
       ],
       "hover_anchor_id": "hover.generated_accessor",
       "definition_anchor_id": "definition.generated_accessor"

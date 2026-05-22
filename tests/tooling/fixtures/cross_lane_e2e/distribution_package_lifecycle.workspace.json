@@ -10,6 +10,14 @@
     "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
     "package_id": "cross-lane:distribution-package-lifecycle"
   },
+  "package_modules": [
+    {
+      "module_name": "CrossLanePublishedToolchain",
+      "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle_provider.objc3",
+      "package_id": "package:cross-lane-published-toolchain",
+      "relationship": "linked-provider-runtime-import-surface"
+    }
+  ],
   "package_edges": [
     {
       "from": "cross-lane:distribution-package-lifecycle",

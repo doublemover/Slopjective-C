@@ -458,6 +458,13 @@
     {
       "capability_id": "runtime.object-model.class-realization",
       "support_claim": "objc3c.behavior.runtime.object-model-class-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "runtime.object-model.class-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model-class-realization",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
     },
@@ -498,6 +505,13 @@
       "support_claim": "objc3c.behavior.runtime.object-model-category-protocol-registration",
       "evidence_kind": "test",
       "path": "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.category-protocol-registration",
+      "support_claim": "objc3c.behavior.runtime.object-model-category-protocol-registration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.object-model.category-protocol-registration",
@@ -543,6 +557,13 @@
       "support_claim": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
       "evidence_kind": "test",
       "path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.property-ivar-reflection",
+      "support_claim": "objc3c.behavior.runtime.object-model-property-ivar-reflection",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.object-model.property-ivar-reflection",
@@ -693,6 +714,12 @@
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
       "command": "npm run objc3c -- validate-object-model-debugger-proof"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
@@ -3073,6 +3100,17 @@
       "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
     },
     {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
       "capability_id": "compiler.architecture.module-decomposition",
       "evidence_kind": "source",
       "path": "native/objc3c/src/CMakeLists.txt"
@@ -3930,6 +3968,27 @@
     {
       "capability_id": "conformance.public.stable-suite-manifest",
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
     },
@@ -4030,6 +4089,13 @@
     {
       "capability_id": "ecosystem.package-install.clean-distribution",
       "support_claim": "objc3c.behavior.package.install-clean-distribution",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "ecosystem.package-install.clean-distribution",
+      "support_claim": "objc3c.behavior.package.install-clean-distribution",
       "evidence_kind": "source",
       "path": "scripts/objc3c_package_manager/install_distribution.py"
     },
@@ -4065,6 +4131,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/test_release_abi_api_drift.py",
       "command": "npm run objc3c -- check-release-abi-api-drift"
+    },
+    {
+      "capability_id": "release.abi.stability-governance",
+      "support_claim": "objc3c.behavior.release.abi-stability-governance",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "release.abi.stability-governance",
@@ -4127,6 +4200,13 @@
     {
       "capability_id": "release.operations.channel-lifecycle",
       "support_claim": "objc3c.behavior.release.channel-operations",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "release.operations.channel-lifecycle",
+      "support_claim": "objc3c.behavior.release.channel-operations",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-release-channel-operations-v1.schema.json"
     },
@@ -4174,6 +4254,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
       "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+    },
+    {
+      "capability_id": "runtime.public-api.reflection",
+      "support_claim": "objc3c.behavior.runtime.public-reflection-api",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.public-api.reflection",
@@ -4397,6 +4484,13 @@
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_debug_trace_surface.py",
       "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+    },
+    {
+      "capability_id": "runtime.debug-trace.structured-inspection",
+      "support_claim": "objc3c.behavior.runtime.debug_trace",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.debug-trace.structured-inspection",

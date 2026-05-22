@@ -234,9 +234,9 @@
         },
         {
           "id": "debugger-reflection-abi",
-          "description": "Debugger-grade reflection ABI additions must be represented in ABI governance before umbrella promotion.",
-          "status": "blocked",
-          "blocker_id": "object-model-debugger-source-identity"
+          "description": "Debugger-grade reflection ABI additions are governed through debug-anchor ABI v2, minimum reader ABI v2, caller snapshot-size negotiation, and append-only source/debug artifact fields.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         }
       ],
       "required_docs": [
@@ -282,8 +282,7 @@
           "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, and a canonical frontend artifact/runtime inventory probe exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.",
           "missing_work": [
             "Full canonical compiler-owned source-map publication and native line tables for the integrated object-model program.",
-            "Production debugger statement-stepping integration over those emitted line tables.",
-            "Debugger reflection ABI governance for any public object-inspection ABI additions."
+            "Production debugger statement-stepping integration over those emitted line tables."
           ],
           "tracking_issue": "#8198"
         }

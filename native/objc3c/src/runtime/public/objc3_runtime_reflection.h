@@ -7,7 +7,8 @@ extern "C" {
 #endif
 
 #define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u
-#define OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION 1u
+#define OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION 2u
+#define OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_MIN_READER_VERSION 2u
 
 typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_OK = 0,
@@ -276,10 +277,16 @@ typedef struct objc3_runtime_reflection_debug_anchor_snapshot {
   const char *ivar_layout_replay_key;
   const char *selector;
   const char *debug_projection_key;
+  const char *abi_governance_policy;
+  const char *source_anchor_kind;
+  const char *source_map_record_kind;
+  const char *source_map_anchor_policy;
+  const char *artifact_inspector_compatibility;
 } objc3_runtime_reflection_debug_anchor_snapshot;
 
 uint32_t objc3_runtime_reflection_api_abi_version(void);
 uint32_t objc3_runtime_reflection_debug_anchor_abi_version(void);
+uint32_t objc3_runtime_reflection_debug_anchor_min_reader_abi_version(void);
 uint64_t objc3_runtime_reflection_surface_count(void);
 uint64_t objc3_runtime_reflection_debug_anchor_count(void);
 int objc3_runtime_copy_reflection_surface(

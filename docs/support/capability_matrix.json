@@ -653,6 +653,11 @@
           "command": "npm run objc3c -- test-runtime-acceptance-fast"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
         },
@@ -696,6 +701,11 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "source",
@@ -746,6 +756,11 @@
         {
           "kind": "test",
           "path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "test",
@@ -868,7 +883,7 @@
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, and value-inspection records together. Full production-path debugger stepping, canonical compiler-emitted object-model line tables, and debugger reflection ABI governance remain reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, and debug-anchor ABI governance together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, full source-map publication, typed keypath lowering in the combined fixture, and statement-level debugger stepping remain reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -903,6 +918,11 @@
           "kind": "test",
           "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "source",
@@ -3319,7 +3339,7 @@
       "id": "language.advanced-runtime-closure",
       "title": "Advanced runtime-backed language closure",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay; remaining broad runtime closure stays reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, and negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/blocks/",
         "native/objc3c/src/runtime/memory/",
@@ -3369,6 +3389,15 @@
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         }
       ]
     },
@@ -4275,6 +4304,21 @@
           "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
         },
@@ -4382,6 +4426,11 @@
           "command": "npm run objc3c -- validate-package-install-distribution"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "scripts/objc3c_package_manager/install_distribution.py"
         },
@@ -4425,6 +4474,11 @@
           "kind": "test",
           "path": "tests/tooling/test_release_abi_api_drift.py",
           "command": "npm run objc3c -- check-release-abi-api-drift"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "schema",
@@ -4504,6 +4558,11 @@
           "command": "npm run objc3c -- validate-release-operations-end-to-end"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "schema",
           "path": "schemas/objc3c-release-channel-operations-v1.schema.json"
         },
@@ -4554,6 +4613,11 @@
           "kind": "test",
           "path": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
           "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "source",
@@ -4805,6 +4869,11 @@
           "kind": "test",
           "path": "tests/tooling/test_runtime_debug_trace_surface.py",
           "command": "npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "schema",

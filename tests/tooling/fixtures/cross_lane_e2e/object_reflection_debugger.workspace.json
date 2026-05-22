@@ -14,12 +14,32 @@
     {
       "from": "cross-lane:object-reflection-debugger",
       "to": "runtime:objc3.object-model",
-      "relationship": "class-category-protocol-property-reflection-prerequisite"
+      "relationship": "class-category-protocol-property-executable-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:object-reflection-debugger",
+      "to": "runtime:objc3.public-reflection-api",
+      "relationship": "public-runtime-reflection-gate-prerequisite"
     },
     {
       "from": "cross-lane:object-reflection-debugger",
       "to": "developer-tooling:runtime-debug-trace",
-      "relationship": "debug-source-map-output-prerequisite"
+      "relationship": "declaration-debug-map-artifact-output-prerequisite"
+    },
+    {
+      "from": "cross-lane:object-reflection-debugger",
+      "to": "developer-tooling:artifact-inspector",
+      "relationship": "runtime-inventory-and-object-artifact-inspection-prerequisite"
     }
-  ]
+  ],
+  "canonical_production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+    "object_model_debugger_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "public_runtime_reflection_command": "npm run objc3c -- validate-public-runtime-reflection-api",
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "typed_keypath_lowering_status": "reserved",
+    "statement_stepping_status": "reserved",
+    "full_source_map_publication_status": "reserved",
+    "full_realization_promoted": false
+  }
 }

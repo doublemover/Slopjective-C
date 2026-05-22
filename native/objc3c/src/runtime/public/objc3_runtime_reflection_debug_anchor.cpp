@@ -29,6 +29,18 @@ constexpr const char *kDebugAnchorPolicy =
     "metadata";
 constexpr const char *kDebugAnchorSourceIdentityModel =
     "module plus translation-unit identity key plus runtime metadata identity";
+constexpr const char *kDebugAnchorAbiGovernancePolicy =
+    "debug-anchor ABI bumps on snapshot layout, status semantics, or "
+    "source-anchor mapping changes";
+constexpr const char *kDebugAnchorSourceMapAnchorPolicy =
+    "debug_projection_key must be present in checked source-map and debug-map "
+    "runtime_anchor_ids";
+constexpr const char *kDebugAnchorArtifactInspectorCompatibility =
+    "compile-artifact-inspector runtime inventory uses manifest-derived "
+    "runtime metadata and keeps full source-map publication fail-closed";
+constexpr std::size_t kDebugAnchorV1SnapshotSize =
+    offsetof(objc3_runtime_reflection_debug_anchor_snapshot,
+             abi_governance_policy);
 
 bool RuntimeReflectionCStringPresent(const char *value) {
   return value != nullptr && value[0] != '\0';
@@ -56,6 +68,34 @@ void InitializeReflectionDebugAnchorSnapshot(
   snapshot.method_family = OBJC3_RUNTIME_REFLECTION_METHOD_FAMILY_INVALID;
   snapshot.anchor_policy = kDebugAnchorPolicy;
   snapshot.source_identity_model = kDebugAnchorSourceIdentityModel;
+  snapshot.abi_governance_policy = kDebugAnchorAbiGovernancePolicy;
+  snapshot.source_map_anchor_policy = kDebugAnchorSourceMapAnchorPolicy;
+  snapshot.artifact_inspector_compatibility =
+      kDebugAnchorArtifactInspectorCompatibility;
+}
+
+std::size_t ReflectionDebugAnchorCallerSnapshotSize(
+    const objc3_runtime_reflection_debug_anchor_snapshot &snapshot) {
+  if (snapshot.snapshot_size == 0u) {
+    return kDebugAnchorV1SnapshotSize;
+  }
+  if (snapshot.snapshot_size > sizeof(objc3_runtime_reflection_debug_anchor_snapshot)) {
+    return sizeof(objc3_runtime_reflection_debug_anchor_snapshot);
+  }
+  return snapshot.snapshot_size;
+}
+
+int PublishReflectionDebugAnchorSnapshot(
+    const objc3_runtime_reflection_debug_anchor_snapshot &source,
+    objc3_runtime_reflection_debug_anchor_snapshot *target,
+    std::size_t target_size) {
+  if (target == nullptr || target_size < kDebugAnchorV1SnapshotSize) {
+    return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
+  }
+  std::memset(target, 0, target_size);
+  std::memcpy(target, &source, target_size);
+  target->snapshot_size = static_cast<std::uint32_t>(target_size);
+  return source.status;
 }
 
 std::uint64_t CountConcreteProtocolsUnlocked(const RuntimeState &state) {
@@ -281,6 +321,61 @@ std::uint64_t ReflectionDebugAnchorGeneration(const RuntimeState &state,
   }
 }
 
+const char *ReflectionDebugAnchorSourceAnchorKindName(int anchor_kind) {
+  switch (anchor_kind) {
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS:
+    return "class";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY:
+    return "category";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL:
+    return "protocol";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY:
+    return "property";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR:
+    return "ivar";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD:
+    return "method";
+  default:
+    return nullptr;
+  }
+}
+
+const char *ReflectionDebugAnchorSourceMapRecordKind(int anchor_kind) {
+  switch (anchor_kind) {
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS:
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY:
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL:
+    return "declaration";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY:
+    return "property-access";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR:
+    return "generated-accessor";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD:
+    return "method";
+  default:
+    return nullptr;
+  }
+}
+
+const char *ReflectionDebugAnchorProjectionKey(int anchor_kind) {
+  switch (anchor_kind) {
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS:
+    return "runtime.anchor.object_model.class";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY:
+    return "runtime.anchor.object_model.category";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL:
+    return "runtime.anchor.object_model.protocol";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY:
+    return "runtime.anchor.object_model.property";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR:
+    return "runtime.anchor.object_model.ivar";
+  case OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD:
+    return "runtime.anchor.object_model.method";
+  default:
+    return nullptr;
+  }
+}
+
 void PopulateReflectionDebugAnchorGenerations(
     const RuntimeState &state, int anchor_kind,
     objc3_runtime_reflection_debug_anchor_snapshot &snapshot) {
@@ -404,13 +499,17 @@ bool PopulateReflectionDebugAnchorCommon(
   snapshot.source_identity_backed = 1;
   snapshot.replayable = 1;
   snapshot.registration_order_ordinal = registration_order_ordinal;
+  snapshot.source_anchor_kind =
+      ReflectionDebugAnchorSourceAnchorKindName(anchor_kind);
+  snapshot.source_map_record_kind =
+      ReflectionDebugAnchorSourceMapRecordKind(anchor_kind);
   PopulateReflectionDebugAnchorGenerations(state, anchor_kind, snapshot);
   snapshot.module_name = BorrowRuntimeCString(image->module_name);
   snapshot.translation_unit_identity_key =
       BorrowRuntimeCString(image->translation_unit_identity_key);
   snapshot.source_path = snapshot.translation_unit_identity_key;
   snapshot.runtime_identity_key = NullableRuntimeCString(runtime_identity_key);
-  snapshot.debug_projection_key = snapshot.runtime_identity_key;
+  snapshot.debug_projection_key = ReflectionDebugAnchorProjectionKey(anchor_kind);
   return true;
 }
 
@@ -948,6 +1047,11 @@ extern "C" uint32_t objc3_runtime_reflection_debug_anchor_abi_version(void) {
   return OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION;
 }
 
+extern "C" uint32_t
+objc3_runtime_reflection_debug_anchor_min_reader_abi_version(void) {
+  return OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_MIN_READER_VERSION;
+}
+
 extern "C" uint64_t objc3_runtime_reflection_debug_anchor_count(void) {
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -961,12 +1065,24 @@ extern "C" int objc3_runtime_copy_reflection_debug_anchor(
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
   }
-  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(*snapshot);
+  const std::size_t snapshot_size =
+      objc3c::runtime::ReflectionDebugAnchorCallerSnapshotSize(*snapshot);
+  objc3_runtime_reflection_debug_anchor_snapshot local_snapshot{};
+  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(local_snapshot);
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  return objc3c::runtime::PopulateReflectionDebugAnchorByQueryUnlocked(
-      state, anchor_kind, container_name, member_name, method_family,
-      *snapshot);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    status = objc3c::runtime::PopulateReflectionDebugAnchorByQueryUnlocked(
+        state, anchor_kind, container_name, member_name, method_family,
+        local_snapshot);
+  }
+  const int publish_status =
+      objc3c::runtime::PublishReflectionDebugAnchorSnapshot(
+          local_snapshot, snapshot, snapshot_size);
+  return publish_status == OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT
+             ? publish_status
+             : status;
 }
 
 extern "C" int objc3_runtime_copy_reflection_debug_anchor_with_generation(
@@ -976,22 +1092,38 @@ extern "C" int objc3_runtime_copy_reflection_debug_anchor_with_generation(
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
   }
-  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(*snapshot);
+  const std::size_t snapshot_size =
+      objc3c::runtime::ReflectionDebugAnchorCallerSnapshotSize(*snapshot);
+  objc3_runtime_reflection_debug_anchor_snapshot local_snapshot{};
+  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(local_snapshot);
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  const int status =
-      objc3c::runtime::PopulateReflectionDebugAnchorByQueryUnlocked(
-          state, anchor_kind, container_name, member_name, method_family,
-          *snapshot);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    status = objc3c::runtime::PopulateReflectionDebugAnchorByQueryUnlocked(
+        state, anchor_kind, container_name, member_name, method_family,
+        local_snapshot);
+  }
   if (status != OBJC3_RUNTIME_REFLECTION_STATUS_OK) {
-    return status;
+    const int publish_status =
+        objc3c::runtime::PublishReflectionDebugAnchorSnapshot(
+            local_snapshot, snapshot, snapshot_size);
+    return publish_status == OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT
+               ? publish_status
+               : status;
   }
-  if (snapshot->anchor_generation != expected_anchor_generation) {
-    snapshot->stale_generation = 1;
-    return objc3c::runtime::PublishReflectionStatus(
-        OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR, &snapshot->status);
+  if (local_snapshot.anchor_generation != expected_anchor_generation) {
+    local_snapshot.stale_generation = 1;
+    status = objc3c::runtime::PublishReflectionStatus(
+        OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR,
+        &local_snapshot.status);
   }
-  return OBJC3_RUNTIME_REFLECTION_STATUS_OK;
+  const int publish_status =
+      objc3c::runtime::PublishReflectionDebugAnchorSnapshot(
+          local_snapshot, snapshot, snapshot_size);
+  return publish_status == OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT
+             ? publish_status
+             : status;
 }
 
 extern "C" int objc3_runtime_copy_reflection_debug_anchor_at(
@@ -999,13 +1131,26 @@ extern "C" int objc3_runtime_copy_reflection_debug_anchor_at(
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT;
   }
-  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(*snapshot);
+  const std::size_t snapshot_size =
+      objc3c::runtime::ReflectionDebugAnchorCallerSnapshotSize(*snapshot);
+  objc3_runtime_reflection_debug_anchor_snapshot local_snapshot{};
+  objc3c::runtime::InitializeReflectionDebugAnchorSnapshot(local_snapshot);
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  if (!objc3c::runtime::TryPopulateReflectionDebugAnchorAtUnlocked(
-          state, index, *snapshot)) {
-    return objc3c::runtime::PublishReflectionStatus(
-        OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &snapshot->status);
+  int status = OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    if (objc3c::runtime::TryPopulateReflectionDebugAnchorAtUnlocked(
+            state, index, local_snapshot)) {
+      status = local_snapshot.status;
+    } else {
+      status = objc3c::runtime::PublishReflectionStatus(
+          OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND, &local_snapshot.status);
+    }
   }
-  return snapshot->status;
+  const int publish_status =
+      objc3c::runtime::PublishReflectionDebugAnchorSnapshot(
+          local_snapshot, snapshot, snapshot_size);
+  return publish_status == OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_OUTPUT
+             ? publish_status
+             : status;
 }
