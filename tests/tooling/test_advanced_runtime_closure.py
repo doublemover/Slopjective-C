@@ -13,6 +13,7 @@ from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
     ADVANCED_CLOSURE_NEGATIVE_MATRIX,
     REQUIRED_INTERACTION_FEATURE_SETS,
+    REQUIRED_LITERAL_NEGATIVE_CASE_IDS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS,
     REQUIRED_UNSUPPORTED_RESERVED_CLAIMS,
@@ -37,7 +38,7 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
     payload = validate_advanced_runtime_closure()
 
     assert payload["status"] == "PASS"
-    assert payload["advanced_runtime_negative_matrix_case_count"] >= 14
+    assert payload["advanced_runtime_negative_matrix_case_count"] >= 17
     assert (
         payload["advanced_runtime_negative_matrix_interaction_count"]
         == len(REQUIRED_INTERACTION_FEATURE_SETS)
@@ -111,6 +112,7 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     case_ids = {
         str(case["case_id"]) for case in negative_matrix["cases"]  # type: ignore[index]
     }
+    assert REQUIRED_LITERAL_NEGATIVE_CASE_IDS <= case_ids
     interaction_ids = {
         str(record["interaction_id"])
         for record in contract["interaction_records"]  # type: ignore[index]

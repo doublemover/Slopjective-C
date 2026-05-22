@@ -4,6 +4,8 @@
 // install from clean root
 // update
 // rollback
+// release operations end-to-end
+// tampered package rejection
 // compile/run installed package
 module CrossLaneDistributionPackageLifecycle;
 
@@ -30,6 +32,14 @@ fn rollbackInstalledPackage() -> i32 {
   return 11;
 }
 
+fn releaseOperationsEndToEnd() -> i32 {
+  return 17;
+}
+
+fn tamperedPackageRejected() -> i32 {
+  return 19;
+}
+
 fn compileRunInstalledPackage() -> i32 {
   return 13;
 }
@@ -41,8 +51,10 @@ fn verifyLifecycle() -> i32 {
     + installFromCleanRoot()
     + updateInstalledPackage()
     + rollbackInstalledPackage()
+    + releaseOperationsEndToEnd()
+    + tamperedPackageRejected()
     + compileRunInstalledPackage();
-  if (total != 41) {
+  if (total != 77) {
     return total;
   }
   return 0;

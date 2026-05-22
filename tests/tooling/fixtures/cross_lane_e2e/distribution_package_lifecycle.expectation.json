@@ -16,7 +16,7 @@
   "diagnostics": {
     "status": "expected-pass",
     "responsible_domain": "package trust diagnostic",
-    "reason": "distribution lifecycle source now compiles without diagnostics while package trust and release-operation proof remain explicit generated evidence",
+    "reason": "distribution lifecycle source now compiles without diagnostics while package trust, release-operation, and tamper-rejection proof remain explicit generated evidence",
     "expected_codes": [],
     "required_tokens": [
       "package signing",
@@ -24,6 +24,8 @@
       "install from clean root",
       "update",
       "rollback",
+      "release operations end-to-end",
+      "tampered package rejection",
       "compile/run installed package"
     ]
   },
@@ -51,7 +53,7 @@
   "source_graph": {
     "status": "expected-pass",
     "responsible_domain": "capability/evidence mismatch",
-    "reason": "the generated lifecycle trace binds the checked source fixture to package-install, release-operations, update, rollback, and linked-provider evidence",
+    "reason": "the generated lifecycle trace binds the checked source fixture to package-install, release-operations E2E, update, rollback, tamper rejection, and linked-provider evidence",
     "source_truth": false,
     "expected_edges": [
       "cross-lane:distribution-package-lifecycle -> package:local-distribution-root",
@@ -76,7 +78,7 @@
   "distribution_lifecycle": {
     "status": "expected-pass",
     "responsible_domain": "package trust diagnostic",
-    "reason": "public validation runs the from-nothing package install proof, release-operations rollback proof, and executable package lifecycle fixture together",
+    "reason": "public validation runs the from-nothing package install proof, release-operations end-to-end proof, tampered installed-package rejection, and executable package lifecycle fixture together",
     "source_truth": false,
     "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/distribution-lifecycle-trace.json"
   },
@@ -85,7 +87,7 @@
       "case_id": "distribution-package-tampered-signature",
       "status": "expected-pass",
       "responsible_domain": "package trust diagnostic",
-      "reason": "the lifecycle trace records the package-manager tamper diagnostic that would reject a drifted installed trust signature"
+      "reason": "the lifecycle trace mutates the generated install verification and records the package-manager diagnostics that reject a drifted installed trust signature"
     },
     {
       "case_id": "distribution-package-hosted-registry-overclaim",
@@ -101,6 +103,6 @@
       "release.operations.channel-lifecycle",
       "release.abi.stability-governance"
     ],
-    "claim_boundary": "this fixture proves clean local package install, local publication metadata, deterministic update/uninstall receipts, release-operation rollback safety, installer signature evidence, and executable compile/run; hosted registry, network install, background updater, and public production release publication remain out of scope"
+    "claim_boundary": "this fixture proves clean local package install, local publication metadata, deterministic update/uninstall receipts, release-operation end-to-end rollback safety, installer signature evidence, tampered installed-package rejection, and executable compile/run; hosted registry, network install, background updater, and public production release publication remain out of scope"
   }
 }

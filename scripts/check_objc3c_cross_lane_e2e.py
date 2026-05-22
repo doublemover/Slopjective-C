@@ -7,11 +7,14 @@ import sys
 import os
 import shutil
 import subprocess
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from check_objc3c_advanced_runtime_closure import validate_advanced_runtime_closure
+from objc3c_package_manager.install_distribution import collect_install_distribution_failures
+from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE
 from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
 from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import paths_for_source, resolve_source
@@ -90,6 +93,31 @@ PACKAGE_UNINSTALL_RECEIPT_PATH = (
     / "receipts"
     / "objc3c-uninstall-plan-receipt.json"
 )
+PACKAGE_INSTALL_CONTRACT_PATH = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "package_ecosystem"
+    / "install_distribution_credibility_contract.json"
+)
+PACKAGE_INSTALL_MIRROR_PATH = (
+    ROOT / "tmp" / "artifacts" / "package-ecosystem" / "mirrors" / "offline-mirror-index.json"
+)
+PACKAGE_INSTALL_REGISTRY_PATH = (
+    ROOT / "tmp" / "artifacts" / "package-ecosystem" / "registry" / "local-package-index.json"
+)
+PACKAGE_INSTALL_PUBLICATION_PATH = (
+    ROOT / "tmp" / "artifacts" / "package-ecosystem" / "registry" / "publication-metadata.json"
+)
+PACKAGE_INSTALL_RESTORE_RECEIPT_PATH = (
+    ROOT
+    / "tmp"
+    / "artifacts"
+    / "package-ecosystem"
+    / "offline-install"
+    / "objc3c-offline-mirror-restore-receipt.json"
+)
 RELEASE_OPERATIONS_SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
 RELEASE_UPDATE_MANIFEST_PATH = (
     ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
@@ -162,6 +190,13 @@ def require_nonempty_string(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value:
         raise RuntimeError(f"{field} must be a non-empty string")
     return value
+
+
+def require_string_list(value: Any, field: str) -> list[str]:
+    return [
+        require_nonempty_string(item, f"{field}[{index}]")
+        for index, item in enumerate(require_list(value, field))
+    ]
 
 
 def normalize_path(path: str) -> str:
@@ -1250,6 +1285,29 @@ def _lock_package_trust_signatures(lock: dict[str, Any]) -> dict[str, str]:
     return signatures
 
 
+def _channel_manifest_entries_by_id(
+    family_id: str,
+    channel_manifest: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    entries: dict[str, dict[str, Any]] = {}
+    for index, raw_entry in enumerate(
+        require_list(
+            channel_manifest.get("channel_manifests"),
+            f"{family_id}.release_operations.channel_manifest.channel_manifests",
+        )
+    ):
+        entry = require_object(
+            raw_entry,
+            f"{family_id}.release_operations.channel_manifest.channel_manifests[{index}]",
+        )
+        channel_id = require_nonempty_string(
+            entry.get("channel_id"),
+            f"{family_id}.release_operations.channel_manifest.channel_manifests[{index}].channel_id",
+        )
+        entries[channel_id] = entry
+    return entries
+
+
 def validate_distribution_release_operations_model(family_id: str) -> dict[str, Any]:
     model = _require_json_artifact(
         RELEASE_CHANNEL_OPERATIONS_MODEL_PATH,
@@ -1337,6 +1395,276 @@ def validate_distribution_release_operations_model(family_id: str) -> dict[str, 
     }
 
 
+def validate_distribution_release_operations_lifecycle_proof(
+    family_id: str,
+    release_model: dict[str, Any],
+    release_summary: dict[str, Any],
+    update_manifest: dict[str, Any],
+    channel_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    if release_summary.get("contract_id") != "objc3c.release.operations.end-to-end.summary.v1":
+        raise RuntimeError(f"{family_id}.release operations end-to-end summary contract drifted")
+    if release_summary.get("status") != "PASS":
+        raise RuntimeError(f"{family_id}.release operations end-to-end summary did not pass")
+    if update_manifest.get("contract_id") != "objc3c.release.operations.update-manifest.v1":
+        raise RuntimeError(f"{family_id}.release operations update manifest contract drifted")
+    if channel_manifest.get("contract_id") != "objc3c.release.operations.channel-manifest.v1":
+        raise RuntimeError(f"{family_id}.release operations channel manifest contract drifted")
+
+    if release_summary.get("update_manifest") != repo_rel(RELEASE_UPDATE_MANIFEST_PATH):
+        raise RuntimeError(f"{family_id}.release operations summary update manifest link drifted")
+    if release_summary.get("release_channel_manifest") != repo_rel(RELEASE_CHANNEL_MANIFEST_PATH):
+        raise RuntimeError(f"{family_id}.release operations summary channel manifest link drifted")
+    if update_manifest.get("release_channel_manifest") != repo_rel(RELEASE_CHANNEL_MANIFEST_PATH):
+        raise RuntimeError(f"{family_id}.release operations update manifest channel link drifted")
+
+    expected_channels = ["stable", "candidate", "nightly", "preview"]
+    summary_channels = require_string_list(release_summary.get("channels"), f"{family_id}.release_operations.summary.channels")
+    if summary_channels != expected_channels:
+        raise RuntimeError(f"{family_id}.release operations summary channel order drifted")
+    manifest_channels = [
+        require_nonempty_string(
+            require_object(raw_channel, f"{family_id}.release_operations.update_manifest.channels[{index}]").get("channel_id"),
+            f"{family_id}.release_operations.update_manifest.channels[{index}].channel_id",
+        )
+        for index, raw_channel in enumerate(
+            require_list(update_manifest.get("channels"), f"{family_id}.release_operations.update_manifest.channels")
+        )
+    ]
+    if manifest_channels != expected_channels:
+        raise RuntimeError(f"{family_id}.release operations update manifest channel order drifted")
+
+    summary_clean_channels = sorted(
+        require_string_list(
+            release_summary.get("clean_install_prerequisite_channels"),
+            f"{family_id}.release_operations.summary.clean_install_prerequisite_channels",
+        )
+    )
+    if summary_clean_channels != release_model["clean_install_prerequisite_channels"]:
+        raise RuntimeError(f"{family_id}.release operations clean-install prerequisite proof drifted")
+
+    channel_entries = _channel_manifest_entries_by_id(family_id, channel_manifest)
+    stable_entry = require_object(channel_entries.get("stable"), f"{family_id}.release_operations.stable_channel")
+    nightly_entry = require_object(channel_entries.get("nightly"), f"{family_id}.release_operations.nightly_channel")
+    stable_gates = require_string_list(
+        stable_entry.get("release_gate_actions"),
+        f"{family_id}.release_operations.stable.release_gate_actions",
+    )
+    nightly_gates = require_string_list(
+        nightly_entry.get("release_gate_actions"),
+        f"{family_id}.release_operations.nightly.release_gate_actions",
+    )
+    summary_stable_gates = require_string_list(
+        release_summary.get("stable_gate_actions"),
+        f"{family_id}.release_operations.summary.stable_gate_actions",
+    )
+    summary_nightly_gates = require_string_list(
+        release_summary.get("nightly_gate_actions"),
+        f"{family_id}.release_operations.summary.nightly_gate_actions",
+    )
+    if stable_gates != summary_stable_gates or stable_gates != release_model["release_gate_actions"]["stable"]:
+        raise RuntimeError(f"{family_id}.release operations stable gate proof drifted")
+    if nightly_gates != summary_nightly_gates or nightly_gates != release_model["release_gate_actions"]["nightly"]:
+        raise RuntimeError(f"{family_id}.release operations nightly gate proof drifted")
+    if "validate-release-operations-end-to-end" not in stable_gates:
+        raise RuntimeError(f"{family_id}.release operations stable channel lost end-to-end validation")
+    if "test-nightly" not in nightly_gates:
+        raise RuntimeError(f"{family_id}.release operations nightly channel lost nightly validation")
+
+    stable_rollback = require_object(
+        stable_entry.get("rollback_safety"),
+        f"{family_id}.release_operations.stable.rollback_safety",
+    )
+    nightly_rollback = require_object(
+        nightly_entry.get("rollback_safety"),
+        f"{family_id}.release_operations.nightly.rollback_safety",
+    )
+    if stable_rollback.get("rollback_channel") != "local-installer":
+        raise RuntimeError(f"{family_id}.release operations stable rollback channel drifted")
+    if nightly_rollback.get("rollback_channel") != "offline-bundle":
+        raise RuntimeError(f"{family_id}.release operations nightly rollback channel drifted")
+
+    for field in ("rollback_diagnostic_count", "fail_closed_diagnostic_count"):
+        value = release_summary.get(field)
+        if not isinstance(value, int) or value <= 0:
+            raise RuntimeError(f"{family_id}.release operations summary {field} must be positive")
+
+    stable_artifacts = require_object(
+        release_summary.get("stable_artifacts"),
+        f"{family_id}.release_operations.summary.stable_artifacts",
+    )
+    installer_signature = require_object(
+        stable_artifacts.get("installer_signature"),
+        f"{family_id}.release_operations.summary.stable_artifacts.installer_signature",
+    )
+    if installer_signature.get("artifact") != stable_artifacts.get("installer_archive"):
+        raise RuntimeError(f"{family_id}.release operations installer signature artifact drifted")
+    require_nonempty_string(
+        installer_signature.get("sha256"),
+        f"{family_id}.release_operations.summary.stable_artifacts.installer_signature.sha256",
+    )
+
+    release_evidence = require_object(
+        channel_manifest.get("release_evidence"),
+        f"{family_id}.release_operations.channel_manifest.release_evidence",
+    )
+    evidence_artifacts = require_string_list(
+        release_evidence.get("evidence_artifacts"),
+        f"{family_id}.release_operations.channel_manifest.release_evidence.evidence_artifacts",
+    )
+    for required_artifact in (
+        repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
+        repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
+    ):
+        if required_artifact not in evidence_artifacts:
+            raise RuntimeError(f"{family_id}.release operations evidence omitted {required_artifact}")
+    release_source_truth_paths = require_string_list(
+        release_summary.get("release_source_truth_paths"),
+        f"{family_id}.release_operations.summary.release_source_truth_paths",
+    )
+    generated_source_truth = [
+        path
+        for path in release_source_truth_paths
+        if path.startswith("tmp/") or path.startswith("artifacts/")
+    ]
+    if generated_source_truth:
+        raise RuntimeError(
+            f"{family_id}.release operations source truth used generated outputs: "
+            + ", ".join(generated_source_truth)
+        )
+
+    return {
+        "status": "PASS",
+        "summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
+        "update_manifest": repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
+        "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
+        "channels": summary_channels,
+        "stable_gate_actions": stable_gates,
+        "nightly_gate_actions": nightly_gates,
+        "stable_rollback_channel": stable_rollback["rollback_channel"],
+        "nightly_rollback_channel": nightly_rollback["rollback_channel"],
+        "rollback_diagnostic_count": release_summary["rollback_diagnostic_count"],
+        "fail_closed_diagnostic_count": release_summary["fail_closed_diagnostic_count"],
+        "release_source_truth_paths": release_source_truth_paths,
+    }
+
+
+def validate_tampered_package_rejection(
+    family_id: str,
+    artifact_dir: Path,
+    *,
+    contract: dict[str, Any],
+    lock: dict[str, Any],
+    mirror: dict[str, Any],
+    registry: dict[str, Any],
+    publication: dict[str, Any],
+    restore_receipt: dict[str, Any],
+    verification: dict[str, Any],
+) -> dict[str, Any]:
+    tampered_verification = deepcopy(verification)
+    installed_records = require_list(
+        tampered_verification.get("installed_packages"),
+        f"{family_id}.tampered_package.installed_packages",
+    )
+    if not installed_records:
+        raise RuntimeError(f"{family_id}.tampered package rejection has no installed packages")
+    target_record = require_object(
+        installed_records[0],
+        f"{family_id}.tampered_package.installed_packages[0]",
+    )
+    package_id = require_nonempty_string(
+        target_record.get("package_id"),
+        f"{family_id}.tampered_package.package_id",
+    )
+    original_signature = require_nonempty_string(
+        target_record.get("trust_signature"),
+        f"{family_id}.tampered_package.original_trust_signature",
+    )
+    target_record["trust_signature"] = original_signature + ".tampered"
+
+    observed_failures = collect_install_distribution_failures(
+        root=ROOT,
+        contract=contract,
+        lock=lock,
+        mirror=mirror,
+        registry=registry,
+        publication=publication,
+        restore_receipt=restore_receipt,
+        verification=tampered_verification,
+    )
+    expected_diagnostic = f"{PACKAGE_MANAGER_TAMPER_CODE}: installed trust signature drifted for {package_id}"
+    if expected_diagnostic not in observed_failures:
+        raise RuntimeError(
+            f"{family_id}.tampered package rejection did not report expected diagnostic: "
+            + expected_diagnostic
+        )
+
+    payload = {
+        "contract_id": "objc3c.cross_lane_e2e.tampered_package_rejection.v1",
+        "schema_version": 1,
+        "issue": 8200,
+        "family_id": family_id,
+        "status": "PASS",
+        "rejection_engine": "collect_install_distribution_failures",
+        "source_verification": repo_rel(PACKAGE_INSTALL_VERIFICATION_PATH),
+        "package_id": package_id,
+        "tampered_field": "installed_packages[0].trust_signature",
+        "expected_diagnostic": expected_diagnostic,
+        "observed_diagnostics": observed_failures,
+    }
+    trace_path = artifact_dir / "tampered-package-rejection.json"
+    write_json_file(trace_path, payload)
+    return {
+        "status": "PASS",
+        "trace": repo_rel(trace_path),
+        "package_id": package_id,
+        "expected_diagnostic": expected_diagnostic,
+        "observed_diagnostic_count": len(observed_failures),
+    }
+
+
+def prepare_release_operations_preflight(families: list[Any]) -> dict[str, Any]:
+    for index, raw_row in enumerate(families):
+        family = require_object(raw_row, f"families[{index}].family")
+        family_id = require_nonempty_string(
+            family.get("family_id"),
+            f"families[{index}].family.family_id",
+        )
+        if family_id != "distribution_package_lifecycle":
+            continue
+        expectation_path = require_source_owned_path(
+            str(family.get("expectation", "")),
+            f"{family_id}.expectation",
+        )
+        expectation = load_json(expectation_path)
+        lifecycle = expectation.get("distribution_lifecycle")
+        if not isinstance(lifecycle, dict) or lifecycle.get("status") != "expected-pass":
+            continue
+
+        artifact_dir = ARTIFACT_ROOT / family_id.replace("_", "-")
+        run_public_workflow_action(
+            "validate-release-operations",
+            log_path=artifact_dir / "release-operations-preflight.log",
+            domain=f"{family_id}.release operations preflight",
+        )
+        require_artifact(RELEASE_OPERATIONS_SUMMARY_PATH, "release operations summary")
+        require_artifact(RELEASE_UPDATE_MANIFEST_PATH, "release operations update manifest")
+        require_artifact(RELEASE_CHANNEL_MANIFEST_PATH, "release operations channel manifest")
+        return {
+            "status": "PASS",
+            "action": "validate-release-operations",
+            "log": repo_rel(artifact_dir / "release-operations-preflight.log"),
+            "summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
+            "update_manifest": repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
+            "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
+        }
+
+    return {
+        "status": "SKIPPED",
+        "reason": "no expected-pass distribution lifecycle family requires release-operation artifacts",
+    }
+
+
 def validate_distribution_package_lifecycle_proof(
     family_id: str,
     expectation: dict[str, Any],
@@ -1364,6 +1692,14 @@ def validate_distribution_package_lifecycle_proof(
     lock = _require_json_artifact(PACKAGE_LOCK_PATH, "package lock")
     update_receipt = _require_json_artifact(PACKAGE_UPDATE_RECEIPT_PATH, "package update receipt")
     uninstall_receipt = _require_json_artifact(PACKAGE_UNINSTALL_RECEIPT_PATH, "package uninstall receipt")
+    package_contract = _require_json_artifact(PACKAGE_INSTALL_CONTRACT_PATH, "package install contract")
+    mirror = _require_json_artifact(PACKAGE_INSTALL_MIRROR_PATH, "package install mirror")
+    registry = _require_json_artifact(PACKAGE_INSTALL_REGISTRY_PATH, "package install registry")
+    publication = _require_json_artifact(PACKAGE_INSTALL_PUBLICATION_PATH, "package install publication metadata")
+    restore_receipt = _require_json_artifact(PACKAGE_INSTALL_RESTORE_RECEIPT_PATH, "package install restore receipt")
+    release_summary = _require_json_artifact(RELEASE_OPERATIONS_SUMMARY_PATH, "release operations summary")
+    release_update_manifest = _require_json_artifact(RELEASE_UPDATE_MANIFEST_PATH, "release operations update manifest")
+    release_channel_manifest = _require_json_artifact(RELEASE_CHANNEL_MANIFEST_PATH, "release operations channel manifest")
 
     if package_summary.get("status") != "PASS":
         raise RuntimeError(f"{family_id}.package trust diagnostic did not pass")
@@ -1403,8 +1739,24 @@ def validate_distribution_package_lifecycle_proof(
 
     if first_installed is None:
         raise RuntimeError(f"{family_id}.package trust diagnostic installed no packages")
-    tampered_package_id = str(first_installed["package_id"])
-    tampered_signature_diagnostic = f"O3PKG8055: installed trust signature drifted for {tampered_package_id}"
+    release_lifecycle_proof = validate_distribution_release_operations_lifecycle_proof(
+        family_id,
+        release_model,
+        release_summary,
+        release_update_manifest,
+        release_channel_manifest,
+    )
+    tampered_rejection = validate_tampered_package_rejection(
+        family_id,
+        artifact_dir,
+        contract=package_contract,
+        lock=lock,
+        mirror=mirror,
+        registry=registry,
+        publication=publication,
+        restore_receipt=restore_receipt,
+        verification=verification,
+    )
 
     payload = {
         "contract_id": "objc3c.cross_lane_e2e.distribution_lifecycle.v1",
@@ -1437,6 +1789,10 @@ def validate_distribution_package_lifecycle_proof(
         },
         "release_operations": {
             "model": release_model["model"],
+            "end_to_end_summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
+            "update_manifest": repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
+            "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
+            "lifecycle_proof": release_lifecycle_proof,
             "clean_install_prerequisite_channels": release_model["clean_install_prerequisite_channels"],
             "rollback_channels": release_model["rollback_channels"],
             "release_gate_actions": release_model["release_gate_actions"],
@@ -1444,9 +1800,7 @@ def validate_distribution_package_lifecycle_proof(
         },
         "negative_cases": {
             "tampered_package_signature": {
-                "status": "PASS",
-                "package_id": tampered_package_id,
-                "diagnostic": tampered_signature_diagnostic,
+                **tampered_rejection,
             }
         },
         "reserved_or_external_rows_not_promoted": [
@@ -1465,7 +1819,9 @@ def validate_distribution_package_lifecycle_proof(
         "package_count": package_summary["package_count"],
         "installed_package_count": package_summary["installed_package_count"],
         "rollback_channels": release_model["rollback_channels"],
-        "tampered_signature_negative_case": tampered_signature_diagnostic,
+        "release_operations_summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
+        "tampered_signature_negative_case": tampered_rejection["expected_diagnostic"],
+        "tampered_package_rejection_probe": tampered_rejection["trace"],
     }
 
 
@@ -1984,6 +2340,7 @@ def validate_manifest() -> dict[str, Any]:
             + ", ".join(REQUIRED_FAMILY_IDS)
         )
 
+    release_operations_preflight = prepare_release_operations_preflight(families)
     family_summaries = [validate_family(require_object(row, "family")) for row in families]
     workflow_action_glue = validate_workflow_action_glue()
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
@@ -2000,6 +2357,7 @@ def validate_manifest() -> dict[str, Any]:
         "public_action": PUBLIC_ACTION,
         "public_replay_command": PUBLIC_COMMAND,
         "workflow_action_glue": workflow_action_glue,
+        "release_operations_preflight": release_operations_preflight,
         "family_count": len(family_summaries),
         "blocked_or_reserved_family_count": blocked_count,
         "family_summaries": family_summaries,

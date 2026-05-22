@@ -46,7 +46,7 @@
     "reason": "the public advanced-runtime closure validator checks the combined positive fixture and deterministic unsupported-combination matrix without promoting the umbrella row",
     "expected_codes": [],
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
-    "negative_matrix_case_count": 14,
+    "negative_matrix_case_count": 17,
     "required_tokens": [
       "ownership",
       "blocks",
@@ -125,7 +125,7 @@
       "responsible_domain": "parser/sema diagnostic",
       "reason": "validate-advanced-runtime-closure checks every unsupported combination as rejected or reserved and keeps those combinations fail-closed",
       "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
-      "expected_case_count": 14
+      "expected_case_count": 17
     },
     {
       "case_id": "advanced-runtime-native-executable-umbrella",

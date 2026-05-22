@@ -113,6 +113,11 @@ REQUIRED_INTERACTION_FEATURE_SETS = {
     "macro-package-replay": frozenset({"macro", "package_replay"}),
     "error-package-replay": frozenset({"error", "package_replay"}),
 }
+REQUIRED_LITERAL_NEGATIVE_CASE_IDS = {
+    "actor_mailbox_unsupported_payload",
+    "property_behavior_conflict",
+    "scheduler_guarantee_overclaim",
+}
 REQUIRED_POSITIVE_FEATURE_TOKENS = {
     "ownership": (
         "borrowed id *",
@@ -798,6 +803,12 @@ def _validate_negative_matrix(failures: list[str]) -> dict[str, Any]:
         failures.append(
             "advanced runtime negative matrix has extra features: "
             f"{sorted(extra_features)}"
+        )
+    missing_literal_cases = REQUIRED_LITERAL_NEGATIVE_CASE_IDS - seen_case_ids
+    if missing_literal_cases:
+        failures.append(
+            "advanced runtime negative matrix missing literal issue cases: "
+            f"{sorted(missing_literal_cases)}"
         )
     missing_interactions = set(REQUIRED_INTERACTION_FEATURE_SETS) - seen_interactions
     if missing_interactions:

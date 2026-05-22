@@ -28,6 +28,11 @@
       "from": "cross-lane:distribution-package-lifecycle",
       "to": "release:channel-operations",
       "relationship": "sign-publish-channel-lifecycle-prerequisite"
+    },
+    {
+      "from": "cross-lane:distribution-package-lifecycle",
+      "to": "package:cross-lane-published-toolchain",
+      "relationship": "linked-provider-runtime-import-surface"
     }
   ]
 }

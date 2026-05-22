@@ -26,6 +26,8 @@
       "install from clean root",
       "update",
       "rollback",
+      "release operations end-to-end",
+      "tampered package rejection",
       "compile/run installed package"
     ]
   },

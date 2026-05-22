@@ -1,0 +1,15 @@
+module AdvancedRuntimeClosureNegativeActorMailboxPayload;
+
+extern fn objc3_runtime_actor_mailbox_enqueue_object(actor_handle: i32, payload: id, executor_tag: i32) -> i32;
+
+actor class MailboxUnsupportedPayloadActor
+- (i32)enqueueUnsupportedPayload:(id)payload;
+@end
+
+@implementation MailboxUnsupportedPayloadActor
+- (i32)enqueueUnsupportedPayload:(id)payload {
+  // unsupported payload: object mailbox payloads remain fail-closed in the
+  // advanced-runtime closure proof until typed mailbox payload ownership lands.
+  return objc3_runtime_actor_mailbox_enqueue_object(1, payload, 7);
+}
+@end

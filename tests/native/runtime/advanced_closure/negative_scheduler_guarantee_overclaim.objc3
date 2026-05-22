@@ -1,0 +1,15 @@
+module AdvancedRuntimeClosureNegativeSchedulerGuarantee;
+
+extern fn objc3_runtime_task_yield_i32(i32 token) -> i32;
+
+actor class SchedulerGuaranteeActor
+- (i32)requiresFairness:(i32)token __attribute__((objc_scheduler_guarantee(fairness)));
+@end
+
+@implementation SchedulerGuaranteeActor
+- (i32)requiresFairness:(i32)token __attribute__((objc_scheduler_guarantee(fairness))) {
+  // broad scheduler guarantee: fairness is reserved and cannot be inferred from
+  // a task-yield probe or actor mailbox closure proof.
+  return objc3_runtime_task_yield_i32(token);
+}
+@end

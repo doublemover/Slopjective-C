@@ -685,7 +685,9 @@
         "objc3_runtime_actor_mailbox_drain_next_i32"
       ],
       "negative_case_ids": [
-        "ownership_actor_cancellation_escape"
+        "ownership_actor_cancellation_escape",
+        "actor_mailbox_unsupported_payload",
+        "scheduler_guarantee_overclaim"
       ],
       "runtime_state_record_ids": [
         "runtime-state.async-cancellation",
@@ -720,7 +722,8 @@
         "advancedRuntimeMacroTrace()"
       ],
       "negative_case_ids": [
-        "actor_property_macro_cross_isolation"
+        "actor_property_macro_cross_isolation",
+        "property_behavior_conflict"
       ],
       "runtime_state_record_ids": [
         "runtime-state.actor-mailbox",
