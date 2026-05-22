@@ -873,7 +873,10 @@
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
         "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
-        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
       ],
       "evidence": [
         {
@@ -895,6 +898,26 @@
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
         },
         {
           "kind": "test",
@@ -3817,11 +3840,8 @@
     {
       "id": "tooling.editor.object-artifact-inspector",
       "title": "Editor object artifact inspector",
-      "state": "implemented",
+      "state": "internal",
       "summary": "The inspect-artifact surface proves emitted object bytes through a real object path, SHA-256 digest, object format detection, symbol table inventory, section inventory, runtime helper import/export counts, and source/debug artifact links.",
-      "support_claims": [
-        "objc3c.behavior.tooling.artifact-inspector"
-      ],
       "owner_modules": [
         "scripts/objc3c_editor_tooling/artifact_inspector.py",
         "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
@@ -3837,8 +3857,7 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
-          "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py"
         },
         {
           "kind": "source",
@@ -3853,11 +3872,8 @@
     {
       "id": "tooling.editor.runtime-artifact-inspector",
       "title": "Editor runtime artifact inspector",
-      "state": "implemented",
+      "state": "internal",
       "summary": "The inspect-artifact surface proves runtime metadata inventory from the emitted runtime metadata artifact plus manifest-backed class, protocol, method, property, helper, runtime artifact, source graph, and debug-map links.",
-      "support_claims": [
-        "objc3c.behavior.tooling.artifact-inspector"
-      ],
       "owner_modules": [
         "scripts/objc3c_editor_tooling/artifact_inspector.py",
         "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
@@ -3879,8 +3895,7 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
-          "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+          "path": "tests/tooling/test_developer_tooling_artifact_inspector.py"
         },
         {
           "kind": "source",
@@ -4068,7 +4083,7 @@
       "id": "conformance.public.stable-suite-manifest",
       "title": "Stable public conformance suite manifest",
       "state": "implemented",
-      "summary": "A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.",
+      "summary": "A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, cross-lane E2E replay entries, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.",
       "support_claims": [
         "objc3c.behavior.conformance.public-stable-suite"
       ],
@@ -4077,7 +4092,9 @@
         "schemas/objc3c-public-conformance-suite-v1.schema.json",
         "scripts/check_objc3c_public_conformance_suite_manifest.py",
         "scripts/check_objc3c_public_conformance_suite.py",
+        "scripts/check_objc3c_cross_lane_e2e.py",
         "scripts/objc3c_public_conformance_suite/package.py",
+        "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
         "tests/conformance/corpus_surface.json",
         "scripts/check_objc3c_conformance_corpus_integration.py"
       ],
@@ -4108,12 +4125,26 @@
           "command": "npm run objc3c -- validate-public-conformance-suite"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
           "kind": "source",
           "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
         },
         {
           "kind": "source",
           "path": "scripts/check_objc3c_public_conformance_suite.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_cross_lane_e2e.py"
         },
         {
           "kind": "source",
@@ -4547,7 +4578,9 @@
       "owner_modules": [
         "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
         "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
-        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp",
+        "native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h"
       ],
       "evidence": [
         {
@@ -4563,9 +4596,26 @@
           "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
         },
         {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h"
+        },
+        {
           "kind": "test",
           "path": "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll",
           "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+          "command": "npm run objc3c -- validate-cache-aware-dispatch"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_runtime_cache_invalidation_generations.py"
         },
         {
           "kind": "doc",
@@ -5150,14 +5200,18 @@
       "id": "runtime.collections.type-descriptors",
       "title": "Collection type descriptor identity",
       "state": "implemented",
-      "summary": "Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract so later runtime descriptor lanes can reject cross-kind or cross-type misuse.",
+      "summary": "Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract, and the runtime collection substrate now has descriptor records, descriptor-match checks, malformed-descriptor status, descriptor-mismatch status, and snapshot-visible descriptor counts for Array, Slice, Map, Set, Iterator, and MapIterator shapes.",
       "support_claims": [
         "objc3c.behavior.runtime.collections.type-descriptors"
       ],
       "owner_modules": [
         "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h",
         "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp",
-        "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+        "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_state.h",
+        "native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp",
+        "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
       ],
       "evidence": [
         {
@@ -5167,7 +5221,16 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json",
+          "command": "npm run objc3c -- validate-stdlib-foundation"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/test_generic_collection_type_model.py"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_collections_support_claim_groundwork.py"
         },
         {
           "kind": "source",
@@ -5180,6 +5243,22 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_state.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
         }
       ]
     },

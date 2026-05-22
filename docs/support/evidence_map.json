@@ -3476,60 +3476,49 @@
     },
     {
       "capability_id": "tooling.editor.object-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
       "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
     },
     {
       "capability_id": "tooling.editor.object-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "test",
-      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
-      "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py"
     },
     {
       "capability_id": "tooling.editor.object-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
     },
     {
       "capability_id": "tooling.editor.object-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
     },
     {
       "capability_id": "tooling.editor.runtime-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin",
       "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
     },
     {
       "capability_id": "tooling.editor.runtime-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json",
       "command": "npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3"
     },
     {
       "capability_id": "tooling.editor.runtime-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "test",
-      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py",
-      "command": "python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py"
+      "path": "tests/tooling/test_developer_tooling_artifact_inspector.py"
     },
     {
       "capability_id": "tooling.editor.runtime-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
     },
     {
       "capability_id": "tooling.editor.runtime-artifact-inspector",
-      "support_claim": "objc3c.behavior.tooling.artifact-inspector",
       "evidence_kind": "source",
       "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
     },
@@ -3761,6 +3750,20 @@
     {
       "capability_id": "conformance.public.stable-suite-manifest",
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_public_conformance_suite_manifest.py"
     },
@@ -3769,6 +3772,12 @@
       "support_claim": "objc3c.behavior.conformance.public-stable-suite",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_public_conformance_suite.py"
+    },
+    {
+      "capability_id": "conformance.public.stable-suite-manifest",
+      "support_claim": "objc3c.behavior.conformance.public-stable-suite",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_cross_lane_e2e.py"
     },
     {
       "capability_id": "conformance.public.stable-suite-manifest",
@@ -4153,9 +4162,34 @@
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
       "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp"
+    },
+    {
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h"
+    },
+    {
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
       "evidence_kind": "test",
       "path": "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll",
       "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "evidence_kind": "test",
+      "path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "command": "npm run objc3c -- validate-cache-aware-dispatch"
+    },
+    {
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_runtime_cache_invalidation_generations.py"
     },
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
@@ -4621,7 +4655,20 @@
       "capability_id": "runtime.collections.type-descriptors",
       "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json",
+      "command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "test",
       "path": "tests/tooling/test_generic_collection_type_model.py"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_collections_support_claim_groundwork.py"
     },
     {
       "capability_id": "runtime.collections.type-descriptors",
@@ -4640,6 +4687,30 @@
       "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime_contract.h"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime_state.h"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp"
+    },
+    {
+      "capability_id": "runtime.collections.type-descriptors",
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/collections_runtime.cpp"
     },
     {
       "capability_id": "language.generics.collection-identity",

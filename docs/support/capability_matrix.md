@@ -113,8 +113,6 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.string-view-runtime-shape` |
 | `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.unicode-scalar-iteration` |
 | `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
-| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.object-artifact-inspector` |
-| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.runtime-artifact-inspector` |
 | `objc3c.behavior.tooling.first-run-product-path` | `e2e` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` | `tooling.developer-experience.first-run-product-path` |
 | `objc3c.behavior.tooling.formatter-lsp-workspace` | `e2e` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` | `tooling.editor.formatter-lsp-workspace` |
 
@@ -580,12 +578,20 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/runtime/images/registration.cpp`
   - `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
   - `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
 - Evidence:
   - doc: `docs/support/hard_cutover_capability_truth.md`
   - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
   - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
   - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
+  - test: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`
+  - test: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`
   - test: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`
   - test: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
@@ -1841,8 +1847,8 @@ the canonical manifest fixture and public npm command above.
 ### Editor object artifact inspector
 
 - Capability ID: `tooling.editor.object-artifact-inspector`
-- State: `implemented`
-- Support claims: `objc3c.behavior.tooling.artifact-inspector`
+- State: `internal`
+- Support claims: None
 - Summary: The inspect-artifact surface proves emitted object bytes through a real object path, SHA-256 digest, object format detection, symbol table inventory, section inventory, runtime helper import/export counts, and source/debug artifact links.
 - Owner modules:
   - `scripts/objc3c_editor_tooling/artifact_inspector.py`
@@ -1852,15 +1858,15 @@ the canonical manifest fixture and public npm command above.
   - `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj`
 - Evidence:
   - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
-  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py`
+  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py`
   - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
   - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
 
 ### Editor runtime artifact inspector
 
 - Capability ID: `tooling.editor.runtime-artifact-inspector`
-- State: `implemented`
-- Support claims: `objc3c.behavior.tooling.artifact-inspector`
+- State: `internal`
+- Support claims: None
 - Summary: The inspect-artifact surface proves runtime metadata inventory from the emitted runtime metadata artifact plus manifest-backed class, protocol, method, property, helper, runtime artifact, source graph, and debug-map links.
 - Owner modules:
   - `scripts/objc3c_editor_tooling/artifact_inspector.py`
@@ -1872,7 +1878,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
   - test: `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json` via `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`
-  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py` via `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py`
+  - test: `tests/tooling/test_developer_tooling_artifact_inspector.py`
   - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
   - source: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
 
@@ -1942,13 +1948,15 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `conformance.public.stable-suite-manifest`
 - State: `implemented`
 - Support claims: `objc3c.behavior.conformance.public-stable-suite`
-- Summary: A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.
+- Summary: A checked stable public conformance suite manifest now defines the public profiles, phase taxonomy, suite cases, cross-lane E2E replay entries, package surface, source-truth inputs, and strict rejection policy for public Objective-C 3 conformance. Tmp reports remain generated outputs, not support truth.
 - Owner modules:
   - `tests/conformance/public_suite_manifest.json`
   - `schemas/objc3c-public-conformance-suite-v1.schema.json`
   - `scripts/check_objc3c_public_conformance_suite_manifest.py`
   - `scripts/check_objc3c_public_conformance_suite.py`
+  - `scripts/check_objc3c_cross_lane_e2e.py`
   - `scripts/objc3c_public_conformance_suite/package.py`
+  - `tests/tooling/fixtures/cross_lane_e2e/manifest.json`
   - `tests/conformance/corpus_surface.json`
   - `scripts/check_objc3c_conformance_corpus_integration.py`
 - Evidence:
@@ -1957,8 +1965,11 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/conformance/public_suite_package_replay_evidence.json` via `npm run objc3c -- validate-public-conformance-suite`
   - test: `tests/tooling/fixtures/public_conformance_suite/package_contract.json` via `npm run objc3c -- validate-public-conformance-suite`
   - test: `tests/tooling/test_public_conformance_suite_package.py` via `npm run objc3c -- validate-public-conformance-suite`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/manifest.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - source: `scripts/check_objc3c_public_conformance_suite_manifest.py`
   - source: `scripts/check_objc3c_public_conformance_suite.py`
+  - source: `scripts/check_objc3c_cross_lane_e2e.py`
   - source: `scripts/objc3c_public_conformance_suite/package.py`
   - source: `tests/conformance/corpus_surface.json`
 
@@ -2165,11 +2176,17 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
   - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - `native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp`
+  - `native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h`
 - Evidence:
   - source: `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
   - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - source: `native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp`
+  - source: `native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h`
   - test: `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - test: `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp` via `npm run objc3c -- validate-cache-aware-dispatch`
+  - test: `tests/tooling/test_runtime_cache_invalidation_generations.py`
   - doc: `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`
 
 ### Structured runtime debug trace
@@ -2460,17 +2477,27 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.collections.type-descriptors`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.collections.type-descriptors`
-- Summary: Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract so later runtime descriptor lanes can reject cross-kind or cross-type misuse.
+- Summary: Collection generic type identities carry deterministic runtime descriptor and ABI identity strings through the typed sema lowering-readiness contract, and the runtime collection substrate now has descriptor records, descriptor-match checks, malformed-descriptor status, descriptor-mismatch status, and snapshot-visible descriptor counts for Array, Slice, Map, Set, Iterator, and MapIterator shapes.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_state.h`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp`
+  - `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
 - Evidence:
   - test: `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` via `npm run objc3c -- validate-stdlib-foundation`
   - test: `tests/tooling/test_generic_collection_type_model.py`
+  - test: `tests/tooling/test_collections_support_claim_groundwork.py`
   - source: `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h`
   - source: `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_state.h`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/collections_runtime.cpp`
 
 ### Collection generic identity semantics
 

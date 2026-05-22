@@ -602,15 +602,15 @@ diagnostic, documentation, or boundary evidence only.
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
 | `tooling.editor.artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
-| `tooling.editor.object-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
-| `tooling.editor.object-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py` |
-| `tooling.editor.object-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
-| `tooling.editor.object-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
-| `tooling.editor.runtime-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
-| `tooling.editor.runtime-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
-| `tooling.editor.runtime-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` | `python -m pytest tests/tooling/test_developer_tooling_artifact_inspector.py` |
-| `tooling.editor.runtime-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
-| `tooling.editor.runtime-artifact-inspector` | `objc3c.behavior.tooling.artifact-inspector` | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.editor.object-artifact-inspector` |  | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
+| `tooling.editor.object-artifact-inspector` |  | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` |  |
+| `tooling.editor.object-artifact-inspector` |  | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
+| `tooling.editor.object-artifact-inspector` |  | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
+| `tooling.editor.runtime-artifact-inspector` |  | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
+| `tooling.editor.runtime-artifact-inspector` |  | `test` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json` | `npm run objc3c -- inspect-artifact tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` |
+| `tooling.editor.runtime-artifact-inspector` |  | `test` | `tests/tooling/test_developer_tooling_artifact_inspector.py` |  |
+| `tooling.editor.runtime-artifact-inspector` |  | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
+| `tooling.editor.runtime-artifact-inspector` |  | `source` | `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json` |  |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/product_workflow_source_truth.json` | `npm run objc3c -- validate-developer-tooling` |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/editor_tooling_source_truth_contract.json` | `npm run objc3c -- check-developer-tooling-editor-source-truth` |
 | `tooling.editor.formatter-lsp-workspace` | `objc3c.behavior.tooling.formatter-lsp-workspace` | `test` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` |
@@ -645,8 +645,11 @@ diagnostic, documentation, or boundary evidence only.
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/conformance/public_suite_package_replay_evidence.json` | `npm run objc3c -- validate-public-conformance-suite` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/public_conformance_suite/package_contract.json` | `npm run objc3c -- validate-public-conformance-suite` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/test_public_conformance_suite_package.py` | `npm run objc3c -- validate-public-conformance-suite` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/manifest.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `test` | `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite_manifest.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_public_conformance_suite.py` |  |
+| `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/check_objc3c_cross_lane_e2e.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `scripts/objc3c_public_conformance_suite/package.py` |  |
 | `conformance.public.stable-suite-manifest` | `objc3c.behavior.conformance.public-stable-suite` | `source` | `tests/conformance/corpus_surface.json` |  |
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `test` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` |
@@ -708,7 +711,11 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_message_send_emission.cpp` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/runtime/dispatch/dispatch_checked_entrypoint.cpp` |  |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `source` | `native/objc3c/src/runtime/dispatch/dispatch_snapshot_contracts.h` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp` | `npm run objc3c -- validate-cache-aware-dispatch` |
+| `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `test` | `tests/tooling/test_runtime_cache_invalidation_generations.py` |  |
 | `runtime.optimization.cache-aware-dispatch` | `objc3c.behavior.runtime.cache-aware-dispatch` | `doc` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` |  |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.structured-inspection` | `objc3c.behavior.runtime.debug_trace` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
@@ -785,10 +792,16 @@ diagnostic, documentation, or boundary evidence only.
 | `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_type_relations.cpp` |  |
 | `stdlib.collections.generic-type-model` | `objc3c.behavior.stdlib.collections.generic-type-model` | `source` | `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h` |  |
 | `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/fixtures/stdlib_collections/runtime_backed_collection_claims_contract.json` | `npm run objc3c -- validate-stdlib-foundation` |
 | `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/test_generic_collection_type_model.py` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `test` | `tests/tooling/test_collections_support_claim_groundwork.py` |  |
 | `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h` |  |
 | `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp` |  |
 | `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_contract.h` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_state.h` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime_state.cpp` |  |
+| `runtime.collections.type-descriptors` | `objc3c.behavior.runtime.collections.type-descriptors` | `source` | `native/objc3c/src/runtime/stdlib/collections_runtime.cpp` |  |
 | `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `test` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `test` | `tests/tooling/test_generic_collection_type_model.py` |  |
 | `language.generics.collection-identity` | `objc3c.behavior.language.generics.collection-identity` | `source` | `native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp` |  |
