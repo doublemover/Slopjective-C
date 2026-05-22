@@ -13,7 +13,7 @@
       "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
       "module_name": "CrossLaneTextCollectionsPackage",
       "module_declaration": "module CrossLaneTextCollectionsPackage;",
-      "source_sha256": "ceda5933d1de3feea09693842191877c4a23c0492947dae67787afea895371de",
+      "source_sha256": "4f46629b08db75e719cdbfb72b948dd3cf53000f4e74eea14ecbd42aad8a3eae",
       "required_tokens": [
         "module CrossLaneTextCollectionsPackage;",
         "objc_import_module(named(\"CrossLaneFixtureProvider\"))",

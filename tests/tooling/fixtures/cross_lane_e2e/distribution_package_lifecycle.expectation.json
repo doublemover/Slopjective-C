@@ -9,7 +9,6 @@
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
   "responsible_domains": [
     "package trust diagnostic",
-    "release operations diagnostic",
     "runtime status",
     "capability/evidence mismatch"
   ],
