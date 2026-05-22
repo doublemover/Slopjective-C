@@ -58,10 +58,6 @@ void InitializeReflectionDebugAnchorSnapshot(
   snapshot.source_identity_model = kDebugAnchorSourceIdentityModel;
 }
 
-std::uint64_t AggregateCount(const objc3_runtime_pointer_aggregate *aggregate) {
-  return aggregate != nullptr ? aggregate->count : 0;
-}
-
 std::uint64_t CountConcreteProtocolsUnlocked(const RuntimeState &state) {
   std::uint64_t count = 0;
   for (const RegisteredImageMetadata *image : OrderedClassGraphImages(state)) {
