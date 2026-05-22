@@ -187,7 +187,7 @@
           "capability_id": "compiler.optimization.devirtualization",
           "support_claim": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
           "status": "implemented",
-          "claim_boundary": "the integrated program now proves exact direct-call evidence and runtime equivalence without promoting method inlining"
+          "claim_boundary": "the integrated program now proves exact direct-call evidence and runtime equivalence while the method-inlining candidate remains explicitly fail-closed"
         },
         {
           "capability_id": "compiler.optimization.semantic-preserving-pipeline",
@@ -199,7 +199,7 @@
           "capability_id": "compiler.optimization.method-inlining",
           "support_claim": "objc3c.behavior.semantic_optimization.method_inlining",
           "status": "reserved",
-          "claim_boundary": "method inlining is reserved and must remain a blocker in this cross-lane family"
+          "claim_boundary": "production IR still retains the method-inlining candidate call and lacks inlined-body, inline-frame, and invalidation proof, so this cross-lane family records a fail-closed blocker instead of a support claim"
         },
         {
           "capability_id": "runtime.optimization.cache-aware-dispatch",
@@ -212,7 +212,7 @@
         {
           "blocker_id": "cross-lane-optimization-method-inlining-reserved",
           "domain": "optimization proof",
-          "reason": "method inlining remains reserved even though direct dispatch, cache-aware dispatch, before/after IR references, and runtime equivalence are now checked"
+          "reason": "method inlining remains blocked on the integrated production path because direct dispatch, cache-aware dispatch, before/after IR references, and runtime equivalence are checked, but the generated IR does not carry inlined-body, inline-frame, or invalidation proof"
         }
       ]
     },

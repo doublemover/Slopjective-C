@@ -14,6 +14,7 @@
     "runtime_support_claimed": true,
     "semantic_optimization_trace_claimed": true,
     "cache_aware_dispatch_claimed": true,
+    "method_inlining_fail_closed_contract_claimed": true,
     "method_inlining_promoted": false
   },
   "expected": {
@@ -22,6 +23,7 @@
     "required_tokens": [
       "exact devirtualization",
       "method inlining",
+      "method inlining fail-closed boundary",
       "cache-aware dispatch",
       "before/after IR",
       "runtime equivalence"

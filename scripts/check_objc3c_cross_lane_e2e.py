@@ -32,6 +32,12 @@ ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "cross-lane-e2e"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "conformance-minima.yml"
 OPTIMIZATION_BEFORE_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.before.ll"
 OPTIMIZATION_AFTER_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.after.ll"
+OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH = (
+    ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_method_inlining.before.ll"
+)
+OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH = (
+    ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_method_inlining.after.ll"
+)
 ADVANCED_RUNTIME_FAMILY_ID = "advanced_runtime_closure"
 ADVANCED_RUNTIME_PUBLIC_COMMAND = "npm run objc3c -- validate-advanced-runtime-closure"
 ADVANCED_RUNTIME_POSITIVE_FIXTURE = "tests/native/runtime/advanced_closure/combined_positive.objc3"
@@ -472,6 +478,14 @@ def validate_optimization_trace_proof(
     require_artifact(ll_path, "optimization runtime LLVM IR")
     require_artifact(OPTIMIZATION_BEFORE_IR_PATH, "semantic optimization before IR reference")
     require_artifact(OPTIMIZATION_AFTER_IR_PATH, "semantic optimization after IR reference")
+    require_artifact(
+        OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH,
+        "semantic optimization method-inlining before IR reference",
+    )
+    require_artifact(
+        OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH,
+        "semantic optimization method-inlining after IR reference",
+    )
 
     ll_text = ll_path.read_text(encoding="utf-8")
     required_ir_tokens = {
@@ -487,6 +501,82 @@ def validate_optimization_trace_proof(
         raise RuntimeError(
             f"{family_id}.optimization proof diagnostic missing IR tokens: " + ", ".join(missing)
         )
+
+    method_before_text = OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH.read_text(encoding="utf-8")
+    method_after_text = OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH.read_text(encoding="utf-8")
+    required_method_reference_tokens = {
+        "method_before_call": "call i32 @objc3_inlineable_Math_addOne",
+        "method_before_body_identity": "callee body identity: body:Math.addOne:v1",
+        "method_after_inline_frame": "source-map inline frame preserved",
+        "method_after_invalidation": "semantic-optimization.invalidate-global-proof-state",
+    }
+    missing_method_reference = [
+        label
+        for label, token in required_method_reference_tokens.items()
+        if token not in (method_before_text if label.startswith("method_before") else method_after_text)
+    ]
+    if missing_method_reference:
+        raise RuntimeError(
+            f"{family_id}.method inlining reference proof missing tokens: "
+            + ", ".join(missing_method_reference)
+        )
+
+    negative_cases = require_list(expectation.get("negative_cases"), f"{family_id}.negative_cases")
+    method_fail_closed_case = None
+    for raw_case in negative_cases:
+        case = require_object(raw_case, f"{family_id}.negative_cases[]")
+        if case.get("case_id") == "optimization-runtime-method-inlining-fail-closed":
+            method_fail_closed_case = case
+            break
+    if method_fail_closed_case is None:
+        raise RuntimeError(f"{family_id}.negative_cases missing method-inlining fail-closed case")
+    if method_fail_closed_case.get("status") != "expected-pass":
+        raise RuntimeError(f"{family_id}.method inlining fail-closed case must be expected-pass")
+
+    required_generated_ir_tokens = [
+        require_nonempty_string(token, f"{family_id}.method_inlining.required_generated_ir_tokens[]")
+        for token in require_list(
+            method_fail_closed_case.get("required_generated_ir_tokens"),
+            f"{family_id}.method_inlining.required_generated_ir_tokens",
+        )
+    ]
+    forbidden_generated_ir_tokens = [
+        require_nonempty_string(token, f"{family_id}.method_inlining.forbidden_generated_ir_tokens[]")
+        for token in require_list(
+            method_fail_closed_case.get("forbidden_generated_ir_tokens"),
+            f"{family_id}.method_inlining.forbidden_generated_ir_tokens",
+        )
+    ]
+    missing_required_inline_tokens = [
+        token for token in required_generated_ir_tokens if token not in ll_text
+    ]
+    if missing_required_inline_tokens:
+        raise RuntimeError(
+            f"{family_id}.method inlining fail-closed proof missing generated IR tokens: "
+            + ", ".join(missing_required_inline_tokens)
+        )
+    promoted_inline_tokens = [
+        token for token in forbidden_generated_ir_tokens if token in ll_text
+    ]
+    if promoted_inline_tokens:
+        raise RuntimeError(
+            f"{family_id}.method inlining fail-closed proof saw promoted IR tokens: "
+            + ", ".join(promoted_inline_tokens)
+        )
+
+    expected_references = {
+        repo_rel(OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH),
+        repo_rel(OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH),
+    }
+    actual_references = {
+        normalize_path(str(path))
+        for path in require_list(
+            method_fail_closed_case.get("reference_artifacts"),
+            f"{family_id}.method_inlining.reference_artifacts",
+        )
+    }
+    if expected_references.difference(actual_references):
+        raise RuntimeError(f"{family_id}.method inlining fail-closed references drifted")
 
     payload = {
         "contract_id": "objc3c.cross_lane_e2e.optimization_trace.v1",
@@ -510,6 +600,20 @@ def validate_optimization_trace_proof(
             "source_map_anchor": required_ir_tokens["cache_source_map_anchor"],
             "optimization_anchor": required_ir_tokens["cache_optimization_anchor"],
         },
+        "method_inlining_fail_closed_evidence": {
+            "status": "REJECTED_FAIL_CLOSED",
+            "case_id": method_fail_closed_case["case_id"],
+            "candidate_site": required_ir_tokens["direct_candidate_call"],
+            "generated_ir_retains_candidate_call": True,
+            "generated_ir_contains_inline_frame": False,
+            "generated_ir_contains_global_invalidation": False,
+            "before_ir_reference": repo_rel(OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH),
+            "after_ir_reference": repo_rel(OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH),
+            "reason": (
+                "cross-lane production IR has a method-inlining candidate call, "
+                "but does not carry inlined-body, inline-frame, or invalidation proof"
+            ),
+        },
         "reserved_rows_not_promoted": [
             "compiler.optimization.method-inlining"
         ],
@@ -521,6 +625,7 @@ def validate_optimization_trace_proof(
         "generated_ir": repo_rel(ll_path),
         "before_ir_reference": repo_rel(OPTIMIZATION_BEFORE_IR_PATH),
         "after_ir_reference": repo_rel(OPTIMIZATION_AFTER_IR_PATH),
+        "method_inlining_fail_closed_evidence": payload["method_inlining_fail_closed_evidence"],
         "reserved_rows_not_promoted": payload["reserved_rows_not_promoted"],
     }
 
