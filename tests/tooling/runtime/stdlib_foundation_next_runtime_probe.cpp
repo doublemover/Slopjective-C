@@ -109,6 +109,19 @@ int main() {
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_INVALID_COUNT) {
     return Fail("array invalid count did not fail closed");
   }
+  const int mutable_array =
+      objc3_runtime_stdlib_collections_mutable_array_i32();
+  if (mutable_array <= 0 ||
+      objc3_runtime_stdlib_collections_mutable_array_append_i32(
+          mutable_array, 13) != 1 ||
+      objc3_runtime_stdlib_collections_mutable_array_append_i32(
+          mutable_array, 17) != 2 ||
+      objc3_runtime_stdlib_collections_mutable_array_set_i32(
+          mutable_array, 1, 19) != 19 ||
+      objc3_runtime_stdlib_collections_mutable_array_remove_at_i32(
+          mutable_array, 0) != 1) {
+    return Fail("mutable array helpers drifted");
+  }
 
   const int array_descriptor = objc3_runtime_stdlib_collections_descriptor_i32(
       OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY,
@@ -225,6 +238,11 @@ int main() {
   const int map = objc3_runtime_stdlib_collections_map_entry_i32(7, 42);
   if (map <= 0) {
     return Fail("map handle was not a runtime-owned positive id");
+  }
+  const int empty_map = objc3_runtime_stdlib_collections_map_empty_i32();
+  if (empty_map <= 0 ||
+      objc3_runtime_stdlib_collections_map_count_i32(empty_map) != 0) {
+    return Fail("empty map helper drifted");
   }
   if (objc3_runtime_stdlib_collections_map_count_i32(map) != 1 ||
       objc3_runtime_stdlib_collections_map_insert_i32(map, 8, 64) != 2 ||
@@ -370,11 +388,11 @@ int main() {
           &collections_snapshot) != 0) {
     return Fail("collections snapshot copy failed");
   }
-  if (collections_snapshot.total_call_count != 107 ||
-      collections_snapshot.array_create_call_count != 5 ||
+  if (collections_snapshot.total_call_count != 114 ||
+      collections_snapshot.array_create_call_count != 10 ||
       collections_snapshot.array_query_call_count != 8 ||
-      collections_snapshot.map_create_call_count != 2 ||
-      collections_snapshot.map_query_call_count != 12 ||
+      collections_snapshot.map_create_call_count != 3 ||
+      collections_snapshot.map_query_call_count != 13 ||
       collections_snapshot.map_mutation_call_count != 6 ||
       collections_snapshot.set_create_call_count != 3 ||
       collections_snapshot.set_query_call_count != 5 ||
@@ -386,8 +404,8 @@ int main() {
       collections_snapshot.descriptor_create_call_count != 4 ||
       collections_snapshot.descriptor_query_call_count != 4 ||
       collections_snapshot.status_call_count != 22 ||
-      collections_snapshot.array_record_count != 3 ||
-      collections_snapshot.map_record_count != 2 ||
+      collections_snapshot.array_record_count != 4 ||
+      collections_snapshot.map_record_count != 3 ||
       collections_snapshot.set_record_count != 2 ||
       collections_snapshot.slice_record_count != 1 ||
       collections_snapshot.iterator_record_count != 8 ||
@@ -402,6 +420,26 @@ int main() {
       collections_snapshot.last_descriptor_expected_kind !=
           OBJC3_RUNTIME_STDLIB_COLLECTIONS_DESCRIPTOR_ARRAY) {
     return Fail("collections runtime call counters drifted");
+  }
+  if (objc3_runtime_stdlib_collections_array_count_i32(map) != 0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CROSS_KIND_HANDLE) {
+    return Fail("collection cross-kind handle status did not fail closed");
+  }
+  const int stale_probe_array =
+      objc3_runtime_stdlib_collections_array3_i32(1, 2, 3, 3);
+  if (stale_probe_array <= 0) {
+    return Fail("stale handle probe setup did not create an array");
+  }
+  objc3_runtime_reset_for_testing();
+  if (objc3_runtime_stdlib_collections_array_count_i32(stale_probe_array) !=
+          0 ||
+      objc3_runtime_stdlib_collections_last_status_i32() !=
+          OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_STALE_HANDLE) {
+    return Fail("collection stale handle after reset did not fail closed");
+  }
+  if (OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED != 30653) {
+    return Fail("collection capacity-exceeded status drifted");
   }
 
   std::cout << "{"

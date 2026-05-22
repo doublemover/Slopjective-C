@@ -98,7 +98,10 @@ def test_generic_collection_type_model_evidence_rows_are_claimable_without_liter
             CONTRACT_PATH.relative_to(ROOT).as_posix()
         )
         assert catalog_row["traceability_fixture"] in contract["source_truth"]
-        assert catalog_row["positive_evidence"] == contract["source_truth"]
+        assert catalog_row["positive_evidence"] == [
+            str(CONTRACT_PATH.relative_to(ROOT).as_posix()),
+            *contract["source_truth"],
+        ]
         assert sorted(catalog_row["required_diagnostic_codes"]) == ["O3S206"]
 
     assert str(CONTRACT_PATH.relative_to(ROOT).as_posix()) in fixture_paths

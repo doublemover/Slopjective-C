@@ -47,6 +47,10 @@ def _assert_repo_path_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
+def _expected_claim_ids(contract: dict[str, Any]) -> set[str]:
+    return {str(claim["support_claim"]) for claim in contract["claims"]}
+
+
 def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> None:
     matrix = _read_json(MATRIX_PATH)
     manifest = _read_json(MANIFEST_PATH)
@@ -122,7 +126,7 @@ def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> No
 
         requirement_text = " ".join(row["source_truth_requirements"]).lower()
         for reserved in expected["reserved_until_runtime_storage"]:
-            assert reserved in requirement_text
+            assert reserved.lower() in requirement_text
 
         for path in [
             row["conformance_fixture"],

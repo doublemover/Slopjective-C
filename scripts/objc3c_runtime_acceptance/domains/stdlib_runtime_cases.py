@@ -76,10 +76,10 @@ def check_stdlib_foundation_next_runtime_probe_case(
     expect_equal(payload.get("text_record_count"), 4, "stdlib text record count drifted")
     expect_equal(
         payload.get("collections_total_call_count"),
-        107,
+        114,
         "stdlib collections calls drifted",
     )
-    expect_equal(payload.get("array_record_count"), 3, "stdlib array record count drifted")
+    expect_equal(payload.get("array_record_count"), 4, "stdlib array record count drifted")
     expect_equal(
         payload.get("descriptor_record_count"),
         3,
@@ -115,7 +115,7 @@ def check_stdlib_foundation_next_runtime_probe_case(
         1,
         "stdlib collection expected descriptor kind drifted",
     )
-    expect_equal(payload.get("map_record_count"), 2, "stdlib map record count drifted")
+    expect_equal(payload.get("map_record_count"), 3, "stdlib map record count drifted")
     expect_equal(
         payload.get("map_mutation_call_count"),
         6,

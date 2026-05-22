@@ -1114,7 +1114,7 @@
         "Array and slice runtime shape support is claimed by the dedicated objc3.collections module and collections runtime ABI, not by legacy objc3.core helper routing",
         "Positive evidence must include concrete i32 array create, count, get-or, prefix, slice, iterator, status, invalid-count, and invalid-range behavior through the stdlib foundation-next runtime probe",
         "Invalid handles, out-of-bounds indexes, invalid ranges, invalid counts, iterator end, and ABI signature conflicts remain fail-closed evidence",
-        "Generic element typing and non-i32 array storage remain reserved; collection literal, mutation, and for-in syntax are claimed only by the dedicated #8185 rows"
+        "Generic element typing, non-i32 collection storage, Foundation collection bridging, and collection display or string interpolation remain reserved; collection literal, mutation, and for-in syntax are claimed only by the dedicated #8185 rows"
       ]
     },
     {
@@ -1146,7 +1146,7 @@
         "Array aggregate runtime shape support is claimed by the dedicated objc3.collections module and collections runtime ABI, not by legacy objc3.core helper routing",
         "Positive evidence must include concrete i32 array creation, checked sum aggregation, invalid-handle status, and runtime probe behavior through the stdlib foundation-next runtime probe",
         "Invalid handles, checked i32 overflow, and ABI signature conflicts remain fail-closed evidence",
-        "Generic element typing and higher-order reduce callbacks remain reserved; collection literal, mutation, and for-in syntax are claimed only by the dedicated #8185 rows"
+        "Array literals, generic element typing, owned arbitrary-length array storage, higher-order reduce callbacks, and syntax-level for-in integration remain reserved for this aggregate row; collection literal, mutation, and for-in syntax are claimed only by the dedicated #8185 rows"
       ]
     },
     {
@@ -1178,7 +1178,7 @@
         "Map-entry runtime shape support is claimed by the dedicated objc3.collections module and collections runtime ABI, not by legacy objc3.core helper routing",
         "Positive evidence must include i32 map create, insert, count, contains, lookup-or, missing-key status, and invalid-handle behavior through the stdlib foundation-next runtime probe",
         "Invalid handles, missing keys, and ABI signature conflicts remain fail-closed evidence",
-        "Generic key or value typing and key hashing beyond concrete i32 key equality remain reserved; map literal, mutation, delete, and for-in syntax are claimed only by the dedicated #8185 rows"
+        "Generic key or value typing, key hashing beyond concrete i32 key equality, Foundation collection bridging, and collection display or string interpolation remain reserved; map literal, mutation, delete, and for-in syntax are claimed only by the dedicated #8185 rows"
       ]
     },
     {
@@ -1210,7 +1210,7 @@
         "Set runtime shape support is claimed by the dedicated objc3.collections module and collections runtime ABI, not by legacy objc3.core helper routing",
         "Positive evidence must include concrete i32 set create, deduplicated count, contains, insert, iterator, mutation-during-iteration status, and invalid-count behavior through the stdlib foundation-next runtime probe",
         "Invalid handles, missing values, invalid counts, mutation during iteration, and ABI signature conflicts remain fail-closed evidence",
-        "Generic element typing and hashing beyond concrete i32 equality remain reserved; set literal, insertion, deletion, and for-in syntax are claimed only by the dedicated #8185 rows"
+        "Generic element typing, hashing beyond concrete i32 equality, Foundation collection bridging, and collection display or string interpolation remain reserved; set literal, insertion, deletion, and for-in syntax are claimed only by the dedicated #8185 rows"
       ]
     },
     {

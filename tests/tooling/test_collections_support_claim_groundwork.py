@@ -182,8 +182,12 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
     negative_fixture = _read_repo_text(source_backing["negative_fixture"])
     runtime_header = _read_repo_text(source_backing["runtime_contract_header"])
     runtime_implementation = _read_repo_text(source_backing["runtime_implementation"])
+    runtime_state_implementation = _read_repo_text(
+        source_backing["runtime_state_implementation"]
+    )
     runtime_probe = _read_repo_text(source_backing["runtime_probe"])
     runtime_acceptance = _read_repo_text(source_backing["runtime_acceptance_domain"])
+    runtime_sources = runtime_implementation + runtime_state_implementation
 
     for path in contract["source_truth"]:
         _assert_repo_path_exists(path)
@@ -215,7 +219,7 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
         value = status["value"]
         boundary = status["boundary"]
         assert f"{constant} = {value}" in runtime_header
-        assert constant in runtime_implementation
+        assert constant in runtime_sources
         assert constant in runtime_probe
         assert boundary in " ".join(
             requirement
