@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.actor-nonisolated-mailbox
 module AdvancedRuntimeClosureNegativeActor;
 
 extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;

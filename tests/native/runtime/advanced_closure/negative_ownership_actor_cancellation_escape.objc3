@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.ownership-actor-cancellation-escape
 module AdvancedRuntimeClosureNegativeOwnershipActorCancellation;
 
 extern fn ConsumeOwned(value: consumed id) -> void;

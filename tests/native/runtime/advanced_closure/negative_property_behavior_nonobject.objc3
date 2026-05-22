@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.property-behavior-nonobject
 module AdvancedRuntimeClosureNegativeProperty;
 
 @interface InvalidAdvancedRuntimeProperty

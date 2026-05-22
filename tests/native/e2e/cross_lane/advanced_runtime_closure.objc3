@@ -44,7 +44,7 @@ fn statusBridgeAdvancedRuntime(value: i32, error: NSError*) -> i32
 pure fn advancedRuntimeMacroTrace() -> i32
     __attribute__((objc_macro(named("AdvancedRuntimeClosureTrace")),
                    objc_macro_package(named("std.metaprogramming.advanced-runtime")),
-                   objc_macro_provenance(named("sha256:advanced-runtime-closure")),
+                   objc_macro_provenance(named("sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f")),
                    objc_macro_cache_key(named("AdvancedRuntimeClosureTrace:v1")),
                    objc_macro_sandbox(named("deterministic")))) {
   return 3;
@@ -55,19 +55,20 @@ pure fn advancedRuntimeMacroTrace() -> i32
 @end
 
 @interface CrossLaneAdvancedRuntimeModel
-@property (strong, behavior=Observed) __strong id value;
+@property (strong, behavior=Observed) id value;
 @property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
 @end
 
 @implementation CrossLaneAdvancedRuntimeModel
-@property (strong, behavior=Observed) __strong id value;
+@property (strong, behavior=Observed) id value;
 @property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
 @end
 
-fn ownershipAndBlockLane(owner: __strong id, peer: id, bytes: borrowed id *) -> i32 {
+fn ownershipAndBlockLane(owner: id, peer: id, bytes: borrowed id *) -> i32 {
   let retained = CFRetain(owner);
   let closure = ^[weak owner, unowned peer, retained] {
     let strongRef = owner;
+    let retainedRef = retained;
     let unownedRef = peer;
     return 1;
   };
@@ -99,7 +100,7 @@ actor class CrossLaneAdvancedRuntimeClosureActor
 }
 @end
 
-fn combinedAdvancedRuntimeClosure(owner: __strong id, peer: id, bytes: borrowed id *) throws -> i32 {
+fn combinedAdvancedRuntimeClosure(owner: id, peer: id, bytes: borrowed id *) throws -> i32 {
   let ownedBlock = ownershipAndBlockLane(owner, peer, bytes);
   let bridged = try? statusBridgeAdvancedRuntime(ownedBlock, 0);
   let forced = try! throwingAdvancedRuntime(bridged);

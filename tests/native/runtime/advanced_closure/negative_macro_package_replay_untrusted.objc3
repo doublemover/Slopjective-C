@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.macro-package-replay-untrusted
 module AdvancedRuntimeClosureNegativeMacroPackageReplay;
 
 pure fn packageReplayMacro() -> i32

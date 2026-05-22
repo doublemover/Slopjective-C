@@ -3,7 +3,7 @@
   "schema_version": 1,
   "issue": 8200,
   "family_id": "text_collections_package",
-  "expectation_state": "scaffold-blocked",
+  "expectation_state": "expected-pass",
   "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
   "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.workspace.json",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
@@ -14,18 +14,7 @@
     "source-map/debug diagnostic",
     "capability/evidence mismatch"
   ],
-  "blockers": [
-    {
-      "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
-      "domain": "runtime status",
-      "reason": "runtime package import execution remains reserved because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider prevents provider import-surface preservation from becoming an executable package proof"
-    },
-    {
-      "blocker_id": "cross-lane-text-package-source-reference-full-source-map-reserved",
-      "domain": "source-map/debug diagnostic",
-      "reason": "direct @import module lookup is source-truth backed by the sema module-roundtrip manifests, but compiler-owned semantic reference closure, full source-map publication, and statement-level stepping remain fail-closed"
-    }
-  ],
+  "blockers": [],
   "diagnostics": {
     "status": "expected-pass",
     "responsible_domain": "parser/sema diagnostic",
@@ -39,29 +28,28 @@
     ]
   },
   "runtime": {
-    "status": "reserved",
-    "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
+    "status": "expected-pass",
     "responsible_domain": "runtime status",
-    "reason": "runtime-backed text builders, source-level collection literals, for-in traversal, map lookup, set membership, and linked provider package seed behavior must stay reserved until provider import-surface FFI preservation is compiler-owned",
+    "reason": "runtime-backed text builders, source-level collection literals, for-in traversal, map lookup, set membership, and linked provider package seed behavior compile, link, and run through a source-owned provider module",
     "source_truth": false,
-    "failing_stage": "cross-module runtime link-plan",
-    "blocked_provider_module": "CrossLaneFixtureProvider",
-    "concrete_blocker": "cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider",
-    "required_remaining_native_compiler_work": [
-      "preserve provider FFI metadata/interface packets through runtime import surfaces",
-      "make CrossLaneFixtureProvider import-surface FFI preservation deterministic for separate compilation",
-      "promote package runtime execution only after the compiler emits the preserved Part 11 surface"
+    "expected_exit_code": 0,
+    "linked_provider_module": "CrossLaneFixtureProvider",
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.runtime-import-surface.json",
+      "module.cross-module-runtime-link-plan.json",
+      "module.exe"
     ]
   },
   "compile_manifest": {
-    "status": "scaffold-blocked",
-    "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
+    "status": "expected-pass",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "the executable package compile manifest cannot be claimed while the provider import-surface FFI preservation packet is absent from the cross-module runtime link plan",
+    "reason": "the executable package compile manifest and cross-module runtime link plan are emitted through the public cross-lane validator",
     "source_truth": false,
-    "failing_stage": "cross-module runtime link-plan",
-    "blocked_provider_module": "CrossLaneFixtureProvider",
-    "concrete_blocker": "cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider"
+    "expected_path": "tmp/artifacts/cross-lane-e2e/text-collections-package/compile/module.manifest.json"
   },
   "source_graph": {
     "status": "expected-pass",
@@ -113,7 +101,7 @@
     ]
   },
   "optimization_trace": {
-    "status": "scaffold-blocked",
+    "status": "reserved",
     "blocker_id": "cross-lane-text-package-not-optimization-owner",
     "responsible_domain": "optimization proof diagnostic",
     "reason": "no optimization proof is required for the text, collections, and package family",
@@ -121,7 +109,7 @@
   },
   "text_collections_package_proof": {
     "contract_id": "objc3c.cross_lane_e2e.text_collections_package_proof.v1",
-    "status": "scaffold-blocked",
+    "status": "expected-pass",
     "runs_canonical_frontend": true,
     "frontend_artifact_surface": "inspect-editor-tooling",
     "metadata_import_surface": "objc_import_module(named(\"CrossLaneFixtureProvider\"))",
@@ -158,23 +146,18 @@
       ]
     },
     "runtime_package_execution": {
-      "status": "reserved",
-      "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
+      "status": "expected-pass",
       "responsible_domain": "runtime status",
-      "failing_stage": "cross-module runtime link-plan",
-      "blocked_provider_module": "CrossLaneFixtureProvider",
-      "concrete_blocker": "cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider",
-      "required_remaining_native_compiler_work": [
-        "preserve provider FFI metadata/interface packets through runtime import surfaces",
-        "make CrossLaneFixtureProvider import-surface FFI preservation deterministic for separate compilation",
-        "promote package runtime execution only after the compiler emits the preserved Part 11 surface"
-      ]
+      "linked_provider_module": "CrossLaneFixtureProvider",
+      "reason": "the package provider import surface, cross-module runtime link plan, linked executable, and missing-provider link rejection are checked by the public cross-lane validator"
     },
     "required_artifact_kinds": [
       "summary",
       "source-graph",
       "artifact-inspector",
-      "debug-map"
+      "debug-map",
+      "runtime-import-surface",
+      "cross-module-runtime-link-plan"
     ],
     "minimums": {
       "source_graph_nodes": 12,
@@ -184,19 +167,17 @@
     "reserved_rows_not_promoted": [
       "runtime.debug-trace.statement-stepping",
       "runtime.debug-trace.full-source-map-publication",
-      "developer-tooling.source-graph.semantic-reference-closure",
-      "runtime.interop.package-loader-bridge"
+      "developer-tooling.source-graph.semantic-reference-closure"
     ],
-    "claim_boundary": "direct @import module lookup is backed by checked-in module-roundtrip source truth; this text fixture keeps package intent on objc_import_module metadata while package text identity, workspace package edges, production source graph package nodes, and declaration debug-map anchors are checked; package runtime execution and missing-provider link rejection remain reserved on the CrossLaneFixtureProvider FFI preservation blocker, and semantic reference closure, full source maps, and statement stepping remain unpromoted"
+    "claim_boundary": "direct @import module lookup is backed by checked-in module-roundtrip source truth; this text fixture keeps package intent on objc_import_module metadata while package text identity, workspace package edges, production source graph package nodes, declaration debug-map anchors, package runtime execution, and missing-provider link rejection are checked; semantic reference closure, full source maps, and statement stepping remain unpromoted"
   },
   "negative_cases": [
     {
-      "case_id": "text-collection-package-runtime-ffi-preservation-reserved",
-      "status": "reserved",
-      "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
-      "responsible_domain": "runtime status",
-      "reason": "package runtime execution cannot be promoted because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider blocks provider import-surface preservation",
-      "expected_failure_stage": "cross-module runtime link-plan"
+      "case_id": "text-collection-package-missing-provider-link-fail-closed",
+      "status": "expected-pass",
+      "responsible_domain": "package trust diagnostic",
+      "reason": "runtime package execution links with CrossLaneFixtureProvider while the validator also proves missing-provider link rejection as package trust evidence",
+      "expected_failure_stage": "missing-provider link"
     },
     {
       "case_id": "text-collection-source-reference-closure-fail-closed",
@@ -221,6 +202,6 @@
       "runtime.interop.package-loader-bridge",
       "modules.public-import-lookup"
     ],
-    "claim_boundary": "this fixture proves source collection literals, source for-in syntax, package text identity, bounded package source graph, declaration debug-map anchors, and sema-owned direct @import source truth; objc_import_module linked-provider execution, missing-provider link rejection, semantic reference closure, full source maps, and statement stepping remain unpromoted"
+    "claim_boundary": "this fixture proves source collection literals, source for-in syntax, package text identity, bounded package source graph, declaration debug-map anchors, sema-owned direct @import source truth, objc_import_module linked-provider execution, and missing-provider link rejection; semantic reference closure, full source maps, and statement stepping remain unpromoted"
   }
 }

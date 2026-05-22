@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.actor-mailbox-unsupported-payload
 module AdvancedRuntimeClosureNegativeActorMailboxPayload;
 
 extern fn objc3_runtime_actor_mailbox_enqueue_object(actor_handle: i32, payload: id, executor_tag: i32) -> i32;

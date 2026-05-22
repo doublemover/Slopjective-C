@@ -3,7 +3,7 @@
   "schema_version": 1,
   "issue": 8200,
   "family_id": "object_reflection_debugger",
-  "expectation_state": "scaffold-blocked",
+  "expectation_state": "expected-pass",
   "source": "tests/native/e2e/cross_lane/object_reflection_debugger.objc3",
   "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.workspace.json",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
@@ -12,13 +12,7 @@
     "source-map/debug diagnostic",
     "capability/evidence mismatch"
   ],
-  "blockers": [
-    {
-      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
-      "domain": "source-map/debug",
-      "reason": "the executable object/reflection program now compiles, runs, emits artifact-backed debug anchors, and checks bounded single-component typed keypath descriptor handles, but full source-map publication, broad keypath shapes, and statement stepping remain reserved"
-    }
-  ],
+  "blockers": [],
   "diagnostics": {
     "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
@@ -77,7 +71,7 @@
     "statement_level_stepping": false
   },
   "optimization_trace": {
-    "status": "scaffold-blocked",
+    "status": "reserved",
     "blocker_id": "cross-lane-object-reflection-not-optimization-owner",
     "responsible_domain": "optimization proof diagnostic",
     "reason": "optimization traces are not the owning proof for the object/reflection/debugger family",

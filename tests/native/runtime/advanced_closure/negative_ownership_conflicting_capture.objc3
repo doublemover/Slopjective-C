@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.ownership-conflicting-capture
 module AdvancedRuntimeClosureNegativeOwnership;
 
 extern fn ConsumeOwned(value: consumed id) -> void;

@@ -1,9 +1,10 @@
 // #8200 cross-lane source fixture: source-level collection literals, for-in,
-// text builder calls, package import metadata, source graph package nodes, and
-// declaration debug anchors interact in one Objective-C 3 source fixture.
+// text builder calls, package import metadata, provider import-surface runtime
+// execution, source graph package nodes, and declaration debug anchors interact
+// in one Objective-C 3 source fixture.
 // Direct @import lookup is source-truth backed by the module-roundtrip fixtures;
-// runtime package execution stays reserved on objc_import_module metadata until
-// provider FFI preservation is compiler-owned across import surfaces.
+// this executable fixture keeps package loading on objc_import_module metadata
+// and proves the provider import surface through compile/link/run.
 module CrossLaneTextCollectionsPackage;
 
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;

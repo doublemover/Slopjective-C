@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.package-replay-missing-proof
 module AdvancedRuntimeClosureNegativePackageReplay;
 
 extern fn missingReplayEntry(selector: SEL) -> i32

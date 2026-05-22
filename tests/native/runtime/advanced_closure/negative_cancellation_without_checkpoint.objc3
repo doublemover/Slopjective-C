@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.cancellation-without-checkpoint
 module AdvancedRuntimeClosureNegativeCancellation;
 
 extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;

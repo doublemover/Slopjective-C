@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.macro-host-io
 module AdvancedRuntimeClosureNegativeMacro;
 
 pure fn invalidMacroHostIO() -> i32

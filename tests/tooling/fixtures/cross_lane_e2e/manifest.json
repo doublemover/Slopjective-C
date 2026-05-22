@@ -5,6 +5,11 @@
   "suite_id": "objc3-cross-lane-e2e",
   "public_action": "validate-cross-lane-e2e",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "required_public_commands": [
+    "npm run objc3c -- validate-cross-lane-e2e",
+    "npm run objc3c -- validate-public-conformance-suite",
+    "npm run objc3c -- test-full"
+  ],
   "claim_policy": {
     "tmp_source_truth_allowed": false,
     "generated_outputs_can_define_support": false,
@@ -20,7 +25,7 @@
       "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.workspace.json",
       "expectation": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
-      "expected_state": "scaffold-blocked",
+      "expected_state": "expected-pass",
       "required_source_tokens": [
         "#array",
         "#map",
@@ -48,46 +53,35 @@
         {
           "capability_id": "stdlib.text.runtime-builder-interpolation",
           "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
-          "status": "blocked",
-          "claim_boundary": "text builder calls remain source/tooling anchored in this family, but integrated runtime execution is not claimed until the CrossLaneFixtureProvider import-surface FFI preservation blocker is fixed"
+          "status": "implemented",
+          "claim_boundary": "text builder calls execute through the integrated package fixture while full source-map and statement-stepping rows remain reserved"
         },
         {
           "capability_id": "language.collections.literal-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
-          "status": "blocked",
-          "claim_boundary": "array, map, and set literal source syntax is anchored without promoting integrated runtime execution while the package provider FFI preservation blocker remains open"
+          "status": "implemented",
+          "claim_boundary": "array, map, and set literal syntax executes through the integrated package fixture without promoting unsupported collection behavior"
         },
         {
           "capability_id": "language.collections.for-in-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
-          "status": "blocked",
-          "claim_boundary": "source-level for-in over array, set, and map values is anchored for tooling, but integrated runtime execution and statement stepping remain unpromoted"
+          "status": "implemented",
+          "claim_boundary": "source-level for-in over array, set, and map values executes through the integrated package fixture while statement stepping remains unpromoted"
         },
         {
           "capability_id": "runtime.interop.package-loader-bridge",
           "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
-          "status": "reserved",
-          "claim_boundary": "objc_import_module metadata is present, but package runtime execution and missing-provider link rejection remain reserved because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider blocks provider import-surface preservation"
+          "status": "implemented",
+          "claim_boundary": "objc_import_module metadata, provider import-surface preservation, package runtime execution, and missing-provider link rejection are checked through the source-owned provider module"
         },
         {
           "capability_id": "modules.public-import-lookup",
           "support_claim": "objc3c.behavior.modules.public-import-lookup",
           "status": "implemented",
-          "claim_boundary": "direct @import module lookup is backed by checked-in provider/consumer fixtures and module-roundtrip manifests; this text fixture keeps runtime package intent on objc_import_module metadata while package execution remains reserved"
+          "claim_boundary": "direct @import module lookup is backed by checked-in provider/consumer fixtures and module-roundtrip manifests; this text fixture keeps runtime package intent on objc_import_module metadata while package execution is proven separately"
         }
       ],
-      "blockers": [
-        {
-          "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
-          "domain": "runtime status",
-          "reason": "runtime package import execution remains reserved because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider prevents provider import-surface preservation from becoming an executable package proof"
-        },
-        {
-          "blocker_id": "cross-lane-text-package-source-reference-full-source-map-reserved",
-          "domain": "source-map/debug diagnostic",
-          "reason": "direct @import module lookup is now source-truth backed, but compiler-owned semantic reference closure, full source-map publication, and statement-level stepping remain fail-closed even though source literals, for-in syntax, package metadata, package text identity, bounded source graph nodes, and declaration debug anchors are checked"
-        }
-      ]
+      "blockers": []
     },
     {
       "family_id": "object_reflection_debugger",
@@ -97,7 +91,7 @@
       "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.workspace.json",
       "expectation": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
-      "expected_state": "scaffold-blocked",
+      "expected_state": "expected-pass",
       "required_source_tokens": [
         "@interface",
         "@protocol",
@@ -157,18 +151,12 @@
         },
         {
           "capability_id": "runtime.debug-trace.statement-stepping",
-          "support_claim": "objc3c.behavior.runtime.debug_trace.statement_stepping",
+          "support_claim": "",
           "status": "reserved",
           "claim_boundary": "statement-level debugger stepping is explicitly blocked in the expectation fixture"
         }
       ],
-      "blockers": [
-        {
-          "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
-          "domain": "source-map/debug",
-          "reason": "the executable object/reflection/debugger path now compiles, runs, emits declaration debug anchors, and checks a bounded single-component typed keypath descriptor, but full source-map publication, broad keypath shapes, and statement stepping remain reserved"
-        }
-      ]
+      "blockers": []
     },
     {
       "family_id": "optimization_runtime_equivalence",
@@ -178,7 +166,7 @@
       "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
       "expectation": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
-      "expected_state": "scaffold-blocked",
+      "expected_state": "expected-pass",
       "required_source_tokens": [
         "exact devirtualization candidate",
         "method inlining candidate",
@@ -212,7 +200,7 @@
         },
         {
           "capability_id": "compiler.optimization.method-inlining",
-          "support_claim": "objc3c.behavior.semantic_optimization.method_inlining",
+          "support_claim": "",
           "status": "reserved",
           "claim_boundary": "production IR still retains the method-inlining candidate call and lacks inlined-body, inline-frame, and invalidation proof, so this cross-lane family records a fail-closed blocker instead of a support claim"
         },
@@ -223,13 +211,7 @@
           "claim_boundary": "cache-aware dispatch lowering and runtime equivalence execute through the native runtime in this fixture"
         }
       ],
-      "blockers": [
-        {
-          "blocker_id": "cross-lane-optimization-method-inlining-reserved",
-          "domain": "optimization proof",
-          "reason": "method inlining remains blocked on the integrated production path because direct dispatch, cache-aware dispatch, before/after IR references, and runtime equivalence are checked, but the generated IR does not carry inlined-body, inline-frame, or invalidation proof"
-        }
-      ]
+      "blockers": []
     },
     {
       "family_id": "advanced_runtime_closure",
@@ -239,10 +221,10 @@
       "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.workspace.json",
       "expectation": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
       "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
-      "expected_state": "scaffold-blocked",
+      "expected_state": "expected-pass",
       "required_source_tokens": [
-        "__strong",
         "^",
+        "let retainedRef = retained;",
         "async fn asyncCancellationLane",
         "actor class CrossLaneAdvancedRuntimeClosureActor",
         "objc3_runtime_task_is_cancelled_i32",
@@ -275,7 +257,7 @@
       "evidence_map_refs": [
         {
           "capability_id": "language.advanced-runtime-closure",
-          "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+          "support_claim": "",
           "status": "reserved",
           "claim_boundary": "umbrella advanced runtime support remains reserved even though cross-lane runtime-state, source graph, source/debug-map, and negative-matrix evidence are validated"
         },
@@ -283,7 +265,7 @@
           "capability_id": "runtime.blocks.copy-dispose-invoke",
           "support_claim": "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
           "status": "implemented",
-          "claim_boundary": "block copy/dispose/invoke runtime evidence is consumed from the combined runtime identity contract; it does not promote native execution for the full umbrella fixture"
+          "claim_boundary": "block copy/dispose/invoke runtime evidence is consumed from the combined runtime identity contract and native executable proof; it does not promote the reserved umbrella capability row"
         },
         {
           "capability_id": "runtime.concurrency.async-actors",
@@ -295,7 +277,7 @@
           "capability_id": "runtime.errors.nserror-status-bridge",
           "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
           "status": "implemented",
-          "claim_boundary": "status-bridge evidence is one checked runtime-state/source-graph lane in the combined proof, not an umbrella compile/run claim"
+          "claim_boundary": "status-bridge evidence is one checked runtime-state/source-graph lane in the combined proof and linked executable path, not an umbrella capability promotion"
         },
         {
           "capability_id": "language.metaprogramming.property-behavior-semantics",
@@ -310,18 +292,7 @@
           "claim_boundary": "structured debug trace evidence covers source-to-artifact anchors and debug-map inspection for the combined advanced-runtime lanes while full source-map publication, statement stepping, and LLDB plugin support remain reserved"
         }
       ],
-      "blockers": [
-        {
-          "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
-          "domain": "lowering/IR diagnostic",
-          "reason": "contract-backed runtime-state, source-graph, and source/debug-map evidence is integrated, but native compile/link/run for the language.advanced-runtime-closure umbrella remains blocked"
-        },
-        {
-          "blocker_id": "advanced-runtime-unsupported-combination-matrix",
-          "domain": "parser/sema diagnostic",
-          "reason": "unsupported advanced-runtime feature combinations remain rejected or reserved by the deterministic negative matrix"
-        }
-      ]
+      "blockers": []
     },
     {
       "family_id": "distribution_package_lifecycle",

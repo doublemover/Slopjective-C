@@ -42,6 +42,18 @@ LANGUAGE_SEMANTICS_CONTRACT_PATH = (
     / "objc3c"
     / "language_semantics_runtime_api_contract.json"
 )
+LANGUAGE_SEMANTICS_HEADER_PATH = (
+    ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "runtime"
+    / "public"
+    / "objc3_runtime_language_semantics.h"
+)
+LANGUAGE_SEMANTICS_IMPLEMENTATION_PATH = LANGUAGE_SEMANTICS_HEADER_PATH.with_suffix(
+    ".cpp"
+)
 REPORT_PATH = ROOT / "tmp" / "reports" / "advanced-runtime-closure.json"
 CONTRACT_ID = "objc3c.advanced-runtime.closure.validation.v1"
 REQUIRED_FAMILIES = {
@@ -134,6 +146,14 @@ REQUIRED_LITERAL_NEGATIVE_CASE_IDS = {
     "actor_mailbox_unsupported_payload",
     "property_behavior_conflict",
     "scheduler_guarantee_overclaim",
+}
+REQUIRED_NEGATIVE_DIAGNOSTIC_COMMENT_PREFIX = (
+    "// Expected advanced-runtime diagnostic: "
+)
+REQUIRED_ADVANCED_RUNTIME_NATIVE_SNAPSHOT_FIELDS = {
+    "native_artifact_evidence",
+    "native_executable_umbrella_support",
+    "native_artifact_contract",
 }
 NATIVE_PARALLELISM_CAP_ENV = {
     "CMAKE_BUILD_PARALLEL_LEVEL": "4",
@@ -782,6 +802,7 @@ def _validate_negative_matrix(failures: list[str]) -> dict[str, Any]:
     cases = [case for case in _as_list(matrix.get("cases")) if isinstance(case, dict)]
     seen_features: set[str] = set()
     seen_case_ids: set[str] = set()
+    seen_diagnostics: set[str] = set()
     seen_interactions: set[str] = set()
     for index, case in enumerate(cases):
         label = f"advanced_runtime_closure.negative_matrix.cases[{index}]"
@@ -814,6 +835,9 @@ def _validate_negative_matrix(failures: list[str]) -> dict[str, Any]:
         diagnostic = str(case.get("expected_diagnostic", ""))
         if not diagnostic.startswith("advanced-runtime."):
             failures.append(f"{label}: expected_diagnostic must be advanced-runtime scoped")
+        elif diagnostic in seen_diagnostics:
+            failures.append(f"{label}: duplicate expected_diagnostic {diagnostic}")
+        seen_diagnostics.add(diagnostic)
         fixture = _normalized(str(case.get("fixture", "")))
         if not fixture.startswith(f"{ADVANCED_CLOSURE_FIXTURE_DIR}/"):
             failures.append(f"{label}: fixture must stay in {ADVANCED_CLOSURE_FIXTURE_DIR}")
@@ -825,6 +849,15 @@ def _validate_negative_matrix(failures: list[str]) -> dict[str, Any]:
             label=label,
             forbidden_prefixes=forbidden_prefixes,
         )
+        fixture_text = _source_text(
+            fixture,
+            failures,
+            label=label,
+            forbidden_prefixes=forbidden_prefixes,
+        )
+        diagnostic_anchor = f"{REQUIRED_NEGATIVE_DIAGNOSTIC_COMMENT_PREFIX}{diagnostic}"
+        if diagnostic_anchor not in fixture_text:
+            failures.append(f"{label}: missing deterministic diagnostic anchor")
 
     missing_features = REQUIRED_CLOSURE_FEATURES - seen_features
     extra_features = seen_features - REQUIRED_CLOSURE_FEATURES
@@ -1456,6 +1489,29 @@ def _validate_advanced_runtime_split(failures: list[str]) -> dict[str, Any]:
 
 def _validate_language_semantics_row(failures: list[str]) -> dict[str, Any]:
     contract = _load_json(LANGUAGE_SEMANTICS_CONTRACT_PATH)
+    header = LANGUAGE_SEMANTICS_HEADER_PATH.read_text(encoding="utf-8")
+    implementation = LANGUAGE_SEMANTICS_IMPLEMENTATION_PATH.read_text(encoding="utf-8")
+    if contract.get("abi_version") != 5:
+        failures.append("language semantics runtime API contract abi_version must be 5")
+    if "OBJC3_RUNTIME_LANGUAGE_SEMANTICS_ABI_VERSION 5u" not in header:
+        failures.append("language semantics runtime API header must publish ABI version 5")
+    native_snapshot_fields = {
+        str(field)
+        for field in _as_list(contract.get("advanced_runtime_native_snapshot_fields"))
+    }
+    if native_snapshot_fields != REQUIRED_ADVANCED_RUNTIME_NATIVE_SNAPSHOT_FIELDS:
+        failures.append(
+            "language semantics runtime API contract native snapshot fields drifted"
+        )
+    for field in sorted(REQUIRED_ADVANCED_RUNTIME_NATIVE_SNAPSHOT_FIELDS):
+        if field not in header:
+            failures.append(
+                f"language semantics runtime API header missing native snapshot field {field}"
+            )
+        if field not in implementation:
+            failures.append(
+                f"language semantics runtime API implementation missing native snapshot field {field}"
+            )
     rows = [
         row
         for row in contract.get("surface_rows", [])

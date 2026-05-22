@@ -3,7 +3,7 @@
   "schema_version": 1,
   "issue": 8200,
   "family_id": "optimization_runtime_equivalence",
-  "expectation_state": "scaffold-blocked",
+  "expectation_state": "expected-pass",
   "source": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
   "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
@@ -12,13 +12,7 @@
     "lowering/IR diagnostic",
     "runtime status"
   ],
-  "blockers": [
-    {
-      "blocker_id": "cross-lane-optimization-method-inlining-reserved",
-      "domain": "optimization proof",
-      "reason": "runtime equivalence, direct dispatch, and cache-aware dispatch are proven, but production IR still retains the method-inlining candidate call and must fail closed until inlined-body, inline-frame, and invalidation proof exists on the integrated path"
-    }
-  ],
+  "blockers": [],
   "diagnostics": {
     "status": "expected-pass",
     "responsible_domain": "optimization proof diagnostic",

@@ -5,22 +5,23 @@
   "issue": 8200,
   "owner_phase": "e2e",
   "behavior_family": "cross_lane_e2e",
-  "fixture_kind": "contract-backed-production-proof",
+  "fixture_kind": "native-executable-with-contract-backed-production-proof",
   "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
   "boundary": {
     "canonical_behavior_source": true,
-    "behavior_contract": "cross-lane-advanced-runtime-contract-backed-proof",
+    "behavior_contract": "cross-lane-advanced-runtime-executable-proof",
     "reserved_support_promoted": false,
-    "runtime_support_claimed": false,
+    "runtime_support_claimed": true,
     "runtime_state_evidence_claimed": true,
     "source_graph_evidence_claimed": true,
     "source_debug_map_evidence_claimed": true,
     "native_compile_artifacts_claimed": true,
-    "native_compile_run_claimed": false,
+    "native_compile_run_claimed": true,
+    "linked_provider_module": "CrossLaneAdvancedRuntimeClosureProvider",
     "advanced_runtime_umbrella_promoted": false
   },
   "expected": {
-    "stage": "contract-backed-runtime-state-source-debug-map",
+    "stage": "native-compile-link-run-plus-contract-backed-runtime-state-source-debug-map",
     "diagnostic_code": "",
     "required_tokens": [
       "ownership",

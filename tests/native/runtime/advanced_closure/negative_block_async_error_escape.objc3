@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.block-async-error-boundary
 module AdvancedRuntimeClosureNegativeBlockAsyncError;
 
 extern fn riskyAdvancedRuntime(value: i32) throws -> i32;

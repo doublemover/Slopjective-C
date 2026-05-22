@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.async-sync-entry
 module AdvancedRuntimeClosureNegativeAsync;
 
 async fn fetchAsync() -> i32 __attribute__((objc_executor(main))) {

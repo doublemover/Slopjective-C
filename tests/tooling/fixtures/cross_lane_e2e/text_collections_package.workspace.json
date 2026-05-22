@@ -27,7 +27,7 @@
       "module_name": "CrossLaneFixtureProvider",
       "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
       "package_id": "package:cross-lane-fixture-provider",
-      "relationship": "provider-runtime-import-surface-reserved-ffi-preservation-input",
+      "relationship": "provider-runtime-import-surface-executable-proof",
       "source_text_identity": {
         "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
         "module_name": "CrossLaneFixtureProvider",
@@ -55,7 +55,7 @@
     {
       "from": "cross-lane:text-collections-package",
       "to": "package:cross-lane-fixture-provider",
-      "relationship": "package-import-runtime-execution-reserved-ffi-preservation"
+      "relationship": "package-import-runtime-execution"
     }
   ]
 }

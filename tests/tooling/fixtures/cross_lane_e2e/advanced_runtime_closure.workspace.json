@@ -8,8 +8,40 @@
   "module": {
     "module_name": "CrossLaneAdvancedRuntimeClosure",
     "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
-    "package_id": "cross-lane:advanced-runtime-closure"
+    "package_id": "cross-lane:advanced-runtime-closure",
+    "source_text_identity": {
+      "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+      "module_name": "CrossLaneAdvancedRuntimeClosure",
+      "module_declaration": "module CrossLaneAdvancedRuntimeClosure;",
+      "source_sha256": "9d5bd8f235be6a314bae1b6819233e7018e2ffbdb193b4513b35c47d994a6e5c",
+      "required_tokens": [
+        "module CrossLaneAdvancedRuntimeClosure;",
+        "objc_macro_provenance(named(\"sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f\"))",
+        "let retainedRef = retained;",
+        "extern fn packageReplayEntry(selector: SEL) -> i32"
+      ]
+    }
   },
+  "package_modules": [
+    {
+      "module_name": "CrossLaneAdvancedRuntimeClosureProvider",
+      "source": "tests/native/e2e/cross_lane/advanced_runtime_closure_provider.objc3",
+      "package_id": "package:cross-lane-advanced-runtime-provider",
+      "relationship": "linked-provider-runtime-import-surface",
+      "source_text_identity": {
+        "source": "tests/native/e2e/cross_lane/advanced_runtime_closure_provider.objc3",
+        "module_name": "CrossLaneAdvancedRuntimeClosureProvider",
+        "module_declaration": "module CrossLaneAdvancedRuntimeClosureProvider;",
+        "source_sha256": "c2fea24d3aca586e414baec58f8cc183f1481bea41e76e82dfbbd7e159a7907c",
+        "required_tokens": [
+          "fn ConsumeBorrowed(bytes: borrowed id *) -> void",
+          "fn CFRetain(value: id) -> id",
+          "fn CFRelease(value: id) -> void",
+          "fn packageReplayEntry(selector: SEL) -> i32"
+        ]
+      }
+    }
+  ],
   "canonical_production_evidence": {
     "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
     "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
@@ -49,6 +81,11 @@
       "from": "cross-lane:advanced-runtime-closure",
       "to": "runtime:package-replay",
       "relationship": "package-replay-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "package:cross-lane-advanced-runtime-provider",
+      "relationship": "linked-provider-runtime-import-surface"
     },
     {
       "from": "cross-lane:advanced-runtime-closure",

@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.block-byref-escape
 module AdvancedRuntimeClosureNegativeBlockByref;
 
 fn invalidByrefEscape(owner: id) -> i32 {

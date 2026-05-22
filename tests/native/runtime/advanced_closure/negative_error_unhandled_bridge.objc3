@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.error-unhandled-async-bridge
 module AdvancedRuntimeClosureNegativeError;
 
 extern fn riskyAdvancedRuntime(value: i32) throws -> i32;

@@ -1,3 +1,4 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.error-package-async-replay
 module AdvancedRuntimeClosureNegativeErrorPackageAsyncReplay;
 
 extern fn replayBridge(selector: SEL) throws -> i32

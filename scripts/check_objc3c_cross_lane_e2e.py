@@ -151,6 +151,14 @@ WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
 PUBLIC_ACTION = "validate-cross-lane-e2e"
 PUBLIC_COMMAND = "npm run objc3c -- validate-cross-lane-e2e"
+PUBLIC_CONFORMANCE_SUITE_COMMAND = "npm run objc3c -- validate-public-conformance-suite"
+TEST_FULL_COMMAND = "npm run objc3c -- test-full"
+REQUIRED_PUBLIC_COMMANDS = (
+    PUBLIC_COMMAND,
+    PUBLIC_CONFORMANCE_SUITE_COMMAND,
+    TEST_FULL_COMMAND,
+)
+PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH = ROOT / "tests" / "conformance" / "public_suite_manifest.json"
 OBJECT_REFLECTION_DEBUGGER_PROOF_CONTRACT_ID = (
     "objc3c.cross_lane_e2e.object_reflection_debugger_proof.v1"
 )
@@ -190,6 +198,15 @@ FORBIDDEN_SOURCE_PREFIXES = ("tmp/", "temp/", "generated/", "build/", "dist/")
 ALLOWED_EXPECTATION_STATES = ("expected-pass", "scaffold-blocked", "reserved")
 ALLOWED_SECTION_STATES = ("expected-pass", "scaffold-blocked", "reserved")
 BLOCKED_STATES = ("scaffold-blocked", "reserved")
+ISSUE_FAILURE_DOMAINS = (
+    "parser/sema diagnostic",
+    "lowering/IR diagnostic",
+    "runtime status",
+    "package trust diagnostic",
+    "source-map/debug diagnostic",
+    "optimization proof diagnostic",
+    "capability/evidence mismatch",
+)
 
 
 def fail(message: str) -> int:
@@ -213,6 +230,16 @@ def require_nonempty_string(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value:
         raise RuntimeError(f"{field} must be a non-empty string")
     return value
+
+
+def require_failure_domain(value: Any, field: str) -> str:
+    domain = require_nonempty_string(value, field)
+    if domain not in ISSUE_FAILURE_DOMAINS:
+        raise RuntimeError(
+            f"{field} must use one of the #8200 failure domains: "
+            + ", ".join(ISSUE_FAILURE_DOMAINS)
+        )
+    return domain
 
 
 def require_string_list(value: Any, field: str) -> list[str]:
@@ -1957,10 +1984,13 @@ def validate_text_collections_package_proof(
         "runtime.debug-trace.statement-stepping",
         "runtime.debug-trace.full-source-map-publication",
         "developer-tooling.source-graph.semantic-reference-closure",
-        "runtime.interop.package-loader-bridge",
     ):
         if required_row not in reserved_rows:
             raise RuntimeError(f"{family_id}.text package proof must keep {required_row} unpromoted")
+    if executable_proof is None and "runtime.interop.package-loader-bridge" not in reserved_rows:
+        raise RuntimeError(f"{family_id}.text package proof must keep package-loader bridge reserved without runtime proof")
+    if executable_proof is not None and "runtime.interop.package-loader-bridge" in reserved_rows:
+        raise RuntimeError(f"{family_id}.text package proof must not reserve package-loader bridge with runtime proof")
     if DIRECT_IMPORT_CAPABILITY_ID in reserved_rows:
         raise RuntimeError(f"{family_id}.text package proof must use direct import source truth, not a reserved row")
 
@@ -1989,11 +2019,22 @@ def validate_text_collections_package_proof(
             executable_proof,
             artifact_dir,
         )
+        missing_provider_case = _first_matching_row(
+            expectation.get("negative_cases"),
+            field_name="case_id",
+            expected_value="text-collection-package-missing-provider-link-fail-closed",
+            field=f"{family_id}.negative_cases",
+        )
+        if missing_provider_case.get("status") != "expected-pass":
+            raise RuntimeError(f"{family_id}.missing-provider negative case must be expected-pass")
+        if missing_provider_case.get("responsible_domain") != "package trust diagnostic":
+            raise RuntimeError(f"{family_id}.missing-provider negative case must be package-trust owned")
         if provider_surface_path is not None:
             payload["provider_import_surface"] = repo_rel(provider_surface_path)
         if link_plan_path is not None:
             payload["cross_module_runtime_link_plan"] = repo_rel(link_plan_path)
         payload["missing_provider_negative_case"] = missing_provider
+        payload["missing_provider_negative_case"]["case_id"] = missing_provider_case["case_id"]
     return payload
 
 
@@ -2817,7 +2858,17 @@ def validate_advanced_runtime_contract_backed_proof(
     require_expected_pass_section(runtime, f"{family_id}.runtime")
     require_expected_pass_section(source_graph, f"{family_id}.source_graph")
     require_expected_pass_section(debug_source_map, f"{family_id}.debug_source_map")
-    require_blocked_section(compile_manifest, f"{family_id}.compile_manifest")
+    if compile_manifest.get("status") == "expected-pass":
+        expected_compile_manifest = normalize_path(
+            require_nonempty_string(
+                compile_manifest.get("expected_path"),
+                f"{family_id}.compile_manifest.expected_path",
+            )
+        )
+        if expected_compile_manifest != "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/compile/module.manifest.json":
+            raise RuntimeError(f"{family_id}.compile_manifest.expected_path drifted")
+    else:
+        require_blocked_section(compile_manifest, f"{family_id}.compile_manifest")
     require_blocked_section(optimization_trace, f"{family_id}.optimization_trace")
 
     if runtime.get("proof_kind") != "advanced-runtime-combined-runtime-state":
@@ -2932,7 +2983,7 @@ def require_blocker_list(value: Any, field: str) -> list[dict[str, Any]]:
     for index, raw_blocker in enumerate(blockers):
         blocker = require_object(raw_blocker, f"{field}[{index}]")
         require_nonempty_string(blocker.get("blocker_id"), f"{field}[{index}].blocker_id")
-        require_nonempty_string(blocker.get("domain"), f"{field}[{index}].domain")
+        require_failure_domain(blocker.get("domain"), f"{field}[{index}].domain")
         require_nonempty_string(blocker.get("reason"), f"{field}[{index}].reason")
         normalized.append(blocker)
     return normalized
@@ -2990,20 +3041,22 @@ def validate_workspace(family_id: str, workspace_path: Path, expected_source: st
 def validate_text_package_native_meta_boundary(family_id: str, meta: dict[str, Any]) -> None:
     if family_id != "text_collections_package":
         return
-    if meta.get("fixture_kind") != "source-tooling-boundary-with-reserved-runtime-package":
-        raise RuntimeError(f"{family_id}.native_meta.fixture_kind drifted from reserved runtime package boundary")
+    if meta.get("fixture_kind") != "executable-package-runtime-proof-with-reserved-debugger-rows":
+        raise RuntimeError(f"{family_id}.native_meta.fixture_kind drifted from executable package runtime boundary")
 
     boundary = require_object(meta.get("boundary"), f"{family_id}.native_meta.boundary")
     required_true = (
         "canonical_behavior_source",
+        "runtime_support_claimed",
         "source_collection_literals_claimed",
         "source_for_in_claimed",
         "package_import_metadata_claimed",
         "source_graph_package_nodes_claimed",
         "debug_map_declaration_anchors_claimed",
+        "missing_provider_link_rejection_claimed",
         "package_text_identity_claimed",
         "direct_module_import_source_truth_claimed",
-        "runtime_package_execution_reserved",
+        "runtime_package_execution_claimed",
         "direct_module_import_syntax_promoted",
     )
     for key in required_true:
@@ -3012,9 +3065,8 @@ def validate_text_package_native_meta_boundary(family_id: str, meta: dict[str, A
 
     required_false = (
         "reserved_support_promoted",
-        "runtime_support_claimed",
-        "missing_provider_link_rejection_claimed",
         "text_fixture_uses_direct_module_import_syntax",
+        "runtime_package_execution_reserved",
         "semantic_reference_closure_promoted",
         "full_source_map_publication_promoted",
         "statement_stepping_promoted",
@@ -3023,18 +3075,15 @@ def validate_text_package_native_meta_boundary(family_id: str, meta: dict[str, A
         if boundary.get(key) is not False:
             raise RuntimeError(f"{family_id}.native_meta.boundary.{key} must be false")
 
-    blocker = require_nonempty_string(
-        boundary.get("runtime_package_execution_blocker"),
-        f"{family_id}.native_meta.boundary.runtime_package_execution_blocker",
-    )
-    if TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT not in blocker:
-        raise RuntimeError(f"{family_id}.native_meta runtime package blocker drifted")
-
     execution = require_object(meta.get("execution"), f"{family_id}.native_meta.execution")
-    if execution.get("expected_exit_code") is not None:
-        raise RuntimeError(f"{family_id}.native_meta.execution.expected_exit_code must stay null")
-    if execution.get("requires_live_runtime_dispatch") is not False:
-        raise RuntimeError(f"{family_id}.native_meta.execution.requires_live_runtime_dispatch must stay false")
+    if execution.get("expected_exit_code") != 0:
+        raise RuntimeError(f"{family_id}.native_meta.execution.expected_exit_code must be 0")
+    if execution.get("requires_live_runtime_dispatch") is not True:
+        raise RuntimeError(f"{family_id}.native_meta.execution.requires_live_runtime_dispatch must stay true")
+    if execution.get("requires_provider_runtime_import_surface") is not True:
+        raise RuntimeError(
+            f"{family_id}.native_meta.execution.requires_provider_runtime_import_surface must stay true"
+        )
 
 
 def validate_native_meta(family_id: str, meta_path: Path, source_path: Path) -> dict[str, Any]:
@@ -3062,12 +3111,14 @@ def validate_section_status(section: dict[str, Any], field: str, expectation_sta
     status = require_nonempty_string(section.get("status"), f"{field}.status")
     if status not in ALLOWED_SECTION_STATES:
         raise RuntimeError(f"{field}.status is unknown: {status}")
+    if "responsible_domain" in section:
+        require_failure_domain(section.get("responsible_domain"), f"{field}.responsible_domain")
     if status in BLOCKED_STATES:
         require_nonempty_string(section.get("blocker_id"), f"{field}.blocker_id")
-        require_nonempty_string(section.get("responsible_domain"), f"{field}.responsible_domain")
+        require_failure_domain(section.get("responsible_domain"), f"{field}.responsible_domain")
         require_nonempty_string(section.get("reason"), f"{field}.reason")
     if expectation_state in BLOCKED_STATES and status == "expected-pass":
-        require_nonempty_string(section.get("responsible_domain"), f"{field}.responsible_domain")
+        require_failure_domain(section.get("responsible_domain"), f"{field}.responsible_domain")
         require_nonempty_string(section.get("reason"), f"{field}.reason")
 
 
@@ -3106,12 +3157,13 @@ def validate_expectation(
         require_blocker_list(expectation.get("blockers"), f"{family_id}.expectation.blockers")
 
     responsible_domains = {
-        str(domain)
-        for domain in require_list(
-            expectation.get("responsible_domains"),
-            f"{family_id}.responsible_domains",
+        require_failure_domain(domain, f"{family_id}.responsible_domains[{index}]")
+        for index, domain in enumerate(
+            require_list(
+                expectation.get("responsible_domains"),
+                f"{family_id}.responsible_domains",
+            )
         )
-        if isinstance(domain, str) and domain
     }
     if not responsible_domains:
         raise RuntimeError(f"{family_id}.responsible_domains must name at least one domain")
@@ -3203,8 +3255,7 @@ def validate_family(
                 expectation,
                 workspace,
             )
-        else:
-            executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
+        executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
     object_reflection_debugger_proof = validate_object_reflection_debugger_proof(
         family_id,
         source_path,
@@ -3238,14 +3289,33 @@ def validate_family(
     evidence_refs = require_list(family.get("evidence_map_refs"), f"{family_id}.evidence_map_refs")
     if not capability_rows or not support_claims or not evidence_refs:
         raise RuntimeError(f"{family_id} must reference capability rows, support claims, and evidence-map entries")
+    declared_support_claims = {
+        require_nonempty_string(claim, f"{family_id}.support_claims[]")
+        for claim in support_claims
+    }
 
     for index, raw_ref in enumerate(evidence_refs):
         ref = require_object(raw_ref, f"{family_id}.evidence_map_refs[{index}]")
         require_nonempty_string(ref.get("capability_id"), f"{family_id}.evidence_map_refs[{index}].capability_id")
-        require_nonempty_string(ref.get("support_claim"), f"{family_id}.evidence_map_refs[{index}].support_claim")
         status = require_nonempty_string(ref.get("status"), f"{family_id}.evidence_map_refs[{index}].status")
         if status not in ("implemented", "blocked", "reserved"):
             raise RuntimeError(f"{family_id}.evidence_map_refs[{index}].status is unknown: {status}")
+        support_claim = str(ref.get("support_claim", ""))
+        if status == "implemented":
+            support_claim = require_nonempty_string(
+                support_claim,
+                f"{family_id}.evidence_map_refs[{index}].support_claim",
+            )
+            if support_claim not in declared_support_claims:
+                raise RuntimeError(
+                    f"{family_id}.evidence_map_refs[{index}].support_claim "
+                    "must be listed in family.support_claims"
+                )
+        elif support_claim:
+            raise RuntimeError(
+                f"{family_id}.evidence_map_refs[{index}].support_claim "
+                "must be empty unless the referenced capability is implemented"
+            )
         require_nonempty_string(
             ref.get("claim_boundary"),
             f"{family_id}.evidence_map_refs[{index}].claim_boundary",
@@ -3293,6 +3363,69 @@ def validate_workflow_action_glue() -> dict[str, Any]:
     }
 
 
+def validate_required_public_commands(manifest: dict[str, Any]) -> dict[str, Any]:
+    commands = tuple(require_string_list(manifest.get("required_public_commands"), "required_public_commands"))
+    if commands != REQUIRED_PUBLIC_COMMANDS:
+        raise RuntimeError(
+            "cross-lane E2E required_public_commands must stay in #8200 order: "
+            + ", ".join(REQUIRED_PUBLIC_COMMANDS)
+        )
+    return {
+        "status": "wired",
+        "commands": list(commands),
+    }
+
+
+def collect_public_suite_references(public_suite_manifest: dict[str, Any]) -> tuple[set[str], set[str]]:
+    references: set[str] = set()
+    public_commands: set[str] = set()
+    for case_index, raw_case in enumerate(require_list(public_suite_manifest.get("suite_cases"), "public_suite.suite_cases")):
+        case = require_object(raw_case, f"public_suite.suite_cases[{case_index}]")
+        command = case.get("runnable_command")
+        if isinstance(command, str) and command:
+            public_commands.add(command)
+        for field_name in ("source_manifest", "conformance_fixture", "traceability_fixture"):
+            value = case.get(field_name)
+            if isinstance(value, str) and value:
+                references.add(normalize_path(value))
+        for field_name in ("positive_evidence", "negative_evidence"):
+            values = case.get(field_name)
+            if isinstance(values, list):
+                references.update(normalize_path(value) for value in values if isinstance(value, str) and value)
+    return references, public_commands
+
+
+def validate_public_conformance_suite_linkage(family_summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    public_suite_manifest = load_json(PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH)
+    references, public_commands = collect_public_suite_references(public_suite_manifest)
+    if PUBLIC_COMMAND not in public_commands:
+        raise RuntimeError("public conformance suite must expose the cross-lane E2E replay command")
+    if repo_rel(MANIFEST_PATH) not in references:
+        raise RuntimeError("public conformance suite must reference the #8200 cross-lane manifest")
+
+    missing_families: list[str] = []
+    linked_families: list[str] = []
+    for family in family_summaries:
+        source = normalize_path(str(family["source"]))
+        expectation = normalize_path(str(family["expectation"]))
+        if source in references or expectation in references:
+            linked_families.append(str(family["family_id"]))
+        else:
+            missing_families.append(str(family["family_id"]))
+    if missing_families:
+        raise RuntimeError(
+            "public conformance suite missing cross-lane family linkage: "
+            + ", ".join(missing_families)
+        )
+
+    return {
+        "status": "linked",
+        "manifest": repo_rel(PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH),
+        "public_command": PUBLIC_CONFORMANCE_SUITE_COMMAND,
+        "linked_family_ids": linked_families,
+    }
+
+
 def validate_manifest() -> dict[str, Any]:
     manifest = load_json(MANIFEST_PATH)
     if manifest.get("contract_id") != MANIFEST_CONTRACT_ID:
@@ -3305,6 +3438,7 @@ def validate_manifest() -> dict[str, Any]:
         raise RuntimeError("cross-lane E2E manifest public_action drifted")
     if manifest.get("public_replay_command") != PUBLIC_COMMAND:
         raise RuntimeError("cross-lane E2E manifest public_replay_command drifted")
+    required_public_commands = validate_required_public_commands(manifest)
 
     policy = require_object(manifest.get("claim_policy"), "claim_policy")
     if policy.get("integrated_success_promotes_reserved_rows") is not False:
@@ -3333,9 +3467,14 @@ def validate_manifest() -> dict[str, Any]:
         for family in family_rows
     ]
     workflow_action_glue = validate_workflow_action_glue()
+    public_conformance_suite_linkage = validate_public_conformance_suite_linkage(family_summaries)
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
-    if blocked_count == 0:
-        raise RuntimeError("cross-lane E2E scaffold must keep unsupported families blocker-explicit")
+    reserved_ref_count = sum(
+        1
+        for family in family_rows
+        for raw_ref in require_list(family.get("evidence_map_refs"), f"{family['family_id']}.evidence_map_refs")
+        if require_object(raw_ref, "evidence_map_ref").get("status") == "reserved"
+    )
 
     return {
         "manifest_path": repo_rel(MANIFEST_PATH),
@@ -3346,10 +3485,13 @@ def validate_manifest() -> dict[str, Any]:
         "issue": 8200,
         "public_action": PUBLIC_ACTION,
         "public_replay_command": PUBLIC_COMMAND,
+        "required_public_commands": required_public_commands,
         "workflow_action_glue": workflow_action_glue,
+        "public_conformance_suite_linkage": public_conformance_suite_linkage,
         "release_operations_preflight": release_operations_preflight,
         "family_count": len(family_summaries),
         "blocked_or_reserved_family_count": blocked_count,
+        "reserved_evidence_ref_count": reserved_ref_count,
         "family_summaries": family_summaries,
     }
 
