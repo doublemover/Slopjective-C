@@ -7,6 +7,7 @@ import sys
 import os
 import shutil
 import subprocess
+import hashlib
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "tests" / "tooling" / "fixtures" / "cross_lane_e2e" / "manifest.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "conformance" / "cross-lane-e2e-summary.json"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "cross-lane-e2e"
+RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR = ARTIFACT_ROOT / "release-operations-preflight"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "conformance-minima.yml"
 OPTIMIZATION_BEFORE_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.before.ll"
 OPTIMIZATION_AFTER_IR_PATH = ROOT / "tests" / "native" / "ir" / "optimization" / "semantic_pipeline_direct_dispatch.after.ll"
@@ -119,6 +121,15 @@ PACKAGE_INSTALL_RESTORE_RECEIPT_PATH = (
     / "objc3c-offline-mirror-restore-receipt.json"
 )
 RELEASE_OPERATIONS_SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
+RELEASE_OPERATIONS_REPORT_ROOT = ROOT / "tmp" / "reports" / "release-operations"
+RELEASE_OPERATIONS_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "release-operations"
+PACKAGE_CHANNELS_REPORT_ROOT = ROOT / "tmp" / "reports" / "package-channels"
+PACKAGE_CHANNELS_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "package-channels"
+RELEASE_FOUNDATION_REPORT_ROOT = ROOT / "tmp" / "reports" / "release-foundation"
+RELEASE_FOUNDATION_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "release-foundation"
+RELEASE_EVIDENCE_REPORT_ROOT = ROOT / "tmp" / "reports" / "release_evidence"
+PLATFORM_HARDENING_REPORT_ROOT = ROOT / "tmp" / "reports" / "platform-hardening"
+PLATFORM_HARDENING_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "platform-hardening"
 RELEASE_UPDATE_MANIFEST_PATH = (
     ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 )
@@ -279,6 +290,15 @@ def run_checked(
 def require_artifact(path: Path, label: str) -> None:
     if not path.is_file():
         raise RuntimeError(f"runtime status proof missing {label}: {repo_rel(path)}")
+
+
+def sha256_file(path: Path) -> str:
+    require_artifact(path, "digest input")
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_runtime_launch_inputs(compile_dir: Path) -> tuple[Path, list[str]]:
@@ -1623,9 +1643,127 @@ def validate_tampered_package_rejection(
     }
 
 
+def _require_owned_tmp_output(path: Path, allowed_roots: tuple[Path, ...]) -> None:
+    resolved = path.resolve()
+    resolved_allowed = tuple(root.resolve() for root in allowed_roots)
+    if not any(resolved == root or resolved.is_relative_to(root) for root in resolved_allowed):
+        raise RuntimeError(f"refusing to remove non-cross-lane preflight output: {repo_rel(path)}")
+
+
+def clean_release_operations_preflight_outputs() -> dict[str, Any]:
+    output_roots = (
+        RELEASE_OPERATIONS_ARTIFACT_ROOT,
+        RELEASE_OPERATIONS_REPORT_ROOT,
+        PACKAGE_CHANNELS_ARTIFACT_ROOT,
+        PACKAGE_CHANNELS_REPORT_ROOT,
+        RELEASE_FOUNDATION_ARTIFACT_ROOT,
+        RELEASE_FOUNDATION_REPORT_ROOT,
+        RELEASE_EVIDENCE_REPORT_ROOT,
+        PLATFORM_HARDENING_ARTIFACT_ROOT,
+        PLATFORM_HARDENING_REPORT_ROOT,
+        RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR,
+    )
+    allowed_roots = output_roots
+    preexisting = {repo_rel(path): path.exists() for path in output_roots}
+    removed: list[str] = []
+    for path in output_roots:
+        _require_owned_tmp_output(path, allowed_roots)
+        if not path.exists():
+            continue
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+        removed.append(repo_rel(path))
+    after_clean = {repo_rel(path): path.exists() for path in output_roots}
+    return {
+        "requested": True,
+        "owned_roots": [repo_rel(path) for path in output_roots],
+        "preexisting_owned_outputs": preexisting,
+        "removed_owned_outputs": sorted(removed),
+        "owned_outputs_exist_after_clean": after_clean,
+        "generated_from_clean_owned_outputs": not any(after_clean.values()),
+    }
+
+
+def release_operations_artifact_digests() -> dict[str, str]:
+    artifacts = (
+        RELEASE_OPERATIONS_SUMMARY_PATH,
+        RELEASE_UPDATE_MANIFEST_PATH,
+        RELEASE_CHANNEL_MANIFEST_PATH,
+    )
+    return {repo_rel(path): sha256_file(path) for path in artifacts}
+
+
+def require_release_operations_preflight(
+    family_id: str,
+    release_operations_preflight: dict[str, Any],
+) -> dict[str, Any]:
+    if release_operations_preflight.get("status") != "PASS":
+        raise RuntimeError(f"{family_id}.release operations preflight must pass before distribution proof")
+    if release_operations_preflight.get("consumer_family_id") != family_id:
+        raise RuntimeError(f"{family_id}.release operations preflight consumer drifted")
+    if release_operations_preflight.get("action") != "validate-release-operations":
+        raise RuntimeError(f"{family_id}.release operations preflight action drifted")
+    if release_operations_preflight.get("args") != ["--skip-upstream"]:
+        raise RuntimeError(f"{family_id}.release operations preflight must skip upstream after deterministic generation")
+
+    artifact_generation = require_object(
+        release_operations_preflight.get("deterministic_artifact_generation"),
+        f"{family_id}.release_operations_preflight.deterministic_artifact_generation",
+    )
+    if artifact_generation.get("action") != "build-package-channels":
+        raise RuntimeError(f"{family_id}.release operations preflight generator action drifted")
+
+    clean_start = require_object(
+        release_operations_preflight.get("clean_start"),
+        f"{family_id}.release_operations_preflight.clean_start",
+    )
+    if clean_start.get("generated_from_clean_owned_outputs") is not True:
+        raise RuntimeError(f"{family_id}.release operations preflight did not start from clean owned outputs")
+
+    prerequisite = require_object(
+        release_operations_preflight.get("from_nothing_distribution_prerequisite"),
+        f"{family_id}.release_operations_preflight.from_nothing_distribution_prerequisite",
+    )
+    if prerequisite.get("required_action") != "validate-package-install-distribution":
+        raise RuntimeError(f"{family_id}.release operations preflight prerequisite action drifted")
+    if prerequisite.get("required_flag") != "--from-nothing":
+        raise RuntimeError(f"{family_id}.release operations preflight prerequisite flag drifted")
+    if (
+        prerequisite.get("required_summary")
+        != "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+    ):
+        raise RuntimeError(f"{family_id}.release operations preflight prerequisite summary drifted")
+
+    preflight_digests = require_object(
+        release_operations_preflight.get("generated_artifact_sha256"),
+        f"{family_id}.release_operations_preflight.generated_artifact_sha256",
+    )
+    for path in (
+        RELEASE_OPERATIONS_SUMMARY_PATH,
+        RELEASE_UPDATE_MANIFEST_PATH,
+        RELEASE_CHANNEL_MANIFEST_PATH,
+    ):
+        rel = repo_rel(path)
+        expected = require_nonempty_string(
+            preflight_digests.get(rel),
+            f"{family_id}.release_operations_preflight.generated_artifact_sha256.{rel}",
+        )
+        actual = sha256_file(path)
+        if actual != expected:
+            raise RuntimeError(f"{family_id}.release operations artifact changed after preflight: {rel}")
+
+    return require_object(
+        release_operations_preflight.get("release_model"),
+        f"{family_id}.release_operations_preflight.release_model",
+    )
+
+
 def prepare_release_operations_preflight(families: list[Any]) -> dict[str, Any]:
     for index, raw_row in enumerate(families):
-        family = require_object(raw_row, f"families[{index}].family")
+        row = require_object(raw_row, f"families[{index}]")
+        family = require_object(row.get("family"), f"families[{index}].family")
         family_id = require_nonempty_string(
             family.get("family_id"),
             f"families[{index}].family.family_id",
@@ -1641,22 +1779,53 @@ def prepare_release_operations_preflight(families: list[Any]) -> dict[str, Any]:
         if not isinstance(lifecycle, dict) or lifecycle.get("status") != "expected-pass":
             continue
 
-        artifact_dir = ARTIFACT_ROOT / family_id.replace("_", "-")
+        release_model = validate_distribution_release_operations_model(family_id)
+        clean_start = clean_release_operations_preflight_outputs()
+        run_public_workflow_action(
+            "build-package-channels",
+            log_path=RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR / "deterministic-release-artifact-generation.log",
+            domain=f"{family_id}.deterministic release artifact generation",
+        )
         run_public_workflow_action(
             "validate-release-operations",
-            log_path=artifact_dir / "release-operations-preflight.log",
+            args=["--skip-upstream"],
+            log_path=RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR / "release-operations-preflight.log",
             domain=f"{family_id}.release operations preflight",
         )
         require_artifact(RELEASE_OPERATIONS_SUMMARY_PATH, "release operations summary")
         require_artifact(RELEASE_UPDATE_MANIFEST_PATH, "release operations update manifest")
         require_artifact(RELEASE_CHANNEL_MANIFEST_PATH, "release operations channel manifest")
-        return {
-            "status": "PASS",
-            "action": "validate-release-operations",
-            "log": repo_rel(artifact_dir / "release-operations-preflight.log"),
+        generated_artifacts = {
             "summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
             "update_manifest": repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
             "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
+        }
+        return {
+            "status": "PASS",
+            "consumer_family_id": family_id,
+            "action": "validate-release-operations",
+            "args": ["--skip-upstream"],
+            "command": "npm run objc3c -- validate-release-operations --skip-upstream",
+            "deterministic_artifact_generation": {
+                "action": "build-package-channels",
+                "command": "npm run objc3c -- build-package-channels",
+                "log": repo_rel(
+                    RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR
+                    / "deterministic-release-artifact-generation.log"
+                ),
+            },
+            "log": repo_rel(RELEASE_OPERATIONS_PREFLIGHT_ARTIFACT_DIR / "release-operations-preflight.log"),
+            "clean_start": clean_start,
+            "generated_from_clean_owned_outputs": clean_start["generated_from_clean_owned_outputs"],
+            "generated_artifacts": generated_artifacts,
+            "generated_artifact_sha256": release_operations_artifact_digests(),
+            "release_model": release_model,
+            "from_nothing_distribution_prerequisite": {
+                "required_action": "validate-package-install-distribution",
+                "required_flag": "--from-nothing",
+                "required_summary": "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json",
+                "enforced_for_channels": release_model["clean_install_prerequisite_channels"],
+            },
         }
 
     return {
@@ -1669,6 +1838,7 @@ def validate_distribution_package_lifecycle_proof(
     family_id: str,
     expectation: dict[str, Any],
     executable_proof: dict[str, Any],
+    release_operations_preflight: dict[str, Any],
 ) -> dict[str, Any]:
     lifecycle = require_object(expectation.get("distribution_lifecycle"), f"{family_id}.distribution_lifecycle")
     expected_path = require_nonempty_string(
@@ -1684,7 +1854,7 @@ def validate_distribution_package_lifecycle_proof(
         log_path=artifact_dir / "package-install-distribution.log",
         domain=f"{family_id}.package trust diagnostic",
     )
-    release_model = validate_distribution_release_operations_model(family_id)
+    release_model = require_release_operations_preflight(family_id, release_operations_preflight)
 
     package_summary = _require_json_artifact(PACKAGE_INSTALL_SUMMARY_PATH, "package install summary")
     verification = _require_json_artifact(PACKAGE_INSTALL_VERIFICATION_PATH, "package install verification")
@@ -1789,6 +1959,21 @@ def validate_distribution_package_lifecycle_proof(
         },
         "release_operations": {
             "model": release_model["model"],
+            "preflight": {
+                "action": release_operations_preflight["action"],
+                "args": release_operations_preflight["args"],
+                "command": release_operations_preflight["command"],
+                "deterministic_artifact_generation": release_operations_preflight[
+                    "deterministic_artifact_generation"
+                ],
+                "log": release_operations_preflight["log"],
+                "clean_start": release_operations_preflight["clean_start"],
+                "generated_artifacts": release_operations_preflight["generated_artifacts"],
+                "generated_artifact_sha256": release_operations_preflight["generated_artifact_sha256"],
+                "from_nothing_distribution_prerequisite": release_operations_preflight[
+                    "from_nothing_distribution_prerequisite"
+                ],
+            },
             "end_to_end_summary": repo_rel(RELEASE_OPERATIONS_SUMMARY_PATH),
             "update_manifest": repo_rel(RELEASE_UPDATE_MANIFEST_PATH),
             "release_channel_manifest": repo_rel(RELEASE_CHANNEL_MANIFEST_PATH),
@@ -1816,6 +2001,11 @@ def validate_distribution_package_lifecycle_proof(
         "trace": repo_rel(trace_path),
         "package_install_summary": repo_rel(PACKAGE_INSTALL_SUMMARY_PATH),
         "release_operations_model": release_model["model"],
+        "release_operations_preflight_log": release_operations_preflight["log"],
+        "from_nothing_distribution_prerequisite": release_operations_preflight[
+            "from_nothing_distribution_prerequisite"
+        ],
+        "package_from_nothing_probe": from_nothing,
         "package_count": package_summary["package_count"],
         "installed_package_count": package_summary["installed_package_count"],
         "rollback_channels": release_model["rollback_channels"],
@@ -2179,7 +2369,11 @@ def validate_source_tokens(family_id: str, source_path: Path, tokens: list[Any])
             raise RuntimeError(f"{family_id} source is missing required token: {token_text}")
 
 
-def validate_family(family: dict[str, Any]) -> dict[str, Any]:
+def validate_family(
+    family: dict[str, Any],
+    *,
+    release_operations_preflight: dict[str, Any],
+) -> dict[str, Any]:
     family_id = require_nonempty_string(family.get("family_id"), "family.family_id")
     require_nonempty_string(family.get("display_name"), f"{family_id}.display_name")
     if family.get("public_replay_command") != PUBLIC_COMMAND:
@@ -2251,6 +2445,7 @@ def validate_family(family: dict[str, Any]) -> dict[str, Any]:
             family_id,
             expectation,
             executable_proof,
+            release_operations_preflight,
         )
 
     capability_rows = require_list(family.get("capability_rows"), f"{family_id}.capability_rows")
@@ -2341,7 +2536,13 @@ def validate_manifest() -> dict[str, Any]:
         )
 
     release_operations_preflight = prepare_release_operations_preflight(families)
-    family_summaries = [validate_family(require_object(row, "family")) for row in families]
+    family_summaries = [
+        validate_family(
+            require_object(row, "family"),
+            release_operations_preflight=release_operations_preflight,
+        )
+        for row in families
+    ]
     workflow_action_glue = validate_workflow_action_glue()
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
     if blocked_count == 0:
