@@ -22,7 +22,7 @@ CONTRACT_PATH = (
     / "release_evidence_contract"
     / "release_evidence_gate.json"
 )
-EMPTY_INPUT_ROOT = ROOT / "tmp" / "release_evidence" / "empty-input"
+EMPTY_INPUT_ROOT = ROOT / "tmp" / "reports" / "release_evidence" / "empty-input"
 CONFORMANCE_SOURCE_ROOT = ROOT / "conformance"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
@@ -334,7 +334,7 @@ def generated_index_contract(contract: dict[str, Any]) -> dict[str, Any]:
         raise ReleaseEvidenceContractError(
             "generated_index.output_name must be a JSON filename"
         )
-    output_path = (Path("tmp") / "release_evidence" / output_name).as_posix()
+    output_path = (Path("tmp") / "reports" / "release_evidence" / output_name).as_posix()
     authenticity = generated_index.get("artifact_authenticity")
     if not isinstance(authenticity, dict):
         raise ReleaseEvidenceContractError(
