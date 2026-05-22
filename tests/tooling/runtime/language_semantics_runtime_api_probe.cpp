@@ -54,7 +54,7 @@ bool AdvancedRuntimeClosureSnapshotReady(
          snapshot.combined_runtime_evidence == 1 &&
          snapshot.negative_combination_evidence == 1 &&
          snapshot.source_identity_evidence == 1 &&
-         snapshot.umbrella_closure_support == 1 &&
+         snapshot.umbrella_closure_support == 0 &&
          snapshot.combined_fixture[0] != '\0' &&
          snapshot.combined_contract[0] != '\0' &&
          snapshot.public_command[0] != '\0' &&
@@ -140,6 +140,8 @@ int main() {
               advanced.negative_combination_evidence);
   std::printf("\"advanced_source_identity_evidence\":%d,",
               advanced.source_identity_evidence);
+  std::printf("\"advanced_umbrella_closure_support\":%d,",
+              advanced.umbrella_closure_support);
   std::printf("\"invalid_status\":%d", invalid_status);
   std::printf("}\n");
 

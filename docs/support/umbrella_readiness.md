@@ -48,20 +48,22 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Public runtime reflection API source remains checked in and evidence-linked. (path: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`)
 - `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
-- `blocked` Full debugger source maps, native line tables, and stepping integration must still be owned by checked compiler artifacts. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
+- `blocked` Canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
-- `blocked` Debugger-grade statement stepping and value inspection must become replayable through a public command. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Object-model debugger source-map, line-table, debug-anchor, and value-inspection linkage remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
+- `blocked` Debugger-grade statement stepping must be completed on the production compiler artifact path. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Positive Fixtures
 
 - `satisfied` Class realization behavior fixture remains checked in. (path: `tests/native/runtime/object_model/class_realization_contract.objc3`)
 - `satisfied` Property and ivar reflection behavior fixture remains checked in. (path: `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3`)
 - `satisfied` Combined class/metaclass/category/protocol/property/ivar/selector/reflection/replay fixture remains checked in. (path: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`)
-- `blocked` Debugger-grade object inspection must be covered by integrated source-map and reflection fixtures. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Debugger-grade object inspection is covered by an integrated source-map, line-table, debug-anchor, and reflection replay fixture. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 
 #### Negative Fixtures
 
@@ -76,7 +78,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Public reflection API probe remains checked in. (path: `tests/tooling/runtime/public_runtime_reflection_api_probe.cpp`)
 - `satisfied` Registration reset/replay generation probe remains checked in for lifecycle boundary evidence. (path: `tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp`)
 - `satisfied` Runtime-owned debug-anchor replay probe ties reflection rows to source/debug identity and missing/stale anchor boundaries. (path: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`)
-- `blocked` Debugger value inspection must prove runtime metadata through a checked probe or replay fixture. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Debugger value inspection proves runtime metadata through a checked source-map and debug-anchor replay fixture. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 
 #### Abi Governance Rows
 
@@ -88,6 +90,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Object-model closure runbook remains checked in. (path: `docs/runbooks/objc3c_object_model_closure.md`)
 - `satisfied` Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
+- `satisfied` Object-model debugger proof checker remains covered by fail-closed tests. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
 
 ### Generated Output Boundary
 
@@ -102,10 +105,10 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity exists, but full debugger-grade object-model source identity is not yet complete.
-  - Compiler-owned source-map publication and native line tables for debugger stepping.
-  - LLDB or replayable debugger protocol evidence for object value inspection.
-  - Integrated object-model debugger value-inspection fixtures beyond the bounded debug-anchor replay probe.
+- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity and replayable object-model value inspection exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.
+  - Canonical compiler-owned source-map publication and native line tables for the integrated object-model program.
+  - Production debugger statement-stepping integration over those emitted line tables.
+  - Debugger reflection ABI governance for any public object-inspection ABI additions.
 
 ### Final Promotion Criteria
 
@@ -150,7 +153,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Block runtime copy/dispose/invoke source remains checked in. (path: `native/objc3c/src/runtime/blocks/block_invocation.cpp`)
 - `satisfied` Task and actor runtime sources remain checked in. (path: `native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp`)
 - `satisfied` Error bridge runtime source remains checked in. (path: `native/objc3c/src/runtime/errors/error_bridge_operations.cpp`)
-- `blocked` Combined runtime closure must be traceable through compiler-owned source graph records. (blocker_id: `advanced-runtime-combined-source-identity`)
+- `satisfied` Combined runtime closure is traceable through checked compiler-owned source graph, runtime-state, ABI, and debug-map contract records. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
+- `blocked` The native compiler still must emit the combined source graph and debug-map records on the canonical artifact path. (blocker_id: `advanced-runtime-combined-source-identity`)
 
 #### Public Commands
 
@@ -179,13 +183,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 #### Abi Governance Rows
 
 - `satisfied` Block runtime ABI must remain represented by implemented block runtime rows. (capability_id: `runtime.blocks.copy-dispose-invoke`)
-- `blocked` Combined runtime closure ABI interactions must be represented before umbrella promotion. (blocker_id: `advanced-runtime-combined-source-identity`)
+- `satisfied` Combined block, async, error, actor, property, macro, and package replay ABI interactions are represented by the checked #8199 identity contract. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
 
 #### Docs
 
 - `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Errors and result semantics remain documented as narrower rows. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
 - `satisfied` Concurrency semantics remain documented as narrower rows. (path: `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`)
+- `satisfied` The #8199 checker enforces combined runtime-state/source-graph/debug-map/ABI interaction coverage without promoting the umbrella row. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
 
 ### Generated Output Boundary
 
@@ -202,10 +207,10 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `advanced-runtime-cross-lane-e2e`: The combined runtime closure has checked positive and negative fixture coverage, but still lacks integrated runtime state proof.
   - Runtime equivalence or state probes for the integrated program.
-- `advanced-runtime-combined-source-identity`: Combined runtime semantics are not yet tied to compiler-owned source identity and ABI interaction proof.
-  - Compiler-owned source graph records for combined runtime semantics.
-  - Source-map/debug-map coverage for cross-feature lowering.
-  - ABI interaction proof for block, async, error, actor, property, macro, and package runtime surfaces.
+- `advanced-runtime-combined-source-identity`: Checked combined source identity and ABI interaction proof exists, but native compiler emission still has to publish those source/debug records on the canonical artifact path.
+  - Canonical compiler-emitted source graph records for the combined runtime fixture.
+  - Canonical source-map/debug-map output for cross-feature lowering.
+  - Public command evidence that the emitted records match the checked #8199 identity contract.
 
 ### Final Promotion Criteria
 

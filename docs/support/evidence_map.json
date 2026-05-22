@@ -690,6 +690,12 @@
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
     },
@@ -717,6 +723,17 @@
       "capability_id": "runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_object_model_debugger_proof/model.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "scripts/check_objc3c_object_model_debugger_proof.py",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
@@ -2912,6 +2929,11 @@
       "capability_id": "language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
     },
     {
       "capability_id": "compiler.architecture.module-decomposition",

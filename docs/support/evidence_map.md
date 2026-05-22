@@ -135,12 +135,15 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
 | `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` |  |
+| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
 | `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3` |  |
+| `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_object_model_debugger_proof/model.py` |  |
+| `runtime.object-model.full-realization` |  | `test` | `scripts/check_objc3c_object_model_debugger_proof.py` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_object_model_full_realization_readiness.py` |  |
 | `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` |
@@ -494,6 +497,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.advanced-runtime-closure` |  | `source` | `scripts/check_objc3c_advanced_runtime_closure.py` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/native/runtime/advanced_closure/combined_positive.objc3` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/native/runtime/advanced_closure/negative_matrix.contract.json` |  |
+| `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/config/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/ast/CMakeLists.txt` |  |

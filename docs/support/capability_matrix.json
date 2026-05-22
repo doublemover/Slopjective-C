@@ -868,7 +868,7 @@
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
       "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and a bounded runtime debug-anchor slice ties those reflection rows to source/debug identity. Full debugger stepping, native line tables, and replayable object value inspection remain reserved.",
+      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, and value-inspection records together. Full production-path debugger stepping, canonical compiler-emitted object-model line tables, and debugger reflection ABI governance remain reserved.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -900,6 +900,11 @@
           "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
         },
         {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
           "kind": "source",
           "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
         },
@@ -922,6 +927,15 @@
         {
           "kind": "test",
           "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_object_model_debugger_proof/model.py"
+        },
+        {
+          "kind": "test",
+          "path": "scripts/check_objc3c_object_model_debugger_proof.py",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
         },
         {
           "kind": "test",
@@ -3234,6 +3248,10 @@
         {
           "kind": "test",
           "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
         }
       ]
     },

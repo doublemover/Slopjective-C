@@ -1,0 +1,25 @@
+module AdvancedRuntimeClosureNegativeActorPropertyMacro;
+
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+
+pure fn crossIsolationMacro() -> i32
+    __attribute__((objc_macro(named("AdvancedRuntimeActorPropertyMacro")),
+                   objc_macro_package(named("std.metaprogramming.advanced-runtime")),
+                   objc_macro_provenance(named("sha256:advanced-runtime-actor-property-macro")),
+                   objc_macro_cache_key(named("AdvancedRuntimeActorPropertyMacro:v1")),
+                   objc_macro_sandbox(named("deterministic")))) {
+  return 3;
+}
+
+actor class ActorPropertyMacroBoundary
+@property (strong, behavior=Observed) id value;
+- (i32)invalid:(i32)seed __attribute__((objc_nonisolated));
+@end
+
+@implementation ActorPropertyMacroBoundary
+@property (strong, behavior=Observed) id value;
+- (i32)invalid:(i32)seed __attribute__((objc_nonisolated)) {
+  self.value = crossIsolationMacro();
+  return objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+}
+@end

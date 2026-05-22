@@ -16,6 +16,7 @@ from scripts.objc3c_workflow.actions.developer_tooling_paths import (
     CHECK_DEBUG_SOURCE_MAPS_PY,
     CHECK_DEBUGGER_INTEGRATION_PY,
     CHECK_LANGUAGE_SERVICE_PY,
+    CHECK_OBJECT_MODEL_DEBUGGER_PROOF_PY,
     DEVELOPER_TOOLING_INTEGRATION_PY,
     RUNTIME_DEBUG_TRACE_PY,
     RUNNABLE_DEVELOPER_TOOLING_E2E_PY,
@@ -51,6 +52,10 @@ def _action_validate_debugger_integration(rest: list[str]) -> int:
     return _run_python_script_with_args(CHECK_DEBUGGER_INTEGRATION_PY, *rest)
 
 
+def _action_validate_object_model_debugger_proof(rest: list[str]) -> int:
+    return _run_python_script_with_args(CHECK_OBJECT_MODEL_DEBUGGER_PROOF_PY, *rest)
+
+
 def _action_inspect_debug_map(rest: list[str]) -> int:
     return _run_python_script_with_args(CHECK_DEBUG_SOURCE_MAPS_PY, "--inspect", *rest)
 
@@ -72,6 +77,7 @@ TOOLING_INSPECTION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-debugger-integration": _action_validate_debugger_integration,
     "validate-debug-source-maps": _action_validate_debug_source_maps,
     "validate-language-service": _action_validate_language_service,
+    "validate-object-model-debugger-proof": _action_validate_object_model_debugger_proof,
     "validate-runnable-developer-tooling": _action_validate_runnable_developer_tooling,
     "validate-bonus-experiences": developer_tooling_bonus.action_validate_bonus_experiences,
     "validate-runnable-bonus-experiences": developer_tooling_bonus.action_validate_runnable_bonus_experiences,

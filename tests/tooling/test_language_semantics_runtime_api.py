@@ -144,7 +144,7 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
     assert "RuntimeResultFailClosedOwnershipModel" in implementation
     assert "objc3_runtime_spawn_task_i32+objc3_runtime_executor_hop_i32+" in implementation
     assert "build_advanced_runtime_capability_split_contract" in implementation
-    assert "ownership_concurrency_macro_completion" in implementation
+    assert "combined_runtime_identity_contract" in implementation
 
 
 def test_language_semantics_runtime_api_is_bound_to_km_handoff_contracts() -> None:

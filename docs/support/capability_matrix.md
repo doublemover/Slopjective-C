@@ -572,7 +572,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and a bounded runtime debug-anchor slice ties those reflection rows to source/debug identity. Full debugger stepping, native line tables, and replayable object value inspection remain reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract now ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, and the debugger proof slice ties source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, and value-inspection records together. Full production-path debugger stepping, canonical compiler-emitted object-model line tables, and debugger reflection ABI governance remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -587,12 +587,15 @@ the canonical manifest fixture and public npm command above.
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
   - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
   - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`
+  - test: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
   - test: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`
   - test: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`
   - test: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`
+  - source: `scripts/objc3c_object_model_debugger_proof/model.py`
+  - test: `scripts/check_objc3c_object_model_debugger_proof.py` via `npm run objc3c -- validate-object-model-debugger-proof`
   - test: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
 
@@ -1589,6 +1592,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_advanced_runtime_closure.py`
   - test: `tests/native/runtime/advanced_closure/combined_positive.objc3`
   - test: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`
+  - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`
 
 ### Native compiler module decomposition
 

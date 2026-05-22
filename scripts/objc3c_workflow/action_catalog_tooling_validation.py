@@ -48,6 +48,19 @@ TOOLING_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
         ),
         pass_through_args=True,
     ),
+    "validate-object-model-debugger-proof": ActionSpec(
+        "validate-object-model-debugger-proof",
+        "validate object-model debugger source maps, native line tables, debug anchors, and value inspection links",
+        "python:scripts/check_objc3c_object_model_debugger_proof.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "object-model debugger proof stays fail-closed unless source-map entries, "
+            "debug-map records, native line-table rows, runtime reflection debug anchors, "
+            "and replayable value-inspection commands all point at the same runtime "
+            "reflection identities"
+        ),
+        pass_through_args=True,
+    ),
     "validate-bonus-experiences": ActionSpec(
         "validate-bonus-experiences",
         "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces",

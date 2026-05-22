@@ -1,0 +1,215 @@
+{
+  "contract_id": "objc3c.object_model.debugger_value_inspection_replay.v1",
+  "issue": 8198,
+  "capability_id": "runtime.object-model.full-realization",
+  "public_status": "reserved",
+  "support_claim_published": false,
+  "readiness_role": "checked object-model debugger proof composition for the reserved full-realization umbrella",
+  "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+  "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+  "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+  "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+  "debug_anchor_identity_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
+  "runtime_reflection_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+  "source_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+  "required_runtime_identity_kinds": [
+    "class",
+    "category",
+    "protocol",
+    "property",
+    "ivar",
+    "method"
+  ],
+  "required_source_map_record_kinds": [
+    "declaration",
+    "method",
+    "message-send",
+    "property-access",
+    "generated-accessor"
+  ],
+  "required_debugger_replay_value_kinds": [
+    "class-metadata",
+    "selector-metadata",
+    "object-handle"
+  ],
+  "required_supported_step_kinds": [
+    "method",
+    "message-send"
+  ],
+  "object_model_value_inspection_records": [
+    {
+      "record_id": "inspect.class-metadata.debug-anchor",
+      "value_kind": "class-metadata",
+      "lldb_command_id": "inspect-class",
+      "runtime_anchor_id": "runtime.anchor.declaration",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection class snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.category-metadata.debug-anchor",
+      "value_kind": "category-metadata",
+      "lldb_command_id": "inspect-class",
+      "runtime_anchor_id": "runtime.anchor.declaration",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection category snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.protocol-metadata.debug-anchor",
+      "value_kind": "protocol-metadata",
+      "lldb_command_id": "load-module-metadata",
+      "runtime_anchor_id": "runtime.anchor.module",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection protocol snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.property-metadata.debug-anchor",
+      "value_kind": "property-metadata",
+      "lldb_command_id": "inspect-object",
+      "runtime_anchor_id": "runtime.anchor.property_access",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection property snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.ivar-layout.debug-anchor",
+      "value_kind": "ivar-layout",
+      "lldb_command_id": "inspect-object",
+      "runtime_anchor_id": "runtime.anchor.generated_accessor",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection ivar layout snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.method-metadata.debug-anchor",
+      "value_kind": "method-metadata",
+      "lldb_command_id": "step-method",
+      "runtime_anchor_id": "runtime.anchor.method",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection method snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.selector-message-send.debug-anchor",
+      "value_kind": "selector-metadata",
+      "lldb_command_id": "step-message-send",
+      "runtime_anchor_id": "runtime.anchor.message_send",
+      "replayable": true,
+      "debugger_value_source": "runtime selector metadata plus source-map-backed message-send stepping"
+    }
+  ],
+  "artifact_runtime_reflection_links": [
+    {
+      "link_id": "object-model.class.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "class",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.declaration",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_class",
+      "value_record_id": "inspect.class-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.category.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "category",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.declaration",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_category",
+      "value_record_id": "inspect.category-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.protocol.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "protocol",
+      "source_map_entry_id": "smap.module",
+      "debug_map_entry_id": "dmap.module",
+      "native_line_table_row_id": "lt.module",
+      "runtime_anchor_id": "runtime.anchor.module",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_protocol",
+      "value_record_id": "inspect.protocol-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.property.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "property",
+      "source_map_entry_id": "smap.property_access",
+      "debug_map_entry_id": "dmap.property_access",
+      "native_line_table_row_id": "lt.property_access",
+      "runtime_anchor_id": "runtime.anchor.property_access",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property",
+      "value_record_id": "inspect.property-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.ivar.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "ivar",
+      "source_map_entry_id": "smap.generated_accessor",
+      "debug_map_entry_id": "dmap.generated_accessor",
+      "native_line_table_row_id": "lt.generated_accessor",
+      "runtime_anchor_id": "runtime.anchor.generated_accessor",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property",
+      "value_record_id": "inspect.ivar-layout.debug-anchor"
+    },
+    {
+      "link_id": "object-model.method.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "method",
+      "source_map_entry_id": "smap.method",
+      "debug_map_entry_id": "dmap.method",
+      "native_line_table_row_id": "lt.method",
+      "runtime_anchor_id": "runtime.anchor.method",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_method",
+      "value_record_id": "inspect.method-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.message-send.selector.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "method",
+      "source_map_entry_id": "smap.message_send",
+      "debug_map_entry_id": "dmap.message_send",
+      "native_line_table_row_id": "lt.message_send",
+      "runtime_anchor_id": "runtime.anchor.message_send",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_method",
+      "value_record_id": "inspect.selector-message-send.debug-anchor"
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "source-map-runtime-anchor-drift",
+      "expected_code": "runtime-anchor-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "runtime_anchor_id"
+      ]
+    },
+    {
+      "case_id": "line-table-row-drift",
+      "expected_code": "line-table-row-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "native_line_table_row_id"
+      ]
+    },
+    {
+      "case_id": "debug-anchor-query-drift",
+      "expected_code": "debug-anchor-query-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "reflection_entrypoint"
+      ]
+    },
+    {
+      "case_id": "value-inspection-anchor-drift",
+      "expected_code": "value-inspection-anchor-drift",
+      "mutation_path": [
+        "object_model_value_inspection_records",
+        0,
+        "runtime_anchor_id"
+      ]
+    }
+  ],
+  "boundaries": {
+    "requires_checked_source_map_and_line_table": true,
+    "requires_debug_anchor_replay_contract": true,
+    "requires_replayable_debugger_value_commands": true,
+    "uses_private_testing_snapshots_as_public_truth": false,
+    "promotes_umbrella": false,
+    "creates_objective_c2_compatibility_claim": false
+  }
+}

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+from scripts.objc3c_object_model_debugger_proof import validate_contract_path
+from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
+from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,6 +18,14 @@ CONTRACT_PATH = (
     / "fixtures"
     / "object_model_closure"
     / "full_realization_combined_readiness_contract.json"
+)
+DEBUGGER_PROOF_CONTRACT_PATH = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "object_model_closure"
+    / "debugger_value_inspection_replay_contract.json"
 )
 UMBRELLA_READINESS_PATH = ROOT / "docs" / "support" / "umbrella_readiness.json"
 PUBLIC_REFLECTION_HEADER = (
@@ -40,6 +53,13 @@ def _repo_path(path: str) -> Path:
     return ROOT / path
 
 
+def _set_nested(payload: dict[str, Any], path: list[object], value: object) -> None:
+    cursor: Any = payload
+    for part in path[:-1]:
+        cursor = cursor[part]
+    cursor[path[-1]] = value
+
+
 def test_full_realization_combined_contract_is_checked_source_evidence() -> None:
     contract = _read_json(CONTRACT_PATH)
 
@@ -63,6 +83,7 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
     for key in (
         "combined_positive_fixture",
         "combined_positive_fixture_meta",
+        "debugger_value_inspection_contract",
         "public_reflection_contract",
         "public_reflection_probe",
         "runbook",
@@ -72,6 +93,66 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
 
     for command in contract["public_commands"]:
         assert str(command).startswith("npm run objc3c -- ")
+    assert "npm run objc3c -- validate-object-model-debugger-proof" in contract["public_commands"]
+
+
+def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflection() -> None:
+    contract = _read_json(DEBUGGER_PROOF_CONTRACT_PATH)
+    result = validate_contract_path(DEBUGGER_PROOF_CONTRACT_PATH)
+
+    assert result.ok is True
+    assert result.diagnostics == ()
+    assert contract["issue"] == 8198
+    assert contract["capability_id"] == "runtime.object-model.full-realization"
+    assert contract["public_status"] == "reserved"
+    assert contract["support_claim_published"] is False
+    assert contract["public_command"] == "npm run objc3c -- validate-object-model-debugger-proof"
+    assert set(contract["required_runtime_identity_kinds"]) == {
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method",
+    }
+    assert {
+        record["value_kind"]
+        for record in contract["object_model_value_inspection_records"]
+    } >= {
+        "class-metadata",
+        "category-metadata",
+        "protocol-metadata",
+        "property-metadata",
+        "ivar-layout",
+        "method-metadata",
+        "selector-metadata",
+    }
+    assert {
+        link["runtime_identity_kind"]
+        for link in contract["artifact_runtime_reflection_links"]
+    } >= set(contract["required_runtime_identity_kinds"])
+
+
+def test_object_model_debugger_proof_public_action_is_registered() -> None:
+    action = ACTION_SPECS["validate-object-model-debugger-proof"]
+
+    assert action.backend == "python:scripts/check_objc3c_object_model_debugger_proof.py"
+    assert action.validation_tier == "repo"
+    assert action.pass_through_args is True
+    assert "validate-object-model-debugger-proof" in ACTION_HANDLERS
+
+
+def test_object_model_debugger_proof_rejects_link_drift(tmp_path: Path) -> None:
+    contract = _read_json(DEBUGGER_PROOF_CONTRACT_PATH)
+
+    for case in contract["negative_cases"]:
+        mutated = deepcopy(contract)
+        _set_nested(mutated, case["mutation_path"], "object-model-debugger-proof-drift")
+        path = tmp_path / f"{case['case_id']}.json"
+        path.write_text(json.dumps(mutated, indent=2) + "\n", encoding="utf-8")
+
+        diagnostics = validate_contract_path(path).diagnostics
+        assert case["expected_code"] in {diagnostic.code for diagnostic in diagnostics}
 
 
 def test_combined_fixture_covers_object_model_reflection_and_replay_axes() -> None:
@@ -182,4 +263,15 @@ def test_umbrella_readiness_references_combined_evidence_without_closing_row() -
         "tests/native/runtime/object_model/"
         "full_realization_combined_reflection_replay_contract.objc3"
     ) in required_paths
+    assert (
+        "tests/tooling/fixtures/object_model_closure/"
+        "debugger_value_inspection_replay_contract.json"
+    ) in required_paths
     assert "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp" in required_paths
+
+    required_commands = {
+        requirement.get("command")
+        for requirement in entry["required_public_commands"]
+        if requirement.get("status") == "satisfied"
+    }
+    assert "npm run objc3c -- validate-object-model-debugger-proof" in required_commands

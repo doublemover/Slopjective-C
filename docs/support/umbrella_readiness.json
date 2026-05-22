@@ -97,8 +97,14 @@
           "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
         },
         {
+          "id": "object-model-debugger-proof-contract",
+          "description": "Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+        },
+        {
           "id": "debugger-source-identity",
-          "description": "Full debugger source maps, native line tables, and stepping integration must still be owned by checked compiler artifacts.",
+          "description": "Canonical compiler-emitted source maps, native line tables, and debugger stepping integration must still be owned by the production artifact path.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -117,8 +123,14 @@
           "command": "npm run objc3c -- validate-public-runtime-reflection-api"
         },
         {
+          "id": "object-model-debugger-proof",
+          "description": "Object-model debugger source-map, line-table, debug-anchor, and value-inspection linkage remains replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
           "id": "debugger-integration",
-          "description": "Debugger-grade statement stepping and value inspection must become replayable through a public command.",
+          "description": "Debugger-grade statement stepping must be completed on the production compiler artifact path.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -144,9 +156,9 @@
         },
         {
           "id": "debugger-object-inspection-e2e",
-          "description": "Debugger-grade object inspection must be covered by integrated source-map and reflection fixtures.",
-          "status": "blocked",
-          "blocker_id": "object-model-debugger-source-identity"
+          "description": "Debugger-grade object inspection is covered by an integrated source-map, line-table, debug-anchor, and reflection replay fixture.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         }
       ],
       "required_negative_fixtures": [
@@ -202,9 +214,9 @@
         },
         {
           "id": "debugger-runtime-value-probe",
-          "description": "Debugger value inspection must prove runtime metadata through a checked probe or replay fixture.",
-          "status": "blocked",
-          "blocker_id": "object-model-debugger-source-identity"
+          "description": "Debugger value inspection proves runtime metadata through a checked source-map and debug-anchor replay fixture.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
         }
       ],
       "required_abi_governance_rows": [
@@ -239,6 +251,12 @@
           "description": "Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence.",
           "status": "satisfied",
           "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
+        },
+        {
+          "id": "object-model-debugger-proof-test",
+          "description": "Object-model debugger proof checker remains covered by fail-closed tests.",
+          "status": "satisfied",
+          "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
         }
       ],
       "generated_output_boundary": {
@@ -255,11 +273,11 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity exists, but full debugger-grade object-model source identity is not yet complete.",
+          "summary": "Bounded runtime debug-anchor identity and replayable object-model value inspection exist, but full debugger-grade object-model source identity is not yet complete on the production artifact path.",
           "missing_work": [
-            "Compiler-owned source-map publication and native line tables for debugger stepping.",
-            "LLDB or replayable debugger protocol evidence for object value inspection.",
-            "Integrated object-model debugger value-inspection fixtures beyond the bounded debug-anchor replay probe."
+            "Canonical compiler-owned source-map publication and native line tables for the integrated object-model program.",
+            "Production debugger statement-stepping integration over those emitted line tables.",
+            "Debugger reflection ABI governance for any public object-inspection ABI additions."
           ],
           "tracking_issue": "#8198"
         }
@@ -358,7 +376,13 @@
         },
         {
           "id": "combined-runtime-source-graph",
-          "description": "Combined runtime closure must be traceable through compiler-owned source graph records.",
+          "description": "Combined runtime closure is traceable through checked compiler-owned source graph, runtime-state, ABI, and debug-map contract records.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        },
+        {
+          "id": "compiler-emitted-source-debug-map",
+          "description": "The native compiler still must emit the combined source graph and debug-map records on the canonical artifact path.",
           "status": "blocked",
           "blocker_id": "advanced-runtime-combined-source-identity"
         }
@@ -452,9 +476,9 @@
         },
         {
           "id": "combined-runtime-abi",
-          "description": "Combined runtime closure ABI interactions must be represented before umbrella promotion.",
-          "status": "blocked",
-          "blocker_id": "advanced-runtime-combined-source-identity"
+          "description": "Combined block, async, error, actor, property, macro, and package replay ABI interactions are represented by the checked #8199 identity contract.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
         }
       ],
       "required_docs": [
@@ -475,6 +499,12 @@
           "description": "Concurrency semantics remain documented as narrower rows.",
           "status": "satisfied",
           "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
+        },
+        {
+          "id": "advanced-runtime-identity-contract",
+          "description": "The #8199 checker enforces combined runtime-state/source-graph/debug-map/ABI interaction coverage without promoting the umbrella row.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
         }
       ],
       "generated_output_boundary": {
@@ -499,11 +529,11 @@
         },
         {
           "blocker_id": "advanced-runtime-combined-source-identity",
-          "summary": "Combined runtime semantics are not yet tied to compiler-owned source identity and ABI interaction proof.",
+          "summary": "Checked combined source identity and ABI interaction proof exists, but native compiler emission still has to publish those source/debug records on the canonical artifact path.",
           "missing_work": [
-            "Compiler-owned source graph records for combined runtime semantics.",
-            "Source-map/debug-map coverage for cross-feature lowering.",
-            "ABI interaction proof for block, async, error, actor, property, macro, and package runtime surfaces."
+            "Canonical compiler-emitted source graph records for the combined runtime fixture.",
+            "Canonical source-map/debug-map output for cross-feature lowering.",
+            "Public command evidence that the emitted records match the checked #8199 identity contract."
           ],
           "tracking_issue": "#8199"
         }

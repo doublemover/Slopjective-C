@@ -13,9 +13,11 @@
   "public_reflection_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
   "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
   "debug_anchor_identity_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
+  "debugger_value_inspection_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
   "public_commands": [
     "npm run objc3c -- validate-object-model-conformance",
-    "npm run objc3c -- validate-public-runtime-reflection-api"
+    "npm run objc3c -- validate-public-runtime-reflection-api",
+    "npm run objc3c -- validate-object-model-debugger-proof"
   ],
   "combined_axes": [
     "class",
@@ -89,6 +91,21 @@
     ],
     "does_not_promote_umbrella": true
   },
+  "debugger_value_inspection_contract_summary": {
+    "source_map_line_table_backed": true,
+    "debug_anchor_replay_backed": true,
+    "artifact_runtime_reflection_linked": true,
+    "replayable_public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "covered_identity_kinds": [
+      "class",
+      "category",
+      "protocol",
+      "property",
+      "ivar",
+      "method"
+    ],
+    "does_not_promote_umbrella": true
+  },
   "reflection_lifetime_contract": {
     "snapshot_ownership": "caller-owned snapshot structs",
     "string_lifetime": "runtime-owned borrowed strings",
@@ -133,7 +150,7 @@
   "remaining_blockers": [
     {
       "blocker_id": "object-model-debugger-source-identity",
-      "summary": "Bounded runtime debug-anchor identity is now covered; native line tables, debugger stepping, and replayable object value inspection remain required before this reserved umbrella can become implemented."
+      "summary": "Bounded runtime debug-anchor identity and replayable object-model debugger value inspection are now covered; canonical compiler-emitted native line tables, statement stepping, and debugger reflection ABI governance remain required before this reserved umbrella can become implemented."
     }
   ]
 }

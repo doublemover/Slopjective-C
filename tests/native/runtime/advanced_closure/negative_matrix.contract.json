@@ -15,6 +15,9 @@
       "case_id": "ownership_conflicting_capture",
       "issue_ref": 8199,
       "feature": "ownership",
+      "interacts_with": [
+        "blocks"
+      ],
       "status": "rejected",
       "fixture": "tests/native/runtime/advanced_closure/negative_ownership_conflicting_capture.objc3",
       "expected_diagnostic": "advanced-runtime.ownership-conflicting-capture",
@@ -126,6 +129,93 @@
         "objc_import_module(named(\"AdvancedRuntimeClosureKit\"))",
         "objc_mixed_image(named(\"AdvancedRuntimeClosureKitCore\"))",
         "missingReplayEntry"
+      ]
+    },
+    {
+      "case_id": "block_async_error_escape",
+      "issue_ref": 8199,
+      "feature": "blocks",
+      "interacts_with": [
+        "async",
+        "error"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_block_async_error_escape.objc3",
+      "expected_diagnostic": "advanced-runtime.block-async-error-boundary",
+      "required_tokens": [
+        "async fn throwsThroughBlock",
+        "let handler = ^[strong owner]",
+        "return await throwsThroughBlock(owner)"
+      ]
+    },
+    {
+      "case_id": "actor_property_macro_cross_isolation",
+      "issue_ref": 8199,
+      "feature": "actor",
+      "interacts_with": [
+        "property",
+        "macro"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_property_macro_cross_isolation.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-property-macro-cross-isolation",
+      "required_tokens": [
+        "actor class ActorPropertyMacroBoundary",
+        "@property (strong, behavior=Observed) id value",
+        "objc_macro_cache_key(named(\"AdvancedRuntimeActorPropertyMacro:v1\"))",
+        "objc_nonisolated"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_untrusted",
+      "issue_ref": 8199,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_untrusted.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-untrusted",
+      "required_tokens": [
+        "pure fn packageReplayMacro",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.untrustedReplay\"))",
+        "untrustedReplayEntry(nil)"
+      ]
+    },
+    {
+      "case_id": "ownership_actor_cancellation_escape",
+      "issue_ref": 8199,
+      "feature": "ownership",
+      "interacts_with": [
+        "actor",
+        "cancellation",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_ownership_actor_cancellation_escape.objc3",
+      "expected_diagnostic": "advanced-runtime.ownership-actor-cancellation-escape",
+      "required_tokens": [
+        "actor class OwnershipCancellationActor",
+        "consumed id)owner",
+        "objc3_runtime_task_on_cancel_i32",
+        "let cleanup = ^[consumed owner]"
+      ]
+    },
+    {
+      "case_id": "error_package_async_replay",
+      "issue_ref": 8199,
+      "feature": "error",
+      "interacts_with": [
+        "package_replay",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_error_package_async_replay.objc3",
+      "expected_diagnostic": "advanced-runtime.error-package-async-replay",
+      "required_tokens": [
+        "extern fn replayBridge(selector: SEL) throws -> i32",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.throwingReplay\"))",
+        "return await replayBridge(nil)"
       ]
     }
   ]
