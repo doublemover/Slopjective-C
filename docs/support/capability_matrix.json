@@ -1729,7 +1729,7 @@
       "id": "stdlib.text.runtime-builder-interpolation",
       "title": "Runtime-backed objc3.text builder interpolation",
       "state": "implemented",
-      "summary": "The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation lowering and arbitrary object interpolation remain outside this claim.",
+      "summary": "The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation is covered by the separate language text interpolation claim that lowers into this builder ABI; arbitrary object interpolation remains outside this claim.",
       "support_claims": [
         "objc3c.behavior.stdlib.text.runtime-builder-interpolation"
       ],
@@ -1788,7 +1788,7 @@
       "id": "language.text.source-string-literal-text-shape-handle",
       "title": "Source string literal Text shape handles",
       "state": "implemented",
-      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Source-level mutation, interpolation, formatting, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.",
+      "summary": "Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Interpolation is covered by the separate source string interpolation claim; source-level mutation, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.",
       "support_claims": [
         "objc3c.behavior.language.text.source-string-literal-text-shape-handle"
       ],
@@ -1849,6 +1849,103 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_value_type.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.text.source-string-interpolation",
+      "title": "Source string interpolation over Text and i32 payloads",
+      "state": "implemented",
+      "summary": "Ordinary source string literals can embed checked \\(expr) interpolation payloads for Text and i32 values. The parser preserves literal and interpolation segment boundaries, sema rejects unsupported payload types, and lowering builds runtime-owned Text through the objc3.text builder ABI. Empty, nested, and unterminated interpolation payloads fail closed; bool, arbitrary object, collection, normalization, collation, locale, Foundation, and NSString interpolation remain reserved.",
+      "support_claims": [
+        "objc3c.behavior.language.text.source-string-interpolation"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc",
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc",
+        "native/objc3c/src/ast/objc3_ast_expr_kind_members.h",
+        "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h",
+        "native/objc3c/src/ast/objc3_ast_value_type.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.exitcode.txt"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_empty_payload_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_nested_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_unterminated_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_bool_payload_rejected.objc3"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_source_string_interpolation_text_support.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_expr_kind_members.h"
         },
         {
           "kind": "source",

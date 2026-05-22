@@ -1680,6 +1680,115 @@
       "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
     },
     {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.exitcode.txt"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_empty_payload_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_nested_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_unterminated_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_bool_payload_rejected.objc3"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_source_string_interpolation_text_support.py"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lex/objc3_lexer_scanning.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_expr_kind_members.h"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_value_type.h"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/text_runtime_contract.h"
+    },
+    {
+      "capability_id": "language.text.source-string-interpolation",
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+    },
+    {
       "capability_id": "stdlib.collections.array-slice-runtime-shape",
       "support_claim": "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
       "evidence_kind": "test",

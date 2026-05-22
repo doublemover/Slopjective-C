@@ -55,6 +55,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
 | `objc3c.behavior.language.protocols.existential-witness-model` | `runtime` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.existential-witness-model` |
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
+| `objc3c.behavior.language.text.source-string-interpolation` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3` | `npm run objc3c -- test-execution-smoke` | `language.text.source-string-interpolation` |
 | `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `language.text.source-string-literal-text-shape-handle` |
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
@@ -927,7 +928,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `stdlib.text.runtime-builder-interpolation`
 - State: `implemented`
 - Support claims: `objc3c.behavior.stdlib.text.runtime-builder-interpolation`
-- Summary: The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation lowering and arbitrary object interpolation remain outside this claim.
+- Summary: The objc3.text runtime builder composes Text handles, deterministic i32 formatting, and checked Unicode scalar payloads into finalized runtime-owned UTF-8 text storage with snapshot-visible builder and interpolation counters. Source-level interpolation is covered by the separate language text interpolation claim that lowers into this builder ABI; arbitrary object interpolation remains outside this claim.
 - Owner modules:
   - `stdlib/modules/objc3.text/module.json`
   - `stdlib/modules/objc3.text/module.objc3`
@@ -952,7 +953,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.text.source-string-literal-text-shape-handle`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.text.source-string-literal-text-shape-handle`
-- Summary: Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Source-level mutation, interpolation, formatting, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.
+- Summary: Source string literals are accepted as decoded UTF-8 scalar text values, typed as the Text scalar handle, and lowered to owned runtime text UTF-8 storage so byte count, scalar unit count, validity metadata, and byte retrieval work from the literal handle. Interpolation is covered by the separate source string interpolation claim; source-level mutation, normalization, collation, Foundation/NSString bridging, and arbitrary string operations remain outside this contract.
 - Owner modules:
   - `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
   - `native/objc3c/src/lex/objc3_lexer_char_class.cpp`
@@ -979,6 +980,44 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc`
   - source: `native/objc3c/src/parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc`
   - source: `native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_return_type_parser_spelling_capture.inc`
+  - source: `native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h`
+  - source: `native/objc3c/src/ast/objc3_ast_value_type.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc`
+  - source: `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - source: `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+
+### Source string interpolation over Text and i32 payloads
+
+- Capability ID: `language.text.source-string-interpolation`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.text.source-string-interpolation`
+- Summary: Ordinary source string literals can embed checked \(expr) interpolation payloads for Text and i32 values. The parser preserves literal and interpolation segment boundaries, sema rejects unsupported payload types, and lowering builds runtime-owned Text through the objc3.text builder ABI. Empty, nested, and unterminated interpolation payloads fail closed; bool, arbitrary object, collection, normalization, collation, locale, Foundation, and NSString interpolation remain reserved.
+- Owner modules:
+  - `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
+  - `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc`
+  - `native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc`
+  - `native/objc3c/src/ast/objc3_ast_expr_kind_members.h`
+  - `native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h`
+  - `native/objc3c/src/ast/objc3_ast_value_type.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp`
+  - `native/objc3c/src/runtime/stdlib/text_runtime_contract.h`
+  - `native/objc3c/src/runtime/stdlib/text_runtime.cpp`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.exitcode.txt`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_empty_payload_rejected.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_nested_rejected.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_unterminated_rejected.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_bool_payload_rejected.objc3`
+  - test: `tests/tooling/test_source_string_interpolation_text_support.py`
+  - source: `native/objc3c/src/lex/objc3_lexer_scanning.cpp`
+  - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc`
+  - source: `native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc`
+  - source: `native/objc3c/src/ast/objc3_ast_expr_kind_members.h`
   - source: `native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h`
   - source: `native/objc3c/src/ast/objc3_ast_value_type.h`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc`

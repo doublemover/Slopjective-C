@@ -1620,7 +1620,7 @@
       ],
       "source_truth_requirements": [
         "Runtime builder interpolation support composes Text handles, deterministic i32 formatting, and checked scalar payloads into runtime-owned text storage",
-        "Source-level interpolation lowering, unsupported payload interpolation, nested interpolation, and arbitrary object interpolation remain reserved",
+        "Source-level interpolation lowering is covered by objc3c.behavior.language.text.source-string-interpolation, while arbitrary object interpolation remains reserved",
         "Positive evidence must include builder create, append, finalization, interpolation counters, and copied UTF-8 output behavior",
         "Invalid handles, malformed scalar payloads, unavailable text storage, capacity failures, and ABI signature conflicts remain fail-closed evidence"
       ]
@@ -1660,9 +1660,52 @@
       ],
       "source_truth_requirements": [
         "Source string literal support is a storage-backed handle contract: the AST stores the decoded source value, while current lowering copies UTF-8 bytes into the runtime text storage helper",
-        "The runtime-visible type is the Text scalar handle and source literal handles preserve UTF-8 storage for byte retrieval; mutation, formatting, interpolation, normalization, collation, NSString bridging, and Foundation compatibility remain reserved",
+        "The runtime-visible type is the Text scalar handle and source literal handles preserve UTF-8 storage for byte retrieval; interpolation is covered by objc3c.behavior.language.text.source-string-interpolation, while mutation, normalization, collation, NSString bridging, and Foundation compatibility remain reserved",
         "Invalid escapes and interpolation syntax fail closed in lexer diagnostics O3L010 and O3L011; malformed UTF-8 remains O3L012 evidence owned by the same lexer scanner",
         "This claim does not advertise source-level mutation, locale formatting, Unicode normalization, collation, arbitrary string operations, or alternate Foundation/NSString compatibility paths"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.text.source-string-interpolation",
+      "capability_id": "language.text.source-string-interpolation",
+      "owner_phase": "lowering",
+      "conformance_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+      "traceability_fixture": "tests/tooling/test_source_string_interpolation_text_support.py",
+      "runnable_command": "npm run objc3c -- test-execution-smoke",
+      "runtime_acceptance_case": "source-string-interpolation-text-i32",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+        "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.exitcode.txt",
+        "tests/tooling/test_source_string_interpolation_text_support.py",
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_primary_literals_identifiers_dispatch.inc",
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes_scalar_literals.inc",
+        "native/objc3c/src/ast/objc3_ast_expr_kind_members.h",
+        "native/objc3c/src/ast/objc3_ast_expr_control_flow_members.h",
+        "native/objc3c/src/ast/objc3_ast_value_type.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc",
+        "native/objc3c/src/ir/objc3_ir_expression_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_prototype_declarations_runtime_helpers.cpp",
+        "native/objc3c/src/runtime/stdlib/text_runtime_contract.h",
+        "native/objc3c/src/runtime/stdlib/text_runtime.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_empty_payload_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_nested_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_unterminated_rejected.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_text_interpolation_bool_payload_rejected.objc3",
+        "native/objc3c/src/lex/objc3_lexer_scanning.cpp",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation_expr_literal_identifier_cases.inc"
+      ],
+      "required_diagnostic_codes": [
+        "O3L011",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Source interpolation is a language lowering contract: the lexer identifies interpolation payloads, the parser preserves segment boundaries, sema accepts only Text and i32 payloads, and IR lowers to the runtime text builder ABI",
+        "The runtime-visible result is a Text scalar handle backed by objc3.text builder storage; arbitrary object, bool, collection, normalization, collation, locale, Foundation, and NSString interpolation remain reserved",
+        "Positive evidence must include a source string containing Text and i32 interpolation that compiles, links, executes, and compares the runtime-built result with an expected Text handle",
+        "Empty payloads, nested interpolation, unterminated interpolation, and unsupported payload types fail closed through deterministic diagnostics"
       ]
     },
     {

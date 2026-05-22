@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
+MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
+CATALOG_PATH = (
+    ROOT
+    / "tests"
+    / "conformance"
+    / "support_claim_runnable_evidence_catalog.json"
+)
+CAPABILITY_ID = "language.text.source-string-interpolation"
+SUPPORT_CLAIM = "objc3c.behavior.language.text.source-string-interpolation"
 POSITIVE_FIXTURE = (
     "tests/tooling/fixtures/native/execution/positive/"
     "source_string_interpolation_text_i32.objc3"
@@ -34,6 +46,12 @@ NEGATIVE_FIXTURES = [
 
 def _read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
 
 
 def test_source_string_interpolation_lowering_is_source_backed() -> None:
@@ -93,3 +111,48 @@ def test_source_string_interpolation_negative_fixtures_are_strict() -> None:
         fixture = _read(path)
         assert f"Expected diagnostic code(s): {code}" in fixture
         assert "\\(" in fixture
+
+
+def test_source_string_interpolation_support_claim_is_evidence_backed() -> None:
+    matrix = _read_json(MATRIX_PATH)
+    manifest = _read_json(MANIFEST_PATH)
+    catalog = _read_json(CATALOG_PATH)
+
+    matrix_rows = {str(row["id"]): row for row in matrix["capabilities"]}
+    manifest_claims = {
+        str(claim["claim_id"]): claim
+        for claim in manifest["support_claims"]
+        if isinstance(claim, dict)
+    }
+    catalog_rows = {
+        str(row["support_claim"]): row
+        for row in catalog["rows"]
+        if isinstance(row, dict)
+    }
+    fixture_paths = {
+        str(fixture["path"])
+        for fixture in manifest["fixtures"]
+        if isinstance(fixture, dict)
+    }
+
+    matrix_row = matrix_rows[CAPABILITY_ID]
+    claim = manifest_claims[SUPPORT_CLAIM]
+    catalog_row = catalog_rows[SUPPORT_CLAIM]
+
+    assert matrix_row["state"] == "implemented"
+    assert matrix_row["support_claims"] == [SUPPORT_CLAIM]
+    assert claim["owner_phase"] == catalog_row["owner_phase"] == "lowering"
+    assert claim["behavior_fixture"] == POSITIVE_FIXTURE
+    assert claim["behavior_fixture"] in fixture_paths
+    assert catalog_row["capability_id"] == CAPABILITY_ID
+    assert catalog_row["conformance_fixture"] == POSITIVE_FIXTURE
+    assert catalog_row["runnable_command"] == "npm run objc3c -- test-execution-smoke"
+    assert POSITIVE_FIXTURE in catalog_row["positive_evidence"]
+    assert "tests/tooling/test_source_string_interpolation_text_support.py" in catalog_row[
+        "positive_evidence"
+    ]
+    assert {"O3L011", "O3S206"}.issubset(
+        set(catalog_row["required_diagnostic_codes"])
+    )
+    for path, _code in NEGATIVE_FIXTURES:
+        assert path in catalog_row["negative_evidence"]

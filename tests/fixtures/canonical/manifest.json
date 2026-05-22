@@ -378,6 +378,12 @@
       "executable_command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
     },
     {
+      "claim_id": "objc3c.behavior.language.text.source-string-interpolation",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
       "claim_id": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
@@ -1733,6 +1739,14 @@
     },
     {
       "path": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "language-text",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
       "origin": "hand-authored",
       "owner_phase": "lowering",
       "behavior_family": "language-text",
