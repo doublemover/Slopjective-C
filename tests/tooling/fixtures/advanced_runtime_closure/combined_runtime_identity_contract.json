@@ -11,7 +11,8 @@
   "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
   "canonical_compiler_emitted_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
   "canonical_source_debug_map_public_command": "npm run objc3c -- validate-advanced-runtime-closure",
-  "native_executable_fail_closed_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json",
+  "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+  "native_artifact_ready": true,
   "native_executable_umbrella_promoted": false,
   "forbidden_source_truth_prefixes": [
     "tmp/",

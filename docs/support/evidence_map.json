@@ -3118,7 +3118,7 @@
     {
       "capability_id": "language.advanced-runtime-closure",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json"
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json"
     },
     {
       "capability_id": "language.advanced-runtime-closure",

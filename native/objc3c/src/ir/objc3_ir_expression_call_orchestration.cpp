@@ -49,6 +49,7 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
     FunctionContext &ctx, const std::string &throws_error_slot_ptr,
     bool *bridge_failed_out,
     std::string *bridge_error_value_out,
+    std::string *bridge_failure_condition_out,
     const Objc3IRExpressionCallEmissionOptions &options) {
   return EmitObjc3IRDirectFunctionCall(
       expr, signature, ctx,
@@ -82,7 +83,8 @@ std::string EmitObjc3IRExpressionCallDirectFunctionCall(
                 options.services.build_function_local_flow_context());
           },
           options.services.lookup_function_signature},
-      throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
+      throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out,
+      bridge_failure_condition_out);
 }
 
 std::string EmitObjc3IRExpressionCallMessageSendExpr(
@@ -161,10 +163,12 @@ std::string EmitObjc3IRExpressionCallImpl(
                      FunctionContext &callback_ctx,
                      const std::string &throws_error_slot_ptr,
                      bool *bridge_failed_out,
-                     std::string *bridge_error_value_out) {
+                     std::string *bridge_error_value_out,
+                     std::string *bridge_failure_condition_out) {
             return EmitObjc3IRExpressionCallDirectFunctionCall(
                 call_expr, signature, callback_ctx, throws_error_slot_ptr,
-                bridge_failed_out, bridge_error_value_out, options);
+                bridge_failed_out, bridge_error_value_out,
+                bridge_failure_condition_out, options);
           },
           BuildObjc3IRThrowsErrorSlotAlloca,
           EmitObjc3IRLoadThrownError,

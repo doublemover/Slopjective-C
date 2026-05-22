@@ -1237,22 +1237,70 @@ def _validate_native_debug_info_evidence(
                 f"{path}.object_section_names",
             )
         )
-    if evidence.get("emitted_native_debug_info_supported") is not False:
+    if evidence.get("emitted_native_debug_info_supported") is not True:
         diagnostics.append(
             _diag(
-                "production-native-debug-info-evidence-overclaimed",
-                "production native debug-info evidence must not claim emitted native debug info yet",
+                "production-native-debug-info-evidence-unavailable",
+                "production native debug-info evidence must confirm emitted native debug info",
                 f"{path}.emitted_native_debug_info_supported",
             )
         )
-    if evidence.get("native_line_table_supported") is not False:
+    if evidence.get("native_line_table_supported") is not True:
         diagnostics.append(
             _diag(
-                "production-native-debug-info-evidence-overclaimed",
-                "production native debug-info evidence must not claim native line-table debug sections yet",
+                "production-native-debug-info-evidence-unavailable",
+                "production native debug-info evidence must confirm emitted native line-table sections",
                 f"{path}.native_line_table_supported",
             )
         )
+    if not _list(evidence.get("native_debug_sections")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must list emitted native debug sections",
+                f"{path}.native_debug_sections",
+            )
+        )
+    if not _list(evidence.get("native_line_table_sections")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must list emitted native line-table sections",
+                f"{path}.native_line_table_sections",
+            )
+        )
+    _validate_count_at_least(
+        evidence.get("native_debug_section_count"),
+        1,
+        diagnostics,
+        code="production-native-debug-info-evidence-incomplete",
+        message="production native debug-info evidence lacks native debug sections",
+        path=f"{path}.native_debug_section_count",
+    )
+    _validate_count_at_least(
+        evidence.get("native_line_table_section_count"),
+        1,
+        diagnostics,
+        code="production-native-debug-info-evidence-incomplete",
+        message="production native debug-info evidence lacks native line-table sections",
+        path=f"{path}.native_line_table_section_count",
+    )
+    if evidence.get("llvm_debug_metadata_present") is not True:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must confirm instruction-level LLVM DI locations",
+                f"{path}.llvm_debug_metadata_present",
+            )
+        )
+    _validate_count_at_least(
+        evidence.get("llvm_debug_location_count"),
+        1,
+        diagnostics,
+        code="production-native-debug-info-evidence-incomplete",
+        message="production native debug-info evidence lacks instruction-level LLVM debug locations",
+        path=f"{path}.llvm_debug_location_count",
+    )
     if evidence.get("statement_stepping_supported") is not False:
         diagnostics.append(
             _diag(
@@ -1262,16 +1310,24 @@ def _validate_native_debug_info_evidence(
             )
         )
     blocked_by = set(_safe_str(item) for item in _list(evidence.get("blocked_by")))
-    required_blockers = {
-        "native-object-lacks-debug-line-section",
-        "compiler-ir-lacks-llvm-di-locations",
-        "runtime-debug-trace-statement-stepping-integration",
-    }
-    if not required_blockers.issubset(blocked_by):
+    if "runtime-debug-trace-statement-stepping-integration" not in blocked_by:
         diagnostics.append(
             _diag(
                 "production-native-debug-info-evidence-incomplete",
-                "production native debug-info evidence must name the exact fail-closed blockers",
+                "production native debug-info evidence must keep runtime statement-stepping integration blocked",
+                f"{path}.blocked_by",
+            )
+        )
+    retired_blockers = {
+        "native-object-lacks-debug-info-section",
+        "native-object-lacks-debug-line-section",
+        "compiler-ir-lacks-llvm-di-locations",
+    }
+    if blocked_by & retired_blockers:
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-stale-blocker",
+                "production native debug-info evidence must clear missing-section and missing-DI blockers once native debug metadata is emitted",
                 f"{path}.blocked_by",
             )
         )
@@ -1293,16 +1349,39 @@ def _validate_fail_closed_publication_boundaries(
         _safe_str(_object(boundary).get("capability_id")): _object(boundary)
         for boundary in _list(publication.get("fail_closed_boundaries"))
     }
-    for capability_id in ("emittedNativeDebugInfo", "statementLevelStepping"):
-        boundary = boundaries.get(capability_id, {})
-        if boundary.get("status") != "reserved" or boundary.get("fail_closed") is not True:
+    emitted_boundary = boundaries.get("emittedNativeDebugInfo", {})
+    if publication.get("emitted_native_debug_info_supported") is True:
+        if (
+            emitted_boundary.get("status") != "supported"
+            or emitted_boundary.get("fail_closed") is not False
+        ):
             diagnostics.append(
                 _diag(
                     "production-source-map-publication-boundary-missing",
-                    f"production source-map/native-line-table publication must keep {capability_id} reserved",
+                    "production source-map/native-line-table publication must mark emittedNativeDebugInfo supported",
                     "production_artifact_probe.debug_map.object_model_source_identity.source_map_native_line_table_publication.fail_closed_boundaries",
                 )
             )
+    elif (
+        emitted_boundary.get("status") != "reserved"
+        or emitted_boundary.get("fail_closed") is not True
+    ):
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-boundary-missing",
+                "production source-map/native-line-table publication must keep emittedNativeDebugInfo reserved when native debug info is absent",
+                "production_artifact_probe.debug_map.object_model_source_identity.source_map_native_line_table_publication.fail_closed_boundaries",
+            )
+        )
+    boundary = boundaries.get("statementLevelStepping", {})
+    if boundary.get("status") != "reserved" or boundary.get("fail_closed") is not True:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-boundary-missing",
+                "production source-map/native-line-table publication must keep statementLevelStepping reserved",
+                "production_artifact_probe.debug_map.object_model_source_identity.source_map_native_line_table_publication.fail_closed_boundaries",
+            )
+        )
 
 
 def _validate_production_source_map_publication_payload(
@@ -1386,15 +1465,22 @@ def _validate_production_source_map_publication_payload(
                     f"{path}.{key}",
                 )
             )
-    for key in ("emitted_native_debug_info_supported", "statement_stepping_supported"):
-        if publication.get(key) is not False:
-            diagnostics.append(
-                _diag(
-                    "production-source-map-publication-overclaimed",
-                    f"production source-map/native-line-table publication must not claim {key}",
-                    f"{path}.{key}",
-                )
+    if publication.get("emitted_native_debug_info_supported") is not True:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-incomplete",
+                "production source-map/native-line-table publication must claim emitted_native_debug_info_supported only after emitted native sections are proven",
+                f"{path}.emitted_native_debug_info_supported",
             )
+        )
+    if publication.get("statement_stepping_supported") is not False:
+        diagnostics.append(
+            _diag(
+                "production-source-map-publication-overclaimed",
+                "production source-map/native-line-table publication must not claim statement_stepping_supported",
+                f"{path}.statement_stepping_supported",
+            )
+        )
 
     record_ids = {
         _safe_str(_object(record).get("source_map_record_id"))
@@ -1526,6 +1612,7 @@ def _validate_production_source_identity_payload(
         "source_map_publication_supported",
         "native_line_table_publication_supported",
         "method_stepping_candidates_supported",
+        "native_debug_info_emitted",
     )
     for key in required_true:
         if source_identity.get(key) is not True:
@@ -1539,7 +1626,6 @@ def _validate_production_source_identity_payload(
     required_false = (
         "full_source_map_publication",
         "runtime_debug_trace_statement_stepping",
-        "native_debug_info_emitted",
     )
     for key in required_false:
         if source_identity.get(key) is not False:
@@ -1673,12 +1759,20 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}",
                 )
             )
-        if row.get("native_debug_info_emitted") is not False:
+        if row.get("native_debug_info_emitted") is not True:
             diagnostics.append(
                 _diag(
-                    "production-source-identity-overclaimed",
-                    "production native line-table projection row must not claim emitted native debug info",
+                    "production-source-identity-incomplete",
+                    "production native line-table projection row must link to emitted native debug info",
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_emitted",
+                )
+            )
+        if row.get("native_line_table_emitted") is not True:
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-incomplete",
+                    "production native line-table projection row must confirm emitted native line-table support",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_line_table_emitted",
                 )
             )
         if (
@@ -1719,6 +1813,17 @@ def _validate_production_source_identity_payload(
                 )
             )
         if (
+            candidate.get("native_debug_info_emitted") is not True
+            or candidate.get("native_line_table_emitted") is not True
+        ):
+            diagnostics.append(
+                _diag(
+                    "production-source-identity-incomplete",
+                    "production method stepping candidate must carry emitted native debug and line-table evidence before stepping integration",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}",
+                )
+            )
+        if (
             native_debug_info_evidence_id
             and candidate.get("native_debug_info_evidence_id") != native_debug_info_evidence_id
         ):
@@ -1732,11 +1837,23 @@ def _validate_production_source_identity_payload(
         candidate_blockers = set(
             _safe_str(item) for item in _list(candidate.get("blocked_by"))
         )
-        if "native-object-lacks-debug-line-section" not in candidate_blockers:
+        if "runtime-debug-trace-statement-stepping-integration" not in candidate_blockers:
             diagnostics.append(
                 _diag(
                     "production-native-debug-info-evidence-incomplete",
-                    "production stepping candidate must name the native line-table blocker",
+                    "production stepping candidate must keep runtime statement-stepping integration blocked",
+                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.blocked_by",
+                )
+            )
+        if candidate_blockers & {
+            "native-object-lacks-debug-info-section",
+            "native-object-lacks-debug-line-section",
+            "compiler-ir-lacks-llvm-di-locations",
+        }:
+            diagnostics.append(
+                _diag(
+                    "production-native-debug-info-evidence-stale-blocker",
+                    "production stepping candidate must clear missing native debug blockers once debug sections are emitted",
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.blocked_by",
                 )
             )

@@ -10,8 +10,10 @@ Objc3FrontendOptions BuildFrontendPipelineOptions(
   frontend_options.emit_manifest = options.emit_manifest != 0;
   frontend_options.emit_ir = options.emit_ir != 0;
   frontend_options.emit_object = options.emit_object != 0;
+  const bool emits_native_artifacts =
+      frontend_options.emit_ir || frontend_options.emit_object;
   frontend_options.allow_live_error_runtime_surface =
-      options.allow_live_error_runtime_surface != 0;
+      options.allow_live_error_runtime_surface != 0 || emits_native_artifacts;
   if (options.translation_unit_registration_order_ordinal > 0) {
     frontend_options.bootstrap_registration_order_ordinal =
         options.translation_unit_registration_order_ordinal;

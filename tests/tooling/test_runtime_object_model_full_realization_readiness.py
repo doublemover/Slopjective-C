@@ -316,24 +316,35 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "object_format": "coff",
         "object_sha256": "a" * 64,
         "object_section_inventory_command": "llvm-readobj --sections tmp/artifacts/module.obj",
-        "object_section_names": [".text", ".rdata", ".pdata", ".xdata"],
-        "native_debug_sections": [],
-        "native_line_table_sections": [],
-        "native_debug_section_count": 0,
-        "native_line_table_section_count": 0,
+        "object_section_names": [
+            ".text",
+            ".rdata",
+            ".debug$S",
+            ".debug_abbrev",
+            ".debug_info",
+            ".debug_str",
+            ".debug_line",
+        ],
+        "native_debug_sections": [
+            ".debug$S",
+            ".debug_abbrev",
+            ".debug_info",
+            ".debug_str",
+            ".debug_line",
+        ],
+        "native_line_table_sections": [".debug$S", ".debug_line"],
+        "native_debug_section_count": 5,
+        "native_line_table_section_count": 2,
         "ir_path": "tmp/artifacts/module.ll",
-        "ir_debug_metadata_model": "no-llvm-di-debug-locations",
-        "llvm_debug_metadata_present": False,
-        "llvm_debug_location_count": 0,
-        "emitted_native_debug_info_supported": False,
-        "native_line_table_supported": False,
+        "ir_debug_metadata_model": "llvm-di-metadata-present",
+        "llvm_debug_metadata_present": True,
+        "llvm_debug_location_count": 12,
+        "emitted_native_debug_info_supported": True,
+        "native_line_table_supported": True,
         "statement_stepping_supported": False,
         "fail_closed": True,
-        "fail_closed_reason": "native object lacks debug info and debug line-table sections",
+        "fail_closed_reason": "runtime debug trace is not integrated with emitted native debug info",
         "blocked_by": [
-            "native-object-lacks-debug-info-section",
-            "native-object-lacks-debug-line-section",
-            "compiler-ir-lacks-llvm-di-locations",
             "runtime-debug-trace-statement-stepping-integration",
         ],
     }
@@ -371,10 +382,10 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
                 "source_path": source_path,
                 "line": index + 1,
                 "column": 1,
-                "native_debug_info_emitted": False,
+                "native_debug_info_emitted": True,
                 "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
                 "native_line_table_evidence_id": native_debug_info_evidence["evidence_id"],
-                "native_line_table_emitted": False,
+                "native_line_table_emitted": True,
                 "native_debug_info_blocker": native_debug_info_evidence["fail_closed_reason"],
             }
         )
@@ -382,10 +393,10 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         {
             "source_map_record_id": record["source_map_record_id"],
             "native_line_table_row_id": record["native_line_table_row_id"],
-            "status": "source-identity-ready-stepping-blocked",
+            "status": "native-line-table-ready-stepping-blocked",
             "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
-            "native_debug_info_emitted": False,
-            "native_line_table_emitted": False,
+            "native_debug_info_emitted": True,
+            "native_line_table_emitted": True,
             "native_debug_info_blocker": native_debug_info_evidence["fail_closed_reason"],
             "blocked_by": native_debug_info_evidence["blocked_by"],
         }
@@ -400,7 +411,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "publication_model": "canonical-frontend-manifest-source-map-native-line-table",
         "source_map_publication_supported": True,
         "native_line_table_publication_supported": True,
-        "emitted_native_debug_info_supported": False,
+        "emitted_native_debug_info_supported": True,
         "statement_stepping_supported": False,
         "native_debug_info_evidence": native_debug_info_evidence,
         "source_map_record_count": len(source_map_records),
@@ -422,8 +433,8 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "fail_closed_boundaries": [
             {
                 "capability_id": "emittedNativeDebugInfo",
-                "status": "reserved",
-                "fail_closed": True,
+                "status": "supported",
+                "fail_closed": False,
             },
             {
                 "capability_id": "statementLevelStepping",
@@ -445,7 +456,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "method_stepping_candidates_supported": True,
         "full_source_map_publication": False,
         "runtime_debug_trace_statement_stepping": False,
-        "native_debug_info_emitted": False,
+        "native_debug_info_emitted": True,
         "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
         "native_debug_info_evidence": native_debug_info_evidence,
         "native_debug_info_fail_closed_reason": native_debug_info_evidence["fail_closed_reason"],
@@ -577,6 +588,70 @@ def test_object_model_debugger_proof_rejects_production_source_map_publication_o
     ).diagnostics
 
     assert "production-source-map-publication-overclaimed" in {
+        diagnostic.code for diagnostic in diagnostics
+    }
+
+
+def test_object_model_debugger_proof_rejects_native_debug_metadata_without_instruction_locations(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    source_identity["native_debug_info_evidence"]["ir_debug_metadata_model"] = (
+        "llvm-di-metadata-present"
+    )
+    source_identity["native_debug_info_evidence"]["llvm_debug_metadata_present"] = True
+    source_identity["native_debug_info_evidence"]["llvm_debug_location_count"] = 0
+
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert any(
+        diagnostic.code == "production-native-debug-info-evidence-incomplete"
+        and diagnostic.path.endswith(".llvm_debug_location_count")
+        for diagnostic in diagnostics
+    )
+
+
+def test_object_model_debugger_proof_rejects_stale_native_debug_blockers(
+    monkeypatch: Any,
+) -> None:
+    source_identity = _fake_object_model_source_identity(
+        "tests/native/runtime/object_model/"
+        "full_realization_combined_reflection_replay_contract.objc3"
+    )
+    stale_blocker = "compiler-ir-lacks-llvm-di-locations"
+    source_identity["native_debug_info_evidence"]["blocked_by"].append(stale_blocker)
+    for candidate in source_identity["stepping_candidates"]:
+        if stale_blocker not in candidate["blocked_by"]:
+            candidate["blocked_by"].append(stale_blocker)
+
+    monkeypatch.setattr(
+        debugger_proof_model,
+        "_build_production_probe_artifacts",
+        lambda probe: _fake_production_artifacts(
+            debug_map_overrides={"object_model_source_identity": source_identity}
+        ),
+    )
+
+    diagnostics = debugger_proof_model.validate_contract_path(
+        DEBUGGER_PROOF_CONTRACT_PATH,
+        run_production_probe=True,
+    ).diagnostics
+
+    assert "production-native-debug-info-evidence-stale-blocker" in {
         diagnostic.code for diagnostic in diagnostics
     }
 

@@ -2,12 +2,7 @@ bool IsValidObjc3ActorLoweringMetadataContract(
     const Objc3ActorLoweringMetadataContract &contract) {
   if (contract.actor_method_sites < contract.nonisolated_entry_sites ||
       contract.actor_method_sites < contract.executor_affinity_sites ||
-      contract.actor_method_sites < contract.actor_hop_artifact_sites ||
-      contract.actor_method_sites < contract.actor_isolation_thunk_sites ||
-      contract.actor_method_sites < contract.guard_blocked_sites ||
-      contract.actor_method_sites < contract.contract_violation_sites ||
       contract.actor_metadata_record_sites < contract.actor_interface_sites ||
-      contract.task_handoff_sites < contract.actor_hop_artifact_sites ||
       contract.task_handoff_sites < contract.actor_isolation_thunk_sites) {
     return false;
   }

@@ -34,45 +34,58 @@
         "stdlib.text.runtime-builder-interpolation",
         "language.collections.literal-syntax-runtime-backed",
         "language.collections.for-in-syntax-runtime-backed",
-        "runtime.interop.package-loader-bridge"
+        "runtime.interop.package-loader-bridge",
+        "modules.public-import-lookup"
       ],
       "support_claims": [
         "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
         "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
         "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
-        "objc3c.behavior.runtime.interop.package-loader-bridge"
+        "objc3c.behavior.runtime.interop.package-loader-bridge",
+        "objc3c.behavior.modules.public-import-lookup"
       ],
       "evidence_map_refs": [
         {
           "capability_id": "stdlib.text.runtime-builder-interpolation",
           "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
-          "status": "implemented",
-          "claim_boundary": "runtime builder support executes with source-level collection iteration and declaration debug anchors; interpolation sugar, full source maps, and statement stepping remain outside this claim"
+          "status": "blocked",
+          "claim_boundary": "text builder calls remain source/tooling anchored in this family, but integrated runtime execution is not claimed until the CrossLaneFixtureProvider import-surface FFI preservation blocker is fixed"
         },
         {
           "capability_id": "language.collections.literal-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
-          "status": "implemented",
-          "claim_boundary": "array, map, and set literals execute in the integrated fixture and are source-graph anchored without promoting direct stdlib module import syntax"
+          "status": "blocked",
+          "claim_boundary": "array, map, and set literal source syntax is anchored without promoting integrated runtime execution while the package provider FFI preservation blocker remains open"
         },
         {
           "capability_id": "language.collections.for-in-syntax-runtime-backed",
           "support_claim": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
-          "status": "implemented",
-          "claim_boundary": "source-level for-in over array, set, and map values executes in this fixture with declaration debug anchors without promoting statement stepping or direct module import rows"
+          "status": "blocked",
+          "claim_boundary": "source-level for-in over array, set, and map values is anchored for tooling, but integrated runtime execution and statement stepping remain unpromoted"
         },
         {
           "capability_id": "runtime.interop.package-loader-bridge",
           "support_claim": "objc3c.behavior.runtime.interop.package-loader-bridge",
+          "status": "reserved",
+          "claim_boundary": "objc_import_module metadata is present, but package runtime execution and missing-provider link rejection remain reserved because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider blocks provider import-surface preservation"
+        },
+        {
+          "capability_id": "modules.public-import-lookup",
+          "support_claim": "objc3c.behavior.modules.public-import-lookup",
           "status": "implemented",
-          "claim_boundary": "linked provider import-surface metadata resolves the package seed and missing-provider linking rejects fail-closed; direct @import syntax and hosted package lifecycle remain blocked elsewhere"
+          "claim_boundary": "direct @import module lookup is backed by checked-in provider/consumer fixtures and module-roundtrip manifests; this text fixture keeps runtime package intent on objc_import_module metadata while package execution remains reserved"
         }
       ],
       "blockers": [
         {
-          "blocker_id": "cross-lane-text-package-direct-import-full-source-map-reserved",
-          "domain": "parser/sema diagnostic",
-          "reason": "direct @import module syntax and full source-map/statement-stepping publication remain unpromoted even though source literals, for-in, package metadata, bounded source graph nodes, declaration debug anchors, missing-provider rejection, and runtime execution are checked"
+          "blocker_id": "cross-lane-text-package-runtime-import-ffi-preservation-reserved",
+          "domain": "runtime status",
+          "reason": "runtime package import execution remains reserved because cross-module runtime link-plan Part 11 ffi preservation surface incomplete for CrossLaneFixtureProvider prevents provider import-surface preservation from becoming an executable package proof"
+        },
+        {
+          "blocker_id": "cross-lane-text-package-source-reference-full-source-map-reserved",
+          "domain": "source-map/debug diagnostic",
+          "reason": "direct @import module lookup is now source-truth backed, but compiler-owned semantic reference closure, full source-map publication, and statement-level stepping remain fail-closed even though source literals, for-in syntax, package metadata, package text identity, bounded source graph nodes, and declaration debug anchors are checked"
         }
       ]
     },

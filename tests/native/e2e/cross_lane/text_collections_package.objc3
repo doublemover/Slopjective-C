@@ -1,7 +1,9 @@
-// #8200 cross-lane executable: source-level collection literals, for-in,
-// runtime-backed text builders, package import metadata, source graph package
-// nodes, and declaration debug anchors interact in one Objective-C 3 program.
-// Direct @import module syntax remains reserved.
+// #8200 cross-lane source fixture: source-level collection literals, for-in,
+// text builder calls, package import metadata, source graph package nodes, and
+// declaration debug anchors interact in one Objective-C 3 source fixture.
+// Direct @import lookup is source-truth backed by the module-roundtrip fixtures;
+// runtime package execution stays reserved on objc_import_module metadata until
+// provider FFI preservation is compiler-owned across import surfaces.
 module CrossLaneTextCollectionsPackage;
 
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;

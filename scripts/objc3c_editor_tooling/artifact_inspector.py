@@ -65,6 +65,23 @@ LLVM_TOOL_FALLBACK_DIRS = (
     Path("C:/Program Files/LLVM/bin"),
 )
 DEFAULT_OBJC3_ABI_IDENTITY = "objc3-abi-2025Q4"
+LLVM_DEBUG_LOCATION_ATTACHMENT_PATTERN = re.compile(
+    r"(?:^|,\s*)!dbg\s+![0-9]+\b"
+)
+LLVM_NON_INSTRUCTION_DEBUG_LOCATION_PREFIXES = (
+    "!",
+    "@",
+    "attributes ",
+    "comdat ",
+    "declare ",
+    "define ",
+    "module ",
+    "source_filename",
+    "target ",
+    "uselistorder",
+    "{",
+    "}",
+)
 
 
 def _summary_paths(summary: dict[str, Any]) -> dict[str, Any]:
@@ -605,6 +622,19 @@ def _read_text(record: dict[str, Any]) -> str:
     return resolve_repo_path(str(record["path"])).read_text(encoding="utf-8", errors="replace")
 
 
+def _has_instruction_debug_location(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped or stripped.startswith(";"):
+        return False
+    stripped = stripped.split(";", 1)[0].rstrip()
+    lowered = stripped.lower()
+    if lowered.startswith(LLVM_NON_INSTRUCTION_DEBUG_LOCATION_PREFIXES):
+        return False
+    if "@llvm.dbg." in lowered:
+        return False
+    return LLVM_DEBUG_LOCATION_ATTACHMENT_PATTERN.search(stripped) is not None
+
+
 def _severity_counts(entries: list[Any]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for entry in entries:
@@ -684,20 +714,10 @@ def _manifest_payload(
 def _ir_payload(record: dict[str, Any]) -> dict[str, Any]:
     text = _read_text(record)
     lines = text.splitlines()
-    llvm_debug_metadata_markers = (
-        "!dbg",
-        "llvm.dbg.",
-        "DICompileUnit",
-        "DISubprogram",
-        "DILocation",
-    )
     llvm_debug_location_count = sum(
-        line.count("!dbg")
-        + line.count("DILocation")
-        + line.count("llvm.dbg.")
-        for line in lines
+        1 for line in lines if _has_instruction_debug_location(line)
     )
-    llvm_debug_metadata_present = any(marker in text for marker in llvm_debug_metadata_markers)
+    llvm_debug_metadata_present = llvm_debug_location_count > 0
     return {
         "available": record["available"],
         "path": record["path"],
@@ -748,7 +768,11 @@ def _native_debug_info_evidence_payload(
     native_line_table_sections = [
         name for name in section_names if _is_native_line_table_section(name)
     ]
-    llvm_debug_metadata_present = ir_payload.get("llvm_debug_metadata_present") is True
+    llvm_debug_location_count = int(ir_payload.get("llvm_debug_location_count", 0) or 0)
+    llvm_debug_metadata_present = (
+        ir_payload.get("llvm_debug_metadata_present") is True
+        and llvm_debug_location_count > 0
+    )
     emitted_native_debug_info_supported = bool(
         native_debug_sections and llvm_debug_metadata_present
     )
@@ -770,7 +794,7 @@ def _native_debug_info_evidence_payload(
         if not native_debug_sections and not native_line_table_sections
         else "native object lacks debug line-table sections"
         if not native_line_table_sections
-        else "compiler IR lacks LLVM DI locations"
+        else "compiler IR lacks instruction-level LLVM DI locations"
         if not llvm_debug_metadata_present
         else "runtime debug trace is not integrated with emitted native debug info"
     )
@@ -794,7 +818,7 @@ def _native_debug_info_evidence_payload(
         "ir_path": str(ir_payload.get("path", "") or ""),
         "ir_debug_metadata_model": str(ir_payload.get("debug_metadata_model", "") or ""),
         "llvm_debug_metadata_present": llvm_debug_metadata_present,
-        "llvm_debug_location_count": int(ir_payload.get("llvm_debug_location_count", 0) or 0),
+        "llvm_debug_location_count": llvm_debug_location_count,
         "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
         "native_line_table_supported": native_line_table_supported,
         "statement_stepping_supported": False,

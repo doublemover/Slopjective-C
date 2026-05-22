@@ -8,14 +8,37 @@
   "module": {
     "module_name": "CrossLaneTextCollectionsPackage",
     "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
-    "package_id": "cross-lane:text-collections-package"
+    "package_id": "cross-lane:text-collections-package",
+    "source_text_identity": {
+      "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
+      "module_name": "CrossLaneTextCollectionsPackage",
+      "module_declaration": "module CrossLaneTextCollectionsPackage;",
+      "source_sha256": "ceda5933d1de3feea09693842191877c4a23c0492947dae67787afea895371de",
+      "required_tokens": [
+        "module CrossLaneTextCollectionsPackage;",
+        "objc_import_module(named(\"CrossLaneFixtureProvider\"))",
+        "fn summarizeImportedCollections() -> i32",
+        "objc3_runtime_stdlib_text_builder_append_i32_i32"
+      ]
+    }
   },
   "package_modules": [
     {
       "module_name": "CrossLaneFixtureProvider",
       "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
       "package_id": "package:cross-lane-fixture-provider",
-      "relationship": "linked-provider-runtime-import-surface"
+      "relationship": "provider-runtime-import-surface-reserved-ffi-preservation-input",
+      "source_text_identity": {
+        "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
+        "module_name": "CrossLaneFixtureProvider",
+        "module_declaration": "module CrossLaneFixtureProvider;",
+        "source_sha256": "13dfff4f3236caf069fab63f904f5767bec818a78b1568b6c4af80693c223022",
+        "required_tokens": [
+          "module CrossLaneFixtureProvider;",
+          "fn importedPackageSeed() -> i32",
+          "return 3;"
+        ]
+      }
     }
   ],
   "package_edges": [
@@ -32,7 +55,7 @@
     {
       "from": "cross-lane:text-collections-package",
       "to": "package:cross-lane-fixture-provider",
-      "relationship": "package-import-runtime-execution-prerequisite"
+      "relationship": "package-import-runtime-execution-reserved-ffi-preservation"
     }
   ]
 }

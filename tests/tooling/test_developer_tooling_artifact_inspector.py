@@ -263,6 +263,137 @@ def test_artifact_inspector_only_publishes_object_commands_for_real_object_paths
     )
 
 
+def test_artifact_inspector_promotes_emitted_native_debug_sections_only_with_ir_di() -> None:
+    evidence = artifact_inspector_module._native_debug_info_evidence_payload(
+        {
+            "available": True,
+            "path": "tmp/artifacts/module.obj",
+            "object_format": "coff",
+            "sha256": "a" * 64,
+            "object_section_inventory_command": "llvm-objdump -h tmp/artifacts/module.obj",
+            "sections": [
+                {"name": ".text"},
+                {"name": ".debug$S"},
+                {"name": ".debug_abbrev"},
+                {"name": ".debug_info"},
+                {"name": ".debug_str"},
+                {"name": ".debug_line"},
+            ],
+        },
+        {
+            "path": "tmp/artifacts/module.ll",
+            "debug_metadata_model": "llvm-di-metadata-present",
+            "llvm_debug_metadata_present": True,
+            "llvm_debug_location_count": 8,
+        },
+    )
+
+    assert evidence["object_format"] == "coff"
+    assert evidence["emitted_native_debug_info_supported"] is True
+    assert evidence["native_line_table_supported"] is True
+    assert evidence["native_debug_section_count"] == 5
+    assert evidence["native_line_table_section_count"] == 2
+    assert evidence["llvm_debug_metadata_present"] is True
+    assert evidence["llvm_debug_location_count"] == 8
+    assert evidence["blocked_by"] == [
+        "runtime-debug-trace-statement-stepping-integration"
+    ]
+    assert evidence["fail_closed_reason"] == (
+        "runtime debug trace is not integrated with emitted native debug info"
+    )
+
+
+def test_artifact_inspector_keeps_native_debug_reserved_without_ir_di() -> None:
+    evidence = artifact_inspector_module._native_debug_info_evidence_payload(
+        {
+            "available": True,
+            "path": "tmp/artifacts/module.obj",
+            "object_format": "coff",
+            "sha256": "a" * 64,
+            "object_section_inventory_command": "llvm-objdump -h tmp/artifacts/module.obj",
+            "sections": [
+                {"name": ".text"},
+                {"name": ".debug$S"},
+                {"name": ".debug_abbrev"},
+                {"name": ".debug_info"},
+                {"name": ".debug_str"},
+                {"name": ".debug_line"},
+            ],
+        },
+        {
+            "path": "tmp/artifacts/module.ll",
+            "debug_metadata_model": "no-llvm-di-debug-locations",
+            "llvm_debug_metadata_present": False,
+            "llvm_debug_location_count": 0,
+        },
+    )
+
+    assert evidence["emitted_native_debug_info_supported"] is False
+    assert evidence["native_line_table_supported"] is False
+    assert evidence["statement_stepping_supported"] is False
+    assert "compiler-ir-lacks-llvm-di-locations" in evidence["blocked_by"]
+    assert "runtime-debug-trace-statement-stepping-integration" in evidence["blocked_by"]
+    assert (
+        evidence["fail_closed_reason"]
+        == "compiler IR lacks instruction-level LLVM DI locations"
+    )
+
+
+def test_artifact_inspector_rejects_dilocation_declarations_without_instruction_dbg(
+    tmp_path: Path,
+) -> None:
+    ir_path = tmp_path / "metadata-only.ll"
+    ir_path.write_text(
+        """
+define void @metadata_only() !dbg !4 {
+entry:
+  call void @llvm.dbg.value(metadata i32 0, metadata !7, metadata !DIExpression())
+  ret void
+}
+
+declare void @llvm.dbg.value(metadata, metadata, metadata)
+
+!llvm.dbg.cu = !{!0}
+!0 = distinct !DICompileUnit(language: DW_LANG_C, file: !1)
+!1 = !DIFile(filename: "metadata_only.objc3", directory: ".")
+!4 = distinct !DISubprogram(name: "metadata_only", file: !1, line: 1)
+!7 = !DILocalVariable(name: "value", scope: !4, file: !1, line: 1)
+!8 = !DILocation(line: 1, column: 1, scope: !4)
+""",
+        encoding="utf-8",
+    )
+
+    ir_payload = artifact_inspector_module._ir_payload(
+        {
+            "available": True,
+            "path": str(ir_path),
+            "retired_route_reason": "",
+        }
+    )
+    evidence = artifact_inspector_module._native_debug_info_evidence_payload(
+        {
+            "available": True,
+            "path": "tmp/artifacts/module.obj",
+            "object_format": "coff",
+            "sha256": "a" * 64,
+            "object_section_inventory_command": "llvm-objdump -h tmp/artifacts/module.obj",
+            "sections": [
+                {"name": ".text"},
+                {"name": ".debug$S"},
+                {"name": ".debug_info"},
+                {"name": ".debug_line"},
+            ],
+        },
+        ir_payload,
+    )
+
+    assert ir_payload["llvm_debug_metadata_present"] is False
+    assert ir_payload["llvm_debug_location_count"] == 0
+    assert evidence["emitted_native_debug_info_supported"] is False
+    assert evidence["native_line_table_supported"] is False
+    assert "compiler-ir-lacks-llvm-di-locations" in evidence["blocked_by"]
+
+
 def test_artifact_inspector_extracts_object_runtime_package_and_link_inventory(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,

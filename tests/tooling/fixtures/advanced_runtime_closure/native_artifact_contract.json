@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.advanced-runtime.closure.native-artifact.v1",
+  "issue_ref": 8199,
+  "status": "native_artifact_ready",
+  "support_id": "advanced-runtime-native-object-artifacts",
+  "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+  "generated_attempt_dir": "tmp/artifacts/advanced-runtime-closure/native-executable-umbrella/compile",
+  "expected_compile_backend": "direct-native",
+  "expected_exit_code": 0,
+  "native_compile_claimed": true,
+  "native_object_artifact_claimed": true,
+  "native_ir_artifact_claimed": true,
+  "native_manifest_artifact_claimed": true,
+  "native_link_claimed": false,
+  "native_run_claimed": false,
+  "native_executable_umbrella_promoted": false,
+  "umbrella_support_promoted": false,
+  "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "boundary": "The combined positive fixture is checked against the real direct-native compiler path and now produces LLVM IR, object output, semantic manifests, runtime registration manifests, and runtime metadata artifacts from a fresh generated-attempt directory. This contract claims native compile/artifact readiness only; native executable link/run promotion remains unclaimed until the umbrella fixture has a stable end-to-end executable harness.",
+  "expected_diagnostics": [],
+  "absent_diagnostic_codes": [],
+  "required_success_artifacts": [
+    "module.obj",
+    "module.ll",
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json",
+    "module.runtime-metadata.bin",
+    "module.error_handling-error-replay.json"
+  ],
+  "forbidden_success_artifacts": [
+    "module.exe"
+  ],
+  "forbidden_llvm_operand_markers": [
+    "|%",
+    "%|"
+  ],
+  "parallelism_caps": {
+    "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+    "CL_MPCount": "4",
+    "LLVM_PARALLEL_COMPILE_JOBS": "4",
+    "OBJC3C_NATIVE_BUILD_PARALLELISM": "4"
+  }
+}

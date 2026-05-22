@@ -14,6 +14,9 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
     return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   }
 
+  // The native driver always emits IR/object artifacts, so its macro-host
+  // subprocess must inherit the same error runtime surface as the parent.
+  const bool allow_live_error_runtime_surface = true;
   std::string artifact_json;
   if (!TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
           {.contract_id =
@@ -54,7 +57,7 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
            .bootstrap_registration_order_ordinal =
                cli_options.bootstrap_registration_order_ordinal,
            .allow_live_error_runtime_surface =
-               cli_options.allow_live_error_runtime_surface,
+               allow_live_error_runtime_surface,
            .imported_runtime_surface_paths =
                cli_options.imported_runtime_surface_paths,
            .deterministic = true},

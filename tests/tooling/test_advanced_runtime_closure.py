@@ -11,10 +11,11 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE,
     ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT,
-    ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT,
+    ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT,
     ADVANCED_CLOSURE_NEGATIVE_MATRIX,
-    EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES,
-    EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS,
+    FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS,
+    FORBIDDEN_NATIVE_SUCCESS_ARTIFACTS,
+    REQUIRED_NATIVE_ARTIFACTS,
     REQUIRED_INTERACTION_FEATURE_SETS,
     REQUIRED_LITERAL_NEGATIVE_CASE_IDS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS,
@@ -73,14 +74,13 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
         == len(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
     )
     assert (
-        payload["advanced_runtime_native_executable_fail_closed_contract"]
-        == ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT
+        payload["advanced_runtime_native_artifact_contract"]
+        == ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT
     )
-    assert payload["advanced_runtime_native_compile_attempt_status"] == "fail_closed"
-    assert payload["advanced_runtime_native_compile_attempt_exit_code"] == 1
-    assert payload["advanced_runtime_native_compile_attempt_diagnostic_count"] == len(
-        EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS
-    )
+    assert payload["advanced_runtime_native_compile_attempt_status"] == "native_artifact_ready"
+    assert payload["advanced_runtime_native_compile_attempt_exit_code"] == 0
+    assert payload["advanced_runtime_native_compile_attempt_diagnostic_count"] == 0
+    assert payload["advanced_runtime_native_artifact_ready"] is True
     assert payload["advanced_runtime_native_executable_umbrella_promoted"] is False
 
 
@@ -96,7 +96,7 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     _assert_checked_path(str(contract["language_semantics_contract"]))
     _assert_checked_path(str(contract["debug_source_map_validator"]))
     _assert_checked_path(str(contract["canonical_compiler_emitted_source_debug_map_bundle"]))
-    _assert_checked_path(str(contract["native_executable_fail_closed_contract"]))
+    _assert_checked_path(str(contract["native_artifact_contract"]))
 
     unsupported_policy = contract["unsupported_combination_policy"]  # type: ignore[index]
     assert unsupported_policy["diagnostic"] == "advanced-runtime.unsupported-combination"
@@ -138,31 +138,26 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
         assert set(record["runtime_source_debug_link_ids"]) <= runtime_source_debug_link_ids
 
 
-def test_native_executable_umbrella_remains_fail_closed() -> None:
-    contract = _read_json(ADVANCED_CLOSURE_NATIVE_EXECUTABLE_FAIL_CLOSED_CONTRACT)
+def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
+    contract = _read_json(ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT)
 
     assert contract["issue_ref"] == 8199
-    assert contract["status"] == "fail_closed"
-    assert contract["native_compile_claimed"] is False
+    assert contract["status"] == "native_artifact_ready"
+    assert contract["native_compile_claimed"] is True
+    assert contract["native_object_artifact_claimed"] is True
+    assert contract["native_ir_artifact_claimed"] is True
+    assert contract["native_manifest_artifact_claimed"] is True
     assert contract["native_link_claimed"] is False
     assert contract["native_run_claimed"] is False
     assert contract["native_executable_umbrella_promoted"] is False
     assert contract["umbrella_support_promoted"] is False
     assert contract["positive_fixture"] == "tests/native/runtime/advanced_closure/combined_positive.objc3"
 
-    expected = [
-        {
-            "code": record["code"],
-            "line": record["line"],
-            "column": record["column"],
-            "message_contains": record["message_contains"],
-        }
-        for record in EXPECTED_NATIVE_FAIL_CLOSED_DIAGNOSTICS
-    ]
-    assert contract["expected_diagnostics"] == expected
-    assert set(contract["absent_diagnostic_codes"]) == EXPECTED_NATIVE_FAIL_CLOSED_ABSENT_CODES
-    assert "module.obj" in contract["forbidden_success_artifacts"]
-    assert "module.exe" in contract["forbidden_success_artifacts"]
+    assert contract["expected_diagnostics"] == []
+    assert contract["absent_diagnostic_codes"] == []
+    assert tuple(contract["required_success_artifacts"]) == REQUIRED_NATIVE_ARTIFACTS
+    assert tuple(contract["forbidden_success_artifacts"]) == FORBIDDEN_NATIVE_SUCCESS_ARTIFACTS
+    assert tuple(contract["forbidden_llvm_operand_markers"]) == FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS
 
 
 def test_canonical_source_debug_map_links_every_combined_identity_record() -> None:

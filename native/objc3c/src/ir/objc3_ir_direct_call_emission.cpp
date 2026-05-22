@@ -33,7 +33,8 @@ std::string EmitObjc3IRDirectFunctionCall(
     FunctionContext &ctx,
     const Objc3IRDirectCallEmissionCallbacks &callbacks,
     const std::string &throws_error_slot_ptr, bool *bridge_failed_out,
-    std::string *bridge_error_value_out) {
+    std::string *bridge_error_value_out,
+    std::string *bridge_failure_condition_out) {
   if (expr != nullptr && expr->await_expression_enabled &&
       !ctx.async_runtime_helper_enabled) {
     return callbacks.emit_unsupported_i32_value(
@@ -130,8 +131,16 @@ std::string EmitObjc3IRDirectFunctionCall(
   if (bridge_error_value_out != nullptr) {
     *bridge_error_value_out = "0";
   }
+  if (bridge_failure_condition_out != nullptr) {
+    *bridge_failure_condition_out = "";
+  }
 
-  if (signature != nullptr && signature->objc_status_code_declared) {
+  const bool observe_bridge_failure = bridge_failed_out != nullptr ||
+                                      bridge_error_value_out != nullptr ||
+                                      bridge_failure_condition_out != nullptr;
+
+  if (observe_bridge_failure && signature != nullptr &&
+      signature->objc_status_code_declared) {
     const std::string is_success = callbacks.new_temp(ctx);
     ctx.code_lines.push_back("  " + is_success + " = icmp eq i32 " + out +
                              ", " +
@@ -142,6 +151,9 @@ std::string EmitObjc3IRDirectFunctionCall(
                              is_success + ", true");
     if (bridge_failed_out != nullptr) {
       *bridge_failed_out = true;
+    }
+    if (bridge_failure_condition_out != nullptr) {
+      *bridge_failure_condition_out = bridge_failed;
     }
     if (bridge_error_value_out != nullptr) {
       std::string raw_bridge_error = out;
@@ -171,10 +183,10 @@ std::string EmitObjc3IRDirectFunctionCall(
                                ")");
       *bridge_error_value_out = bridged_error;
     }
-    return out + "|" + bridge_failed;
   }
 
-  if (signature != nullptr && signature->objc_nserror_declared) {
+  if (observe_bridge_failure && signature != nullptr &&
+      signature->objc_nserror_declared) {
     const std::string is_success = callbacks.new_temp(ctx);
     ctx.code_lines.push_back("  " + is_success + " = icmp ne i32 " + out +
                              ", 0");
@@ -183,6 +195,9 @@ std::string EmitObjc3IRDirectFunctionCall(
                              is_success + ", true");
     if (bridge_failed_out != nullptr) {
       *bridge_failed_out = true;
+    }
+    if (bridge_failure_condition_out != nullptr) {
+      *bridge_failure_condition_out = bridge_failed;
     }
     if (bridge_error_value_out != nullptr) {
       std::string raw_bridge_error = "1";
@@ -198,7 +213,6 @@ std::string EmitObjc3IRDirectFunctionCall(
                                "(i32 " + raw_bridge_error + ")");
       *bridge_error_value_out = bridged_error;
     }
-    return out + "|" + bridge_failed;
   }
 
   if (expr != nullptr && expr->await_expression_enabled &&

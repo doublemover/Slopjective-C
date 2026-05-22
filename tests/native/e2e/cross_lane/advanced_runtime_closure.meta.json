@@ -15,6 +15,7 @@
     "runtime_state_evidence_claimed": true,
     "source_graph_evidence_claimed": true,
     "source_debug_map_evidence_claimed": true,
+    "native_compile_artifacts_claimed": true,
     "native_compile_run_claimed": false,
     "advanced_runtime_umbrella_promoted": false
   },
@@ -36,6 +37,7 @@
   "production_evidence": {
     "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
     "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
     "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
     "umbrella_support_promoted": false

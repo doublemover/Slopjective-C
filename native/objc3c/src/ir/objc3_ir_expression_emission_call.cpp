@@ -49,15 +49,18 @@ std::string EmitObjc3IRCallExpression(
                              ", align 4");
     bool bridge_failed = false;
     std::string bridge_error_value = "0";
+    std::string bridge_failure_condition;
     std::string result = callbacks.emit_direct_function_call(
         operand, operand_signature, ctx, error_slot, &bridge_failed,
-        &bridge_error_value);
+        &bridge_error_value, &bridge_failure_condition);
     std::string actual_result = result;
     std::string failure_cond;
     if (bridge_failed) {
-      const std::size_t marker = result.rfind('|');
-      actual_result = result.substr(0, marker);
-      failure_cond = result.substr(marker + 1);
+      if (bridge_failure_condition.empty()) {
+        return callbacks.emit_unsupported_i32_value(
+            "try lowering received bridged operand without failure condition");
+      }
+      failure_cond = bridge_failure_condition;
     } else if (operand_signature->throws_declared) {
       const std::string has_error = callbacks.new_temp(ctx);
       const std::string loaded_error =
@@ -121,12 +124,12 @@ std::string EmitObjc3IRCallExpression(
     ctx.code_lines.push_back("  store i32 0, ptr " + ignored_error_slot +
                              ", align 4");
     return callbacks.emit_direct_function_call(
-        expr, signature, ctx, ignored_error_slot, nullptr, nullptr);
+        expr, signature, ctx, ignored_error_slot, nullptr, nullptr, nullptr);
   }
   // implementation anchor: supported await-marked expressions reach native IR
   // through direct-call lowering, where executor-affined async contexts
   // materialize the private continuation helper handoff. Unsupported await
   // surfaces fail closed from that direct-call path.
   return callbacks.emit_direct_function_call(expr, signature, ctx, "",
-                                             nullptr, nullptr);
+                                             nullptr, nullptr, nullptr);
 }

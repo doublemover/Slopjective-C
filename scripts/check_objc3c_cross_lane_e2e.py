@@ -157,6 +157,18 @@ OBJECT_REFLECTION_DEBUGGER_PROOF_CONTRACT_ID = (
 TEXT_COLLECTIONS_PACKAGE_PROOF_CONTRACT_ID = (
     "objc3c.cross_lane_e2e.text_collections_package_proof.v1"
 )
+CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
+SUPPORT_CLAIM_EVIDENCE_CATALOG_PATH = (
+    ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
+)
+DIRECT_IMPORT_CAPABILITY_ID = "modules.public-import-lookup"
+DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.public-import-lookup"
+DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
+TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID = "cross-lane-text-package-runtime-import-ffi-preservation-reserved"
+TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT = (
+    "cross-module runtime link-plan Part 11 ffi preservation surface incomplete "
+    "for CrossLaneFixtureProvider"
+)
 
 REQUIRED_FAMILY_IDS = (
     "text_collections_package",
@@ -1097,12 +1109,470 @@ def _workspace_edge_labels(workspace: dict[str, Any], family_id: str) -> set[str
     return labels
 
 
+def _require_path_under_root(path: Path, root: Path, field: str) -> Path:
+    resolved_path = path.resolve()
+    resolved_root = root.resolve()
+    try:
+        resolved_path.relative_to(resolved_root)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"{field} must stay under {repo_rel(resolved_root)}: {resolved_path.as_posix()}"
+        ) from exc
+    return resolved_path
+
+
+def _require_generated_artifact_under(path_text: str, root: Path, field: str) -> str:
+    normalized = normalize_path(require_nonempty_string(path_text, field))
+    path = ROOT / normalized
+    _require_path_under_root(path, root, field)
+    require_artifact(path, field)
+    return repo_rel(path)
+
+
+def _reset_editor_tooling_probe_outputs(paths: Any) -> None:
+    report_root = ROOT / "tmp" / "reports" / "developer-tooling" / "editor-surface"
+    artifact_root = ROOT / "tmp" / "artifacts" / "developer-tooling" / "editor-surface"
+    for path, root, field in (
+        (paths.report_dir, report_root, "editor tooling report directory"),
+        (paths.artifact_dir, artifact_root, "editor tooling artifact directory"),
+    ):
+        _require_path_under_root(path, root, field)
+        if path.exists():
+            shutil.rmtree(path)
+
+
+def _validate_editor_tooling_probe_freshness(
+    *,
+    family_id: str,
+    paths: Any,
+    inputs: Any,
+    published: Any,
+    graph: dict[str, Any],
+) -> dict[str, str]:
+    report_root = ROOT / "tmp" / "reports" / "developer-tooling" / "editor-surface"
+    artifact_root = ROOT / "tmp" / "artifacts" / "developer-tooling" / "editor-surface"
+    summary_paths = require_object(inputs.summary.get("paths"), f"{family_id}.compile_summary.paths")
+    if normalize_path(str(inputs.summary.get("out_dir", ""))) != repo_rel(paths.artifact_dir):
+        raise RuntimeError(f"{family_id}.production frontend summary out_dir drifted from fresh artifact dir")
+    if normalize_path(str(summary_paths.get("summary", ""))) != repo_rel(paths.compile_summary):
+        raise RuntimeError(f"{family_id}.production frontend summary path drifted from fresh report dir")
+
+    manifest_path = _require_generated_artifact_under(
+        str(inputs.manifest_path_text or ""),
+        artifact_root,
+        f"{family_id}.production manifest path",
+    )
+    for key in ("diagnostics", "object"):
+        _require_generated_artifact_under(
+            str(summary_paths.get(key, "")),
+            artifact_root,
+            f"{family_id}.production {key} path",
+        )
+    compile_summary_path = _require_generated_artifact_under(
+        repo_rel(paths.compile_summary),
+        report_root,
+        f"{family_id}.production compile summary path",
+    )
+    source_graph_path = _require_generated_artifact_under(
+        str(published.source_graph_path),
+        report_root,
+        f"{family_id}.production source graph path",
+    )
+    debug_map_path = _require_generated_artifact_under(
+        str(published.debug_path),
+        report_root,
+        f"{family_id}.production debug map path",
+    )
+
+    evidence = require_object(graph.get("evidence"), f"{family_id}.source_graph.evidence")
+    if normalize_path(str(evidence.get("manifest_path", ""))) != manifest_path:
+        raise RuntimeError(f"{family_id}.source graph evidence manifest path drifted from fresh compile output")
+    if "manifest-source-graph-fields" not in require_string_list(
+        evidence.get("source_truth_inputs"),
+        f"{family_id}.source_graph.evidence.source_truth_inputs",
+    ):
+        raise RuntimeError(f"{family_id}.source graph must consume fresh compiler manifest source-graph fields")
+    source_graph_digest = require_nonempty_string(
+        graph.get("source_graph_digest"),
+        f"{family_id}.source_graph.source_graph_digest",
+    )
+    if load_json(ROOT / source_graph_path).get("source_graph_digest") != source_graph_digest:
+        raise RuntimeError(f"{family_id}.published source graph digest drifted from in-memory model")
+
+    return {
+        "compile_summary": compile_summary_path,
+        "manifest": manifest_path,
+        "source_graph": source_graph_path,
+        "debug_map": debug_map_path,
+    }
+
+
 def _require_no_direct_import_statement(family_id: str, source_text: str) -> None:
     for line_number, line in enumerate(source_text.splitlines(), start=1):
         if line.strip().startswith("@import "):
             raise RuntimeError(
                 f"{family_id} must not promote direct @import syntax on line {line_number}"
             )
+
+
+def _require_source_text_identity(
+    *,
+    family_id: str,
+    source_path: Path,
+    expected_module_name: str,
+    identity: dict[str, Any],
+    field: str,
+) -> dict[str, Any]:
+    declared_source = require_source_owned_path(str(identity.get("source", "")), f"{field}.source")
+    if repo_rel(declared_source) != repo_rel(source_path):
+        raise RuntimeError(f"{field}.source drifted from workspace source")
+    module_name = require_nonempty_string(identity.get("module_name"), f"{field}.module_name")
+    if module_name != expected_module_name:
+        raise RuntimeError(f"{field}.module_name drifted from workspace module name")
+    expected_digest = require_nonempty_string(identity.get("source_sha256"), f"{field}.source_sha256").lower()
+    actual_digest = sha256_file(source_path).lower()
+    if expected_digest != actual_digest:
+        raise RuntimeError(
+            f"{field}.source_sha256 drifted for {repo_rel(source_path)}: expected {expected_digest}, got {actual_digest}"
+        )
+    source_text = source_path.read_text(encoding="utf-8")
+    module_declaration = require_nonempty_string(
+        identity.get("module_declaration"),
+        f"{field}.module_declaration",
+    )
+    if module_declaration not in source_text:
+        raise RuntimeError(f"{field}.module_declaration is missing from source text")
+    required_tokens = [
+        require_nonempty_string(token, f"{field}.required_tokens[{index}]")
+        for index, token in enumerate(require_list(identity.get("required_tokens"), f"{field}.required_tokens"))
+    ]
+    missing_tokens = [token for token in required_tokens if token not in source_text]
+    if missing_tokens:
+        raise RuntimeError(f"{field} source text is missing required tokens: " + ", ".join(missing_tokens))
+    return {
+        "source": repo_rel(source_path),
+        "module_name": module_name,
+        "source_sha256": actual_digest,
+        "module_declaration": module_declaration,
+        "required_token_count": len(required_tokens),
+    }
+
+
+def _validate_workspace_source_text_identities(
+    family_id: str,
+    workspace: dict[str, Any],
+    source_path: Path,
+) -> list[dict[str, Any]]:
+    identities: list[dict[str, Any]] = []
+    module = require_object(workspace.get("module"), f"{family_id}.workspace.module")
+    module_name = require_nonempty_string(module.get("module_name"), f"{family_id}.workspace.module.module_name")
+    identities.append(
+        _require_source_text_identity(
+            family_id=family_id,
+            source_path=source_path,
+            expected_module_name=module_name,
+            identity=require_object(
+                module.get("source_text_identity"),
+                f"{family_id}.workspace.module.source_text_identity",
+            ),
+            field=f"{family_id}.workspace.module.source_text_identity",
+        )
+    )
+
+    for index, raw_module in enumerate(
+        require_list(workspace.get("package_modules"), f"{family_id}.workspace.package_modules")
+    ):
+        package_module = require_object(raw_module, f"{family_id}.workspace.package_modules[{index}]")
+        package_source = require_source_owned_path(
+            str(package_module.get("source", "")),
+            f"{family_id}.workspace.package_modules[{index}].source",
+        )
+        package_module_name = require_nonempty_string(
+            package_module.get("module_name"),
+            f"{family_id}.workspace.package_modules[{index}].module_name",
+        )
+        identities.append(
+            _require_source_text_identity(
+                family_id=family_id,
+                source_path=package_source,
+                expected_module_name=package_module_name,
+                identity=require_object(
+                    package_module.get("source_text_identity"),
+                    f"{family_id}.workspace.package_modules[{index}].source_text_identity",
+                ),
+                field=f"{family_id}.workspace.package_modules[{index}].source_text_identity",
+            )
+        )
+    return identities
+
+
+def _first_matching_row(rows: Any, *, field_name: str, expected_value: str, field: str) -> dict[str, Any]:
+    for index, raw_row in enumerate(require_list(rows, field)):
+        row = require_object(raw_row, f"{field}[{index}]")
+        if row.get(field_name) == expected_value:
+            return row
+    raise RuntimeError(f"{field} missing {field_name}={expected_value}")
+
+
+def _require_source_owned_evidence_paths(paths: list[Any], field: str) -> list[str]:
+    normalized: list[str] = []
+    for index, raw_path in enumerate(paths):
+        path_text = require_nonempty_string(raw_path, f"{field}[{index}]")
+        normalized.append(repo_rel(require_source_owned_path(path_text, f"{field}[{index}]")))
+    return normalized
+
+
+def _validate_direct_import_source_truth(
+    family_id: str,
+    proof: dict[str, Any],
+) -> dict[str, Any]:
+    direct_import = require_object(
+        proof.get("direct_import_source_truth"),
+        f"{family_id}.text_collections_package_proof.direct_import_source_truth",
+    )
+    if direct_import.get("status") != "expected-pass":
+        raise RuntimeError(f"{family_id}.direct_import_source_truth.status must be expected-pass")
+    if direct_import.get("capability_id") != DIRECT_IMPORT_CAPABILITY_ID:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth.capability_id drifted")
+    if direct_import.get("support_claim") != DIRECT_IMPORT_SUPPORT_CLAIM:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth.support_claim drifted")
+    if direct_import.get("owner_phase") != "sema":
+        raise RuntimeError(f"{family_id}.direct_import_source_truth.owner_phase must stay sema-owned")
+    if direct_import.get("public_replay_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth.public command drifted")
+
+    consumer_fixture = require_source_owned_path(
+        str(direct_import.get("consumer_fixture", "")),
+        f"{family_id}.direct_import_source_truth.consumer_fixture",
+    )
+    provider_fixture = require_source_owned_path(
+        str(direct_import.get("provider_fixture", "")),
+        f"{family_id}.direct_import_source_truth.provider_fixture",
+    )
+    conformance_fixture = require_source_owned_path(
+        str(direct_import.get("conformance_fixture", "")),
+        f"{family_id}.direct_import_source_truth.conformance_fixture",
+    )
+    traceability_fixture = require_source_owned_path(
+        str(direct_import.get("traceability_fixture", "")),
+        f"{family_id}.direct_import_source_truth.traceability_fixture",
+    )
+
+    consumer_text = consumer_fixture.read_text(encoding="utf-8")
+    provider_text = provider_fixture.read_text(encoding="utf-8")
+    required_consumer_tokens = [
+        require_nonempty_string(token, f"{family_id}.direct_import_source_truth.required_consumer_tokens[{index}]")
+        for index, token in enumerate(
+            require_list(
+                direct_import.get("required_consumer_tokens"),
+                f"{family_id}.direct_import_source_truth.required_consumer_tokens",
+            )
+        )
+    ]
+    missing_consumer_tokens = [token for token in required_consumer_tokens if token not in consumer_text]
+    if missing_consumer_tokens:
+        raise RuntimeError(
+            f"{family_id}.direct_import_source_truth.consumer fixture missing tokens: "
+            + ", ".join(missing_consumer_tokens)
+        )
+    if "@import " not in consumer_text:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth consumer fixture must contain direct @import")
+    if "module moduleImportLookupProvider;" not in provider_text:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth provider module declaration drifted")
+
+    canonical_manifest = load_json(CANONICAL_MANIFEST_PATH)
+    support_claim = _first_matching_row(
+        canonical_manifest.get("support_claims"),
+        field_name="claim_id",
+        expected_value=DIRECT_IMPORT_SUPPORT_CLAIM,
+        field="canonical_manifest.support_claims",
+    )
+    if support_claim.get("owner_phase") != direct_import.get("owner_phase"):
+        raise RuntimeError(f"{family_id}.direct_import_source_truth owner phase drifted from canonical manifest")
+    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(consumer_fixture):
+        raise RuntimeError(f"{family_id}.direct_import_source_truth behavior fixture drifted from canonical manifest")
+    if support_claim.get("executable_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth executable command drifted from canonical manifest")
+
+    evidence_catalog = load_json(SUPPORT_CLAIM_EVIDENCE_CATALOG_PATH)
+    evidence_row = _first_matching_row(
+        evidence_catalog.get("rows"),
+        field_name="support_claim",
+        expected_value=DIRECT_IMPORT_SUPPORT_CLAIM,
+        field="support_claim_evidence_catalog.rows",
+    )
+    if evidence_row.get("capability_id") != DIRECT_IMPORT_CAPABILITY_ID:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth evidence row capability drifted")
+    if evidence_row.get("owner_phase") != direct_import.get("owner_phase"):
+        raise RuntimeError(f"{family_id}.direct_import_source_truth evidence row owner drifted")
+    if evidence_row.get("runnable_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth evidence command drifted")
+    if normalize_path(str(evidence_row.get("conformance_fixture", ""))) != repo_rel(conformance_fixture):
+        raise RuntimeError(f"{family_id}.direct_import_source_truth conformance fixture drifted")
+    if normalize_path(str(evidence_row.get("traceability_fixture", ""))) != repo_rel(traceability_fixture):
+        raise RuntimeError(f"{family_id}.direct_import_source_truth traceability fixture drifted")
+
+    required_positive = _require_source_owned_evidence_paths(
+        require_list(
+            direct_import.get("required_positive_evidence"),
+            f"{family_id}.direct_import_source_truth.required_positive_evidence",
+        ),
+        f"{family_id}.direct_import_source_truth.required_positive_evidence",
+    )
+    required_negative = _require_source_owned_evidence_paths(
+        require_list(
+            direct_import.get("required_negative_evidence"),
+            f"{family_id}.direct_import_source_truth.required_negative_evidence",
+        ),
+        f"{family_id}.direct_import_source_truth.required_negative_evidence",
+    )
+    positive_evidence = {
+        normalize_path(require_nonempty_string(path, "positive_evidence[]"))
+        for path in require_list(evidence_row.get("positive_evidence"), "support_claim_evidence_catalog.positive_evidence")
+    }
+    negative_evidence = {
+        normalize_path(require_nonempty_string(path, "negative_evidence[]"))
+        for path in require_list(evidence_row.get("negative_evidence"), "support_claim_evidence_catalog.negative_evidence")
+    }
+    missing_positive = sorted(set(required_positive).difference(positive_evidence))
+    missing_negative = sorted(set(required_negative).difference(negative_evidence))
+    if missing_positive:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth missing positive evidence: " + ", ".join(missing_positive))
+    if missing_negative:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth missing negative evidence: " + ", ".join(missing_negative))
+    required_codes = set(
+        require_string_list(
+            direct_import.get("required_diagnostic_codes"),
+            f"{family_id}.direct_import_source_truth.required_diagnostic_codes",
+        )
+    )
+    actual_codes = {
+        require_nonempty_string(code, "support_claim_evidence_catalog.required_diagnostic_codes[]")
+        for code in require_list(
+            evidence_row.get("required_diagnostic_codes"),
+            "support_claim_evidence_catalog.required_diagnostic_codes",
+        )
+    }
+    missing_codes = sorted(required_codes.difference(actual_codes))
+    if missing_codes:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth missing diagnostic codes: " + ", ".join(missing_codes))
+    source_truth_requirements = require_string_list(
+        evidence_row.get("source_truth_requirements"),
+        "support_claim_evidence_catalog.source_truth_requirements",
+    )
+    if not source_truth_requirements:
+        raise RuntimeError(f"{family_id}.direct_import_source_truth requires source-truth requirements")
+
+    return {
+        "status": "PASS",
+        "capability_id": DIRECT_IMPORT_CAPABILITY_ID,
+        "support_claim": DIRECT_IMPORT_SUPPORT_CLAIM,
+        "public_replay_command": DIRECT_IMPORT_PUBLIC_COMMAND,
+        "consumer_fixture": repo_rel(consumer_fixture),
+        "provider_fixture": repo_rel(provider_fixture),
+        "conformance_fixture": repo_rel(conformance_fixture),
+        "traceability_fixture": repo_rel(traceability_fixture),
+        "positive_evidence_count": len(positive_evidence),
+        "negative_evidence_count": len(negative_evidence),
+        "source_truth_requirement_count": len(source_truth_requirements),
+    }
+
+
+def _validate_source_reference_closure_boundary(
+    family_id: str,
+    source_graph: dict[str, Any],
+    graph: dict[str, Any],
+) -> dict[str, Any]:
+    expected_supported = source_graph.get("semantic_reference_closure_supported")
+    if not isinstance(expected_supported, bool):
+        raise RuntimeError(f"{family_id}.source_graph.semantic_reference_closure_supported must be boolean")
+    evidence = require_object(graph.get("evidence"), f"{family_id}.source_graph.evidence")
+    actual_supported = evidence.get("semantic_reference_closure") is True
+    if actual_supported != expected_supported:
+        raise RuntimeError(
+            f"{family_id}.source graph semantic reference closure drifted: "
+            f"expected {expected_supported}, got {actual_supported}"
+        )
+
+    required_consumers = require_string_list(
+        source_graph.get("required_fail_closed_consumers"),
+        f"{family_id}.source_graph.required_fail_closed_consumers",
+    )
+    required_diagnostics = require_string_list(
+        source_graph.get("required_fail_closed_diagnostics"),
+        f"{family_id}.source_graph.required_fail_closed_diagnostics",
+    )
+    required_remaining_work = require_string_list(
+        source_graph.get("required_remaining_native_compiler_work"),
+        f"{family_id}.source_graph.required_remaining_native_compiler_work",
+    )
+    minimum_reference_candidates = source_graph.get("minimum_reference_candidates")
+    if not isinstance(minimum_reference_candidates, int) or isinstance(minimum_reference_candidates, bool):
+        raise RuntimeError(f"{family_id}.source_graph.minimum_reference_candidates must be an integer")
+
+    if expected_supported:
+        if graph.get("fail_closed") is True:
+            raise RuntimeError(f"{family_id}.source graph must not fail closed when semantic closure is supported")
+        return {
+            "status": "PASS",
+            "semantic_reference_closure_supported": True,
+            "fail_closed": False,
+        }
+
+    if graph.get("fail_closed") is not True:
+        raise RuntimeError(f"{family_id}.source graph must fail closed without semantic reference closure")
+    if evidence.get("lexical_candidates_authoritative") is not False:
+        raise RuntimeError(f"{family_id}.source graph lexical candidates must remain non-authoritative")
+    if int(graph.get("reference_candidate_count", 0) or 0) < minimum_reference_candidates:
+        raise RuntimeError(
+            f"{family_id}.source graph expected at least {minimum_reference_candidates} reference candidates"
+        )
+    diagnostics = require_list(graph.get("diagnostics"), f"{family_id}.source_graph.diagnostics")
+    diagnostic_codes = {
+        require_nonempty_string(
+            require_object(entry, f"{family_id}.source_graph.diagnostics[]").get("code"),
+            f"{family_id}.source_graph.diagnostics[].code",
+        )
+        for entry in diagnostics
+    }
+    missing_diagnostics = sorted(set(required_diagnostics).difference(diagnostic_codes))
+    if missing_diagnostics:
+        raise RuntimeError(
+            f"{family_id}.source graph missing fail-closed diagnostics: " + ", ".join(missing_diagnostics)
+        )
+    consumer_capabilities = require_object(
+        graph.get("consumer_capabilities"),
+        f"{family_id}.source_graph.consumer_capabilities",
+    )
+    fail_closed_consumers: list[str] = []
+    for consumer_name in required_consumers:
+        consumer = require_object(
+            consumer_capabilities.get(consumer_name),
+            f"{family_id}.source_graph.consumer_capabilities.{consumer_name}",
+        )
+        if consumer.get("supported") is not False or consumer.get("fail_closed") is not True:
+            raise RuntimeError(f"{family_id}.source graph consumer {consumer_name} must fail closed")
+        fail_closed_consumers.append(consumer_name)
+    remaining_work = set(
+        require_string_list(
+            graph.get("remaining_native_compiler_work"),
+            f"{family_id}.source_graph.remaining_native_compiler_work",
+        )
+    )
+    missing_remaining_work = sorted(set(required_remaining_work).difference(remaining_work))
+    if missing_remaining_work:
+        raise RuntimeError(
+            f"{family_id}.source graph missing native work blockers: " + ", ".join(missing_remaining_work)
+        )
+    return {
+        "status": "PASS",
+        "semantic_reference_closure_supported": False,
+        "fail_closed": True,
+        "reference_candidate_count": int(graph.get("reference_candidate_count", 0) or 0),
+        "fail_closed_consumers": fail_closed_consumers,
+        "fail_closed_diagnostics": sorted(required_diagnostics),
+        "remaining_native_compiler_work": sorted(required_remaining_work),
+    }
 
 
 def _validate_missing_provider_link_failure(
@@ -1144,6 +1614,95 @@ def _validate_missing_provider_link_failure(
     }
 
 
+def _validate_text_runtime_package_execution_boundary(
+    family_id: str,
+    expectation: dict[str, Any],
+    proof: dict[str, Any],
+    executable_proof: dict[str, Any] | None,
+) -> dict[str, Any]:
+    runtime_package = require_object(
+        proof.get("runtime_package_execution"),
+        f"{family_id}.text_collections_package_proof.runtime_package_execution",
+    )
+    status = require_nonempty_string(
+        runtime_package.get("status"),
+        f"{family_id}.runtime_package_execution.status",
+    )
+    if status not in ALLOWED_SECTION_STATES:
+        raise RuntimeError(f"{family_id}.runtime_package_execution.status is unknown: {status}")
+
+    runtime = require_object(expectation["runtime"], f"{family_id}.runtime")
+    compile_manifest = require_object(expectation["compile_manifest"], f"{family_id}.compile_manifest")
+    if executable_proof is not None:
+        require_expected_pass_section(runtime, f"{family_id}.runtime")
+        require_expected_pass_section(compile_manifest, f"{family_id}.compile_manifest")
+        if status != "expected-pass":
+            raise RuntimeError(f"{family_id}.runtime_package_execution.status must be expected-pass with executable proof")
+        return {
+            "status": "PASS",
+            "runtime_status": "expected-pass",
+            "compile_manifest_status": "expected-pass",
+        }
+
+    require_blocked_section(runtime, f"{family_id}.runtime")
+    require_blocked_section(compile_manifest, f"{family_id}.compile_manifest")
+    for section_name, section in (("runtime", runtime), ("compile_manifest", compile_manifest)):
+        if section.get("blocker_id") != TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID:
+            raise RuntimeError(f"{family_id}.{section_name}.blocker_id must name the FFI preservation blocker")
+        concrete_blocker = require_nonempty_string(
+            section.get("concrete_blocker"),
+            f"{family_id}.{section_name}.concrete_blocker",
+        )
+        if TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT not in concrete_blocker:
+            raise RuntimeError(f"{family_id}.{section_name}.concrete_blocker drifted from the known compiler blocker")
+
+    if status != "reserved":
+        raise RuntimeError(f"{family_id}.runtime_package_execution.status must stay reserved without executable proof")
+    if runtime_package.get("blocker_id") != TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID:
+        raise RuntimeError(f"{family_id}.runtime_package_execution.blocker_id drifted")
+    if runtime_package.get("blocked_provider_module") != "CrossLaneFixtureProvider":
+        raise RuntimeError(f"{family_id}.runtime_package_execution.blocked_provider_module drifted")
+    failing_stage = require_nonempty_string(
+        runtime_package.get("failing_stage"),
+        f"{family_id}.runtime_package_execution.failing_stage",
+    )
+    concrete_blocker = require_nonempty_string(
+        runtime_package.get("concrete_blocker"),
+        f"{family_id}.runtime_package_execution.concrete_blocker",
+    )
+    if TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT not in concrete_blocker:
+        raise RuntimeError(f"{family_id}.runtime_package_execution.concrete_blocker drifted")
+    remaining_work = require_string_list(
+        runtime_package.get("required_remaining_native_compiler_work"),
+        f"{family_id}.runtime_package_execution.required_remaining_native_compiler_work",
+    )
+    if not any("ffi" in item.lower() and "preservation" in item.lower() for item in remaining_work):
+        raise RuntimeError(f"{family_id}.runtime_package_execution must keep FFI preservation native work explicit")
+
+    negative_case = _first_matching_row(
+        expectation.get("negative_cases"),
+        field_name="case_id",
+        expected_value="text-collection-package-runtime-ffi-preservation-reserved",
+        field=f"{family_id}.negative_cases",
+    )
+    if negative_case.get("status") != "reserved":
+        raise RuntimeError(f"{family_id}.runtime FFI preservation negative case must stay reserved")
+    if negative_case.get("blocker_id") != TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID:
+        raise RuntimeError(f"{family_id}.runtime FFI preservation negative case blocker drifted")
+
+    return {
+        "status": "RESERVED",
+        "runtime_status": runtime.get("status"),
+        "compile_manifest_status": compile_manifest.get("status"),
+        "blocker_id": TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID,
+        "blocked_provider_module": "CrossLaneFixtureProvider",
+        "failing_stage": failing_stage,
+        "concrete_blocker": concrete_blocker,
+        "required_remaining_native_compiler_work": remaining_work,
+        "negative_case": negative_case["case_id"],
+    }
+
+
 def validate_text_collections_package_proof(
     family_id: str,
     source_path: Path,
@@ -1160,17 +1719,32 @@ def validate_text_collections_package_proof(
     )
     if proof.get("contract_id") != TEXT_COLLECTIONS_PACKAGE_PROOF_CONTRACT_ID:
         raise RuntimeError(f"{family_id}.text_collections_package_proof contract_id drifted")
-    if executable_proof is None:
-        raise RuntimeError(f"{family_id}.text collections package proof requires executable runtime proof")
+    proof_status = require_nonempty_string(proof.get("status"), f"{family_id}.text_collections_package_proof.status")
+    if proof_status not in ALLOWED_SECTION_STATES:
+        raise RuntimeError(f"{family_id}.text_collections_package_proof.status is unknown: {proof_status}")
+    if executable_proof is None and proof_status not in BLOCKED_STATES:
+        raise RuntimeError(f"{family_id}.text collections package proof must stay blocker-explicit without executable proof")
+    if executable_proof is not None and proof_status != "expected-pass":
+        raise RuntimeError(f"{family_id}.text collections package proof must be expected-pass with executable proof")
     if proof.get("runs_canonical_frontend") is not True:
         raise RuntimeError(f"{family_id}.text package proof must run the canonical frontend")
-    if proof.get("direct_module_import_syntax_promoted") is not False:
-        raise RuntimeError(f"{family_id}.text package proof must keep direct @import unpromoted")
+    if proof.get("direct_module_import_syntax_promoted") is not True:
+        raise RuntimeError(f"{family_id}.text package proof must promote direct @import only through source truth")
+    if proof.get("text_fixture_uses_direct_module_import_syntax") is not False:
+        raise RuntimeError(f"{family_id}.text executable fixture must keep package import on objc_import_module metadata")
 
     source_text = source_path.read_text(encoding="utf-8")
     _require_no_direct_import_statement(family_id, source_text)
     if 'objc_import_module(named("CrossLaneFixtureProvider"))' not in source_text:
         raise RuntimeError(f"{family_id} source must use the checked metadata import surface")
+    source_text_identities = _validate_workspace_source_text_identities(family_id, workspace, source_path)
+    direct_import_source_truth = _validate_direct_import_source_truth(family_id, proof)
+    runtime_package_execution = _validate_text_runtime_package_execution_boundary(
+        family_id,
+        expectation,
+        proof,
+        executable_proof,
+    )
 
     source_graph = require_object(expectation["source_graph"], f"{family_id}.source_graph")
     debug_source_map = require_object(expectation["debug_source_map"], f"{family_id}.debug_source_map")
@@ -1184,53 +1758,58 @@ def validate_text_collections_package_proof(
     )
 
     artifact_dir = ARTIFACT_ROOT / slug_from_family_id(family_id)
-    compile_dir = ROOT / normalize_path(
-        require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
-    )
-    link_plan_path = compile_dir / "module.cross-module-runtime-link-plan.json"
-    link_plan = _require_json_artifact(link_plan_path, "text package cross-module runtime link plan")
-    if link_plan.get("ready") is not True:
-        raise RuntimeError(f"{family_id}.package trust diagnostic link plan must be ready")
-    imported_modules = require_list(link_plan.get("imported_modules"), f"{family_id}.link_plan.imported_modules")
-    imported_module_names = {
-        require_nonempty_string(
-            require_object(module, f"{family_id}.link_plan.imported_modules[]").get("module_name"),
-            f"{family_id}.link_plan.imported_modules[].module_name",
+    compile_dir: Path | None = None
+    link_plan_path: Path | None = None
+    provider_surface_path: Path | None = None
+    if executable_proof is not None:
+        compile_dir = ROOT / normalize_path(
+            require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
         )
-        for module in imported_modules
-    }
-    if "CrossLaneFixtureProvider" not in imported_module_names:
-        raise RuntimeError(f"{family_id}.package trust diagnostic did not import CrossLaneFixtureProvider")
+        link_plan_path = compile_dir / "module.cross-module-runtime-link-plan.json"
+        link_plan = _require_json_artifact(link_plan_path, "text package cross-module runtime link plan")
+        if link_plan.get("ready") is not True:
+            raise RuntimeError(f"{family_id}.package trust diagnostic link plan must be ready")
+        imported_modules = require_list(link_plan.get("imported_modules"), f"{family_id}.link_plan.imported_modules")
+        imported_module_names = {
+            require_nonempty_string(
+                require_object(module, f"{family_id}.link_plan.imported_modules[]").get("module_name"),
+                f"{family_id}.link_plan.imported_modules[].module_name",
+            )
+            for module in imported_modules
+        }
+        if "CrossLaneFixtureProvider" not in imported_module_names:
+            raise RuntimeError(f"{family_id}.package trust diagnostic did not import CrossLaneFixtureProvider")
 
-    package_module_proofs = require_list(
-        executable_proof.get("package_module_proofs"),
-        f"{family_id}.executable_proof.package_module_proofs",
-    )
-    provider_proof = None
-    for raw_provider in package_module_proofs:
-        provider = require_object(raw_provider, f"{family_id}.package_module_proofs[]")
-        if provider.get("module_name") == "CrossLaneFixtureProvider":
-            provider_proof = provider
-            break
-    if provider_proof is None:
-        raise RuntimeError(f"{family_id}.package trust diagnostic missing provider proof")
-    provider_surface_path = ROOT / normalize_path(
-        require_nonempty_string(
-            provider_proof.get("runtime_import_surface"),
-            f"{family_id}.provider.runtime_import_surface",
+        package_module_proofs = require_list(
+            executable_proof.get("package_module_proofs"),
+            f"{family_id}.executable_proof.package_module_proofs",
         )
-    )
-    provider_surface = _require_json_artifact(provider_surface_path, "text package provider import surface")
-    if provider_surface.get("module_name") != "CrossLaneFixtureProvider":
-        raise RuntimeError(f"{family_id}.provider import surface module drifted")
-    if provider_surface.get("ready_for_import_artifact_emission") is not True:
-        raise RuntimeError(f"{family_id}.provider import surface is not artifact-emission ready")
-    if provider_surface.get("ready_for_frontend_module_consumption") is not True:
-        raise RuntimeError(f"{family_id}.provider import surface is not frontend-consumption ready")
-    if int(provider_surface.get("function_decl_count", 0) or 0) < 1:
-        raise RuntimeError(f"{family_id}.provider import surface must export at least one function")
+        provider_proof = None
+        for raw_provider in package_module_proofs:
+            provider = require_object(raw_provider, f"{family_id}.package_module_proofs[]")
+            if provider.get("module_name") == "CrossLaneFixtureProvider":
+                provider_proof = provider
+                break
+        if provider_proof is None:
+            raise RuntimeError(f"{family_id}.package trust diagnostic missing provider proof")
+        provider_surface_path = ROOT / normalize_path(
+            require_nonempty_string(
+                provider_proof.get("runtime_import_surface"),
+                f"{family_id}.provider.runtime_import_surface",
+            )
+        )
+        provider_surface = _require_json_artifact(provider_surface_path, "text package provider import surface")
+        if provider_surface.get("module_name") != "CrossLaneFixtureProvider":
+            raise RuntimeError(f"{family_id}.provider import surface module drifted")
+        if provider_surface.get("ready_for_import_artifact_emission") is not True:
+            raise RuntimeError(f"{family_id}.provider import surface is not artifact-emission ready")
+        if provider_surface.get("ready_for_frontend_module_consumption") is not True:
+            raise RuntimeError(f"{family_id}.provider import surface is not frontend-consumption ready")
+        if int(provider_surface.get("function_decl_count", 0) or 0) < 1:
+            raise RuntimeError(f"{family_id}.provider import surface must export at least one function")
 
     paths = paths_for_source(resolve_source(repo_rel(source_path)))
+    _reset_editor_tooling_probe_outputs(paths)
     compile_result = run_frontend_compile(paths)
     if compile_result.returncode != 0 or not compile_result.summary_available:
         raise RuntimeError(
@@ -1266,8 +1845,12 @@ def validate_text_collections_package_proof(
         elif kind == "debug-map":
             candidate = paths.debug_map
         elif kind == "runtime-import-surface":
+            if compile_dir is None:
+                raise RuntimeError(f"{family_id}.runtime-import-surface artifact must stay reserved without executable proof")
             candidate = compile_dir / "module.runtime-import-surface.json"
         elif kind == "cross-module-runtime-link-plan":
+            if link_plan_path is None:
+                raise RuntimeError(f"{family_id}.cross-module-runtime-link-plan artifact must stay reserved without executable proof")
             candidate = link_plan_path
         else:
             path_key = artifact_path_keys.get(kind)
@@ -1298,8 +1881,14 @@ def validate_text_collections_package_proof(
     evidence = require_object(graph.get("evidence"), f"{family_id}.source_graph.evidence")
     if evidence.get("native_compiler_source_graph_present") is not True:
         raise RuntimeError(f"{family_id}.source graph must expose native compiler source graph fields")
-    if evidence.get("semantic_reference_closure") is not False:
-        raise RuntimeError(f"{family_id}.source graph must not claim semantic reference closure")
+    editor_tooling_freshness = _validate_editor_tooling_probe_freshness(
+        family_id=family_id,
+        paths=paths,
+        inputs=inputs,
+        published=published,
+        graph=graph,
+    )
+    source_reference_closure = _validate_source_reference_closure_boundary(family_id, source_graph, graph)
     graph_nodes = require_list(graph.get("nodes"), f"{family_id}.source_graph.nodes")
     package_node_ids = {
         str(require_object(node, f"{family_id}.source_graph.nodes[]").get("owning_package", ""))
@@ -1365,36 +1954,47 @@ def validate_text_collections_package_proof(
         f"{family_id}.text_collections_package_proof.reserved_rows_not_promoted",
     )
     for required_row in (
-        "modules.public-import-lookup",
         "runtime.debug-trace.statement-stepping",
         "runtime.debug-trace.full-source-map-publication",
+        "developer-tooling.source-graph.semantic-reference-closure",
+        "runtime.interop.package-loader-bridge",
     ):
         if required_row not in reserved_rows:
             raise RuntimeError(f"{family_id}.text package proof must keep {required_row} unpromoted")
+    if DIRECT_IMPORT_CAPABILITY_ID in reserved_rows:
+        raise RuntimeError(f"{family_id}.text package proof must use direct import source truth, not a reserved row")
 
-    missing_provider = _validate_missing_provider_link_failure(
-        family_id,
-        executable_proof,
-        artifact_dir,
-    )
-
-    return {
+    payload = {
         "status": "PASS",
         "compile_summary": repo_rel(paths.compile_summary),
+        "editor_tooling_freshness": editor_tooling_freshness,
         "source_graph": published.source_graph_path,
         "debug_map": published.debug_path,
         "emitted_artifacts": emitted_artifacts,
-        "provider_import_surface": repo_rel(provider_surface_path),
-        "cross_module_runtime_link_plan": repo_rel(link_plan_path),
+        "source_text_identities": source_text_identities,
+        "direct_import_source_truth": direct_import_source_truth,
+        "runtime_package_execution": runtime_package_execution,
         "workspace_edges": expected_workspace_edges,
+        "source_reference_closure": source_reference_closure,
         "source_graph_nodes": source_graph_nodes,
         "package_nodes": package_nodes,
         "expected_package_nodes": expected_package_nodes,
         "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
         "required_debug_anchors": required_debug_anchors,
-        "missing_provider_negative_case": missing_provider,
         "reserved_rows_not_promoted": reserved_rows,
     }
+    if executable_proof is not None:
+        missing_provider = _validate_missing_provider_link_failure(
+            family_id,
+            executable_proof,
+            artifact_dir,
+        )
+        if provider_surface_path is not None:
+            payload["provider_import_surface"] = repo_rel(provider_surface_path)
+        if link_plan_path is not None:
+            payload["cross_module_runtime_link_plan"] = repo_rel(link_plan_path)
+        payload["missing_provider_negative_case"] = missing_provider
+    return payload
 
 
 def run_public_workflow_action(
@@ -2387,6 +2987,56 @@ def validate_workspace(family_id: str, workspace_path: Path, expected_source: st
     return workspace
 
 
+def validate_text_package_native_meta_boundary(family_id: str, meta: dict[str, Any]) -> None:
+    if family_id != "text_collections_package":
+        return
+    if meta.get("fixture_kind") != "source-tooling-boundary-with-reserved-runtime-package":
+        raise RuntimeError(f"{family_id}.native_meta.fixture_kind drifted from reserved runtime package boundary")
+
+    boundary = require_object(meta.get("boundary"), f"{family_id}.native_meta.boundary")
+    required_true = (
+        "canonical_behavior_source",
+        "source_collection_literals_claimed",
+        "source_for_in_claimed",
+        "package_import_metadata_claimed",
+        "source_graph_package_nodes_claimed",
+        "debug_map_declaration_anchors_claimed",
+        "package_text_identity_claimed",
+        "direct_module_import_source_truth_claimed",
+        "runtime_package_execution_reserved",
+        "direct_module_import_syntax_promoted",
+    )
+    for key in required_true:
+        if boundary.get(key) is not True:
+            raise RuntimeError(f"{family_id}.native_meta.boundary.{key} must be true")
+
+    required_false = (
+        "reserved_support_promoted",
+        "runtime_support_claimed",
+        "missing_provider_link_rejection_claimed",
+        "text_fixture_uses_direct_module_import_syntax",
+        "semantic_reference_closure_promoted",
+        "full_source_map_publication_promoted",
+        "statement_stepping_promoted",
+    )
+    for key in required_false:
+        if boundary.get(key) is not False:
+            raise RuntimeError(f"{family_id}.native_meta.boundary.{key} must be false")
+
+    blocker = require_nonempty_string(
+        boundary.get("runtime_package_execution_blocker"),
+        f"{family_id}.native_meta.boundary.runtime_package_execution_blocker",
+    )
+    if TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT not in blocker:
+        raise RuntimeError(f"{family_id}.native_meta runtime package blocker drifted")
+
+    execution = require_object(meta.get("execution"), f"{family_id}.native_meta.execution")
+    if execution.get("expected_exit_code") is not None:
+        raise RuntimeError(f"{family_id}.native_meta.execution.expected_exit_code must stay null")
+    if execution.get("requires_live_runtime_dispatch") is not False:
+        raise RuntimeError(f"{family_id}.native_meta.execution.requires_live_runtime_dispatch must stay false")
+
+
 def validate_native_meta(family_id: str, meta_path: Path, source_path: Path) -> dict[str, Any]:
     meta = load_json(meta_path)
     if meta.get("schema_version") != 1:
@@ -2404,6 +3054,7 @@ def validate_native_meta(family_id: str, meta_path: Path, source_path: Path) -> 
     expected = require_object(meta.get("expected"), f"{family_id}.native_meta.expected")
     require_nonempty_string(expected.get("stage"), f"{family_id}.native_meta.expected.stage")
     require_list(expected.get("required_tokens"), f"{family_id}.native_meta.expected.required_tokens")
+    validate_text_package_native_meta_boundary(family_id, meta)
     return meta
 
 

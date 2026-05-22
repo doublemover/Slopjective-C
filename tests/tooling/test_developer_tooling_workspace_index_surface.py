@@ -159,26 +159,35 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
             "object_format": "coff",
             "object_sha256": "a" * 64,
             "object_section_inventory_command": "llvm-readobj --sections tmp/artifacts/module.obj",
-            "object_section_names": [".text", ".rdata", ".pdata", ".xdata"],
-            "native_debug_sections": [],
-            "native_line_table_sections": [],
-            "native_debug_section_count": 0,
-            "native_line_table_section_count": 0,
+            "object_section_names": [
+                ".text",
+                ".rdata",
+                ".debug$S",
+                ".debug_abbrev",
+                ".debug_info",
+                ".debug_str",
+                ".debug_line",
+            ],
+            "native_debug_sections": [
+                ".debug$S",
+                ".debug_abbrev",
+                ".debug_info",
+                ".debug_str",
+                ".debug_line",
+            ],
+            "native_line_table_sections": [".debug$S", ".debug_line"],
+            "native_debug_section_count": 5,
+            "native_line_table_section_count": 2,
             "ir_path": "tmp/artifacts/module.ll",
-            "ir_debug_metadata_model": "no-llvm-di-debug-locations",
-            "llvm_debug_metadata_present": False,
-            "llvm_debug_location_count": 0,
-            "emitted_native_debug_info_supported": False,
-            "native_line_table_supported": False,
+            "ir_debug_metadata_model": "llvm-di-metadata-present",
+            "llvm_debug_metadata_present": True,
+            "llvm_debug_location_count": 12,
+            "emitted_native_debug_info_supported": True,
+            "native_line_table_supported": True,
             "statement_stepping_supported": False,
             "fail_closed": True,
-            "fail_closed_reason": "native object lacks debug info and debug line-table sections",
-            "blocked_by": [
-                "native-object-lacks-debug-info-section",
-                "native-object-lacks-debug-line-section",
-                "compiler-ir-lacks-llvm-di-locations",
-                "runtime-debug-trace-statement-stepping-integration",
-            ],
+            "fail_closed_reason": "runtime debug trace is not integrated with emitted native debug info",
+            "blocked_by": ["runtime-debug-trace-statement-stepping-integration"],
         },
     )
 
@@ -187,16 +196,26 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     assert "object-model-production-source-map-native-line-table" in debug_payload["evidence_roots"]
     assert "native-debug-info-artifact-evidence" in debug_payload["evidence_roots"]
     assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
-    assert source_identity["native_debug_info_evidence"]["native_debug_section_count"] == 0
-    assert source_identity["native_debug_info_evidence"]["native_line_table_section_count"] == 0
+    assert source_identity["native_debug_info_evidence"]["native_debug_section_count"] == 5
+    assert source_identity["native_debug_info_evidence"]["native_line_table_section_count"] == 2
     assert source_identity["native_debug_info_fail_closed_reason"] == (
-        "native object lacks debug info and debug line-table sections"
+        "runtime debug trace is not integrated with emitted native debug info"
     )
     assert source_identity["source_map_records_supported"] is True
     assert source_identity["native_line_table_projection_supported"] is True
     assert source_identity["source_map_publication_supported"] is True
     assert source_identity["native_line_table_publication_supported"] is True
+    assert debug_payload["source_map_supported"] is False
+    assert debug_payload["statement_level_stepping"] is False
     assert source_identity["runtime_debug_trace_statement_stepping"] is False
+    assert {
+        candidate["status"]
+        for candidate in source_identity["stepping_candidates"]
+    } == {"native-line-table-ready-stepping-blocked"}
+    assert {
+        tuple(candidate["blocked_by"])
+        for candidate in source_identity["stepping_candidates"]
+    } == {("runtime-debug-trace-statement-stepping-integration",)}
     publication = source_identity["source_map_native_line_table_publication"]
     assert publication["contract_id"] == (
         "objc3c.object_model.production.source_map_native_line_table.v1"
@@ -206,13 +225,10 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     )
     assert publication["source_map_publication_supported"] is True
     assert publication["native_line_table_publication_supported"] is True
-    assert publication["emitted_native_debug_info_supported"] is False
+    assert publication["emitted_native_debug_info_supported"] is True
     assert publication["statement_stepping_supported"] is False
     assert publication["native_debug_info_evidence"]["blocked_by"] == [
-        "native-object-lacks-debug-info-section",
-        "native-object-lacks-debug-line-section",
-        "compiler-ir-lacks-llvm-di-locations",
-        "runtime-debug-trace-statement-stepping-integration",
+        "runtime-debug-trace-statement-stepping-integration"
     ]
     assert set(publication["source_map_record_ids"]) == {
         record["source_map_record_id"]
@@ -238,4 +254,12 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     assert {
         row["native_debug_info_blocker"]
         for row in source_identity["native_line_table_rows"]
-    } == {"native object lacks debug info and debug line-table sections"}
+    } == {"runtime debug trace is not integrated with emitted native debug info"}
+    assert {
+        row["native_debug_info_emitted"]
+        for row in source_identity["native_line_table_rows"]
+    } == {True}
+    assert {
+        row["native_line_table_emitted"]
+        for row in source_identity["native_line_table_rows"]
+    } == {True}

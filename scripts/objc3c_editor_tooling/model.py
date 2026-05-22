@@ -562,6 +562,18 @@ def _build_object_model_source_map_publication(
     native_debug_info_fail_closed_reason = _safe_text(
         native_debug_info_evidence.get("fail_closed_reason")
     )
+    emitted_native_debug_boundary = {
+        "capability_id": "emittedNativeDebugInfo",
+        "status": "supported",
+        "fail_closed": False,
+        "unpublished_reason": "",
+    } if emitted_native_debug_info_supported else {
+        "capability_id": "emittedNativeDebugInfo",
+        "status": "reserved",
+        "fail_closed": True,
+        "unpublished_reason": native_debug_info_fail_closed_reason
+        or "object artifact native debug-info emission is not published by this surface",
+    }
     return {
         "contract_id": OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID,
         "supported": supported,
@@ -582,13 +594,7 @@ def _build_object_model_source_map_publication(
             kind for kind in OBJECT_MODEL_SOURCE_IDENTITY_KINDS if kind in identity_kinds
         ],
         "fail_closed_boundaries": [
-            {
-                "capability_id": "emittedNativeDebugInfo",
-                "status": "reserved",
-                "fail_closed": True,
-                "unpublished_reason": native_debug_info_fail_closed_reason
-                or "object artifact native debug-info emission is not published by this surface",
-            },
+            emitted_native_debug_boundary,
             {
                 "capability_id": "statementLevelStepping",
                 "status": "reserved",
@@ -636,6 +642,11 @@ def build_object_model_source_identity_payload(
         for item in _as_list(native_debug_info_evidence.get("blocked_by"))
         if _safe_text(item)
     ]
+    stepping_status = (
+        "native-line-table-ready-stepping-blocked"
+        if native_debug_info_emitted and native_line_table_emitted
+        else "source-identity-ready-stepping-blocked"
+    )
     stepping_candidates = [
         {
             "source_map_record_id": record["source_map_record_id"],
@@ -646,7 +657,7 @@ def build_object_model_source_identity_payload(
             "line": record["line"],
             "column": record["column"],
             "runtime_debug_trace_step_id": f"object-model.step.{_identity_slug(record['owner_name'], record['selector'])}",
-            "status": "source-identity-ready-stepping-blocked",
+            "status": stepping_status,
             "native_debug_info_evidence_id": native_debug_info_evidence_id,
             "native_debug_info_emitted": native_debug_info_emitted,
             "native_line_table_emitted": native_line_table_emitted,
