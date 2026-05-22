@@ -591,6 +591,37 @@ def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() ->
     assert rows["runtime.object-model.full-realization"]["state"] == "reserved"
 
 
+def test_cross_lane_manifest_support_claims_are_matrix_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "cross_lane_e2e"
+            / "manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    implemented_claims = {
+        claim
+        for row in rows.values()
+        if row["state"] == "implemented"
+        for claim in row.get("support_claims", [])
+    }
+
+    for family in manifest["families"]:
+        for capability_id in family["capability_rows"]:
+            assert capability_id in rows, (family["family_id"], capability_id)
+        for claim in family["support_claims"]:
+            assert claim in implemented_claims, (family["family_id"], claim)
+
+
 def test_object_model_implemented_rows_reject_broad_realization_language() -> None:
     validator = _load_validator()
     row = {

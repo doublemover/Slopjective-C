@@ -450,6 +450,12 @@
           "description": "The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries.",
           "status": "satisfied",
           "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+        },
+        {
+          "id": "native-executable-fail-closed",
+          "description": "The #8199 native executable fail-closed contract checks the combined fixture against the real native compiler path while preserving the unclaimed native compile/link/run boundary.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json"
         }
       ],
       "required_runtime_probes": [
@@ -520,7 +526,7 @@
       "promotion_blockers": [
         {
           "blocker_id": "advanced-runtime-cross-lane-native-compile-run",
-          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
+          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, native executable fail-closed, and 17-case negative-matrix proof exists, but native compile/link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
           "missing_work": [
             "Canonical native compile manifest and executable runtime acceptance for the integrated advanced-runtime umbrella fixture.",
             "Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations."

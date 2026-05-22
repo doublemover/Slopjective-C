@@ -527,6 +527,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.advanced-runtime-closure` |  | `test` | `tests/native/runtime/advanced_closure/negative_matrix.contract.json` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json` |  |
+| `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json` |  |
 | `language.advanced-runtime-closure` |  | `test` | `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/CMakeLists.txt` |  |
 | `compiler.architecture.module-decomposition` |  | `source` | `native/objc3c/src/config/CMakeLists.txt` |  |

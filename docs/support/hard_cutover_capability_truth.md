@@ -86,7 +86,10 @@ equivalence keeps method inlining fail-closed until inline-frame, callee-body
 identity, and invalidation proof exist. Distribution lifecycle evidence proves
 local clean install, release-operation rollback safety, and tampered installed
 package rejection without promoting a public hosted registry, network install,
-background updater, or public production release channel.
+background updater, or public production release channel. Advanced-runtime
+native executable evidence is likewise fail-closed: it proves the unsupported
+combined native compile path rejects before object/link/run artifacts are
+published, not native executable umbrella support.
 
 ## Documentation Rule
 

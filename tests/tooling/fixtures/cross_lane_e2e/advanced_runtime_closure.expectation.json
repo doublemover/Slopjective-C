@@ -142,13 +142,11 @@
       "runtime.blocks.copy-dispose-invoke",
       "runtime.concurrency.async-actors",
       "runtime.concurrency.actor-mailbox-isolation",
-      "runtime.errors.status-bridge",
+      "runtime.errors.nserror-status-bridge",
       "language.metaprogramming.property-behavior-semantics",
       "runtime.metaprogramming.host-cache-boundary",
       "runtime.interop.package-loader-bridge",
-      "compiler.artifacts.source-map",
-      "compiler.artifacts.native-line-table",
-      "tooling.debug.debug-map"
+      "runtime.debug-trace.structured-inspection"
     ],
     "claim_boundary": "the cross-lane family proves checked-in advanced-runtime runtime-state, compiler-owned source graph, canonical source/debug-map, and deterministic negative-matrix evidence; the language.advanced-runtime-closure umbrella, native executable, statement stepping, and unsupported combinations remain blocked or reserved"
   }

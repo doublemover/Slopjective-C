@@ -1633,7 +1633,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.advanced-runtime-closure`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, and 17-case negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, native executable fail-closed, and 17-case negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
@@ -1654,6 +1654,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json`
+  - test: `tests/tooling/fixtures/advanced_runtime_closure/native_executable_fail_closed_contract.json`
   - test: `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
 
 ### Native compiler module decomposition

@@ -242,25 +242,20 @@
         "runtime.blocks.copy-dispose-invoke",
         "runtime.concurrency.async-actors",
         "runtime.concurrency.actor-mailbox-isolation",
-        "runtime.errors.status-bridge",
+        "runtime.errors.nserror-status-bridge",
         "language.metaprogramming.property-behavior-semantics",
         "runtime.metaprogramming.host-cache-boundary",
         "runtime.interop.package-loader-bridge",
-        "compiler.artifacts.source-map",
-        "compiler.artifacts.native-line-table",
-        "tooling.debug.debug-map"
+        "runtime.debug-trace.structured-inspection"
       ],
       "support_claims": [
-        "objc3c.behavior.language.advanced-runtime-closure",
         "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
         "objc3c.behavior.runtime.concurrency-async-actors",
         "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
-        "objc3c.behavior.runtime.errors.status-bridge",
+        "objc3c.behavior.runtime.error-nserror-status-bridge",
         "objc3c.behavior.language.metaprogramming.property-behavior-semantics",
         "objc3c.behavior.runtime.interop.package-loader-bridge",
-        "objc3c.behavior.compiler.artifacts.source-map",
-        "objc3c.behavior.compiler.artifacts.native-line-table",
-        "objc3c.behavior.tooling.debug.debug-map"
+        "objc3c.behavior.runtime.debug_trace"
       ],
       "evidence_map_refs": [
         {
@@ -282,8 +277,8 @@
           "claim_boundary": "async actor and actor mailbox runtime-state evidence is validated as part of the combined identity contract without promoting unsupported advanced-runtime combinations"
         },
         {
-          "capability_id": "runtime.errors.status-bridge",
-          "support_claim": "objc3c.behavior.runtime.errors.status-bridge",
+          "capability_id": "runtime.errors.nserror-status-bridge",
+          "support_claim": "objc3c.behavior.runtime.error-nserror-status-bridge",
           "status": "implemented",
           "claim_boundary": "status-bridge evidence is one checked runtime-state/source-graph lane in the combined proof, not an umbrella compile/run claim"
         },
@@ -294,16 +289,10 @@
           "claim_boundary": "property behavior and macro provenance are validated through checked-in source graph and source/debug-map records while host/runtime unsupported cases remain fail-closed"
         },
         {
-          "capability_id": "compiler.artifacts.source-map",
-          "support_claim": "objc3c.behavior.compiler.artifacts.source-map",
+          "capability_id": "runtime.debug-trace.structured-inspection",
+          "support_claim": "objc3c.behavior.runtime.debug_trace",
           "status": "implemented",
-          "claim_boundary": "canonical source-map records are validated from checked-in compiler-owned evidence and remain non-source-truth generated artifact proof"
-        },
-        {
-          "capability_id": "tooling.debug.debug-map",
-          "support_claim": "objc3c.behavior.tooling.debug.debug-map",
-          "status": "implemented",
-          "claim_boundary": "debug-map anchors for the combined advanced-runtime lanes are checked, while statement stepping and LLDB plugin support remain reserved"
+          "claim_boundary": "structured debug trace evidence covers source-to-artifact anchors and debug-map inspection for the combined advanced-runtime lanes while full source-map publication, statement stepping, and LLDB plugin support remain reserved"
         }
       ],
       "blockers": [
