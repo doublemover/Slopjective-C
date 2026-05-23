@@ -1,6 +1,9 @@
 #include "sema/objc3_semantic_match_exhaustiveness.h"
 
 bool IsMatchCatchAllPattern(const SwitchCase &case_stmt) {
+  if (case_stmt.has_match_guard) {
+    return false;
+  }
   return case_stmt.is_default ||
          case_stmt.match_pattern_kind == MatchPatternKind::Wildcard ||
          case_stmt.match_pattern_kind == MatchPatternKind::Binding;

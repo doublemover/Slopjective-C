@@ -295,6 +295,8 @@
     "tests/tooling/fixtures/performance_governance/source_surface.json",
     "tests/tooling/fixtures/performance_governance/claim_policy.json",
     "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
-    "tests/tooling/fixtures/performance_governance/lab_policy.json"
+    "tests/tooling/fixtures/performance_governance/lab_policy.json",
+    "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+    "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
   ]
 }

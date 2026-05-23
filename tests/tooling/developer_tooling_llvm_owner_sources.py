@@ -88,3 +88,13 @@ def hosted_summary_without_clang() -> dict[str, object]:
         "llc": {"found": True},
         "llc_features": {"supports_filetype_obj": True},
     }
+
+
+def hosted_summary_without_llc() -> dict[str, object]:
+    return {
+        "mode": "objc3c-llvm-capabilities-v2",
+        "ok": False,
+        "clang": {"found": True},
+        "llc": {"found": False},
+        "llc_features": {"supports_filetype_obj": False},
+    }

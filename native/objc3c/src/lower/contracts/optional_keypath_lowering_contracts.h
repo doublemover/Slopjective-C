@@ -14,13 +14,13 @@ inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringContractId =
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringOptionalModel =
     "optional-bindings-sends-optional-member-access-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringTypedKeypathModel =
-    "validated-single-component-typed-keypath-literals-lower-to-canonical-runtime-descriptor-handles-with-generic-metadata-preservation";
+    "validated-single-component-typed-keypath-literals-lower-to-canonical-runtime-descriptor-handles-with-generic-type-source-object-model-debugger-metadata-preservation";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringAuthorityModel =
     "type_system-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel =
     "native-lowering-fails-closed-on-lowering-contract-drift-and-on-semantically-unsupported-typed-keypath-shapes";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringDebugEvidenceModel =
-    "live-typed-keypath-artifacts-require-descriptor-source-map-and-runtime-handle-evidence";
+    "live-typed-keypath-artifacts-require-descriptor-source-map-runtime-handle-debugger-step-and-diagnostic-anchor-evidence-without-fallback-interpretation";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId =
     "objc3c.type_system.optional.keypath.runtime.helper.contract.v1";
 inline constexpr const char

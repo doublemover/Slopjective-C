@@ -1,7 +1,18 @@
 ; objc3 semantic optimization method/function inlining before fixture
 ; call-site source-map: sm:inline:caller:line:21
+; original call source span: source-span:method-inline:original-callsite
+; callee source span: source-span:method-inline:callee-body
+; inline frame id: inline-frame:method-inline:caller+callee
+; inlined callsite source span: source-span:method-inline:inlined-callsite
+; imported debug map inline frame: dmap.optimization_transform_edge
+; emitted debug map inline frame: dmap.optimization_transform_edge
+; stepping policy: stepping-policy:method-inline:step-into-callee-step-out-caller
+; optimized IR/source correlation: ir-source-correlation:method-inline:optimized-ir-to-caller-callee
+; receiver dispatch assumption: dispatch-assumption:method-inline:receiver-static-type+final-target
+; side-effect replay: side-effect-replay:method-inline:pure-no-writes-no-calls-no-runtime-helpers
 ; callee body identity: body:Math.addOne:v1
 ; callee generation: method-generation=G88
+; runtime invalidation replay: runtime-replay:method-inline:stale-dispatch-cache-fallback
 
 declare i32 @objc3_inlineable_Math_addOne(i32)
 

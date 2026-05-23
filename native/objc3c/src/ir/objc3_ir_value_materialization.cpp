@@ -69,6 +69,18 @@ std::string EmitObjc3IRTypedKeyPathLiteralValue(
         "typed key-path artifact '" + profile +
         "' was not registered before IR lowering");
   }
+  const TypedKeyPathArtifact &artifact = artifact_it->second;
+  if (artifact.fallback_interpretation_allowed ||
+      artifact.source_span_id.empty() || artifact.root_type_identity.empty() ||
+      artifact.value_type_identity.empty() ||
+      artifact.object_model_owner_identity.empty() ||
+      artifact.object_model_member_identity.empty() ||
+      artifact.debug_source_map_key.empty() ||
+      artifact.diagnostic_anchor_key.empty()) {
+    return materialization_context.emit_unsupported_i32_value(
+        "typed key-path artifact '" + profile +
+        "' lacks debugger-grade type/source/object-model metadata");
+  }
   return std::to_string(
-      static_cast<unsigned long long>(artifact_it->second.ordinal + 1u));
+      static_cast<unsigned long long>(artifact.ordinal + 1u));
 }

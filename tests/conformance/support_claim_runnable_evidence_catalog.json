@@ -915,6 +915,45 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "capability_id": "language.advanced-runtime-closure",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+      "runnable_command": "npm run objc3c -- validate-advanced-runtime-closure",
+      "runtime_acceptance_case": "advanced-runtime-native-executable-closure",
+      "positive_evidence": [
+        "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "tests/native/runtime/advanced_closure/combined_provider.objc3",
+        "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+        "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+        "scripts/check_objc3c_advanced_runtime_closure.py",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_metaprogramming.cpp"
+      ],
+      "negative_evidence": [
+        "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+        "tests/native/runtime/advanced_closure/negative_distributed_actor_missing_transport.objc3",
+        "tests/native/runtime/advanced_closure/negative_foreign_abi_unsafe_mixed_image.objc3",
+        "tests/native/runtime/advanced_closure/negative_macro_package_replay_tampered_metadata.objc3",
+        "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+        "scripts/check_objc3c_advanced_runtime_closure.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3RT004",
+        "O3PKG8052",
+        "O3S331"
+      ],
+      "source_truth_requirements": [
+        "Advanced runtime closure support is claimed only by the integrated language row and its public validator",
+        "Positive evidence must include the combined fixture, source-owned provider fixture, runtime identity contract, source/debug-map bundle, executable contract surface, and native artifact link/run contract",
+        "Broad scheduler fairness, Swift/C++ ABI closure, distributed actor networking, arbitrary macro-host execution, and tampered package replay remain fail-closed or reserved boundary evidence"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.language.blocks.escape-capture-legality",
       "capability_id": "language.blocks.escape-capture-legality",
       "owner_phase": "sema",
@@ -2047,6 +2086,161 @@
         "Package manager support is bounded to checked-in local package surfaces, generated package manifests, deterministic locks, and offline mirrors",
         "Hosted registries, implicit network fetches, unpinned hosted references, and tmp-only source truth remain fail-closed",
         "Language version, ABI identity, manifest digest, source digest, and trust metadata must be present before package claims are accepted"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+      "runnable_command": "npm run objc3c -- validate-package-registry-model",
+      "runtime_acceptance_case": "package-hosted-registry-offline-fixture-resolution",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+        "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+        "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/check_objc3c_package_registry_model.py",
+        "tests/tooling/test_package_hosted_registry_resolution.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+        "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Hosted registry support is bounded to checked-in offline fixture metadata, fixture lock, local trust root, and offline mirror pins",
+        "Live network fetches, registry availability, auth, moderation, package-manager parity, and fallback registry success must fail closed",
+        "Endpoint identity, channel identity, language version, ABI identity, package signatures, cache digest, and trust material must agree before resolution"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+      "runnable_command": "npm run objc3c -- validate-package-network-publication",
+      "runtime_acceptance_case": "package-network-dependency-resolution-offline-fixture",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+        "schemas/objc3c-package-network-resolution-v1.schema.json",
+        "scripts/objc3c_package_manager/network_publication.py",
+        "scripts/check_objc3c_package_network_publication.py",
+        "tests/tooling/test_package_network_publication_contract.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Network dependency resolution support is offline fixture-backed and requires exact locked version, fixture lock digest, trust root, provenance, cache digest, and cache signature",
+        "Live network fetches, unpinned hosted dependencies, dependency identity drift, endpoint mismatch, lock mismatch, unsigned cache, and fallback registry success must fail closed",
+        "The support claim does not imply arbitrary network package manager behavior"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+      "runnable_command": "npm run objc3c -- validate-package-network-publication",
+      "runtime_acceptance_case": "package-release-channel-publication-offline-fixture",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+        "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+        "schemas/objc3c-package-release-channel-publication-v1.schema.json",
+        "scripts/objc3c_package_manager/network_publication.py",
+        "scripts/check_objc3c_package_network_publication.py",
+        "tests/tooling/test_package_network_publication_contract.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Release-channel publication support is source-owned offline fixture metadata, not live publication",
+        "Channel freshness, release-channel id, hosted registry channel id, cache pin, lock digest, package signatures, and trust provenance must remain current",
+        "Stale channels, live network publication, endpoint drift, lock mismatch, cache tamper, and fallback publication success must fail closed"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+      "traceability_fixture": "schemas/objc3c-package-signing-trust-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-package-security-hardening",
+      "runtime_acceptance_case": "package-security-hardening-fail-closed",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+        "schemas/objc3c-package-signing-trust-v1.schema.json",
+        "schemas/objc3c-package-lock-v1.schema.json",
+        "scripts/objc3c_package_manager/trust.py",
+        "scripts/sign_objc3c_package.py",
+        "scripts/verify_objc3c_package.py",
+        "scripts/objc3c_package_manager/operations.py",
+        "scripts/objc3c_package_manager/install_distribution.py",
+        "scripts/check_objc3c_package_security_hardening.py",
+        "tests/tooling/test_package_signing_trust.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Package security support is bounded to deterministic local fixture signing, repo-relative trust inputs, non-overwriting outputs, pre-mutation extraction plans, and reserved installer/update-key states",
+        "Absolute paths, parent traversal, symlinks, overwrites, duplicate paths, case conflicts, active release/registry roots, and fallback trust roots must fail closed",
+        "Production package signing, live registry trust roots, unsafe extraction success, and implicit key rollover remain reserved"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "capability_id": "modules.direct-import-syntax",
+      "owner_phase": "parser",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
+      "runnable_command": "npm run objc3c -- validate-direct-import-module-syntax",
+      "runtime_acceptance_case": "direct-import-module-syntax-package-provenance",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+        "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
+        "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+        "tests/tooling/fixtures/native/module_import_lookup_provider.objc3",
+        "native/objc3c/src/token/objc3_token_kind_contract.h",
+        "native/objc3c/src/ast/objc3_ast_declarations.h",
+        "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc",
+        "scripts/objc3c_package_manager/model.py",
+        "scripts/check_objc3c_direct_import_module_syntax.py",
+        "tests/tooling/test_direct_import_module_syntax_contract.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+        "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3MOD8219",
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Direct @import support is bounded to parser-admitted module identity records and checked-in package module graph provenance",
+        "Malformed module identities, missing locked package provenance, ambiguous case-folded package identity, and fallback registry success must fail closed",
+        "Live hosted lookup, implicit network package resolution, and Objective-C 2 framework import compatibility are outside this support claim"
       ]
     },
     {

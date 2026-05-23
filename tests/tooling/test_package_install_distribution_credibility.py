@@ -100,10 +100,10 @@ def test_install_distribution_check_generates_clean_root_summary(install_summary
     from_nothing = install_summary["from_nothing_probe"]
     assert from_nothing["requested"] is True
     assert from_nothing["generated_from_clean_owned_outputs"] is True
-    assert from_nothing["owned_outputs_exist_after_clean"] == {
-        "tmp/artifacts/package-ecosystem": False,
-        "tmp/reports/package-ecosystem": False,
-    }
+    owned_outputs_after_clean = from_nothing["owned_outputs_exist_after_clean"]
+    assert owned_outputs_after_clean["tmp/artifacts/package-ecosystem/install-validation"] is False
+    assert owned_outputs_after_clean["tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"] is False
+    assert not any(owned_outputs_after_clean.values())
     assert (ROOT / INSTALL_ROOT_REL).is_dir()
     assert (ROOT / INSTALL_HOME_REL / "Bootstrap-objc3cEnvironment.ps1").is_file()
     assert (ROOT / INSTALL_RECEIPT_REL).is_file()

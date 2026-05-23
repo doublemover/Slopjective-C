@@ -7,6 +7,7 @@ conformance manifests. Markdown projections explain the machine-readable
 truth, but they do not create support claims.
 
 Authoritative inputs:
+
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 - `tests/fixtures/canonical/manifest.json`
@@ -28,94 +29,101 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 ## Support Claim Authority
 
-| Support claim | Owner phase | Behavior fixture | Command | Matrix capability |
-| --- | --- | --- | --- | --- |
-| `objc3c.behavior.abi.governance-source-truth` | `e2e` | `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json` | `npm run objc3c -- validate-abi-governance` | `abi.governance.source-truth` |
-| `objc3c.behavior.application-framework-samples.async-runtime-application` | `e2e` | `showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.async-runtime-application` |
-| `objc3c.behavior.application-framework-samples.interop-adapter-library` | `e2e` | `showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.interop-adapter-library` |
-| `objc3c.behavior.application-framework-samples.object-runtime-library` | `e2e` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.object-runtime-library` |
-| `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli` | `e2e` | `showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3` | `npm run objc3c -- validate-application-framework-samples` | `applications.framework-samples.stdlib-text-collections-cli` |
-| `objc3c.behavior.arc-cleanup.integration` | `runtime` | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration` | `language.arc-cleanup.integration` |
-| `objc3c.behavior.conformance.public-stable-suite` | `e2e` | `tests/conformance/public_suite_manifest.json` | `npm run objc3c -- validate-conformance-corpus` | `conformance.public.stable-suite-manifest` |
-| `objc3c.behavior.diagnostics.parser-sema-recovery-fixits` | `parser` | `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` | `npm run objc3c -- validate-conformance-corpus` | `diagnostics.parser-sema.recovery-fixits` |
-| `objc3c.behavior.e2e.runnable-smoke` | `e2e` | `tests/native/e2e/smoke/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.e2e.runnable-smoke` |
-| `objc3c.behavior.errors.try-catch-semantics` | `sema` | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `language.errors.try-catch-semantics` |
-| `objc3c.behavior.ir.module-emission` | `ir` | `tests/native/ir/module/basic_i32_return_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.ir.module-emission` |
-| `objc3c.behavior.language.blocks.escape-capture-legality` | `sema` | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `language.blocks.escape-capture-legality` |
-| `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.for-in-syntax-runtime-backed` |
-| `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.literal-syntax-runtime-backed` |
-| `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.mutation-syntax-runtime-backed` |
-| `objc3c.behavior.language.generics.callable-type-parameters` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.callable-type-parameters` |
-| `objc3c.behavior.language.generics.collection-identity` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.collection-identity` |
-| `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
-| `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
-| `objc3c.behavior.language.metaprogramming.derive-expansion-inventory` | `sema` | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.derive-expansion-inventory` |
-| `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism` | `sema` | `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.macro-safety-sandbox-determinism` |
-| `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `sema` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `language.metaprogramming.property-behavior-semantics` |
-| `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
-| `objc3c.behavior.language.protocols.existential-witness-model` | `runtime` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.existential-witness-model` |
-| `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
-| `objc3c.behavior.language.text.source-string-interpolation` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3` | `npm run objc3c -- test-execution-smoke` | `language.text.source-string-interpolation` |
-| `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `language.text.source-string-literal-text-shape-handle` |
-| `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
-| `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
-| `objc3c.behavior.modules.public-import-lookup` | `sema` | `tests/tooling/fixtures/native/module_import_lookup_consumer.objc3` | `npm run objc3c -- validate-conformance-corpus` | `modules.public-import-lookup` |
-| `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `sema` | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` | `npm run objc3c -- validate-module-interop-contracts` | `modules.visibility-reexport-rebuild-contract` |
-| `objc3c.behavior.package.install-clean-distribution` | `e2e` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution` | `ecosystem.package-install.clean-distribution` |
-| `objc3c.behavior.package.manager-local-registry` | `e2e` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` | `ecosystem.package-manager.local-registry` |
-| `objc3c.behavior.parser.canonical-syntax` | `parser` | `tests/native/parser/positive/canonical_module_main.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.parser.core-declarations` |
-| `objc3c.behavior.platform.windows-x64-tier1` | `e2e` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` | `npm run objc3c -- build-platform-support-matrix` | `platform.windows-x64.tier1` |
-| `objc3c.behavior.release.abi-stability-governance` | `e2e` | `tests/tooling/fixtures/release_foundation/abi_api_governance.json` | `npm run objc3c -- check-release-abi-api-drift` | `release.abi.stability-governance` |
-| `objc3c.behavior.release.channel-operations` | `e2e` | `tests/tooling/fixtures/release_operations/channel_operations_model.json` | `npm run objc3c -- validate-release-operations-end-to-end` | `release.operations.channel-lifecycle` |
-| `objc3c.behavior.runtime.blocks.byref-forwarding` | `runtime` | `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.byref-forwarding` |
-| `objc3c.behavior.runtime.blocks.copy-dispose-invoke` | `runtime` | `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3` | `npm run objc3c -- test-runtime-acceptance-block-arc` | `runtime.blocks.copy-dispose-invoke` |
-| `objc3c.behavior.runtime.cache-aware-dispatch` | `ir` | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `runtime.optimization.cache-aware-dispatch` |
-| `objc3c.behavior.runtime.collections.type-descriptors` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `runtime.collections.type-descriptors` |
-| `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation` | `runtime` | `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.actor-mailbox-isolation` |
-| `objc3c.behavior.runtime.concurrency-async-actors` | `runtime` | `tests/native/runtime/concurrency/actor_executor_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.concurrency.async-actors` |
-| `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle` | `runtime` | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3` | `npm run objc3c -- validate-concurrency-conformance` | `runtime.concurrency.task-continuation-lifecycle` |
-| `objc3c.behavior.runtime.debug_trace` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.structured-inspection` |
-| `objc3c.behavior.runtime.debug_trace.async_tasks` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.async-tasks` |
-| `objc3c.behavior.runtime.debug_trace.error_unwind` | `e2e` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` | `runtime.debug-trace.error-unwind` |
-| `objc3c.behavior.runtime.error-live-bridge-cleanup` | `runtime` | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3` | `npm run objc3c -- validate-error-conformance` | `runtime.errors.live-bridge-cleanup` |
-| `objc3c.behavior.runtime.error-nserror-status-bridge` | `runtime` | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `runtime.errors.nserror-status-bridge` |
-| `objc3c.behavior.runtime.generics.cross-module-metadata` | `runtime` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `runtime.generics.cross-module-metadata` |
-| `objc3c.behavior.runtime.interop.mixed-image-replay` | `runtime` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` | `runtime.interop.mixed-image-replay` |
-| `objc3c.behavior.runtime.interop.package-loader-bridge` | `runtime` | `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` | `runtime.interop.package-loader-bridge` |
-| `objc3c.behavior.runtime.metaprogramming.host-cache-boundary` | `runtime` | `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `runtime.metaprogramming.host-cache-boundary` |
-| `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay` | `runtime` | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3` | `npm run objc3c -- validate-interop-conformance` | `runtime.modules.imported-runtime-packaging-replay` |
-| `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `runtime` | `tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.bounded-query-snapshots` |
-| `objc3c.behavior.runtime.object-model-category-protocol-registration` | `runtime` | `tests/native/runtime/object_model/category_protocol_registration_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.category-protocol-registration` |
-| `objc3c.behavior.runtime.object-model-class-realization` | `runtime` | `tests/native/runtime/object_model/class_realization_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.class-realization` |
-| `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime` | `tests/native/runtime/object_model/interface_method_table_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.interface-method-table` |
-| `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `runtime` | `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.property-ivar-reflection` |
-| `objc3c.behavior.runtime.object-model-registration-replay` | `runtime` | `tests/native/runtime/object_model/registration_replay_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.registration-replay` |
-| `objc3c.behavior.runtime.public-reflection-api` | `runtime` | `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json` | `npm run objc3c -- validate-public-runtime-reflection-api` | `runtime.public-api.reflection` |
-| `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
-| `objc3c.behavior.sema.effects-ownership-model` | `sema` | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3` | `npm run objc3c -- test-lowering-runtime-stress` | `compiler.sema.effects-ownership-model` |
-| `objc3c.behavior.sema.typed-flow` | `sema` | `tests/native/sema/types/typed_i32_bool_flow.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.sema.typed-flow` |
-| `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.devirtualization` |
-| `objc3c.behavior.semantic_optimization_pipeline` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.semantic-preserving-pipeline` |
-| `objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-aggregate-runtime-shape` |
-| `objc3c.behavior.stdlib.collections.array-slice-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.array-slice-runtime-shape` |
-| `objc3c.behavior.stdlib.collections.generic-type-model` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `stdlib.collections.generic-type-model` |
-| `objc3c.behavior.stdlib.collections.map-entry-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.map-entry-runtime-shape` |
-| `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.collections.set-iteration-runtime-shape` |
-| `objc3c.behavior.stdlib.concurrency-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.concurrency.runtime-backed-v1` |
-| `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-actor-mailbox-api` |
-| `objc3c.behavior.stdlib.concurrency.public-executor-hop-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-executor-hop-api` |
-| `objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-group-cancellation-api` |
-| `objc3c.behavior.stdlib.concurrency.public-task-spawn-api` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3` | `npm run objc3c -- test-runtime-acceptance-concurrency` | `stdlib.concurrency.public-task-spawn-api` |
-| `objc3c.behavior.stdlib.core-runtime-v1` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3` | `npm run objc3c -- test-execution-smoke` | `stdlib.core.runtime-backed-v1` |
-| `objc3c.behavior.stdlib.text.basic-formatting` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.basic-formatting` |
-| `objc3c.behavior.stdlib.text.byte-span-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.byte-span-runtime-shape` |
-| `objc3c.behavior.stdlib.text.equality-comparison` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.equality-comparison` |
-| `objc3c.behavior.stdlib.text.runtime-builder-interpolation` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.runtime-builder-interpolation` |
-| `objc3c.behavior.stdlib.text.string-view-runtime-shape` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.string-view-runtime-shape` |
-| `objc3c.behavior.stdlib.text.unicode-scalar-iteration` | `runtime` | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3` | `npm run objc3c -- validate-stdlib-foundation` | `stdlib.text.unicode-scalar-iteration` |
-| `objc3c.behavior.tooling.artifact-inspector` | `e2e` | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3` | `tooling.editor.artifact-inspector` |
-| `objc3c.behavior.tooling.first-run-product-path` | `e2e` | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json` | `npm run objc3c -- validate-getting-started` | `tooling.developer-experience.first-run-product-path` |
-| `objc3c.behavior.tooling.formatter-lsp-workspace` | `e2e` | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json` | `npm run objc3c -- validate-developer-tooling` | `tooling.editor.formatter-lsp-workspace` |
+| Support claim                                                                  | Owner phase | Behavior fixture                                                                                               | Command                                                                                                                           | Matrix capability                                              |
+| ------------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `objc3c.behavior.abi.governance-source-truth`                                  | `e2e`       | `tests/tooling/fixtures/abi_governance/source_of_truth_manifest.json`                                          | `npm run objc3c -- validate-abi-governance`                                                                                       | `abi.governance.source-truth`                                  |
+| `objc3c.behavior.application-framework-samples.async-runtime-application`      | `e2e`       | `showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3`                                     | `npm run objc3c -- validate-application-framework-samples`                                                                        | `applications.framework-samples.async-runtime-application`     |
+| `objc3c.behavior.application-framework-samples.interop-adapter-library`        | `e2e`       | `showcase/applicationFrameworkSamples/libraries/interopAdapterKit/main.objc3`                                  | `npm run objc3c -- validate-application-framework-samples`                                                                        | `applications.framework-samples.interop-adapter-library`       |
+| `objc3c.behavior.application-framework-samples.object-runtime-library`         | `e2e`       | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3`                                      | `npm run objc3c -- validate-application-framework-samples`                                                                        | `applications.framework-samples.object-runtime-library`        |
+| `objc3c.behavior.application-framework-samples.stdlib-text-collections-cli`    | `e2e`       | `showcase/applicationFrameworkSamples/apps/workflowStdlibCLI/main.objc3`                                       | `npm run objc3c -- validate-application-framework-samples`                                                                        | `applications.framework-samples.stdlib-text-collections-cli`   |
+| `objc3c.behavior.arc-cleanup.integration`                                      | `runtime`   | `tests/tooling/fixtures/native/arc_cleanup_source_construct_order_positive.objc3`                              | `npm run objc3c -- test-runtime-acceptance-arc-cleanup-integration`                                                               | `language.arc-cleanup.integration`                             |
+| `objc3c.behavior.conformance.public-stable-suite`                              | `e2e`       | `tests/conformance/public_suite_manifest.json`                                                                 | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `conformance.public.stable-suite-manifest`                     |
+| `objc3c.behavior.diagnostics.parser-sema-recovery-fixits`                      | `parser`    | `tests/tooling/fixtures/native/recovery/negative/negative_obj3next016_parser_missing_semicolon_recovery.objc3` | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `diagnostics.parser-sema.recovery-fixits`                      |
+| `objc3c.behavior.e2e.runnable-smoke`                                           | `e2e`       | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                                           | `npm run objc3c -- test-behavior-matrix`                                                                                          | `compiler.e2e.runnable-smoke`                                  |
+| `objc3c.behavior.errors.try-catch-semantics`                                   | `sema`      | `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`                                          | `npm run objc3c -- test-runtime-acceptance-fast`                                                                                  | `language.errors.try-catch-semantics`                          |
+| `objc3c.behavior.ir.module-emission`                                           | `ir`        | `tests/native/ir/module/basic_i32_return_main.objc3`                                                           | `npm run objc3c -- test-behavior-matrix`                                                                                          | `compiler.ir.module-emission`                                  |
+| `objc3c.behavior.language.advanced-runtime-closure`                            | `runtime`   | `tests/native/runtime/advanced_closure/combined_positive.objc3`                                                | `npm run objc3c -- validate-advanced-runtime-closure`                                                                             | `language.advanced-runtime-closure`                            |
+| `objc3c.behavior.language.blocks.escape-capture-legality`                      | `sema`      | `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3`          | `npm run objc3c -- test-runtime-acceptance-block-arc`                                                                             | `language.blocks.escape-capture-legality`                      |
+| `objc3c.behavior.language.collections.for-in-syntax-runtime-backed`            | `lowering`  | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3`                   | `npm run objc3c -- test-execution-smoke`                                                                                          | `language.collections.for-in-syntax-runtime-backed`            |
+| `objc3c.behavior.language.collections.literal-syntax-runtime-backed`           | `lowering`  | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3`                   | `npm run objc3c -- test-execution-smoke`                                                                                          | `language.collections.literal-syntax-runtime-backed`           |
+| `objc3c.behavior.language.collections.mutation-syntax-runtime-backed`          | `lowering`  | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3`                   | `npm run objc3c -- test-execution-smoke`                                                                                          | `language.collections.mutation-syntax-runtime-backed`          |
+| `objc3c.behavior.language.control-flow.statement-guarded-match`                | `sema`      | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3`                        | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.control-flow.statement-guarded-match`                |
+| `objc3c.behavior.language.generics.callable-type-parameters`                   | `sema`      | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3`                       | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.generics.callable-type-parameters`                   |
+| `objc3c.behavior.language.generics.collection-identity`                        | `sema`      | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json`                        | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.generics.collection-identity`                        |
+| `objc3c.behavior.language.generics.protocol-qualified-arguments`               | `sema`      | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`                                  | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.generics.protocol-qualified-arguments`               |
+| `objc3c.behavior.language.generics.variance-specialization`                    | `sema`      | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`                                  | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.generics.variance-specialization`                    |
+| `objc3c.behavior.language.metaprogramming.derive-expansion-inventory`          | `sema`      | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3`                                      | `npm run objc3c -- validate-metaprogramming-conformance`                                                                          | `language.metaprogramming.derive-expansion-inventory`          |
+| `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism`    | `sema`      | `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3`                                            | `npm run objc3c -- validate-metaprogramming-conformance`                                                                          | `language.metaprogramming.macro-safety-sandbox-determinism`    |
+| `objc3c.behavior.language.metaprogramming.property-behavior-semantics`         | `sema`      | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3`                                      | `npm run objc3c -- test-runtime-acceptance`                                                                                       | `language.metaprogramming.property-behavior-semantics`         |
+| `objc3c.behavior.language.ownership-memory-model`                              | `sema`      | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3`                              | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.ownership.memory-model`                              |
+| `objc3c.behavior.language.protocols.existential-witness-model`                 | `runtime`   | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3`                 | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.protocols.existential-witness-model`                 |
+| `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema`      | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3`                                | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `language.protocols.protocol-qualified-existential-value-flow` |
+| `objc3c.behavior.language.text.source-string-interpolation`                    | `lowering`  | `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3`                  | `npm run objc3c -- test-execution-smoke`                                                                                          | `language.text.source-string-interpolation`                    |
+| `objc3c.behavior.language.text.source-string-literal-text-shape-handle`        | `lowering`  | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3`               | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `language.text.source-string-literal-text-shape-handle`        |
+| `objc3c.behavior.lowering.error-unwind-cleanup`                                | `ir`        | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3`                                        | `npm run objc3c -- test-runtime-acceptance-fast`                                                                                  | `compiler.lowering.error-unwind-cleanup`                       |
+| `objc3c.behavior.lowering.strict-runtime-dispatch`                             | `lowering`  | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`                               | `npm run objc3c -- test-behavior-matrix`                                                                                          | `compiler.lowering.strict-runtime-dispatch`                    |
+| `objc3c.behavior.modules.direct-import-syntax`                                 | `parser`    | `tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json`                           | `npm run objc3c -- validate-direct-import-module-syntax`                                                                          | `modules.direct-import-syntax`                                 |
+| `objc3c.behavior.modules.public-import-lookup`                                 | `sema`      | `tests/tooling/fixtures/native/module_import_lookup_consumer.objc3`                                            | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `modules.public-import-lookup`                                 |
+| `objc3c.behavior.modules.visibility-reexport-rebuild-contract`                 | `sema`      | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json`              | `npm run objc3c -- validate-module-interop-contracts`                                                                             | `modules.visibility-reexport-rebuild-contract`                 |
+| `objc3c.behavior.package.hosted-registry-fixture`                              | `e2e`       | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json`                          | `npm run objc3c -- validate-package-registry-model`                                                                               | `ecosystem.package-manager.hosted-registry-fixture`            |
+| `objc3c.behavior.package.install-clean-distribution`                           | `e2e`       | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json`                      | `npm run objc3c -- validate-package-install-distribution --from-nothing`                                                          | `ecosystem.package-install.clean-distribution`                 |
+| `objc3c.behavior.package.manager-local-registry`                               | `e2e`       | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json`                                 | `npm run objc3c -- validate-package-manager-model`                                                                                | `ecosystem.package-manager.local-registry`                     |
+| `objc3c.behavior.package.network-dependency-resolution`                        | `e2e`       | `tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json`               | `npm run objc3c -- validate-package-network-publication`                                                                          | `ecosystem.package-manager.network-dependency-resolution`      |
+| `objc3c.behavior.package.release-channel-publication`                          | `e2e`       | `tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json`         | `npm run objc3c -- validate-package-network-publication`                                                                          | `ecosystem.package-manager.release-channel-publication`        |
+| `objc3c.behavior.package.security-hardening`                                   | `e2e`       | `tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json`                            | `npm run objc3c -- validate-package-security-hardening`                                                                           | `ecosystem.package-manager.security-hardening`                 |
+| `objc3c.behavior.parser.canonical-syntax`                                      | `parser`    | `tests/native/parser/positive/canonical_module_main.objc3`                                                     | `npm run objc3c -- test-behavior-matrix`                                                                                          | `compiler.parser.core-declarations`                            |
+| `objc3c.behavior.platform.windows-x64-tier1`                                   | `e2e`       | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`                           | `npm run objc3c -- build-platform-support-matrix`                                                                                 | `platform.windows-x64.tier1`                                   |
+| `objc3c.behavior.release.abi-stability-governance`                             | `e2e`       | `tests/tooling/fixtures/release_foundation/abi_api_governance.json`                                            | `npm run objc3c -- check-release-abi-api-drift`                                                                                   | `release.abi.stability-governance`                             |
+| `objc3c.behavior.release.channel-operations`                                   | `e2e`       | `tests/tooling/fixtures/release_operations/channel_operations_model.json`                                      | `npm run objc3c -- validate-release-operations-end-to-end`                                                                        | `release.operations.channel-lifecycle`                         |
+| `objc3c.behavior.runtime.blocks.byref-forwarding`                              | `runtime`   | `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`                                 | `npm run objc3c -- test-runtime-acceptance-block-arc`                                                                             | `runtime.blocks.byref-forwarding`                              |
+| `objc3c.behavior.runtime.blocks.copy-dispose-invoke`                           | `runtime`   | `tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3`              | `npm run objc3c -- test-runtime-acceptance-block-arc`                                                                             | `runtime.blocks.copy-dispose-invoke`                           |
+| `objc3c.behavior.runtime.cache-aware-dispatch`                                 | `ir`        | `tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll`                                       | `npm run objc3c -- validate-semantic-optimization-pipeline`                                                                       | `runtime.optimization.cache-aware-dispatch`                    |
+| `objc3c.behavior.runtime.collections.type-descriptors`                         | `sema`      | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json`                        | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `runtime.collections.type-descriptors`                         |
+| `objc3c.behavior.runtime.concurrency-actor-mailbox-isolation`                  | `runtime`   | `tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3`                                      | `npm run objc3c -- validate-concurrency-conformance`                                                                              | `runtime.concurrency.actor-mailbox-isolation`                  |
+| `objc3c.behavior.runtime.concurrency-async-actors`                             | `runtime`   | `tests/native/runtime/concurrency/actor_executor_contract.objc3`                                               | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.concurrency.async-actors`                             |
+| `objc3c.behavior.runtime.concurrency-task-continuation-lifecycle`              | `runtime`   | `tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3`                           | `npm run objc3c -- validate-concurrency-conformance`                                                                              | `runtime.concurrency.task-continuation-lifecycle`              |
+| `objc3c.behavior.runtime.debug_trace`                                          | `e2e`       | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json`                                   | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`                                                 | `runtime.debug-trace.structured-inspection`                    |
+| `objc3c.behavior.runtime.debug_trace.async_tasks`                              | `e2e`       | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json`                                   | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`                                                 | `runtime.debug-trace.async-tasks`                              |
+| `objc3c.behavior.runtime.debug_trace.error_unwind`                             | `e2e`       | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json`                                   | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3`                                                 | `runtime.debug-trace.error-unwind`                             |
+| `objc3c.behavior.runtime.error-live-bridge-cleanup`                            | `runtime`   | `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3`                                  | `npm run objc3c -- validate-error-conformance`                                                                                    | `runtime.errors.live-bridge-cleanup`                           |
+| `objc3c.behavior.runtime.error-nserror-status-bridge`                          | `runtime`   | `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`                                     | `npm run objc3c -- test-runtime-acceptance-fast`                                                                                  | `runtime.errors.nserror-status-bridge`                         |
+| `objc3c.behavior.runtime.generics.cross-module-metadata`                       | `runtime`   | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`                                  | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `runtime.generics.cross-module-metadata`                       |
+| `objc3c.behavior.runtime.interop.mixed-image-replay`                           | `runtime`   | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`                                               | `npm run objc3c -- validate-interop-conformance`                                                                                  | `runtime.interop.mixed-image-replay`                           |
+| `objc3c.behavior.runtime.interop.package-loader-bridge`                        | `runtime`   | `tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3`                                      | `npm run objc3c -- validate-interop-conformance`                                                                                  | `runtime.interop.package-loader-bridge`                        |
+| `objc3c.behavior.runtime.metaprogramming.host-cache-boundary`                  | `runtime`   | `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`                                 | `npm run objc3c -- test-runtime-acceptance`                                                                                       | `runtime.metaprogramming.host-cache-boundary`                  |
+| `objc3c.behavior.runtime.modules.imported-runtime-packaging-replay`            | `runtime`   | `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`                                               | `npm run objc3c -- validate-interop-conformance`                                                                                  | `runtime.modules.imported-runtime-packaging-replay`            |
+| `objc3c.behavior.runtime.object-model-bounded-query-snapshots`                 | `runtime`   | `tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3`                                      | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.bounded-query-snapshots`                 |
+| `objc3c.behavior.runtime.object-model-category-protocol-registration`          | `runtime`   | `tests/native/runtime/object_model/category_protocol_registration_contract.objc3`                              | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.category-protocol-registration`          |
+| `objc3c.behavior.runtime.object-model-class-realization`                       | `runtime`   | `tests/native/runtime/object_model/class_realization_contract.objc3`                                           | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.class-realization`                       |
+| `objc3c.behavior.runtime.object-model-interface-method-table`                  | `runtime`   | `tests/native/runtime/object_model/interface_method_table_contract.objc3`                                      | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.interface-method-table`                  |
+| `objc3c.behavior.runtime.object-model-property-ivar-reflection`                | `runtime`   | `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3`                                    | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.property-ivar-reflection`                |
+| `objc3c.behavior.runtime.object-model-registration-replay`                     | `runtime`   | `tests/native/runtime/object_model/registration_replay_contract.objc3`                                         | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.object-model.registration-replay`                     |
+| `objc3c.behavior.runtime.public-reflection-api`                                | `runtime`   | `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json`                                    | `npm run objc3c -- validate-public-runtime-reflection-api`                                                                        | `runtime.public-api.reflection`                                |
+| `objc3c.behavior.runtime.strict-dispatch-error`                                | `runtime`   | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3`                               | `npm run objc3c -- test-behavior-matrix`                                                                                          | `runtime.dispatch.strict-error`                                |
+| `objc3c.behavior.sema.effects-ownership-model`                                 | `sema`      | `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3`                                | `npm run objc3c -- test-lowering-runtime-stress`                                                                                  | `compiler.sema.effects-ownership-model`                        |
+| `objc3c.behavior.sema.typed-flow`                                              | `sema`      | `tests/native/sema/types/typed_i32_bool_flow.objc3`                                                            | `npm run objc3c -- test-behavior-matrix`                                                                                          | `compiler.sema.typed-flow`                                     |
+| `objc3c.behavior.semantic_optimization.exact_target_devirtualization`          | `ir`        | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`                                          | `npm run objc3c -- validate-semantic-optimization-pipeline`                                                                       | `compiler.optimization.devirtualization`                       |
+| `objc3c.behavior.semantic_optimization_pipeline`                               | `ir`        | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json`                                          | `npm run objc3c -- validate-semantic-optimization-pipeline`                                                                       | `compiler.optimization.semantic-preserving-pipeline`           |
+| `objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape`             | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3`            | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.collections.array-aggregate-runtime-shape`             |
+| `objc3c.behavior.stdlib.collections.array-slice-runtime-shape`                 | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3`            | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.collections.array-slice-runtime-shape`                 |
+| `objc3c.behavior.stdlib.collections.generic-type-model`                        | `sema`      | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json`                        | `npm run objc3c -- validate-conformance-corpus`                                                                                   | `stdlib.collections.generic-type-model`                        |
+| `objc3c.behavior.stdlib.collections.map-entry-runtime-shape`                   | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3`            | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.collections.map-entry-runtime-shape`                   |
+| `objc3c.behavior.stdlib.collections.set-iteration-runtime-shape`               | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3`            | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.collections.set-iteration-runtime-shape`               |
+| `objc3c.behavior.stdlib.concurrency-runtime-v1`                                | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3`                    | `npm run objc3c -- test-execution-smoke`                                                                                          | `stdlib.concurrency.runtime-backed-v1`                         |
+| `objc3c.behavior.stdlib.concurrency.public-actor-mailbox-api`                  | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3`                    | `npm run objc3c -- test-runtime-acceptance-concurrency`                                                                           | `stdlib.concurrency.public-actor-mailbox-api`                  |
+| `objc3c.behavior.stdlib.concurrency.public-executor-hop-api`                   | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3`                    | `npm run objc3c -- test-runtime-acceptance-concurrency`                                                                           | `stdlib.concurrency.public-executor-hop-api`                   |
+| `objc3c.behavior.stdlib.concurrency.public-task-group-cancellation-api`        | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3`                    | `npm run objc3c -- test-runtime-acceptance-concurrency`                                                                           | `stdlib.concurrency.public-task-group-cancellation-api`        |
+| `objc3c.behavior.stdlib.concurrency.public-task-spawn-api`                     | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3`                    | `npm run objc3c -- test-runtime-acceptance-concurrency`                                                                           | `stdlib.concurrency.public-task-spawn-api`                     |
+| `objc3c.behavior.stdlib.core-runtime-v1`                                       | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_core_runtime_helpers.objc3`                           | `npm run objc3c -- test-execution-smoke`                                                                                          | `stdlib.core.runtime-backed-v1`                                |
+| `objc3c.behavior.stdlib.text.basic-formatting`                                 | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.basic-formatting`                                 |
+| `objc3c.behavior.stdlib.text.byte-span-runtime-shape`                          | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.byte-span-runtime-shape`                          |
+| `objc3c.behavior.stdlib.text.equality-comparison`                              | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.equality-comparison`                              |
+| `objc3c.behavior.stdlib.text.runtime-builder-interpolation`                    | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.runtime-builder-interpolation`                    |
+| `objc3c.behavior.stdlib.text.string-view-runtime-shape`                        | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.string-view-runtime-shape`                        |
+| `objc3c.behavior.stdlib.text.unicode-scalar-iteration`                         | `runtime`   | `tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3`                   | `npm run objc3c -- validate-stdlib-foundation`                                                                                    | `stdlib.text.unicode-scalar-iteration`                         |
+| `objc3c.behavior.tooling.artifact-inspector`                                   | `e2e`       | `tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`                                     | `npm run objc3c -- inspect-editor-tooling tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3`               | `tooling.editor.artifact-inspector`                            |
+| `objc3c.behavior.tooling.first-run-product-path`                               | `e2e`       | `tests/tooling/fixtures/developer_tooling/developer_experience_completion_contract.json`                       | `npm run objc3c -- validate-getting-started`                                                                                      | `tooling.developer-experience.first-run-product-path`          |
+| `objc3c.behavior.tooling.formatter-lsp-workspace`                              | `e2e`       | `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`                    | `npm run objc3c -- validate-developer-tooling`                                                                                    | `tooling.editor.formatter-lsp-workspace`                       |
 
 ## Phase Owner Contract
 
@@ -369,6 +377,113 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3`
   - test: `scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py`
   - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp`
+
+### Typed throws effect payloads
+
+- Capability ID: `language.errors.typed-throws`
+- State: `reserved`
+- Support claims: None
+- Summary: Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface and source-closure records expose untyped bare-throws effect metadata without silently erasing parenthesized payloads into support.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
+  - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
+  - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`
+  - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+
+### Value optional type constructor
+
+- Capability ID: `language.types.value-optionals`
+- State: `reserved`
+- Support claims: None
+- Summary: Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked contract records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
+  - `native/objc3c/src/parse/objc3_parser_cstyle_type_parser_diagnostics.inc`
+  - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
+  - `native/objc3c/src/sema/model/frontend_type_source_closure.h`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3`
+  - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+
+### Statement-form guarded match patterns
+
+- Capability ID: `language.control-flow.statement-guarded-match`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.control-flow.statement-guarded-match`
+- Summary: Statement-form guarded match patterns are implemented under issue #8236 for `match (expr) { case pattern where bool_condition: { ... } }`. The guard is a contextual `where` clause checked as bool after pattern binding; expression-position match, `=>` arms, type-test patterns, aliases, and strict-profile promotion remain outside this support claim.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc`
+  - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp`
+  - `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp`
+  - `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers_stmt_sites.cpp`
+  - `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3`
+  - `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3`
+  - source: `native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc`
+  - source: `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp`
+  - source: `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp`
+  - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+
+### Strict and strict-concurrency profile admission
+
+- Capability ID: `language.profiles.strict-admission`
+- State: `reserved`
+- Support claims: None
+- Summary: Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, and underscore or compatibility aliases are rejected rather than treated as source-only support.
+- Owner modules:
+  - `native/objc3c/src/config/objc3_language_profile_validation.cpp`
+  - `native/objc3c/src/io/objc3_conformance_profile_selection.cpp`
+  - `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+- Evidence:
+  - diagnostic: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+  - source: `native/objc3c/src/config/objc3_language_profile_validation.cpp`
+  - source: `native/objc3c/src/io/objc3_conformance_profile_selection.cpp`
+
+### Language evolution umbrella alignment
+
+- Capability ID: `language.evolution.umbrella-alignment`
+- State: `reserved`
+- Support claims: None
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profiles. It is reserved until every prerequisite row is either implemented with source-owned evidence or explicitly remains fail-closed; the current state records #8236 source-level support and #8233/#8234/#8235/#8237 reserved boundaries without claiming runtime or profile behavior.
+- Owner modules:
+  - `docs/support/umbrella_readiness.json`
+  - `docs/support/capability_matrix.json`
+  - `docs/support/evidence_map.json`
+  - `docs/support/hard_cutover_capability_truth.md`
+  - `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`
+  - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+  - `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+  - `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+- Evidence:
+  - doc: `docs/support/umbrella_readiness.json`
+  - doc: `docs/support/hard_cutover_capability_truth.md`
+  - source: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`
+  - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+  - source: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+  - source: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+  - source: `tests/fixtures/canonical/manifest.json`
 
 ### Error unwind and cleanup lowering
 
@@ -689,9 +804,10 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.generics.callable-type-parameters`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.generics.callable-type-parameters`
-- Summary: Generic methods and functions are claimed for checked-in receiver substitution and bounded identity-call fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns.
+- Summary: Generic callable type-parameter support is claimed for checked-in generic class receiver substitution and Objective-C 3 `fn name<T>(...)` free-function identity fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns. Objective-C method type-parameter clauses, C/Objective-C style generic free functions, explicit reification markers, and runtime reified generic metadata remain outside this implemented row.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc`
   - `native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp`
   - `native/objc3c/src/ir/objc3_ir_type_model.cpp`
 - Evidence:
@@ -703,6 +819,27 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_unresolved_return.objc3`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp`
+
+### Generic callable reification
+
+- Capability ID: `language.generics.generic-callable-reification`
+- State: `reserved`
+- Support claims: None
+- Summary: Generic callable reification remains reserved under issue #8235. The native source records deterministic erased-default generic callable signature metadata for admitted Objective-C 3 generic free functions, but declaration-scoped reification markers, Objective-C method type-parameter clauses, C/Objective-C style generic free-function declarations, overload-by-generic-signature, variadic generic parameters, and runtime reified generic metadata remain fail-closed.
+- Owner modules:
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc`
+  - `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h`
+  - `native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_type_metadata_function_builder.inc`
+  - `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+- Evidence:
+  - source: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_marker_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_generic_method_type_parameter_clause_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc`
+  - source: `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h`
 
 ### Generic variance and specialization policy
 
@@ -745,14 +882,25 @@ the canonical manifest fixture and public npm command above.
 ### Direct module import syntax
 
 - Capability ID: `modules.direct-import-syntax`
-- State: `reserved`
-- Support claims: None
-- Summary: Direct @import module syntax remains reserved. Current import/package evidence uses checked metadata import surfaces, public cross-module lookup, and package workspace edges; the #8200 text/package proof validates objc_import_module metadata closure and fail-closed missing-provider rejection without promoting direct import syntax.
+- State: `implemented`
+- Support claims: `objc3c.behavior.modules.direct-import-syntax`
+- Summary: Direct @import module syntax is parser-admitted as a deterministic module identity record and package-resolved only when checked-in module graph metadata carries locked package provenance. Malformed module identities, missing package provenance, and ambiguous case-folded package identities fail closed with O3MOD8219 or O3PKG8055; live hosted lookup and fallback package resolution remain outside this claim.
 - Owner modules:
-  - `native/objc3c/src/parse/objc3_type_feature_module_profiles_import_graph.inc`
-  - `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.cpp`
+  - `native/objc3c/src/token/objc3_token_kind_contract.h`
+  - `native/objc3c/src/ast/objc3_ast_declarations.h`
+  - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc`
+  - `scripts/objc3c_package_manager/model.py`
+  - `scripts/check_objc3c_direct_import_module_syntax.py`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - test: `tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - test: `tests/tooling/test_direct_import_module_syntax_contract.py` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - test: `tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - test: `tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3` via `npm run objc3c -- validate-direct-import-module-syntax`
+  - source: `scripts/objc3c_package_manager/model.py`
+  - source: `scripts/check_objc3c_direct_import_module_syntax.py`
+  - source: `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc`
   - doc: `docs/support/hard_cutover_capability_truth.md`
 
 ### Module visibility and rebuild contract
@@ -1631,9 +1779,9 @@ the canonical manifest fixture and public npm command above.
 ### Advanced runtime-backed language closure
 
 - Capability ID: `language.advanced-runtime-closure`
-- State: `reserved`
-- Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, native object/IR/manifest artifact readiness, and 17-case negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure, including link/run, and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.advanced-runtime-closure`
+- Summary: The advanced-runtime closure is now an implemented Objective-C 3 behavior row for the integrated runtime envelope that works today: blocks/byref, ARC cleanup and ownership, throws/error cleanup, task lifecycle, actors and actor mailboxes, property behaviors, macro provenance, package replay, ABI records, source/debug records, native object/IR/manifest emission, and native link/run all agree through the public validator. Broad scheduler fairness, Swift/C++ ABI closure, distributed actor networking, and arbitrary macro-host execution remain separate reserved or fail-closed rows.
 - Owner modules:
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/memory/`
@@ -1650,10 +1798,14 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
   - source: `scripts/check_objc3c_advanced_runtime_closure.py`
-  - test: `tests/native/runtime/advanced_closure/combined_positive.objc3`
+  - source: `native/objc3c/src/pipeline/runtime_import_preservation_evidence_metaprogramming.cpp`
+  - source: `native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp`
+  - test: `tests/native/runtime/advanced_closure/combined_positive.objc3` via `npm run objc3c -- validate-advanced-runtime-closure`
+  - test: `tests/native/runtime/advanced_closure/combined_provider.objc3`
   - test: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json`
+  - test: `tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json`
   - test: `tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json`
   - test: `tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
 
@@ -1793,7 +1945,9 @@ the canonical manifest fixture and public npm command above.
   - `schemas/objc3c-package-manifest-v1.schema.json`
   - `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
+  - `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
   - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
 - Evidence:
   - schema: `schemas/objc3c-capability-matrix-v1.schema.json`
   - schema: `docs/support/capability_matrix.schema.json`
@@ -1812,8 +1966,11 @@ the canonical manifest fixture and public npm command above.
   - schema: `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
   - schema: `schemas/objc3c-package-install-receipt-v1.schema.json`
   - schema: `schemas/objc3c-platform-support-matrix-v1.schema.json`
+  - schema: `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - schema: `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - schema: `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
   - schema: `schemas/objc3c-performance-telemetry-v1.schema.json`
+  - schema: `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
   - schema: `schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json`
   - schema: `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
   - schema: `schemas/objc3c-application-architecture-evidence-summary-v1.schema.json`
@@ -1841,7 +1998,6 @@ the canonical manifest fixture and public npm command above.
   - schema: `schemas/objc3c-package-manifest-v1.schema.json`
   - schema: `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - schema: `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
-  - schema: `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
 
 ### Hard-cutover capability truth boundary
 
@@ -2049,7 +2205,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.local-registry`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.manager-local-registry`
-- Summary: Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, shared module-graph source-of-truth records, offline mirror metadata, explicit package trust-root policy, local trust envelopes, and fail-closed language/ABI/module-graph dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.
+- Summary: Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, shared module-graph source-of-truth records, offline mirror metadata, explicit package trust-root policy, local trust envelopes, and fail-closed language/ABI/module-graph dependency resolution. Source-owned hosted-registry fixture, offline network-resolution, release-channel publication, and security-hardening rows own their bounded support; live hosted services, arbitrary network fetches, and fallback registry success remain unsupported.
 - Owner modules:
   - `scripts/objc3c_package_manager/model.py`
   - `scripts/objc3c_package_manager/registry.py`
@@ -2076,12 +2232,96 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_package_manager_model.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 
+### Source-owned hosted registry fixture resolution
+
+- Capability ID: `ecosystem.package-manager.hosted-registry-fixture`
+- State: `implemented`
+- Support claims: `objc3c.behavior.package.hosted-registry-fixture`
+- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim.
+- Owner modules:
+  - `scripts/objc3c_package_manager/hosted_registry.py`
+  - `scripts/check_objc3c_package_registry_model.py`
+  - `scripts/objc3c_workflow/action_catalog_package_registry_publication.py`
+  - `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/test_package_hosted_registry_resolution.py` via `npm run objc3c -- validate-package-registry-model`
+  - schema: `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/hosted_registry.py`
+  - source: `scripts/check_objc3c_package_registry_model.py`
+
+### Offline fixture-backed network dependency resolution
+
+- Capability ID: `ecosystem.package-manager.network-dependency-resolution`
+- State: `implemented`
+- Support claims: `objc3c.behavior.package.network-dependency-resolution`
+- Summary: Network dependency resolution is implemented only as source-owned offline fixture resolution. The resolver accepts a dependency when hosted endpoint identity, exact locked version, fixture lock digest, trust root, package provenance, cache digest/signature, registry record digest, and no-fallback policy all agree; live network fetches, unpinned hosted dependencies, and fallback registry success fail closed.
+- Owner modules:
+  - `scripts/objc3c_package_manager/network_publication.py`
+  - `scripts/check_objc3c_package_network_publication.py`
+  - `scripts/objc3c_workflow/action_catalog_package_registry_publication.py`
+  - `schemas/objc3c-package-network-resolution-v1.schema.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json` via `npm run objc3c -- validate-package-network-publication`
+  - test: `tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json` via `npm run objc3c -- validate-package-network-publication`
+  - test: `tests/tooling/test_package_network_publication_contract.py` via `npm run objc3c -- validate-package-network-publication`
+  - schema: `schemas/objc3c-package-network-resolution-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/network_publication.py`
+  - source: `scripts/check_objc3c_package_network_publication.py`
+
+### Source-owned package release-channel publication
+
+- Capability ID: `ecosystem.package-manager.release-channel-publication`
+- State: `implemented`
+- Support claims: `objc3c.behavior.package.release-channel-publication`
+- Summary: Package release-channel publication is implemented as checked metadata publication for the offline fixture channel. Publication is accepted only when channel freshness, release channel id, hosted registry channel id, network resolution proof, cache pin, lock digest, package signatures, and trust provenance remain current; stale channels, live network publication, and fallback publication success fail closed.
+- Owner modules:
+  - `scripts/objc3c_package_manager/network_publication.py`
+  - `scripts/check_objc3c_package_network_publication.py`
+  - `scripts/objc3c_workflow/action_catalog_package_registry_publication.py`
+  - `schemas/objc3c-package-release-channel-publication-v1.schema.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json` via `npm run objc3c -- validate-package-network-publication`
+  - test: `tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json` via `npm run objc3c -- validate-package-network-publication`
+  - test: `tests/tooling/test_package_network_publication_contract.py` via `npm run objc3c -- validate-package-network-publication`
+  - schema: `schemas/objc3c-package-release-channel-publication-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/network_publication.py`
+  - source: `scripts/check_objc3c_package_network_publication.py`
+
+### Package security hardening
+
+- Capability ID: `ecosystem.package-manager.security-hardening`
+- State: `implemented`
+- Support claims: `objc3c.behavior.package.security-hardening`
+- Summary: Package security hardening is implemented for deterministic local fixture signing and verification, repo-relative non-overwriting trust inputs and outputs, pre-mutation extraction path plans, duplicate/case-conflict/symlink/overwrite rejection, reserved installer/update keys, and reserved release/registry trust roots. Production signing, fallback trust roots, unsafe extraction success, and live registry trust roots remain fail-closed.
+- Owner modules:
+  - `scripts/objc3c_package_manager/trust.py`
+  - `scripts/sign_objc3c_package.py`
+  - `scripts/verify_objc3c_package.py`
+  - `scripts/objc3c_package_manager/operations.py`
+  - `scripts/objc3c_package_manager/install_distribution.py`
+  - `scripts/check_objc3c_package_security_hardening.py`
+  - `schemas/objc3c-package-signing-trust-v1.schema.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json` via `npm run objc3c -- validate-package-security-hardening`
+  - test: `tests/tooling/test_package_signing_trust.py` via `npm run objc3c -- validate-package-security-hardening`
+  - schema: `schemas/objc3c-package-signing-trust-v1.schema.json`
+  - schema: `schemas/objc3c-package-lock-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/trust.py`
+  - source: `scripts/sign_objc3c_package.py`
+  - source: `scripts/verify_objc3c_package.py`
+  - source: `scripts/objc3c_package_manager/operations.py`
+  - source: `scripts/objc3c_package_manager/install_distribution.py`
+  - source: `scripts/check_objc3c_package_security_hardening.py`
+
 ### Public hosted package registry
 
 - Capability ID: `ecosystem.package-manager.public-hosted-registry`
 - State: `reserved`
 - Support claims: None
-- Summary: Public hosted package registry support remains reserved. Current package-manager evidence is limited to source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, and fail-closed hosted-registry/network-install overclaim checks.
+- Summary: Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, and offline fixture-backed network/publication contracts, but no live hosted service, auth, moderation, availability, or fallback registry success claim.
 - Owner modules:
   - `scripts/objc3c_package_manager/registry.py`
   - `docs/runbooks/objc3c_package_ecosystem.md`
@@ -2094,16 +2334,18 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-install.clean-distribution`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.install-clean-distribution`
-- Summary: The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, deterministic update/uninstall operation receipts, tampered installed-package rejection, and executable compile/run of the installed package slice. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
+- Summary: The package ecosystem now validates a from-nothing clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, deterministic update/uninstall operation receipts, tampered installed-package rejection, and executable compile/run of the installed package slice. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.
 - Owner modules:
   - `scripts/objc3c_package_manager/install_distribution.py`
   - `scripts/check_objc3c_package_install_distribution_credibility.py`
   - `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json`
+  - `tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json`
   - `scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py`
 - Evidence:
-  - test: `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` via `npm run objc3c -- validate-package-install-distribution`
-  - test: `tests/tooling/test_package_install_distribution_credibility.py` via `npm run objc3c -- validate-package-install-distribution`
+  - test: `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` via `npm run objc3c -- validate-package-install-distribution --from-nothing`
+  - test: `tests/tooling/test_package_install_distribution_credibility.py` via `npm run objc3c -- validate-package-install-distribution --from-nothing`
   - test: `tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - source: `tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json`
   - source: `scripts/objc3c_package_manager/install_distribution.py`
   - source: `scripts/check_objc3c_package_install_distribution_credibility.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
@@ -2195,7 +2437,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `compiler.optimization.semantic-preserving-pipeline`
 - State: `implemented`
 - Support claims: `objc3c.behavior.semantic_optimization_pipeline`
-- Summary: The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.
+- Summary: The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, optimization runtime/debug safety governance, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.
 - Owner modules:
   - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.h`
   - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
@@ -2210,9 +2452,31 @@ the canonical manifest fixture and public npm command above.
   - source: `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
   - source: `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
   - source: `tests/tooling/fixtures/performance_governance/budget_model.json`
+  - source: `tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json`
   - schema: `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
+  - schema: `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
   - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
   - source: `scripts/objc3c_semantic_optimization_pipeline.py`
+
+### Optimization runtime/debug safety governance
+
+- Capability ID: `compiler.optimization.runtime-debug-safety`
+- State: `internal`
+- Support claims: None
+- Summary: Optimization speedup and optimized-method safety publication is governed by a checked contract for #8205/#8227. It binds budget metrics, benchmark source records, deoptimization/invalidation boundaries, side-effect replay, optimized debug source-map preservation, no alternate success path policy, and fail-closed negative cases before any timing result can become a support claim.
+- Owner modules:
+  - `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
+  - `tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json`
+  - `scripts/objc3c_semantic_optimization_pipeline.py`
+  - `tests/tooling/test_semantic_optimization_pipeline.py`
+  - `docs/runbooks/objc3c_performance_governance.md`
+- Evidence:
+  - schema: `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
+  - source: `tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json`
+  - source: `tests/tooling/fixtures/performance_governance/budget_model.json`
+  - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - test: `tests/tooling/test_semantic_optimization_pipeline.py` via `npm run objc3c -- validate-semantic-optimization-pipeline`
+  - doc: `docs/runbooks/objc3c_performance_governance.md`
 
 ### Semantic optimization pass registry
 
@@ -2411,37 +2675,49 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.linux-x64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: Linux x64 support remains fail-closed: the support evidence contract records an unsupported-host denial until build, package, install, and native execution evidence exists on a replayable public path.
+- Summary: Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows now record the Linux host/toolchain/package promotion blockers, but they publish no support claim until build, package, install, and native execution evidence exists on a replayable public path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### macOS arm64 platform support
 
 - Capability ID: `platform.darwin-arm64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: macOS arm64 support remains fail-closed: the support evidence contract records an unsupported-host denial until package install and native execution evidence exists on a replayable public path.
+- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, but they publish no support claim until package install and native execution evidence exists on a replayable public path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### Current probed LLVM executable evidence
 
 - Capability ID: `toolchain.llvm.current-probed-executable`
 - State: `internal`
 - Support claims: None
-- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Unsupported versions fail closed without a range claim.
+- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves and proves llc --filetype=obj; missing llc, missing object-filetype support, mixed tool roots, unsupported versions, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `scripts/probe_objc3c_llvm_capabilities.py`
+  - `scripts/objc3c_llvm_capability_probe/reports.py`
+  - `scripts/check_objc3c_cross_lane_e2e.py`
 - Evidence:
   - source: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - source: `scripts/probe_objc3c_llvm_capabilities.py`
+  - source: `scripts/objc3c_llvm_capability_probe/reports.py`
+  - source: `scripts/check_objc3c_cross_lane_e2e.py`
   - test: `tests/tooling/test_probe_objc3c_llvm_capabilities.py`
 
 ### Package bridge host tool evidence
@@ -2459,29 +2735,56 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_workflow/public_command_api.py`
   - source: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
 
+### Platform expansion umbrella readiness
+
+- Capability ID: `platform.expansion.umbrella-readiness`
+- State: `internal`
+- Support claims: None
+- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer variants reserved, and keeps missing-llc native object emission fail-closed with no clang substitute success path.
+- Owner modules:
+  - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
+  - `scripts/check_objc3c_platform_support_matrix.py`
+  - `scripts/platform_hardening_contracts/support_evidence.py`
+  - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - `docs/runbooks/objc3c_platform_hardening.md`
+- Evidence:
+  - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - schema: `schemas/objc3c-platform-support-source-truth-v1.schema.json`
+  - source: `scripts/check_objc3c_platform_support_matrix.py`
+  - source: `scripts/platform_hardening_contracts/support_evidence.py`
+  - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - doc: `docs/runbooks/objc3c_platform_hardening.md`
+
 ### AddressSanitizer platform variant
 
 - Capability ID: `toolchain.sanitizer.address`
 - State: `reserved`
 - Support claims: None
-- Summary: AddressSanitizer package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.
+- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract now records the ASan runtime package id, compiler/linker flag shape, install guard, and fail-closed mixed-runtime/unsupported-platform blockers, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
-  - doc: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### UndefinedBehaviorSanitizer platform variant
 
 - Capability ID: `toolchain.sanitizer.undefined`
 - State: `reserved`
 - Support claims: None
-- Summary: UBSan package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.
+- Summary: UBSan support remains reserved under issue #8231: the source contract now records the UBSan runtime package id, trap-or-recover policy placeholder, install guard, and fail-closed suppression/mixed-runtime blockers, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
-  - doc: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### Object runtime sample library
 
@@ -2635,10 +2938,12 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `modules.standalone-textual-interface-payload`
 - State: `internal`
 - Support claims: None
-- Summary: The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata. This row does not claim importer consumption or semantic roundtrip support yet; those remain reserved in the payload until issue #8238 lands the parser/importer and public validation workflow.
+- Summary: The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata, plus a fail-closed importer contract that validates package lock identity, source/debug anchors, declaration identity, source counts, reserved metadata, and semantic roundtrip status through a public workflow command.
 - Owner modules:
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.h`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
   - `native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp`
   - `native/objc3c/src/io/objc3_runtime_artifact_paths.cpp`
   - `native/objc3c/src/io/objc3_runtime_artifact_writers.cpp`
@@ -2646,6 +2951,9 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - schema: `schemas/objc3c-standalone-textual-interface-payload-v1.schema.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
+  - test: `tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json` via `npm run objc3c -- validate-standalone-textual-interface-payload`
+  - test: `tests/tooling/test_native_interface_and_runtime_contracts.py` via `npm run objc3c -- validate-standalone-textual-interface-payload`
   - source: `native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp`
   - source: `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`
 

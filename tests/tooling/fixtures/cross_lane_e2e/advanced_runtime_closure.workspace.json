@@ -48,7 +48,7 @@
     "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
     "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
-    "umbrella_support_promoted": false,
+    "umbrella_support_promoted": true,
     "proof_axes": [
       "runtime_state",
       "source_graph",
@@ -90,7 +90,7 @@
     {
       "from": "cross-lane:advanced-runtime-closure",
       "to": "language:advanced-runtime-closure",
-      "relationship": "reserved-umbrella-boundary-not-promoted"
+      "relationship": "implemented-umbrella-boundary-promoted"
     }
   ]
 }

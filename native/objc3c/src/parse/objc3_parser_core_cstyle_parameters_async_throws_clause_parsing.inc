@@ -1,3 +1,79 @@
+  std::string ClassifyReservedTypedThrowsPayloadShape() const {
+    if (!At(TokenKind::LParen)) {
+      return "absent-payload";
+    }
+
+    std::size_t cursor = index_ + 1u;
+    int paren_depth = 1;
+    int angle_depth = 0;
+    bool saw_payload_token = false;
+    bool saw_top_level_comma = false;
+    while (cursor < tokens_.size()) {
+      const Token &token = tokens_[cursor];
+      if (token.kind == TokenKind::Eof) {
+        return "malformed-unclosed-payload";
+      }
+      if (token.kind == TokenKind::LParen) {
+        ++paren_depth;
+        saw_payload_token = true;
+        ++cursor;
+        continue;
+      }
+      if (token.kind == TokenKind::RParen) {
+        --paren_depth;
+        if (paren_depth == 0) {
+          break;
+        }
+        saw_payload_token = true;
+        ++cursor;
+        continue;
+      }
+
+      if (paren_depth == 1) {
+        if (token.kind == TokenKind::Less) {
+          ++angle_depth;
+          saw_payload_token = true;
+          ++cursor;
+          continue;
+        }
+        if (token.kind == TokenKind::Greater) {
+          if (angle_depth > 0) {
+            --angle_depth;
+          }
+          saw_payload_token = true;
+          ++cursor;
+          continue;
+        }
+        if (token.kind == TokenKind::GreaterGreater) {
+          if (angle_depth >= 2) {
+            angle_depth -= 2;
+          } else {
+            angle_depth = 0;
+          }
+          saw_payload_token = true;
+          ++cursor;
+          continue;
+        }
+        if (token.kind == TokenKind::Comma && angle_depth == 0) {
+          saw_top_level_comma = true;
+        }
+      }
+      saw_payload_token = true;
+      ++cursor;
+    }
+
+    if (cursor >= tokens_.size() || tokens_[cursor].kind != TokenKind::RParen) {
+      return "malformed-unclosed-payload";
+    }
+    if (!saw_payload_token) {
+      return "empty-payload";
+    }
+    if (saw_top_level_comma) {
+      return "multi-payload";
+    }
+    return "single-payload";
+  }
+
   bool ParseOptionalThrowsClause(FunctionDecl &fn) {
     if (!AtThrowsClauseKeyword()) {
       return true;
@@ -10,7 +86,8 @@
     }
     if (At(TokenKind::LParen)) {
       diagnostics_.push_back(
-          BuildObjc3ReservedTypedThrowsDiagnostic(throws_token));
+          BuildObjc3ReservedTypedThrowsDiagnostic(
+              throws_token, ClassifyReservedTypedThrowsPayloadShape()));
       return false;
     }
     fn.throws_declared = true;
@@ -29,7 +106,8 @@
     }
     if (At(TokenKind::LParen)) {
       diagnostics_.push_back(
-          BuildObjc3ReservedTypedThrowsDiagnostic(throws_token));
+          BuildObjc3ReservedTypedThrowsDiagnostic(
+              throws_token, ClassifyReservedTypedThrowsPayloadShape()));
       return false;
     }
     method.throws_declared = true;

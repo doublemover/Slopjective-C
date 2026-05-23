@@ -18,6 +18,7 @@ static void PublishControlFlowControlFlowSemanticModelReplayKey(
       << ";match-bindings=" << summary.match_binding_scope_sites
       << ";match-result-bindings="
       << summary.match_result_case_scope_sites
+      << ";match-guards=" << summary.match_guard_condition_sites
       << ";match-exhaustive=" << summary.match_exhaustive_statement_sites
       << ";match-bool-exhaustive=" << summary.match_bool_exhaustive_sites
       << ";match-result-exhaustive="

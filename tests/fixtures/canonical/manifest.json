@@ -72,6 +72,12 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
       "claim_id": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
@@ -226,6 +232,12 @@
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
       "executable_command": "npm run objc3c -- validate-interop-conformance"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.advanced-runtime-closure",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "executable_command": "npm run objc3c -- validate-advanced-runtime-closure"
     },
     {
       "claim_id": "objc3c.behavior.errors.try-catch-semantics",
@@ -444,10 +456,40 @@
       "executable_command": "npm run objc3c -- validate-package-manager-model"
     },
     {
+      "claim_id": "objc3c.behavior.package.hosted-registry-fixture",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "executable_command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.network-dependency-resolution",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "executable_command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.release-channel-publication",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "executable_command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.security-hardening",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+      "executable_command": "npm run objc3c -- validate-package-security-hardening"
+    },
+    {
+      "claim_id": "objc3c.behavior.modules.direct-import-syntax",
+      "owner_phase": "parser",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "executable_command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
       "claim_id": "objc3c.behavior.package.install-clean-distribution",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
-      "executable_command": "npm run objc3c -- validate-package-install-distribution"
+      "executable_command": "npm run objc3c -- validate-package-install-distribution --from-nothing"
     },
     {
       "claim_id": "objc3c.behavior.release.abi-stability-governance",
@@ -1244,6 +1286,142 @@
       "expected_diagnostic_code": "O3S206"
     },
     {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_marker_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "generics",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P114"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_type_parameter_clause_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "generics",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P114"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "generics",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P114"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "errors",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P182"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "errors",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P182"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "errors",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P182"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "errors",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P182"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3C004"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "control-flow",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P156"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "control-flow",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P156"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "control-flow",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P157"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_language_semantics_await_outside_async.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -1329,6 +1507,22 @@
       "owner_phase": "runtime",
       "behavior_family": "interop",
       "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "advanced_runtime_closure",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/advanced_closure/combined_provider.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "advanced_runtime_closure",
+      "fixture_kind": "positive-provider",
       "expected_diagnostic_code": ""
     },
     {
@@ -1538,6 +1732,46 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "module-import",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "module-import",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "module-import",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3MOD8219"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "module-import",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3PKG8055"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "module-import",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3PKG8055"
+    },
+    {
       "path": "tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -1587,6 +1821,54 @@
     },
     {
       "path": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3PKG8055"
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3PKG8055"
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
       "behavior_family": "package-ecosystem",

@@ -21,7 +21,7 @@
       "from_module": "InterfacePayloadFixture",
       "to_module": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json",
       "interface_payload_id": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json:standalone-textual-interface:v1",
-      "lock_identity": "unlocked:runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json",
+      "lock_identity": "package-lock:runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json:trust:v1",
       "capability_requirements": [
         "modules.public-import-lookup"
       ]
@@ -53,12 +53,36 @@
               "result_object_pointer_type_name": "",
               "result_generic_suffix": "",
               "result_pointer_depth": 0,
-              "parameters": []
+              "parameters": [],
+              "value_optional_contract": {
+                "issue_ref": 8234,
+                "canonical_spelling": "Optional<T>",
+                "source_status": "reserved-rejected-before-sema",
+                "lowercase_alias_accepted": false,
+                "abi_layout_status": "reserved-no-layout",
+                "nil_to_scalar_coercion_allowed": false,
+                "nullable_pointer_conversion_allowed": false,
+                "throws_result_conversion_allowed": false,
+                "interface_roundtrip_status": "reserved-feature-marker-imported"
+              }
             },
             "effects": {
               "async": false,
               "throws": false,
-              "typed_throws": "reserved",
+              "throws_kind": "none",
+              "declared_error_type": "",
+              "typed_throws": {
+                "issue_ref": 8233,
+                "canonical_syntax": "throws(E)",
+                "throws_kind": "none",
+                "declared_error_type": "",
+                "typed_payload_arity": 0,
+                "typed_payload_status": "reserved-rejected-before-sema",
+                "silent_erasure_allowed": false,
+                "multi_payload_supported": false,
+                "abi_status": "reserved-no-lowering",
+                "interface_roundtrip_status": "reserved-feature-marker-imported"
+              },
               "throws_profile": "",
               "actor_nonisolated": false,
               "actor_isolation_profile": "",
@@ -122,12 +146,36 @@
         "result_object_pointer_type_name": "Box",
         "result_generic_suffix": "",
         "result_pointer_depth": 1,
-        "parameters": []
+        "parameters": [],
+        "value_optional_contract": {
+          "issue_ref": 8234,
+          "canonical_spelling": "Optional<T>",
+          "source_status": "reserved-rejected-before-sema",
+          "lowercase_alias_accepted": false,
+          "abi_layout_status": "reserved-no-layout",
+          "nil_to_scalar_coercion_allowed": false,
+          "nullable_pointer_conversion_allowed": false,
+          "throws_result_conversion_allowed": false,
+          "interface_roundtrip_status": "reserved-feature-marker-imported"
+        }
       },
       "effects": {
         "async": false,
         "throws": false,
-        "typed_throws": "reserved",
+        "throws_kind": "none",
+        "declared_error_type": "",
+        "typed_throws": {
+          "issue_ref": 8233,
+          "canonical_syntax": "throws(E)",
+          "throws_kind": "none",
+          "declared_error_type": "",
+          "typed_payload_arity": 0,
+          "typed_payload_status": "reserved-rejected-before-sema",
+          "silent_erasure_allowed": false,
+          "multi_payload_supported": false,
+          "abi_status": "reserved-no-lowering",
+          "interface_roundtrip_status": "reserved-feature-marker-imported"
+        },
         "throws_profile": "",
         "actor_nonisolated": false,
         "actor_isolation_profile": "",
@@ -177,8 +225,8 @@
   ],
   "interface_roundtrip": {
     "payload_id": "InterfacePayloadFixture:standalone-textual-interface:v1",
-    "parse_status": "reserved-importer-not-landed",
-    "semantic_equivalence_status": "reserved-importer-not-landed",
+    "parse_status": "supported",
+    "semantic_equivalence_status": "supported",
     "drift_diagnostic": "O3IFC8238"
   },
   "source_counts": {
@@ -188,12 +236,61 @@
     "implementations_reserved": 1,
     "functions": 1
   },
+  "issue_refs": [
+    8238,
+    8208
+  ],
+  "source_truth_policy": {
+    "source_truth": "native-artifact-schema-fixture-public-command",
+    "local_temp_source_truth_allowed": false,
+    "generated_output_source_truth_allowed": false,
+    "fallback_success_allowed": false,
+    "schema_registry_required": true,
+    "public_command_evidence_required": true,
+    "capability_truth_row": "modules.standalone-textual-interface-payload",
+    "umbrella_readiness_issue_ref": 8208
+  },
+  "negative_cases": [
+    {
+      "case_id": "stale-schema",
+      "target": "schema_version",
+      "expected_failure": "schema validation failed before import",
+      "fail_closed": true
+    },
+    {
+      "case_id": "unlocked-import",
+      "target": "imports[0].lock_identity",
+      "expected_failure": "package lock/trust identity required",
+      "fail_closed": true
+    },
+    {
+      "case_id": "hidden-declaration",
+      "target": "declarations[0].kind",
+      "expected_failure": "implementation declarations remain reserved metadata",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    },
+    {
+      "case_id": "count-drift",
+      "target": "source_counts.interfaces",
+      "expected_failure": "source_counts drift rejected",
+      "fail_closed": true
+    },
+    {
+      "case_id": "reserved-roundtrip",
+      "target": "interface_roundtrip.parse_status",
+      "expected_failure": "reserved importer status cannot satisfy support",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    }
+  ],
   "capability_requirements": [
     "modules.public-import-lookup",
     "modules.standalone-textual-interface-payload"
   ],
   "public_commands": [
-    "npm run objc3c -- compile-objc3c <input.objc3>"
+    "npm run objc3c -- compile-objc3c <input.objc3>",
+    "npm run objc3c -- validate-standalone-textual-interface-payload"
   ],
   "diagnostic_count": 0
 }

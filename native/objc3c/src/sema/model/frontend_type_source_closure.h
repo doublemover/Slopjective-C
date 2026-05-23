@@ -71,6 +71,13 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool typed_keypath_literal_source_supported = false;
   bool optional_member_access_fail_closed = false;
   bool value_optional_type_fail_closed = false;
+  std::size_t value_optional_issue_ref = 8234;
+  std::string value_optional_canonical_spelling = "Optional<T>";
+  bool lowercase_optional_alias_rejected = true;
+  bool value_optional_nil_to_scalar_coercion_allowed = false;
+  bool value_optional_nullable_pointer_conversion_allowed = false;
+  bool value_optional_throws_conversion_allowed = false;
+  std::string value_optional_abi_status = "reserved-no-layout";
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;

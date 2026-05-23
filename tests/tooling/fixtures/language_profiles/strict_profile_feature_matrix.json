@@ -1,0 +1,100 @@
+{
+  "contract_id": "objc3c.language_profiles.strict_admission_matrix.v1",
+  "issue_refs": [
+    8207,
+    8237
+  ],
+  "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+  "profile_claim_policy": {
+    "claimed_public_profiles": [
+      "core"
+    ],
+    "native_frontend_profiles": [
+      "canonical"
+    ],
+    "strict_profile_aliases_allowed": false,
+    "strict_concurrency_aliases_allowed": false,
+    "objc2_compatibility_profile_allowed": false,
+    "local_temp_evidence_allowed": false
+  },
+  "accepted_profiles": [
+    {
+      "profile_id": "canonical",
+      "selection_state": "accepted",
+      "language_profile": "canonical",
+      "support_boundary": "Native frontend compilation remains canonical-only."
+    },
+    {
+      "profile_id": "core",
+      "selection_state": "claimed-conformance-profile",
+      "language_profile": "canonical",
+      "support_boundary": "Public conformance publication may claim core only."
+    }
+  ],
+  "rejected_profiles": [
+    {
+      "profile_id": "strict",
+      "selection_state": "rejected-missing-release-evidence",
+      "diagnostic_codes": [
+        "O3C036"
+      ],
+      "required_capabilities": [
+        "match-expression-result-typing",
+        "strict-diagnostics",
+        "textual-interface-roundtrip",
+        "package-replay-publication",
+        "public-release-evidence"
+      ],
+      "disabled_allowances": [
+        "retired-mode",
+        "legacy-alias",
+        "local-temp-evidence",
+        "parser-recognition-only-feature-macro"
+      ],
+      "rejection_policy": "Selection is rejected before compilation until all required rows have durable public evidence."
+    },
+    {
+      "profile_id": "strict-concurrency",
+      "selection_state": "rejected-missing-runtime-evidence",
+      "diagnostic_codes": [
+        "O3C037"
+      ],
+      "required_capabilities": [
+        "actor-isolation",
+        "sendability",
+        "task-lifecycle",
+        "scheduler",
+        "actor-mailbox-runtime-guarantees",
+        "public-release-evidence"
+      ],
+      "disabled_allowances": [
+        "retired-mode",
+        "legacy-alias",
+        "source-only-concurrency-claim",
+        "local-temp-evidence",
+        "parser-recognition-only-feature-macro"
+      ],
+      "rejection_policy": "Selection is rejected before compilation until concurrency runtime prerequisites have durable public evidence."
+    }
+  ],
+  "negative_selection_fixtures": [
+    {
+      "case_id": "strict_language_profile_reserved",
+      "selection": "strict",
+      "expected_diagnostic": "O3C036",
+      "forbidden_outcome": "strict treated as an alias of canonical or core"
+    },
+    {
+      "case_id": "strict_concurrency_language_profile_reserved",
+      "selection": "strict-concurrency",
+      "expected_diagnostic": "O3C037",
+      "forbidden_outcome": "strict-concurrency treated as source-only concurrency support"
+    },
+    {
+      "case_id": "strict_concurrency_alias_rejected",
+      "selection": "strict_concurrency",
+      "expected_diagnostic": "O3C001",
+      "forbidden_outcome": "underscore alias accepted"
+    }
+  ]
+}

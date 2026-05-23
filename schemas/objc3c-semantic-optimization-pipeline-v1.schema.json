@@ -37,8 +37,10 @@
             { "contains": { "const": 8192 } },
             { "contains": { "const": 8193 } },
             { "contains": { "const": 8194 } },
+            { "contains": { "const": 8205 } },
             { "contains": { "const": 8224 } },
-            { "contains": { "const": 8226 } }
+            { "contains": { "const": 8226 } },
+            { "contains": { "const": 8227 } }
           ]
         },
         "support_claims": {
@@ -346,6 +348,7 @@
         "budget_model",
         "required_public_actions",
         "required_checked_in_paths",
+        "optimization_runtime_debug_safety_contract",
         "workload_evidence",
         "semantic_trace_evidence",
         "runtime_equivalence_validation"
@@ -371,7 +374,15 @@
         "required_checked_in_paths": {
           "type": "array",
           "items": { "type": "string" },
+          "allOf": [
+            { "contains": { "const": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json" } },
+            { "contains": { "const": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json" } },
+            { "contains": { "const": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json" } }
+          ],
           "minItems": 1
+        },
+        "optimization_runtime_debug_safety_contract": {
+          "const": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
         },
         "workload_evidence": {
           "type": "array",

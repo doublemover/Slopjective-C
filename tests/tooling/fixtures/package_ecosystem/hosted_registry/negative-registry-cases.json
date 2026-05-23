@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_negative_cases.v1",
+  "issue_refs": [
+    8220
+  ],
+  "diagnostic_code": "O3PKG8055",
+  "fixture_index": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+  "offline_mirror": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+  "cases": [
+    {
+      "case_id": "unpinned-hosted-dependency",
+      "failure_mode": "unpinned-hosted-dependency",
+      "expected_failure": "O3PKG8055: unpinned hosted dependency for fixture:network.core"
+    },
+    {
+      "case_id": "registry-trust-mismatch",
+      "failure_mode": "registry-trust-mismatch",
+      "expected_failure": "O3PKG8055: hosted registry trust root mismatch for fixture:network.core"
+    },
+    {
+      "case_id": "endpoint-channel-drift",
+      "failure_mode": "endpoint-channel-drift",
+      "expected_failure": "O3PKG8055: hosted registry endpoint channel_id drifted"
+    },
+    {
+      "case_id": "missing-package-provenance",
+      "failure_mode": "missing-package-provenance",
+      "expected_failure": "O3PKG8055: missing package provenance for fixture:network.core"
+    }
+  ]
+}

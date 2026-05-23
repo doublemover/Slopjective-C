@@ -92,8 +92,18 @@ def build_llvm_support_matrix(
 ) -> dict[str, object]:
     clang_record = _tool_record("clang", clang_probe)
     llc_record = _tool_record("llc", llc_probe)
+    llc_found = bool(llc_probe.get("found"))
     llc_supports_obj = bool(llc_features.get("supports_filetype_obj", False))
     parity_ready = bool(sema_type_system_parity.get("parity_ready", False))
+    native_object_emission_status = (
+        "native_object_emission_supported"
+        if llc_found and llc_supports_obj
+        else (
+            "native_object_emission_missing_llc"
+            if not llc_found
+            else "native_object_emission_filetype_obj_unavailable"
+        )
+    )
     supported_features: list[str] = []
     rejected_features: list[dict[str, str]] = []
 
@@ -144,6 +154,18 @@ def build_llvm_support_matrix(
         "contract_id": "objc3c.llvm.version_support_matrix.v1",
         "schema_version": 1,
         "issue_ref": 8232,
+        "native_object_emission_contract": {
+            "contract_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+            "issue_ref": 8232,
+            "required_tool": "llc",
+            "required_probe": "llc --filetype=obj",
+            "status": native_object_emission_status,
+            "missing_llc_status": "native_object_emission_missing_llc",
+            "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+            "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+            "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+            "fallback_policy": "no-clang-fallback-success-claim",
+        },
         "host_platform": {
             "system": platform.system().lower(),
             "machine": platform.machine().lower(),

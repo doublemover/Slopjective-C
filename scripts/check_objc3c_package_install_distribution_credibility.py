@@ -21,6 +21,7 @@ from objc3c_package_manager.install_distribution import (
     INSTALL_LOCAL_ARTIFACT_ROOT_REL,
     INSTALL_PROOF_MANIFEST_REL,
     INSTALL_RECEIPT_REL,
+    INSTALL_VALIDATION_ROOT_REL,
     INSTALL_VERIFICATION_REL,
     PACKAGE_UNINSTALL_RECEIPT_REL,
     PACKAGE_UPDATE_RECEIPT_REL,
@@ -67,8 +68,13 @@ SUMMARY_PATH = (
     / "install-distribution-credibility-summary.json"
 )
 FROM_NOTHING_ROOTS = (
-    ROOT / "tmp" / "artifacts" / "package-ecosystem",
-    ROOT / "tmp" / "reports" / "package-ecosystem",
+    LOCK_PATH,
+    MIRROR_PATH.parent,
+    REGISTRY_PATH.parent,
+    RESTORE_RECEIPT_PATH.parent,
+    ROOT / INSTALL_VALIDATION_ROOT_REL,
+    MIRROR_SUMMARY_PATH,
+    SUMMARY_PATH,
 )
 
 

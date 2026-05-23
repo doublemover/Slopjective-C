@@ -81,6 +81,14 @@ void WriteSemanticFunctionTypeManifestRecord(
     const Objc3SemanticFunctionTypeMetadata &metadata) {
   JsonObjectWriter object(out);
   object.StringField("name", metadata.name);
+  object.StringField("generic_callable_signature_replay_key",
+                     metadata.generic_callable_signature_replay_key);
+  object.StringField("generic_callable_reification_policy",
+                     metadata.generic_callable_reification_policy);
+  object.StringField("generic_callable_mangling_policy_id",
+                     metadata.generic_callable_mangling_policy_id);
+  object.BoolField("generic_callable_contract_deterministic",
+                   metadata.generic_callable_contract_deterministic);
   object.StringArrayField("generic_parameter_names_source_order",
                           metadata.generic_parameter_names_source_order);
   object.StringArrayField("generic_parameter_variance_source_order",

@@ -1,6 +1,7 @@
 #include "ir/objc3_ir_canonical_literal_pools.h"
 
 #include <cstddef>
+#include <string>
 #include <utility>
 
 #include "ast/objc3_ast.h"
@@ -86,11 +87,46 @@ class Objc3IRCanonicalLiteralPoolCollector {
     artifact.component_path =
         JoinStringParts(expr.typed_keypath_components, ".");
     artifact.profile = profile;
+    artifact.source_line = expr.line;
+    artifact.source_column = expr.column;
+    artifact.source_span_id =
+        "typed-keypath:span:" + std::to_string(expr.line) + ":" +
+        std::to_string(expr.column) + ":" + profile;
+    artifact.root_type_identity =
+        expr.typed_keypath_root_is_self
+            ? std::string("self")
+            : std::string("objc-class:") + expr.typed_keypath_root_name;
+    artifact.value_type_identity = "objc-id:typed-keypath-descriptor";
+    artifact.object_model_owner_identity =
+        expr.typed_keypath_root_is_self
+            ? std::string("self")
+            : std::string("class:") + expr.typed_keypath_root_name;
+    artifact.object_model_member_identity =
+        artifact.object_model_owner_identity + "." + artifact.component_path;
+    artifact.debug_source_map_key = "source-map:typed-keypath:" + profile;
+    artifact.diagnostic_anchor_key =
+        "diagnostic:typed-keypath:" + std::to_string(expr.line) + ":" +
+        std::to_string(expr.column);
+    artifact.fallback_interpretation_allowed = false;
     pools_.typed_keypath_artifacts.emplace(profile, std::move(artifact));
     RegisterRuntimeStringLiteral(expr.typed_keypath_root_name);
     RegisterRuntimeStringLiteral(
         JoinStringParts(expr.typed_keypath_components, "."));
     RegisterRuntimeStringLiteral(profile);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .source_span_id);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .root_type_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .value_type_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .object_model_owner_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .object_model_member_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .debug_source_map_key);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .diagnostic_anchor_key);
     if (!frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()) {
       RegisterRuntimeStringLiteral(
           frontend_metadata_.lowering_generic_metadata_abi_replay_key);

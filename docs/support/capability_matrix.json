@@ -404,6 +404,218 @@
       ]
     },
     {
+      "id": "language.errors.typed-throws",
+      "title": "Typed throws effect payloads",
+      "state": "reserved",
+      "summary": "Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface and source-closure records expose untyped bare-throws effect metadata without silently erasing parenthesized payloads into support.",
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
+        "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+        "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.types.value-optionals",
+      "title": "Value optional type constructor",
+      "state": "reserved",
+      "summary": "Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked contract records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.",
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_parser_diagnostics.inc",
+        "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+        "native/objc3c/src/sema/model/frontend_type_source_closure.h",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.control-flow.statement-guarded-match",
+      "title": "Statement-form guarded match patterns",
+      "state": "implemented",
+      "summary": "Statement-form guarded match patterns are implemented under issue #8236 for `match (expr) { case pattern where bool_condition: { ... } }`. The guard is a contextual `where` clause checked as bool after pattern binding; expression-position match, `=>` arms, type-test patterns, aliases, and strict-profile promotion remain outside this support claim.",
+      "support_claims": [
+        "objc3c.behavior.language.control-flow.statement-guarded-match"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc",
+        "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+        "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp",
+        "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp",
+        "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers_stmt_sites.cpp",
+        "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+          "command": "npm run objc3c -- validate-conformance-corpus"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+        }
+      ]
+    },
+    {
+      "id": "language.profiles.strict-admission",
+      "title": "Strict and strict-concurrency profile admission",
+      "state": "reserved",
+      "summary": "Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, and underscore or compatibility aliases are rejected rather than treated as source-only support.",
+      "owner_modules": [
+        "native/objc3c/src/config/objc3_language_profile_validation.cpp",
+        "native/objc3c/src/io/objc3_conformance_profile_selection.cpp",
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/config/objc3_language_profile_validation.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/objc3_conformance_profile_selection.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.evolution.umbrella-alignment",
+      "title": "Language evolution umbrella alignment",
+      "state": "reserved",
+      "summary": "Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profiles. It is reserved until every prerequisite row is either implemented with source-owned evidence or explicitly remains fail-closed; the current state records #8236 source-level support and #8233/#8234/#8235/#8237 reserved boundaries without claiming runtime or profile behavior.",
+      "owner_modules": [
+        "docs/support/umbrella_readiness.json",
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json",
+        "docs/support/hard_cutover_capability_truth.md",
+        "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/fixtures/canonical/manifest.json"
+        }
+      ]
+    },
+    {
       "id": "compiler.lowering.error-unwind-cleanup",
       "title": "Error unwind and cleanup lowering",
       "state": "implemented",
@@ -1177,12 +1389,13 @@
       "id": "language.generics.callable-type-parameters",
       "title": "Generic callable type parameters",
       "state": "implemented",
-      "summary": "Generic methods and functions are claimed for checked-in receiver substitution and bounded identity-call fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns.",
+      "summary": "Generic callable type-parameter support is claimed for checked-in generic class receiver substitution and Objective-C 3 `fn name<T>(...)` free-function identity fixtures with O3S206 fail-closed coverage for unsatisfied constraints and unresolved generic returns. Objective-C method type-parameter clauses, C/Objective-C style generic free functions, explicit reification markers, and runtime reified generic metadata remain outside this implemented row.",
       "support_claims": [
         "objc3c.behavior.language.generics.callable-type-parameters"
       ],
       "owner_modules": [
         "native/objc3c/src/sema/objc3_semantic_passes_generic_protocol_message_validation.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
         "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp",
         "native/objc3c/src/ir/objc3_ir_type_model.cpp"
       ],
@@ -1219,6 +1432,49 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.generic-callable-reification",
+      "title": "Generic callable reification",
+      "state": "reserved",
+      "summary": "Generic callable reification remains reserved under issue #8235. The native source records deterministic erased-default generic callable signature metadata for admitted Objective-C 3 generic free functions, but declaration-scoped reification markers, Objective-C method type-parameter clauses, C/Objective-C style generic free-function declarations, overload-by-generic-signature, variadic generic parameters, and runtime reified generic metadata remain fail-closed.",
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
+        "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
+        "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_type_metadata_function_builder.inc",
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_marker_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_type_parameter_clause_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h"
         }
       ]
     },
@@ -1312,17 +1568,60 @@
     {
       "id": "modules.direct-import-syntax",
       "title": "Direct module import syntax",
-      "state": "reserved",
-      "summary": "Direct @import module syntax remains reserved. Current import/package evidence uses checked metadata import surfaces, public cross-module lookup, and package workspace edges; the #8200 text/package proof validates objc_import_module metadata closure and fail-closed missing-provider rejection without promoting direct import syntax.",
+      "state": "implemented",
+      "summary": "Direct @import module syntax is parser-admitted as a deterministic module identity record and package-resolved only when checked-in module graph metadata carries locked package provenance. Malformed module identities, missing package provenance, and ambiguous case-folded package identities fail closed with O3MOD8219 or O3PKG8055; live hosted lookup and fallback package resolution remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.modules.direct-import-syntax"
+      ],
       "owner_modules": [
-        "native/objc3c/src/parse/objc3_type_feature_module_profiles_import_graph.inc",
-        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.cpp"
+        "native/objc3c/src/token/objc3_token_kind_contract.h",
+        "native/objc3c/src/ast/objc3_ast_declarations.h",
+        "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc",
+        "scripts/objc3c_package_manager/model.py",
+        "scripts/check_objc3c_direct_import_module_syntax.py"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
-          "command": "npm run objc3c -- validate-cross-lane-e2e"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_direct_import_module_syntax_contract.py",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+          "command": "npm run objc3c -- validate-direct-import-module-syntax"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/model.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_direct_import_module_syntax.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc"
         },
         {
           "kind": "doc",
@@ -3359,8 +3658,11 @@
     {
       "id": "language.advanced-runtime-closure",
       "title": "Advanced runtime-backed language closure",
-      "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by narrower implemented rows for block capture legality, block copy/dispose/invoke helpers, byref forwarding, ARC cleanup integration, try/catch and error bridge helpers, task continuations, async actors, actor mailboxes, property behaviors, metaprogramming host-cache boundaries, and interop package/replay. The #8199 closure proof now checks combined runtime-state, source-graph, ABI, source/debug-map, native line-table, native object/IR/manifest artifact readiness, and 17-case negative-matrix records, and the cross-lane advanced-runtime family consumes that contract-backed evidence. Native executable closure, including link/run, and broad scheduler, Swift ABI, distributed actor, and arbitrary macro-host guarantees remain reserved.",
+      "state": "implemented",
+      "summary": "The advanced-runtime closure is now an implemented Objective-C 3 behavior row for the integrated runtime envelope that works today: blocks/byref, ARC cleanup and ownership, throws/error cleanup, task lifecycle, actors and actor mailboxes, property behaviors, macro provenance, package replay, ABI records, source/debug records, native object/IR/manifest emission, and native link/run all agree through the public validator. Broad scheduler fairness, Swift/C++ ABI closure, distributed actor networking, and arbitrary macro-host execution remain separate reserved or fail-closed rows.",
+      "support_claims": [
+        "objc3c.behavior.language.advanced-runtime-closure"
+      ],
       "owner_modules": [
         "native/objc3c/src/runtime/blocks/",
         "native/objc3c/src/runtime/memory/",
@@ -3400,8 +3702,21 @@
           "path": "scripts/check_objc3c_advanced_runtime_closure.py"
         },
         {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/runtime_import_preservation_evidence_metaprogramming.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
+        },
+        {
           "kind": "test",
-          "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
+          "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+          "command": "npm run objc3c -- validate-advanced-runtime-closure"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/advanced_closure/combined_provider.objc3"
         },
         {
           "kind": "test",
@@ -3414,6 +3729,10 @@
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json"
         },
         {
           "kind": "test",
@@ -3691,7 +4010,9 @@
         "schemas/objc3c-package-manifest-v1.schema.json",
         "schemas/objc3c-runtime-debug-trace-v1.schema.json",
         "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json",
-        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+        "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "schemas/objc3c-platform-support-source-truth-v1.schema.json"
       ],
       "evidence": [
         {
@@ -3764,11 +4085,23 @@
         },
         {
           "kind": "schema",
+          "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-platform-support-source-truth-v1.schema.json"
+        },
+        {
+          "kind": "schema",
           "path": "schemas/objc3c-compiler-throughput-summary-v1.schema.json"
         },
         {
           "kind": "schema",
           "path": "schemas/objc3c-performance-telemetry-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
         },
         {
           "kind": "schema",
@@ -3877,10 +4210,6 @@
         {
           "kind": "schema",
           "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
-        },
-        {
-          "kind": "schema",
-          "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
         }
       ]
     },
@@ -4369,7 +4698,7 @@
       "id": "ecosystem.package-manager.local-registry",
       "title": "Local package manager and registry model",
       "state": "implemented",
-      "summary": "Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, shared module-graph source-of-truth records, offline mirror metadata, explicit package trust-root policy, local trust envelopes, and fail-closed language/ABI/module-graph dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.",
+      "summary": "Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, shared module-graph source-of-truth records, offline mirror metadata, explicit package trust-root policy, local trust envelopes, and fail-closed language/ABI/module-graph dependency resolution. Source-owned hosted-registry fixture, offline network-resolution, release-channel publication, and security-hardening rows own their bounded support; live hosted services, arbitrary network fetches, and fallback registry success remain unsupported.",
       "support_claims": [
         "objc3c.behavior.package.manager-local-registry"
       ],
@@ -4441,10 +4770,209 @@
       ]
     },
     {
+      "id": "ecosystem.package-manager.hosted-registry-fixture",
+      "title": "Source-owned hosted registry fixture resolution",
+      "state": "implemented",
+      "summary": "Hosted-registry resolution is implemented only for checked-in offline fixture metadata: endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim.",
+      "support_claims": [
+        "objc3c.behavior.package.hosted-registry-fixture"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/check_objc3c_package_registry_model.py",
+        "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+        "schemas/objc3c-package-hosted-registry-index-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_hosted_registry_resolution.py",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-hosted-registry-index-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/hosted_registry.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_registry_model.py"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-manager.network-dependency-resolution",
+      "title": "Offline fixture-backed network dependency resolution",
+      "state": "implemented",
+      "summary": "Network dependency resolution is implemented only as source-owned offline fixture resolution. The resolver accepts a dependency when hosted endpoint identity, exact locked version, fixture lock digest, trust root, package provenance, cache digest/signature, registry record digest, and no-fallback policy all agree; live network fetches, unpinned hosted dependencies, and fallback registry success fail closed.",
+      "support_claims": [
+        "objc3c.behavior.package.network-dependency-resolution"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/network_publication.py",
+        "scripts/check_objc3c_package_network_publication.py",
+        "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+        "schemas/objc3c-package-network-resolution-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_network_publication_contract.py",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-network-resolution-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/network_publication.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_network_publication.py"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-manager.release-channel-publication",
+      "title": "Source-owned package release-channel publication",
+      "state": "implemented",
+      "summary": "Package release-channel publication is implemented as checked metadata publication for the offline fixture channel. Publication is accepted only when channel freshness, release channel id, hosted registry channel id, network resolution proof, cache pin, lock digest, package signatures, and trust provenance remain current; stale channels, live network publication, and fallback publication success fail closed.",
+      "support_claims": [
+        "objc3c.behavior.package.release-channel-publication"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/network_publication.py",
+        "scripts/check_objc3c_package_network_publication.py",
+        "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+        "schemas/objc3c-package-release-channel-publication-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_network_publication_contract.py",
+          "command": "npm run objc3c -- validate-package-network-publication"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-release-channel-publication-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/network_publication.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_network_publication.py"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-manager.security-hardening",
+      "title": "Package security hardening",
+      "state": "implemented",
+      "summary": "Package security hardening is implemented for deterministic local fixture signing and verification, repo-relative non-overwriting trust inputs and outputs, pre-mutation extraction path plans, duplicate/case-conflict/symlink/overwrite rejection, reserved installer/update keys, and reserved release/registry trust roots. Production signing, fallback trust roots, unsafe extraction success, and live registry trust roots remain fail-closed.",
+      "support_claims": [
+        "objc3c.behavior.package.security-hardening"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/trust.py",
+        "scripts/sign_objc3c_package.py",
+        "scripts/verify_objc3c_package.py",
+        "scripts/objc3c_package_manager/operations.py",
+        "scripts/objc3c_package_manager/install_distribution.py",
+        "scripts/check_objc3c_package_security_hardening.py",
+        "schemas/objc3c-package-signing-trust-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+          "command": "npm run objc3c -- validate-package-security-hardening"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_signing_trust.py",
+          "command": "npm run objc3c -- validate-package-security-hardening"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-signing-trust-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-lock-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/trust.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/sign_objc3c_package.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/verify_objc3c_package.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/operations.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/install_distribution.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_security_hardening.py"
+        }
+      ]
+    },
+    {
       "id": "ecosystem.package-manager.public-hosted-registry",
       "title": "Public hosted package registry",
       "state": "reserved",
-      "summary": "Public hosted package registry support remains reserved. Current package-manager evidence is limited to source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, and fail-closed hosted-registry/network-install overclaim checks.",
+      "summary": "Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, and offline fixture-backed network/publication contracts, but no live hosted service, auth, moderation, availability, or fallback registry success claim.",
       "owner_modules": [
         "scripts/objc3c_package_manager/registry.py",
         "docs/runbooks/objc3c_package_ecosystem.md"
@@ -4465,7 +4993,7 @@
       "id": "ecosystem.package-install.clean-distribution",
       "title": "Clean package install distribution",
       "state": "implemented",
-      "summary": "The package ecosystem now validates a clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, deterministic update/uninstall operation receipts, tampered installed-package rejection, and executable compile/run of the installed package slice. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.",
+      "summary": "The package ecosystem now validates a from-nothing clean local install root from generated package manifests, deterministic lockfiles, offline mirror cache entries, local registry metadata, publication metadata, restore receipts, machine-owned install receipts, deterministic update/uninstall operation receipts, tampered installed-package rejection, and executable compile/run of the installed package slice. Hosted registry, network install, system installer, and release-channel publication claims remain fail-closed outside this package-install contract.",
       "support_claims": [
         "objc3c.behavior.package.install-clean-distribution"
       ],
@@ -4473,23 +5001,28 @@
         "scripts/objc3c_package_manager/install_distribution.py",
         "scripts/check_objc3c_package_install_distribution_credibility.py",
         "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+        "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
         "scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py"
       ],
       "evidence": [
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
-          "command": "npm run objc3c -- validate-package-install-distribution"
+          "command": "npm run objc3c -- validate-package-install-distribution --from-nothing"
         },
         {
           "kind": "test",
           "path": "tests/tooling/test_package_install_distribution_credibility.py",
-          "command": "npm run objc3c -- validate-package-install-distribution"
+          "command": "npm run objc3c -- validate-package-install-distribution --from-nothing"
         },
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
           "command": "npm run objc3c -- validate-cross-lane-e2e"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
         },
         {
           "kind": "source",
@@ -4698,7 +5231,7 @@
       "id": "compiler.optimization.semantic-preserving-pipeline",
       "title": "Semantic-preserving optimization pipeline",
       "state": "implemented",
-      "summary": "The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.",
+      "summary": "The compiler now has a typed semantic optimization pipeline with deterministic pass ordering, explicit input/output contracts, invalidation declarations, post-pass verification, fail-closed diagnostics, checked-in performance workload digests, optimization runtime/debug safety governance, and bounded enabled passes for nil receiver folding, exact direct dispatch, retained-result cleanup, and runtime dispatch preservation.",
       "support_claims": [
         "objc3c.behavior.semantic_optimization_pipeline"
       ],
@@ -4743,8 +5276,16 @@
           "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
         },
         {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+        },
+        {
           "kind": "schema",
           "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
         },
         {
           "kind": "source",
@@ -4753,6 +5294,47 @@
         {
           "kind": "source",
           "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+        }
+      ]
+    },
+    {
+      "id": "compiler.optimization.runtime-debug-safety",
+      "title": "Optimization runtime/debug safety governance",
+      "state": "internal",
+      "summary": "Optimization speedup and optimized-method safety publication is governed by a checked contract for #8205/#8227. It binds budget metrics, benchmark source records, deoptimization/invalidation boundaries, side-effect replay, optimized debug source-map preservation, no alternate success path policy, and fail-closed negative cases before any timing result can become a support claim.",
+      "owner_modules": [
+        "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+        "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+        "scripts/objc3c_semantic_optimization_pipeline.py",
+        "tests/tooling/test_semantic_optimization_pipeline.py",
+        "docs/runbooks/objc3c_performance_governance.md"
+      ],
+      "evidence": [
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_semantic_optimization_pipeline.py",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_performance_governance.md"
         }
       ]
     },
@@ -5166,9 +5748,12 @@
       "id": "platform.linux-x64.unsupported",
       "title": "Linux x64 platform support",
       "state": "rejected",
-      "summary": "Linux x64 support remains fail-closed: the support evidence contract records an unsupported-host denial until build, package, install, and native execution evidence exists on a replayable public path.",
+      "summary": "Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows now record the Linux host/toolchain/package promotion blockers, but they publish no support claim until build, package, install, and native execution evidence exists on a replayable public path.",
       "owner_modules": [
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "scripts/platform_hardening_contracts/support_evidence.py"
       ],
       "evidence": [
         {
@@ -5178,6 +5763,10 @@
         {
           "kind": "diagnostic",
           "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
         }
       ]
     },
@@ -5185,9 +5774,12 @@
       "id": "platform.darwin-arm64.unsupported",
       "title": "macOS arm64 platform support",
       "state": "rejected",
-      "summary": "macOS arm64 support remains fail-closed: the support evidence contract records an unsupported-host denial until package install and native execution evidence exists on a replayable public path.",
+      "summary": "macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, but they publish no support claim until package install and native execution evidence exists on a replayable public path.",
       "owner_modules": [
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "scripts/platform_hardening_contracts/support_evidence.py"
       ],
       "evidence": [
         {
@@ -5197,6 +5789,10 @@
         {
           "kind": "diagnostic",
           "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
         }
       ]
     },
@@ -5204,10 +5800,12 @@
       "id": "toolchain.llvm.current-probed-executable",
       "title": "Current probed LLVM executable evidence",
       "state": "internal",
-      "summary": "LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Unsupported versions fail closed without a range claim.",
+      "summary": "LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves and proves llc --filetype=obj; missing llc, missing object-filetype support, mixed tool roots, unsupported versions, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
-        "scripts/probe_objc3c_llvm_capabilities.py"
+        "scripts/probe_objc3c_llvm_capabilities.py",
+        "scripts/objc3c_llvm_capability_probe/reports.py",
+        "scripts/check_objc3c_cross_lane_e2e.py"
       ],
       "evidence": [
         {
@@ -5217,6 +5815,14 @@
         {
           "kind": "source",
           "path": "scripts/probe_objc3c_llvm_capabilities.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_llvm_capability_probe/reports.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_cross_lane_e2e.py"
         },
         {
           "kind": "test",
@@ -5250,12 +5856,54 @@
       ]
     },
     {
+      "id": "platform.expansion.umbrella-readiness",
+      "title": "Platform expansion umbrella readiness",
+      "state": "internal",
+      "summary": "#8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer variants reserved, and keeps missing-llc native object emission fail-closed with no clang substitute success path.",
+      "owner_modules": [
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "schemas/objc3c-platform-support-source-truth-v1.schema.json",
+        "scripts/check_objc3c_platform_support_matrix.py",
+        "scripts/platform_hardening_contracts/support_evidence.py",
+        "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+        "docs/runbooks/objc3c_platform_hardening.md"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-platform-support-source-truth-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_platform_support_matrix.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/platform_hardening_contracts/support_evidence.py"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_platform_hardening.md"
+        }
+      ]
+    },
+    {
       "id": "toolchain.sanitizer.address",
       "title": "AddressSanitizer platform variant",
       "state": "reserved",
-      "summary": "AddressSanitizer package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.",
+      "summary": "AddressSanitizer support remains reserved under issue #8230: the source contract now records the ASan runtime package id, compiler/linker flag shape, install guard, and fail-closed mixed-runtime/unsupported-platform blockers, but no package/install/native execution support is claimed.",
       "owner_modules": [
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "evidence": [
         {
@@ -5263,8 +5911,12 @@
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
         },
         {
-          "kind": "doc",
+          "kind": "source",
           "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
         }
       ]
     },
@@ -5272,9 +5924,11 @@
       "id": "toolchain.sanitizer.undefined",
       "title": "UndefinedBehaviorSanitizer platform variant",
       "state": "reserved",
-      "summary": "UBSan package/install/native execution support is reserved until sanitizer-specific evidence exists for the build and packaged runtime path.",
+      "summary": "UBSan support remains reserved under issue #8231: the source contract now records the UBSan runtime package id, trap-or-recover policy placeholder, install guard, and fail-closed suppression/mixed-runtime blockers, but no package/install/native execution support is claimed.",
       "owner_modules": [
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "evidence": [
         {
@@ -5282,8 +5936,12 @@
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
         },
         {
-          "kind": "doc",
+          "kind": "source",
           "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
         }
       ]
     },
@@ -5626,10 +6284,12 @@
       "id": "modules.standalone-textual-interface-payload",
       "title": "Standalone textual interface payload",
       "state": "internal",
-      "summary": "The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata. This row does not claim importer consumption or semantic roundtrip support yet; those remain reserved in the payload until issue #8238 lands the parser/importer and public validation workflow.",
+      "summary": "The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata, plus a fail-closed importer contract that validates package lock identity, source/debug anchors, declaration identity, source counts, reserved metadata, and semantic roundtrip status through a public workflow command.",
       "owner_modules": [
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.h",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.h",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
         "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp",
         "native/objc3c/src/io/objc3_runtime_artifact_paths.cpp",
         "native/objc3c/src/io/objc3_runtime_artifact_writers.cpp",
@@ -5643,6 +6303,20 @@
         {
           "kind": "source",
           "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+          "command": "npm run objc3c -- validate-standalone-textual-interface-payload"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_native_interface_and_runtime_contracts.py",
+          "command": "npm run objc3c -- validate-standalone-textual-interface-payload"
         },
         {
           "kind": "source",

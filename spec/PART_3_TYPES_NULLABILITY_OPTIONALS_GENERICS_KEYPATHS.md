@@ -369,6 +369,12 @@ The following spellings are reserved for a future revision and are ill-formed in
 - `Optional<...>` in type positions.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
+The current #8234 compiler contract owns the canonical spelling boundary but
+does not claim value-optional execution: `Optional<T>` is rejected with `O3P159`
+before type admission, no layout/tagged-payload ABI is emitted, and textual
+interfaces may carry only reserved feature-marker metadata rather than semantic
+value-optional type support.
+
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 
 To avoid blocking a future value optional design:
@@ -377,6 +383,13 @@ To avoid blocking a future value optional design:
 - v1 parser and interface emitters shall keep the reserved spellings above unavailable for unrelated language/library features.
 - Module metadata and textual interfaces shall preserve optional/nullability semantics via extensible encoding so a future value-optional kind can be added without redefining existing v1 fields.
 - Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
+- `Optional<id>` remains distinct from nullable object-pointer spelling. A
+  producer shall not lower it as `id?`, nullable `id`, or any other object
+  pointer nullability profile.
+- `nil` shall not implicitly convert to scalar zero, `false`, an empty
+  aggregate/string/collection value, `throws`, or `Result` through
+  value-optional syntax. All optional-to-error or optional-to-result conversion
+  remains explicit.
 
 #### 3.3.5.2 Canonical future spelling policy (v0.11 decision) {#part-3-3-5-2}
 
@@ -388,6 +401,9 @@ Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature
   canonicalization fix-it to `Optional<T>`; the fix-it does not make
   `optional<T>` an accepted compatibility spelling.
 - Canonical textual interface emission for future value-optionals shall use `Optional<T>`.
+- Nested lowercase spellings such as `optional<Optional<T>>` are rejected before
+  type admission. The outer lowercase spelling is not a compatibility shim for
+  the canonical reserved spelling.
 
 ---
 
@@ -566,8 +582,24 @@ The constraint grammar is intentionally limited for implementability.
 
 #### 3.5.3.1 v1 status {#part-3-5-3-1}
 
-Objective‑C 3.0 v1 defers generic methods/functions.
-Toolchains shall reserve the syntax in [§3.5.3.2](#part-3-5-3-2), but in v1 source that uses it is ill‑formed.
+Objective‑C 3.0 v1 reserves Objective-C generic method declarations and
+C/Objective-C style generic free-function declarations. The native `objc3c`
+frontend admits only the Objective-C 3 free-function form where the type
+parameter clause follows the `fn` declaration name:
+
+```objc
+fn genericIdentity<T : id<Persistable>>(value: T) -> T;
+```
+
+That admitted free-function surface is erased by default and must preserve its
+generic callable signature in semantic metadata. The #8235 compiler contract
+records this as deterministic erased-default metadata, not runtime reification:
+there is no compatibility alias, no declaration-scoped reification marker, and
+no silent promotion from erased source metadata to reified ABI support.
+Toolchains shall reject
+Objective-C method type-parameter clauses and C/Objective-C style generic
+function declarations with stable parser-owned diagnostics until a future mode
+explicitly admits them.
 
 #### 3.5.3.2 Candidate syntax (future revision) {#part-3-5-3-2}
 
@@ -591,6 +623,9 @@ Examples:
 <T: NSObject> NSArray<T>* OCCollect(T first, ...);
 ```
 
+The `objc3c` v1 native subset reserves the examples above and uses the accepted
+free-function spelling from [§3.5.3.1](#part-3-5-3-1) instead.
+
 #### 3.5.3.3 Lowering and mangling path (future revision) {#part-3-5-3-3}
 
 The viable path is **erased execution with preserved generic signatures**:
@@ -610,6 +645,12 @@ stability, not one byte-for-byte mangling string across all toolchains:
 - Conforming toolchains shall publish a stable mangling policy identifier for enabled generic free-function support.
 - Module metadata and textual interfaces shall preserve the semantic generic signature required for cross-tool conformance assertions.
 - Conformance assertions shall validate semantic equivalence and policy-id stability; literal symbol-byte equality is only required within a single declared policy.
+- The native `objc3c` metadata surface publishes `generic_callable_signature_replay_key`,
+  `generic_callable_reification_policy`, `generic_callable_mangling_policy_id`,
+  and `generic_callable_contract_deterministic` for admitted generic free
+  functions. Redeclarations that drift in generic arity, parameter order,
+  variance markers, normalized constraints, reification policy, or mangling
+  policy are ill-formed.
 
 #### 3.5.3.4 Selector and metadata interaction (future revision) {#part-3-5-3-4}
 
@@ -641,6 +682,10 @@ Additional constraints for any future reification-capable mode:
 - Reification controls shall apply per declaration; enabling a module/profile mode alone shall not implicitly reify unrelated declarations.
 - Module/profile controls may gate whether declaration-scoped reification syntax is accepted, but shall not change meaning of declarations that omit reification markers.
 - Mixed modules that contain both erased and reified declarations shall preserve this distinction in metadata and textual interfaces.
+- In the current native v1 subset, `@reify_generics` is a reserved
+  declaration-scoped marker. It is lexed so the parser can emit a stable
+  fail-closed diagnostic, but no source declaration becomes reified until a
+  reification-capable mode explicitly admits the marker.
 
 ### 3.5.6 Variance {#part-3-5-6}
 

@@ -55,7 +55,10 @@ def main() -> int:
         "build-native-binaries": public_workflow_command("build-native-binaries"),
         "package-runnable-toolchain": public_workflow_command("package-runnable-toolchain"),
         "build-package-channels": python_script_command(ROOT / "scripts" / "build_objc3c_package_channels.py"),
-        "validate-packaging-channels-end-to-end": python_script_command(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"),
+        "validate-packaging-channels-end-to-end": [
+            *python_script_command(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"),
+            "--use-existing-build-report",
+        ],
     }
     for step_name in contract["required_steps"]:
         command = command_map[step_name]

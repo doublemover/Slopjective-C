@@ -63,6 +63,16 @@ struct TypedKeyPathArtifact {
   std::string component_path;
   std::string profile;
   std::string descriptor_symbol;
+  unsigned source_line = 1;
+  unsigned source_column = 1;
+  std::string source_span_id;
+  std::string root_type_identity;
+  std::string value_type_identity;
+  std::string object_model_owner_identity;
+  std::string object_model_member_identity;
+  std::string debug_source_map_key;
+  std::string diagnostic_anchor_key;
+  bool fallback_interpretation_allowed = false;
 };
 
 struct PendingBlockDisposeCall {

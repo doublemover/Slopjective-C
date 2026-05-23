@@ -27,8 +27,23 @@ HOSTED_REGISTRY_CONTRACT_ID = "objc3c.package_ecosystem.hosted_registry_index.v1
 HOSTED_REGISTRY_SCHEMA_KEY = "objc3c-package-hosted-registry-index-v1"
 HOSTED_REGISTRY_NETWORK_POLICY = "offline-fixture-metadata-only"
 HOSTED_REGISTRY_RESOLVER_ID = "deterministic-hosted-registry-offline-resolver-v1"
+HOSTED_REGISTRY_ENDPOINT_ID = "objc3c-hosted-registry-fixture-endpoint-v1"
+HOSTED_REGISTRY_CHANNEL_ID = "stable-fixture"
+HOSTED_REGISTRY_BASE_URL = "https://registry.objc3c.invalid/fixture/v1"
 OFFLINE_MIRROR_CONTRACT_ID = "objc3c.package_ecosystem.offline_mirror.v1"
 OFFLINE_MIRROR_NETWORK_POLICY = "no-network-during-validation"
+HOSTED_REGISTRY_FAILURE_MODES = {
+    "ambiguous-module-identity",
+    "endpoint-channel-drift",
+    "fallback-registry-success",
+    "live-network-fetch",
+    "missing-package-provenance",
+    "registry-trust-mismatch",
+    "unlocked-version-selection",
+    "unpinned-hosted-dependency",
+}
+HOSTED_REGISTRY_CACHE_POLICY = "offline-cache-required-digest-pinned"
+HOSTED_REGISTRY_PROVENANCE_POLICY = "source-owned-package-manifest-required"
 HOSTED_REGISTRY_SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
     / "schemas"
@@ -42,6 +57,8 @@ class HostedRegistryResolutionRequest:
     package_version: str | None = None
     language_version: str = LOCAL_PACKAGE_LANGUAGE_VERSION
     abi_identity: str = LOCAL_PACKAGE_ABI_IDENTITY
+    endpoint_id: str = HOSTED_REGISTRY_ENDPOINT_ID
+    channel_id: str = HOSTED_REGISTRY_CHANNEL_ID
     allow_network: bool = False
     registry_url: str | None = None
 
@@ -172,10 +189,115 @@ def _revoked_values(index: dict[str, Any], field_name: str) -> set[str]:
     return {str(value) for value in values if isinstance(value, str)}
 
 
+def collect_endpoint_identity_failures(index: dict[str, Any]) -> list[str]:
+    endpoint = index.get("endpoint_identity", {})
+    registry_id = str(index.get("registry_id", ""))
+    if not isinstance(endpoint, dict):
+        return [hosted_registry_diagnostic("missing hosted registry endpoint identity")]
+    failures: list[str] = []
+    expected = {
+        "registry_id": registry_id,
+        "endpoint_id": HOSTED_REGISTRY_ENDPOINT_ID,
+        "channel_id": HOSTED_REGISTRY_CHANNEL_ID,
+        "base_url": HOSTED_REGISTRY_BASE_URL,
+        "availability_claim": "fixture-metadata-only",
+        "network_fetch": "forbidden-fail-closed",
+    }
+    for field_name, expected_value in expected.items():
+        if endpoint.get(field_name) != expected_value:
+            failures.append(hosted_registry_diagnostic(f"hosted registry endpoint {field_name} drifted"))
+    if endpoint.get("fallback_registry_success") is not False:
+        failures.append(hosted_registry_diagnostic("fallback registry success path is forbidden"))
+    return failures
+
+
+def collect_lock_trust_material_failures(
+    index: dict[str, Any],
+    mirror: dict[str, Any],
+    *,
+    root: Path | None = None,
+) -> list[str]:
+    material = index.get("lock_trust_material", {})
+    if not isinstance(material, dict):
+        return [hosted_registry_diagnostic("missing hosted registry lock/trust material")]
+    failures: list[str] = []
+    if material.get("source_lock") != mirror.get("source_lock"):
+        failures.append(hosted_registry_diagnostic("hosted registry source lock drifted"))
+    if material.get("offline_mirror_path") != "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json":
+        failures.append(hosted_registry_diagnostic("hosted registry offline mirror path drifted"))
+    if material.get("cache_policy") != HOSTED_REGISTRY_CACHE_POLICY:
+        failures.append(hosted_registry_diagnostic("hosted registry offline cache policy drifted"))
+    if material.get("provenance_policy") != HOSTED_REGISTRY_PROVENANCE_POLICY:
+        failures.append(hosted_registry_diagnostic("hosted registry provenance policy drifted"))
+    trust_root_id = str(material.get("trust_root_id", ""))
+    if not trust_root_id:
+        failures.append(hosted_registry_diagnostic("hosted registry trust root missing"))
+    if root is not None:
+        for label, relative_path in (
+            ("source lock", str(material.get("source_lock", ""))),
+            ("offline mirror", str(material.get("offline_mirror_path", ""))),
+        ):
+            normalized = relative_path.replace("\\", "/")
+            normalized_path = Path(normalized)
+            if (
+                not normalized
+                or normalized_path.is_absolute()
+                or normalized.startswith(("tmp/", "temp/"))
+                or ".." in normalized_path.parts
+            ):
+                failures.append(hosted_registry_diagnostic(f"unsafe hosted registry {label} path"))
+                continue
+            if not (root / normalized).is_file():
+                failures.append(hosted_registry_diagnostic(f"missing hosted registry {label} file"))
+    return failures
+
+
+def collect_failure_mode_failures(index: dict[str, Any]) -> list[str]:
+    failure_modes = index.get("failure_modes", [])
+    if not isinstance(failure_modes, list):
+        return [hosted_registry_diagnostic("hosted registry failure modes field is not a list")]
+    actual_modes = {str(mode) for mode in failure_modes if isinstance(mode, str)}
+    missing_modes = sorted(HOSTED_REGISTRY_FAILURE_MODES - actual_modes)
+    if missing_modes:
+        return [hosted_registry_diagnostic("hosted registry failure mode contract missing: " + ", ".join(missing_modes))]
+    return []
+
+
+def collect_source_path_failures(record: dict[str, Any], *, root: Path | None) -> list[str]:
+    if root is None:
+        return []
+    package_id = str(record.get("package_id", ""))
+    failures: list[str] = []
+    source = str(record.get("source", ""))
+    package_manifest = record.get("package_manifest", {})
+    offline_mirror = record.get("offline_mirror", {})
+    manifest_path = str(package_manifest.get("path", "")) if isinstance(package_manifest, dict) else ""
+    cache_path = str(offline_mirror.get("cache_path", "")) if isinstance(offline_mirror, dict) else ""
+    for label, relative_path in (
+        ("source", source),
+        ("package manifest", manifest_path),
+        ("offline cache", cache_path),
+    ):
+        normalized = relative_path.replace("\\", "/")
+        normalized_path = Path(normalized)
+        if (
+            not normalized
+            or normalized_path.is_absolute()
+            or normalized.startswith(("tmp/", "temp/"))
+            or ".." in normalized_path.parts
+        ):
+            failures.append(hosted_registry_diagnostic(f"unsafe hosted registry {label} path for {package_id}"))
+            continue
+        if not (root / normalized).is_file():
+            failures.append(hosted_registry_diagnostic(f"missing hosted registry {label} file for {package_id}"))
+    return failures
+
+
 def collect_hosted_registry_model_failures(
     index: dict[str, Any],
     mirror: dict[str, Any],
     *,
+    root: Path | None = None,
     trust_policy: dict[str, Any] | None = None,
 ) -> list[str]:
     failures = validate_hosted_registry_schema(index)
@@ -192,6 +314,9 @@ def collect_hosted_registry_model_failures(
     if index.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
         failures.append(hosted_registry_diagnostic("hosted registry ABI identity drifted"))
     registry_id = str(index.get("registry_id", ""))
+    failures.extend(collect_endpoint_identity_failures(index))
+    failures.extend(collect_lock_trust_material_failures(index, mirror, root=root))
+    failures.extend(collect_failure_mode_failures(index))
     if index.get("registry_state") != "not-revoked":
         failures.append(hosted_registry_diagnostic(f"revoked registry {registry_id}"))
     if registry_id in _revoked_values(index, "revoked_registry_ids"):
@@ -211,6 +336,7 @@ def collect_hosted_registry_model_failures(
         package_id = str(record.get("package_id", ""))
         package_version = str(record.get("package_version", ""))
         record_key = (package_id, package_version)
+        failures.extend(collect_source_path_failures(record, root=root))
         if record_key in seen_keys:
             failures.append(hosted_registry_diagnostic(f"nondeterministic candidates for {package_id}@{package_version}"))
         seen_keys.add(record_key)
@@ -227,6 +353,29 @@ def collect_hosted_registry_model_failures(
             signature_id = str(registry_signature.get("signature_id", ""))
             if signature_id in _revoked_values(index, "revoked_signature_ids"):
                 failures.append(hosted_registry_diagnostic(f"revoked signature {signature_id}"))
+        lock_trust_material = index.get("lock_trust_material", {})
+        expected_trust_root = str(lock_trust_material.get("trust_root_id", "")) if isinstance(lock_trust_material, dict) else ""
+        if expected_trust_root:
+            for envelope_name, envelope in (
+                ("package manifest", record.get("trust")),
+                ("registry record", registry_signature),
+            ):
+                if not isinstance(envelope, dict) or envelope.get("trust_root_id") != expected_trust_root:
+                    failures.append(hosted_registry_diagnostic(
+                        f"hosted registry trust root mismatch for {package_id} {envelope_name}"
+                    ))
+        package_manifest = record.get("package_manifest", {})
+        record_trust = record.get("trust")
+        record_provenance = str(record_trust.get("provenance", "")) if isinstance(record_trust, dict) else ""
+        registry_provenance = str(registry_signature.get("provenance", "")) if isinstance(registry_signature, dict) else ""
+        if (
+            not isinstance(package_manifest, dict)
+            or not package_manifest.get("path")
+            or not package_manifest.get("digest")
+            or record_provenance != "deterministic-local-fixture-replay-only"
+            or registry_provenance != "deterministic-local-fixture-replay-only"
+        ):
+            failures.append(hosted_registry_diagnostic(f"missing package provenance for {package_id}"))
         failures.extend(
             collect_signature_envelope_failures(
                 registry_signature,
@@ -279,10 +428,17 @@ def collect_hosted_registry_model_failures(
 
 
 def network_fetch_request_failures(request: HostedRegistryResolutionRequest) -> list[str]:
+    failures: list[str] = []
     if request.allow_network or request.registry_url:
         target = request.registry_url or "live registry endpoint"
-        return [hosted_registry_diagnostic(f"network fetch request rejected for {target}")]
-    return []
+        failures.append(hosted_registry_diagnostic(f"network fetch request rejected for {target}"))
+    if request.endpoint_id != HOSTED_REGISTRY_ENDPOINT_ID:
+        failures.append(hosted_registry_diagnostic(f"hosted registry endpoint mismatch for {request.package_id}"))
+    if request.channel_id != HOSTED_REGISTRY_CHANNEL_ID:
+        failures.append(hosted_registry_diagnostic(f"hosted registry channel mismatch for {request.package_id}"))
+    if request.package_version is None:
+        failures.append(hosted_registry_diagnostic(f"unpinned hosted dependency for {request.package_id}"))
+    return failures
 
 
 def resolve_hosted_registry_package(
@@ -297,6 +453,7 @@ def resolve_hosted_registry_package(
         collect_hosted_registry_model_failures(
             index,
             mirror,
+            root=None,
             trust_policy=trust_policy,
         )
     )
@@ -343,6 +500,10 @@ def resolve_hosted_registry_package(
 
 __all__ = [
     "HOSTED_REGISTRY_CONTRACT_ID",
+    "HOSTED_REGISTRY_BASE_URL",
+    "HOSTED_REGISTRY_CHANNEL_ID",
+    "HOSTED_REGISTRY_ENDPOINT_ID",
+    "HOSTED_REGISTRY_FAILURE_MODES",
     "HOSTED_REGISTRY_NETWORK_POLICY",
     "HOSTED_REGISTRY_RESOLVER_ID",
     "HOSTED_REGISTRY_SCHEMA_KEY",

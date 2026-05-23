@@ -1,5 +1,11 @@
   void ParseObjcInterfaceDeclMembers(Objc3InterfaceDecl &decl) {
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::KwAtReifyGenerics)) {
+        RejectReservedReificationControl(Previous(),
+                                         "an Objective-C interface member");
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (At(TokenKind::KwAtProperty)) {
         Objc3PropertyDecl property;
         if (ParseObjcPropertyDecl(property)) {

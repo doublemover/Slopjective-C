@@ -20,7 +20,8 @@
     "blocking_conditions": [
       "unsupported host attempted build package or install flow",
       "unsupported channel claim reached publication",
-      "support tier overclaim bypassed fail-closed policy"
+      "support tier overclaim bypassed fail-closed policy",
+      "native object emission reached package native execution or publication with missing llc"
     ]
   },
   "hard_fail_classes": [
@@ -58,6 +59,43 @@
         "publication"
       ],
       "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "missing-runtime-library",
+      "applies_to": [
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "missing-sanitizer-runtime",
+      "applies_to": [
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "stale-package-metadata",
+      "applies_to": [
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "native-object-emission-unavailable",
+      "applies_to": [
+        "toolchain",
+        "package",
+        "execution",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
     }
   ],
   "synthetic_unsupported_host_checks": [
@@ -67,6 +105,24 @@
       "host_arch": "x64",
       "host_system": "linux",
       "host_machine": "x86_64",
+      "host_triples": [
+        "x86_64-unknown-linux-gnu"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
       "failure_id": "unsupported-host-linux-x64-denied",
       "expected_behavior": "fail-closed"
     },
@@ -76,6 +132,24 @@
       "host_arch": "arm64",
       "host_system": "darwin",
       "host_machine": "arm64",
+      "host_triples": [
+        "aarch64-apple-darwin"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
       "failure_id": "unsupported-host-darwin-arm64-denied",
       "expected_behavior": "fail-closed"
     }
@@ -100,11 +174,13 @@
   "forbidden_phrases": [
     "best effort supported",
     "probably compatible",
-    "supported if LLVM is installed"
+    "supported if LLVM is installed",
+    "object emission supported via clang substitute"
   ],
   "required_claims": [
     "unsupported hosts fail closed",
     "package install rollback and publication claims stay on the checked-in matrix",
-    "tool presence does not widen host support by itself"
+    "tool presence does not widen host support by itself",
+    "native object emission requires llc --filetype=obj and has no clang substitute success path"
   ]
 }

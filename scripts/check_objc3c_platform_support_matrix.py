@@ -24,7 +24,9 @@ from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
 
 SOURCE_TRUTH_PATH = ROOT / "tests" / "tooling" / "fixtures" / "platform_support" / "source_truth_matrix.json"
 SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-source-truth-v1.schema.json"
-DEFAULT_SUMMARY_PATH = ROOT / "tmp" / "reports" / "platform-matrix" / "matrix-validation-summary.json"
+DEFAULT_SUMMARY_PATH = (
+    ROOT / "tmp" / "reports" / "platform-hardening" / "platform-matrix-summary.json"
+)
 
 REQUIRED_SUPPORTED_EVIDENCE_CLASSES = ("build", "package", "install", "execution")
 REQUIRED_AUXILIARY_EVIDENCE_CLASSES = ("toolchain", "hosted_ci", "clean_room")
@@ -37,6 +39,38 @@ EXPECTED_UNSUPPORTED_PLATFORM_ISSUES = {
 EXPECTED_SANITIZER_ISSUES = {
     "address": 8230,
     "undefined": 8231,
+}
+EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS = {
+    8228: {
+        "row_id": "objc3c.platform.linux-x64.unsupported",
+        "contract_kind": "platform-host",
+        "claim_state": "unsupported",
+        "required_promotion_evidence": ("build", "package", "install", "execution"),
+    },
+    8229: {
+        "row_id": "objc3c.platform.darwin-arm64.unsupported",
+        "contract_kind": "platform-host",
+        "claim_state": "unsupported",
+        "required_promotion_evidence": ("build", "package", "install", "execution"),
+    },
+    8230: {
+        "row_id": "objc3c.package.sanitizer.asan.reserved",
+        "contract_kind": "sanitizer-runtime-package",
+        "claim_state": "reserved",
+        "required_promotion_evidence": ("package", "install", "execution"),
+    },
+    8231: {
+        "row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "contract_kind": "sanitizer-runtime-package",
+        "claim_state": "reserved",
+        "required_promotion_evidence": ("package", "install", "execution"),
+    },
+    8232: {
+        "row_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+        "contract_kind": "native-object-emission",
+        "claim_state": "toolchain-prerequisite-fail-closed",
+        "required_promotion_evidence": ("toolchain", "native-object-emission"),
+    },
 }
 FORBIDDEN_SOURCE_PREFIXES = ("tmp/", "artifacts/")
 FORBIDDEN_RANGE_TERMS = ("all", "best effort", "best-effort", "compat", "fallback")
@@ -366,6 +400,108 @@ def _validate_sanitizer_variant_rows(inputs: ValidationInputs, records_by_id: di
     return variant_ids
 
 
+def _validate_umbrella_readiness(
+    inputs: ValidationInputs,
+    *,
+    supported_ids: set[str],
+    unsupported_ids: set[str],
+    package_variant_row_ids: set[str],
+    sanitizer_variant_ids: set[str],
+) -> dict[str, Any]:
+    contract = inputs.source_truth["umbrella_readiness_contract"]
+    expect(contract["umbrella_issue_ref"] == 8206, "platform umbrella issue_ref drifted")
+    expect(contract["closure_state"] == "source-owned-fail-closed-ready", "platform umbrella closure state drifted")
+    expect(contract["support_claim_boundary"] == "windows-x64-only", "platform umbrella widened support boundary")
+    expect(
+        contract["supported_platform_row_ids"]
+        == [row["row_id"] for row in inputs.source_truth["supported_rows"]],
+        "platform umbrella supported row ids drifted from source truth",
+    )
+    expect(supported_ids == {"windows-x64"}, "platform umbrella support boundary is not windows-x64-only")
+    expect(unsupported_ids == {"linux-x64", "darwin-arm64"}, "platform umbrella unsupported host set drifted")
+    expect(
+        {"objc3c.package.sanitizer.asan.reserved", "objc3c.package.sanitizer.ubsan.reserved"} <= package_variant_row_ids,
+        "platform umbrella sanitizer package rows are not reserved in source truth",
+    )
+    expect(
+        {"objc3c.toolchain.sanitizer.address", "objc3c.toolchain.sanitizer.undefined"} == sanitizer_variant_ids,
+        "platform umbrella sanitizer variant ids drifted",
+    )
+    hard_fail_ids = {
+        str(failure_class.get("failure_id"))
+        for failure_class in inputs.unsupported_host_policy.get("hard_fail_classes", [])
+        if isinstance(failure_class, dict) and failure_class.get("failure_id")
+    }
+    expect(
+        "native-object-emission-unavailable" in hard_fail_ids,
+        "platform umbrella missing native object emission hard-fail policy",
+    )
+
+    child_contracts = {
+        int(row["issue_ref"]): row
+        for row in contract["child_issue_contracts"]
+    }
+    expect(
+        set(child_contracts) == set(EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS),
+        "platform umbrella child issue contracts drifted",
+    )
+    for issue_ref, expected in EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS.items():
+        row = child_contracts[issue_ref]
+        for field_name in ("row_id", "contract_kind", "claim_state"):
+            expect(row[field_name] == expected[field_name], f"platform umbrella child {issue_ref} {field_name} drifted")
+        expect(
+            tuple(row["required_promotion_evidence"]) == expected["required_promotion_evidence"],
+            f"platform umbrella child {issue_ref} promotion evidence drifted",
+        )
+
+    upstream_native_contract = inputs.platform_evidence["llvm_version_support_matrix"]["native_object_emission_contract"]
+    native_contract = contract["native_object_emission_contract"]
+    for field_name in (
+        "contract_id",
+        "issue_ref",
+        "required_tool",
+        "required_probe",
+        "success_status",
+        "missing_llc_status",
+        "missing_filetype_status",
+        "hosted_runner_behavior",
+        "conformance_minima_behavior",
+        "fallback_policy",
+    ):
+        expect(
+            native_contract[field_name] == upstream_native_contract[field_name],
+            f"platform umbrella native object emission {field_name} drifted from upstream evidence",
+        )
+    expect(
+        native_contract["fallback_policy"] == "no-clang-fallback-success-claim",
+        "platform umbrella allowed a clang substitute object-emission claim",
+    )
+    forbidden_overclaims = {str(item) for item in contract["forbidden_overclaims"]}
+    expect(
+        "native object emission success when llc is missing" in forbidden_overclaims,
+        "platform umbrella missing hosted-runner missing-llc overclaim guard",
+    )
+    expect(
+        "clang substitute published as llvm-direct object emission success" in forbidden_overclaims,
+        "platform umbrella missing no-clang-substitute overclaim guard",
+    )
+    expect(
+        "Only the windows-x64 row may be projected as supported" in contract["lead_projection_rule"],
+        "platform umbrella projection rule does not pin windows-x64-only support",
+    )
+    return {
+        "umbrella_issue_ref": contract["umbrella_issue_ref"],
+        "closure_state": contract["closure_state"],
+        "support_claim_boundary": contract["support_claim_boundary"],
+        "child_issue_refs": sorted(child_contracts),
+        "native_object_emission_statuses": [
+            native_contract["success_status"],
+            native_contract["missing_llc_status"],
+            native_contract["missing_filetype_status"],
+        ],
+    }
+
+
 def _validate_toolchain_ranges(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], supported_ids: set[str]) -> list[str]:
     components_seen: list[str] = []
     for toolchain_range in inputs.platform_evidence.get("toolchain_ranges", []):
@@ -409,6 +545,13 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
     toolchain_components = _validate_toolchain_ranges(inputs, records_by_id, supported_ids)
     package_variant_row_ids = _validate_package_variant_rows(inputs, records_by_id, supported_ids)
     sanitizer_variant_ids = _validate_sanitizer_variant_rows(inputs, records_by_id, set(package_variant_row_ids))
+    umbrella_readiness = _validate_umbrella_readiness(
+        inputs,
+        supported_ids=supported_ids,
+        unsupported_ids=set(unsupported_ids),
+        package_variant_row_ids=set(package_variant_row_ids),
+        sanitizer_variant_ids=set(sanitizer_variant_ids),
+    )
 
     return {
         "contract_id": "objc3c.platform.support.source_truth.validation.summary.v1",
@@ -425,6 +568,7 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
         "validated_toolchain_components": sorted(toolchain_components),
         "package_variant_row_ids": sorted(package_variant_row_ids),
         "sanitizer_variant_ids": sorted(sanitizer_variant_ids),
+        "umbrella_readiness": umbrella_readiness,
         "public_action_count": len(ACTION_SPECS),
     }
 

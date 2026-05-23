@@ -20,6 +20,7 @@
     "unsupported_rows",
     "package_variant_rows",
     "sanitizer_variant_rows",
+    "umbrella_readiness_contract",
     "report_policy"
   ],
   "properties": {
@@ -52,7 +53,7 @@
           8232
         ]
       },
-      "minItems": 5,
+      "minItems": 6,
       "uniqueItems": true
     },
     "upstream_sources": {
@@ -174,6 +175,9 @@
         "$ref": "#/$defs/sanitizerVariantRow"
       }
     },
+    "umbrella_readiness_contract": {
+      "$ref": "#/$defs/umbrellaReadinessContract"
+    },
     "report_policy": {
       "type": "object",
       "additionalProperties": false,
@@ -184,7 +188,7 @@
       "properties": {
         "summary_path": {
           "type": "string",
-          "pattern": "^tmp/reports/platform-matrix/"
+          "pattern": "^tmp/reports/platform-hardening/"
         },
         "generated_reports_must_not_be_source": {
           "const": true
@@ -201,6 +205,171 @@
       "type": "string",
       "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*( .*)?$"
     },
+    "umbrellaReadinessContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "umbrella_issue_ref",
+        "closure_state",
+        "support_claim_boundary",
+        "supported_platform_row_ids",
+        "child_issue_contracts",
+        "native_object_emission_contract",
+        "forbidden_overclaims",
+        "lead_projection_rule"
+      ],
+      "properties": {
+        "umbrella_issue_ref": {
+          "const": 8206
+        },
+        "closure_state": {
+          "const": "source-owned-fail-closed-ready"
+        },
+        "support_claim_boundary": {
+          "const": "windows-x64-only"
+        },
+        "supported_platform_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "child_issue_contracts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/childIssueContract"
+          },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "native_object_emission_contract": {
+          "$ref": "#/$defs/nativeObjectEmissionContract"
+        },
+        "forbidden_overclaims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "lead_projection_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "childIssueContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_ref",
+        "row_id",
+        "contract_kind",
+        "claim_state",
+        "required_promotion_evidence",
+        "diagnostic"
+      ],
+      "properties": {
+        "issue_ref": {
+          "type": "integer",
+          "enum": [
+            8228,
+            8229,
+            8230,
+            8231,
+            8232
+          ]
+        },
+        "row_id": {
+          "type": "string"
+        },
+        "contract_kind": {
+          "enum": [
+            "platform-host",
+            "sanitizer-runtime-package",
+            "native-object-emission"
+          ]
+        },
+        "claim_state": {
+          "enum": [
+            "unsupported",
+            "reserved",
+            "toolchain-prerequisite-fail-closed"
+          ]
+        },
+        "required_promotion_evidence": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution",
+              "toolchain",
+              "native-object-emission"
+            ]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "diagnostic": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "nativeObjectEmissionContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "issue_ref",
+        "required_tool",
+        "required_probe",
+        "success_status",
+        "missing_llc_status",
+        "missing_filetype_status",
+        "hosted_runner_behavior",
+        "conformance_minima_behavior",
+        "fallback_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.llvm.native-object-emission.fail-closed.v1"
+        },
+        "issue_ref": {
+          "const": 8232
+        },
+        "required_tool": {
+          "const": "llc"
+        },
+        "required_probe": {
+          "const": "llc --filetype=obj"
+        },
+        "success_status": {
+          "const": "native_object_emission_supported"
+        },
+        "missing_llc_status": {
+          "const": "native_object_emission_missing_llc"
+        },
+        "missing_filetype_status": {
+          "const": "native_object_emission_filetype_obj_unavailable"
+        },
+        "hosted_runner_behavior": {
+          "const": "fail-closed-no-native-object-success-claim"
+        },
+        "conformance_minima_behavior": {
+          "const": "fail-closed-before-cross-lane-runtime-proof"
+        },
+        "fallback_policy": {
+          "const": "no-clang-fallback-success-claim"
+        }
+      }
+    },
     "supportedRow": {
       "type": "object",
       "additionalProperties": false,
@@ -209,6 +378,7 @@
         "platform_id",
         "host_os",
         "host_arch",
+        "host_triples",
         "support_state",
         "issue_ref",
         "required_evidence",
@@ -231,6 +401,14 @@
         },
         "host_arch": {
           "type": "string"
+        },
+        "host_triples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "support_state": {
           "const": "supported"
@@ -316,8 +494,11 @@
         "platform_id",
         "host_os",
         "host_arch",
+        "host_triples",
         "support_state",
         "issue_ref",
+        "required_evidence_classes",
+        "required_toolchain_components",
         "failure_id",
         "fail_closed_evidence_id",
         "package_variant_row_ids",
@@ -337,11 +518,48 @@
         "host_arch": {
           "type": "string"
         },
+        "host_triples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
         "support_state": {
           "const": "unsupported"
         },
         "issue_ref": {
           "type": "integer"
+        },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "required_toolchain_components": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "llvm",
+              "clang",
+              "cmake",
+              "ninja",
+              "python",
+              "node",
+              "pwsh"
+            ]
+          },
+          "minItems": 7,
+          "uniqueItems": true
         },
         "failure_id": {
           "type": "string",
@@ -382,6 +600,8 @@
         "target_platform_id",
         "platform_ids",
         "package_id",
+        "runtime_library_contract",
+        "metadata_freshness_guard",
         "claim_state",
         "evidence_ids",
         "unsupported_behavior",
@@ -412,6 +632,12 @@
         },
         "package_id": {
           "type": "string"
+        },
+        "runtime_library_contract": {
+          "$ref": "#/$defs/runtimeLibraryContract"
+        },
+        "metadata_freshness_guard": {
+          "$ref": "#/$defs/metadataFreshnessGuard"
         },
         "claim_state": {
           "enum": [
@@ -445,6 +671,9 @@
         "platform_ids",
         "package_variant_row_id",
         "package_id",
+        "runtime_requirement",
+        "metadata_freshness_guard",
+        "install_guard",
         "diagnostic"
       ],
       "properties": {
@@ -479,8 +708,95 @@
         "package_id": {
           "type": "string"
         },
+        "runtime_requirement": {
+          "type": "string"
+        },
+        "metadata_freshness_guard": {
+          "$ref": "#/$defs/metadataFreshnessGuard"
+        },
+        "install_guard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release_channel_policy",
+            "unsupported_platform_behavior",
+            "missing_runtime_behavior",
+            "mixed_runtime_behavior",
+            "stale_package_metadata_behavior"
+          ],
+          "properties": {
+            "release_channel_policy": {
+              "type": "string"
+            },
+            "unsupported_platform_behavior": {
+              "const": "fail-closed"
+            },
+            "missing_runtime_behavior": {
+              "const": "fail-closed-before-package-install"
+            },
+            "mixed_runtime_behavior": {
+              "const": "fail-closed"
+            },
+            "stale_package_metadata_behavior": {
+              "const": "fail-closed-before-publication"
+            }
+          }
+        },
         "diagnostic": {
           "type": "string"
+        }
+      }
+    },
+    "runtimeLibraryContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_ids",
+        "missing_runtime_behavior",
+        "mixed_runtime_behavior"
+      ],
+      "properties": {
+        "runtime_library_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "missing_runtime_behavior": {
+          "enum": [
+            "fail-closed-before-native-execution-claim",
+            "fail-closed-before-package-install"
+          ]
+        },
+        "mixed_runtime_behavior": {
+          "const": "fail-closed"
+        }
+      }
+    },
+    "metadataFreshnessGuard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metadata_source",
+        "generated_metadata_allowed",
+        "stale_package_metadata_behavior",
+        "blocks_publication_on_stale"
+      ],
+      "properties": {
+        "metadata_source": {
+          "type": "string",
+          "pattern": "^(tests/tooling/fixtures|schemas|docs/runbooks)/"
+        },
+        "generated_metadata_allowed": {
+          "const": false
+        },
+        "stale_package_metadata_behavior": {
+          "const": "fail-closed-before-publication"
+        },
+        "blocks_publication_on_stale": {
+          "const": true
         }
       }
     }

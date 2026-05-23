@@ -86,15 +86,16 @@ Compile either fixture from a fresh checkout after setup:
 ```powershell
 npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3 --out-dir tmp/readme-collections --emit-prefix module
 npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3 --out-dir tmp/readme-text --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3 --out-dir tmp/readme-signalMesh --emit-prefix module
 ```
 
 ## Current Support Snapshot
 
-The checked capability matrix currently contains 110 rows:
+The checked capability matrix currently contains 123 rows:
 
-- 86 implemented rows
-- 11 internal implementation or workflow-owner rows
-- 10 reserved rows
+- 93 implemented rows
+- 14 internal implementation or workflow-owner rows
+- 13 reserved rows
 - 3 rejected rows
 
 Authoritative support data lives in:
@@ -122,6 +123,9 @@ generated reports.
   the language surface defines them.
 - Typed flow for current scalar, function, expression, statement, control-flow,
   protocol, generic, ownership, and effect surfaces.
+- Statement-form guarded match patterns using
+  `case pattern where bool_condition: { ... }`; expression match, `=>` arms,
+  type-test patterns, and strict-profile promotion remain outside that row.
 - Protocol-qualified existentials, witness-model evidence, generic
   protocol-qualified arguments, callable type parameters, variance and
   specialization evidence, and collection generic identity semantics.
@@ -179,12 +183,19 @@ Checked modules live under [`stdlib/modules/`](stdlib/modules/).
 ### Packages, Modules, And Interop
 
 - Public import lookup and visibility/reexport/rebuild contracts.
+- Direct `@import` syntax with parser-owned module identity, locked package
+  provenance, and fail-closed malformed, missing-provenance, and ambiguous
+  module identity diagnostics.
 - Dependency graph diagnostics, stale cache rejection, missing module
   diagnostics, import cycle diagnostics, duplicate export diagnostics, hidden
   declaration diagnostics, and ABI mismatch diagnostics.
 - Package manager local registry model, deterministic package locks, offline
   mirror records, local trust envelopes, install/update/uninstall/rollback
   receipts, package signing, package verification, and clean distribution
+  checks.
+- Source-owned hosted-registry fixture resolution, offline fixture-backed
+  network dependency resolution, source-owned release-channel publication
+  metadata, and package security hardening with pre-mutation extraction path
   checks.
 - Runnable toolchain package channels, release manifests, SBOM/provenance
   publication, release operation policy, release channel lifecycle, ABI/API
@@ -240,24 +251,45 @@ rejected rows include:
   rows are implemented, and debugger-grade proof has advanced, but full source
   maps beyond bounded identity rows, emitted native debug info, broader typed
   keypath lowering, and statement-level debugger stepping are still reserved.
-- Full advanced-runtime closure as one umbrella support claim. Narrow block,
-  ARC, error, async, actor, property, macro, and package/replay rows are
-  implemented, but native executable link/run for the full umbrella fixture and
-  broad scheduler/Swift ABI/distributed actor/arbitrary macro-host guarantees
-  remain reserved.
-- Direct `@import` module syntax. Current package/import evidence uses checked
-  metadata import surfaces, public cross-module lookup, and package workspace
-  edges.
-- Public hosted package registry and live network dependency resolution.
-  Current package evidence is local/offline/deterministic.
+- Broad advanced-runtime guarantees beyond the integrated Objective-C 3 runtime
+  envelope. The combined fixture compiles, links, and runs with checked runtime
+  evidence, while broad scheduler fairness, Swift ABI mirroring, distributed
+  actor networking, and arbitrary macro-host execution remain reserved.
+- Typed throws and value optionals. `throws(E)` is parser-owned `O3P182`
+  reserved syntax with no silent erasure to bare `throws`; `Optional<T>` is
+  parser-owned `O3P159` reserved syntax, lowercase `optional<T>` is rejected as
+  `O3C004` rather than an alias, and neither path claims nil-to-scalar,
+  nullable-pointer, semantic interface, ABI, lowering, or runtime support.
+- Generic callable reification. Current support is the erased generic class
+  receiver/free-function subset named by the generic callable row; explicit
+  `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C
+  style generic functions, and runtime reified metadata remain reserved.
+- Strict and strict-concurrency language profiles. Canonical/core are the only
+  current language/conformance selections; strict profile selections reject
+  fail-closed until release/runtime evidence exists.
+- The #8207 language-evolution umbrella. It is a readiness/truth row over
+  typed throws, value optionals, generic callable reification, guarded match,
+  and strict profiles, not a separate behavior claim.
+- Live public hosted package registry services and arbitrary live network
+  dependency resolution. Current package evidence is local/offline,
+  fixture-backed, deterministic, and fail-closed.
 - Method inlining. Exact-target devirtualization is implemented; method
   inlining remains reserved until ownership, inline-frame source-map,
   callee-body identity, and side-effect/invalidation replay proofs exist.
 - Full source-map publication, statement stepping, and LLDB plugin integration.
 - Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
-  host row.
+  host row; Linux and macOS rows are source-owned fail-closed contracts until
+  package/install/native execution evidence exists.
 - AddressSanitizer and UndefinedBehaviorSanitizer package/install/native
-  execution variants.
+  execution variants. Their runtime package metadata is source-owned and
+  reserved; no sanitizer package support is claimed yet.
+- Native object emission without `llc --filetype=obj`. Missing `llc` is a
+  fail-closed status, and clang must not be treated as a fallback object
+  emitter for support, package, or execution claims.
+- The #8206 platform expansion umbrella. It is an internal readiness/truth row
+  over Windows x64 support, fail-closed Linux/macOS rows, reserved sanitizer
+  package variants, and #8232 native object emission, not a broad platform
+  support claim.
 
 ## Fresh Setup
 
@@ -399,10 +431,12 @@ Common actions:
   `validate-advanced-runtime-closure`
 - Standard library: `validate-stdlib-foundation`
 - Modules/interop: `validate-module-interop-contracts`,
-  `validate-interop-conformance`, `validate-runnable-interop`
-- Packages: `validate-package-manager-model`, `validate-package-mirror`,
-  `validate-package-install-distribution`, `package-install`,
-  `package-verify`, `package-sign`
+  `validate-direct-import-module-syntax`, `validate-interop-conformance`,
+  `validate-runnable-interop`
+- Packages: `validate-package-manager-model`, `validate-package-registry-model`,
+  `validate-package-network-publication`, `validate-package-security-hardening`,
+  `validate-package-mirror`, `validate-package-install-distribution`,
+  `package-install`, `package-verify`, `package-sign`
 - Release: `validate-abi-governance`, `validate-release-foundation`,
   `validate-packaging-channels`, `validate-release-operations`,
   `validate-distribution-credibility`

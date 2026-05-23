@@ -1,7 +1,7 @@
 # Advanced Runtime Executable Contract
 
-This runbook owns the bounded #8214/#8215 executable-runtime contract slice
-that follows the #8213 native link/run closure work.
+This runbook owns the bounded #8214/#8215/#8216/#8217 executable-runtime
+contract slice that follows the #8213 native link/run closure work.
 
 ## Contract Surface
 
@@ -39,11 +39,52 @@ callables, async foreign callbacks, and arbitrary foreign runtime mirroring.
 The canonical negative fixture is
 `tests/native/runtime/advanced_closure/negative_foreign_abi_runtime_mirroring.objc3`.
 
+## #8216 Actor Mailbox Runtime Expansion
+
+Supported behavior is still local and single-process: stable logical mailbox
+message ids, FIFO enqueue/dequeue/completion sequence records, cancellation,
+deterministic actor method error recording, and shutdown/drain state through
+the private actor runtime snapshot.
+
+Rejected or reserved behavior includes distributed actor syntax without a
+transport, cross-process mailboxes, remote serialization, stale actor identity
+reuse after shutdown, and treating cancelled queued messages as delivered work.
+The canonical negative fixtures are
+`tests/native/runtime/advanced_closure/negative_distributed_actor_missing_transport.objc3`
+and `tests/native/runtime/advanced_closure/negative_actor_mailbox_stale_identity.objc3`.
+
+## #8217 Macro Host And Package Replay Runtime Closure
+
+Supported behavior is limited to content-addressed macro host cache/package
+replay handoff records: package identity, lock identity, trust identity, host
+identity, input/output content identity, replay generation, cache validation
+status, and runtime consumption identity must be present before cross-module
+link-plan consumption.
+
+Rejected behavior includes arbitrary host I/O, impure macro execution, unsigned
+or stale package replay, host identity mismatch, and tampered runtime metadata.
+The canonical negative fixtures are
+`tests/native/runtime/advanced_closure/negative_macro_package_replay_stale_cache.objc3`
+and `tests/native/runtime/advanced_closure/negative_macro_package_replay_host_mismatch.objc3`.
+
+## #8218 Promotion Boundary
+
+`language.advanced-runtime-closure` is promoted only by the integrated
+executable fixture, negative matrix, schema-backed surfaces, evidence map, and
+umbrella readiness agreeing through the public command without using temp or
+generated reports as source truth. It is not a shortcut for broad scheduler,
+Swift/C++ ABI, distributed actor, or arbitrary macro-host behavior.
+
 ## Fail-Closed Rules
 
 - Invalid or unknown executable-contract surface queries return rejected status.
 - `compatibility_shim_allowed` is always false.
-- Typed dispatch and native registration are required for both supported rows.
+- Typed dispatch and native registration are required for every supported row.
+- Native object artifacts, link, run, and umbrella promotion require the
+  source-owned #8232 `llc --filetype=obj` contract; missing `llc` records
+  `native_object_emission_missing_llc` and cannot publish object, package,
+  execution, or conformance-minima success.
 - Metadata preservation alone cannot satisfy executable runtime support.
-- Public docs must keep broad scheduler and Swift/C++ runtime claims reserved
-  until a real runtime owner adds executable behavior and negative fixtures.
+- Public docs must keep broad scheduler, Swift/C++ runtime, distributed actor,
+  and arbitrary macro-host claims reserved until real runtime owners add
+  executable behavior and negative fixtures.

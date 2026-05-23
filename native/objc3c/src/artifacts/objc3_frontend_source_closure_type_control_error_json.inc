@@ -55,6 +55,22 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << (summary.optional_member_access_fail_closed ? "true" : "false")
       << ",\"value_optional_type_fail_closed\":"
       << (summary.value_optional_type_fail_closed ? "true" : "false")
+      << ",\"value_optional_issue_ref\":"
+      << summary.value_optional_issue_ref
+      << ",\"value_optional_canonical_spelling\":\""
+      << EscapeJsonString(summary.value_optional_canonical_spelling)
+      << "\",\"lowercase_optional_alias_rejected\":"
+      << (summary.lowercase_optional_alias_rejected ? "true" : "false")
+      << ",\"value_optional_nil_to_scalar_coercion_allowed\":"
+      << (summary.value_optional_nil_to_scalar_coercion_allowed ? "true"
+                                                                : "false")
+      << ",\"value_optional_nullable_pointer_conversion_allowed\":"
+      << (summary.value_optional_nullable_pointer_conversion_allowed ? "true"
+                                                                     : "false")
+      << ",\"value_optional_throws_conversion_allowed\":"
+      << (summary.value_optional_throws_conversion_allowed ? "true" : "false")
+      << ",\"value_optional_abi_status\":\""
+      << EscapeJsonString(summary.value_optional_abi_status) << "\""
       << ",\"nil_coalescing_fail_closed\":"
       << (summary.nil_coalescing_fail_closed ? "true" : "false")
       << ",\"typed_keypath_literal_fail_closed\":"
@@ -100,8 +116,16 @@ std::string BuildControlFlowControlFlowSourceClosureSummaryJson(
       << summary.match_literal_pattern_sites
       << ",\"match_binding_pattern_sites\":"
       << summary.match_binding_pattern_sites
+      << ",\"guarded_match_pattern_sites\":"
+      << summary.guarded_match_pattern_sites
       << ",\"match_result_case_pattern_sites\":"
       << summary.match_result_case_pattern_sites
+      << ",\"guarded_match_issue_ref\":"
+      << summary.guarded_match_issue_ref
+      << ",\"guarded_match_admitted_syntax\":\""
+      << EscapeJsonString(summary.guarded_match_admitted_syntax)
+      << "\",\"guarded_match_condition_bool_required\":"
+      << (summary.guarded_match_condition_bool_required ? "true" : "false")
       << ",\"guard_binding_source_supported\":"
       << (summary.guard_binding_source_supported ? "true" : "false")
       << ",\"guard_condition_list_source_supported\":"
@@ -118,6 +142,8 @@ std::string BuildControlFlowControlFlowSourceClosureSummaryJson(
       << (summary.match_literal_pattern_source_supported ? "true" : "false")
       << ",\"match_binding_pattern_source_supported\":"
       << (summary.match_binding_pattern_source_supported ? "true" : "false")
+      << ",\"guarded_match_pattern_source_supported\":"
+      << (summary.guarded_match_pattern_source_supported ? "true" : "false")
       << ",\"match_result_case_pattern_source_supported\":"
       << (summary.match_result_case_pattern_source_supported ? "true"
                                                              : "false")
@@ -127,8 +153,10 @@ std::string BuildControlFlowControlFlowSourceClosureSummaryJson(
       << (summary.defer_fail_closed ? "true" : "false")
       << ",\"match_expression_fail_closed\":"
       << (summary.match_expression_fail_closed ? "true" : "false")
-      << ",\"guarded_pattern_fail_closed\":"
-      << (summary.guarded_pattern_fail_closed ? "true" : "false")
+      << ",\"match_expression_result_typing_supported\":"
+      << (summary.match_expression_result_typing_supported ? "true" : "false")
+      << ",\"match_fat_arrow_arms_supported\":"
+      << (summary.match_fat_arrow_arms_supported ? "true" : "false")
       << ",\"type_test_pattern_fail_closed\":"
       << (summary.type_test_pattern_fail_closed ? "true" : "false")
       << ",\"deterministic_handoff\":"
@@ -195,6 +223,22 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << (summary.catch_keyword_reserved ? "true" : "false")
       << ",\"typed_throws_fail_closed\":"
       << (summary.typed_throws_fail_closed ? "true" : "false")
+      << ",\"typed_throws_issue_ref\":"
+      << summary.typed_throws_issue_ref
+      << ",\"typed_throws_canonical_syntax\":\""
+      << EscapeJsonString(summary.typed_throws_canonical_syntax)
+      << "\",\"typed_throws_single_payload_reserved\":"
+      << (summary.typed_throws_single_payload_reserved ? "true" : "false")
+      << ",\"typed_throws_empty_payload_rejected\":"
+      << (summary.typed_throws_empty_payload_rejected ? "true" : "false")
+      << ",\"typed_throws_multi_payload_rejected\":"
+      << (summary.typed_throws_multi_payload_rejected ? "true" : "false")
+      << ",\"typed_throws_silent_erasure_allowed\":"
+      << (summary.typed_throws_silent_erasure_allowed ? "true" : "false")
+      << ",\"typed_throws_effect_record_status\":\""
+      << EscapeJsonString(summary.typed_throws_effect_record_status)
+      << "\",\"typed_throws_abi_status\":\""
+      << EscapeJsonString(summary.typed_throws_abi_status) << "\""
       << ",\"try_fail_closed\":"
       << (summary.try_fail_closed ? "true" : "false")
       << ",\"throw_fail_closed\":"

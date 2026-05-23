@@ -68,6 +68,30 @@ class HostedLLVMCapabilityTruth:
     def fail_closed_without_live_capability(self) -> bool:
         return not self.hosted_execution_supported
 
+    @property
+    def native_object_emission_status(self) -> str:
+        if not self.is_hosted_source:
+            return "native_object_emission_diagnostic_only"
+        if self.hosted_execution_supported:
+            return "native_object_emission_supported"
+        if not self.llc_found:
+            return "native_object_emission_missing_llc"
+        if not self.llc_supports_filetype_obj:
+            return "native_object_emission_filetype_obj_unavailable"
+        return "native_object_emission_unavailable"
+
+    @property
+    def hosted_runner_behavior(self) -> str:
+        if self.hosted_execution_supported:
+            return "native-object-emission-supported"
+        return "fail-closed-no-native-object-success-claim"
+
+    @property
+    def conformance_minima_behavior(self) -> str:
+        if self.hosted_execution_supported:
+            return "native-object-emission-may-enter-conformance-minima"
+        return "fail-closed-before-cross-lane-runtime-proof"
+
     def as_payload(self) -> dict[str, object]:
         return {
             "source_kind": self.source_kind,
@@ -82,6 +106,9 @@ class HostedLLVMCapabilityTruth:
             "fail_closed_without_live_capability": (
                 self.fail_closed_without_live_capability
             ),
+            "native_object_emission_status": self.native_object_emission_status,
+            "hosted_runner_behavior": self.hosted_runner_behavior,
+            "conformance_minima_behavior": self.conformance_minima_behavior,
             "failure_reasons": list(self.failure_reasons),
         }
 

@@ -1,0 +1,7 @@
+// Negative fixture: Objective-C method type-parameter clauses remain reserved.
+// Expected diagnostic code(s): O3P114.
+module NegativeGenericMethodTypeParameterClauseReserved;
+
+@interface GenericProbe
+- <T> (T)identity:(T)value;
+@end

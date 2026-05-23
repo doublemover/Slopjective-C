@@ -1,11 +1,24 @@
   void ParseTopLevelDeclaration(Objc3ParsedProgram &program) {
     if (Match(TokenKind::KwModule)) {
       ParseModule(program);
+    } else if (Match(TokenKind::KwAtImport)) {
+      ParseDirectModuleImport(program);
     } else if (Match(TokenKind::KwLet)) {
       auto decl = ParseGlobalLet();
       if (decl != nullptr) {
         ast_builder_.AddGlobalDecl(program, std::move(*decl));
       }
+    } else if (Match(TokenKind::KwAtReifyGenerics)) {
+      RejectReservedReificationControl(Previous(), "a top-level declaration");
+      SynchronizeTopLevel();
+    } else if (At(TokenKind::Less)) {
+      const Token generic_clause = Advance();
+      diagnostics_.push_back(MakeDiag(
+          generic_clause.line, generic_clause.column, "O3P114",
+          "C/Objective-C style generic free-function declaration syntax is "
+          "reserved; use 'fn name<T>(...)' for the admitted Objective-C 3 "
+          "generic free-function surface"));
+      SynchronizeTopLevel();
     } else if (Match(TokenKind::KwAtInterface)) {
       auto decl = ParseObjcInterfaceDecl();
       if (decl != nullptr) {

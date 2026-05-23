@@ -1,0 +1,9 @@
+// Negative fixture: declaration-scoped generic reification markers are lexed
+// but fail closed until a reification-capable mode exists.
+// Expected diagnostic code(s): O3P114.
+module NegativeReifyGenericsMarkerReserved;
+
+@reify_generics
+fn genericIdentity<T>(value: T) -> T {
+  return value;
+}

@@ -36,11 +36,11 @@ BuildControlFlowControlFlowSourceClosureSummary(
   summary.match_wildcard_pattern_source_supported = true;
   summary.match_literal_pattern_source_supported = true;
   summary.match_binding_pattern_source_supported = true;
+  summary.guarded_match_pattern_source_supported = true;
   summary.match_result_case_pattern_source_supported = true;
   summary.defer_keyword_reserved = true;
   summary.defer_fail_closed = false;
   summary.match_expression_fail_closed = true;
-  summary.guarded_pattern_fail_closed = true;
   summary.type_test_pattern_fail_closed = true;
   summary.deterministic_handoff =
       summary.guard_binding_clause_sites >= summary.guard_binding_sites &&

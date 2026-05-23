@@ -112,6 +112,7 @@
         "module_name",
         "resolver",
         "direct_import_syntax",
+        "direct_imports",
         "import_edges",
         "unsafe_metadata_policy"
       ],
@@ -145,7 +146,11 @@
           }
         },
         "resolver": { "const": "checked-in-local-registry" },
-        "direct_import_syntax": { "const": "reserved-fail-closed" },
+        "direct_import_syntax": { "const": "supported-fail-closed" },
+        "direct_imports": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/directImportRecord" }
+        },
         "import_edges": {
           "type": "array",
           "items": { "$ref": "#/$defs/moduleImportEdge" }
@@ -166,6 +171,39 @@
             "network_or_hosted_metadata": { "const": "fail-closed" }
           }
         }
+      }
+    },
+    "directImportRecord": {
+      "type": "object",
+      "required": [
+        "syntax",
+        "source_module",
+        "imported_module",
+        "to_package_id",
+        "package_provenance",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version",
+        "missing_provenance_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": { "const": "@import" },
+        "source_module": { "type": "string", "minLength": 1 },
+        "imported_module": { "type": "string", "minLength": 1 },
+        "to_package_id": { "$ref": "#/$defs/packageId" },
+        "package_provenance": { "const": "locked-package" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "resolution": { "const": "locked-local-registry" },
+        "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "missing_provenance_diagnostic": { "const": "O3PKG8055" }
       }
     },
     "moduleImportEdge": {

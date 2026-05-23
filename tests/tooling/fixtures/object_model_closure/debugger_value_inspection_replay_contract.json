@@ -115,6 +115,216 @@
   },
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
   "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+  "lldb_protocol_contract": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+  "typed_keypath_debugger_metadata_contract": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+  "debugger_grade_umbrella_readiness": {
+    "contract_id": "objc3c.object_model.debugger_grade_umbrella_readiness.v1",
+    "issue_refs": [
+      8225,
+      8209,
+      8210,
+      8211,
+      8212,
+      8202
+    ],
+    "capability_id": "runtime.object-model.full-realization",
+    "public_status": "reserved",
+    "support_claim_published": false,
+    "readiness_role": "source-owned glue for debugger-grade object-model readiness without promoting full runtime object-model realization",
+    "required_contracts": {
+      "debug_source_map_bundle": {
+        "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+        "contract_id": "objc3c.debug-source-maps.v1"
+      },
+      "debug_source_map_negative_cases": {
+        "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        "contract_id": "objc3c.debug-source-maps.negative-cases.v1"
+      },
+      "inline_frame_source_map_contract": {
+        "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+        "contract_id": "objc3c.debug-source-maps.inline-frame.method-inlining.v1"
+      },
+      "debugger_replay": {
+        "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+        "contract_id": "objc3c.debugger-integration.replay.v1"
+      },
+      "lldb_protocol_contract": {
+        "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+        "contract_id": "objc3c.lldb-plugin.protocol.v1"
+      },
+      "typed_keypath_debugger_metadata_contract": {
+        "path": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+        "contract_id": "objc3c.typed-keypath.debugger-lowering-metadata.v1"
+      },
+      "debug_anchor_identity_contract": {
+        "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+        "contract_id": "objc3c.object_model.debug_anchor_identity_replay.v1"
+      }
+    },
+    "bounded_capability_rows": [
+      {
+        "capability_id": "runtime.debug-trace.inline-frame-source-map",
+        "issue": 8225,
+        "recommended_status": "bounded-supported",
+        "support_claim_published": false,
+        "evidence_contract": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json"
+      },
+      {
+        "capability_id": "runtime.debug-trace.statement-stepping",
+        "issue": 8209,
+        "recommended_status": "bounded-supported",
+        "support_claim_published": false,
+        "evidence_contract": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json"
+      },
+      {
+        "capability_id": "runtime.debug-trace.lldb-plugin",
+        "issue": 8210,
+        "recommended_status": "bounded-supported",
+        "support_claim_published": false,
+        "evidence_contract": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json"
+      },
+      {
+        "capability_id": "runtime.typed-keypath.debugger-lowering",
+        "issue": 8211,
+        "recommended_status": "bounded-supported",
+        "support_claim_published": false,
+        "evidence_contract": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json"
+      },
+      {
+        "capability_id": "runtime.object-model.full-realization",
+        "issue": 8212,
+        "recommended_status": "reserved",
+        "support_claim_published": false,
+        "evidence_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+      }
+    ],
+    "typed_keypath_policy": {
+      "fallback_interpretation_allowed": false,
+      "required_descriptor_fields": [
+        "source_span_id",
+        "root_type_identity",
+        "value_type_identity",
+        "object_model_owner_identity",
+        "object_model_member_identity",
+        "debug_source_map_key",
+        "diagnostic_anchor_key",
+        "fallback_interpretation_allowed"
+      ]
+    },
+    "fail_closed_negative_cases": [
+      {
+        "case_id": "generated-only-source-maps",
+        "issue_refs": [
+          8225,
+          8209,
+          8210,
+          8212,
+          8202
+        ],
+        "sources": [
+          {
+            "contract_key": "debug_source_map_negative_cases",
+            "case_id": "statement-stepping-generated-only-map",
+            "diagnostic_code": "statement-stepping-generated-only"
+          },
+          {
+            "contract_key": "inline_frame_source_map_contract",
+            "case_id": "inline-frame-generated-only-map",
+            "diagnostic_code": "inline-frame-generated-only-map"
+          },
+          {
+            "contract_key": "lldb_protocol_contract",
+            "case_id": "generated-only-source-map",
+            "diagnostic_code": "lldb-protocol-generated-only-map"
+          }
+        ]
+      },
+      {
+        "case_id": "stale-native-debug-line-table",
+        "issue_refs": [
+          8209,
+          8212,
+          8202
+        ],
+        "sources": [
+          {
+            "contract_key": "debug_source_map_negative_cases",
+            "case_id": "native-line-table-drift",
+            "diagnostic_code": "line-table-drift"
+          },
+          {
+            "contract_key": "object_model_debugger_contract",
+            "case_id": "line-table-row-drift",
+            "diagnostic_code": "line-table-row-missing"
+          }
+        ]
+      },
+      {
+        "case_id": "lldb-protocol-drift",
+        "issue_refs": [
+          8210,
+          8212,
+          8202
+        ],
+        "sources": [
+          {
+            "contract_key": "lldb_protocol_contract",
+            "case_id": "stale-compiler-id",
+            "diagnostic_code": "lldb-protocol-stale-compiler-id"
+          },
+          {
+            "contract_key": "lldb_protocol_contract",
+            "case_id": "missing-inline-frame-chain",
+            "diagnostic_code": "lldb-protocol-inline-frame-chain-missing"
+          }
+        ]
+      },
+      {
+        "case_id": "typed-keypath-fallback-interpretation",
+        "issue_refs": [
+          8211,
+          8212,
+          8202
+        ],
+        "sources": [
+          {
+            "contract_key": "typed_keypath_debugger_metadata_contract",
+            "case_id": "typed-keypath-fallback-interpretation",
+            "invariant": "IR materialization fails when a typed keypath artifact is fallback-enabled",
+            "policy_field": "fallback_interpretation_allowed",
+            "expected_policy_value": false
+          }
+        ]
+      },
+      {
+        "case_id": "object-debug-identity-mismatch",
+        "issue_refs": [
+          8212,
+          8202
+        ],
+        "sources": [
+          {
+            "contract_key": "object_model_debugger_contract",
+            "case_id": "object-debug-identity-mismatch",
+            "diagnostic_code": "object-debug-identity-mismatch"
+          }
+        ]
+      }
+    ],
+    "umbrella_boundary": {
+      "promotes_umbrella": false,
+      "generated_only_maps_can_promote": false,
+      "typed_keypath_fallback_allowed": false,
+      "lldb_protocol_drift_allowed": false,
+      "object_debug_identity_mismatch_allowed": false
+    },
+    "central_docs_deferred": [
+      "README.md",
+      "docs/support/capability_matrix.*",
+      "docs/support/evidence_map.*",
+      "docs/support/umbrella_readiness.*"
+    ]
+  },
   "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
   "debug_anchor_identity_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
   "runtime_reflection_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
@@ -218,6 +428,7 @@
     "object-handle"
   ],
   "required_supported_step_kinds": [
+    "statement",
     "method",
     "message-send"
   ],
@@ -557,6 +768,60 @@
   ],
   "negative_cases": [
     {
+      "case_id": "debugger-umbrella-generated-only-source-map-drift",
+      "expected_code": "debugger-umbrella-negative-case-missing",
+      "mutation_path": [
+        "debugger_grade_umbrella_readiness",
+        "fail_closed_negative_cases",
+        0,
+        "sources",
+        0,
+        "case_id"
+      ]
+    },
+    {
+      "case_id": "debugger-umbrella-stale-native-line-table-drift",
+      "expected_code": "debugger-umbrella-negative-case-drift",
+      "mutation_path": [
+        "debugger_grade_umbrella_readiness",
+        "fail_closed_negative_cases",
+        1,
+        "sources",
+        0,
+        "diagnostic_code"
+      ]
+    },
+    {
+      "case_id": "debugger-umbrella-lldb-protocol-drift",
+      "expected_code": "debugger-umbrella-contract-drift",
+      "mutation_path": [
+        "debugger_grade_umbrella_readiness",
+        "required_contracts",
+        "lldb_protocol_contract",
+        "contract_id"
+      ]
+    },
+    {
+      "case_id": "debugger-umbrella-typed-keypath-fallback-drift",
+      "expected_code": "debugger-umbrella-typed-keypath-fallback-enabled",
+      "mutation_path": [
+        "debugger_grade_umbrella_readiness",
+        "typed_keypath_policy",
+        "fallback_interpretation_allowed"
+      ],
+      "mutation_value": true
+    },
+    {
+      "case_id": "object-debug-identity-mismatch",
+      "expected_code": "object-debug-identity-mismatch",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "runtime_identity_kind"
+      ],
+      "mutation_value": "method"
+    },
+    {
       "case_id": "source-map-runtime-anchor-drift",
       "expected_code": "runtime-anchor-missing",
       "mutation_path": [
@@ -682,6 +947,7 @@
   ],
   "boundaries": {
     "requires_checked_source_map_and_line_table": true,
+    "requires_debugger_grade_umbrella_readiness": true,
     "requires_debug_anchor_replay_contract": true,
     "requires_replayable_debugger_value_commands": true,
     "uses_private_testing_snapshots_as_public_truth": false,

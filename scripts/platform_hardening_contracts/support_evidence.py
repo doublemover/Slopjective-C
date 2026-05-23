@@ -40,6 +40,16 @@ REQUIRED_LLVM_MATRIX_TOOLS: tuple[str, ...] = (
     "headers-libs",
 )
 REQUIRED_ROADMAP_ISSUE_REFS: tuple[int, ...] = (8206, 8228, 8229, 8230, 8231, 8232)
+REQUIRED_UNSUPPORTED_POLICY_HARD_FAIL_CLASSES: tuple[str, ...] = (
+    "unsupported-host-os-or-arch",
+    "missing-required-tier-tool",
+    "unsupported-channel-claim",
+    "support-tier-overclaim",
+    "missing-runtime-library",
+    "missing-sanitizer-runtime",
+    "stale-package-metadata",
+    "native-object-emission-unavailable",
+)
 EXPECTED_UNSUPPORTED_PLATFORM_ISSUES: dict[str, int] = {
     "linux-x64": 8228,
     "darwin-arm64": 8229,
@@ -182,6 +192,40 @@ def _unsupported_failure_ids(unsupported_host_policy: dict[str, Any]) -> set[str
         for check in unsupported_host_policy.get("synthetic_unsupported_host_checks", [])
         if check.get("failure_id")
     }
+
+
+def _validate_unsupported_host_policy_contract(unsupported_host_policy: dict[str, Any]) -> None:
+    hard_fail_classes = {
+        str(failure_class.get("failure_id")): failure_class
+        for failure_class in unsupported_host_policy.get("hard_fail_classes", [])
+        if isinstance(failure_class, dict) and failure_class.get("failure_id")
+    }
+    expect(
+        set(REQUIRED_UNSUPPORTED_POLICY_HARD_FAIL_CLASSES) <= set(hard_fail_classes),
+        "unsupported host hard-fail classes drifted",
+    )
+    for failure_id in REQUIRED_UNSUPPORTED_POLICY_HARD_FAIL_CLASSES:
+        failure_class = hard_fail_classes[failure_id]
+        expect(
+            failure_class.get("required_behavior") == "fail-closed",
+            f"{failure_id} hard-fail class does not fail closed",
+        )
+    native_object_failure = hard_fail_classes["native-object-emission-unavailable"]
+    expect(
+        {"toolchain", "package", "execution", "publication"}
+        <= {str(surface) for surface in native_object_failure.get("applies_to", [])},
+        "native object emission hard-fail class does not block toolchain package execution and publication",
+    )
+    required_claims = {str(claim) for claim in unsupported_host_policy.get("required_claims", [])}
+    expect(
+        "native object emission requires llc --filetype=obj and has no clang substitute success path" in required_claims,
+        "unsupported host policy missing native object emission no-fallback claim",
+    )
+    forbidden_phrases = {str(phrase) for phrase in unsupported_host_policy.get("forbidden_phrases", [])}
+    expect(
+        "object emission supported via clang substitute" in forbidden_phrases,
+        "unsupported host policy missing clang substitute forbidden phrase",
+    )
 
 
 def _require_no_claims_outside_boundary(
@@ -347,6 +391,35 @@ def _validate_llvm_version_support_matrix(
         matrix.get("support_claim_policy") == "capability-probed-fail-closed",
         "LLVM version support matrix policy drifted",
     )
+    native_object_contract = matrix.get("native_object_emission_contract")
+    expect(
+        isinstance(native_object_contract, dict),
+        "LLVM version support matrix missing native object emission contract",
+    )
+    expect(
+        native_object_contract.get("contract_id")
+        == "objc3c.llvm.native-object-emission.fail-closed.v1",
+        "native object emission contract_id drifted",
+    )
+    expect(native_object_contract.get("issue_ref") == 8232, "native object emission issue_ref drifted")
+    expect(native_object_contract.get("required_tool") == "llc", "native object emission required tool drifted")
+    expect(
+        native_object_contract.get("required_probe") == "llc --filetype=obj",
+        "native object emission required probe drifted",
+    )
+    expect(
+        native_object_contract.get("missing_llc_status") == "native_object_emission_missing_llc",
+        "native object emission missing-llc status drifted",
+    )
+    expect(
+        native_object_contract.get("missing_filetype_status")
+        == "native_object_emission_filetype_obj_unavailable",
+        "native object emission filetype status drifted",
+    )
+    expect(
+        native_object_contract.get("fallback_policy") == "no-clang-fallback-success-claim",
+        "native object emission fallback policy drifted",
+    )
     for claim_field in ("minimum_supported_version", "known_good_versions"):
         value = matrix.get(claim_field)
         expect(bool(value), f"LLVM version support matrix missing {claim_field}")
@@ -395,11 +468,33 @@ def _validate_llvm_version_support_matrix(
 
     rejection_rules = matrix.get("rejection_rules", [])
     expect(isinstance(rejection_rules, list) and rejection_rules, "LLVM matrix missing rejection rules")
+    missing_llc_rule: dict[str, Any] | None = None
     for rule in rejection_rules:
         expect(isinstance(rule, dict), "LLVM matrix rejection rule must be an object")
         expect(str(rule.get("rule_id", "")), "LLVM matrix rejection rule missing rule_id")
         expect(str(rule.get("condition", "")), f"{rule.get('rule_id', '')} missing rejection condition")
         expect(str(rule.get("diagnostic", "")), f"{rule.get('rule_id', '')} missing rejection diagnostic")
+        if rule.get("rule_id") == "objc3c.llvm.reject.missing-llc":
+            missing_llc_rule = rule
+    expect(missing_llc_rule is not None, "LLVM matrix missing missing-llc rejection rule")
+    expect(
+        missing_llc_rule.get("failure_status") == "native_object_emission_missing_llc",
+        "missing-llc rejection status drifted",
+    )
+    expect(
+        missing_llc_rule.get("hosted_runner_behavior")
+        == "fail-closed-no-native-object-success-claim",
+        "missing-llc hosted runner behavior drifted",
+    )
+    expect(
+        missing_llc_rule.get("conformance_minima_behavior")
+        == "fail-closed-before-cross-lane-runtime-proof",
+        "missing-llc conformance minima behavior drifted",
+    )
+    expect(
+        missing_llc_rule.get("fallback_policy") == "no-clang-fallback-success-claim",
+        "missing-llc fallback policy drifted",
+    )
 
 
 def validate_platform_toolchain_support_evidence(
@@ -445,6 +540,7 @@ def validate_platform_toolchain_support_evidence(
         for platform in supported_platforms.get("supported_platforms", [])
         if platform.get("platform_id")
     }
+    _validate_unsupported_host_policy_contract(unsupported_host_policy)
     tier_supported_ids = _supported_tier_platforms(tier_policy)
     unsupported_failure_ids = _unsupported_failure_ids(unsupported_host_policy)
 

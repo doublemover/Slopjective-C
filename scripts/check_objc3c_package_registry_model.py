@@ -78,7 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     index = load_json(registry_path)
     mirror = load_json(mirror_path)
 
-    failures = collect_hosted_registry_model_failures(index, mirror)
+    failures = collect_hosted_registry_model_failures(index, mirror, root=ROOT)
     resolution: dict[str, Any] | None = None
     request = HostedRegistryResolutionRequest(
         package_id=str(args.package_id),
@@ -116,6 +116,9 @@ def main(argv: list[str] | None = None) -> int:
             "allow_network": bool(args.allow_network),
             "registry_url": args.registry_url,
         },
+        "endpoint_identity": index.get("endpoint_identity"),
+        "lock_trust_material": index.get("lock_trust_material"),
+        "failure_modes": index.get("failure_modes"),
         "resolution": resolution,
         "tamper_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
         "failures": failures,

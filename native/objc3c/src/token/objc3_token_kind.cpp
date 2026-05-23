@@ -102,6 +102,10 @@ const char *Objc3LexTokenKindName(Objc3LexTokenKind kind) {
     return "@property";
   case Objc3LexTokenKind::KwAtKeypath:
     return "@keypath";
+  case Objc3LexTokenKind::KwAtImport:
+    return "@import";
+  case Objc3LexTokenKind::KwAtReifyGenerics:
+    return "@reify_generics";
   case Objc3LexTokenKind::KwAtCleanup:
     return "@cleanup";
   case Objc3LexTokenKind::KwAtResource:
@@ -256,6 +260,8 @@ bool Objc3LexTokenKindIsKeyword(Objc3LexTokenKind kind) {
   case Objc3LexTokenKind::KwAtOptional:
   case Objc3LexTokenKind::KwAtProperty:
   case Objc3LexTokenKind::KwAtKeypath:
+  case Objc3LexTokenKind::KwAtImport:
+  case Objc3LexTokenKind::KwAtReifyGenerics:
   case Objc3LexTokenKind::KwAtCleanup:
   case Objc3LexTokenKind::KwAtResource:
   case Objc3LexTokenKind::KwAtEnd:

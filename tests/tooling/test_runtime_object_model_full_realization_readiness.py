@@ -83,6 +83,29 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
         "imported-runtime-packages",
         "reflection-result-lifetime",
     ]
+    assert contract["debugger_grade_umbrella_readiness_summary"] == {
+        "contract_id": "objc3c.object_model.debugger_grade_umbrella_readiness.v1",
+        "source_contract": (
+            "tests/tooling/fixtures/object_model_closure/"
+            "debugger_value_inspection_replay_contract.json"
+        ),
+        "ties_issue_refs": [8225, 8209, 8210, 8211, 8212, 8202],
+        "bounded_debugger_rows": [
+            "runtime.debug-trace.inline-frame-source-map",
+            "runtime.debug-trace.statement-stepping",
+            "runtime.debug-trace.lldb-plugin",
+            "runtime.typed-keypath.debugger-lowering",
+        ],
+        "reserved_umbrella_row": "runtime.object-model.full-realization",
+        "fail_closed_negative_boundaries": [
+            "generated-only-source-maps",
+            "stale-native-debug-line-table",
+            "lldb-protocol-drift",
+            "typed-keypath-fallback-interpretation",
+            "object-debug-identity-mismatch",
+        ],
+        "does_not_promote_umbrella": True,
+    }
 
     for key in (
         "combined_positive_fixture",
@@ -224,6 +247,40 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
         "blocked_by": [
             "runtime-debug-trace-statement-stepping-integration",
         ],
+    }
+    umbrella = contract["debugger_grade_umbrella_readiness"]
+    assert umbrella["contract_id"] == "objc3c.object_model.debugger_grade_umbrella_readiness.v1"
+    assert set(umbrella["issue_refs"]) == {8225, 8209, 8210, 8211, 8212, 8202}
+    assert umbrella["capability_id"] == "runtime.object-model.full-realization"
+    assert umbrella["public_status"] == "reserved"
+    assert umbrella["support_claim_published"] is False
+    assert umbrella["umbrella_boundary"] == {
+        "promotes_umbrella": False,
+        "generated_only_maps_can_promote": False,
+        "typed_keypath_fallback_allowed": False,
+        "lldb_protocol_drift_allowed": False,
+        "object_debug_identity_mismatch_allowed": False,
+    }
+    assert {
+        row["capability_id"]: row["recommended_status"]
+        for row in umbrella["bounded_capability_rows"]
+    } == {
+        "runtime.debug-trace.inline-frame-source-map": "bounded-supported",
+        "runtime.debug-trace.statement-stepping": "bounded-supported",
+        "runtime.debug-trace.lldb-plugin": "bounded-supported",
+        "runtime.typed-keypath.debugger-lowering": "bounded-supported",
+        "runtime.object-model.full-realization": "reserved",
+    }
+    assert umbrella["typed_keypath_policy"]["fallback_interpretation_allowed"] is False
+    assert {
+        case["case_id"]
+        for case in umbrella["fail_closed_negative_cases"]
+    } == {
+        "generated-only-source-maps",
+        "stale-native-debug-line-table",
+        "lldb-protocol-drift",
+        "typed-keypath-fallback-interpretation",
+        "object-debug-identity-mismatch",
     }
     assert {
         anchor["runtime_identity_kind"]
@@ -845,7 +902,11 @@ def test_object_model_debugger_proof_rejects_link_drift(tmp_path: Path) -> None:
 
     for case in contract["negative_cases"]:
         mutated = deepcopy(contract)
-        _set_nested(mutated, case["mutation_path"], "object-model-debugger-proof-drift")
+        _set_nested(
+            mutated,
+            case["mutation_path"],
+            case.get("mutation_value", "object-model-debugger-proof-drift"),
+        )
         path = tmp_path / f"{case['case_id']}.json"
         path.write_text(json.dumps(mutated, indent=2) + "\n", encoding="utf-8")
 

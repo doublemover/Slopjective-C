@@ -52,6 +52,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property);
 
+#include "sema/objc3_semantic_passes_generic_callable_contracts.inc"
+
 #include "sema/objc3_semantic_passes_type_baseline_semantic_type_accounting.inc"
 #include "sema/objc3_semantic_passes_type_baseline_bootstrap_publication.inc"
 #include "sema/objc3_semantic_passes_feature_claim_strictness_publication.inc"

@@ -23,16 +23,30 @@ class EcosystemPublicationOwnerContract:
 PACKAGE_SOURCE_CONTRACTS = (
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
     "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
     "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
 )
 PACKAGE_FORBIDDEN_CLAIMS = (
     "hosted registry availability",
     "package-manager parity",
     "network-backed alternate install path",
+    "fallback registry success",
+    "unsafe package extraction success",
+    "active release or registry trust root without source-backed key policy",
     "dependency resolution without package manifest trust",
     "generated artifact as source authority",
     "wrapper-only package publication",
@@ -100,10 +114,20 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-trust-owner",
         "verifies package signature envelopes, trust roots, revocation, subject identity, language/ABI, and digest binding before any package trust claim",
     ),
+    "validate-package-security-hardening": _package_contract(
+        "validate-package-security-hardening",
+        "package-ecosystem-security-owner",
+        "validates package trust policy, extraction path safety, installer/update-key reservations, release/registry trust-root reservations, and package security negative fixtures",
+    ),
     "validate-package-manager-model": _package_contract(
         "validate-package-manager-model",
         "package-ecosystem-manager-owner",
         "validates local package manifests, dependency graph resolution, ABI/language constraints, and trust envelopes before authoring claims",
+    ),
+    "validate-direct-import-module-syntax": _package_contract(
+        "validate-direct-import-module-syntax",
+        "package-ecosystem-direct-import-owner",
+        "validates direct @import token, parser, AST, checked package provenance, and fail-closed ambiguity/missing-provenance diagnostics before any direct import support claim",
     ),
     "validate-package-authoring": _package_contract(
         "validate-package-authoring",
@@ -125,6 +149,11 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-registry-owner",
         "resolves hosted package metadata only from checked-in fixture registry and offline mirror inputs; live network fetches fail closed",
     ),
+    "validate-package-network-publication": _package_contract(
+        "validate-package-network-publication",
+        "package-ecosystem-network-publication-owner",
+        "validates offline fixture-backed network dependency resolution and package release-channel publication without live network or fallback success paths",
+    ),
     "validate-package-ecosystem": _package_contract(
         "validate-package-ecosystem",
         "package-ecosystem-registry-owner",
@@ -133,7 +162,7 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
     "validate-package-install-distribution": _package_contract(
         "validate-package-install-distribution",
         "package-ecosystem-install-owner",
-        "proves clean local install credibility across package manifests, locks, mirrors, local registry metadata, restore receipts, and machine-owned install receipts",
+        "proves from-nothing clean local install credibility across package manifests, locks, mirrors, local registry metadata, restore receipts, and machine-owned install receipts; the public action injects --from-nothing when no pass-through args are supplied",
     ),
     "package-publish": _package_contract(
         "package-publish",
@@ -143,12 +172,12 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
     "package-install": _package_contract(
         "package-install",
         "package-ecosystem-operations-owner",
-        "installs only locked, signed, registry-backed, offline-cache-pinned packages with ABI/language and dependency checks",
+        "installs only locked, signed, registry-backed, offline-cache-pinned packages with pre-mutation extraction safety, ABI/language, and dependency checks",
     ),
     "package-update": _package_contract(
         "package-update",
         "package-ecosystem-operations-owner",
-        "updates only compatible signed packages while preserving deterministic rollback tokens and previous-state pins",
+        "updates only compatible signed packages while preserving deterministic rollback tokens, previous-state pins, and extraction safety records",
     ),
     "package-uninstall": _package_contract(
         "package-uninstall",

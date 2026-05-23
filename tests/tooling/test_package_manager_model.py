@@ -84,7 +84,9 @@ def lock_payload() -> dict[str, object]:
                 "npm run objc3c -- build-package-lock",
                 "npm run objc3c -- package-sign",
                 "npm run objc3c -- package-verify",
+                "npm run objc3c -- validate-package-security-hardening",
                 "npm run objc3c -- validate-package-manager-model",
+                "npm run objc3c -- validate-direct-import-module-syntax",
                 "npm run objc3c -- validate-package-authoring",
             ]
         },
@@ -131,6 +133,13 @@ def test_package_manager_model_generates_manifest_backed_lock() -> None:
     assert all(package["package_manifest"]["contract_id"] == "objc3c.package_ecosystem.package_manifest.v1" for package in packages)
     assert all(package["module_graph"]["contract_id"] == "objc3c.package_ecosystem.module_graph.v1" for package in packages)
     assert all(package["module_graph"]["direct_import_syntax"] == DIRECT_IMPORT_SYNTAX_SUPPORT for package in packages)
+    assert all("direct_imports" in package["module_graph"] for package in packages)
+    assert all(
+        direct_import["package_provenance"] == "locked-package"
+        and direct_import["missing_provenance_diagnostic"] == PACKAGE_MANAGER_TAMPER_CODE
+        for package in packages
+        for direct_import in package["module_graph"]["direct_imports"]
+    )
     assert all(package["module_graph"]["resolver"] == "checked-in-local-registry" for package in packages)
     assert all(package["trust"]["signing_key_id"] == LOCAL_PACKAGE_TRUST_KEY_ID for package in packages)
     assert payload["resolution_plan"]["resolver"] == "deterministic-local-registry"

@@ -375,6 +375,34 @@
       ]
     },
     {
+      "link_id": "runtime-source-debug.actor-mailbox-expanded",
+      "features": [
+        "actor",
+        "async",
+        "cancellation",
+        "error"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.actor-mailbox-expanded"
+      ],
+      "source_graph_record_id": "source-graph.actor-mailbox",
+      "debug_map_record_id": "debug-map.actor-mailbox",
+      "abi_record_ids": [
+        "abi.async-actor-cancellation",
+        "abi.error-bridge"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "debug_map_entry_id": "advanced-runtime.dmap.actor-mailbox",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.actor-mailbox"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ]
+    },
+    {
       "link_id": "runtime-source-debug.error-bridge",
       "features": [
         "error",
@@ -458,6 +486,32 @@
       "source_graph_record_id": "source-graph.package-replay",
       "debug_map_record_id": "debug-map.package-replay",
       "abi_record_ids": [
+        "abi.package-replay"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "debug_map_entry_id": "advanced-runtime.dmap.package-replay",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.package-replay"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.macro-package-replay",
+      "features": [
+        "macro",
+        "package_replay"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.macro-package-replay"
+      ],
+      "source_graph_record_id": "source-graph.package-replay",
+      "debug_map_record_id": "debug-map.package-replay",
+      "abi_record_ids": [
+        "abi.macro-host-cache",
         "abi.package-replay"
       ],
       "source_graph_node_id": "advanced-runtime.source.package-replay",

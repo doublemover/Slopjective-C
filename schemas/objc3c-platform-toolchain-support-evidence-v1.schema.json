@@ -156,9 +156,12 @@
         "platform_id",
         "host_os",
         "host_arch",
+        "host_triples",
         "support_state",
         "claim_class",
         "tier_id",
+        "required_evidence_classes",
+        "required_toolchain_components",
         "evidence",
         "issue_ref",
         "package_variant_row_ids",
@@ -176,6 +179,14 @@
         },
         "host_arch": {
           "type": "string"
+        },
+        "host_triples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "support_state": {
           "enum": [
@@ -274,6 +285,7 @@
         "contract_id",
         "issue_ref",
         "support_claim_policy",
+        "native_object_emission_contract",
         "minimum_supported_version",
         "known_good_versions",
         "known_bad_versions",
@@ -290,6 +302,9 @@
         },
         "support_claim_policy": {
           "const": "capability-probed-fail-closed"
+        },
+        "native_object_emission_contract": {
+          "$ref": "#/$defs/nativeObjectEmissionContract"
         },
         "minimum_supported_version": {
           "type": "string"
@@ -447,6 +462,66 @@
         },
         "diagnostic": {
           "type": "string"
+        },
+        "failure_status": {
+          "type": "string"
+        },
+        "hosted_runner_behavior": {
+          "type": "string"
+        },
+        "conformance_minima_behavior": {
+          "type": "string"
+        },
+        "fallback_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "nativeObjectEmissionContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "issue_ref",
+        "required_tool",
+        "required_probe",
+        "success_status",
+        "missing_llc_status",
+        "missing_filetype_status",
+        "hosted_runner_behavior",
+        "conformance_minima_behavior",
+        "fallback_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.llvm.native-object-emission.fail-closed.v1"
+        },
+        "issue_ref": {
+          "const": 8232
+        },
+        "required_tool": {
+          "const": "llc"
+        },
+        "required_probe": {
+          "const": "llc --filetype=obj"
+        },
+        "success_status": {
+          "const": "native_object_emission_supported"
+        },
+        "missing_llc_status": {
+          "const": "native_object_emission_missing_llc"
+        },
+        "missing_filetype_status": {
+          "const": "native_object_emission_filetype_obj_unavailable"
+        },
+        "hosted_runner_behavior": {
+          "const": "fail-closed-no-native-object-success-claim"
+        },
+        "conformance_minima_behavior": {
+          "const": "fail-closed-before-cross-lane-runtime-proof"
+        },
+        "fallback_policy": {
+          "const": "no-clang-fallback-success-claim"
         }
       }
     },
@@ -528,6 +603,8 @@
         "target_platform_id",
         "platform_ids",
         "package_id",
+        "runtime_library_contract",
+        "metadata_freshness_guard",
         "claim_state",
         "channel_scope",
         "required_evidence_classes",
@@ -560,6 +637,12 @@
         },
         "package_id": {
           "type": "string"
+        },
+        "runtime_library_contract": {
+          "$ref": "#/$defs/runtimeLibraryContract"
+        },
+        "metadata_freshness_guard": {
+          "$ref": "#/$defs/metadataFreshnessGuard"
         },
         "claim_state": {
           "enum": [
@@ -633,6 +716,7 @@
         "package_id",
         "llvm_requirement",
         "runtime_requirement",
+        "metadata_freshness_guard",
         "build_contract",
         "install_guard",
         "evidence_ids",
@@ -681,6 +765,9 @@
         "runtime_requirement": {
           "type": "string"
         },
+        "metadata_freshness_guard": {
+          "$ref": "#/$defs/metadataFreshnessGuard"
+        },
         "build_contract": {
           "type": "object",
           "additionalProperties": false,
@@ -722,7 +809,9 @@
           "required": [
             "release_channel_policy",
             "unsupported_platform_behavior",
-            "mixed_runtime_behavior"
+            "missing_runtime_behavior",
+            "mixed_runtime_behavior",
+            "stale_package_metadata_behavior"
           ],
           "properties": {
             "release_channel_policy": {
@@ -731,8 +820,14 @@
             "unsupported_platform_behavior": {
               "const": "fail-closed"
             },
+            "missing_runtime_behavior": {
+              "const": "fail-closed-before-package-install"
+            },
             "mixed_runtime_behavior": {
               "const": "fail-closed"
+            },
+            "stale_package_metadata_behavior": {
+              "const": "fail-closed-before-publication"
             }
           }
         },
@@ -744,6 +839,59 @@
           "items": {
             "$ref": "#/$defs/negativeContract"
           }
+        }
+      }
+    },
+    "runtimeLibraryContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_ids",
+        "missing_runtime_behavior",
+        "mixed_runtime_behavior"
+      ],
+      "properties": {
+        "runtime_library_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "missing_runtime_behavior": {
+          "enum": [
+            "fail-closed-before-native-execution-claim",
+            "fail-closed-before-package-install"
+          ]
+        },
+        "mixed_runtime_behavior": {
+          "const": "fail-closed"
+        }
+      }
+    },
+    "metadataFreshnessGuard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metadata_source",
+        "generated_metadata_allowed",
+        "stale_package_metadata_behavior",
+        "blocks_publication_on_stale"
+      ],
+      "properties": {
+        "metadata_source": {
+          "type": "string",
+          "pattern": "^(tests/tooling/fixtures|schemas|docs/runbooks)/"
+        },
+        "generated_metadata_allowed": {
+          "const": false
+        },
+        "stale_package_metadata_behavior": {
+          "const": "fail-closed-before-publication"
+        },
+        "blocks_publication_on_stale": {
+          "const": true
         }
       }
     },

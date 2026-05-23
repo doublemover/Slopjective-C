@@ -18,7 +18,7 @@
     "native_compile_artifacts_claimed": true,
     "native_compile_run_claimed": true,
     "linked_provider_module": "CrossLaneAdvancedRuntimeClosureProvider",
-    "advanced_runtime_umbrella_promoted": false
+    "advanced_runtime_umbrella_promoted": true
   },
   "expected": {
     "stage": "native-compile-link-run-plus-contract-backed-runtime-state-source-debug-map",
@@ -41,6 +41,6 @@
     "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
     "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
-    "umbrella_support_promoted": false
+    "umbrella_support_promoted": true
   }
 }

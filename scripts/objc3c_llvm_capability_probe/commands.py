@@ -75,7 +75,7 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
     filetype_version_result, version_with_filetype_duration_ms = run_command(
         version_with_filetype_cmd
     )
-    supports_from_command = filetype_version_result.returncode != 127
+    supports_from_command = filetype_version_result.returncode == 0
     supports_filetype_obj = supports_from_help or supports_from_command
 
     return {

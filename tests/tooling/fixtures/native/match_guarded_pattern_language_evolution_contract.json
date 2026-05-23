@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.language_evolution.match_guarded_pattern.contract.v1",
+  "schema_version": 1,
+  "umbrella_issue_ref": 8207,
+  "issue_refs": [
+    8236
+  ],
+  "support_state": {
+    "statement_guarded_match_patterns": "supported_bounded",
+    "match_expressions": "reserved_fail_closed",
+    "fat_arrow_arms": "reserved_fail_closed",
+    "type_test_patterns": "reserved_fail_closed"
+  },
+  "admitted_surface": {
+    "canonical_syntax": "match (expr) { case pattern where bool_condition: { ... } default: { ... } }",
+    "guard_condition_type": "bool",
+    "guard_condition_checked_after_binding": true,
+    "guarded_catch_all_exhaustiveness": "does-not-make-match-exhaustive-by-itself",
+    "where_keyword_scope": "contextual-match-case-only",
+    "positive_fixture": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+    "source_fields": [
+      "guarded_match_issue_ref",
+      "guarded_match_admitted_syntax",
+      "guarded_match_condition_bool_required",
+      "guarded_match_pattern_source_supported"
+    ]
+  },
+  "reserved_surfaces": [
+    {
+      "surface": "match_expression_position",
+      "expected_diagnostic": "O3P156",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3"
+    },
+    {
+      "surface": "fat_arrow_match_arms",
+      "expected_diagnostic": "O3P156",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
+    },
+    {
+      "surface": "missing_where_condition",
+      "expected_diagnostic": "O3P157",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3"
+    },
+    {
+      "surface": "non_bool_guard_condition",
+      "expected_diagnostic": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3"
+    }
+  ],
+  "reserved_source_fields": [
+    "match_expression_fail_closed",
+    "match_expression_result_typing_supported",
+    "match_fat_arrow_arms_supported",
+    "type_test_pattern_fail_closed"
+  ],
+  "source_anchors": [
+    "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
+    "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp",
+    "native/objc3c/src/pipeline/source_closure/frontend_source_closure_replay_keys_core.cpp",
+    "native/objc3c/src/pipeline/results/capability_status.h",
+    "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc",
+    "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
+  ],
+  "public_claim_boundary": {
+    "support_claims": [
+      "objc3c.behavior.language.control-flow.statement-guarded-match"
+    ],
+    "reserved_rows_required": [
+      "language.control-flow.match-expressions",
+      "language.control-flow.type-test-patterns"
+    ],
+    "no_expression_lowering_claim": true,
+    "no_runtime_result_typing_claim": true,
+    "no_compatibility_syntax_aliases": true
+  }
+}

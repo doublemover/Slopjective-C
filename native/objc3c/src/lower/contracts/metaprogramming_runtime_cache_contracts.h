@@ -62,6 +62,18 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageIdentity =
+        "std.metaprogramming.advanced-runtime";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageLockIdentity =
+        "objc3c.metaprogramming.advanced-runtime.lock.v1";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageTrustIdentity =
+        "deterministic-sandbox+checked-package-replay";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationValidStatus =
+        "valid";
 
 std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary();
 std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary();

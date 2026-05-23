@@ -16,6 +16,9 @@ from .action_catalog_package_registry_publication import (
     PACKAGE_OFFLINE_MIRROR_INDEX_PATH,
     PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH,
     PACKAGE_OFFLINE_MIRROR_SCHEMA,
+    PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+    PACKAGE_NETWORK_RESOLUTION_SCHEMA,
+    PACKAGE_RELEASE_CHANNEL_PUBLICATION_SCHEMA,
     PACKAGE_REGISTRY_LOCAL_INDEX_PATH,
     PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
 )
@@ -23,9 +26,22 @@ from .action_catalog_package_registry_publication import (
 PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS = (
     "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
     "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
     "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
 )
 
 PACKAGE_OPERATION_RECEIPT_SCHEMA = PackageSchemaContract(
@@ -59,6 +75,9 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
             PACKAGE_MANIFEST_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_INSTALL_RECEIPT_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_NETWORK_RESOLUTION_SCHEMA,
+            PACKAGE_RELEASE_CHANNEL_PUBLICATION_SCHEMA,
         ),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
         generated_paths=(
@@ -74,22 +93,25 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
     PackagePublicWorkflowAction(
         action="validate-package-install-distribution",
         summary=(
-            "enforce clean-root package install credibility across generated "
-            "manifests, locks, mirrors, registry metadata, restore receipts, "
-            "and install receipts"
+            "enforce from-nothing clean-root package install credibility "
+            "across generated manifests, locks, mirrors, registry metadata, "
+            "restore receipts, and install receipts"
         ),
         script_path="scripts/check_objc3c_package_install_distribution_credibility.py",
         validation_tier="repo",
         guarantee_owner=(
-            "package install distribution claims stay grounded in clean local "
-            "install evidence without hosted registry or network resolution "
-            "overclaims"
+            "package install distribution claims stay grounded in from-nothing "
+            "clean local install evidence; the public action defaults to "
+            "--from-nothing when no pass-through args are supplied"
         ),
         schema_contracts=(
             PACKAGE_LOCK_SCHEMA,
             PACKAGE_MANIFEST_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_INSTALL_RECEIPT_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_NETWORK_RESOLUTION_SCHEMA,
+            PACKAGE_RELEASE_CHANNEL_PUBLICATION_SCHEMA,
         ),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
         generated_paths=(
@@ -123,6 +145,9 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
             PACKAGE_MANIFEST_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_INSTALL_RECEIPT_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_NETWORK_RESOLUTION_SCHEMA,
+            PACKAGE_RELEASE_CHANNEL_PUBLICATION_SCHEMA,
         ),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
         generated_paths=(
@@ -156,7 +181,8 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "package install verifies trust, registry metadata, lock identity, "
-            "offline mirror pins, language/ABI compatibility, and dependencies"
+            "offline mirror pins, extraction path safety, language/ABI "
+            "compatibility, and dependencies"
         ),
         schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
@@ -170,7 +196,7 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "package update preserves rollback data and accepts only signed, "
-            "locked, cache-pinned compatible metadata"
+            "locked, cache-pinned compatible metadata with extraction safety"
         ),
         schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,
@@ -212,7 +238,8 @@ PACKAGE_INTEGRATION_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "publish, install, update, uninstall, and rollback receipts stay "
-            "deterministic, trust-bound, cache-pinned, and fail-closed"
+            "deterministic, trust-bound, cache-pinned, extraction-safe, and "
+            "fail-closed"
         ),
         schema_contracts=(PACKAGE_OPERATION_RECEIPT_SCHEMA,),
         source_paths=PACKAGE_INTEGRATION_CLAIM_SOURCE_PATHS,

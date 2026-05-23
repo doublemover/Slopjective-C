@@ -45,6 +45,14 @@ def load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def case_by_id(case_id: str) -> dict[str, Any]:
+    cases = load_json(NEGATIVE_CASES)["cases"]
+    for case in cases:
+        if case["case_id"] == case_id:
+            return case
+    raise AssertionError(f"missing negative case: {case_id}")
+
+
 def set_nested(payload: dict[str, Any], path: list[object], value: object) -> None:
     cursor: Any = payload
     for part in path[:-1]:
@@ -88,8 +96,10 @@ def test_debug_source_map_positive_fixture_validates_source_debug_and_line_links
     assert bundle.native_debug_info.contract_id == NATIVE_DEBUG_INFO_CONTRACT_ID
     assert bundle.native_debug_info.emitted_native_debug_info is True
     assert bundle.native_debug_info.native_line_table_emitted is True
-    assert bundle.native_debug_info.statement_stepping_integrated is False
-    assert bundle.statement_stepping_supported is False
+    assert bundle.native_debug_info.statement_stepping_integrated is True
+    assert bundle.native_debug_info.fail_closed_without_stepping_integration is False
+    assert len(bundle.native_debug_info.statement_stepping_evidence) == 1
+    assert bundle.statement_stepping_supported is True
 
 
 def test_debug_map_inspection_summary_is_stable_and_diagnostic_backed() -> None:
@@ -131,12 +141,20 @@ def test_debug_source_map_negative_case_catalog_is_explicit() -> None:
         "generated-code-without-provenance",
         "optimization-without-source-map-preservation",
         "statement-stepping-without-line-table",
+        "statement-stepping-without-native-debug-evidence",
+        "statement-stepping-source-span-drift",
+        "statement-stepping-generated-only-map",
         "package-boundary-mismatch",
         "native-line-table-drift",
         "native-debug-info-row-drift",
         "unstable-source-path",
         "missing-capability-row",
         "inline-frame-missing-callee",
+        "inline-frame-missing-frame-id",
+        "inline-frame-missing-callsite-callee-span",
+        "inline-frame-source-map-drift",
+        "inline-frame-ambiguous-stepping-policy",
+        "inline-frame-generated-only-map",
         "inline-frame-native-range-drift",
         "inline-frame-non-inlining-proof",
         "inline-frame-failure-record",
@@ -144,91 +162,139 @@ def test_debug_source_map_negative_case_catalog_is_explicit() -> None:
 
 
 def test_debug_source_maps_reject_missing_source_span(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][0]
+    case = case_by_id("missing-source-span")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_stale_source_graph_id(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][1]
+    case = case_by_id("stale-source-graph-id")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_stale_source_digest(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][2]
+    case = case_by_id("stale-source-digest")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_generated_code_without_provenance(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][3]
+    case = case_by_id("generated-code-without-provenance")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_optimization_without_source_map_preservation(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][4]
+    case = case_by_id("optimization-without-source-map-preservation")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_statement_stepping_without_line_table(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][5]
+    case = case_by_id("statement-stepping-without-line-table")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_statement_stepping_without_native_debug_evidence(tmp_path: Path) -> None:
+    case = case_by_id("statement-stepping-without-native-debug-evidence")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_statement_stepping_source_span_drift(tmp_path: Path) -> None:
+    case = case_by_id("statement-stepping-source-span-drift")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_statement_stepping_generated_only_map(tmp_path: Path) -> None:
+    case = case_by_id("statement-stepping-generated-only-map")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_package_boundary_mismatch(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][6]
+    case = case_by_id("package-boundary-mismatch")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_native_line_table_drift(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][7]
+    case = case_by_id("native-line-table-drift")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_native_debug_info_row_drift(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][8]
+    case = case_by_id("native-debug-info-row-drift")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_unstable_source_path(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][9]
+    case = case_by_id("unstable-source-path")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_missing_capability_row(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][10]
+    case = case_by_id("missing-capability-row")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_inline_frame_missing_callee(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][11]
+    case = case_by_id("inline-frame-missing-callee")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_missing_frame_id(tmp_path: Path) -> None:
+    case = case_by_id("inline-frame-missing-frame-id")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_missing_callsite_callee_span(tmp_path: Path) -> None:
+    case = case_by_id("inline-frame-missing-callsite-callee-span")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_source_map_drift(tmp_path: Path) -> None:
+    case = case_by_id("inline-frame-source-map-drift")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_ambiguous_stepping_policy(tmp_path: Path) -> None:
+    case = case_by_id("inline-frame-ambiguous-stepping-policy")
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_generated_only_map(tmp_path: Path) -> None:
+    case = case_by_id("inline-frame-generated-only-map")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_inline_frame_native_range_drift(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][12]
+    case = case_by_id("inline-frame-native-range-drift")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_inline_frame_non_inlining_proof(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][13]
+    case = case_by_id("inline-frame-non-inlining-proof")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
 def test_debug_source_maps_reject_inline_frame_failure_record(tmp_path: Path) -> None:
-    case = load_json(NEGATIVE_CASES)["cases"][14]
+    case = case_by_id("inline-frame-failure-record")
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 

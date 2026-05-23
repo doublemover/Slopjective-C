@@ -69,13 +69,18 @@ def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_
     }
     for step in plan["steps"]:
         assert step["source_file"] == "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3"
+        assert step["source_span_id"].startswith("span.")
         assert step["source_line"] > 0
+        assert step["source_column"] > 0
+        assert step["source_end_line"] >= step["source_line"]
+        assert step["source_end_column"] > 0
         assert step["native_line"] > 0
         assert step["object_debug_line_anchor"]
         assert step["source_map_entry_id"].startswith("smap.")
         assert step["debug_map_entry_id"].startswith("dmap.")
         assert step["source_digest"] == "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
         assert step["native_line_table_row_id"].startswith("lt.")
+        assert step["native_debug_info_evidence_id"] == "debugmaps.foundation.native-debug-info"
 
 
 def test_debugger_integration_public_action_is_registered() -> None:
@@ -135,6 +140,36 @@ def test_debugger_integration_rejects_unsupported_record_that_claims_stepping(tm
     path = mutated_fixture(tmp_path, ["stepping_plan", "records", 4, "claims_stepping"], True)
 
     assert "stepping-overclaimed" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_generated_only_step_maps(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "source_map_entry_id"], "smap.generated_accessor")
+
+    assert "lldb-protocol-generated-only-map" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_stale_compiler_id(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["protocol_contract", "compiler_identity_id"], "objc3c.compiler.stale")
+
+    assert "lldb-protocol-stale-compiler-id" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_missing_inline_frame_chain(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["protocol_contract", "required_inline_frame_chain_ids"], ["inline.chain.missing"])
+
+    assert "lldb-protocol-inline-frame-chain-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_unsupported_runtime_metadata(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["value_inspection", "records", 0, "runtime_metadata_kind"], "private-runtime")
+
+    assert "lldb-protocol-unsupported-runtime-metadata" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_missing_native_debug_info_evidence_link(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "native_debug_info_evidence_id"], "")
+
+    assert "native-debug-info-evidence-missing" in diagnostic_codes(path)
 
 
 def test_debugger_integration_returns_structured_diagnostic_for_invalid_json(tmp_path: Path) -> None:

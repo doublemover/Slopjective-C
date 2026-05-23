@@ -1,4 +1,7 @@
-    bool compatible = existing.arity == fn.params.size() && existing.return_type == fn.return_type &&
+    const bool generic_callable_signature_compatible =
+        IsFunctionGenericCallableSignatureCompatibleWithDecl(existing, fn);
+    bool compatible = generic_callable_signature_compatible &&
+                      existing.arity == fn.params.size() && existing.return_type == fn.return_type &&
                       existing.return_is_vector == fn.return_vector_spelling &&
                       existing.return_has_ownership_qualifier == fn.has_return_ownership_qualifier &&
                       existing.return_ownership_insert_retain == fn.return_ownership_insert_retain &&
@@ -89,7 +92,15 @@
       }
     }
     if (!compatible) {
-      diagnostics.push_back(MakeDiag(fn.line, fn.column, "O3S206",
-                                     "type mismatch: incompatible function signature for '" + fn.name + "'"));
+      const std::string message =
+          generic_callable_signature_compatible
+              ? "type mismatch: incompatible function signature for '" +
+                    fn.name + "'"
+              : "type mismatch: generic callable signature drift for function '" +
+                    fn.name +
+                    "'; generic arity, parameter order, constraints, "
+                    "reification policy, and mangling policy must match "
+                    "across redeclarations";
+      diagnostics.push_back(MakeDiag(fn.line, fn.column, "O3S206", message));
       continue;
     }

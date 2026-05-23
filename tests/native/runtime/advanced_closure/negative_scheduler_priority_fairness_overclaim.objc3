@@ -16,7 +16,9 @@ actor class PriorityFairnessSchedulerClaim
                    objc_scheduler_guarantee(fairness))) {
   // Unsupported scheduler policies fail closed: executor-hop traffic proves
   // deterministic ordering only, not priority, fairness, work stealing, or
-  // distributed scheduling.
+  // distributed scheduling. The import packet must leave unsupported_policy_sites
+  // at zero and the executable contract must keep scheduler_fairness_supported,
+  // scheduler_priority_supported, and distributed_scheduler_supported false.
   let spawned = objc3_runtime_spawn_task_i32(2, 1);
   return objc3_runtime_executor_hop_i32(spawned + token, 1);
 }

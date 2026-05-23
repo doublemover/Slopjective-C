@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.language_evolution.typed_throws_value_optionals.reserved.v1",
+  "umbrella_issue_ref": 8207,
+  "issues": {
+    "typed_throws": 8233,
+    "value_optionals": 8234
+  },
+  "support_state": {
+    "typed_throws": "reserved_fail_closed",
+    "value_optionals": "reserved_fail_closed"
+  },
+  "typed_throws": {
+    "canonical_syntax": "throws(E)",
+    "bare_throws_status": "supported_untyped_effect",
+    "parenthesized_payload_status": "reserved_rejected_before_sema",
+    "accepted_payload_arity": 0,
+    "effect_record": {
+      "throws_kind": "untyped",
+      "throws_type_arity": 0,
+      "declared_error_type": "id<Error>",
+      "typed_payload_refs": []
+    },
+    "diagnostic": "O3P182",
+    "payload_shapes": [
+      "empty-payload",
+      "single-payload",
+      "multi-payload",
+      "malformed-unclosed-payload"
+    ],
+    "silent_erasure_allowed": false,
+    "multi_payload_supported": false,
+    "interface_roundtrip_status": "reserved-feature-marker-imported",
+    "abi_status": "reserved-no-lowering"
+  },
+  "value_optionals": {
+    "canonical_spelling": "Optional<T>",
+    "source_status": "reserved_rejected_before_sema",
+    "lowercase_alias_spelling": "optional<T>",
+    "lowercase_alias_accepted": false,
+    "canonical_diagnostic": "O3P159",
+    "lowercase_alias_diagnostic": "O3C004",
+    "abi_layout_status": "reserved-no-layout",
+    "nil_to_scalar_coercion_allowed": false,
+    "nullable_pointer_conversion_allowed": false,
+    "throws_result_conversion_allowed": false,
+    "optional_id_distinct_from_nullable_object_pointer": true,
+    "interface_roundtrip_status": "reserved-feature-marker-imported"
+  },
+  "umbrella_alignment": {
+    "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+    "profile_widening_allowed": false,
+    "objc2_compatibility_path_allowed": false,
+    "runtime_lowering_claim_allowed": false
+  },
+  "source_anchors": [
+    "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
+    "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+    "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
+    "native/objc3c/src/sema/model/frontend_type_source_closure.h",
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_runtime_capability_artifacts.cpp"
+  ],
+  "negative_fixtures": [
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "single typed throws payload remains reserved"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "empty typed throws payload remains reserved"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "multi typed throws payload remains reserved"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "typed throws payload is not erased to bare throws"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "canonical Optional<T> remains reserved"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "Optional<id> remains distinct from nullable object pointers"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "value optionals do not enable nil-to-scalar coercion"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3",
+      "expected_diagnostic": "O3C004",
+      "contract_case": "lowercase optional<T> is rejected as a non-alias before type admission"
+    }
+  ],
+  "public_claim_boundary": {
+    "support_claims": [],
+    "reserved_rows_required": [
+      "language.errors.typed-throws",
+      "language.types.value-optionals"
+    ],
+    "no_compatibility_aliases": true,
+    "no_temp_generated_evidence_as_source_of_truth": true
+  }
+}

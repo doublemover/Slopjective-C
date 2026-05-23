@@ -24,6 +24,9 @@
     "reserved_metadata",
     "interface_roundtrip",
     "source_counts",
+    "issue_refs",
+    "source_truth_policy",
+    "negative_cases",
     "capability_requirements",
     "public_commands"
   ],
@@ -91,9 +94,27 @@
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
     },
+    "issue_refs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "enum": [8208, 8238]
+      },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "source_truth_policy": {
+      "$ref": "#/$defs/sourceTruthPolicy"
+    },
+    "negative_cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/negativeCase" },
+      "minItems": 5,
+      "uniqueItems": true
+    },
     "public_commands": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": { "$ref": "#/$defs/publicCommand" },
       "minItems": 1
     },
     "diagnostic_count": { "type": "number" }
@@ -104,9 +125,88 @@
       "type": "object",
       "required": ["path", "line", "column"],
       "properties": {
-        "path": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!(?:tmp|temp|generated|build|dist)(?:/|\\\\))(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"
+        },
         "line": { "type": "number" },
         "column": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "sourceTruthPolicy": {
+      "type": "object",
+      "required": [
+        "source_truth",
+        "local_temp_source_truth_allowed",
+        "generated_output_source_truth_allowed",
+        "fallback_success_allowed",
+        "schema_registry_required",
+        "public_command_evidence_required",
+        "capability_truth_row",
+        "umbrella_readiness_issue_ref"
+      ],
+      "properties": {
+        "source_truth": {
+          "const": "native-artifact-schema-fixture-public-command"
+        },
+        "local_temp_source_truth_allowed": {
+          "const": false
+        },
+        "generated_output_source_truth_allowed": {
+          "const": false
+        },
+        "fallback_success_allowed": {
+          "const": false
+        },
+        "schema_registry_required": {
+          "const": true
+        },
+        "public_command_evidence_required": {
+          "const": true
+        },
+        "capability_truth_row": {
+          "const": "modules.standalone-textual-interface-payload"
+        },
+        "umbrella_readiness_issue_ref": {
+          "const": 8208
+        }
+      },
+      "additionalProperties": false
+    },
+    "negativeCase": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "target",
+        "expected_failure",
+        "fail_closed"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_failure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fail_closed": {
+          "const": true
+        },
+        "diagnostic": {
+          "type": "string",
+          "pattern": "^O3"
+        }
       },
       "additionalProperties": false
     },

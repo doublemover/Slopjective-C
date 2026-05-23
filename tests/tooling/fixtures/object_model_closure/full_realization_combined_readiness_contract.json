@@ -112,6 +112,33 @@
     ],
     "does_not_promote_umbrella": true
   },
+  "debugger_grade_umbrella_readiness_summary": {
+    "contract_id": "objc3c.object_model.debugger_grade_umbrella_readiness.v1",
+    "source_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+    "ties_issue_refs": [
+      8225,
+      8209,
+      8210,
+      8211,
+      8212,
+      8202
+    ],
+    "bounded_debugger_rows": [
+      "runtime.debug-trace.inline-frame-source-map",
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.lldb-plugin",
+      "runtime.typed-keypath.debugger-lowering"
+    ],
+    "reserved_umbrella_row": "runtime.object-model.full-realization",
+    "fail_closed_negative_boundaries": [
+      "generated-only-source-maps",
+      "stale-native-debug-line-table",
+      "lldb-protocol-drift",
+      "typed-keypath-fallback-interpretation",
+      "object-debug-identity-mismatch"
+    ],
+    "does_not_promote_umbrella": true
+  },
   "reflection_lifetime_contract": {
     "snapshot_ownership": "caller-owned snapshot structs",
     "string_lifetime": "runtime-owned borrowed strings",

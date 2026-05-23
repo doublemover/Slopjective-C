@@ -114,14 +114,19 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 
 ## D-008: Generic methods are deferred in v1 {#decisions-d-008}
 
-**Decision:** v1 includes **generic types** (pragmatic, erased generics) but defers **generic methods/functions**.
+**Decision:** v1 includes **generic types** (pragmatic, erased generics) and
+the bounded native `fn name<T>(...)` generic free-function surface. Objective-C
+generic methods and C/Objective-C style generic free-function declarations remain
+reserved.
 
 **Rationale:**
 
 - Generic methods create difficult interactions with Objective‑C selector syntax, method redeclaration/overload rules, and module interface printing.
 - The majority of practical value on Apple platforms comes from generic container types and constrained protocols.
 
-**Spec impact:** [Part 3](#part-3) [§3.5](#part-3-5) (generic methods moved to future extensions).
+**Spec impact:** [Part 3](#part-3) [§3.5](#part-3-5) (Objective-C generic
+methods and C/Objective-C style generic functions moved to future extensions;
+native `fn name<T>` generic free functions are erased by default).
 
 ---
 
@@ -221,6 +226,11 @@ Direct symbol-string equality is only required within the same declared mangling
 
 **Decision:** Any future explicit generic reification mode applies per declaration via `@reify_generics` (or equivalent canonical declaration-level form).
 Module/profile switches may gate whether declaration-level syntax is allowed, but shall not implicitly reify declarations that omit explicit markers.
+
+Current native v1 frontend behavior reserves `@reify_generics` with a
+parser-owned diagnostic. Accepted generic free functions publish
+`erased_default` reification policy metadata until a reification-capable mode is
+implemented.
 
 Conforming metadata/interface behavior shall preserve whether a declaration is erased or explicitly reified.
 

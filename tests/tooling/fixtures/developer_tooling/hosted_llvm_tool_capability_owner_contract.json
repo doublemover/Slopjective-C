@@ -22,7 +22,7 @@
       "action": "check-hosted-llvm-capabilities",
       "owner": "developer-tooling.hosted-llvm.probe",
       "proof_source": "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
-      "claim_scope": "hosted LLVM capability truth requires the hosted summary to report clang plus llc object-emission support",
+      "claim_scope": "hosted LLVM capability truth requires the hosted summary to report clang plus native_object_emission_supported from llc --filetype=obj",
       "requires_hosted_probe_summary": true,
       "fails_closed_without_live_capability": true,
       "unsupported_claims": [
@@ -60,7 +60,7 @@
   ],
   "global_claim_boundaries": [
     "unpublished language-server capability claims stay blocked until backed by first-class implementation contracts",
-    "hosted execution support is unavailable without a hosted LLVM summary that records object emission",
+    "hosted execution support is unavailable without a hosted LLVM summary that records native_object_emission_supported",
     "local-only probe summaries are diagnostics and never CI capability truth",
     "workflow actions must publish owner contracts for the capability they expose"
   ]

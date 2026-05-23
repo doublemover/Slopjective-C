@@ -1,0 +1,77 @@
+{
+  "contract_id": "objc3c.optimization.method_inlining_replay_contract.v1",
+  "issue_refs": [
+    8224,
+    8226,
+    8225
+  ],
+  "pass_id": "method-inlining",
+  "source_truth": {
+    "executor_header": "native/objc3c/src/opt/objc3_semantic_optimization_executor.h",
+    "executor_implementation": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
+    "pipeline_registry": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+    "ir_policy": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp"
+  },
+  "required_native_gates": [
+    "method_inline_callee_body_identity_present",
+    "method_inline_original_call_source_span_key",
+    "method_inline_callee_source_span_key",
+    "method_inline_original_call_source_span_present",
+    "method_inline_inline_frame_id_key",
+    "method_inline_inlined_callsite_source_span_key",
+    "method_inline_stepping_policy_key",
+    "method_inline_optimized_ir_source_correlation_key",
+    "method_inline_inline_frame_id_present",
+    "method_inline_inlined_callsite_source_span_present",
+    "method_inline_imported_debug_map_inline_frame_present",
+    "method_inline_emitted_debug_map_inline_frame_present",
+    "method_inline_stepping_policy_unambiguous",
+    "method_inline_optimized_ir_source_correlation_present",
+    "method_inline_generated_only_source_map",
+    "method_inline_receiver_dispatch_assumption_key",
+    "method_inline_receiver_dispatch_assumptions_pinned",
+    "method_inline_scalar_subset",
+    "method_inline_ownership_arc_effects_safe",
+    "method_inline_side_effect_summary_safe",
+    "method_inline_side_effect_replay_key",
+    "method_inline_side_effect_replay_complete",
+    "method_inline_source_map_debug_preserved",
+    "method_inline_diagnostic_location_preserved",
+    "method_inline_debug_stepping_evidence_key",
+    "method_inline_debug_stepping_evidence_present",
+    "method_inline_runtime_abi_safe",
+    "method_inline_package_abi_identical",
+    "method_inline_depth_within_limit",
+    "method_inline_recursion_absent",
+    "method_inline_callee_generation_pinned",
+    "method_inline_runtime_cache_assumptions_fresh",
+    "method_inline_runtime_invalidation_replay_key",
+    "method_inline_runtime_invalidation_replay_present",
+    "method_inline_invalidation_complete"
+  ],
+  "metadata_key_requirements": [
+    "original call source span",
+    "callee source span",
+    "inline frame id",
+    "inlined callsite source span",
+    "stepping policy",
+    "optimized IR/source correlation",
+    "receiver dispatch assumption",
+    "side-effect replay key",
+    "debug stepping evidence key",
+    "runtime invalidation replay key",
+    "runtime cache freshness verdict"
+  ],
+  "fail_closed_negative_fixtures": [
+    "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+    "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+    "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+    "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+    "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json"
+  ],
+  "shared_docs_deferred_for_central_integration": [
+    "docs/support/capability_matrix.*",
+    "docs/support/evidence_map.*",
+    "docs/support/umbrella_readiness.*"
+  ]
+}

@@ -37,6 +37,10 @@ CONTRACT_ID = "objc3c.security.hardening.sanitizer.validation.contract.v1"
 SUMMARY_CONTRACT_ID = "objc3c.security.hardening.sanitizer.validation.summary.v1"
 REQUIRED_SANITIZERS = {"ASan", "UBSan"}
 REQUIRED_COVERAGE_SURFACES = {"native_runtime", "native_compiler"}
+REQUIRED_PACKAGE_VARIANTS = {
+    "objc3c.toolchain.sanitizer.address": 8230,
+    "objc3c.toolchain.sanitizer.undefined": 8231,
+}
 
 
 def fail(message: str) -> int:
@@ -162,6 +166,53 @@ def validate_coverage_matrix(contract: dict[str, Any]) -> list[dict[str, str]]:
     return checked
 
 
+def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str, object]]:
+    variants = contract.get("runtime_package_variants")
+    if not isinstance(variants, list) or not variants:
+        raise RuntimeError("runtime_package_variants must be a non-empty list")
+
+    by_id: dict[str, dict[str, Any]] = {}
+    for variant in variants:
+        if not isinstance(variant, dict):
+            raise RuntimeError("runtime_package_variants entries must be objects")
+        variant_id = str(variant.get("variant_id", ""))
+        if not variant_id:
+            raise RuntimeError("runtime package variant missing variant_id")
+        if variant_id in by_id:
+            raise RuntimeError(f"duplicate runtime package variant {variant_id}")
+        by_id[variant_id] = variant
+
+    missing = sorted(set(REQUIRED_PACKAGE_VARIANTS) - set(by_id))
+    if missing:
+        raise RuntimeError(f"runtime_package_variants missing reserved variants: {missing}")
+
+    checked: list[dict[str, object]] = []
+    for variant_id, issue_ref in REQUIRED_PACKAGE_VARIANTS.items():
+        variant = by_id[variant_id]
+        if variant.get("issue_ref") != issue_ref:
+            raise RuntimeError(f"{variant_id} issue_ref drifted")
+        if variant.get("claim_state") != "reserved":
+            raise RuntimeError(f"{variant_id} must remain reserved until package execution evidence exists")
+        if variant.get("native_package_execution_claimed") is not False:
+            raise RuntimeError(f"{variant_id} must not claim native package execution")
+        if variant.get("unsupported_behavior") != "fail-closed":
+            raise RuntimeError(f"{variant_id} package variant does not fail closed")
+        required_package_evidence = [str(item) for item in variant.get("required_package_evidence", [])]
+        if set(required_package_evidence) != {"build", "package", "install", "execution"}:
+            raise RuntimeError(f"{variant_id} package variant evidence requirements drifted")
+        checked.append(
+            {
+                "variant_id": variant_id,
+                "issue_ref": issue_ref,
+                "package_variant_row_id": str(variant["package_variant_row_id"]),
+                "package_id": str(variant["package_id"]),
+                "claim_state": "reserved",
+                "native_package_execution_claimed": False,
+            }
+        )
+    return checked
+
+
 def validate_fixture(contract: dict[str, Any]) -> str:
     fixture = require_path(str(contract.get("source_fixture", "")))
     marker = str(contract.get("fixture_required_marker", ""))
@@ -201,6 +252,7 @@ def main() -> int:
         config_summary = validate_sanitizer_config(contract)
         target_applications = validate_target_applications(contract)
         coverage_matrix = validate_coverage_matrix(contract)
+        runtime_package_variants = validate_runtime_package_variants(contract)
         fixture_path = validate_fixture(contract)
         report_contract = validate_report_contract(contract)
     except RuntimeError as exc:
@@ -214,6 +266,7 @@ def main() -> int:
         "sanitizer_config": config_summary,
         "target_applications": target_applications,
         "coverage_matrix": coverage_matrix,
+        "runtime_package_variants": runtime_package_variants,
         "source_fixture": fixture_path,
         "report_contract": report_contract,
         "owner_boundaries": contract["owner_boundaries"],

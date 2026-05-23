@@ -1,0 +1,10 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_fixture_lock.v1",
+  "package_id": "fixture:network.core",
+  "package_version": "1.0.0",
+  "selection_policy": "exact-version-only",
+  "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+  "registry_endpoint_id": "objc3c-hosted-registry-fixture-endpoint-v1",
+  "registry_channel_id": "stable-fixture",
+  "network_policy": "offline-fixture-metadata-only"
+}

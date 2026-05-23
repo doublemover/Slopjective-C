@@ -5,13 +5,17 @@
   "type": "object",
   "required": [
     "contract_id",
+    "issue_refs",
     "registry_id",
     "registry_version",
     "registry_state",
+    "endpoint_identity",
     "network_policy",
     "resolver",
     "language_version",
     "abi_identity",
+    "lock_trust_material",
+    "failure_modes",
     "packages",
     "revocations",
     "replay"
@@ -19,13 +23,28 @@
   "additionalProperties": false,
   "properties": {
     "contract_id": { "const": "objc3c.package_ecosystem.hosted_registry_index.v1" },
+    "issue_refs": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "contains": { "const": 8220 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
     "registry_id": { "type": "string", "minLength": 1 },
     "registry_version": { "type": "integer", "minimum": 1 },
     "registry_state": { "type": "string", "minLength": 1 },
+    "endpoint_identity": { "$ref": "#/$defs/endpointIdentity" },
     "network_policy": { "type": "string", "minLength": 1 },
     "resolver": { "const": "deterministic-hosted-registry-offline-resolver-v1" },
     "language_version": { "type": "string", "minLength": 1 },
     "abi_identity": { "type": "string", "minLength": 1 },
+    "lock_trust_material": { "$ref": "#/$defs/lockTrustMaterial" },
+    "failure_modes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failureMode" },
+      "minItems": 8,
+      "uniqueItems": true
+    },
     "packages": {
       "type": "array",
       "items": { "$ref": "#/$defs/registryRecord" }
@@ -45,6 +64,60 @@
     "packageId": {
       "type": "string",
       "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "endpointIdentity": {
+      "type": "object",
+      "required": [
+        "registry_id",
+        "endpoint_id",
+        "channel_id",
+        "base_url",
+        "availability_claim",
+        "network_fetch",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "registry_id": { "type": "string", "minLength": 1 },
+        "endpoint_id": { "const": "objc3c-hosted-registry-fixture-endpoint-v1" },
+        "channel_id": { "const": "stable-fixture" },
+        "base_url": { "const": "https://registry.objc3c.invalid/fixture/v1" },
+        "availability_claim": { "const": "fixture-metadata-only" },
+        "network_fetch": { "const": "forbidden-fail-closed" },
+        "fallback_registry_success": { "const": false }
+      }
+    },
+    "lockTrustMaterial": {
+      "type": "object",
+      "required": [
+        "source_lock",
+        "source_lock_digest",
+        "trust_root_id",
+        "offline_mirror_path",
+        "cache_policy",
+        "provenance_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_lock": { "type": "string", "minLength": 1 },
+        "source_lock_digest": { "$ref": "#/$defs/sha256" },
+        "trust_root_id": { "const": "objc3c-local-deterministic-trust-root-v1" },
+        "offline_mirror_path": { "type": "string", "minLength": 1 },
+        "cache_policy": { "const": "offline-cache-required-digest-pinned" },
+        "provenance_policy": { "const": "source-owned-package-manifest-required" }
+      }
+    },
+    "failureMode": {
+      "enum": [
+        "ambiguous-module-identity",
+        "endpoint-channel-drift",
+        "fallback-registry-success",
+        "live-network-fetch",
+        "missing-package-provenance",
+        "registry-trust-mismatch",
+        "unlocked-version-selection",
+        "unpinned-hosted-dependency"
+      ]
     },
     "packageManifestRef": {
       "type": "object",

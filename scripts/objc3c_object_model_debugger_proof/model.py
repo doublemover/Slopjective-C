@@ -117,6 +117,35 @@ REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS = frozenset(
 )
 DEBUG_ANCHOR_SIZE_NEGOTIATION_POLICY = "snapshot_size-zero-means-v1-prefix"
 REQUIRED_ROADMAP_ISSUE_LINKS = frozenset({8202, 8208, 8209, 8210, 8211, 8212})
+DEBUGGER_UMBRELLA_READINESS_CONTRACT_ID = (
+    "objc3c.object_model.debugger_grade_umbrella_readiness.v1"
+)
+REQUIRED_DEBUGGER_UMBRELLA_ISSUES = frozenset({8202, 8209, 8210, 8211, 8212, 8225})
+REQUIRED_DEBUGGER_UMBRELLA_CONTRACTS = {
+    "debug_source_map_bundle": "objc3c.debug-source-maps.v1",
+    "debug_source_map_negative_cases": "objc3c.debug-source-maps.negative-cases.v1",
+    "inline_frame_source_map_contract": "objc3c.debug-source-maps.inline-frame.method-inlining.v1",
+    "debugger_replay": "objc3c.debugger-integration.replay.v1",
+    "lldb_protocol_contract": "objc3c.lldb-plugin.protocol.v1",
+    "typed_keypath_debugger_metadata_contract": "objc3c.typed-keypath.debugger-lowering-metadata.v1",
+    "debug_anchor_identity_contract": DEBUG_ANCHOR_CONTRACT_ID,
+}
+REQUIRED_DEBUGGER_UMBRELLA_ROWS = {
+    "runtime.debug-trace.inline-frame-source-map": "bounded-supported",
+    "runtime.debug-trace.statement-stepping": "bounded-supported",
+    "runtime.debug-trace.lldb-plugin": "bounded-supported",
+    "runtime.typed-keypath.debugger-lowering": "bounded-supported",
+    "runtime.object-model.full-realization": "reserved",
+}
+REQUIRED_DEBUGGER_UMBRELLA_NEGATIVE_CASES = frozenset(
+    {
+        "generated-only-source-maps",
+        "stale-native-debug-line-table",
+        "lldb-protocol-drift",
+        "typed-keypath-fallback-interpretation",
+        "object-debug-identity-mismatch",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -194,6 +223,14 @@ def _load_json(path: Path | str) -> tuple[Path, dict[str, Any], tuple[Diagnostic
     if not isinstance(payload, dict):
         return resolved, {}, (_diag("schema-type", "fixture must be a JSON object", "$"),)
     return resolved, payload, ()
+
+
+def _records_by_case_id(records: object) -> dict[str, dict[str, Any]]:
+    return {
+        _safe_str(record.get("case_id")): record
+        for record in (_object(item) for item in _list(records))
+        if _safe_str(record.get("case_id"))
+    }
 
 
 def _contract_path(payload: dict[str, Any], key: str, default: Path) -> Path:
@@ -282,6 +319,13 @@ def _source_map_record_kind_for_identity(identity_kind: str) -> str:
     if identity_kind == "method":
         return "method"
     return ""
+
+
+def _source_map_record_kinds_for_identity(identity_kind: str) -> frozenset[str]:
+    if identity_kind == "method":
+        return frozenset({"method", "message-send"})
+    expected = _source_map_record_kind_for_identity(identity_kind)
+    return frozenset({expected}) if expected else frozenset()
 
 
 def _repo_path_text(path: Path | str) -> str:
@@ -531,6 +575,27 @@ def _validate_artifact_links(
             )
         else:
             linked_identity_kinds.add(identity_kind)
+
+        expected_record_kinds = _source_map_record_kinds_for_identity(identity_kind)
+        if expected_record_kinds and source_entry.record_kind not in expected_record_kinds:
+            diagnostics.append(
+                _diag(
+                    "object-debug-identity-mismatch",
+                    "artifact link runtime identity kind drifted from the source-map record kind",
+                    path,
+                )
+            )
+        if debug_map is not None and (
+            debug_map.object_debug_line_anchor != source_entry.object_debug_line_anchor
+            or debug_map.native_symbol != source_entry.native_symbol
+        ):
+            diagnostics.append(
+                _diag(
+                    "object-debug-identity-mismatch",
+                    "debug-map native identity drifted from the source-map record",
+                    path,
+                )
+            )
 
         expected_anchor_kind = DEBUG_ANCHOR_KIND_BY_IDENTITY.get(identity_kind, "")
         reflection_entrypoint = _safe_str(link.get("reflection_entrypoint"))
@@ -1180,6 +1245,366 @@ def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic])
                 "boundaries.requires_checked_source_map_and_line_table",
             )
         )
+    if boundaries.get("requires_debugger_grade_umbrella_readiness") is not True:
+        diagnostics.append(
+            _diag(
+                "boundary-missing",
+                "contract must require debugger-grade umbrella readiness glue",
+                "boundaries.requires_debugger_grade_umbrella_readiness",
+            )
+        )
+
+
+def _validate_debugger_umbrella_negative_source(
+    source: dict[str, Any],
+    *,
+    contract_payloads: dict[str, dict[str, Any]],
+    current_payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+    path: str,
+) -> None:
+    contract_key = _safe_str(source.get("contract_key"))
+    case_id = _safe_str(source.get("case_id"))
+    expected_code = _safe_str(source.get("diagnostic_code"))
+    if not contract_key or not case_id:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-negative-case-missing",
+                "umbrella negative proof source must name a contract key and case id",
+                path,
+            )
+        )
+        return
+
+    payload = current_payload if contract_key == "object_model_debugger_contract" else contract_payloads.get(contract_key, {})
+    if not payload:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-contract-missing",
+                f"umbrella negative proof references missing contract: {contract_key}",
+                path,
+            )
+        )
+        return
+
+    if contract_key == "debug_source_map_negative_cases":
+        case = _records_by_case_id(payload.get("cases")).get(case_id)
+        if case is None:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"debug source-map negative case is missing: {case_id}",
+                    path,
+                )
+            )
+        elif expected_code and _safe_str(case.get("expected_code")) != expected_code:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-drift",
+                    f"debug source-map negative diagnostic drifted: {case_id}",
+                    path,
+                )
+            )
+        return
+
+    if contract_key == "inline_frame_source_map_contract":
+        case = _records_by_case_id(payload.get("fail_closed_diagnostics")).get(case_id)
+        if case is None:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"inline-frame source-map negative case is missing: {case_id}",
+                    path,
+                )
+            )
+        elif expected_code and _safe_str(case.get("diagnostic_code")) != expected_code:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-drift",
+                    f"inline-frame source-map negative diagnostic drifted: {case_id}",
+                    path,
+                )
+            )
+        return
+
+    if contract_key == "lldb_protocol_contract":
+        case = _records_by_case_id(payload.get("rejects")).get(case_id)
+        if case is None:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"LLDB protocol reject case is missing: {case_id}",
+                    path,
+                )
+            )
+        elif expected_code and _safe_str(case.get("diagnostic_code")) != expected_code:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-drift",
+                    f"LLDB protocol reject diagnostic drifted: {case_id}",
+                    path,
+                )
+            )
+        return
+
+    if contract_key == "typed_keypath_debugger_metadata_contract":
+        invariant = _safe_str(source.get("invariant"))
+        invariants = set(_safe_str(item) for item in _list(payload.get("fail_closed_invariants")))
+        if not invariant or invariant not in invariants:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"typed keypath fail-closed invariant is missing: {case_id}",
+                    path,
+                )
+            )
+        policy_field = _safe_str(source.get("policy_field"))
+        expected_policy_value = source.get("expected_policy_value")
+        policy = _object(payload.get("debugger_evidence_policy"))
+        if policy_field and policy.get(policy_field) != expected_policy_value:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-typed-keypath-fallback-enabled",
+                    f"typed keypath debugger policy drifted: {policy_field}",
+                    path,
+                )
+            )
+        return
+
+    if contract_key == "object_model_debugger_contract":
+        case = _records_by_case_id(current_payload.get("negative_cases")).get(case_id)
+        if case is None:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"object-model debugger negative case is missing: {case_id}",
+                    path,
+                )
+            )
+        elif expected_code and _safe_str(case.get("expected_code")) != expected_code:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-drift",
+                    f"object-model debugger negative diagnostic drifted: {case_id}",
+                    path,
+                )
+            )
+        return
+
+    diagnostics.append(
+        _diag(
+            "debugger-umbrella-contract-missing",
+            f"umbrella negative proof uses unknown contract key: {contract_key}",
+            path,
+        )
+    )
+
+
+def _validate_debugger_umbrella_readiness(
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    readiness = _object(payload.get("debugger_grade_umbrella_readiness"))
+    if not readiness:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-readiness-missing",
+                "object-model debugger proof must publish debugger-grade umbrella readiness glue",
+                "debugger_grade_umbrella_readiness",
+            )
+        )
+        return
+
+    if readiness.get("contract_id") != DEBUGGER_UMBRELLA_READINESS_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-contract-id",
+                f"debugger umbrella readiness contract_id must be {DEBUGGER_UMBRELLA_READINESS_CONTRACT_ID}",
+                "debugger_grade_umbrella_readiness.contract_id",
+            )
+        )
+    issue_refs = {_safe_int(item) for item in _list(readiness.get("issue_refs")) if _safe_int(item)}
+    for issue_id in sorted(REQUIRED_DEBUGGER_UMBRELLA_ISSUES - issue_refs):
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-issue-link-missing",
+                f"debugger umbrella readiness must link roadmap issue {issue_id}",
+                "debugger_grade_umbrella_readiness.issue_refs",
+            )
+        )
+    if readiness.get("capability_id") != "runtime.object-model.full-realization":
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-capability-id",
+                "debugger umbrella readiness must remain tied to runtime.object-model.full-realization",
+                "debugger_grade_umbrella_readiness.capability_id",
+            )
+        )
+    if readiness.get("public_status") != "reserved" or readiness.get("support_claim_published") is not False:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-overclaimed",
+                "debugger umbrella readiness must not promote the reserved object-model umbrella",
+                "debugger_grade_umbrella_readiness.public_status",
+            )
+        )
+
+    boundary = _object(readiness.get("umbrella_boundary"))
+    for key, expected in (
+        ("promotes_umbrella", False),
+        ("generated_only_maps_can_promote", False),
+        ("typed_keypath_fallback_allowed", False),
+        ("lldb_protocol_drift_allowed", False),
+        ("object_debug_identity_mismatch_allowed", False),
+    ):
+        if boundary.get(key) is not expected:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-overclaimed",
+                    f"debugger umbrella boundary drifted: {key}",
+                    f"debugger_grade_umbrella_readiness.umbrella_boundary.{key}",
+                )
+            )
+
+    contract_payloads: dict[str, dict[str, Any]] = {}
+    required_contracts = _object(readiness.get("required_contracts"))
+    for contract_key, expected_contract_id in sorted(REQUIRED_DEBUGGER_UMBRELLA_CONTRACTS.items()):
+        contract = _object(required_contracts.get(contract_key))
+        path = _safe_str(contract.get("path"))
+        if contract.get("contract_id") != expected_contract_id:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-contract-drift",
+                    f"debugger umbrella contract id drifted: {contract_key}",
+                    f"debugger_grade_umbrella_readiness.required_contracts.{contract_key}.contract_id",
+                )
+            )
+        if not path or path.startswith(("tmp/", "tmp\\")):
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-contract-missing",
+                    f"debugger umbrella contract path is missing or temp-only: {contract_key}",
+                    f"debugger_grade_umbrella_readiness.required_contracts.{contract_key}.path",
+                )
+            )
+            continue
+        _, contract_payload, load_diagnostics = _load_json(path)
+        diagnostics.extend(
+            _diag(
+                "debugger-umbrella-contract-missing",
+                diagnostic.message,
+                f"debugger_grade_umbrella_readiness.required_contracts.{contract_key}.path",
+            )
+            for diagnostic in load_diagnostics
+        )
+        if contract_payload:
+            contract_payloads[contract_key] = contract_payload
+            if contract_payload.get("contract_id") != expected_contract_id:
+                diagnostics.append(
+                    _diag(
+                        "debugger-umbrella-contract-drift",
+                        f"debugger umbrella referenced contract payload drifted: {contract_key}",
+                        f"debugger_grade_umbrella_readiness.required_contracts.{contract_key}.path",
+                    )
+                )
+
+    rows = {
+        _safe_str(row.get("capability_id")): row
+        for row in (_object(item) for item in _list(readiness.get("bounded_capability_rows")))
+        if _safe_str(row.get("capability_id"))
+    }
+    for capability_id, expected_status in sorted(REQUIRED_DEBUGGER_UMBRELLA_ROWS.items()):
+        row = rows.get(capability_id)
+        if row is None:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-row-missing",
+                    f"debugger umbrella bounded capability row is missing: {capability_id}",
+                    "debugger_grade_umbrella_readiness.bounded_capability_rows",
+                )
+            )
+            continue
+        if row.get("recommended_status") != expected_status:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-row-drift",
+                    f"debugger umbrella bounded capability row status drifted: {capability_id}",
+                    f"debugger_grade_umbrella_readiness.bounded_capability_rows.{capability_id}.recommended_status",
+                )
+            )
+        if row.get("support_claim_published") is not False:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-overclaimed",
+                    f"debugger umbrella bounded row must not publish support directly: {capability_id}",
+                    f"debugger_grade_umbrella_readiness.bounded_capability_rows.{capability_id}.support_claim_published",
+                )
+            )
+
+    typed_policy = _object(readiness.get("typed_keypath_policy"))
+    if typed_policy.get("fallback_interpretation_allowed") is not False:
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-typed-keypath-fallback-enabled",
+                "typed keypath umbrella readiness must reject fallback interpretation",
+                "debugger_grade_umbrella_readiness.typed_keypath_policy.fallback_interpretation_allowed",
+            )
+        )
+    typed_payload = contract_payloads.get("typed_keypath_debugger_metadata_contract", {})
+    typed_required_fields = set(
+        _safe_str(item) for item in _list(typed_payload.get("required_descriptor_fields"))
+    )
+    for field in _list(typed_policy.get("required_descriptor_fields")):
+        required_field = _safe_str(field)
+        if required_field and required_field not in typed_required_fields:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-typed-keypath-field-missing",
+                    f"typed keypath descriptor field is missing from the source contract: {required_field}",
+                    "debugger_grade_umbrella_readiness.typed_keypath_policy.required_descriptor_fields",
+                )
+            )
+
+    negative_cases = _records_by_case_id(readiness.get("fail_closed_negative_cases"))
+    for case_id in sorted(REQUIRED_DEBUGGER_UMBRELLA_NEGATIVE_CASES - set(negative_cases)):
+        diagnostics.append(
+            _diag(
+                "debugger-umbrella-negative-case-missing",
+                f"debugger umbrella fail-closed negative case is missing: {case_id}",
+                "debugger_grade_umbrella_readiness.fail_closed_negative_cases",
+            )
+        )
+    for index, item in enumerate(_list(readiness.get("fail_closed_negative_cases"))):
+        case = _object(item)
+        path = f"debugger_grade_umbrella_readiness.fail_closed_negative_cases[{index}]"
+        case_id = _safe_str(case.get("case_id"))
+        case_issues = {_safe_int(issue) for issue in _list(case.get("issue_refs")) if _safe_int(issue)}
+        if case_id and {8202, 8212} - case_issues:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-issue-link-missing",
+                    f"debugger umbrella negative case must stay linked to #8202/#8212: {case_id}",
+                    path,
+                )
+            )
+        sources = _list(case.get("sources"))
+        if not sources:
+            diagnostics.append(
+                _diag(
+                    "debugger-umbrella-negative-case-missing",
+                    f"debugger umbrella negative case lacks source-backed proofs: {case_id}",
+                    path,
+                )
+            )
+            continue
+        for source_index, source_item in enumerate(sources):
+            _validate_debugger_umbrella_negative_source(
+                _object(source_item),
+                contract_payloads=contract_payloads,
+                current_payload=payload,
+                diagnostics=diagnostics,
+                path=f"{path}.sources[{source_index}]",
+            )
 
 
 def _build_production_probe_artifacts(probe: dict[str, Any]) -> ProductionProbeArtifacts:
@@ -2055,10 +2480,10 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.source_map_records.{index}.source_truth_kind",
                 )
             )
-        expected_record_kind = _source_map_record_kind_for_identity(identity_kind)
+        expected_record_kinds = _source_map_record_kinds_for_identity(identity_kind)
         if (
-            expected_record_kind
-            and _safe_str(record.get("source_map_record_kind")) != expected_record_kind
+            expected_record_kinds
+            and _safe_str(record.get("source_map_record_kind")) not in expected_record_kinds
         ):
             diagnostics.append(
                 _diag(
@@ -2715,6 +3140,7 @@ def validate_contract_path(
     _validate_reflection_abi_governance(payload, debug_anchor_payload, diagnostics)
     _validate_debug_anchor_contract(payload, debug_anchor_payload, diagnostics)
     _validate_boundaries(payload, diagnostics)
+    _validate_debugger_umbrella_readiness(payload, diagnostics)
     _validate_production_artifact_probe(
         payload,
         diagnostics,

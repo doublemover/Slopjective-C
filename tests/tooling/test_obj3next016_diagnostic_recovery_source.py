@@ -219,6 +219,9 @@ def test_language_evolution_reserved_surfaces_fail_closed_with_specific_codes(
         "negative_typed_throws_reserved.objc3": "O3P182",
         "negative_match_expression_position_reserved.objc3": "O3P156",
         "negative_guarded_match_pattern_reserved.objc3": "O3P157",
+        "negative_reify_generics_marker_reserved.objc3": "O3P114",
+        "negative_generic_method_type_parameter_clause_reserved.objc3": "O3P114",
+        "negative_cstyle_generic_function_reserved.objc3": "O3P114",
     }
 
     for fixture_name, expected_code in cases.items():

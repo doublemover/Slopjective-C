@@ -24,7 +24,7 @@ std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
     const std::string &profile_id) {
   std::ostringstream out;
   out << "unsupported --objc3-conformance-profile selection: " << profile_id
-      << " (claimed profiles: core; rejected built-in profiles: strict, strict-concurrency, strict-system; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
+      << " (claimed profiles: core; rejected built-in profiles: strict, strict-concurrency, strict-system; targeted release-evidence profiles: strict, strict-concurrency, strict-system; strict prerequisites: parser+sema+lowering+textual-interface+package-publication evidence; strict-concurrency prerequisites: actor-isolation+sendability+task-lifecycle+scheduler+mailbox runtime evidence; no compatibility modes or aliases; policy="
       << kObjc3ConformanceProfileClaimPolicyModel << ")";
   return out.str();
 }

@@ -47,6 +47,9 @@ def test_performance_governance_source_surface_writes_named_summary_fields() -> 
         assert summary["budget_model"] == checker.EXPECTED_REQUIRED_PATHS["budget_model"]
         assert summary["workflow_surface"] == checker.EXPECTED_REQUIRED_PATHS["workflow_surface"]
         assert summary["schema_surface"] == checker.EXPECTED_REQUIRED_PATHS["schema_surface"]
+        assert summary["optimization_runtime_debug_safety_contract"] == (
+            checker.EXPECTED_REQUIRED_PATHS["optimization_runtime_debug_safety_contract"]
+        )
         assert summary["checked_in_sources"] == list(checker.EXPECTED_CHECKED_IN_SOURCES)
         assert summary["checked_in_roots"] == list(checker.EXPECTED_CHECKED_IN_ROOTS)
         assert summary["owner_split"] == checker.EXPECTED_OWNER_SPLIT

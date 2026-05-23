@@ -221,6 +221,7 @@
         "module_name",
         "resolver",
         "direct_import_syntax",
+        "direct_imports",
         "import_edges",
         "unsafe_metadata_policy"
       ],
@@ -254,7 +255,11 @@
           }
         },
         "resolver": { "const": "checked-in-local-registry" },
-        "direct_import_syntax": { "const": "reserved-fail-closed" },
+        "direct_import_syntax": { "const": "supported-fail-closed" },
+        "direct_imports": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/directImportRecord" }
+        },
         "import_edges": {
           "type": "array",
           "items": { "$ref": "#/$defs/moduleImportEdge" }
@@ -275,6 +280,39 @@
             "network_or_hosted_metadata": { "const": "fail-closed" }
           }
         }
+      }
+    },
+    "directImportRecord": {
+      "type": "object",
+      "required": [
+        "syntax",
+        "source_module",
+        "imported_module",
+        "to_package_id",
+        "package_provenance",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version",
+        "missing_provenance_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": { "const": "@import" },
+        "source_module": { "type": "string", "minLength": 1 },
+        "imported_module": { "type": "string", "minLength": 1 },
+        "to_package_id": { "$ref": "#/$defs/packageId" },
+        "package_provenance": { "const": "locked-package" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "resolution": { "const": "locked-local-registry" },
+        "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "missing_provenance_diagnostic": { "const": "O3PKG8055" }
       }
     },
     "moduleImportEdge": {
@@ -363,6 +401,9 @@
         "trust_roots",
         "revocations",
         "key_rotation_policy",
+        "extraction_path_policy",
+        "installer_update_key_policy",
+        "release_registry_trust_root_policy",
         "production_signing_backend",
         "verification_policy"
       ],
@@ -390,6 +431,64 @@
             "revoked_signing_key_ids": { "type": "array", "items": { "type": "string" } },
             "revoked_package_ids": { "type": "array", "items": { "type": "string" } },
             "revoked_signature_ids": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "extraction_path_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "before_filesystem_mutation_required",
+            "reject_absolute_paths",
+            "reject_parent_traversal",
+            "reject_symlink_entries",
+            "reject_overwrite_existing_paths",
+            "reject_duplicate_paths",
+            "reject_case_conflicting_paths"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.extraction_path_policy.v1" },
+            "before_filesystem_mutation_required": { "const": true },
+            "reject_absolute_paths": { "const": true },
+            "reject_parent_traversal": { "const": true },
+            "reject_symlink_entries": { "const": true },
+            "reject_overwrite_existing_paths": { "const": true },
+            "reject_duplicate_paths": { "const": true },
+            "reject_case_conflicting_paths": { "const": true }
+          }
+        },
+        "installer_update_key_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "installer_key_required",
+            "update_key_required",
+            "installer_key_state",
+            "update_key_state"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.installer_update_key_policy.v1" },
+            "installer_key_required": { "const": true },
+            "update_key_required": { "const": true },
+            "installer_key_state": { "const": "reserved-fail-closed" },
+            "update_key_state": { "const": "reserved-fail-closed" }
+          }
+        },
+        "release_registry_trust_root_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "release_root_required_state",
+            "registry_root_required_state",
+            "fallback_trust_root_allowed"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.release_registry_trust_root_policy.v1" },
+            "release_root_required_state": { "const": "reserved" },
+            "registry_root_required_state": { "const": "reserved" },
+            "fallback_trust_root_allowed": { "const": false }
           }
         },
         "production_signing_backend": {

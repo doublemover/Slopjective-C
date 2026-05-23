@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 import sys
 
 from ..commands import pwsh_file, run
-from .hosted_llvm_summary import hosted_llc_object_emission_available
+from .hosted_llvm_summary import (
+    hosted_llc_object_emission_available,
+    hosted_native_object_emission_status,
+)
 from .test_orchestration_paths import (
     BEHAVIOR_MATRIX_PY,
     COMPILE_WRAPPER_SELF_AUDIT_PY,
@@ -16,6 +21,33 @@ from .test_orchestration_paths import (
     REPLAY_PS1,
     SMOKE_PS1,
 )
+
+HOSTED_EXECUTION_SMOKE_SUMMARY = (
+    Path(__file__).resolve().parents[3]
+    / "tmp"
+    / "reports"
+    / "hosted-execution-smoke"
+    / "summary.json"
+)
+
+
+def write_hosted_execution_skip_summary(status: str) -> None:
+    HOSTED_EXECUTION_SMOKE_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
+    HOSTED_EXECUTION_SMOKE_SUMMARY.write_text(
+        json.dumps(
+            {
+                "contract_id": "objc3c.hosted_execution_smoke.summary.v1",
+                "status": "UNAVAILABLE",
+                "native_object_emission_status": status,
+                "support_claim_published": False,
+                "fallback_success_path": False,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def action_test_behavior_matrix(_: list[str]) -> int:
@@ -32,9 +64,11 @@ def action_test_execution_smoke(rest: list[str]) -> int:
 
 def action_test_hosted_execution_smoke(_: list[str]) -> int:
     if not hosted_llc_object_emission_available():
+        status = hosted_native_object_emission_status()
+        write_hosted_execution_skip_summary(status)
         print(
             "Skipping execution smoke: hosted runner does not provide "
-            "llc --filetype=obj capability."
+            f"llc --filetype=obj capability; {status}."
         )
         return 0
     return pwsh_file(SMOKE_PS1)

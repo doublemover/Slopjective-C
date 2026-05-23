@@ -3,7 +3,7 @@
   "surface_kind": "package-ecosystem-negative-package-metadata",
   "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
   "diagnostic_code": "O3PKG8055",
-  "claim_boundary": "negative fixture contract for local package manifest, module graph, and local registry metadata only; direct @import syntax, hosted registry resolution, and network install support remain reserved",
+  "claim_boundary": "negative fixture contract for local package manifest, direct @import module graph, local registry metadata, and source-owned hosted registry fixture boundaries; live network install support remains fail-closed",
   "cases": [
     {
       "case_id": "missing-module-graph",
@@ -23,13 +23,69 @@
       "expected_failure": "O3PKG8055: unsafe module graph source authority"
     },
     {
-      "case_id": "direct-import-syntax-claim-widened",
+      "case_id": "direct-import-syntax-contract-drift",
       "target": "lock-package",
       "mutation": {
         "set": "module_graph.direct_import_syntax",
-        "value": "supported"
+        "value": "reserved-fail-closed"
       },
-      "expected_failure": "O3PKG8055: direct @import support claim widened"
+      "expected_failure": "O3PKG8055: direct @import syntax contract drift"
+    },
+    {
+      "case_id": "missing-direct-import-package-provenance",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_imports",
+        "value": [
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportWithoutPackageProvenance",
+            "imported_module": "moduleImportLookupProvider",
+            "to_package_id": "",
+            "package_provenance": "missing",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          }
+        ]
+      },
+      "expected_failure": "O3PKG8055: missing direct @import package provenance"
+    },
+    {
+      "case_id": "ambiguous-direct-import-module-identity",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_imports",
+        "value": [
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportAmbiguous",
+            "imported_module": "Foundation",
+            "to_package_id": "stdlib:Foundation",
+            "package_provenance": "locked-package",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          },
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportAmbiguous",
+            "imported_module": "foundation",
+            "to_package_id": "stdlib:foundation",
+            "package_provenance": "locked-package",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          }
+        ]
+      },
+      "expected_failure": "O3PKG8055: ambiguous direct @import module identity"
     },
     {
       "case_id": "missing-package-manifest-envelope",

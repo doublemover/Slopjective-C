@@ -58,7 +58,7 @@ LLVM_TOOL_CAPABILITY_OWNER_CONTRACTS: Final[
         proof_source=HOSTED_LLVM_CAPABILITIES_SUMMARY_OUT,
         claim_scope=(
             "hosted LLVM capability truth requires the hosted summary to report "
-            "clang plus llc object-emission support"
+            "clang plus native_object_emission_supported from llc --filetype=obj"
         ),
         unsupported_claims=(
             "clang-only hosted execution",

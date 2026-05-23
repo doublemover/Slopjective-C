@@ -1,12 +1,42 @@
 {
   "contract_id": "objc3c.package_ecosystem.hosted_registry_index.v1",
+  "issue_refs": [
+    8220
+  ],
   "registry_id": "objc3c-hosted-registry-fixture-v1",
   "registry_version": 1,
   "registry_state": "not-revoked",
+  "endpoint_identity": {
+    "registry_id": "objc3c-hosted-registry-fixture-v1",
+    "endpoint_id": "objc3c-hosted-registry-fixture-endpoint-v1",
+    "channel_id": "stable-fixture",
+    "base_url": "https://registry.objc3c.invalid/fixture/v1",
+    "availability_claim": "fixture-metadata-only",
+    "network_fetch": "forbidden-fail-closed",
+    "fallback_registry_success": false
+  },
   "network_policy": "offline-fixture-metadata-only",
   "resolver": "deterministic-hosted-registry-offline-resolver-v1",
   "language_version": "3.0",
   "abi_identity": "objc3-abi-2025Q4",
+  "lock_trust_material": {
+    "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+    "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "cache_policy": "offline-cache-required-digest-pinned",
+    "provenance_policy": "source-owned-package-manifest-required"
+  },
+  "failure_modes": [
+    "ambiguous-module-identity",
+    "endpoint-channel-drift",
+    "fallback-registry-success",
+    "live-network-fetch",
+    "missing-package-provenance",
+    "registry-trust-mismatch",
+    "unlocked-version-selection",
+    "unpinned-hosted-dependency"
+  ],
   "packages": [
     {
       "package_id": "fixture:network.core",

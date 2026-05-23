@@ -3,7 +3,7 @@ module NegativeGuardedMatchPatternReserved;
 
 fn main(value: i32) -> i32 {
   match (value) {
-    case let candidate where candidate > 0: {
+    case let candidate where: {
       return candidate;
     }
     default: {
@@ -11,4 +11,3 @@ fn main(value: i32) -> i32 {
     }
   }
 }
-

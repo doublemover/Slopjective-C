@@ -43,17 +43,16 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
     },
     {
         "id": "language.advanced-runtime-closure",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "17-case negative-matrix",
-            "native executable closure",
+            "native link/run",
+            "broad scheduler fairness",
         ),
         "evidence_paths": (
             "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
             "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
             "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
         ),
-        "no_support_claims": True,
     },
     {
         "id": "compiler.optimization.method-inlining",
@@ -70,15 +69,16 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
     },
     {
         "id": "modules.direct-import-syntax",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "direct @import module syntax remains reserved",
-            "without promoting direct import syntax",
+            "parser-admitted",
+            "locked package provenance",
+            "fail closed",
         ),
         "evidence_paths": (
-            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+            "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+            "scripts/check_objc3c_direct_import_module_syntax.py",
         ),
-        "no_support_claims": True,
     },
     {
         "id": "runtime.debug-trace.full-source-map-publication",
@@ -109,8 +109,8 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
         "id": "ecosystem.package-manager.public-hosted-registry",
         "state": "reserved",
         "summary_tokens": (
-            "public hosted package registry support remains reserved",
-            "fail-closed hosted-registry",
+            "public hosted package registry service support remains reserved",
+            "fallback registry success",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",

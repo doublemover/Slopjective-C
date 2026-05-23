@@ -182,6 +182,14 @@ remains platform/toolchain gated; the checked-in gate fails closed unless ASan
 and UBSan config, native runtime/compiler target application, workflow action,
 fixture, and report surfaces stay coherent.
 
+ASan (#8230) and UBSan (#8231) are modeled as reserved runtime package variants,
+not hidden flags on the default release runtime. The package rows remain
+fail-closed until package/install/native execution evidence exists for a
+supported host, and sanitized packages cannot be published into the default
+release channel, installed without the matching sanitizer runtime library,
+published from stale package metadata, or mixed with unsanitized runtime
+libraries.
+
 ### Disclosure And Response Boundary
 
 Current disclosure and response posture is checked-in and operator-scoped:

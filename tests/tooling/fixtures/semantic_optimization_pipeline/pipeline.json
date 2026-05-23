@@ -8,8 +8,10 @@
       8192,
       8193,
       8194,
+      8205,
       8224,
-      8226
+      8226,
+      8227
     ],
     "support_claims": [
       "objc3c.behavior.semantic_optimization_pipeline",
@@ -34,7 +36,10 @@
       "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
       "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
       "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
-      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir"
+      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir",
+      "objc3c.evidence.semantic_optimization_pipeline.runtime_debug_safety_contract",
+      "objc3c.evidence.semantic_optimization_pipeline.runtime_debug_safety_schema",
+      "objc3c.evidence.semantic_optimization_pipeline.speedup_overclaim_negative_cases"
     ]
   },
   "source_truth": {
@@ -107,7 +112,9 @@
         "tokens": [
           "PROOF_MODEL_CONTRACT_ID",
           "evaluate_optimization_proof_case",
-          "_validate_proof_model"
+          "_validate_proof_model",
+          "OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_ID",
+          "_validate_optimization_runtime_debug_safety_contract"
         ]
       },
       {
@@ -338,7 +345,7 @@
         "inlining depth is within limit and recursion is absent",
         "callee generation snapshot is pinned",
         "source, debug, and runtime identity preservation evidence is present",
-        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed or fall back"
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without fallback success"
       ],
       "invalidation": "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
       "post_verify": [
@@ -377,7 +384,7 @@
       "post_verify": [
         "strict dispatch status envelope aborts non-value results",
         "source-map and debug-visible cache-aware site anchors are preserved",
-        "runtime fallback and miss behavior remains owned by the checked helper"
+        "runtime miss behavior remains owned by the checked helper and is not an optimization success path"
       ],
       "fail_closed_diagnostics": [
         "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation"
@@ -499,7 +506,7 @@
         "callee generation snapshot is pinned",
         "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
         "source, debug, and runtime identity preservation evidence is present",
-        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed or fall back"
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without fallback success"
       ],
       "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
@@ -681,7 +688,7 @@
       },
       {
         "proof_id": "runtime_invalidation_replay",
-        "source": "runtime mutation replay proving optimized inlined sites fail closed or fall back after invalidation",
+        "source": "runtime mutation replay proving optimized inlined sites fail closed after invalidation without fallback success",
         "fail_closed_if_missing": true
       }
     ],
@@ -800,7 +807,7 @@
       },
       {
         "verifier_id": "runtime-invalidation-replay-verifier",
-        "verifies": "runtime generation dependencies and mutation replay prove stale optimized sites fail closed or fall back"
+        "verifies": "runtime generation dependencies and mutation replay prove stale optimized sites fail closed without fallback success"
       }
     ],
     "pass_proof_contracts": [
@@ -1055,7 +1062,7 @@
           "semantic_equivalence",
           "invalidation_completeness"
         ],
-        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss/fallback semantics",
+        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss semantics without a fallback success path",
         "semantic_equivalence_verdict": "required",
         "runtime_abi_safety_verdict": "required",
         "source_map_debug_impact_verdict": "required",
@@ -1153,8 +1160,12 @@
     "required_checked_in_paths": [
       "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
       "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
-      "tests/tooling/fixtures/performance_governance/budget_model.json"
+      "tests/tooling/fixtures/performance_governance/budget_model.json",
+      "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+      "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
     ],
+    "optimization_runtime_debug_safety_contract": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
     "workload_evidence": [
       {
         "workload_id": "compile-cold-wrapper",

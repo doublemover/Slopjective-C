@@ -19,10 +19,24 @@ READINESS_REQUIREMENT_FIELDS = (
 
 GENERATED_OUTPUT_REJECTION_TOKENS = (
     "tmp/",
+    "temp/",
     "generated markdown projections",
     "issue comments",
     "PR bodies",
 )
+FORBIDDEN_SOURCE_PATH_PREFIXES = (
+    "tmp/",
+    "tmp\\",
+    "temp/",
+    "temp\\",
+    "generated/",
+    "generated\\",
+    "build/",
+    "build\\",
+    "dist/",
+    "dist\\",
+)
+PUBLIC_COMMAND_PREFIX = "npm run objc3c -- "
 
 
 def _row_by_id(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -44,11 +58,44 @@ def _require_existing_path(entry_id: str, requirement: dict[str, Any]) -> None:
     raw_path = requirement.get("path")
     if not isinstance(raw_path, str) or not raw_path:
         return
+    raw_repo_path = Path(raw_path)
+    if (
+        raw_path.startswith(FORBIDDEN_SOURCE_PATH_PREFIXES)
+        or raw_repo_path.is_absolute()
+        or ".." in raw_repo_path.parts
+    ):
+        raise CapabilityDocsError(
+            f"{entry_id} readiness requirement {requirement['id']} "
+            f"uses non-source path as readiness evidence: {raw_path}"
+        )
     path = ROOT / raw_path
     if not path.exists():
         raise CapabilityDocsError(
             f"{entry_id} readiness requirement {requirement['id']} "
             f"references missing path: {raw_path}"
+        )
+
+
+def _public_action_names() -> set[str]:
+    from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
+
+    return set(ACTION_SPECS)
+
+
+def _validate_public_command(entry_id: str, requirement: dict[str, Any]) -> None:
+    command = requirement.get("command")
+    if not isinstance(command, str) or not command:
+        return
+    if not command.startswith(PUBLIC_COMMAND_PREFIX):
+        raise CapabilityDocsError(
+            f"{entry_id} readiness requirement {requirement['id']} "
+            f"uses unsupported public command surface: {command}"
+        )
+    action = command[len(PUBLIC_COMMAND_PREFIX) :].split(maxsplit=1)[0]
+    if action not in _public_action_names():
+        raise CapabilityDocsError(
+            f"{entry_id} readiness requirement {requirement['id']} "
+            f"references unregistered public workflow action: {action}"
         )
 
 
@@ -79,6 +126,7 @@ def _validate_requirement(
                 "but has no path, capability_id, or command evidence"
             )
         _require_existing_path(entry_id, requirement)
+        _validate_public_command(entry_id, requirement)
         capability_id = requirement.get("capability_id")
         if isinstance(capability_id, str) and capability_id not in rows_by_id:
             raise CapabilityDocsError(

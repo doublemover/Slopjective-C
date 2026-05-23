@@ -339,6 +339,10 @@ contracts, not by local executable discovery text.
   object-emission truth is available
 - fail-closed payload fields must include source kind, local-diagnostic status,
   hosted execution support, hosted source parity support, and failure reasons
+- hosted runner payloads also publish native object-emission status. Missing
+  hosted `llc` records `native_object_emission_missing_llc`, unavailable
+  `--filetype=obj` records `native_object_emission_filetype_obj_unavailable`,
+  and neither status can publish parity, package, object, or execution success
 
 ## Debugger, Source-Map, And Stepping Semantics
 

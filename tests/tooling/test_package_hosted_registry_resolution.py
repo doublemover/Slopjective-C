@@ -34,6 +34,7 @@ from scripts.objc3c_workflow.actions.ecosystem_publication_owner_contracts impor
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "hosted_registry"
 REGISTRY_FIXTURE = FIXTURE_ROOT / "hosted-registry-index.json"
 MIRROR_FIXTURE = FIXTURE_ROOT / "offline-mirror-index.json"
+NEGATIVE_CASES_FIXTURE = FIXTURE_ROOT / "negative-registry-cases.json"
 
 
 def hosted_registry_fixture() -> tuple[dict[str, object], dict[str, object]]:
@@ -69,11 +70,15 @@ def assert_resolution_failure(
 def test_hosted_registry_fixture_resolves_from_offline_metadata() -> None:
     index, mirror = hosted_registry_fixture()
 
-    failures = collect_hosted_registry_model_failures(index, mirror)
+    failures = collect_hosted_registry_model_failures(index, mirror, root=ROOT)
     resolved = resolve_default(index, mirror)
 
     assert failures == []
     assert index["contract_id"] == HOSTED_REGISTRY_CONTRACT_ID
+    assert index["endpoint_identity"]["endpoint_id"] == "objc3c-hosted-registry-fixture-endpoint-v1"  # type: ignore[index]
+    assert index["endpoint_identity"]["channel_id"] == "stable-fixture"  # type: ignore[index]
+    assert index["endpoint_identity"]["fallback_registry_success"] is False  # type: ignore[index]
+    assert index["lock_trust_material"]["cache_policy"] == "offline-cache-required-digest-pinned"  # type: ignore[index]
     assert resolved.package_id == "fixture:network.core"
     assert resolved.package_version == "1.0.0"
     assert resolved.cache_path == (
@@ -103,6 +108,28 @@ def test_hosted_registry_missing_metadata_fails_closed() -> None:
         mirror,
         f"{PACKAGE_MANAGER_TAMPER_CODE}: missing hosted registry metadata for fixture:missing@1.0.0",
         package_id="fixture:missing",
+    )
+
+
+def test_hosted_registry_unpinned_dependency_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: unpinned hosted dependency for fixture:network.core",
+        package_version=None,
+    )
+
+
+def test_hosted_registry_endpoint_channel_drift_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["endpoint_identity"]["channel_id"] = "nightly-fixture"  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry endpoint channel_id drifted",
     )
 
 
@@ -139,6 +166,30 @@ def test_hosted_registry_unknown_trust_root_fails_closed() -> None:
         index,
         mirror,
         f"{PACKAGE_MANAGER_TAMPER_CODE}: unknown trust root unknown-registry-root",
+    )
+
+
+def test_hosted_registry_registry_trust_mismatch_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    record = index["packages"][0]  # type: ignore[index]
+    record["registry_signature"]["trust_root_id"] = "objc3c-other-registry-root-v1"  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry trust root mismatch for fixture:network.core",
+    )
+
+
+def test_hosted_registry_missing_package_provenance_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    record = index["packages"][0]  # type: ignore[index]
+    record["package_manifest"] = {}  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package provenance for fixture:network.core",
     )
 
 
@@ -206,6 +257,22 @@ def test_hosted_registry_cache_offline_mirror_pin_mismatch_fails_closed() -> Non
         index,
         mirror,
         f"{PACKAGE_MANAGER_TAMPER_CODE}: cache/offline mirror pin mismatch for fixture:network.core",
+    )
+
+
+def test_hosted_registry_negative_cases_are_source_owned() -> None:
+    payload = load_json(NEGATIVE_CASES_FIXTURE)
+    case_ids = {str(case["case_id"]) for case in payload["cases"]}  # type: ignore[index]
+
+    assert payload["diagnostic_code"] == PACKAGE_MANAGER_TAMPER_CODE
+    assert {
+        "endpoint-channel-drift",
+        "missing-package-provenance",
+        "registry-trust-mismatch",
+        "unpinned-hosted-dependency",
+    } <= case_ids
+    assert str(payload["fixture_index"]) == (
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"
     )
 
 

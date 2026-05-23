@@ -46,6 +46,8 @@ static void FinalizeControlFlowControlFlowSemanticModelReadiness(
           summary.match_statement_semantic_sites &&
       summary.match_result_case_scope_sites <=
           summary.match_statement_semantic_sites &&
+      summary.match_guard_condition_sites <=
+          summary.match_statement_semantic_sites &&
       summary.match_exhaustive_statement_sites <=
           summary.match_statement_semantic_sites &&
       summary.match_non_exhaustive_diagnostic_sites <=

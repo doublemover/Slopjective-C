@@ -62,17 +62,20 @@ std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       "O3P159",
-      "Optional<T> value optionals are reserved until value-optional ABI and interface roundtrip are implemented",
+      "Optional<T> value optionals are reserved until value-optional ABI, lowering, and interface roundtrip are implemented; Optional<T> remains distinct from nullable object pointers and nil-to-scalar conversions",
       "parser-reserved-value-optional-type-rejection",
       "type spelling");
 }
 
 std::string BuildObjc3ReservedTypedThrowsDiagnostic(
-    const Objc3LexToken &token) {
+    const Objc3LexToken &token,
+    std::string_view payload_shape) {
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       "O3P182",
-      "typed throws payloads are reserved; use bare throws or remove the parenthesized error type",
+      "typed throws payloads are reserved; use bare throws or remove the parenthesized error type; typed-payload-shape=" +
+          std::string(payload_shape) +
+          "; parenthesized payloads are not silently erased into untyped throws",
       "parser-reserved-typed-throws-rejection",
       "throws clause");
 }
@@ -82,7 +85,7 @@ std::string BuildObjc3ReservedMatchExpressionDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       "O3P156",
-      "match expressions are reserved; match is statement-only in Objective-C 3 v1",
+      "match expressions are reserved; use statement-form match with ':' braced arms until expression result typing and lowering are release-evidenced",
       "parser-reserved-match-expression-rejection",
       "expression");
 }

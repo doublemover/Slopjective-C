@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-install-distribution-receipt-v1.schema.json",
+  "title": "objc3c Package Install Distribution Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema",
+    "install_root",
+    "install_home",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "machine_owned",
+    "installed_at_utc"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.from_nothing_install_receipt.v1"
+    },
+    "schema": {
+      "const": "schemas/objc3c-package-install-distribution-receipt-v1.schema.json"
+    },
+    "install_root": {
+      "type": "string",
+      "pattern": "^tmp/artifacts/package-ecosystem/install-validation/clean-root$"
+    },
+    "install_home": {
+      "type": "string",
+      "pattern": "^tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c$"
+    },
+    "bootstrap_entrypoint": {
+      "const": "Bootstrap-objc3cEnvironment.ps1"
+    },
+    "package_bridge": {
+      "const": "objc3c"
+    },
+    "install_command": {
+      "const": "npm run objc3c -- validate-package-install-distribution --from-nothing"
+    },
+    "machine_owned": {
+      "const": true
+    },
+    "installed_at_utc": {
+      "const": "omitted-for-deterministic-replay"
+    }
+  }
+}

@@ -15,7 +15,7 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelRule =
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelDeferRule =
     "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-lowering-and-runtime-work";
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelMatchRule =
-    "statement-match-enforces-catch-all-bool-and-result-case-exhaustiveness-with-case-local-binding-scopes-while-result-payload-typing-remains-deferred";
+    "statement-match-enforces-catch-all-bool-result-case-and-guarded-pattern-exhaustiveness-with-case-local-binding-scopes-while-match-expression-and-result-payload-typing-remain-deferred";
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelExitRule =
     "break-and-continue-restrictions-plus-defer-body-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred";
 
@@ -42,6 +42,7 @@ struct Objc3ControlFlowControlFlowSemanticModelSummary {
   std::size_t match_literal_pattern_sites = 0;
   std::size_t match_binding_scope_sites = 0;
   std::size_t match_result_case_scope_sites = 0;
+  std::size_t match_guard_condition_sites = 0;
   std::size_t match_exhaustive_statement_sites = 0;
   std::size_t match_bool_exhaustive_sites = 0;
   std::size_t match_result_case_exhaustive_sites = 0;

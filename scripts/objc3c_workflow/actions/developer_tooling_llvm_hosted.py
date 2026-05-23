@@ -69,11 +69,13 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
     if not truth.llc_found:
         print(
             "Hosted runner capability summary recorded no llc availability; "
-            "clang-only hosted execution is not a supported capability claim."
+            "native_object_emission_missing_llc; clang-only hosted execution "
+            "is not a supported capability claim."
         )
         return 0
     print(
         "Hosted runner capability summary recorded no llc --filetype=obj support; "
-        "hosted source parity and execution support claims are unavailable."
+        "native_object_emission_filetype_obj_unavailable; hosted source parity "
+        "and execution support claims are unavailable."
     )
     return 0

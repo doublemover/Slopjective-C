@@ -131,7 +131,9 @@ def main() -> int:
                 build_lock_command,
                 public_workflow_command("package-sign"),
                 public_workflow_command("package-verify"),
+                public_workflow_command("validate-package-security-hardening"),
                 public_workflow_command("validate-package-manager-model"),
+                public_workflow_command("validate-direct-import-module-syntax"),
                 authoring_check_command,
             ]
         },

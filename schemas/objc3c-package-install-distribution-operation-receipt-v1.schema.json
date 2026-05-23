@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json",
+  "title": "objc3c Package Install Distribution Operation Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema",
+    "operation",
+    "operation_mode",
+    "install_root",
+    "install_home",
+    "receipt_root",
+    "package_bridge",
+    "command",
+    "network_policy",
+    "hosted_registry_support",
+    "language_version",
+    "abi_identity",
+    "selection_policy",
+    "state_mutation",
+    "timestamp",
+    "package_count",
+    "package_order",
+    "package_digests"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.install_distribution_operation_receipt.v1"
+    },
+    "schema": {
+      "const": "schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json"
+    },
+    "operation": {
+      "enum": ["update", "uninstall"]
+    },
+    "operation_mode": {
+      "enum": [
+        "locked-local-update-noop",
+        "reverse-dependency-order-uninstall-plan"
+      ]
+    },
+    "install_root": {
+      "type": "string",
+      "pattern": "^tmp/artifacts/package-ecosystem/install-validation/clean-root$"
+    },
+    "install_home": {
+      "type": "string",
+      "pattern": "^tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c$"
+    },
+    "receipt_root": {
+      "type": "string",
+      "pattern": "^tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts$"
+    },
+    "package_bridge": {
+      "const": "objc3c"
+    },
+    "command": {
+      "const": "npm run objc3c -- validate-package-install-distribution --from-nothing"
+    },
+    "network_policy": {
+      "const": "no-network-during-validation"
+    },
+    "hosted_registry_support": {
+      "const": "unsupported-fail-closed-if-claimed"
+    },
+    "language_version": {
+      "const": "3.0"
+    },
+    "abi_identity": {
+      "const": "objc3-abi-2025Q4"
+    },
+    "selection_policy": {
+      "const": "exact-locked-version-only"
+    },
+    "state_mutation": {
+      "const": "record-only-deterministic-plan"
+    },
+    "timestamp": {
+      "const": "omitted-for-deterministic-replay"
+    },
+    "package_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "package_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "package_digests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "package_id",
+          "source_digest",
+          "manifest_digest",
+          "trust_signature"
+        ],
+        "properties": {
+          "package_id": {
+            "type": "string"
+          },
+          "source_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "manifest_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "trust_signature": {
+            "type": "string"
+          }
+        }
+      },
+      "minItems": 1
+    }
+  }
+}

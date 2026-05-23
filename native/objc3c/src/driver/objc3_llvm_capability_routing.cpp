@@ -35,8 +35,13 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
   }
 
   if (options.route_backend_from_capabilities) {
-    options.ir_object_backend =
-        summary.llc_supports_filetype_obj ? Objc3IrObjectBackend::kLLVMDirect : Objc3IrObjectBackend::kClang;
+    if (!summary.llc_found || !summary.llc_supports_filetype_obj) {
+      error =
+          "capability routing fail-closed: native object emission requires "
+          "llc --filetype=obj; clang substitute object emission is not permitted";
+      return false;
+    }
+    options.ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
   }
 
   if (options.ir_object_backend == Objc3IrObjectBackend::kClang && !summary.clang_found) {

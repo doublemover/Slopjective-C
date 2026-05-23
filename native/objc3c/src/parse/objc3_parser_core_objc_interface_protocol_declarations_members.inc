@@ -7,6 +7,12 @@
     Objc3ProtocolRequirementKind requirement_kind =
         Objc3ProtocolRequirementKind::Required;
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::KwAtReifyGenerics)) {
+        RejectReservedReificationControl(Previous(),
+                                         "an Objective-C protocol member");
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (Match(TokenKind::KwAtRequired)) {
         requirement_kind = Objc3ProtocolRequirementKind::Required;
         continue;

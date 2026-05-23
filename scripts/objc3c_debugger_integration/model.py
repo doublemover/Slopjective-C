@@ -13,6 +13,8 @@ from objc3c_tooling.paths import ROOT, display_path, repo_rel, resolve_repo_path
 CONTRACT_ID = "objc3c.debugger-integration.replay.v1"
 VALIDATION_CONTRACT_ID = "objc3c.debugger-integration.validation.v1"
 PLAN_CONTRACT_ID = "objc3c.debugger-integration.stepping-plan.v1"
+LLDB_PROTOCOL_CONTRACT_ID = "objc3c.lldb-plugin.protocol.v1"
+SUPPORTED_COMPILER_ID = "objc3c.compiler.objc3c-3.0.debug-info.v1"
 DEFAULT_FIXTURE_PATH = (
     ROOT
     / "tests"
@@ -82,6 +84,22 @@ UNSUPPORTED_REASONS = frozenset(
         "malformed-runtime-metadata",
         "unsupported-plugin-command",
         "source-map-object-digest-mismatch",
+        "generated-only-source-map",
+        "stale-compiler-id",
+        "missing-inline-frame-chain",
+        "unsupported-runtime-metadata",
+    }
+)
+SUPPORTED_RUNTIME_METADATA_KINDS = frozenset(
+    {
+        "class",
+        "selector",
+        "object",
+        "stdlib-text",
+        "stdlib-collection",
+        "async-actor-lanes",
+        "error-bridge",
+        "runtime-debug-trace",
     }
 )
 
@@ -131,6 +149,12 @@ def _safe_str(value: object) -> str:
 
 def _safe_int(value: object) -> int:
     return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def _tuple_str(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        return ()
+    return tuple(item for item in value if isinstance(item, str))
 
 
 def _load_replay(path: Path | str) -> tuple[Path, dict[str, Any], tuple[Diagnostic, ...]]:
@@ -198,6 +222,7 @@ def validate_replay_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> ValidationR
     line_rows = {row.row_id: row for row in source_bundle.native_line_tables}
     debug_config = _object(payload.get("debug_configuration"))
     debug_config_supported = _debug_config_supported(debug_config, diagnostics)
+    protocol_contract = _validate_protocol_contract(payload, source_bundle, diagnostics)
 
     _validate_stepping_records(
         payload,
@@ -205,10 +230,12 @@ def validate_replay_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> ValidationR
         source_maps,
         debug_maps_by_source,
         line_rows,
+        source_bundle.native_debug_info.evidence_id,
         debug_config_supported,
+        protocol_contract,
         diagnostics,
     )
-    _validate_value_inspection(payload, commands, diagnostics)
+    _validate_value_inspection(payload, commands, protocol_contract, diagnostics)
     _validate_negative_cases(payload, diagnostics)
 
     return ValidationResult(
@@ -233,6 +260,77 @@ def _debug_config_supported(debug_config: dict[str, Any], diagnostics: list[Diag
             )
         )
     return supported
+
+
+def _validate_protocol_contract(
+    payload: dict[str, Any],
+    source_bundle: Any,
+    diagnostics: list[Diagnostic],
+) -> dict[str, Any]:
+    contract = _object(payload.get("protocol_contract"))
+    compiler_identity = _object(source_bundle.payload.get("compiler_identity"))
+    if contract.get("contract_id") != LLDB_PROTOCOL_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-contract-id",
+                f"LLDB protocol contract_id must be {LLDB_PROTOCOL_CONTRACT_ID}",
+                "protocol_contract.contract_id",
+            )
+        )
+    expected_compiler_id = _safe_str(contract.get("compiler_identity_id"))
+    source_compiler_id = _safe_str(compiler_identity.get("compiler_id"))
+    if expected_compiler_id != SUPPORTED_COMPILER_ID or source_compiler_id != expected_compiler_id:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-stale-compiler-id",
+                "LLDB protocol compiler id must match the source-map compiler identity",
+                "protocol_contract.compiler_identity_id",
+            )
+        )
+    if contract.get("rejects_generated_only_maps") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-generated-only-map",
+                "LLDB protocol must reject generated-only source maps",
+                "protocol_contract.rejects_generated_only_maps",
+            )
+        )
+    if contract.get("requires_inline_frame_chains") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-inline-frame-chain-missing",
+                "LLDB protocol must require inline-frame chains for optimized frames",
+                "protocol_contract.requires_inline_frame_chains",
+            )
+        )
+    inline_chain_ids = {chain.chain_id for chain in source_bundle.inline_debug_chains}
+    for chain_id in _tuple_str(contract.get("required_inline_frame_chain_ids")):
+        if chain_id not in inline_chain_ids:
+            diagnostics.append(
+                _diag(
+                    "lldb-protocol-inline-frame-chain-missing",
+                    f"LLDB protocol references missing inline-frame chain: {chain_id}",
+                    "protocol_contract.required_inline_frame_chain_ids",
+                )
+            )
+    supported_metadata = set(_tuple_str(contract.get("supported_runtime_metadata_kinds")))
+    if not supported_metadata or supported_metadata - SUPPORTED_RUNTIME_METADATA_KINDS:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-unsupported-runtime-metadata",
+                "LLDB protocol lists unsupported runtime metadata kinds",
+                "protocol_contract.supported_runtime_metadata_kinds",
+            )
+        )
+    if contract.get("requires_supported_runtime_metadata") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-unsupported-runtime-metadata",
+                "LLDB protocol must reject unsupported runtime metadata",
+                "protocol_contract.requires_supported_runtime_metadata",
+            )
+        )
+    return contract
 
 
 def _validate_commands(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> dict[str, dict[str, Any]]:
@@ -265,7 +363,9 @@ def _validate_stepping_records(
     source_maps: dict[str, Any],
     debug_maps_by_source: dict[str, Any],
     line_rows: dict[str, Any],
+    native_debug_info_evidence_id: str,
     debug_config_supported: bool,
+    protocol_contract: dict[str, Any],
     diagnostics: list[Diagnostic],
 ) -> None:
     records = _list(_object(payload.get("stepping_plan")).get("records"))
@@ -279,7 +379,7 @@ def _validate_stepping_records(
         entry = source_maps.get(entry_id)
 
         if status == "unsupported":
-            _validate_unsupported_step(record, path, commands, source_maps, debug_maps_by_source, diagnostics)
+            _validate_unsupported_step(record, path, commands, source_maps, debug_maps_by_source, protocol_contract, diagnostics)
             continue
         if status != "supported":
             diagnostics.append(_diag("stepping-status-invalid", "stepping record status must be supported or unsupported", path))
@@ -298,6 +398,14 @@ def _validate_stepping_records(
         if entry is None:
             diagnostics.append(_diag("source-map-entry-missing", f"stepping record references missing source map: {entry_id}", path))
             continue
+        if protocol_contract.get("rejects_generated_only_maps") is True and entry.generated:
+            diagnostics.append(
+                _diag(
+                    "lldb-protocol-generated-only-map",
+                    f"LLDB stepping cannot use generated-only source maps: {entry_id}",
+                    path,
+                )
+            )
         if entry.record_kind != step_kind:
             diagnostics.append(
                 _diag("stepping-source-kind-mismatch", f"stepping kind does not match source-map kind: {entry_id}", path)
@@ -309,7 +417,14 @@ def _validate_stepping_records(
             diagnostics.append(_diag("debug-map-entry-missing", f"stepping record debug-map id drifted from source map: {entry_id}", path))
         if _safe_str(record.get("source_digest")) != entry.source_digest:
             diagnostics.append(_diag("source-digest-stale", f"stepping record source digest drifted from source map: {entry_id}", path))
-        if not entry.source_range.is_valid() or _safe_int(record.get("source_line")) != entry.source_range.line:
+        if (
+            not entry.source_range.is_valid()
+            or _safe_int(record.get("source_line")) != entry.source_range.line
+            or _safe_int(record.get("source_column")) != entry.source_range.column
+            or _safe_int(record.get("source_end_line")) != entry.source_range.end_line
+            or _safe_int(record.get("source_end_column")) != entry.source_range.end_column
+            or not _safe_str(record.get("source_span_id"))
+        ):
             diagnostics.append(_diag("stepping-anchor-missing", f"stepping record lacks a valid source line anchor: {entry_id}", path))
         if _safe_str(record.get("source_file")) != entry.source_file:
             diagnostics.append(_diag("stepping-anchor-missing", f"stepping record source file does not match source map: {entry_id}", path))
@@ -322,6 +437,24 @@ def _validate_stepping_records(
             diagnostics.append(_diag("line-table-row-missing", f"stepping record lacks source-map line-table row: {entry_id}", path))
         elif row_id not in line_rows:
             diagnostics.append(_diag("line-table-row-missing", f"stepping record references missing line-table row: {row_id}", path))
+        else:
+            row = line_rows[row_id]
+            if row.source_range != entry.source_range or row.object_debug_line_anchor != entry.object_debug_line_anchor:
+                diagnostics.append(
+                    _diag(
+                        "stepping-anchor-missing",
+                        f"stepping record native debug row drifted from source span: {entry_id}",
+                        path,
+                    )
+                )
+        if _safe_str(record.get("native_debug_info_evidence_id")) != native_debug_info_evidence_id:
+            diagnostics.append(
+                _diag(
+                    "native-debug-info-evidence-missing",
+                    f"stepping record does not link emitted native debug-info evidence: {entry_id}",
+                    path,
+                )
+            )
         command_id = _safe_str(record.get("lldb_command_id"))
         if command_id not in commands:
             diagnostics.append(_diag("lldb-command-missing", f"stepping record references missing LLDB command: {command_id}", path))
@@ -336,6 +469,7 @@ def _validate_unsupported_step(
     commands: dict[str, dict[str, Any]],
     source_maps: dict[str, Any],
     debug_maps_by_source: dict[str, Any],
+    protocol_contract: dict[str, Any],
     diagnostics: list[Diagnostic],
 ) -> None:
     reason = _safe_str(record.get("unsupported_reason"))
@@ -353,6 +487,14 @@ def _validate_unsupported_step(
     if entry is None:
         diagnostics.append(_diag("source-map-entry-missing", f"unsupported stepping record references missing source map: {entry_id}", path))
         return
+    if protocol_contract.get("rejects_generated_only_maps") is True and entry.generated:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-generated-only-map",
+                f"LLDB unsupported step cannot fall back to generated-only source maps: {entry_id}",
+                path,
+            )
+        )
     debug_map = debug_maps_by_source.get(entry_id)
     if debug_map is None:
         diagnostics.append(_diag("debug-map-entry-missing", f"unsupported stepping record lacks debug-map entry: {entry_id}", path))
@@ -362,13 +504,28 @@ def _validate_unsupported_step(
         diagnostics.append(_diag("source-digest-stale", f"unsupported stepping record source digest drifted from source map: {entry_id}", path))
 
 
-def _validate_value_inspection(payload: dict[str, Any], commands: dict[str, dict[str, Any]], diagnostics: list[Diagnostic]) -> None:
+def _validate_value_inspection(
+    payload: dict[str, Any],
+    commands: dict[str, dict[str, Any]],
+    protocol_contract: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
+    supported_metadata = set(_tuple_str(protocol_contract.get("supported_runtime_metadata_kinds")))
     for index, item in enumerate(_list(_object(payload.get("value_inspection")).get("records"))):
         record = _object(item)
         path = f"value_inspection.records[{index}]"
         value_kind = _safe_str(record.get("value_kind"))
+        runtime_metadata_kind = _safe_str(record.get("runtime_metadata_kind"))
         if value_kind not in SUPPORTED_VALUE_KINDS:
             diagnostics.append(_diag("value-inspection-kind-unsupported", f"unsupported value inspection kind: {value_kind}", path))
+        if protocol_contract.get("requires_supported_runtime_metadata") is True and runtime_metadata_kind not in supported_metadata:
+            diagnostics.append(
+                _diag(
+                    "lldb-protocol-unsupported-runtime-metadata",
+                    f"unsupported LLDB runtime metadata kind: {runtime_metadata_kind}",
+                    path,
+                )
+            )
         command_id = _safe_str(record.get("lldb_command_id"))
         if command_id not in commands:
             diagnostics.append(_diag("lldb-command-missing", f"value inspection references missing LLDB command: {command_id}", path))
@@ -387,6 +544,10 @@ def _validate_negative_cases(payload: dict[str, Any], diagnostics: list[Diagnost
         "malformed-runtime-metadata",
         "unsupported-plugin-command",
         "source-map-object-digest-mismatch",
+        "generated-only-source-map",
+        "stale-compiler-id",
+        "missing-inline-frame-chain",
+        "unsupported-runtime-metadata",
     }
     case_ids = {_safe_str(_object(item).get("case_id")) for item in cases}
     for case_id in sorted(expected - case_ids):
@@ -444,8 +605,11 @@ def generate_stepping_plan_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict
                 "step_kind": entry.record_kind,
                 "lldb_command": _safe_str(command.get("plugin_command")),
                 "source_file": repo_rel(resolve_repo_path(entry.source_file)),
+                "source_span_id": _safe_str(item.get("source_span_id")),
                 "source_line": entry.source_range.line,
                 "source_column": entry.source_range.column,
+                "source_end_line": entry.source_range.end_line,
+                "source_end_column": entry.source_range.end_column,
                 "native_symbol": entry.native_symbol,
                 "source_digest": entry.source_digest,
                 "debug_map_entry_id": _safe_str(item.get("debug_map_entry_id")),
@@ -453,6 +617,7 @@ def generate_stepping_plan_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict
                 "object_debug_line_anchor": entry.object_debug_line_anchor,
                 "source_map_entry_id": entry.entry_id,
                 "native_line_table_row_id": row.row_id,
+                "native_debug_info_evidence_id": _safe_str(item.get("native_debug_info_evidence_id")),
             }
         )
     return {

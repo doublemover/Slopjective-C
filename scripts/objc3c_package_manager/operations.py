@@ -24,6 +24,7 @@ from .model import (
 )
 from .registry import collect_registry_index_failures
 from .trust import LOCAL_PACKAGE_TRUST_KEY_ID
+from .trust import collect_extraction_plan_failures, package_extraction_plan_payload
 
 PACKAGE_OPERATION_PLAN_CONTRACT_ID = "objc3c.package_ecosystem.operation_plan.v1"
 PACKAGE_OPERATION_RECEIPT_CONTRACT_ID = "objc3c.package_ecosystem.operation_receipt.v1"
@@ -33,6 +34,9 @@ PACKAGE_OPERATION_HOSTED_SUPPORT = "offline-metadata-only-live-network-fail-clos
 PACKAGE_OPERATION_CACHE_ROOT = "tmp/artifacts/package-ecosystem/mirrors/cache"
 PACKAGE_OPERATION_OWNED_INSTALL_ROOT = (
     "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/packages"
+)
+PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT = (
+    "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts"
 )
 PACKAGE_OPERATION_RECEIPT_ROOT = "tmp/artifacts/package-ecosystem/operations"
 
@@ -213,6 +217,50 @@ def _owned_package_root(package_id: str) -> str:
     return f"{PACKAGE_OPERATION_OWNED_INSTALL_ROOT}/{namespace}/{name.replace('.', '_')}"
 
 
+def _local_artifact_path(package_id: str) -> str:
+    namespace, separator, name = package_id.partition(":")
+    if not separator or not namespace or not name:
+        return ""
+    return f"{PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT}/{namespace}/{name.replace('.', '_')}.json"
+
+
+def _operation_extraction_plan(
+    *,
+    operation: str,
+    package_order: list[str],
+) -> dict[str, Any]:
+    mutation = "record" if operation == "uninstall" else "write"
+    entries: list[dict[str, str | int]] = []
+    for index, package_id in enumerate(package_order):
+        owned_root = _owned_package_root(package_id)
+        local_artifact = _local_artifact_path(package_id)
+        if owned_root:
+            entries.append(
+                {
+                    "path": f"{owned_root}/package-manifest.json",
+                    "entry_type": "file",
+                    "mutation": mutation,
+                    "package_id": package_id,
+                    "order": index,
+                }
+            )
+        if local_artifact:
+            entries.append(
+                {
+                    "path": local_artifact,
+                    "entry_type": "file",
+                    "mutation": mutation,
+                    "package_id": package_id,
+                    "order": index,
+                }
+            )
+    return package_extraction_plan_payload(
+        plan_id=f"package-operation-{operation}-{stable_digest(package_order)}",
+        entries=entries,
+        provenance="package-operation-plan",
+    )
+
+
 def _installed_records_by_id(installed_state: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not isinstance(installed_state, dict):
         return {}
@@ -381,6 +429,20 @@ def collect_package_operation_failures(
             installed_state=installed_state,
         )
     )
+    package_order = [
+        *_dependency_closure(lock, package_id),
+        package_id,
+    ]
+    if operation in {"uninstall", "rollback"}:
+        package_order = list(reversed(package_order))
+    failures.extend(
+        collect_extraction_plan_failures(
+            _operation_extraction_plan(
+                operation=operation,
+                package_order=package_order,
+            )
+        )
+    )
 
     if hosted_registry is not None or hosted_mirror is not None:
         if not isinstance(hosted_registry, dict) or not isinstance(hosted_mirror, dict):
@@ -441,6 +503,10 @@ def package_operation_plan(
     ]
     if request.operation in {"uninstall", "rollback"}:
         package_order = list(reversed(package_order))
+    extraction_plan = _operation_extraction_plan(
+        operation=request.operation,
+        package_order=package_order,
+    )
     rollback_token = _rollback_token(
         operation=request.operation,
         package_identity=identity,
@@ -470,6 +536,8 @@ def package_operation_plan(
             "previous_manifest_digest": identity["manifest_digest"],
             "owned_package_root": _owned_package_root(request.package_id),
         },
+        "extraction_plan": extraction_plan,
+        "extraction_plan_digest": extraction_plan["plan_digest"],
         "network_policy": PACKAGE_OPERATION_NETWORK_POLICY,
         "hosted_registry_support": PACKAGE_OPERATION_HOSTED_SUPPORT,
         "live_network_publication": "fail-closed",
@@ -497,6 +565,7 @@ def package_operation_receipt(plan: dict[str, Any]) -> dict[str, Any]:
         "next_state": str(plan["next_state"]),
         "rollback_token": str(plan["rollback_token"]),
         "rollback_state": dict(plan["rollback_state"]),
+        "extraction_plan_digest": str(plan["extraction_plan_digest"]),
         "network_policy": str(plan["network_policy"]),
         "hosted_registry_support": str(plan["hosted_registry_support"]),
         "live_network_publication": str(plan["live_network_publication"]),
@@ -524,6 +593,8 @@ def collect_package_operation_receipt_failures(
         failures.append(package_operation_diagnostic("operation receipt contract id drifted"))
     if receipt.get("plan_digest") != plan.get("plan_digest"):
         failures.append(package_operation_diagnostic("operation receipt plan digest drifted"))
+    if receipt.get("extraction_plan_digest") != plan.get("extraction_plan_digest"):
+        failures.append(package_operation_diagnostic("operation receipt extraction plan digest drifted"))
     if receipt.get("machine_owned") is not True:
         failures.append(package_operation_diagnostic("operation receipt is not machine-owned"))
     if receipt.get("network_policy") != PACKAGE_OPERATION_NETWORK_POLICY:
@@ -543,6 +614,7 @@ def package_operation_artifact_paths(operation: str, package_id: str) -> tuple[s
 
 __all__ = [
     "PACKAGE_OPERATION_HOSTED_SUPPORT",
+    "PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT",
     "PACKAGE_OPERATION_NETWORK_POLICY",
     "PACKAGE_OPERATION_PLAN_CONTRACT_ID",
     "PACKAGE_OPERATION_PUBLIC_ACTIONS",

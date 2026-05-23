@@ -34,6 +34,9 @@ def assert_local_diagnostic_truth_payload(payload: dict[str, Any]) -> None:
     assert payload["hosted_execution_supported"] is False
     assert payload["hosted_source_parity_supported"] is False
     assert payload["fail_closed_without_live_capability"] is True
+    assert payload["native_object_emission_status"] == "native_object_emission_diagnostic_only"
+    assert payload["hosted_runner_behavior"] == "fail-closed-no-native-object-success-claim"
+    assert payload["conformance_minima_behavior"] == "fail-closed-before-cross-lane-runtime-proof"
     assert "local LLVM probe summary is diagnostic-only" in payload["failure_reasons"]
 
 
@@ -42,6 +45,9 @@ def assert_object_emission_required_payload(payload: dict[str, Any]) -> None:
     assert payload["hosted_execution_supported"] is False
     assert payload["hosted_source_parity_supported"] is False
     assert payload["fail_closed_without_live_capability"] is True
+    assert payload["native_object_emission_status"] == "native_object_emission_filetype_obj_unavailable"
+    assert payload["hosted_runner_behavior"] == "fail-closed-no-native-object-success-claim"
+    assert payload["conformance_minima_behavior"] == "fail-closed-before-cross-lane-runtime-proof"
     assert "llc --filetype=obj support missing" in payload["failure_reasons"]
 
 
@@ -55,4 +61,7 @@ def assert_hosted_success_payload(
     assert payload["hosted_execution_supported"] is True
     assert payload["hosted_source_parity_supported"] is True
     assert payload["fail_closed_without_live_capability"] is False
+    assert payload["native_object_emission_status"] == "native_object_emission_supported"
+    assert payload["hosted_runner_behavior"] == "native-object-emission-supported"
+    assert payload["conformance_minima_behavior"] == "native-object-emission-may-enter-conformance-minima"
     assert payload["failure_reasons"] == []

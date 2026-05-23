@@ -30,6 +30,13 @@ from .operations import (
     package_operation_plan,
     package_operation_receipt,
 )
+from .network_publication import (
+    NETWORK_DEPENDENCY_RESOLUTION_CONTRACT_ID,
+    PACKAGE_RELEASE_CHANNEL_PUBLICATION_CONTRACT_ID,
+    collect_package_network_publication_failures,
+    collect_package_network_resolution_failures,
+    collect_package_release_channel_publication_failures,
+)
 from .trust import (
     LOCAL_PACKAGE_SIGNING_BACKEND,
     LOCAL_PACKAGE_TRUST_ROOT_ID,
@@ -50,8 +57,10 @@ __all__ = [
     "LOCAL_PACKAGE_TRUST_KEY_ID",
     "PACKAGE_MANAGER_TAMPER_CODE",
     "PACKAGE_MANIFEST_CONTRACT_ID",
+    "NETWORK_DEPENDENCY_RESOLUTION_CONTRACT_ID",
     "PACKAGE_OPERATION_PLAN_CONTRACT_ID",
     "PACKAGE_OPERATION_RECEIPT_CONTRACT_ID",
+    "PACKAGE_RELEASE_CHANNEL_PUBLICATION_CONTRACT_ID",
     "PackageManagerPaths",
     "PackageOperationError",
     "PackageOperationRequest",
@@ -60,7 +69,10 @@ __all__ = [
     "collect_dependency_source_authority_failures",
     "collect_lock_model_failures",
     "collect_manifest_trust_failures",
+    "collect_package_network_publication_failures",
+    "collect_package_network_resolution_failures",
     "collect_package_operation_failures",
+    "collect_package_release_channel_publication_failures",
     "collect_signature_envelope_failures",
     "collect_trust_policy_failures",
     "default_trust_policy_payload",

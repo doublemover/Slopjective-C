@@ -39,6 +39,9 @@
       "unsupported-benchmark-claim",
       "compatibility-retired-route-performance-claim",
       "wrapper-only-action-surface",
+      "optimization-speedup-without-safety-proof",
+      "generated-report-optimization-source-truth",
+      "optimization-fallback-success-path",
       "cross-machine-universal",
       "screenshot-derived",
       "hand-normalized-without-raw-samples"

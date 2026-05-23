@@ -77,11 +77,19 @@ Supported in this boundary:
   surfaces
 - offline mirror evidence generated from local package artifacts
 - registry metadata as a generated, local, replayable artifact
+- fixture-backed hosted-registry indexes, offline network dependency
+  resolution, and source-owned release-channel publication metadata when every
+  row is checked in, locked, digest-bound, and replayed without live network
+  access
+- from-nothing install distribution receipts under the package-ecosystem
+  validation root, validated against package-ecosystem receipt schemas and
+  pinned to `npm run objc3c -- validate-package-install-distribution
+--from-nothing`
 
 Not supported in this boundary:
 
-- a hosted package registry service
-- network-backed dependency resolution
+- a live hosted package registry service
+- arbitrary live network dependency resolution
 - system package manager publication
 - package manifests that bypass the `npm run objc3c -- <action>` bridge
 - a second compiler payload, package layout, or install workflow
@@ -115,9 +123,11 @@ Resolution is intentionally local-first:
   package metadata, ABI-incompatible, language-incompatible, revoked, or outside
   the allowed local/mirror roots
 
-The initial lock model does not claim network fetching. Registry names may appear
-only as generated metadata layered over local package artifacts until later
-evidence proves hosted behavior.
+The lock model does not claim arbitrary network fetching. Registry names may
+appear only through checked-in hosted-registry fixtures, offline network
+resolution fixtures, and release-channel metadata that are digest-bound to local
+package artifacts. Live registry availability, authentication, moderation, and
+remote fetch behavior remain outside this support claim.
 
 ## Local Workspace And Offline Mirror Semantics
 
@@ -174,12 +184,19 @@ Registry behavior is layered on top of the local lock and mirror model:
   exists and digest-matches the mirror index.
 - `publication-metadata` is supported as replayable release/update/package
   channel metadata.
-- `hosted-registry` is explicitly deferred until a later milestone proves
-  network service behavior, authentication, moderation, revocation, and
-  availability semantics.
+- `hosted-registry-fixture` is supported only as a checked-in offline index with
+  deterministic package identity, version, digest, trust, revocation, and mirror
+  evidence. It must not be described as a live hosted service.
+- `network-dependency-resolution` is supported only for the offline fixture path
+  that resolves trusted registry rows into locks and mirrors before install
+  validation. Implicit fetches, unpinned dependencies, digest drift, and missing
+  mirrors fail closed.
+- `release-channel-publication` is supported only for source-owned offline
+  publication metadata and deterministic package-channel records.
 
-Any hosted-registry claim before those proofs exist is release-blocking and must
-be demoted to generated local metadata.
+Any live hosted-registry, live network fetch, or remote publication claim before
+those proofs exist is release-blocking and must be demoted to offline fixture
+metadata.
 
 ## Artifact Contract
 
@@ -193,6 +210,13 @@ Schema surfaces:
 - `schemas/objc3c-package-lock-v1.schema.json`
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
 - `schemas/objc3c-package-local-registry-index-v1.schema.json`
+- `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+- `schemas/objc3c-package-network-resolution-v1.schema.json`
+- `schemas/objc3c-package-release-channel-publication-v1.schema.json`
+- `schemas/objc3c-package-install-receipt-v1.schema.json`
+- `schemas/objc3c-package-install-distribution-receipt-v1.schema.json`
+- `schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json`
+- `schemas/objc3c-package-operation-receipt-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Machine-owned generated outputs stay in package-ecosystem artifact and report

@@ -2,9 +2,10 @@
   "contract_id": "objc3c.advanced-runtime.closure.native-artifact.v1",
   "issue_ref": 8199,
   "followup_issue_ref": 8213,
-  "status": "native_artifact_ready",
-  "support_id": "advanced-runtime-native-object-artifacts",
+  "status": "native_link_run_ready",
+  "support_id": "advanced-runtime-native-executable-closure",
   "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+  "provider_fixture": "tests/native/runtime/advanced_closure/combined_provider.objc3",
   "generated_attempt_dir": "tmp/artifacts/advanced-runtime-closure/native-executable-umbrella/compile",
   "expected_compile_backend": "direct-native",
   "expected_exit_code": 0,
@@ -12,12 +13,12 @@
   "native_object_artifact_claimed": true,
   "native_ir_artifact_claimed": true,
   "native_manifest_artifact_claimed": true,
-  "native_link_claimed": false,
-  "native_run_claimed": false,
-  "native_executable_umbrella_promoted": false,
-  "umbrella_support_promoted": false,
+  "native_link_claimed": true,
+  "native_run_claimed": true,
+  "native_executable_umbrella_promoted": true,
+  "umbrella_support_promoted": true,
   "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
-  "boundary": "The combined positive fixture is checked against the real direct-native compiler path and now produces LLVM IR, object output, semantic manifests, runtime registration manifests, and runtime metadata artifacts from a fresh generated-attempt directory. This contract claims native compile/artifact readiness only; native executable link/run promotion remains unclaimed until the umbrella fixture has a stable end-to-end executable harness.",
+  "boundary": "The combined positive fixture is checked against the real direct-native compiler path, imports a source-owned provider runtime surface, links the emitted objects with the runtime support library, and runs the resulting executable from a fresh generated-attempt directory. This contract claims the integrated Objective-C 3 advanced-runtime executable closure only; arbitrary scheduler fairness, Swift/C++ ABI closure, distributed actor networking, and arbitrary macro-host execution remain outside the claim.",
   "expected_diagnostics": [],
   "absent_diagnostic_codes": [],
   "required_success_artifacts": [
@@ -26,15 +27,26 @@
     "module.manifest.json",
     "module.runtime-registration-manifest.json",
     "module.runtime-metadata.bin",
-    "module.error_handling-error-replay.json"
-  ],
-  "forbidden_success_artifacts": [
+    "module.error_handling-error-replay.json",
     "module.exe"
   ],
+  "forbidden_success_artifacts": [],
   "forbidden_llvm_operand_markers": [
     "|%",
     "%|"
   ],
+  "native_object_emission_toolchain_gate": {
+    "issue_ref": 8232,
+    "required_tool": "llc",
+    "required_probe": "llc --filetype=obj",
+    "success_status": "native_object_emission_supported",
+    "missing_tool_status": "native_object_emission_missing_llc",
+    "missing_probe_status": "native_object_emission_filetype_obj_unavailable",
+    "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+    "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+    "fallback_policy": "no-clang-fallback-success-claim",
+    "diagnostic": "native object emission fail-closed: llc executable not found"
+  },
   "typed_failure_reporting": {
     "contract_id": "objc3c.advanced-runtime.closure.typed-failure-reporting.v1",
     "issue_ref": 8213,
@@ -51,7 +63,10 @@
         "values": [
           "native_compile_succeeded",
           "native_compile_failed",
-          "native_compile_launch_failed"
+          "native_compile_launch_failed",
+          "native_object_emission_missing_llc",
+          "native_object_emission_filetype_obj_unavailable",
+          "native_object_emission_backend_unavailable"
         ],
         "failure_value": "native_compile_failed"
       },
@@ -95,9 +110,9 @@
     }
   },
   "parallelism_caps": {
-    "CMAKE_BUILD_PARALLEL_LEVEL": "4",
-    "CL_MPCount": "4",
-    "LLVM_PARALLEL_COMPILE_JOBS": "4",
-    "OBJC3C_NATIVE_BUILD_PARALLELISM": "4"
+    "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+    "CL_MPCount": "2",
+    "LLVM_PARALLEL_COMPILE_JOBS": "2",
+    "OBJC3C_NATIVE_BUILD_PARALLELISM": "2"
   }
 }

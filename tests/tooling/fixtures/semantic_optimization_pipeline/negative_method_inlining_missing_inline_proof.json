@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.optimization.method_inlining.negative.missing_inline_proof.v1",
+  "issue_refs": [
+    8224
+  ],
+  "pass_id": "method-inlining",
+  "case_id": "method-inlining-missing-inline-proof",
+  "description": "A scalar-looking call cannot be inlined without callee body identity and linked original/callee source spans.",
+  "candidate_overrides": {
+    "method_inline_callee_body_identity_present": false,
+    "method_inline_original_call_source_span_key": "",
+    "method_inline_callee_source_span_key": "",
+    "method_inline_original_call_source_span_present": false,
+    "method_inline_inline_frame_id_key": "inline-frame:method-inline:caller+callee",
+    "method_inline_inlined_callsite_source_span_key": "source-span:method-inline:inlined-callsite",
+    "method_inline_stepping_policy_key": "stepping-policy:method-inline:step-into-callee-step-out-caller",
+    "method_inline_optimized_ir_source_correlation_key": "ir-source-correlation:method-inline:optimized-ir-to-caller-callee",
+    "method_inline_inline_frame_id_present": true,
+    "method_inline_inlined_callsite_source_span_present": true,
+    "method_inline_imported_debug_map_inline_frame_present": true,
+    "method_inline_emitted_debug_map_inline_frame_present": true,
+    "method_inline_stepping_policy_unambiguous": true,
+    "method_inline_optimized_ir_source_correlation_present": true,
+    "method_inline_generated_only_source_map": false,
+    "method_inline_receiver_dispatch_assumption_key": "dispatch-assumption:method-inline:receiver-static-type+final-target",
+    "method_inline_receiver_dispatch_assumptions_pinned": true,
+    "method_inline_scalar_subset": true,
+    "method_inline_ownership_arc_effects_safe": true,
+    "method_inline_side_effect_summary_safe": true,
+    "method_inline_side_effect_replay_key": "side-effect-replay:method-inline:pure-no-writes-no-calls-no-runtime-helpers",
+    "method_inline_side_effect_replay_complete": true,
+    "method_inline_source_map_debug_preserved": true,
+    "method_inline_diagnostic_location_preserved": true,
+    "method_inline_debug_stepping_evidence_key": "debug-step:method-inline:caller-frame+callee-inline-frame",
+    "method_inline_debug_stepping_evidence_present": true,
+    "method_inline_runtime_abi_safe": true,
+    "method_inline_package_abi_identical": true,
+    "method_inline_depth_within_limit": true,
+    "method_inline_recursion_absent": true,
+    "method_inline_callee_generation_pinned": true,
+    "method_inline_runtime_cache_assumptions_fresh": true,
+    "method_inline_runtime_invalidation_replay_key": "runtime-replay:method-inline:stale-dispatch-cache-fail-closed",
+    "method_inline_runtime_invalidation_replay_present": true,
+    "method_inline_invalidation_complete": true
+  },
+  "expected_result": {
+    "decision": "REJECTED_FAIL_CLOSED",
+    "success_claim": false,
+    "diagnostic_contains": [
+      "method_inline_callee_body_identity_present",
+      "method_inline_original_call_source_span_key",
+      "method_inline_callee_source_span_key",
+      "method_inline_original_call_source_span_present"
+    ]
+  }
+}

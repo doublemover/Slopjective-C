@@ -4,6 +4,7 @@ from pathlib import Path
 
 from objc3c_llvm_capabilities_probe_assertions import (
     assert_clang_missing_payload,
+    assert_filetype_unsupported_payload,
     assert_filetype_support_payload,
     assert_llc_launch_file_not_found_payload,
     assert_llc_missing_payload,
@@ -15,6 +16,7 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_capabilities_detected_run,
     fake_clang_missing_run,
     fake_filetype_command_probe_run,
+    fake_llc_filetype_unsupported_run,
     fake_llc_launch_file_not_found_run,
     fake_llc_missing_run,
 )
@@ -52,6 +54,18 @@ def test_probe_accepts_filetype_support_from_command_probe(
 
     assert exit_code == 0
     assert_filetype_support_payload(load_json(summary_out))
+
+
+def test_probe_fail_closes_when_llc_filetype_obj_is_unsupported(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(probe.subprocess, "run", fake_llc_filetype_unsupported_run)
+    summary_out = tmp_path / "summary.json"
+    exit_code = probe.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    assert_filetype_unsupported_payload(load_json(summary_out))
 
 
 def test_probe_flags_semantic_diagnostics_unavailable_when_clang_is_missing(

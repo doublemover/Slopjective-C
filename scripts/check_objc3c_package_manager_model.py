@@ -17,6 +17,7 @@ from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import python_script_command
 from objc3c_package_manager.model import (
+    DIRECT_IMPORT_SYNTAX_SUPPORT,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     LOCAL_PACKAGE_TRUST_KEY_ID,
@@ -104,7 +105,7 @@ def main() -> int:
         expect(isinstance(module_graph, dict), f"manifest module graph missing for {package_id}", failures)
         if not isinstance(module_graph, dict):
             module_graph = {}
-        expect(module_graph.get("direct_import_syntax") == "reserved-fail-closed", f"manifest direct import claim widened for {package_id}", failures)
+        expect(module_graph.get("direct_import_syntax") == DIRECT_IMPORT_SYNTAX_SUPPORT, f"manifest direct import syntax drifted for {package_id}", failures)
         expect(manifest.get("registry", {}).get("network_resolution") == "unsupported-fail-closed", f"manifest network support widened for {package_id}", failures)
         trust = manifest.get("trust", {})
         expect(isinstance(trust, dict) and trust.get("signing_key_id") == LOCAL_PACKAGE_TRUST_KEY_ID, f"manifest signing key drifted for {package_id}", failures)

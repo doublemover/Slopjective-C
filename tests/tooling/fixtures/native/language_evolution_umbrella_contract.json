@@ -1,0 +1,140 @@
+{
+  "contract_id": "objc3c.language_evolution.umbrella.fail_closed_contract.v1",
+  "schema_version": 1,
+  "umbrella_issue_ref": 8207,
+  "issue_refs": [
+    8233,
+    8234,
+    8235,
+    8236,
+    8237
+  ],
+  "source_truth": "checked-in native source, checked-in fixtures, and source-authored docs only",
+  "generated_or_temp_evidence_allowed": false,
+  "objc2_compatibility_paths_allowed": false,
+  "compatibility_aliases_allowed": false,
+  "feature_contracts": [
+    {
+      "feature_id": "typed_throws",
+      "issue_ref": 8233,
+      "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "support_state": "reserved_fail_closed",
+      "negative_case_ids": [
+        "negative_typed_throws_reserved",
+        "negative_typed_throws_empty_payload_reserved",
+        "negative_typed_throws_multi_payload_reserved",
+        "negative_typed_throws_erasure_mismatch_reserved"
+      ]
+    },
+    {
+      "feature_id": "value_optionals",
+      "issue_ref": 8234,
+      "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "support_state": "reserved_fail_closed",
+      "negative_case_ids": [
+        "negative_value_optional_canonical_reserved",
+        "negative_value_optional_nullable_pointer_conversion_reserved",
+        "negative_value_optional_nil_scalar_coercion_reserved",
+        "negative_value_optional_nested_lowercase_alias_reserved"
+      ]
+    },
+    {
+      "feature_id": "generic_callable_reification",
+      "issue_ref": 8235,
+      "contract": "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+      "support_state": "erased_generic_free_functions_supported_bounded_reification_reserved",
+      "negative_case_ids": [
+        "negative_generic_method_type_parameter_clause_reserved",
+        "negative_reify_generics_marker_reserved",
+        "negative_cstyle_generic_function_reserved",
+        "negative_type_semantic_generic_function_signature_drift"
+      ]
+    },
+    {
+      "feature_id": "match_guarded_patterns",
+      "issue_ref": 8236,
+      "contract": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+      "support_state": "statement_guarded_patterns_supported_bounded_match_expressions_reserved",
+      "negative_case_ids": [
+        "negative_match_expression_position_reserved",
+        "negative_match_statement_fat_arrow_ambiguous",
+        "negative_guarded_match_pattern_reserved",
+        "negative_guarded_match_pattern_non_bool"
+      ]
+    },
+    {
+      "feature_id": "strict_profiles",
+      "issue_ref": 8237,
+      "contract": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json",
+      "support_state": "core_only_claimed_strict_profiles_rejected",
+      "negative_case_ids": [
+        "strict_language_profile_reserved",
+        "strict_concurrency_language_profile_reserved",
+        "strict_concurrency_alias_rejected"
+      ]
+    }
+  ],
+  "admitted_public_claims": [
+    "objc3c.behavior.language.control-flow.statement-guarded-match",
+    "objc3c.behavior.language.generics.callable-type-parameters"
+  ],
+  "reserved_public_claims": [
+    "language.errors.typed-throws",
+    "language.types.value-optionals",
+    "language.generics.generic-callable-reification",
+    "language.control-flow.match-expressions",
+    "language.profiles.strict",
+    "language.profiles.strict-concurrency"
+  ],
+  "hard_fail_closed_requirements": [
+    "typed throws payloads are not silently erased into untyped throws",
+    "Optional<T> does not alias nullable object pointers or nil-to-scalar coercions",
+    "generic callable metadata remains erased-default unless declaration-scoped reification lands with runtime evidence",
+    "statement guarded match admits only bool where conditions and does not imply expression-position match support",
+    "strict and strict-concurrency profile names are not aliases for canonical or core"
+  ],
+  "lead_support_row_recommendations": [
+    {
+      "row_id": "language.evolution.umbrella-alignment",
+      "status": "reserved-source-owned-fail-closed",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.errors.typed-throws",
+      "status": "reserved",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.types.value-optionals",
+      "status": "reserved",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.generics.generic-callable-reification",
+      "status": "reserved-runtime-reification",
+      "evidence": [
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.control-flow.statement-guarded-match",
+      "status": "supported-bounded-statement-only",
+      "evidence": [
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.profiles.strict-admission",
+      "status": "reserved-fail-closed",
+      "evidence": [
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ]
+    }
+  ]
+}

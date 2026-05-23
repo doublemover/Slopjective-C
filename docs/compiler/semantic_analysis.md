@@ -3,10 +3,32 @@
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
-Typed throws, value optionals, match expressions, and guarded match patterns are
-not semantic support claims in the current slice. Parser/source-closure records
-must keep those features fail-closed until ABI, interface preservation,
-lowering, and runtime semantics exist for the specific feature family.
+Typed throws, value optionals, and match expressions are not semantic support
+claims in the current slice. Statement-form guarded match patterns are admitted
+only as `case pattern where bool_condition: { ... }`; the guard is checked after
+pattern binding, must type-check as `bool`, and a guarded catch-all does not make
+the match exhaustive by itself. Parser/source-closure records must keep match
+expressions fail-closed until result typing, interface preservation, lowering,
+and runtime semantics exist for that feature family.
+
+Generic callable reification is similarly bounded. Semantic records may publish
+deterministic erased-default signature replay keys for admitted
+`fn name<T>(...)` generic free functions, and redeclarations with generic
+signature drift reject instead of merging erased shapes. That metadata is not a
+runtime reification claim and does not admit Objective-C method type-parameter
+clauses, C/Objective-C style generic free functions, or `@reify_generics`.
+
+Strict and strict-concurrency profiles are profile-selection contracts rather
+than semantic aliases. `core` may be claimed by public conformance publication;
+strict and strict-concurrency remain fail-closed until their release/runtime
+evidence rows are implemented.
+
+The #8207 umbrella contract lives in
+`tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
+keeps semantic promotion bounded: typed throws, value optionals, runtime
+generic reification, match expressions, and strict profiles cannot be widened
+from source-only metadata, generated reports, or Objective-C 2 compatibility
+paths. Statement-form guarded match remains the only admitted #8236 surface.
 
 The semantic-analysis owner boundary is:
 

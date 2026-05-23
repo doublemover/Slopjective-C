@@ -34,7 +34,9 @@
 
     diagnostics_.push_back(MakeDiag(
         generic_clause.line, generic_clause.column, "O3P114",
-        "generic Objective-C method declarations are reserved for a future Objective-C 3 revision"));
+        "generic Objective-C method declarations ('- <T> ...' or '+ <T> ...') "
+        "are reserved for a future Objective-C 3 revision; selector identity "
+        "does not admit method type parameters yet"));
     return false;
   }
 

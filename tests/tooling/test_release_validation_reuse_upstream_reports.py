@@ -18,6 +18,7 @@ from scripts.objc3c_workflow.actions.test_orchestration_nightly_profile import (
     TEST_NIGHTLY_PROFILE,
 )
 from scripts.objc3c_workflow.registry_views import action_spec
+import scripts.check_platform_hardening_toolchain_range_replay as toolchain_range_replay
 
 
 def test_validate_release_foundation_can_reuse_performance_governance_report(
@@ -105,6 +106,44 @@ def test_validate_release_operations_can_reuse_packaging_channels_report(
             "--skip-upstream",
         ]
     ]
+
+
+def test_platform_toolchain_range_replay_reuses_build_package_validation(
+    monkeypatch,
+) -> None:
+    observed_steps: list[str] = []
+
+    def fake_require_packaging_validation_input() -> dict[str, object]:
+        observed_steps.append("reuse-platform-build-package-validation")
+        return {
+            "step": "reuse-platform-build-package-validation",
+            "command": ["report", "build-package-validation", "package-channels"],
+            "status": "PASS",
+        }
+
+    def fake_run_refresh_step(step: str, command: list[str]) -> dict[str, object]:
+        observed_steps.append(step)
+        assert "validate-packaging-channels" not in command
+        return {"step": step, "command": command, "status": "PASS"}
+
+    monkeypatch.setattr(
+        toolchain_range_replay,
+        "require_packaging_validation_input",
+        fake_require_packaging_validation_input,
+    )
+    monkeypatch.setattr(toolchain_range_replay, "run_refresh_step", fake_run_refresh_step)
+
+    steps = toolchain_range_replay.refresh_release_operations_metadata()
+
+    assert [step["step"] for step in steps] == [
+        "reuse-platform-build-package-validation",
+        "check-release-operations-surface",
+        "check-release-operations-schema-surface",
+        "build-update-manifest",
+        "publish-release-operations",
+    ]
+    assert observed_steps[0] == "reuse-platform-build-package-validation"
+    assert "validate-packaging-channels" not in observed_steps
 
 
 def test_validate_distribution_credibility_can_reuse_release_operations_report(

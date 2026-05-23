@@ -22,6 +22,12 @@ struct RuntimeExecutableContractSurfaceRecord {
   bool executor_hop_record_required;
   bool actor_mailbox_event_required;
   bool deterministic_replay_required;
+  bool scheduler_queue_state_required;
+  bool task_lifecycle_state_required;
+  bool cancellation_checkpoint_required;
+  bool task_error_cleanup_required;
+  bool shutdown_drain_required;
+  bool imported_runtime_replay_required;
   bool scheduler_fairness_supported;
   bool scheduler_priority_supported;
   bool distributed_scheduler_supported;
@@ -30,6 +36,32 @@ struct RuntimeExecutableContractSurfaceRecord {
   bool swift_runtime_abi_supported;
   bool foreign_metadata_preserved;
   bool foreign_runtime_mirroring_supported;
+  bool foreign_surface_classification_required;
+  bool foreign_typed_dispatch_expectation_required;
+  bool foreign_package_runtime_identity_required;
+  bool foreign_bridge_ownership_required;
+  bool swift_metadata_boundary_preserved;
+  bool cpp_metadata_boundary_preserved;
+  bool unsafe_mixed_image_rejected;
+  bool unsupported_runtime_fallback_rejected;
+  bool actor_mailbox_message_identity_required;
+  bool actor_mailbox_fifo_drain_required;
+  bool actor_mailbox_cancel_evidence_required;
+  bool actor_mailbox_error_evidence_required;
+  bool actor_mailbox_shutdown_evidence_required;
+  bool distributed_actor_transport_evidence_required;
+  bool distributed_actor_without_transport_rejected;
+  bool stale_actor_identity_rejected;
+  bool cancelled_mailbox_delivery_rejected;
+  bool macro_package_lock_identity_required;
+  bool macro_package_trust_identity_required;
+  bool macro_host_identity_required;
+  bool macro_cache_identity_required;
+  bool macro_input_output_identity_required;
+  bool macro_runtime_consumption_identity_required;
+  bool macro_stale_cache_rejected;
+  bool macro_tampered_metadata_rejected;
+  bool macro_missing_replay_metadata_rejected;
   int rejected_surface_count;
   const char *contract_id;
   const char *support_claim;
@@ -76,6 +108,12 @@ constexpr RuntimeExecutableContractSurfaceRecord
          true,
          true,
          true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
          false,
          false,
          false,
@@ -84,7 +122,33 @@ constexpr RuntimeExecutableContractSurfaceRecord
          false,
          false,
          false,
-         6,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         8,
          "objc3c.advanced-runtime.executable-contract.scheduler-task.v1",
          "objc3c.behavior.runtime.advanced.scheduler-task-contract",
          "scheduler-task-runtime-contract",
@@ -125,12 +189,44 @@ constexpr RuntimeExecutableContractSurfaceRecord
          false,
          false,
          false,
+         false,
+         false,
+         true,
+         false,
+         false,
+         false,
          true,
          false,
          false,
          true,
          false,
-         5,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         7,
          "objc3c.advanced-runtime.executable-contract.foreign-abi.v1",
          "objc3c.behavior.runtime.advanced.foreign-abi-contract",
          "foreign-abi-runtime-contract",
@@ -151,6 +247,165 @@ constexpr RuntimeExecutableContractSurfaceRecord
          kExecutableContractDocsPath,
          kAdvancedRuntimeClosureCommand,
          "advanced-runtime:#8215:foreign-abi-runtime-contract:v1"},
+        {OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SURFACE_ACTOR_MAILBOX_RUNTIME,
+         8216,
+         8213,
+         OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_SUPPORTED,
+         true,
+         true,
+         true,
+         true,
+         false,
+         false,
+         false,
+         false,
+         true,
+         true,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         5,
+         "objc3c.advanced-runtime.executable-contract.actor-mailbox.v1",
+         "objc3c.behavior.runtime.advanced.actor-mailbox-expansion",
+         "actor-mailbox-runtime-expansion-contract",
+         "local actor mailbox helpers preserve stable message identity, FIFO "
+         "enqueue/drain order, cancellation, error, shutdown, executor binding, "
+         "and replay evidence through the private actor runtime snapshot",
+         "distributed actor networking, cross-process transport, remote "
+         "serialization, remote identity, and Swift actor ABI compatibility "
+         "remain rejected without explicit transport evidence",
+         "tests/native/runtime/advanced_closure/combined_positive.objc3",
+         "tests/native/runtime/advanced_closure/"
+         "negative_distributed_actor_missing_transport.objc3",
+         "advanced-runtime.distributed-actor-missing-transport",
+         kTypedDispatchContract,
+         kNativeRegistrationContract,
+         "objc3_runtime_actor_runtime_state_snapshot+"
+         "objc3_runtime_actor_mailbox_enqueue_i32+"
+         "objc3_runtime_actor_mailbox_drain_next_i32+"
+         "objc3_runtime_actor_mailbox_cancel_i32+"
+         "objc3_runtime_actor_mailbox_record_error_i32+"
+         "objc3_runtime_actor_mailbox_shutdown_i32",
+         kExecutableContractSchemaPath,
+         kExecutableContractDocsPath,
+         kAdvancedRuntimeClosureCommand,
+         "advanced-runtime:#8216:actor-mailbox-runtime-expansion-contract:v1"},
+        {OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SURFACE_MACRO_PACKAGE_REPLAY_RUNTIME,
+         8217,
+         8213,
+         OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_SUPPORTED,
+         true,
+         true,
+         true,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         true,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         false,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         true,
+         5,
+         "objc3c.advanced-runtime.executable-contract.macro-package-replay.v1",
+         "objc3c.behavior.runtime.advanced.macro-package-replay",
+         "macro-package-replay-runtime-contract",
+         "macro host cache runtime-import packets preserve package identity, "
+         "package lock identity, trust identity, host identity, cache identity, "
+         "input/output content identity, replay generation, and runtime "
+         "consumption identity before cross-module replay consumption",
+         "arbitrary macro host execution, unsigned package replay, stale cache "
+         "reuse, host identity mismatch, missing replay metadata, and tampered "
+         "runtime metadata remain rejected",
+         "tests/native/runtime/advanced_closure/combined_positive.objc3",
+         "tests/native/runtime/advanced_closure/"
+         "negative_macro_package_replay_stale_cache.objc3",
+         "advanced-runtime.macro-package-replay-stale-cache",
+         kTypedDispatchContract,
+         kNativeRegistrationContract,
+         "objc_metaprogramming_macro_host_process_and_cache_runtime_integration+"
+         "Objc3CrossModuleRuntimeLinkPlanImportedInput",
+         kExecutableContractSchemaPath,
+         kExecutableContractDocsPath,
+         kAdvancedRuntimeClosureCommand,
+         "advanced-runtime:#8217:macro-package-replay-runtime-contract:v1"},
 };
 
 constexpr std::uint64_t RuntimeExecutableContractSurfaceCount() {
@@ -201,6 +456,17 @@ void PopulateRuntimeExecutableContractSurfaceSnapshot(
       record.actor_mailbox_event_required ? 1 : 0;
   snapshot.deterministic_replay_required =
       record.deterministic_replay_required ? 1 : 0;
+  snapshot.scheduler_queue_state_required =
+      record.scheduler_queue_state_required ? 1 : 0;
+  snapshot.task_lifecycle_state_required =
+      record.task_lifecycle_state_required ? 1 : 0;
+  snapshot.cancellation_checkpoint_required =
+      record.cancellation_checkpoint_required ? 1 : 0;
+  snapshot.task_error_cleanup_required =
+      record.task_error_cleanup_required ? 1 : 0;
+  snapshot.shutdown_drain_required = record.shutdown_drain_required ? 1 : 0;
+  snapshot.imported_runtime_replay_required =
+      record.imported_runtime_replay_required ? 1 : 0;
   snapshot.scheduler_fairness_supported =
       record.scheduler_fairness_supported ? 1 : 0;
   snapshot.scheduler_priority_supported =
@@ -216,6 +482,58 @@ void PopulateRuntimeExecutableContractSurfaceSnapshot(
       record.foreign_metadata_preserved ? 1 : 0;
   snapshot.foreign_runtime_mirroring_supported =
       record.foreign_runtime_mirroring_supported ? 1 : 0;
+  snapshot.foreign_surface_classification_required =
+      record.foreign_surface_classification_required ? 1 : 0;
+  snapshot.foreign_typed_dispatch_expectation_required =
+      record.foreign_typed_dispatch_expectation_required ? 1 : 0;
+  snapshot.foreign_package_runtime_identity_required =
+      record.foreign_package_runtime_identity_required ? 1 : 0;
+  snapshot.foreign_bridge_ownership_required =
+      record.foreign_bridge_ownership_required ? 1 : 0;
+  snapshot.swift_metadata_boundary_preserved =
+      record.swift_metadata_boundary_preserved ? 1 : 0;
+  snapshot.cpp_metadata_boundary_preserved =
+      record.cpp_metadata_boundary_preserved ? 1 : 0;
+  snapshot.unsafe_mixed_image_rejected =
+      record.unsafe_mixed_image_rejected ? 1 : 0;
+  snapshot.unsupported_runtime_fallback_rejected =
+      record.unsupported_runtime_fallback_rejected ? 1 : 0;
+  snapshot.actor_mailbox_message_identity_required =
+      record.actor_mailbox_message_identity_required ? 1 : 0;
+  snapshot.actor_mailbox_fifo_drain_required =
+      record.actor_mailbox_fifo_drain_required ? 1 : 0;
+  snapshot.actor_mailbox_cancel_evidence_required =
+      record.actor_mailbox_cancel_evidence_required ? 1 : 0;
+  snapshot.actor_mailbox_error_evidence_required =
+      record.actor_mailbox_error_evidence_required ? 1 : 0;
+  snapshot.actor_mailbox_shutdown_evidence_required =
+      record.actor_mailbox_shutdown_evidence_required ? 1 : 0;
+  snapshot.distributed_actor_transport_evidence_required =
+      record.distributed_actor_transport_evidence_required ? 1 : 0;
+  snapshot.distributed_actor_without_transport_rejected =
+      record.distributed_actor_without_transport_rejected ? 1 : 0;
+  snapshot.stale_actor_identity_rejected =
+      record.stale_actor_identity_rejected ? 1 : 0;
+  snapshot.cancelled_mailbox_delivery_rejected =
+      record.cancelled_mailbox_delivery_rejected ? 1 : 0;
+  snapshot.macro_package_lock_identity_required =
+      record.macro_package_lock_identity_required ? 1 : 0;
+  snapshot.macro_package_trust_identity_required =
+      record.macro_package_trust_identity_required ? 1 : 0;
+  snapshot.macro_host_identity_required =
+      record.macro_host_identity_required ? 1 : 0;
+  snapshot.macro_cache_identity_required =
+      record.macro_cache_identity_required ? 1 : 0;
+  snapshot.macro_input_output_identity_required =
+      record.macro_input_output_identity_required ? 1 : 0;
+  snapshot.macro_runtime_consumption_identity_required =
+      record.macro_runtime_consumption_identity_required ? 1 : 0;
+  snapshot.macro_stale_cache_rejected =
+      record.macro_stale_cache_rejected ? 1 : 0;
+  snapshot.macro_tampered_metadata_rejected =
+      record.macro_tampered_metadata_rejected ? 1 : 0;
+  snapshot.macro_missing_replay_metadata_rejected =
+      record.macro_missing_replay_metadata_rejected ? 1 : 0;
   snapshot.rejected_surface_count = record.rejected_surface_count;
   snapshot.contract_id = record.contract_id;
   snapshot.support_claim = record.support_claim;

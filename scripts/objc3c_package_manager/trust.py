@@ -9,13 +9,23 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from .digests import stable_digest
 
 PACKAGE_MANAGER_TAMPER_CODE = "O3PKG8055"
 PACKAGE_TRUST_CONTRACT_ID = "objc3c.package_ecosystem.signing_trust.v1"
 SIGNATURE_ENVELOPE_CONTRACT_ID = "objc3c.package_ecosystem.signature_envelope.v1"
+PACKAGE_EXTRACTION_PLAN_CONTRACT_ID = "objc3c.package_ecosystem.extraction_plan.v1"
+PACKAGE_EXTRACTION_PATH_POLICY_CONTRACT_ID = (
+    "objc3c.package_ecosystem.extraction_path_policy.v1"
+)
+INSTALLER_UPDATE_KEY_POLICY_CONTRACT_ID = (
+    "objc3c.package_ecosystem.installer_update_key_policy.v1"
+)
+RELEASE_REGISTRY_TRUST_ROOT_POLICY_CONTRACT_ID = (
+    "objc3c.package_ecosystem.release_registry_trust_root_policy.v1"
+)
 LOCAL_PACKAGE_TRUST_ROOT_ID = "objc3c-local-deterministic-trust-root-v1"
 LOCAL_PACKAGE_TRUST_KEY_ID = "objc3c-local-package-key-v1"
 LOCAL_PACKAGE_SIGNATURE_FORMAT = "objc3c-deterministic-test-sha256-v1"
@@ -32,6 +42,13 @@ PRODUCTION_SIGNATURE_ALGORITHM = "ed25519-reserved"
 LOCAL_PACKAGE_TRUST_VALID_FROM_UTC = "2025-01-01T00:00:00Z"
 LOCAL_PACKAGE_TRUST_VALID_UNTIL_UTC = "2027-01-01T00:00:00Z"
 PACKAGE_TRUST_COMPATIBILITY_SCOPE = "objc3-abi-2025Q4-language-3.0"
+EXTRACTION_PATH_POLICY = (
+    "fail-closed-no-absolute-traversal-symlink-overwrite-duplicates-v1"
+)
+INSTALLER_UPDATE_KEY_POLICY = "reserved-fail-closed-installer-update-keys-v1"
+RELEASE_REGISTRY_TRUST_ROOT_POLICY = (
+    "reserved-fail-closed-release-registry-trust-roots-v1"
+)
 _WILDCARD_NAMESPACE = "*"
 
 _SIGNED_SUBJECT_FIELDS = (
@@ -66,6 +83,9 @@ _REQUIRED_TRUST_POLICY_FIELDS = (
     "trust_roots",
     "revocations",
     "key_rotation_policy",
+    "extraction_path_policy",
+    "installer_update_key_policy",
+    "release_registry_trust_root_policy",
     "production_signing_backend",
     "verification_policy",
 )
@@ -84,6 +104,15 @@ _REQUIRED_TRUST_ROOT_FIELDS = (
     "trust_scope",
     "compatibility_scope",
     "allowed_package_namespaces",
+)
+_EXTRACTION_PATH_POLICY_TRUE_FIELDS = (
+    "before_filesystem_mutation_required",
+    "reject_absolute_paths",
+    "reject_parent_traversal",
+    "reject_symlink_entries",
+    "reject_overwrite_existing_paths",
+    "reject_duplicate_paths",
+    "reject_case_conflicting_paths",
 )
 
 
@@ -107,6 +136,24 @@ def package_namespace_from_id(package_id: str) -> str:
     if not separator or not namespace:
         return ""
     return namespace
+
+
+def default_extraction_path_policy_payload() -> dict[str, Any]:
+    return {
+        "contract_id": PACKAGE_EXTRACTION_PATH_POLICY_CONTRACT_ID,
+        "policy": EXTRACTION_PATH_POLICY,
+        "diagnostic_code": PACKAGE_MANAGER_TAMPER_CODE,
+        "plan_contract_id": PACKAGE_EXTRACTION_PLAN_CONTRACT_ID,
+        "path_root": "repo-relative-owned-package-root",
+        "before_filesystem_mutation_required": True,
+        "reject_absolute_paths": True,
+        "reject_parent_traversal": True,
+        "reject_symlink_entries": True,
+        "reject_overwrite_existing_paths": True,
+        "reject_duplicate_paths": True,
+        "reject_case_conflicting_paths": True,
+        "allow_empty_path": False,
+    }
 
 
 def default_trust_policy_payload() -> dict[str, Any]:
@@ -176,6 +223,29 @@ def default_trust_policy_payload() -> dict[str, Any]:
             "overlap_required": True,
             "implicit_key_rollover_allowed": False,
         },
+        "extraction_path_policy": default_extraction_path_policy_payload(),
+        "installer_update_key_policy": {
+            "contract_id": INSTALLER_UPDATE_KEY_POLICY_CONTRACT_ID,
+            "policy": INSTALLER_UPDATE_KEY_POLICY,
+            "diagnostic_code": PACKAGE_MANAGER_TAMPER_CODE,
+            "installer_key_required": True,
+            "update_key_required": True,
+            "installer_key_state": "reserved-fail-closed",
+            "update_key_state": "reserved-fail-closed",
+            "reserved_key_use_fails_closed": True,
+            "implicit_installer_key_rollover_allowed": False,
+            "implicit_update_key_rollover_allowed": False,
+        },
+        "release_registry_trust_root_policy": {
+            "contract_id": RELEASE_REGISTRY_TRUST_ROOT_POLICY_CONTRACT_ID,
+            "policy": RELEASE_REGISTRY_TRUST_ROOT_POLICY,
+            "diagnostic_code": PACKAGE_MANAGER_TAMPER_CODE,
+            "local_fixture_root_only_active": True,
+            "release_root_required_state": "reserved",
+            "registry_root_required_state": "reserved",
+            "reserved_root_use_fails_closed": True,
+            "fallback_trust_root_allowed": False,
+        },
         "production_signing_backend": {
             "state": "reserved-fail-closed",
             "required_backend": "ed25519-pinned-reviewed-provider",
@@ -235,6 +305,30 @@ def _duplicate_values(values: list[str]) -> set[str]:
     return duplicates
 
 
+def _path_is_absolute_or_drive_qualified(raw_path: str) -> bool:
+    normalized = raw_path.replace("\\", "/")
+    return (
+        Path(raw_path).is_absolute()
+        or normalized.startswith("/")
+        or normalized.startswith("~/")
+        or (len(normalized) >= 2 and normalized[1] == ":")
+    )
+
+
+def _normalized_package_path_parts(raw_path: str) -> list[str]:
+    return [part for part in raw_path.replace("\\", "/").split("/") if part]
+
+
+def _normalized_package_path(raw_path: str) -> str:
+    return "/".join(_normalized_package_path_parts(raw_path))
+
+
+def _string_values(values: Iterable[str] | None) -> set[str]:
+    if values is None:
+        return set()
+    return {str(value) for value in values}
+
+
 def _required_string(root: dict[str, Any], field_name: str) -> str:
     value = root.get(field_name)
     return value if isinstance(value, str) and value else ""
@@ -267,6 +361,80 @@ def _collect_revocation_shape_failures(revocations: Any) -> list[str]:
             failures.append(trust_diagnostic(f"trust policy revocations {field_name} has non-string subject"))
         for duplicate in sorted(_duplicate_values(string_values)):
             failures.append(trust_diagnostic(f"duplicate revocation subject {duplicate}"))
+    return failures
+
+
+def _collect_extraction_path_policy_failures(policy: Any) -> list[str]:
+    if not isinstance(policy, dict):
+        return [trust_diagnostic("trust policy extraction path policy is not an object")]
+    failures: list[str] = []
+    if policy.get("contract_id") != PACKAGE_EXTRACTION_PATH_POLICY_CONTRACT_ID:
+        failures.append(trust_diagnostic("extraction path policy contract id drifted"))
+    if policy.get("policy") != EXTRACTION_PATH_POLICY:
+        failures.append(trust_diagnostic("extraction path policy drifted"))
+    if policy.get("diagnostic_code") != PACKAGE_MANAGER_TAMPER_CODE:
+        failures.append(trust_diagnostic("extraction path policy diagnostic code drifted"))
+    if policy.get("plan_contract_id") != PACKAGE_EXTRACTION_PLAN_CONTRACT_ID:
+        failures.append(trust_diagnostic("extraction plan contract id drifted"))
+    if policy.get("path_root") != "repo-relative-owned-package-root":
+        failures.append(trust_diagnostic("extraction path root drifted"))
+    if policy.get("allow_empty_path") is not False:
+        failures.append(trust_diagnostic("extraction path policy allows empty paths"))
+    for field_name in _EXTRACTION_PATH_POLICY_TRUE_FIELDS:
+        if policy.get(field_name) is not True:
+            failures.append(trust_diagnostic(f"extraction path policy disabled {field_name}"))
+    return failures
+
+
+def _collect_installer_update_key_policy_failures(policy: Any) -> list[str]:
+    if not isinstance(policy, dict):
+        return [trust_diagnostic("trust policy installer/update key policy is not an object")]
+    failures: list[str] = []
+    if policy.get("contract_id") != INSTALLER_UPDATE_KEY_POLICY_CONTRACT_ID:
+        failures.append(trust_diagnostic("installer/update key policy contract id drifted"))
+    if policy.get("policy") != INSTALLER_UPDATE_KEY_POLICY:
+        failures.append(trust_diagnostic("installer/update key policy drifted"))
+    if policy.get("diagnostic_code") != PACKAGE_MANAGER_TAMPER_CODE:
+        failures.append(trust_diagnostic("installer/update key policy diagnostic code drifted"))
+    for field_name in (
+        "installer_key_required",
+        "update_key_required",
+        "reserved_key_use_fails_closed",
+    ):
+        if policy.get(field_name) is not True:
+            failures.append(trust_diagnostic(f"installer/update key policy disabled {field_name}"))
+    for field_name in (
+        "implicit_installer_key_rollover_allowed",
+        "implicit_update_key_rollover_allowed",
+    ):
+        if policy.get(field_name) is not False:
+            failures.append(trust_diagnostic(f"installer/update key policy allows {field_name}"))
+    for field_name in ("installer_key_state", "update_key_state"):
+        if policy.get(field_name) != "reserved-fail-closed":
+            failures.append(trust_diagnostic(f"installer/update key policy {field_name} is not reserved-fail-closed"))
+    return failures
+
+
+def _collect_release_registry_trust_root_policy_failures(policy: Any) -> list[str]:
+    if not isinstance(policy, dict):
+        return [trust_diagnostic("trust policy release/registry trust-root policy is not an object")]
+    failures: list[str] = []
+    if policy.get("contract_id") != RELEASE_REGISTRY_TRUST_ROOT_POLICY_CONTRACT_ID:
+        failures.append(trust_diagnostic("release/registry trust-root policy contract id drifted"))
+    if policy.get("policy") != RELEASE_REGISTRY_TRUST_ROOT_POLICY:
+        failures.append(trust_diagnostic("release/registry trust-root policy drifted"))
+    if policy.get("diagnostic_code") != PACKAGE_MANAGER_TAMPER_CODE:
+        failures.append(trust_diagnostic("release/registry trust-root policy diagnostic code drifted"))
+    if policy.get("local_fixture_root_only_active") is not True:
+        failures.append(trust_diagnostic("release/registry trust-root policy allows non-local active roots"))
+    if policy.get("release_root_required_state") != "reserved":
+        failures.append(trust_diagnostic("release trust root required state drifted"))
+    if policy.get("registry_root_required_state") != "reserved":
+        failures.append(trust_diagnostic("registry trust root required state drifted"))
+    if policy.get("reserved_root_use_fails_closed") is not True:
+        failures.append(trust_diagnostic("release/registry reserved root use does not fail closed"))
+    if policy.get("fallback_trust_root_allowed") is not False:
+        failures.append(trust_diagnostic("release/registry fallback trust root allowed"))
     return failures
 
 
@@ -308,6 +476,21 @@ def collect_trust_policy_failures(trust_policy: Any) -> list[str]:
         if key_rotation_policy.get("overlap_required") is not True:
             failures.append(trust_diagnostic("trust policy disabled key overlap requirement"))
 
+    failures.extend(
+        _collect_extraction_path_policy_failures(
+            trust_policy.get("extraction_path_policy")
+        )
+    )
+    failures.extend(
+        _collect_installer_update_key_policy_failures(
+            trust_policy.get("installer_update_key_policy")
+        )
+    )
+    failures.extend(
+        _collect_release_registry_trust_root_policy_failures(
+            trust_policy.get("release_registry_trust_root_policy")
+        )
+    )
     failures.extend(_collect_revocation_shape_failures(trust_policy.get("revocations")))
 
     roots = trust_policy.get("trust_roots", [])
@@ -350,12 +533,232 @@ def collect_trust_policy_failures(trust_policy: Any) -> list[str]:
         if root.get("signature_format") == PRODUCTION_SIGNATURE_FORMAT:
             if root.get("signature_algorithm") != PRODUCTION_SIGNATURE_ALGORITHM:
                 failures.append(trust_diagnostic(f"trust root {root_id or index} production signature algorithm drifted"))
+        if root.get("root_kind") == "release-signing" and root.get("key_state") != "reserved":
+            failures.append(trust_diagnostic(f"release trust root {root_id or index} is not reserved-fail-closed"))
+        if root.get("root_kind") == "registry-signing" and root.get("key_state") != "reserved":
+            failures.append(trust_diagnostic(f"registry trust root {root_id or index} is not reserved-fail-closed"))
+        if root.get("key_state") == "active" and root_id != LOCAL_PACKAGE_TRUST_ROOT_ID:
+            failures.append(trust_diagnostic(f"non-local active trust root {root_id or index}"))
+        if (
+            root.get("root_kind") not in {"local-development", "release-signing", "registry-signing"}
+            and root.get("key_state") == "active"
+        ):
+            failures.append(trust_diagnostic(f"unrecognized active trust root {root_id or index}"))
 
     for duplicate in sorted(_duplicate_values(root_ids)):
         failures.append(trust_diagnostic(f"duplicate trust root {duplicate}"))
     for duplicate in sorted(_duplicate_values(key_ids)):
         failures.append(trust_diagnostic(f"duplicate signing key {duplicate}"))
     return failures
+
+
+def collect_package_path_safety_failures(
+    raw_paths: Iterable[Any],
+    *,
+    existing_paths: Iterable[str] | None = None,
+    symlink_paths: Iterable[str] | None = None,
+    root_label: str = "package extraction",
+) -> list[str]:
+    failures: list[str] = []
+    exact_paths: set[str] = set()
+    casefold_paths: dict[str, str] = {}
+    existing = {_normalized_package_path(value) for value in _string_values(existing_paths)}
+    symlinks = {_normalized_package_path(value) for value in _string_values(symlink_paths)}
+    for value in raw_paths:
+        if not isinstance(value, str) or not value:
+            failures.append(trust_diagnostic(f"{root_label} path is invalid"))
+            continue
+        raw_path = value
+        if raw_path != raw_path.strip():
+            failures.append(trust_diagnostic(f"{root_label} path has surrounding whitespace: {raw_path!r}"))
+        if _path_is_absolute_or_drive_qualified(raw_path):
+            failures.append(trust_diagnostic(f"absolute {root_label} path rejected: {raw_path}"))
+            continue
+        raw_parts = raw_path.replace("\\", "/").split("/")
+        if "" in raw_parts:
+            failures.append(trust_diagnostic(f"{root_label} path contains empty segment: {raw_path}"))
+        if "." in raw_parts:
+            failures.append(trust_diagnostic(f"{root_label} path contains current-directory segment: {raw_path}"))
+        if ".." in raw_parts:
+            failures.append(trust_diagnostic(f"parent traversal {root_label} path rejected: {raw_path}"))
+            continue
+        normalized = _normalized_package_path(raw_path)
+        if not normalized:
+            failures.append(trust_diagnostic(f"{root_label} path is empty after normalization"))
+            continue
+        if normalized in exact_paths:
+            failures.append(trust_diagnostic(f"duplicate {root_label} path rejected: {normalized}"))
+        exact_paths.add(normalized)
+        case_key = normalized.casefold()
+        previous = casefold_paths.get(case_key)
+        if previous is not None and previous != normalized:
+            failures.append(
+                trust_diagnostic(
+                    f"case-conflicting {root_label} path rejected: {previous} vs {normalized}"
+                )
+            )
+        casefold_paths.setdefault(case_key, normalized)
+        if normalized in symlinks:
+            failures.append(trust_diagnostic(f"symlink {root_label} path rejected: {normalized}"))
+        if normalized in existing:
+            failures.append(trust_diagnostic(f"overwrite {root_label} path rejected: {normalized}"))
+    return failures
+
+
+def package_extraction_plan_payload(
+    *,
+    plan_id: str,
+    entries: Iterable[dict[str, Any]],
+    path_root: str = "repo-relative-owned-package-root",
+    path_policy: dict[str, Any] | None = None,
+    provenance: str = "source-owned-package-manager",
+) -> dict[str, Any]:
+    normalized_entries = [dict(entry) for entry in entries]
+    payload: dict[str, Any] = {
+        "contract_id": PACKAGE_EXTRACTION_PLAN_CONTRACT_ID,
+        "plan_id": plan_id,
+        "path_root": path_root,
+        "path_policy": path_policy or default_extraction_path_policy_payload(),
+        "entries": normalized_entries,
+        "entry_count": len(normalized_entries),
+        "before_filesystem_mutation": True,
+        "provenance": provenance,
+    }
+    payload["plan_digest"] = stable_digest(payload)
+    return payload
+
+
+def collect_extraction_plan_failures(
+    extraction_plan: Any,
+    *,
+    existing_paths: Iterable[str] | None = None,
+    symlink_paths: Iterable[str] | None = None,
+) -> list[str]:
+    if not isinstance(extraction_plan, dict):
+        return [trust_diagnostic("package extraction plan is not an object")]
+    failures: list[str] = []
+    for field_name in (
+        "contract_id",
+        "plan_id",
+        "path_root",
+        "path_policy",
+        "entries",
+        "entry_count",
+        "before_filesystem_mutation",
+        "provenance",
+    ):
+        if field_name not in extraction_plan:
+            failures.append(trust_diagnostic(f"package extraction plan missing {field_name}"))
+    if extraction_plan.get("contract_id") != PACKAGE_EXTRACTION_PLAN_CONTRACT_ID:
+        failures.append(trust_diagnostic("package extraction plan contract id drifted"))
+    if extraction_plan.get("path_root") != "repo-relative-owned-package-root":
+        failures.append(trust_diagnostic("package extraction plan root drifted"))
+    if extraction_plan.get("before_filesystem_mutation") is not True:
+        failures.append(trust_diagnostic("package extraction plan was not checked before filesystem mutation"))
+    failures.extend(
+        _collect_extraction_path_policy_failures(extraction_plan.get("path_policy"))
+    )
+    entries = extraction_plan.get("entries", [])
+    if not isinstance(entries, list) or not entries:
+        failures.append(trust_diagnostic("package extraction plan entries missing"))
+        return failures
+    if extraction_plan.get("entry_count") != len(entries):
+        failures.append(trust_diagnostic("package extraction plan entry count drifted"))
+    raw_paths: list[str] = []
+    entry_symlinks = set(_string_values(symlink_paths))
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            failures.append(trust_diagnostic(f"package extraction entry {index} is not an object"))
+            continue
+        raw_path = entry.get("path")
+        if not isinstance(raw_path, str) or not raw_path:
+            failures.append(trust_diagnostic(f"package extraction entry {index} has invalid path"))
+            continue
+        raw_paths.append(raw_path)
+        if entry.get("entry_type") == "symlink":
+            entry_symlinks.add(raw_path)
+        if entry.get("mutation") not in {"write", "copy", "record"}:
+            failures.append(trust_diagnostic(f"package extraction entry {raw_path} has invalid mutation"))
+    failures.extend(
+        collect_package_path_safety_failures(
+            raw_paths,
+            existing_paths=existing_paths,
+            symlink_paths=entry_symlinks,
+            root_label="package extraction",
+        )
+    )
+    plan_digest = extraction_plan.get("plan_digest")
+    if plan_digest is not None:
+        normalized = dict(extraction_plan)
+        normalized.pop("plan_digest", None)
+        if plan_digest != stable_digest(normalized):
+            failures.append(trust_diagnostic("package extraction plan digest drifted"))
+    return failures
+
+
+def _symlink_paths_under_root(root: Path, raw_path: str) -> list[str]:
+    paths: list[str] = []
+    current = root
+    parts: list[str] = []
+    for part in _normalized_package_path_parts(raw_path):
+        parts.append(part)
+        current = current / part
+        if current.is_symlink():
+            paths.append("/".join(parts))
+    return paths
+
+
+def collect_filesystem_extraction_plan_failures(
+    *,
+    root: Path,
+    extraction_plan: Any,
+) -> list[str]:
+    base_failures = collect_extraction_plan_failures(extraction_plan)
+    if base_failures:
+        return base_failures
+    assert isinstance(extraction_plan, dict)
+    entries = extraction_plan.get("entries", [])
+    existing_paths: list[str] = []
+    symlink_paths: list[str] = []
+    for entry in entries if isinstance(entries, list) else []:
+        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+            continue
+        raw_path = str(entry["path"])
+        normalized = _normalized_package_path(raw_path)
+        target = root / normalized
+        if target.exists() or target.is_symlink():
+            existing_paths.append(normalized)
+        symlink_paths.extend(_symlink_paths_under_root(root, raw_path))
+    return collect_extraction_plan_failures(
+        extraction_plan,
+        existing_paths=existing_paths,
+        symlink_paths=symlink_paths,
+    )
+
+
+def resolve_package_trust_cli_path(
+    raw_path: str,
+    *,
+    root: Path,
+    purpose: str,
+    must_exist: bool = True,
+    reject_existing: bool = False,
+) -> Path:
+    normalized = _normalized_package_path(raw_path)
+    symlink_paths = _symlink_paths_under_root(root, raw_path) if normalized else []
+    failures = collect_package_path_safety_failures(
+        [raw_path],
+        symlink_paths=symlink_paths,
+        root_label=purpose,
+    )
+    if failures:
+        raise PackageTrustError("\n".join(failures))
+    target = root / normalized
+    if must_exist and not target.is_file():
+        raise PackageTrustError(trust_diagnostic(f"missing {purpose} path: {normalized}"))
+    if reject_existing and (target.exists() or target.is_symlink()):
+        raise PackageTrustError(trust_diagnostic(f"overwrite {purpose} path rejected: {normalized}"))
+    return target
 
 
 def _collect_trust_root_binding_failures(
@@ -698,22 +1101,32 @@ __all__ = [
     "LOCAL_PACKAGE_SIGNING_BACKEND",
     "LOCAL_PACKAGE_TRUST_KEY_ID",
     "LOCAL_PACKAGE_TRUST_ROOT_ID",
+    "INSTALLER_UPDATE_KEY_POLICY_CONTRACT_ID",
     "PACKAGE_MANAGER_TAMPER_CODE",
+    "PACKAGE_EXTRACTION_PATH_POLICY_CONTRACT_ID",
+    "PACKAGE_EXTRACTION_PLAN_CONTRACT_ID",
     "PACKAGE_TRUST_CONTRACT_ID",
     "PRODUCTION_SIGNATURE_FORMAT",
     "PRODUCTION_SIGNING_BACKEND",
     "PackageTrustError",
+    "RELEASE_REGISTRY_TRUST_ROOT_POLICY_CONTRACT_ID",
     "SIGNATURE_ENVELOPE_CONTRACT_ID",
     "SIGNATURE_VERIFICATION_POLICY",
+    "collect_extraction_plan_failures",
+    "collect_filesystem_extraction_plan_failures",
     "collect_lock_package_trust_failures",
     "collect_manifest_trust_failures",
+    "collect_package_path_safety_failures",
     "collect_signature_envelope_failures",
     "collect_trust_policy_failures",
+    "default_extraction_path_policy_payload",
     "default_trust_policy_payload",
     "load_trust_policy",
     "lock_package_signature_subject",
     "manifest_signature_subject",
+    "package_extraction_plan_payload",
     "production_signing_reserved_diagnostic",
+    "resolve_package_trust_cli_path",
     "sign_manifest_trust_envelope",
     "sign_subject_with_deterministic_test_key",
     "signature_subject_payload",

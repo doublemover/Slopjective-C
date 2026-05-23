@@ -50,6 +50,31 @@ def test_sanitizer_validation_contract_pins_asan_ubsan_runtime_and_compiler_surf
         "native_compiler_c_api_runner",
     }
 
+    package_variants = {
+        variant["variant_id"]: variant
+        for variant in contract["runtime_package_variants"]  # type: ignore[index]
+    }
+    assert package_variants["objc3c.toolchain.sanitizer.address"]["issue_ref"] == 8230
+    assert package_variants["objc3c.toolchain.sanitizer.undefined"]["issue_ref"] == 8231
+    assert all(
+        variant["claim_state"] == "reserved"
+        and variant["native_package_execution_claimed"] is False
+        and variant["unsupported_behavior"] == "fail-closed"
+        and variant["metadata_freshness_guard"]["generated_metadata_allowed"] is False
+        and variant["metadata_freshness_guard"]["blocks_publication_on_stale"] is True
+        and variant["install_guard"]["missing_runtime_behavior"]
+        == "fail-closed-before-package-install"
+        and variant["install_guard"]["stale_package_metadata_behavior"]
+        == "fail-closed-before-publication"
+        for variant in package_variants.values()
+    )
+    assert package_variants["objc3c.toolchain.sanitizer.address"][
+        "runtime_library_contract"
+    ]["runtime_library_ids"] == ["objc3-runtime", "clang_rt.asan"]
+    assert package_variants["objc3c.toolchain.sanitizer.undefined"][
+        "runtime_library_contract"
+    ]["runtime_library_ids"] == ["objc3-runtime", "clang_rt.ubsan"]
+
 
 def test_language_runtime_threat_model_links_macro_runtime_compiler_evidence() -> None:
     contract = load_fixture("language_runtime_threat_model_backlog.json")

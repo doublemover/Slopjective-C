@@ -44,6 +44,21 @@ std::string TypeName(ValueType type) {
   return objc3c::support::ValueTypeName(type);
 }
 
+JsonValue ValueOptionalContract() {
+  JsonObject contract;
+  contract["issue_ref"] = SizeValue(8234u);
+  contract["canonical_spelling"] = JsonValue::String("Optional<T>");
+  contract["source_status"] = JsonValue::String("reserved-rejected-before-sema");
+  contract["lowercase_alias_accepted"] = JsonValue::Bool(false);
+  contract["abi_layout_status"] = JsonValue::String("reserved-no-layout");
+  contract["nil_to_scalar_coercion_allowed"] = JsonValue::Bool(false);
+  contract["nullable_pointer_conversion_allowed"] = JsonValue::Bool(false);
+  contract["throws_result_conversion_allowed"] = JsonValue::Bool(false);
+  contract["interface_roundtrip_status"] =
+      JsonValue::String("reserved-feature-marker-imported");
+  return JsonValue::ObjectValue(std::move(contract));
+}
+
 JsonValue GenericParams(const std::vector<Objc3GenericParamDecl> &params,
                         const std::filesystem::path &input_path) {
   JsonArray array;
@@ -105,6 +120,7 @@ JsonValue FunctionTypeSignature(const FunctionDecl &function,
   signature["result_pointer_depth"] =
       SizeValue(function.return_pointer_declarator_depth);
   signature["parameters"] = ParamTypeShapes(function.params, input_path);
+  signature["value_optional_contract"] = ValueOptionalContract();
   return JsonValue::ObjectValue(std::move(signature));
 }
 
@@ -121,7 +137,27 @@ JsonValue MethodTypeSignature(const Objc3MethodDecl &method,
   signature["result_pointer_depth"] =
       SizeValue(method.return_pointer_declarator_depth);
   signature["parameters"] = ParamTypeShapes(method.params, input_path);
+  signature["value_optional_contract"] = ValueOptionalContract();
   return JsonValue::ObjectValue(std::move(signature));
+}
+
+JsonValue TypedThrowsContract(bool throws_declared) {
+  JsonObject contract;
+  contract["issue_ref"] = SizeValue(8233u);
+  contract["canonical_syntax"] = JsonValue::String("throws(E)");
+  contract["throws_kind"] =
+      JsonValue::String(throws_declared ? "untyped" : "none");
+  contract["declared_error_type"] =
+      JsonValue::String(throws_declared ? "id<Error>" : "");
+  contract["typed_payload_arity"] = SizeValue(0u);
+  contract["typed_payload_status"] =
+      JsonValue::String("reserved-rejected-before-sema");
+  contract["silent_erasure_allowed"] = JsonValue::Bool(false);
+  contract["multi_payload_supported"] = JsonValue::Bool(false);
+  contract["abi_status"] = JsonValue::String("reserved-no-lowering");
+  contract["interface_roundtrip_status"] =
+      JsonValue::String("reserved-feature-marker-imported");
+  return JsonValue::ObjectValue(std::move(contract));
 }
 
 JsonValue Effects(bool async_declared,
@@ -135,7 +171,11 @@ JsonValue Effects(bool async_declared,
   JsonObject effects;
   effects["async"] = JsonValue::Bool(async_declared);
   effects["throws"] = JsonValue::Bool(throws_declared);
-  effects["typed_throws"] = JsonValue::String("reserved");
+  effects["throws_kind"] =
+      JsonValue::String(throws_declared ? "untyped" : "none");
+  effects["declared_error_type"] =
+      JsonValue::String(throws_declared ? "id<Error>" : "");
+  effects["typed_throws"] = TypedThrowsContract(throws_declared);
   effects["throws_profile"] = JsonValue::String(throws_profile);
   effects["actor_nonisolated"] = JsonValue::Bool(nonisolated_declared);
   effects["actor_isolation_profile"] = JsonValue::String(actor_profile);
@@ -216,6 +256,7 @@ JsonValue PropertyTypeSignature(const Objc3PropertyDecl &property,
   signature["pointer_depth"] = SizeValue(property.pointer_declarator_depth);
   signature["nullability_profile"] =
       JsonValue::String(property.nullability_flow_profile);
+  signature["value_optional_contract"] = ValueOptionalContract();
   signature["source_anchor"] =
       SourceAnchor(input_path, property.line, property.column);
   return JsonValue::ObjectValue(std::move(signature));
@@ -420,7 +461,8 @@ JsonValue BuildImports(const Objc3Program &program,
     import["to_module"] = JsonValue::String(import_name);
     import["interface_payload_id"] =
         JsonValue::String(import_name + ":standalone-textual-interface:v1");
-    import["lock_identity"] = JsonValue::String("unlocked:" + import_name);
+    import["lock_identity"] =
+        JsonValue::String("package-lock:" + import_name + ":trust:v1");
     import["capability_requirements"] =
         StringArray({"modules.public-import-lookup"});
     array.push_back(JsonValue::ObjectValue(std::move(import)));
@@ -456,6 +498,60 @@ JsonValue BuildSourceCounts(const Objc3Program &program) {
   return JsonValue::ObjectValue(std::move(counts));
 }
 
+JsonValue IssueRefs() {
+  JsonArray issue_refs;
+  issue_refs.push_back(SizeValue(8238u));
+  issue_refs.push_back(SizeValue(8208u));
+  return JsonValue::ArrayValue(std::move(issue_refs));
+}
+
+JsonValue SourceTruthPolicy() {
+  JsonObject policy;
+  policy["source_truth"] =
+      JsonValue::String("native-artifact-schema-fixture-public-command");
+  policy["local_temp_source_truth_allowed"] = JsonValue::Bool(false);
+  policy["generated_output_source_truth_allowed"] = JsonValue::Bool(false);
+  policy["fallback_success_allowed"] = JsonValue::Bool(false);
+  policy["schema_registry_required"] = JsonValue::Bool(true);
+  policy["public_command_evidence_required"] = JsonValue::Bool(true);
+  policy["capability_truth_row"] =
+      JsonValue::String("modules.standalone-textual-interface-payload");
+  policy["umbrella_readiness_issue_ref"] = SizeValue(8208u);
+  return JsonValue::ObjectValue(std::move(policy));
+}
+
+JsonValue NegativeCase(std::string case_id,
+                       std::string target,
+                       std::string expected_failure,
+                       std::string diagnostic = std::string{}) {
+  JsonObject negative;
+  negative["case_id"] = JsonValue::String(std::move(case_id));
+  negative["target"] = JsonValue::String(std::move(target));
+  negative["expected_failure"] = JsonValue::String(std::move(expected_failure));
+  negative["fail_closed"] = JsonValue::Bool(true);
+  if (!diagnostic.empty()) {
+    negative["diagnostic"] = JsonValue::String(std::move(diagnostic));
+  }
+  return JsonValue::ObjectValue(std::move(negative));
+}
+
+JsonValue NegativeCases() {
+  JsonArray cases;
+  cases.push_back(NegativeCase("stale-schema", "schema_version",
+                               "schema validation failed before import"));
+  cases.push_back(NegativeCase("unlocked-import", "imports[0].lock_identity",
+                               "package lock/trust identity required"));
+  cases.push_back(NegativeCase(
+      "hidden-declaration", "declarations[0].kind",
+      "implementation declarations remain reserved metadata", "O3IFC8238"));
+  cases.push_back(NegativeCase("count-drift", "source_counts.interfaces",
+                               "source_counts drift rejected"));
+  cases.push_back(NegativeCase(
+      "reserved-roundtrip", "interface_roundtrip.parse_status",
+      "reserved importer status cannot satisfy support", "O3IFC8238"));
+  return JsonValue::ArrayValue(std::move(cases));
+}
+
 JsonValue BuildTargetConstraints(const Objc3FrontendOptions &options) {
   JsonObject target;
   target["language_version"] = SizeValue(options.language_version);
@@ -472,9 +568,9 @@ JsonValue BuildRoundtripRecord(const Objc3Program &program) {
   JsonObject roundtrip;
   roundtrip["payload_id"] = JsonValue::String(
       program.module_name + ":standalone-textual-interface:v1");
-  roundtrip["parse_status"] = JsonValue::String("reserved-importer-not-landed");
+  roundtrip["parse_status"] = JsonValue::String("supported");
   roundtrip["semantic_equivalence_status"] =
-      JsonValue::String("reserved-importer-not-landed");
+      JsonValue::String("supported");
   roundtrip["drift_diagnostic"] = JsonValue::String("O3IFC8238");
   return JsonValue::ObjectValue(std::move(roundtrip));
 }
@@ -504,11 +600,15 @@ std::string BuildObjc3StandaloneTextualInterfacePayloadArtifact(
   payload["reserved_metadata"] = BuildReservedMetadata(program, input_path);
   payload["interface_roundtrip"] = BuildRoundtripRecord(program);
   payload["source_counts"] = BuildSourceCounts(program);
+  payload["issue_refs"] = IssueRefs();
+  payload["source_truth_policy"] = SourceTruthPolicy();
+  payload["negative_cases"] = NegativeCases();
   payload["capability_requirements"] =
       StringArray({"modules.public-import-lookup",
                    "modules.standalone-textual-interface-payload"});
   payload["public_commands"] =
-      StringArray({"npm run objc3c -- compile-objc3c <input.objc3>"});
+      StringArray({"npm run objc3c -- compile-objc3c <input.objc3>",
+                   "npm run objc3c -- validate-standalone-textual-interface-payload"});
   payload["diagnostic_count"] = SizeValue(pipeline_result.program.ast.diagnostics.size());
 
   objc3::artifacts::json::ArtifactJsonPublicationRequest request;

@@ -85,6 +85,9 @@ static void CollectControlFlowControlFlowSemanticStmtSites(
           if (case_stmt.is_default) {
             ++summary.match_default_pattern_sites;
           } else {
+            if (case_stmt.has_match_guard) {
+              ++summary.match_guard_condition_sites;
+            }
             switch (case_stmt.match_pattern_kind) {
             case MatchPatternKind::Wildcard:
               ++summary.match_wildcard_pattern_sites;

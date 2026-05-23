@@ -81,6 +81,34 @@ def fake_filetype_command_probe_run(
     raise AssertionError(f"unexpected command: {command}")
 
 
+def fake_llc_filetype_unsupported_run(
+    command: list[str],
+    **_: object,
+) -> subprocess.CompletedProcess[str]:
+    cmd = tuple(command)
+    if cmd == ("clang", "--version"):
+        return fake_completed(command, returncode=0, stdout="clang version 19.1.0\n")
+    if cmd == ("llc", "--version"):
+        return fake_completed(
+            command,
+            returncode=0,
+            stdout="Debian LLVM version 19.1.0\n",
+        )
+    if cmd == ("llc", "--help"):
+        return fake_completed(
+            command,
+            returncode=0,
+            stdout="llc help without object filetype support\n",
+        )
+    if cmd == ("llc", "--filetype=obj", "--version"):
+        return fake_completed(
+            command,
+            returncode=1,
+            stderr="unknown option --filetype=obj\n",
+        )
+    raise AssertionError(f"unexpected command: {command}")
+
+
 def fake_clang_missing_run(
     command: list[str],
     **_: object,

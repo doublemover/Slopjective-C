@@ -47,6 +47,9 @@
       "platform_id": "windows-x64",
       "host_os": "windows",
       "host_arch": "x64",
+      "host_triples": [
+        "x86_64-pc-windows-msvc"
+      ],
       "support_state": "supported",
       "claim_class": "supported",
       "tier_id": "tier-1",
@@ -94,9 +97,27 @@
       "platform_id": "linux-x64",
       "host_os": "linux",
       "host_arch": "x64",
+      "host_triples": [
+        "x86_64-unknown-linux-gnu"
+      ],
       "support_state": "unsupported",
       "claim_class": "fail-closed",
       "tier_id": "unsupported",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
       "evidence": {
         "fail_closed": "objc3c.evidence.unsupported.linux-x64.fail-closed"
       },
@@ -138,9 +159,27 @@
       "platform_id": "darwin-arm64",
       "host_os": "darwin",
       "host_arch": "arm64",
+      "host_triples": [
+        "aarch64-apple-darwin"
+      ],
       "support_state": "unsupported",
       "claim_class": "fail-closed",
       "tier_id": "unsupported",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
       "evidence": {
         "fail_closed": "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
       },
@@ -310,6 +349,18 @@
     "contract_id": "objc3c.llvm.version-support-matrix.source.v1",
     "issue_ref": 8232,
     "support_claim_policy": "capability-probed-fail-closed",
+    "native_object_emission_contract": {
+      "contract_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+      "issue_ref": 8232,
+      "required_tool": "llc",
+      "required_probe": "llc --filetype=obj",
+      "success_status": "native_object_emission_supported",
+      "missing_llc_status": "native_object_emission_missing_llc",
+      "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+      "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+      "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+      "fallback_policy": "no-clang-fallback-success-claim"
+    },
     "minimum_supported_version": "19.1.0",
     "known_good_versions": [
       "19.1.0"
@@ -380,7 +431,11 @@
       {
         "rule_id": "objc3c.llvm.reject.missing-llc",
         "condition": "llc is absent or does not support --filetype=obj",
-        "diagnostic": "native object emission is rejected before package or execution support is claimed"
+        "diagnostic": "native object emission is rejected before package or execution support is claimed",
+        "failure_status": "native_object_emission_missing_llc",
+        "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+        "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+        "fallback_policy": "no-clang-fallback-success-claim"
       },
       {
         "rule_id": "objc3c.llvm.reject.mixed-toolchain",
@@ -404,6 +459,19 @@
         "windows-x64"
       ],
       "package_id": "org.objc3c.runtime:objc3c-runtime-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.windows-x64.release",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "claim_state": "evidence-bound",
       "channel_scope": [
         "portable-archive",
@@ -431,6 +499,19 @@
       "target_platform_id": "linux-x64",
       "platform_ids": [],
       "package_id": "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.linux-x64.release.fail-closed",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "claim_state": "fail-closed",
       "channel_scope": [],
       "required_evidence_classes": [
@@ -461,6 +542,18 @@
           "failure_class": "missing-clean-install-evidence",
           "required_behavior": "fail-closed-before-install-support-claim",
           "source_owner": "platform-hardening-install-validation"
+        },
+        {
+          "contract_id": "objc3c.package.linux-x64.reject.runtime-library-absent",
+          "failure_class": "missing-runtime-library",
+          "required_behavior": "fail-closed-before-native-execution-claim",
+          "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.linux-x64.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
+          "source_owner": "platform-hardening-support-source"
         }
       ],
       "diagnostic": "Linux x64 release runtime packages are blocked until Linux build, package, install, and native execution evidence is checked in."
@@ -472,6 +565,19 @@
       "target_platform_id": "darwin-arm64",
       "platform_ids": [],
       "package_id": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.darwin-arm64.release.fail-closed",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "claim_state": "fail-closed",
       "channel_scope": [],
       "required_evidence_classes": [
@@ -502,6 +608,18 @@
           "failure_class": "missing-runtime-load-path-evidence",
           "required_behavior": "fail-closed-before-native-execution-claim",
           "source_owner": "platform-hardening-install-validation"
+        },
+        {
+          "contract_id": "objc3c.package.darwin-arm64.reject.runtime-library-absent",
+          "failure_class": "missing-runtime-library",
+          "required_behavior": "fail-closed-before-native-execution-claim",
+          "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.darwin-arm64.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
+          "source_owner": "platform-hardening-support-source"
         }
       ],
       "diagnostic": "macOS arm64 release runtime packages are blocked until Mach-O, package install, load-path, and native execution evidence is checked in."
@@ -513,6 +631,20 @@
       "target_platform_id": "sanitizer-address",
       "platform_ids": [],
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.asan.reserved",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "claim_state": "reserved",
       "channel_scope": [],
       "required_evidence_classes": [
@@ -542,6 +674,24 @@
           "failure_class": "mixed-sanitized-unsanitized-runtime",
           "required_behavior": "fail-closed-before-native-execution-claim",
           "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.asan.reject.missing-runtime",
+          "failure_class": "missing-asan-runtime-library",
+          "required_behavior": "fail-closed-before-package-install",
+          "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.asan.reject.unsupported-host",
+          "failure_class": "unsupported-sanitizer-platform",
+          "required_behavior": "fail-closed-before-capability-promotion",
+          "source_owner": "platform-hardening-support-source"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.asan.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
+          "source_owner": "platform-hardening-support-source"
         }
       ],
       "diagnostic": "ASan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
@@ -553,6 +703,20 @@
       "target_platform_id": "sanitizer-undefined",
       "platform_ids": [],
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.ubsan.reserved",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "claim_state": "reserved",
       "channel_scope": [],
       "required_evidence_classes": [
@@ -582,6 +746,24 @@
           "failure_class": "ubsan-suppression-policy-drift",
           "required_behavior": "fail-closed-before-native-execution-claim",
           "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.ubsan.reject.missing-runtime",
+          "failure_class": "missing-ubsan-runtime-library",
+          "required_behavior": "fail-closed-before-package-install",
+          "source_owner": "platform-hardening-build-package-validation"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.ubsan.reject.unsupported-host",
+          "failure_class": "unsupported-sanitizer-platform",
+          "required_behavior": "fail-closed-before-capability-promotion",
+          "source_owner": "platform-hardening-support-source"
+        },
+        {
+          "contract_id": "objc3c.package.sanitizer.ubsan.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
+          "source_owner": "platform-hardening-support-source"
         }
       ],
       "diagnostic": "UBSan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
@@ -598,6 +780,12 @@
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "llvm_requirement": "current-probed-LLVM-with-address-sanitizer-runtime",
       "runtime_requirement": "ASan runtime library available for the exact target platform and package variant",
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.toolchain.sanitizer.address",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "build_contract": {
         "compiler_flags": [
           "-fsanitize=address",
@@ -613,7 +801,9 @@
       "install_guard": {
         "release_channel_policy": "asan packages are opt-in and blocked from default release runtime installs",
         "unsupported_platform_behavior": "fail-closed",
-        "mixed_runtime_behavior": "fail-closed"
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
@@ -630,6 +820,12 @@
           "failure_class": "unsupported-sanitizer-platform",
           "required_behavior": "fail-closed-before-capability-promotion",
           "source_owner": "platform-hardening-support-source"
+        },
+        {
+          "contract_id": "objc3c.sanitizer.address.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
+          "source_owner": "platform-hardening-support-source"
         }
       ],
       "diagnostic": "AddressSanitizer support is reserved until package install and native execution evidence exists for the sanitizer build."
@@ -644,6 +840,12 @@
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "llvm_requirement": "current-probed-LLVM-with-undefined-behavior-sanitizer-runtime",
       "runtime_requirement": "UBSan runtime library and explicit trap-or-recover mode for the exact target platform and package variant",
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.toolchain.sanitizer.undefined",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
       "build_contract": {
         "compiler_flags": [
           "-fsanitize=undefined",
@@ -661,7 +863,9 @@
       "install_guard": {
         "release_channel_policy": "ubsan packages are opt-in and blocked from default release runtime installs",
         "unsupported_platform_behavior": "fail-closed",
-        "mixed_runtime_behavior": "fail-closed"
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
@@ -677,6 +881,12 @@
           "contract_id": "objc3c.sanitizer.undefined.reject.suppression-drift",
           "failure_class": "ubsan-suppression-policy-drift",
           "required_behavior": "fail-closed-before-native-execution-claim",
+          "source_owner": "platform-hardening-support-source"
+        },
+        {
+          "contract_id": "objc3c.sanitizer.undefined.reject.stale-package-metadata",
+          "failure_class": "stale-package-metadata",
+          "required_behavior": "fail-closed-before-publication",
           "source_owner": "platform-hardening-support-source"
         }
       ],

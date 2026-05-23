@@ -173,6 +173,9 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
         << Objc3RuntimeMetadataHostSectionForLogicalName(
                kObjc3RuntimeKeypathDescriptorLogicalSection)
         << ";aggregate_symbol=@__objc3_sec_keypath_descriptors"
+        << ";debugger_metadata=source-span,type-identity,object-model-owner,"
+           "object-model-member,source-map-key,diagnostic-anchor"
+        << ";fallback_interpretation_allowed=false"
         << ";generic_metadata_abi_replay_key="
         << (frontend_metadata.lowering_generic_metadata_abi_replay_key.empty()
                 ? "none"

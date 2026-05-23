@@ -1,8 +1,8 @@
 """Deterministic local package manager model for Objective-C 3.0.
 
 The package manager intentionally starts with checked-in local package roots.
-Network resolution and hosted registry behavior remain fail-closed until they
-have their own replayable evidence.
+Network resolution remains fail-closed; hosted registry behavior is admitted
+only through source-owned, offline fixture metadata with pinned trust material.
 """
 
 from __future__ import annotations
@@ -29,7 +29,8 @@ LOCAL_PACKAGE_LANGUAGE_VERSION = "3.0"
 LOCAL_PACKAGE_LANGUAGE_MODE = "strict"
 LOCAL_PACKAGE_ABI_IDENTITY = "objc3-abi-2025Q4"
 LOCAL_PACKAGE_HOST_PLATFORM = "windows-x64"
-DIRECT_IMPORT_SYNTAX_SUPPORT = "reserved-fail-closed"
+DIRECT_IMPORT_SYNTAX_SUPPORT = "supported-fail-closed"
+DIRECT_IMPORT_PACKAGE_PROVENANCE = "locked-package"
 LOCAL_MODULE_GRAPH_RESOLVER = "checked-in-local-registry"
 LOCAL_DEPENDENCY_SOURCE = "checked-in-local-workspace"
 LOCAL_DEPENDENCY_RESOLUTION = "locked-local-registry"
@@ -176,6 +177,35 @@ def module_import_edges(
     )
 
 
+def module_direct_imports(
+    *,
+    from_module: str,
+    dependencies: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    return sorted(
+        [
+            {
+                "syntax": "@import",
+                "source_module": from_module,
+                "imported_module": package_name(str(dependency["package_id"])),
+                "to_package_id": str(dependency["package_id"]),
+                "package_provenance": DIRECT_IMPORT_PACKAGE_PROVENANCE,
+                "source_authority": str(dependency["source_authority"]),
+                "source_authority_digest": str(dependency["source_authority_digest"]),
+                "resolution": LOCAL_DEPENDENCY_RESOLUTION,
+                "required_version": str(dependency["version_requirement"]),
+                "missing_provenance_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
+            }
+            for dependency in dependencies
+        ],
+        key=lambda edge: (
+            edge["imported_module"].lower(),
+            edge["to_package_id"],
+            edge["required_version"],
+        ),
+    )
+
+
 def module_graph_payload(
     *,
     package_id: str,
@@ -203,6 +233,10 @@ def module_graph_payload(
         },
         "resolver": LOCAL_MODULE_GRAPH_RESOLVER,
         "direct_import_syntax": DIRECT_IMPORT_SYNTAX_SUPPORT,
+        "direct_imports": module_direct_imports(
+            from_module=module_id,
+            dependencies=dependencies,
+        ),
         "import_edges": module_import_edges(
             from_module=module_id,
             dependencies=dependencies,
@@ -471,7 +505,9 @@ def build_lock_components(
             runtime_symbols=runtime_symbols,
             replay_actions=[
                 "build-package-lock",
+                "validate-package-security-hardening",
                 "validate-package-manager-model",
+                "validate-direct-import-module-syntax",
                 "validate-package-authoring",
             ],
         )
@@ -513,7 +549,9 @@ def build_lock_components(
             runtime_symbols=[],
             replay_actions=[
                 "build-package-lock",
+                "validate-package-security-hardening",
                 "validate-package-manager-model",
+                "validate-direct-import-module-syntax",
                 "validate-package-authoring",
                 "validate-package-ecosystem",
             ],
@@ -686,7 +724,7 @@ def collect_package_module_graph_failures(
     if graph.get("resolver") != LOCAL_MODULE_GRAPH_RESOLVER:
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph resolver drift for {package_id}")
     if graph.get("direct_import_syntax") != DIRECT_IMPORT_SYNTAX_SUPPORT:
-        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import support claim widened for {package_id}")
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import syntax contract drift for {package_id}")
 
     unsafe_policy = graph.get("unsafe_metadata_policy", {})
     expected_unsafe_policy = {
@@ -722,6 +760,59 @@ def collect_package_module_graph_failures(
     actual_edges = graph.get("import_edges", [])
     if actual_edges != expected_edges:
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph import edges drift for {package_id}")
+
+    expected_direct_imports: list[dict[str, str]] = []
+    for dependency in dependencies:
+        to_package_id = str(dependency.get("to", ""))
+        expected_direct_imports.append(
+            {
+                "syntax": "@import",
+                "source_module": from_module,
+                "imported_module": package_name(to_package_id) if ":" in to_package_id else "",
+                "to_package_id": to_package_id,
+                "package_provenance": DIRECT_IMPORT_PACKAGE_PROVENANCE,
+                "source_authority": str(dependency.get("source_authority", "")),
+                "source_authority_digest": str(dependency.get("source_authority_digest", "")),
+                "resolution": str(dependency.get("resolution", "")),
+                "required_version": str(dependency.get("required_version", "")),
+                "missing_provenance_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
+            }
+        )
+    expected_direct_imports = sorted(
+        expected_direct_imports,
+        key=lambda item: (
+            item["imported_module"].lower(),
+            item["to_package_id"],
+            item["required_version"],
+        ),
+    )
+    actual_direct_imports = graph.get("direct_imports", [])
+    if not isinstance(actual_direct_imports, list):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing direct @import module identity data for {package_id}")
+        actual_direct_imports = []
+    import_identity_packages: dict[str, set[str]] = {}
+    for direct_import in actual_direct_imports:
+        if not isinstance(direct_import, dict):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: malformed direct @import metadata for {package_id}")
+            continue
+        imported_module = str(direct_import.get("imported_module", ""))
+        to_package_id = str(direct_import.get("to_package_id", ""))
+        if not imported_module or not to_package_id or direct_import.get("package_provenance") != DIRECT_IMPORT_PACKAGE_PROVENANCE:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing direct @import package provenance for {package_id}")
+        if direct_import.get("syntax") != "@import":
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import syntax marker drift for {package_id}")
+        if direct_import.get("missing_provenance_diagnostic") != PACKAGE_MANAGER_TAMPER_CODE:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import diagnostic contract drift for {package_id}")
+        if imported_module and to_package_id:
+            import_identity_packages.setdefault(imported_module.lower(), set()).add(to_package_id)
+    for imported_module_key, package_ids_for_identity in sorted(import_identity_packages.items()):
+        if len(package_ids_for_identity) > 1:
+            failures.append(
+                f"{PACKAGE_MANAGER_TAMPER_CODE}: ambiguous direct @import module identity "
+                f"{imported_module_key} for {package_id}"
+            )
+    if actual_direct_imports != expected_direct_imports:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import module identity drift for {package_id}")
     return failures
 
 

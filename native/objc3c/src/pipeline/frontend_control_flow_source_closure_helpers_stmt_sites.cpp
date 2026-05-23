@@ -84,6 +84,9 @@ void CollectControlFlowControlFlowSourceClosureStmtSites(
           ++summary.match_default_sites;
         } else {
           ++summary.match_case_pattern_sites;
+          if (case_stmt.has_match_guard) {
+            ++summary.guarded_match_pattern_sites;
+          }
           switch (case_stmt.match_pattern_kind) {
           case MatchPatternKind::Wildcard:
             ++summary.match_wildcard_pattern_sites;

@@ -14,6 +14,13 @@ for import_root in (ROOT, SCRIPTS_ROOT):
         sys.path.insert(0, import_root_text)
 
 from objc3c_shared.schema_registry import validate_registered_schema  # noqa: E402
+from check_objc3c_standalone_textual_interface_payload import (  # noqa: E402
+    PUBLIC_VALIDATE_COMMAND,
+    REQUIRED_NEGATIVE_CASE_IDS,
+    REQUIRED_SOURCE_TRUTH_POLICY,
+    negative_payload_cases,
+    validate_payload,
+)
 
 TEXTUAL_INTERFACE_SCHEMA_ID = "objc3c-standalone-textual-interface-payload-v1"
 TEXTUAL_INTERFACE_FIXTURE = (
@@ -60,16 +67,18 @@ def assert_textual_interface_fail_closed(payload: dict[str, Any]) -> None:
 def textual_interface_contract_failures(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     roundtrip = payload["interface_roundtrip"]
-    if roundtrip["parse_status"] != "reserved-importer-not-landed":
-        failures.append("interface importer parse support overclaimed")
-    if roundtrip["semantic_equivalence_status"] != "reserved-importer-not-landed":
-        failures.append("interface semantic roundtrip support overclaimed")
+    if roundtrip["parse_status"] != "supported":
+        failures.append("interface importer parse support missing")
+    if roundtrip["semantic_equivalence_status"] != "supported":
+        failures.append("interface semantic roundtrip support missing")
     if roundtrip["drift_diagnostic"] != "O3IFC8238":
         failures.append("interface drift diagnostic changed")
     if "modules.standalone-textual-interface-payload" not in payload["capability_requirements"]:
         failures.append("standalone textual interface capability requirement missing")
     if "npm run objc3c -- compile-objc3c <input.objc3>" not in payload["public_commands"]:
         failures.append("public compile command missing")
+    if PUBLIC_VALIDATE_COMMAND not in payload["public_commands"]:
+        failures.append("public textual interface validation command missing")
     for declaration in payload["declarations"]:
         source_path = str(declaration["source_anchor"]["path"])
         if source_path.startswith(("tmp/", "temp/", "generated/", "build/", "dist/")):
@@ -83,7 +92,10 @@ def test_standalone_textual_interface_payload_fixture_is_schema_backed() -> None
     payload = load_json(TEXTUAL_INTERFACE_FIXTURE)
 
     validate_registered_schema(payload, TEXTUAL_INTERFACE_SCHEMA_ID)
+    summary = validate_payload(payload)
     assert payload["payload_kind"] == "objc3c.standalone_textual_interface_payload.v1"
+    assert summary["status"] == "PASS"
+    assert summary["declaration_count"] == 2
     assert payload["source_counts"] == {
         "globals": 0,
         "protocols": 0,
@@ -91,6 +103,9 @@ def test_standalone_textual_interface_payload_fixture_is_schema_backed() -> None
         "implementations_reserved": 1,
         "functions": 1,
     }
+    assert set(payload["issue_refs"]) == {8238, 8208}
+    assert payload["source_truth_policy"] == REQUIRED_SOURCE_TRUTH_POLICY
+    assert {row["case_id"] for row in payload["negative_cases"]} == REQUIRED_NEGATIVE_CASE_IDS
     assert_textual_interface_fail_closed(payload)
 
 
@@ -104,13 +119,28 @@ def test_textual_interface_runtime_source_is_registered_and_emitted() -> None:
     bundle_source = source_text(
         "native/objc3c/src/artifacts/objc3_frontend_artifact_bundle_publication.cpp"
     )
+    importer_header = source_text(
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.h"
+    )
+    importer_source = source_text(
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+    )
     schema_registry_source = source_text("scripts/objc3c_shared/schema_registry.py")
     schema_table_source = source_text(
         "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
     )
 
     assert "PublishRegisteredArtifactJson(request)" in artifact_source
+    assert "\"source_truth_policy\"" in artifact_source
+    assert "\"negative_cases\"" in artifact_source
+    assert "\"local_temp_source_truth_allowed\"" in artifact_source
     assert "BuildObjc3StandaloneTextualInterfacePayloadArtifact(" in bundle_source
+    assert "ValidateObjc3StandaloneTextualInterfacePayloadImport(" in importer_header
+    assert "ParseJson(payload_json)" in importer_source
+    assert "ValidateSourceTruthPolicy(payload, result)" in importer_source
+    assert "ValidateNegativeCases(payload, result)" in importer_source
+    assert "source_counts drift" in importer_source
+    assert "interface import must carry package lock/trust identity" in importer_source
     assert "WriteStandaloneTextualInterfacePayloadArtifact(" in driver_source
     assert "io/objc3_artifact_writers.h" in driver_source
     assert ".interface-payload.json" in source_text(
@@ -120,16 +150,34 @@ def test_textual_interface_runtime_source_is_registered_and_emitted() -> None:
     assert TEXTUAL_INTERFACE_SCHEMA_ID in schema_table_source
 
 
-def test_textual_interface_roundtrip_overclaim_is_rejected_by_contract_guard() -> None:
+def test_textual_interface_reserved_roundtrip_is_rejected_by_contract_guard() -> None:
     payload = deepcopy(load_json(TEXTUAL_INTERFACE_FIXTURE))
-    payload["interface_roundtrip"]["parse_status"] = "supported"
-    payload["interface_roundtrip"]["semantic_equivalence_status"] = "supported"
+    payload["interface_roundtrip"]["parse_status"] = "reserved-importer-not-landed"
+    payload["interface_roundtrip"]["semantic_equivalence_status"] = "reserved-importer-not-landed"
 
     validate_registered_schema(payload, TEXTUAL_INTERFACE_SCHEMA_ID)
     assert textual_interface_contract_failures(payload) == [
-        "interface importer parse support overclaimed",
-        "interface semantic roundtrip support overclaimed",
+        "interface importer parse support missing",
+        "interface semantic roundtrip support missing",
     ]
+
+
+def test_textual_interface_import_negative_cases_fail_closed() -> None:
+    payload = load_json(TEXTUAL_INTERFACE_FIXTURE)
+    failures = negative_payload_cases(payload)
+
+    assert set(failures) == {
+        "stale-schema",
+        "unlocked-import",
+        "hidden-declaration",
+        "count-drift",
+        "reserved-roundtrip",
+    }
+    assert "schema validation failed at schema_version" in failures["stale-schema"]
+    assert "lock_identity must be package lock/trust identity" in failures["unlocked-import"]
+    assert "schema validation failed at declarations.0.kind" in failures["hidden-declaration"]
+    assert "source_counts.interfaces expected 1, saw 0" in failures["count-drift"]
+    assert "parse_status must be supported" in failures["reserved-roundtrip"]
 
 
 def test_runtime_executable_contract_fixture_is_schema_backed() -> None:
@@ -141,7 +189,7 @@ def test_runtime_executable_contract_fixture_is_schema_backed() -> None:
     assert payload["support_boundary"]["native_registration_required"] is True
     assert payload["support_boundary"]["executable_runtime_required"] is True
     assert payload["support_boundary"]["compatibility_shims"] is False
-    assert {surface["issue_ref"] for surface in payload["surfaces"]} == {8214, 8215}
+    assert {surface["issue_ref"] for surface in payload["surfaces"]} == {8214, 8215, 8216, 8217}
     for surface in payload["surfaces"]:
         assert surface["support_status"] == "supported"
         assert surface["typed_dispatch_required"] is True

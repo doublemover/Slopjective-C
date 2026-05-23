@@ -92,6 +92,25 @@ The current checked-in support matrix is intentionally narrow.
 The supported host/toolchain matrix is narrow but real, verified, tiered, and
 rooted in the same package and release workflows users run.
 
+## #8206 Umbrella Closure Boundary
+
+#8206 is the platform expansion readiness umbrella, not a broad platform
+success claim. It closes only over checked-in source contracts:
+
+- #8228 `linux-x64` remains an unsupported, fail-closed row until build,
+  package, install, and native execution evidence exists.
+- #8229 `darwin-arm64` remains an unsupported, fail-closed row until Mach-O,
+  package install, load-path, and native execution evidence exists.
+- #8230 ASan and #8231 UBSan are reserved package variant rows until sanitizer
+  runtime package, install, and native execution evidence exists.
+- #8232 native object emission is a toolchain prerequisite: `llc` must resolve
+  and prove `llc --filetype=obj`; missing `llc` records
+  `native_object_emission_missing_llc` and cannot publish object, package,
+  execution, or platform success.
+
+Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
+support. The only supported projection remains `windows-x64`.
+
 ## Host And Toolchain Claim Boundary
 
 Current support claims must stay narrower than the evidence:
@@ -183,6 +202,24 @@ best-effort language.
 - widening support later must happen by expanding checked-in contracts,
   generated matrix artifacts, and public workflow validation
 
+The checked-in source contract may contain fail-closed package rows for future
+hosts. Those rows are not support claims: `linux-x64` (#8228) and
+`darwin-arm64` (#8229) remain unsupported until their source rows are replaced
+with build, package, install, and native execution evidence from the public
+workflow surface.
+
+Sanitizer package variants are separate from host support. The ASan (#8230) and
+UBSan (#8231) runtime package rows are reserved, package-addressable metadata
+only; default release runtime packages must not inherit sanitizer behavior, and
+sanitizer rows must fail closed for unsupported hosts, release-channel installs,
+mixed runtime libraries, missing sanitizer runtime libraries, and stale package
+metadata.
+
+Package variant rows are required to carry source-owned metadata freshness
+guards. Generated package metadata can be emitted as replay output, but stale or
+generated metadata is never source truth and must block package publication
+before it becomes a support, install, or sanitizer claim.
+
 ## Unsupported-Host Fail-Closed Policy
 
 Unsupported-host behavior must be deterministic and machine-describable.
@@ -191,6 +228,12 @@ Hard-fail classes:
 
 - host OS or host architecture outside the checked-in support matrix
 - missing required local tools for the claimed host tier
+- missing runtime libraries for the claimed release package variant
+- missing sanitizer runtime libraries for ASan or UBSan package variants
+- stale package metadata on any release or sanitizer package variant
+- unavailable native object emission, including missing `llc`, missing
+  `llc --filetype=obj`, or any clang substitute published as object-emission
+  success
 - installer or package-channel invocation outside the published host/channel set
 - update or support publication that implies support outside the checked-in
   matrix
@@ -207,6 +250,7 @@ No unsupported host may be described as:
 - `best effort supported`
 - `probably compatible`
 - `supported if LLVM is installed`
+- `object emission supported via clang substitute`
 
 ## Working Rules For Downstream Issues
 

@@ -47,7 +47,19 @@ std::string BuildControlFlowControlFlowSourceClosureReplayKey(
       << ":" << summary.match_wildcard_pattern_sites << ":"
       << summary.match_literal_pattern_sites << ":"
       << summary.match_binding_pattern_sites << ":"
+      << summary.guarded_match_pattern_sites << ":"
       << summary.match_result_case_pattern_sites
+      << ";guarded_match_issue_ref=" << summary.guarded_match_issue_ref
+      << ";guarded_match_admitted_syntax="
+      << summary.guarded_match_admitted_syntax
+      << ";guarded_match_condition_bool_required="
+      << (summary.guarded_match_condition_bool_required ? "true" : "false")
+      << ";match_expression_fail_closed="
+      << (summary.match_expression_fail_closed ? "true" : "false")
+      << ";match_expression_result_typing_supported="
+      << (summary.match_expression_result_typing_supported ? "true" : "false")
+      << ";match_fat_arrow_arms_supported="
+      << (summary.match_fat_arrow_arms_supported ? "true" : "false")
       << ";reserved_keyword_sites=" << summary.defer_keyword_sites
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");

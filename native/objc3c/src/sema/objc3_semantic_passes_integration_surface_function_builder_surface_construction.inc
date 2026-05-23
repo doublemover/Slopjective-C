@@ -53,6 +53,19 @@
         info.generic_parameter_constraints_lexicographic.push_back(
             std::move(constraints));
       }
+      info.generic_callable_reification_policy =
+          kObjc3GenericCallableReificationPolicyErasedDefault;
+      info.generic_callable_mangling_policy_id =
+          kObjc3GenericCallableManglingPolicyId;
+      info.generic_callable_signature_replay_key =
+          BuildObjc3GenericCallableSignatureReplayKey(
+              "function", fn.name, info.generic_parameter_names_source_order,
+              info.generic_parameter_variance_source_order,
+              info.generic_parameter_constraints_lexicographic,
+              info.generic_callable_reification_policy,
+              info.generic_callable_mangling_policy_id);
+      info.generic_callable_contract_deterministic =
+          !info.generic_callable_signature_replay_key.empty();
       info.param_types.reserve(fn.params.size());
       info.param_canonical_types.reserve(fn.params.size());
       info.param_is_vector.reserve(fn.params.size());

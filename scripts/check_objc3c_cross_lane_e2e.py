@@ -169,13 +169,21 @@ CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.
 SUPPORT_CLAIM_EVIDENCE_CATALOG_PATH = (
     ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
 )
-DIRECT_IMPORT_CAPABILITY_ID = "modules.public-import-lookup"
-DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.public-import-lookup"
-DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
+DIRECT_IMPORT_CAPABILITY_ID = "modules.direct-import-syntax"
+DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.direct-import-syntax"
+DIRECT_IMPORT_OWNER_PHASE = "parser"
+DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-direct-import-module-syntax"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID = "cross-lane-text-package-runtime-import-ffi-preservation-reserved"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT = (
     "cross-module runtime link-plan Part 11 ffi preservation surface incomplete "
     "for CrossLaneFixtureProvider"
+)
+NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS = "native_object_emission_missing_llc"
+NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC = (
+    f"{NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS}: native object emission "
+    "fail-closed; llc executable not found; set "
+    "OBJC3C_NATIVE_EXECUTION_LLC_PATH or install LLVM with llc on PATH; no "
+    "native object, package, or execution success claim is published"
 )
 
 REQUIRED_FAMILY_IDS = (
@@ -301,10 +309,7 @@ def resolve_llc() -> str:
     resolved = shutil.which("llc")
     if resolved:
         return resolved
-    raise RuntimeError(
-        "LLVM object emission requires llc; set OBJC3C_NATIVE_EXECUTION_LLC_PATH "
-        "or install LLVM with llc on PATH"
-    )
+    raise RuntimeError(NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC)
 
 
 def link_driver_args() -> list[str]:
@@ -1415,8 +1420,11 @@ def _validate_direct_import_source_truth(
         raise RuntimeError(f"{family_id}.direct_import_source_truth.capability_id drifted")
     if direct_import.get("support_claim") != DIRECT_IMPORT_SUPPORT_CLAIM:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.support_claim drifted")
-    if direct_import.get("owner_phase") != "sema":
-        raise RuntimeError(f"{family_id}.direct_import_source_truth.owner_phase must stay sema-owned")
+    if direct_import.get("owner_phase") != DIRECT_IMPORT_OWNER_PHASE:
+        raise RuntimeError(
+            f"{family_id}.direct_import_source_truth.owner_phase must stay "
+            f"{DIRECT_IMPORT_OWNER_PHASE}-owned"
+        )
     if direct_import.get("public_replay_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.public command drifted")
 
@@ -1468,7 +1476,7 @@ def _validate_direct_import_source_truth(
     )
     if support_claim.get("owner_phase") != direct_import.get("owner_phase"):
         raise RuntimeError(f"{family_id}.direct_import_source_truth owner phase drifted from canonical manifest")
-    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(consumer_fixture):
+    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(conformance_fixture):
         raise RuntimeError(f"{family_id}.direct_import_source_truth behavior fixture drifted from canonical manifest")
     if support_claim.get("executable_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth executable command drifted from canonical manifest")
@@ -2877,8 +2885,8 @@ def validate_advanced_runtime_contract_backed_proof(
     )
     if evidence.get("public_replay_command") != ADVANCED_RUNTIME_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.workspace canonical evidence command drifted")
-    if evidence.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.workspace must not promote advanced-runtime umbrella support")
+    if evidence.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.workspace must promote advanced-runtime umbrella support")
     require_path_field(evidence, "positive_fixture", ADVANCED_RUNTIME_POSITIVE_FIXTURE)
     require_path_field(
         evidence,
@@ -2929,8 +2937,8 @@ def validate_advanced_runtime_contract_backed_proof(
         raise RuntimeError(f"{family_id}.source_graph.proof_kind drifted")
     if debug_source_map.get("proof_kind") != "advanced-runtime-canonical-source-debug-map":
         raise RuntimeError(f"{family_id}.debug_source_map.proof_kind drifted")
-    if runtime.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.runtime must not promote advanced-runtime umbrella support")
+    if runtime.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.runtime must promote advanced-runtime umbrella support")
     if source_graph.get("source_truth") is True or debug_source_map.get("source_truth") is True:
         raise RuntimeError(f"{family_id} generated evidence must not be marked source truth")
 
@@ -3013,7 +3021,7 @@ def validate_advanced_runtime_contract_backed_proof(
         "negative_matrix_case_count": payload["advanced_runtime_negative_matrix_case_count"],
         "compile_manifest_status": compile_manifest["status"],
         "optimization_trace_status": optimization_trace["status"],
-        "umbrella_support_promoted": False,
+        "umbrella_support_promoted": True,
     }
 
 

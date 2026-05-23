@@ -12,9 +12,9 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureContractId
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_control_flow_control_flow_source_closure";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSourceModel =
-    "guard-condition-lists-defer-statements-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
+    "guard-condition-lists-defer-statements-statement-match-patterns-and-guarded-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-and-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureFailureModel =
-    "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
+    "match-remains-statement-only-and-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3ControlFlowControlFlowSourceClosureContractId;
@@ -31,11 +31,11 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
       kObjc3ControlFlowSourceSurfaceMatchWildcardPatterns,
       kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns,
       kObjc3ControlFlowSourceSurfaceMatchBindingPatterns,
+      kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns,
       kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns,
   };
   std::vector<std::string> fail_closed_construct_ids = {
       kObjc3ControlFlowFailClosedConstructMatchExpression,
-      kObjc3ControlFlowFailClosedConstructGuardedPatterns,
       kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns,
   };
   std::size_t guard_binding_sites = 0;
@@ -50,7 +50,12 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::size_t match_wildcard_pattern_sites = 0;
   std::size_t match_literal_pattern_sites = 0;
   std::size_t match_binding_pattern_sites = 0;
+  std::size_t guarded_match_pattern_sites = 0;
   std::size_t match_result_case_pattern_sites = 0;
+  std::size_t guarded_match_issue_ref = 8236;
+  std::string guarded_match_admitted_syntax =
+      "case pattern where bool_condition:";
+  bool guarded_match_condition_bool_required = true;
   bool guard_binding_source_supported = false;
   bool guard_condition_list_source_supported = false;
   bool switch_case_pattern_source_supported = false;
@@ -58,12 +63,14 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   bool match_wildcard_pattern_source_supported = false;
   bool match_literal_pattern_source_supported = false;
   bool match_binding_pattern_source_supported = false;
+  bool guarded_match_pattern_source_supported = false;
   bool match_result_case_pattern_source_supported = false;
   bool defer_statement_source_supported = false;
   bool defer_keyword_reserved = false;
   bool defer_fail_closed = false;
   bool match_expression_fail_closed = false;
-  bool guarded_pattern_fail_closed = false;
+  bool match_expression_result_typing_supported = false;
+  bool match_fat_arrow_arms_supported = false;
   bool type_test_pattern_fail_closed = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
@@ -122,6 +129,14 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool throw_keyword_reserved = false;
   bool catch_keyword_reserved = false;
   bool typed_throws_fail_closed = false;
+  std::size_t typed_throws_issue_ref = 8233;
+  std::string typed_throws_canonical_syntax = "throws(E)";
+  bool typed_throws_single_payload_reserved = true;
+  bool typed_throws_empty_payload_rejected = true;
+  bool typed_throws_multi_payload_rejected = true;
+  bool typed_throws_silent_erasure_allowed = false;
+  std::string typed_throws_effect_record_status = "bare-throws-untyped-only";
+  std::string typed_throws_abi_status = "reserved-no-lowering";
   bool try_fail_closed = false;
   bool throw_fail_closed = false;
   bool do_catch_fail_closed = false;

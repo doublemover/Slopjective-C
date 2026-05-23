@@ -1,0 +1,117 @@
+{
+  "contract_id": "objc3c.advanced-runtime.scheduler-task-runtime-guarantees.v1",
+  "issue_ref": 8214,
+  "dependency_issue_ref": 8213,
+  "surface_kind": "scheduler-task-runtime-contract",
+  "support_status": "supported-bounded",
+  "source_owner": "native runtime private scheduler/task helper cluster plus runtime import replay surface",
+  "snapshot_contract": {
+    "header": "native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h",
+    "task_snapshot_type": "objc3_runtime_task_runtime_state_snapshot",
+    "continuation_snapshot_type": "objc3_runtime_async_continuation_state_snapshot",
+    "actor_snapshot_type": "objc3_runtime_actor_runtime_state_snapshot",
+    "required_task_record_fields": [
+      "spawn_call_count",
+      "wait_next_call_count",
+      "cancel_all_call_count",
+      "cancellation_poll_call_count",
+      "on_cancel_call_count",
+      "executor_hop_call_count",
+      "lifecycle_state",
+      "scheduler_enqueue_count",
+      "scheduler_dequeue_count",
+      "scheduler_cancelled_count",
+      "scheduler_sequence",
+      "last_queue_depth",
+      "last_queue_drain_result",
+      "deadlock_guard_passed",
+      "race_guard_passed"
+    ],
+    "required_continuation_record_fields": [
+      "allocation_call_count",
+      "handoff_call_count",
+      "resume_call_count",
+      "cancel_call_count",
+      "rejected_operation_count",
+      "live_continuation_handle_count",
+      "completed_continuation_count",
+      "cancelled_continuation_count",
+      "failed_continuation_count",
+      "last_operation_failure_code"
+    ],
+    "required_actor_mailbox_event_fields": [
+      "mailbox_enqueue_call_count",
+      "mailbox_drain_call_count",
+      "mailbox_cancel_call_count",
+      "mailbox_error_call_count",
+      "mailbox_shutdown_call_count",
+      "last_mailbox_enqueue_sequence",
+      "last_mailbox_dequeue_sequence",
+      "last_mailbox_completion_sequence",
+      "mailbox_ordering_guard_passed",
+      "mailbox_shutdown_guard_passed"
+    ]
+  },
+  "import_surface_contract": {
+    "member_name": "objc_concurrency_scheduler_task_runtime_import_surface",
+    "contract_id": "objc3c.concurrency.scheduler.task.runtime.import.surface.v1",
+    "source_contract_id": "objc3c.concurrency.task.runtime.lowering.contract.v1",
+    "fail_closed_policy": "present scheduler/task packets must be deterministic, carry lifecycle/cancellation/shutdown replay keys, and keep unsupported_policy_sites at zero",
+    "required_fields": [
+      "task_runtime_ready",
+      "deterministic",
+      "shutdown_drain_ready",
+      "cancellation_error_cleanup_ready",
+      "replay_key",
+      "task_lifecycle_replay_key",
+      "task_cancellation_replay_key",
+      "shutdown_replay_key",
+      "task_record_sites",
+      "continuation_record_sites",
+      "executor_hop_record_sites",
+      "queue_lifecycle_record_sites",
+      "cancellation_checkpoint_sites",
+      "error_cleanup_sites",
+      "shutdown_drain_sites",
+      "unsupported_policy_sites"
+    ]
+  },
+  "supported_boundary": [
+    "single-process deterministic task creation/start/completion state",
+    "cooperative cancellation checkpoints and handler replay",
+    "continuation registration/resume/cancel/double-operation rejection state",
+    "executor-hop ordering through helper snapshot fields",
+    "per-actor FIFO mailbox enqueue/dequeue/completion state",
+    "deterministic shutdown/drain fields for command-line and test runtime closure"
+  ],
+  "reserved_or_rejected_boundary": [
+    "priority fairness",
+    "work stealing",
+    "distributed scheduling",
+    "cross-process actor transport",
+    "external executor integration",
+    "real-time scheduling guarantees"
+  ],
+  "negative_cases": [
+    {
+      "case_id": "scheduler_priority_fairness_overclaim",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-unsupported-policy"
+    },
+    {
+      "case_id": "scheduler_task_lifecycle_missing_replay",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_task_lifecycle_missing_replay.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-task-lifecycle-missing-replay"
+    },
+    {
+      "case_id": "scheduler_shutdown_drain_missing_evidence",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_shutdown_drain_missing_evidence.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-shutdown-drain-missing-evidence"
+    },
+    {
+      "case_id": "scheduler_cancellation_error_cleanup_missing_evidence",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_cancellation_error_cleanup_missing_evidence.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-cancellation-error-cleanup-missing-evidence"
+    }
+  ]
+}

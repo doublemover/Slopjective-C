@@ -35,7 +35,17 @@ struct EmittedKeyPathDescriptor {
   const char *component_path;
   const char *profile;
   const char *generic_metadata_replay_key;
+  const char *source_span_id;
+  const char *root_type_identity;
+  const char *value_type_identity;
+  const char *object_model_owner_identity;
+  const char *object_model_member_identity;
+  const char *debug_source_map_key;
+  const char *diagnostic_anchor_key;
+  std::uint32_t source_line;
+  std::uint32_t source_column;
   bool root_is_self;
+  bool fallback_interpretation_allowed;
 };
 
 struct EmittedClassRecord {

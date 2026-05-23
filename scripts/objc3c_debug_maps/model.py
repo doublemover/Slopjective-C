@@ -63,6 +63,13 @@ REQUIRED_OPTIMIZATION_TRANSFORMS = frozenset(
     }
 )
 VALID_CLASSIFICATIONS = frozenset({"original", "generated"})
+VALID_INLINE_STEPPING_POLICIES = frozenset(
+    {
+        "step-into-callee-step-out-caller",
+        "step-over-inline-callee",
+    }
+)
+VALID_STATEMENT_STEPPING_POLICIES = frozenset({"step-over-emitted-native-debug-info"})
 HEX_DIGEST_LENGTH = 64
 
 
@@ -99,6 +106,13 @@ class SourceRange:
         if self.end_line == self.line:
             return self.end_column > self.column
         return self.end_column >= 1
+
+    def contains(self, other: "SourceRange") -> bool:
+        if not self.is_valid() or not other.is_valid():
+            return False
+        starts_before_or_equal = (self.line, self.column) <= (other.line, other.column)
+        ends_after_or_equal = (self.end_line, self.end_column) >= (other.end_line, other.end_column)
+        return starts_before_or_equal and ends_after_or_equal
 
     def to_payload(self) -> dict[str, int]:
         return {
@@ -246,6 +260,38 @@ class NativeLineTableRow:
 
 
 @dataclass(frozen=True)
+class StatementSteppingEvidence:
+    evidence_id: str
+    source_map_entry_id: str
+    debug_map_entry_id: str
+    native_line_table_row_id: str
+    source_span_id: str
+    source_range: SourceRange
+    source_digest: str
+    object_debug_line_anchor: str
+    native_symbol: str
+    native_debug_info_evidence_id: str
+    stepping_policy: str
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "StatementSteppingEvidence":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            evidence_id=_safe_str(item.get("evidence_id")),
+            source_map_entry_id=_safe_str(item.get("source_map_entry_id")),
+            debug_map_entry_id=_safe_str(item.get("debug_map_entry_id")),
+            native_line_table_row_id=_safe_str(item.get("native_line_table_row_id")),
+            source_span_id=_safe_str(item.get("source_span_id")),
+            source_range=SourceRange.from_payload(item.get("source_range")),
+            source_digest=_safe_str(item.get("source_digest")),
+            object_debug_line_anchor=_safe_str(item.get("object_debug_line_anchor")),
+            native_symbol=_safe_str(item.get("native_symbol")),
+            native_debug_info_evidence_id=_safe_str(item.get("native_debug_info_evidence_id")),
+            stepping_policy=_safe_str(item.get("stepping_policy")),
+        )
+
+
+@dataclass(frozen=True)
 class NativeDebugInfoEvidence:
     contract_id: str
     evidence_id: str
@@ -260,6 +306,7 @@ class NativeDebugInfoEvidence:
     native_line_table_row_ids: tuple[str, ...]
     statement_stepping_integrated: bool
     fail_closed_without_stepping_integration: bool
+    statement_stepping_evidence: tuple[StatementSteppingEvidence, ...]
 
     @classmethod
     def from_payload(cls, payload: object) -> "NativeDebugInfoEvidence":
@@ -278,6 +325,10 @@ class NativeDebugInfoEvidence:
             native_line_table_row_ids=_tuple_str(item.get("native_line_table_row_ids")),
             statement_stepping_integrated=item.get("statement_stepping_integrated") is True,
             fail_closed_without_stepping_integration=item.get("fail_closed_without_stepping_integration") is True,
+            statement_stepping_evidence=tuple(
+                StatementSteppingEvidence.from_payload(record)
+                for record in _list(item.get("statement_stepping_evidence"))
+            ),
         )
 
 
@@ -303,8 +354,16 @@ class InlineFrame:
     frame_id: str
     caller_source_map_entry_id: str
     callee_source_map_entry_id: str
+    original_caller_span: SourceRange
     callsite_span: SourceRange
+    inlined_callsite_span: SourceRange
     callee_body_span: SourceRange
+    stepping_policy: str
+    imported_debug_map_entry_id: str
+    emitted_debug_map_entry_id: str
+    optimized_ir_source_correlation_id: str
+    optimized_ir_anchor: str
+    optimized_source_map_entry_id: str
     caller_runtime_anchor_id: str
     callee_runtime_anchor_id: str
     optimization_proof_id: str
@@ -318,8 +377,16 @@ class InlineFrame:
             frame_id=_safe_str(item.get("frame_id")),
             caller_source_map_entry_id=_safe_str(item.get("caller_source_map_entry_id")),
             callee_source_map_entry_id=_safe_str(item.get("callee_source_map_entry_id")),
+            original_caller_span=SourceRange.from_payload(item.get("original_caller_span")),
             callsite_span=SourceRange.from_payload(item.get("callsite_span")),
+            inlined_callsite_span=SourceRange.from_payload(item.get("inlined_callsite_span")),
             callee_body_span=SourceRange.from_payload(item.get("callee_body_span")),
+            stepping_policy=_safe_str(item.get("stepping_policy")),
+            imported_debug_map_entry_id=_safe_str(item.get("imported_debug_map_entry_id")),
+            emitted_debug_map_entry_id=_safe_str(item.get("emitted_debug_map_entry_id")),
+            optimized_ir_source_correlation_id=_safe_str(item.get("optimized_ir_source_correlation_id")),
+            optimized_ir_anchor=_safe_str(item.get("optimized_ir_anchor")),
+            optimized_source_map_entry_id=_safe_str(item.get("optimized_source_map_entry_id")),
             caller_runtime_anchor_id=_safe_str(item.get("caller_runtime_anchor_id")),
             callee_runtime_anchor_id=_safe_str(item.get("callee_runtime_anchor_id")),
             optimization_proof_id=_safe_str(item.get("optimization_proof_id")),
@@ -811,6 +878,7 @@ def validate_bundle(bundle: DebugSourceMapBundle) -> ValidationResult:
         bundle,
         inline_frames,
         source_maps,
+        debug_maps,
         claims,
         diagnostics,
     )
@@ -851,12 +919,12 @@ def _validate_capabilities(
 
 
 def _validate_debug_policy(bundle: DebugSourceMapBundle, diagnostics: list[Diagnostic]) -> None:
-    if bundle.statement_stepping_supported:
+    if bundle.statement_stepping_supported and not bundle.statement_stepping_requested:
         diagnostics.append(
             _diag(
-                "statement-stepping-overclaimed",
-                "statement stepping must remain reserved until debugger consumer work lands",
-                "debug_policy.statement_stepping_supported",
+                "statement-stepping-policy-drift",
+                "supported statement stepping must also be requested by the debug policy",
+                "debug_policy.statement_stepping_requested",
             )
         )
     if bundle.statement_stepping_requested:
@@ -874,6 +942,14 @@ def _validate_debug_policy(bundle: DebugSourceMapBundle, diagnostics: list[Diagn
                         entry.entry_id,
                     )
                 )
+        if bundle.statement_stepping_supported and not bundle.native_debug_info.statement_stepping_integrated:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-evidence-missing",
+                    "statement stepping support requires emitted native debug-info stepping evidence",
+                    "native_debug_info.statement_stepping_integrated",
+                )
+            )
 
 
 def _validate_native_debug_info_evidence(bundle: DebugSourceMapBundle, diagnostics: list[Diagnostic]) -> None:
@@ -960,15 +1036,23 @@ def _validate_native_debug_info_evidence(bundle: DebugSourceMapBundle, diagnosti
                 "native_debug_info.native_line_table_row_ids",
             )
         )
-    if evidence.statement_stepping_integrated:
+    if evidence.statement_stepping_integrated and not bundle.statement_stepping_supported:
         diagnostics.append(
             _diag(
                 "native-debug-info-overclaimed",
-                "native debug-info evidence must not claim debugger stepping integration",
+                "native debug-info evidence must not claim debugger stepping integration unless the debug policy supports it",
                 "native_debug_info.statement_stepping_integrated",
             )
         )
-    if evidence.fail_closed_without_stepping_integration is not True:
+    if evidence.fail_closed_without_stepping_integration is True and bundle.statement_stepping_supported:
+        diagnostics.append(
+            _diag(
+                "statement-stepping-evidence-missing",
+                "statement stepping support cannot stay marked fail-closed without stepping integration",
+                "native_debug_info.fail_closed_without_stepping_integration",
+            )
+        )
+    if evidence.fail_closed_without_stepping_integration is not True and not bundle.statement_stepping_supported:
         diagnostics.append(
             _diag(
                 "native-debug-info-overclaimed",
@@ -976,6 +1060,144 @@ def _validate_native_debug_info_evidence(bundle: DebugSourceMapBundle, diagnosti
                 "native_debug_info.fail_closed_without_stepping_integration",
             )
         )
+    _validate_statement_stepping_native_debug_evidence(bundle, diagnostics)
+
+
+def _validate_statement_stepping_native_debug_evidence(
+    bundle: DebugSourceMapBundle,
+    diagnostics: list[Diagnostic],
+) -> None:
+    source_maps = {entry.entry_id: entry for entry in bundle.source_maps}
+    debug_maps_by_source = {entry.source_map_entry_id: entry for entry in bundle.debug_maps}
+    line_rows = {row.row_id: row for row in bundle.native_line_tables}
+    statement_entries = [entry for entry in bundle.source_maps if entry.record_kind == "statement"]
+    evidence = bundle.native_debug_info
+
+    if bundle.statement_stepping_supported and not evidence.statement_stepping_evidence:
+        diagnostics.append(
+            _diag(
+                "statement-stepping-evidence-missing",
+                "statement stepping support requires statement native debug-info evidence records",
+                "native_debug_info.statement_stepping_evidence",
+            )
+        )
+
+    evidence_by_source = {
+        record.source_map_entry_id: record
+        for record in evidence.statement_stepping_evidence
+        if record.source_map_entry_id
+    }
+    if bundle.statement_stepping_supported:
+        for entry in statement_entries:
+            if entry.entry_id not in evidence_by_source:
+                diagnostics.append(
+                    _diag(
+                        "statement-stepping-evidence-missing",
+                        f"statement source map lacks native debug-info stepping evidence: {entry.entry_id}",
+                        entry.entry_id,
+                    )
+                )
+
+    for index, record in enumerate(evidence.statement_stepping_evidence):
+        path = f"native_debug_info.statement_stepping_evidence[{index}]"
+        entry = source_maps.get(record.source_map_entry_id)
+        row = line_rows.get(record.native_line_table_row_id)
+        debug_map = debug_maps_by_source.get(record.source_map_entry_id)
+
+        if not record.evidence_id or not record.source_span_id:
+            diagnostics.append(
+                _diag("statement-stepping-evidence-missing", "statement stepping evidence lacks stable ids", path)
+            )
+        if record.native_debug_info_evidence_id != evidence.evidence_id:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-evidence-missing",
+                    "statement stepping evidence must link the native debug-info evidence id",
+                    path,
+                )
+            )
+        if record.stepping_policy not in VALID_STATEMENT_STEPPING_POLICIES:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-policy-ambiguous",
+                    "statement stepping evidence has an unsupported stepping policy",
+                    path,
+                )
+            )
+        if entry is None:
+            diagnostics.append(
+                _diag("source-map-entry-missing", "statement stepping evidence references missing source map", path)
+            )
+            continue
+        if entry.record_kind != "statement":
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-span-drift",
+                    "statement stepping evidence must point at a statement source-map record",
+                    path,
+                )
+            )
+        if entry.generated:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-generated-only",
+                    "statement stepping cannot be backed by a generated-only source map",
+                    path,
+                )
+            )
+        if record.source_digest != entry.source_digest:
+            diagnostics.append(
+                _diag("source-digest-stale", "statement stepping evidence source digest drifted", path)
+            )
+        if not record.source_range.is_valid() or record.source_range != entry.source_range:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-span-drift",
+                    "statement stepping evidence source span drifted from the source map",
+                    path,
+                )
+            )
+        if debug_map is None or record.debug_map_entry_id != debug_map.entry_id:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-debug-map-drift",
+                    "statement stepping evidence debug-map id drifted",
+                    path,
+                )
+            )
+        if row is None:
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-native-line-drift",
+                    "statement stepping evidence references missing native line-table row",
+                    path,
+                )
+            )
+            continue
+        if (
+            row.source_map_entry_id != entry.entry_id
+            or row.source_range != entry.source_range
+            or row.object_debug_line_anchor != entry.object_debug_line_anchor
+            or row.native_symbol != entry.native_symbol
+        ):
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-native-line-drift",
+                    "statement stepping evidence native debug row drifted from the source map",
+                    path,
+                )
+            )
+        if (
+            record.object_debug_line_anchor != entry.object_debug_line_anchor
+            or record.native_symbol != entry.native_symbol
+        ):
+            diagnostics.append(
+                _diag(
+                    "statement-stepping-native-line-drift",
+                    "statement stepping evidence native symbol or object debug anchor drifted",
+                    path,
+                )
+            )
 
 
 def _validate_required_record_kinds(bundle: DebugSourceMapBundle, diagnostics: list[Diagnostic]) -> None:
@@ -1203,6 +1425,7 @@ def _validate_inline_frame_model(
     bundle: DebugSourceMapBundle,
     frames_by_id: dict[str, InlineFrame],
     source_maps: dict[str, SourceMapEntry],
+    debug_maps: dict[str, DebugMapEntry],
     claims: dict[str, OptimizationPreservationClaim],
     diagnostics: list[Diagnostic],
 ) -> None:
@@ -1211,7 +1434,7 @@ def _validate_inline_frame_model(
         ranges_by_frame.setdefault(native_range.frame_id, []).append(native_range)
 
     for frame in bundle.inline_frames:
-        _validate_inline_frame(frame, ranges_by_frame.get(frame.frame_id, []), source_maps, claims, diagnostics)
+        _validate_inline_frame(frame, ranges_by_frame.get(frame.frame_id, []), source_maps, debug_maps, claims, diagnostics)
 
     for native_range in bundle.native_inline_ranges:
         frame = frames_by_id.get(native_range.frame_id)
@@ -1276,9 +1499,32 @@ def _validate_inline_frame(
     frame: InlineFrame,
     native_ranges: list[NativeInlineRange],
     source_maps: dict[str, SourceMapEntry],
+    debug_maps: dict[str, DebugMapEntry],
     claims: dict[str, OptimizationPreservationClaim],
     diagnostics: list[Diagnostic],
 ) -> None:
+    if not frame.frame_id:
+        diagnostics.append(_diag("inline-frame-id-missing", "inline frame lacks stable frame id", "inline_frames.frames"))
+
+    imported_debug_map = debug_maps.get(frame.imported_debug_map_entry_id)
+    emitted_debug_map = debug_maps.get(frame.emitted_debug_map_entry_id)
+    if imported_debug_map is None:
+        diagnostics.append(
+            _diag(
+                "inline-frame-debug-map-missing",
+                f"inline frame references missing imported debug map: {frame.frame_id}",
+                frame.frame_id,
+            )
+        )
+    if emitted_debug_map is None:
+        diagnostics.append(
+            _diag(
+                "inline-frame-debug-map-missing",
+                f"inline frame references missing emitted debug map: {frame.frame_id}",
+                frame.frame_id,
+            )
+        )
+
     caller = source_maps.get(frame.caller_source_map_entry_id)
     callee = source_maps.get(frame.callee_source_map_entry_id)
     if caller is None:
@@ -1288,12 +1534,29 @@ def _validate_inline_frame(
     if caller is None or callee is None:
         return
 
-    if not frame.callsite_span.is_valid() or not frame.callee_body_span.is_valid():
-        diagnostics.append(_diag("inline-frame-range", f"inline frame source spans are invalid: {frame.frame_id}", frame.frame_id))
+    if caller.generated and callee.generated:
+        diagnostics.append(_diag("inline-frame-generated-only-map", f"inline frame cannot be backed only by generated source maps: {frame.frame_id}", frame.frame_id))
+
+    if not frame.original_caller_span.is_valid() or not frame.callsite_span.is_valid() or not frame.inlined_callsite_span.is_valid() or not frame.callee_body_span.is_valid():
+        diagnostics.append(_diag("inline-frame-source-span-missing", f"inline frame source spans are invalid: {frame.frame_id}", frame.frame_id))
+    elif not frame.original_caller_span.contains(frame.callsite_span):
+        diagnostics.append(_diag("inline-frame-range-drift", f"inline frame callsite is outside original caller span: {frame.frame_id}", frame.frame_id))
+    if frame.inlined_callsite_span != frame.callsite_span:
+        diagnostics.append(_diag("inline-frame-range-drift", f"inline frame inlined callsite span drifted from callsite span: {frame.frame_id}", frame.frame_id))
     if frame.callsite_span != caller.source_range:
         diagnostics.append(_diag("inline-frame-range-drift", f"inline frame callsite span drifted from caller source map: {frame.frame_id}", frame.frame_id))
     if frame.callee_body_span.line < callee.source_range.line:
         diagnostics.append(_diag("inline-frame-range-drift", f"inline frame callee body precedes callee declaration: {frame.frame_id}", frame.frame_id))
+    if frame.stepping_policy not in VALID_INLINE_STEPPING_POLICIES:
+        diagnostics.append(_diag("inline-frame-stepping-policy-ambiguous", f"inline frame stepping policy is missing or ambiguous: {frame.frame_id}", frame.frame_id))
+    if not frame.optimized_ir_source_correlation_id or not frame.optimized_ir_anchor or not frame.optimized_source_map_entry_id:
+        diagnostics.append(_diag("inline-frame-correlation-missing", f"inline frame lacks optimized IR/source correlation: {frame.frame_id}", frame.frame_id))
+    elif frame.optimized_ir_anchor != frame.emitted_ir_anchor or frame.optimized_source_map_entry_id != frame.caller_source_map_entry_id:
+        diagnostics.append(_diag("inline-frame-correlation-drift", f"inline frame optimized IR/source correlation drifted: {frame.frame_id}", frame.frame_id))
+    if imported_debug_map is not None and imported_debug_map.source_map_entry_id != frame.caller_source_map_entry_id:
+        diagnostics.append(_diag("inline-frame-debug-map-drift", f"imported debug map does not identify inline caller source map: {frame.frame_id}", frame.frame_id))
+    if emitted_debug_map is not None and emitted_debug_map.source_map_entry_id != frame.caller_source_map_entry_id:
+        diagnostics.append(_diag("inline-frame-debug-map-drift", f"emitted debug map does not identify inline caller source map: {frame.frame_id}", frame.frame_id))
     if frame.caller_runtime_anchor_id not in caller.runtime_anchor_ids:
         diagnostics.append(_diag("inline-frame-runtime-anchor-drift", f"inline frame caller runtime anchor drifted: {frame.frame_id}", frame.frame_id))
     if frame.callee_runtime_anchor_id not in callee.runtime_anchor_ids:

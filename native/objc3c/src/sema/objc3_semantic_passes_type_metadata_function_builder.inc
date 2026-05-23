@@ -21,6 +21,14 @@
         source.generic_parameter_variance_source_order;
     metadata.generic_parameter_constraints_lexicographic =
         source.generic_parameter_constraints_lexicographic;
+    metadata.generic_callable_signature_replay_key =
+        source.generic_callable_signature_replay_key;
+    metadata.generic_callable_reification_policy =
+        source.generic_callable_reification_policy;
+    metadata.generic_callable_mangling_policy_id =
+        source.generic_callable_mangling_policy_id;
+    metadata.generic_callable_contract_deterministic =
+        source.generic_callable_contract_deterministic;
     metadata.param_types = source.param_types;
     metadata.param_canonical_types = source.param_canonical_types;
     metadata.param_is_vector = source.param_is_vector;

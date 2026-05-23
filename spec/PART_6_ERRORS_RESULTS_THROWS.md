@@ -264,7 +264,10 @@ Recommended patterns for generic and callable APIs:
 
 ### 6.3.7 Reserved typed-throws slots (not in v1) {#part-6-3-7}
 
-Typed throws is reserved and unavailable in ObjC 3.0 v1.
+Typed throws is reserved and unavailable in ObjC 3.0 v1. The #8233 compiler
+contract owns parser diagnostics and default metadata slots only; it is not a
+runtime, ABI, lowering, or textual-interface support claim for typed error
+payloads.
 
 Reserved source syntax slots:
 
@@ -274,6 +277,9 @@ Reserved source syntax slots:
 v1 parser and diagnostics requirements:
 
 - A declaration using `throws(` ... `)` shall be rejected in v1 mode with a diagnostic that typed throws is unsupported in v1.
+- Parser-owned typed-throws rejections cover empty payloads (`throws()`), single
+  payloads (`throws(E)`), multi-payload spellings (`throws(E1, E2)`), and
+  malformed unclosed payloads as fail-closed `O3P182` cases.
 - A compiler shall not reinterpret `throws(...)` as bare `throws`, and shall not silently erase the parenthesized payload.
 - A fix-it may suggest replacing `throws(...)` with bare `throws` when preserving behavior.
 
@@ -282,6 +288,10 @@ Reserved metadata slots for module/interface exchange:
 - `throws_kind`: enum slot. v1 requires `untyped`; `typed` is reserved.
 - `throws_type_arity`: unsigned slot. v1 requires `0`.
 - `throws_type_refs`: sequence slot of canonical type references. v1 requires empty.
+- A declaration with bare `throws` has effect record `throws_kind=untyped`,
+  `throws_type_arity=0`, and the v1 declared error carrier `id<Error>`.
+- A declaration without `throws` has effect record `throws_kind=none` and
+  `throws_type_arity=0`.
 
 Version constraints:
 

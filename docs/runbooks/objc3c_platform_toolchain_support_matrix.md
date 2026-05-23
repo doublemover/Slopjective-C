@@ -8,15 +8,29 @@ and which evidence classes are mandatory before a row can move.
 Issue evidence for the post-cutover roadmap index and #8177 lives in
 `docs/issues/objc3_next_8153_8179_evidence.md`.
 
+The platform expansion epic is #8206. Linux x64 is #8228, macOS arm64 is
+#8229, the AddressSanitizer runtime package variant is #8230, and the
+UndefinedBehaviorSanitizer runtime package variant is #8231. Deterministic
+native object emission and the hosted-runner missing-`llc` contract are #8232.
+#8206 is umbrella readiness over those source-owned rows. It may project only
+the existing `windows-x64` supported row; Linux, macOS, sanitizer, and
+missing-`llc` lanes remain unsupported, reserved, or fail-closed until their
+source evidence rows are promoted.
+
 ## Source Of Truth
 
 Checked-in source truth:
 
 - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
+- `schemas/objc3c-platform-support-source-truth-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+- `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
+- `native/objc3c/src/driver/objc3_llvm_capability_routing.cpp`
+- `scripts/objc3c_llvm_capability_probe/reports.py`
+- `scripts/check_objc3c_cross_lane_e2e.py`
 
 Generated artifacts are replay outputs only:
 
@@ -31,11 +45,26 @@ row has build, package, install, and native execution evidence and because its
 toolchain rows are evidence-bound to current local probes.
 
 `linux-x64` and `darwin-arm64` are unsupported rows. They publish fail-closed
-diagnostics only and do not carry support evidence.
+diagnostics only and do not carry support evidence. Their source-owned package
+variant rows are intentionally fail-closed: they record the Linux ELF/toolchain
+and macOS arm64 Mach-O/load-path blockers that must be replaced with real
+build, package, install, and native execution evidence before any capability
+matrix promotion.
 
 AddressSanitizer and UndefinedBehaviorSanitizer variants are reserved. They
 cannot list supported platform ids until sanitizer package, install, and native
-execution evidence exists for a supported host.
+execution evidence exists for a supported host. Their runtime package variant
+metadata is source-owned, but the current rows remain reserved and fail closed
+for unsupported hosts, mixed sanitized/unsanitized runtime libraries, release
+channel publication, missing sanitizer runtime libraries, and stale package
+metadata.
+
+Every platform support row records explicit host triples. The current source
+contract recognizes `x86_64-pc-windows-msvc` as the supported Windows x64
+triple, `x86_64-unknown-linux-gnu` as the fail-closed Linux x64 triple, and
+`aarch64-apple-darwin` as the fail-closed macOS arm64 triple. Package variant
+rows also carry a `metadata_freshness_guard`; stale generated package metadata
+blocks publication and cannot be used as source truth.
 
 ## Required Host Evidence
 
@@ -79,7 +108,16 @@ archive and header/library discovery lanes consume the same matrix directly.
 Object emission is supported only when `llc` is resolved and the probe verifies
 `--filetype=obj`. Missing `llc`, mixed LLVM tool roots, or versions outside
 known-good evidence fail before package, native execution, or platform support
-claims are published.
+claims are published. The source contract records
+`native_object_emission_missing_llc`,
+`native_object_emission_filetype_obj_unavailable`, and
+`native_object_emission_supported` as the native object-emission statuses.
+Capability-routed object emission must select `llvm-direct` only after the
+`llc --filetype=obj` probe succeeds; it must not fall back to clang and then
+publish a native object success claim. Hosted runner and conformance-minima
+lanes may skip or fail closed when the status is unavailable, but they cannot
+publish object, package, execution, or parity success from a missing-`llc`
+summary.
 
 ## Replay Surface
 
@@ -102,4 +140,7 @@ truth.
 A row must remain unsupported or reserved when any required host or toolchain
 evidence is absent. Tool presence alone does not widen host support, source-only
 build success does not imply package support, and report-only output cannot
-publish a new support claim.
+publish a new support claim. Missing runtime libraries, missing sanitizer
+runtime libraries, mixed sanitized/unsanitized runtime libraries, unsupported
+host triples, and stale package metadata all fail closed before package
+publication or native execution claims.

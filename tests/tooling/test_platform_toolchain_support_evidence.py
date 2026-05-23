@@ -40,6 +40,9 @@ def validate_evidence(payload: dict) -> None:
 
 def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     evidence = load_platform_toolchain_support_evidence()
+    unsupported_host_policy = load_fixture(
+        "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    )
 
     validate_evidence(evidence)
 
@@ -53,7 +56,15 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "support_claim_policy": "evidence-bound-current-probes-only",
         "unsupported_component_behavior": "fail-closed-no-range-claim",
     }
-    assert {8206, 8228, 8229, 8230, 8231} <= set(evidence["roadmap_issue_refs"])
+    assert {8206, 8228, 8229, 8230, 8231, 8232} <= set(evidence["roadmap_issue_refs"])
+    assert "native-object-emission-unavailable" in {
+        failure_class["failure_id"]
+        for failure_class in unsupported_host_policy["hard_fail_classes"]
+    }
+    assert (
+        "native object emission requires llc --filetype=obj and has no clang substitute success path"
+        in unsupported_host_policy["required_claims"]
+    )
     assert [row["row_id"] for row in evidence["support_rows"]] == [
         "objc3c.platform.windows-x64.tier1",
         "objc3c.platform.linux-x64.unsupported",
@@ -67,6 +78,14 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "linux-x64": 8228,
         "darwin-arm64": 8229,
     }
+    assert {
+        row["platform_id"]: row["host_triples"]
+        for row in evidence["support_rows"]
+    } == {
+        "windows-x64": ["x86_64-pc-windows-msvc"],
+        "linux-x64": ["x86_64-unknown-linux-gnu"],
+        "darwin-arm64": ["aarch64-apple-darwin"],
+    }
     assert [row["row_id"] for row in evidence["package_variant_rows"]] == [
         "objc3c.package.runtime.windows-x64.release",
         "objc3c.package.runtime.linux-x64.release.fail-closed",
@@ -78,6 +97,18 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     assert llvm_matrix["contract_id"] == "objc3c.llvm.version-support-matrix.source.v1"
     assert llvm_matrix["issue_ref"] == 8232
     assert llvm_matrix["support_claim_policy"] == "capability-probed-fail-closed"
+    assert llvm_matrix["native_object_emission_contract"] == {
+        "contract_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+        "issue_ref": 8232,
+        "required_tool": "llc",
+        "required_probe": "llc --filetype=obj",
+        "success_status": "native_object_emission_supported",
+        "missing_llc_status": "native_object_emission_missing_llc",
+        "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+        "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+        "fallback_policy": "no-clang-fallback-success-claim",
+    }
     assert {tool["tool_name"] for tool in llvm_matrix["required_tools"]} == {
         "clang",
         "clang++",
@@ -168,6 +199,15 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "objc3c.llvm.reject.mixed-toolchain",
         "objc3c.llvm.reject.unsupported-range",
     }
+    missing_llc_rule = next(
+        rule
+        for rule in llvm_matrix["rejection_rules"]
+        if rule["rule_id"] == "objc3c.llvm.reject.missing-llc"
+    )
+    assert missing_llc_rule["failure_status"] == "native_object_emission_missing_llc"
+    assert missing_llc_rule["hosted_runner_behavior"] == "fail-closed-no-native-object-success-claim"
+    assert missing_llc_rule["conformance_minima_behavior"] == "fail-closed-before-cross-lane-runtime-proof"
+    assert missing_llc_rule["fallback_policy"] == "no-clang-fallback-success-claim"
     clean_room_record = next(
         record
         for record in payload["evidence_records"]
@@ -203,6 +243,32 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"]["platform_ids"] == []
     assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "reserved"
     assert package_rows["objc3c.package.sanitizer.ubsan.reserved"]["platform_ids"] == []
+    assert all(
+        row["metadata_freshness_guard"] == {
+            "metadata_source": (
+                "tests/tooling/fixtures/platform_hardening/"
+                f"platform_toolchain_support_evidence.json#{row_id}"
+            ),
+            "generated_metadata_allowed": False,
+            "stale_package_metadata_behavior": "fail-closed-before-publication",
+            "blocks_publication_on_stale": True,
+        }
+        for row_id, row in package_rows.items()
+    )
+    assert package_rows["objc3c.package.sanitizer.asan.reserved"][
+        "runtime_library_contract"
+    ] == {
+        "runtime_library_ids": ["objc3-runtime", "clang_rt.asan"],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+    }
+    assert package_rows["objc3c.package.sanitizer.ubsan.reserved"][
+        "runtime_library_contract"
+    ] == {
+        "runtime_library_ids": ["objc3-runtime", "clang_rt.ubsan"],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+    }
 
     sanitizer_rows = {
         row["variant_id"]: row
@@ -214,12 +280,26 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["platform_ids"] == []
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["package_variant_row_id"] == "objc3c.package.sanitizer.asan.reserved"
     assert "-fsanitize=address" in sanitizer_rows["objc3c.toolchain.sanitizer.address"]["build_contract"]["compiler_flags"]
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["install_guard"] == {
+        "release_channel_policy": "asan packages are opt-in and blocked from default release runtime installs",
+        "unsupported_platform_behavior": "fail-closed",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+    }
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["issue_ref"] == 8231
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["sanitizer"] == "undefined"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "reserved"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["platform_ids"] == []
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["package_variant_row_id"] == "objc3c.package.sanitizer.ubsan.reserved"
     assert "-fsanitize=undefined" in sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["build_contract"]["compiler_flags"]
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["install_guard"] == {
+        "release_channel_policy": "ubsan packages are opt-in and blocked from default release runtime installs",
+        "unsupported_platform_behavior": "fail-closed",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+    }
 
 
 def test_platform_toolchain_support_evidence_rejects_network_backed_support_claim() -> None:
@@ -281,3 +361,24 @@ def test_platform_toolchain_support_evidence_rejects_llvm_range_compatibility_cl
 
     with pytest.raises(RuntimeError, match="LLVM matrix entry used unsupported compatibility language"):
         validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_missing_native_object_policy_class() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    unsupported_host_policy = load_fixture(
+        "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    )
+    unsupported_host_policy["hard_fail_classes"] = [
+        failure_class
+        for failure_class in unsupported_host_policy["hard_fail_classes"]
+        if failure_class["failure_id"] != "native-object-emission-unavailable"
+    ]
+
+    with pytest.raises(RuntimeError, match="hard-fail classes drifted"):
+        validate_platform_toolchain_support_evidence(
+            evidence,
+            boundary=load_fixture("tests/tooling/fixtures/platform_hardening/boundary_inventory.json"),
+            supported_platforms=load_fixture("tests/tooling/fixtures/packaging_channels/supported_platforms.json"),
+            tier_policy=load_fixture("tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"),
+            unsupported_host_policy=unsupported_host_policy,
+        )
