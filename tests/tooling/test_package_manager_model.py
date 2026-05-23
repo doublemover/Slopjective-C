@@ -10,6 +10,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from objc3c_package_manager.model import (  # noqa: E402
+    DIRECT_IMPORT_SYNTAX_SUPPORT,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     LOCAL_PACKAGE_TRUST_KEY_ID,
@@ -128,6 +129,9 @@ def test_package_manager_model_generates_manifest_backed_lock() -> None:
     assert payload["package_manager"]["abi_identity"] == LOCAL_PACKAGE_ABI_IDENTITY
     assert payload["package_manager"]["network_resolution"] == "unsupported-fail-closed"
     assert all(package["package_manifest"]["contract_id"] == "objc3c.package_ecosystem.package_manifest.v1" for package in packages)
+    assert all(package["module_graph"]["contract_id"] == "objc3c.package_ecosystem.module_graph.v1" for package in packages)
+    assert all(package["module_graph"]["direct_import_syntax"] == DIRECT_IMPORT_SYNTAX_SUPPORT for package in packages)
+    assert all(package["module_graph"]["resolver"] == "checked-in-local-registry" for package in packages)
     assert all(package["trust"]["signing_key_id"] == LOCAL_PACKAGE_TRUST_KEY_ID for package in packages)
     assert payload["resolution_plan"]["resolver"] == "deterministic-local-registry"
     assert payload["resolution_plan"]["selection_policy"] == "exact-locked-version-only"
@@ -141,6 +145,64 @@ def test_package_manager_model_generates_manifest_backed_lock() -> None:
         for dependency in dependencies
     )
     assert collect_lock_model_failures(payload, root=ROOT) == []
+
+
+def _apply_package_metadata_mutation(target: dict[str, object], mutation: dict[str, object]) -> None:
+    if "remove" in mutation:
+        target.pop(str(mutation["remove"]), None)
+        return
+    path = str(mutation["set"])
+    parts = path.split(".")
+    current: dict[str, object] = target
+    for part in parts[:-1]:
+        next_value = current[part]
+        assert isinstance(next_value, dict)
+        current = next_value
+    current[parts[-1]] = mutation["value"]
+
+
+def test_package_manager_negative_package_metadata_contracts_fail_closed() -> None:
+    contract = load_json(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "package_ecosystem"
+        / "negative_package_metadata_contracts.json"
+    )
+
+    for case in contract["cases"]:
+        payload = lock_payload()
+        mutation = case["mutation"]
+        assert isinstance(mutation, dict)
+        expected = str(case["expected_failure"])
+        target = str(case["target"])
+        if target == "lock-package":
+            packages = payload["packages"]
+            assert isinstance(packages, list)
+            package = deepcopy(packages[0])
+            assert isinstance(package, dict)
+            _apply_package_metadata_mutation(package, mutation)
+            packages[0] = package
+            failures = collect_lock_model_failures(payload, root=ROOT)
+        elif target == "local-registry-package":
+            registry = local_registry_payload(
+                payload,
+                source_mirror="tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+                source_restore_receipt=(
+                    "tmp/artifacts/package-ecosystem/offline-install/"
+                    "objc3c-offline-mirror-restore-receipt.json"
+                ),
+            )
+            registry_package = deepcopy(registry["packages"][0])
+            assert isinstance(registry_package, dict)
+            _apply_package_metadata_mutation(registry_package, mutation)
+            registry["packages"][0] = registry_package
+            failures = collect_registry_index_failures(registry, payload, root=ROOT)
+        else:
+            raise AssertionError(f"unsupported negative package metadata target {target}")
+
+        assert any(expected in failure for failure in failures), (case["case_id"], failures)
 
 
 def test_package_manager_dependency_abi_drift_fails_closed() -> None:

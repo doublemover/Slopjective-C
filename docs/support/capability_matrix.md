@@ -743,6 +743,25 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h`
   - source: `native/objc3c/src/io/objc3_cross_module_imported_modules_document.h`
 
+### Standalone textual interface payload
+
+- Capability ID: `modules.standalone-textual-interface-payload`
+- State: `internal`
+- Support claims: None
+- Summary: The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata. This row does not claim importer consumption or semantic roundtrip support yet; those remain reserved in the payload until issue #8238 lands the parser/importer and public validation workflow.
+- Owner modules:
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.h`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp`
+  - `native/objc3c/src/io/objc3_runtime_artifact_paths.cpp`
+  - `native/objc3c/src/io/objc3_runtime_artifact_writers.cpp`
+  - `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`
+- Evidence:
+  - schema: `schemas/objc3c-standalone-textual-interface-payload-v1.schema.json`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - source: `native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp`
+  - source: `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`
+
 ### Direct module import syntax
 
 - Capability ID: `modules.direct-import-syntax`
@@ -2050,25 +2069,30 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.local-registry`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.manager-local-registry`
-- Summary: Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, offline mirror metadata, local trust envelopes, and fail-closed language/ABI dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.
+- Summary: Objective-C 3 package publication now has a source-derived local package manager model with generated package manifests, deterministic lockfiles, shared module-graph source-of-truth records, offline mirror metadata, explicit package trust-root policy, local trust envelopes, and fail-closed language/ABI/module-graph dependency resolution. Hosted registry and arbitrary network dependency resolution remain unsupported.
 - Owner modules:
   - `scripts/objc3c_package_manager/model.py`
   - `scripts/objc3c_package_manager/registry.py`
+  - `scripts/objc3c_package_manager/trust.py`
   - `scripts/build_objc3c_package_lock.py`
   - `scripts/build_objc3c_package_mirror.py`
   - `scripts/check_objc3c_package_manager_model.py`
   - `schemas/objc3c-package-manifest-v1.schema.json`
+  - `schemas/objc3c-package-signing-trust-v1.schema.json`
   - `schemas/objc3c-package-lock-v1.schema.json`
   - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
   - `schemas/objc3c-package-local-registry-index-v1.schema.json`
 - Evidence:
   - test: `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` via `npm run objc3c -- validate-package-manager-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json` via `npm run objc3c -- validate-package-manager-model`
   - test: `tests/tooling/test_package_manager_model.py` via `npm run objc3c -- validate-package-manager-model`
   - schema: `schemas/objc3c-package-manifest-v1.schema.json`
+  - schema: `schemas/objc3c-package-signing-trust-v1.schema.json`
   - schema: `schemas/objc3c-package-lock-v1.schema.json`
   - schema: `schemas/objc3c-package-local-registry-index-v1.schema.json`
   - source: `scripts/objc3c_package_manager/model.py`
   - source: `scripts/objc3c_package_manager/registry.py`
+  - source: `scripts/objc3c_package_manager/trust.py`
   - source: `scripts/check_objc3c_package_manager_model.py`
   - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 

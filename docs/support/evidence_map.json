@@ -4043,6 +4043,13 @@
       "capability_id": "ecosystem.package-manager.local-registry",
       "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
+      "command": "npm run objc3c -- validate-package-manager-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "test",
       "path": "tests/tooling/test_package_manager_model.py",
       "command": "npm run objc3c -- validate-package-manager-model"
     },
@@ -5082,6 +5089,26 @@
       "support_claim": "objc3c.behavior.language.generics.collection-identity",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
     }
   ]
 }

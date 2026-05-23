@@ -124,6 +124,14 @@
     }
   },
   "$defs": {
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "package": {
       "type": "object",
       "required": [
@@ -135,6 +143,7 @@
         "abi_identity",
         "source_digest",
         "package_manifest",
+        "module_graph",
         "provenance_id",
         "trust"
       ],
@@ -171,6 +180,9 @@
         "package_manifest": {
           "$ref": "#/$defs/packageManifestRef"
         },
+        "module_graph": {
+          "$ref": "#/$defs/moduleGraph"
+        },
         "provenance_id": {
           "type": "string",
           "minLength": 1
@@ -194,6 +206,95 @@
         },
         "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
         "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "moduleGraph": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "package_id",
+        "package_source_kind",
+        "source",
+        "source_digest",
+        "source_authority",
+        "source_authority_digest",
+        "module_name",
+        "resolver",
+        "direct_import_syntax",
+        "import_edges",
+        "unsafe_metadata_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.module_graph.v1" },
+        "package_id": { "$ref": "#/$defs/packageId" },
+        "package_source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "source": { "type": "string", "minLength": 1 },
+        "source_digest": { "$ref": "#/$defs/sha256" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "module_name": {
+          "type": "object",
+          "required": ["canonical", "implementation", "case_sensitive"],
+          "additionalProperties": false,
+          "properties": {
+            "canonical": { "type": "string", "minLength": 1 },
+            "implementation": { "type": "string", "minLength": 1 },
+            "case_sensitive": { "const": true }
+          }
+        },
+        "resolver": { "const": "checked-in-local-registry" },
+        "direct_import_syntax": { "const": "reserved-fail-closed" },
+        "import_edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/moduleImportEdge" }
+        },
+        "unsafe_metadata_policy": {
+          "type": "object",
+          "required": [
+            "missing_module_graph",
+            "missing_package_manifest",
+            "manual_sidecar_manifest",
+            "network_or_hosted_metadata"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "missing_module_graph": { "const": "fail-closed" },
+            "missing_package_manifest": { "const": "fail-closed" },
+            "manual_sidecar_manifest": { "const": "fail-closed" },
+            "network_or_hosted_metadata": { "const": "fail-closed" }
+          }
+        }
+      }
+    },
+    "moduleImportEdge": {
+      "type": "object",
+      "required": [
+        "from_module",
+        "to_module",
+        "to_package_id",
+        "source",
+        "resolution",
+        "required_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from_module": { "type": "string", "minLength": 1 },
+        "to_module": { "type": "string", "minLength": 1 },
+        "to_package_id": { "$ref": "#/$defs/packageId" },
+        "source": { "const": "checked-in-local-workspace" },
+        "resolution": { "const": "locked-local-registry" },
+        "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
       }
     },
     "trust": {

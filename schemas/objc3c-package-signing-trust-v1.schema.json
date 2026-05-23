@@ -124,6 +124,7 @@
             "package-manifest",
             "package-artifact",
             "package-lock",
+            "hosted-registry-record",
             "registry-metadata",
             "install-receipt",
             "update-receipt"
@@ -148,17 +149,24 @@
       "type": "object",
       "required": [
         "trust_root_id",
+        "issuer_id",
         "root_kind",
         "signer_id",
         "signing_key_id",
         "signature_format",
+        "signature_algorithm",
         "signing_backend",
         "key_state",
-        "trust_scope"
+        "valid_from_utc",
+        "valid_until_utc",
+        "trust_scope",
+        "compatibility_scope",
+        "allowed_package_namespaces"
       ],
       "additionalProperties": false,
       "properties": {
         "trust_root_id": { "type": "string", "minLength": 1 },
+        "issuer_id": { "type": "string", "minLength": 1 },
         "root_kind": {
           "enum": [
             "local-development",
@@ -174,6 +182,12 @@
             "ed25519-reserved-fail-closed"
           ]
         },
+        "signature_algorithm": {
+          "enum": [
+            "sha256-fixture-digest",
+            "ed25519-reserved"
+          ]
+        },
         "signing_backend": {
           "enum": [
             "deterministic-test-replay",
@@ -181,8 +195,17 @@
           ]
         },
         "deterministic_public_material": { "type": "string", "minLength": 1 },
-        "key_state": { "enum": ["active", "reserved", "revoked"] },
-        "trust_scope": { "type": "string", "minLength": 1 }
+        "key_state": { "enum": ["active", "reserved", "revoked", "expired"] },
+        "valid_from_utc": { "type": "string", "minLength": 1 },
+        "valid_until_utc": { "type": "string", "minLength": 1 },
+        "trust_scope": { "type": "string", "minLength": 1 },
+        "compatibility_scope": { "type": "string", "minLength": 1 },
+        "allowed_package_namespaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
       }
     },
     "revocations": {

@@ -24,10 +24,13 @@ from .trust import (
 )
 
 PACKAGE_MANIFEST_CONTRACT_ID = "objc3c.package_ecosystem.package_manifest.v1"
+PACKAGE_MODULE_GRAPH_CONTRACT_ID = "objc3c.package_ecosystem.module_graph.v1"
 LOCAL_PACKAGE_LANGUAGE_VERSION = "3.0"
 LOCAL_PACKAGE_LANGUAGE_MODE = "strict"
 LOCAL_PACKAGE_ABI_IDENTITY = "objc3-abi-2025Q4"
 LOCAL_PACKAGE_HOST_PLATFORM = "windows-x64"
+DIRECT_IMPORT_SYNTAX_SUPPORT = "reserved-fail-closed"
+LOCAL_MODULE_GRAPH_RESOLVER = "checked-in-local-registry"
 
 
 @dataclass(frozen=True)
@@ -135,6 +138,67 @@ def package_manifest_digest(manifest: dict[str, Any]) -> str:
     return stable_digest(payload)
 
 
+def module_import_edges(
+    *,
+    from_module: str,
+    dependencies: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    return sorted(
+        [
+            {
+                "from_module": from_module,
+                "to_module": package_name(str(dependency["package_id"])),
+                "to_package_id": str(dependency["package_id"]),
+                "source": str(dependency["source"]),
+                "resolution": "locked-local-registry",
+                "required_version": str(dependency["version_requirement"]),
+            }
+            for dependency in dependencies
+        ],
+        key=lambda edge: (edge["to_package_id"], edge["required_version"]),
+    )
+
+
+def module_graph_payload(
+    *,
+    package_id: str,
+    source_kind: str,
+    source: str,
+    source_digest: str,
+    module_id: str,
+    implementation_module: str,
+    source_authority: str,
+    source_authority_digest: str,
+    dependencies: list[dict[str, str]],
+) -> dict[str, Any]:
+    return {
+        "contract_id": PACKAGE_MODULE_GRAPH_CONTRACT_ID,
+        "package_id": package_id,
+        "package_source_kind": source_kind,
+        "source": source,
+        "source_digest": source_digest,
+        "source_authority": source_authority,
+        "source_authority_digest": source_authority_digest,
+        "module_name": {
+            "canonical": module_id,
+            "implementation": implementation_module,
+            "case_sensitive": True,
+        },
+        "resolver": LOCAL_MODULE_GRAPH_RESOLVER,
+        "direct_import_syntax": DIRECT_IMPORT_SYNTAX_SUPPORT,
+        "import_edges": module_import_edges(
+            from_module=module_id,
+            dependencies=dependencies,
+        ),
+        "unsafe_metadata_policy": {
+            "missing_module_graph": "fail-closed",
+            "missing_package_manifest": "fail-closed",
+            "manual_sidecar_manifest": "fail-closed",
+            "network_or_hosted_metadata": "fail-closed",
+        },
+    }
+
+
 def package_manifest_payload(
     *,
     package_id: str,
@@ -142,6 +206,7 @@ def package_manifest_payload(
     source_kind: str,
     package_version: str,
     source_digest: str,
+    module_graph: dict[str, Any],
     dependencies: list[dict[str, str]],
     runtime_symbols: list[str],
     replay_actions: list[str],
@@ -164,6 +229,7 @@ def package_manifest_payload(
             "minimum": LOCAL_PACKAGE_ABI_IDENTITY,
             "runtime_symbols": sorted(runtime_symbols),
         },
+        "module_graph": module_graph,
         "dependencies": dependencies,
         "registry": {
             "resolution": "checked-in-local-registry",
@@ -200,6 +266,7 @@ def package_lock_entry(
             "contract_id": manifest["contract_id"],
             "digest": manifest["manifest_digest"],
         },
+        "module_graph": manifest["module_graph"],
         "provenance_id": provenance_id(str(manifest["package_id"])),
         "trust": manifest["trust"],
     }
@@ -345,6 +412,10 @@ def build_lock_components(
     manifest_dependencies_by_package: dict[str, list[dict[str, str]]] = {}
     digest_inputs: list[str] = []
     generator = "scripts/build_objc3c_package_lock.py"
+    stdlib_module_inventory_source = "stdlib/module_inventory.json"
+    showcase_portfolio_source = "showcase/portfolio.json"
+    stdlib_module_inventory_digest = file_digest(root / stdlib_module_inventory_source)
+    showcase_portfolio_digest = file_digest(root / showcase_portfolio_source)
 
     stdlib_versions: dict[str, str] = {}
     for module in sorted((entry for entry in modules if isinstance(entry, dict)), key=lambda entry: str(entry.get("module", ""))):
@@ -364,6 +435,17 @@ def build_lock_components(
             source_kind="stdlib-module-manifest",
             package_version=package_version,
             source_digest=file_digest(root / source),
+            module_graph=module_graph_payload(
+                package_id=package_id,
+                source=source,
+                source_kind="stdlib-module-manifest",
+                source_digest=file_digest(root / source),
+                module_id=module_id,
+                implementation_module=str(module.get("implementation_module", "")),
+                source_authority=stdlib_module_inventory_source,
+                source_authority_digest=stdlib_module_inventory_digest,
+                dependencies=[],
+            ),
             dependencies=[],
             runtime_symbols=runtime_symbols,
             replay_actions=[
@@ -393,6 +475,17 @@ def build_lock_components(
             source_kind="showcase-workspace-manifest",
             package_version="1.0.0",
             source_digest=file_digest(root / source),
+            module_graph=module_graph_payload(
+                package_id=package_id,
+                source=source,
+                source_kind="showcase-workspace-manifest",
+                source_digest=file_digest(root / source),
+                module_id=f"showcase.{example_id}",
+                implementation_module=example_id,
+                source_authority=showcase_portfolio_source,
+                source_authority_digest=showcase_portfolio_digest,
+                dependencies=package_dependencies,
+            ),
             dependencies=package_dependencies,
             runtime_symbols=[],
             replay_actions=[
@@ -489,6 +582,91 @@ def cache_payload_from_mirror_package(mirror_package: dict[str, Any]) -> dict[st
     return payload
 
 
+def collect_package_module_graph_failures(
+    package: dict[str, Any],
+    *,
+    dependencies: list[dict[str, Any]],
+    root: Path,
+) -> list[str]:
+    package_id = str(package.get("package_id", ""))
+    graph = package.get("module_graph")
+    if not isinstance(graph, dict):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph metadata for {package_id}"]
+
+    failures: list[str] = []
+    if graph.get("contract_id") != PACKAGE_MODULE_GRAPH_CONTRACT_ID:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph contract drift for {package_id}")
+    if graph.get("package_id") != package_id:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph package id drift for {package_id}")
+    if graph.get("package_source_kind") != package.get("source_kind"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source kind drift for {package_id}")
+    if graph.get("source") != package.get("source"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source drift for {package_id}")
+    if graph.get("source_digest") != package.get("source_digest"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source digest drift for {package_id}")
+
+    source_authority = str(graph.get("source_authority", ""))
+    if source_authority not in {"stdlib/module_inventory.json", "showcase/portfolio.json"}:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe module graph source authority for {package_id}")
+    source_authority_path = root / source_authority
+    if not source_authority_path.is_file():
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph source authority for {package_id}")
+    elif graph.get("source_authority_digest") != file_digest(source_authority_path):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source authority digest drift for {package_id}")
+
+    module_name = graph.get("module_name", {})
+    if not isinstance(module_name, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph module name for {package_id}")
+        from_module = ""
+    else:
+        from_module = str(module_name.get("canonical", ""))
+        if not from_module:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing canonical module name for {package_id}")
+        if not str(module_name.get("implementation", "")):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing implementation module name for {package_id}")
+        if module_name.get("case_sensitive") is not True:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph case sensitivity drift for {package_id}")
+
+    if graph.get("resolver") != LOCAL_MODULE_GRAPH_RESOLVER:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph resolver drift for {package_id}")
+    if graph.get("direct_import_syntax") != DIRECT_IMPORT_SYNTAX_SUPPORT:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import support claim widened for {package_id}")
+
+    unsafe_policy = graph.get("unsafe_metadata_policy", {})
+    expected_unsafe_policy = {
+        "missing_module_graph": "fail-closed",
+        "missing_package_manifest": "fail-closed",
+        "manual_sidecar_manifest": "fail-closed",
+        "network_or_hosted_metadata": "fail-closed",
+    }
+    if not isinstance(unsafe_policy, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing unsafe metadata policy for {package_id}")
+    elif unsafe_policy != expected_unsafe_policy:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe metadata policy drift for {package_id}")
+
+    expected_edges: list[dict[str, str]] = []
+    for dependency in dependencies:
+        to_package_id = str(dependency.get("to", ""))
+        expected_edges.append(
+            {
+                "from_module": from_module,
+                "to_module": package_name(to_package_id) if ":" in to_package_id else "",
+                "to_package_id": to_package_id,
+                "source": str(dependency.get("source", "")),
+                "resolution": str(dependency.get("resolution", "")),
+                "required_version": str(dependency.get("required_version", "")),
+            }
+        )
+    expected_edges = sorted(
+        expected_edges,
+        key=lambda edge: (edge["to_package_id"], edge["required_version"]),
+    )
+    actual_edges = graph.get("import_edges", [])
+    if actual_edges != expected_edges:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph import edges drift for {package_id}")
+    return failures
+
+
 def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str]:
     failures: list[str] = []
     raw_packages = lock.get("packages", [])
@@ -533,6 +711,11 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
     for package in packages:
         package_id = str(package.get("package_id"))
         source = str(package.get("source", ""))
+        package_dependencies = [
+            dependency
+            for dependency in dependencies
+            if str(dependency.get("from")) == package_id
+        ]
         source_path = root / source
         if not source_path.is_file():
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package source for {package_id}")
@@ -542,6 +725,13 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: language version mismatch for {package_id}")
         if package.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI identity mismatch for {package_id}")
+        failures.extend(
+            collect_package_module_graph_failures(
+                package,
+                dependencies=package_dependencies,
+                root=root,
+            )
+        )
         trust = package.get("trust", {})
         if not isinstance(trust, dict):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing trust envelope for {package_id}")
@@ -557,7 +747,7 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             if trust.get("revocation_state") != "not-revoked":
                 failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: revoked package cannot resolve {package_id}")
         manifest = package.get("package_manifest", {})
-        if not isinstance(manifest, dict):
+        if not isinstance(manifest, dict) or not manifest:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package manifest envelope for {package_id}")
         else:
             manifest_path = str(manifest.get("path", ""))
@@ -583,6 +773,8 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest field drift for {package_id}")
                 if manifest_digest != manifest.get("digest"):
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest mismatch for {package_id}")
+                if manifest_payload.get("module_graph") != package.get("module_graph"):
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest module graph drift for {package_id}")
                 failures.extend(
                     collect_manifest_trust_failures(
                         manifest_payload,

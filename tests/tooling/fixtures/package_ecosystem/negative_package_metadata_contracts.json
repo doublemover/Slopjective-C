@@ -1,0 +1,52 @@
+{
+  "contract_id": "objc3c.package_ecosystem.negative_package_metadata_contracts.v1",
+  "surface_kind": "package-ecosystem-negative-package-metadata",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "diagnostic_code": "O3PKG8055",
+  "claim_boundary": "negative fixture contract for local package manifest, module graph, and local registry metadata only; direct @import syntax, hosted registry resolution, and network install support remain reserved",
+  "cases": [
+    {
+      "case_id": "missing-module-graph",
+      "target": "lock-package",
+      "mutation": {
+        "remove": "module_graph"
+      },
+      "expected_failure": "O3PKG8055: missing module graph metadata"
+    },
+    {
+      "case_id": "unsafe-module-graph-source-authority",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.source_authority",
+        "value": "tmp/unsafe-package-metadata.json"
+      },
+      "expected_failure": "O3PKG8055: unsafe module graph source authority"
+    },
+    {
+      "case_id": "direct-import-syntax-claim-widened",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_import_syntax",
+        "value": "supported"
+      },
+      "expected_failure": "O3PKG8055: direct @import support claim widened"
+    },
+    {
+      "case_id": "missing-package-manifest-envelope",
+      "target": "lock-package",
+      "mutation": {
+        "remove": "package_manifest"
+      },
+      "expected_failure": "O3PKG8055: missing package manifest envelope"
+    },
+    {
+      "case_id": "local-registry-module-graph-drift",
+      "target": "local-registry-package",
+      "mutation": {
+        "set": "module_graph.resolver",
+        "value": "hosted-registry"
+      },
+      "expected_failure": "O3PKG8055: local registry module graph drift"
+    }
+  ]
+}

@@ -55,6 +55,8 @@ That means the package-ecosystem owner surface must build local package semantic
 - deterministic dependency resolution and lock behavior
 - generated package manifests with Objective-C 3.0 language, ABI, digest, and
   trust metadata
+- generated package manifests, lock package rows, and local registry rows with
+  the same checked-in module graph source-of-truth record
 - schema-backed local registry indexes with exact locked version selection,
   dependency digest evidence, and replay commands
 - local workspace and package-authoring workflow
@@ -97,16 +99,21 @@ Resolution is intentionally local-first:
 - package identities are canonical module ids plus source paths, not hosted
   registry slugs
 - generated package manifests capture package version, source digest,
-  Objective-C 3.0 language mode, `objc3-abi-2025Q4`, dependency requirements,
-  trust signature, and revocation state
+  Objective-C 3.0 language mode, `objc3-abi-2025Q4`, module graph source
+  authority, dependency requirements, trust signature, and revocation state
 - locks capture provenance, manifest digests, source digests, selected
-  version/source identity, and replay command intent
+  version/source identity, module graph identity, and replay command intent
 - local registry indexes capture exact locked target versions, dependency source
-  digests, package manifest digests, trust signatures, and replay commands for
-  every indexed package
+  digests, package manifest digests, module graph records, trust signatures, and
+  replay commands for every indexed package
+- package trust roots are explicit policy records: each root binds issuer,
+  signer, key id, signature format/algorithm, validity window, namespace scope,
+  compatibility scope, rotation policy, and revocation lists before any package
+  operation can treat a signature as valid
 - dependency resolution fails closed when a dependency is missing, ambiguous,
-  unpinned, provenance-free, ABI-incompatible, language-incompatible, revoked,
-  or outside the allowed local/mirror roots
+  unpinned, provenance-free, missing module graph metadata, backed by unsafe
+  package metadata, ABI-incompatible, language-incompatible, revoked, or outside
+  the allowed local/mirror roots
 
 The initial lock model does not claim network fetching. Registry names may appear
 only as generated metadata layered over local package artifacts until later

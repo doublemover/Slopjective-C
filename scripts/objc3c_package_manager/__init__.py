@@ -34,6 +34,7 @@ from .trust import (
     SIGNATURE_ENVELOPE_CONTRACT_ID,
     collect_manifest_trust_failures,
     collect_signature_envelope_failures,
+    collect_trust_policy_failures,
     production_signing_reserved_diagnostic,
     sign_manifest_trust_envelope,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "collect_manifest_trust_failures",
     "collect_package_operation_failures",
     "collect_signature_envelope_failures",
+    "collect_trust_policy_failures",
     "default_trust_policy_payload",
     "file_digest",
     "LOCAL_PACKAGE_SIGNING_BACKEND",

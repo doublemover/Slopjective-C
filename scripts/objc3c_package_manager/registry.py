@@ -117,6 +117,7 @@ def package_registry_payload(
         "language_version": str(package["language_version"]),
         "abi_identity": str(package["abi_identity"]),
         "package_manifest": manifest,
+        "module_graph": package.get("module_graph", {}),
         "provenance_id": str(package["provenance_id"]),
         "trust": trust,
         "version": {
@@ -334,6 +335,13 @@ def collect_registry_index_failures(
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry manifest envelope drift for {package_id}")
         elif registry_manifest != locked_manifest:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry manifest drift for {package_id}")
+
+        locked_module_graph = locked.get("module_graph", {})
+        registry_module_graph = raw_package.get("module_graph", {})
+        if not isinstance(locked_module_graph, dict) or not isinstance(registry_module_graph, dict):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry module graph metadata drift for {package_id}")
+        elif registry_module_graph != locked_module_graph:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry module graph drift for {package_id}")
 
         locked_trust = locked.get("trust", {})
         registry_trust = raw_package.get("trust", {})

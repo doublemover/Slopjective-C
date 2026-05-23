@@ -30,6 +30,12 @@
       "failure_mode": "dependency edges without provenance are not lockable"
     },
     {
+      "stage_id": "capture-module-graph-source-truth",
+      "input": "stdlib module inventory, showcase portfolio, generated package manifests, and exact local dependency edges",
+      "output": "module graph record shared by package manifest, lock package row, and local registry row",
+      "failure_mode": "missing, unsafe, or hosted/network-backed module graph metadata fails resolution"
+    },
+    {
       "stage_id": "write-deterministic-lock",
       "input": "resolved package inventory and provenance envelope",
       "output": "machine-owned lock artifact under tmp/artifacts/package-ecosystem",
@@ -50,6 +56,7 @@
     "packages",
     "dependencies",
     "provenance",
+    "resolution_plan",
     "digest_inputs",
     "replay"
   ],
@@ -97,12 +104,14 @@
   "claim_rules": [
     "dependency resolution starts from checked-in local package surfaces",
     "lockfiles must be deterministic and provenance-bearing before registry publication can be claimed",
+    "module graph metadata must be source-derived from checked-in stdlib module inventory or showcase portfolio inputs and must match the generated manifest, lock, and local registry row",
     "package manifests must carry strict Objective-C 3.0 language and ABI requirements before dependencies can resolve",
     "network-backed dependency resolution fails closed until represented by replayable evidence",
     "tmp outputs may contain generated locks and reports but may not become source authority"
   ],
   "release_blocking_conditions": [
     "missing dependency provenance",
+    "missing or unsafe module graph package metadata",
     "ambiguous package identity",
     "unstable lock ordering or digest input set",
     "public workflow replay failure",
