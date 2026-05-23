@@ -105,6 +105,12 @@
         "install",
         "execution"
       ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
       "required_toolchain_components": [
         "llvm",
         "clang",
@@ -135,6 +141,12 @@
       "support_state": "unsupported",
       "issue_ref": 8229,
       "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
         "build",
         "package",
         "install",
@@ -184,6 +196,12 @@
         "blocks_publication_on_stale": true
       },
       "claim_state": "evidence-bound",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
         "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
         "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
@@ -213,6 +231,18 @@
         "blocks_publication_on_stale": true
       },
       "claim_state": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.unsupported.linux-x64.fail-closed"
       ],
@@ -240,6 +270,18 @@
         "blocks_publication_on_stale": true
       },
       "claim_state": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
       ],
@@ -268,6 +310,16 @@
         "blocks_publication_on_stale": true
       },
       "claim_state": "reserved",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
       ],
@@ -296,6 +348,16 @@
         "blocks_publication_on_stale": true
       },
       "claim_state": "reserved",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
       ],
@@ -326,6 +388,16 @@
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "diagnostic": "AddressSanitizer support is reserved until package install and native execution evidence exists for the sanitizer build."
     },
     {
@@ -350,6 +422,16 @@
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "diagnostic": "UBSan support is reserved until package install and native execution evidence exists for the sanitizer build."
     }
   ],
@@ -420,7 +502,7 @@
           "toolchain",
           "native-object-emission"
         ],
-        "diagnostic": "Native object emission requires llc --filetype=obj; missing llc or missing object-filetype support is fail-closed and cannot publish object, package, execution, or platform success."
+        "diagnostic": "Native object emission requires llc --filetype=obj. Package and native execution claims additionally require clang++, llvm-ar, and LLVM header/library discovery from llvm-config or an installed LLVM root; missing required LLVM subtools fail closed before package, execution, or platform success."
       }
     ],
     "native_object_emission_contract": {

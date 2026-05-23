@@ -163,6 +163,9 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     assert '"contains": { "const": "debug_identity_preservation" }' in text
     assert '"contains": { "const": "runtime_identity_preservation" }' in text
     assert '"contains": { "const": "runtime_invalidation_replay" }' in text
+    assert '"contains": { "const": "exact_target_method_identity" }' in text
+    assert '"contains": { "const": "ir_digest_before" }' in text
+    assert '"contains": { "const": "ir_digest_after" }' in text
     for verdict_field in REQUIRED_PROOF_VERDICT_FIELDS:
         assert verdict_field in text
     assert '"pattern": "^[0-9a-f]{64}$"' in text
@@ -204,12 +207,14 @@ def test_semantic_optimization_pipeline_method_inlining_trace_is_proof_backed() 
     after = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
 
     before_text = before.read_text(encoding="utf-8")
-    assert "call i32 @objc3_inlineable_Math_addOne" in before_text
-    assert "callee body identity: body:Math.addOne:v1" in before_text
+    assert "call i32 @objc3_inlineable_InlineMath_addOne" in before_text
+    assert "callee body identity: body:InlineMath.addOne:v1" in before_text
+    assert "exact callee identity: method:InlineMath.addOne:i32->i32" in before_text
 
     after_text = after.read_text(encoding="utf-8")
-    assert "call i32 @objc3_inlineable_Math_addOne" not in after_text
+    assert "call i32 @objc3_inlineable_InlineMath_addOne" not in after_text
     assert "add nsw i32 %value, 1" in after_text
+    assert "exact callee identity preserved: method:InlineMath.addOne:i32->i32" in after_text
     assert "source-map inline frame preserved" in after_text
     assert "diagnostic location preserved" in after_text
     assert "semantic-optimization.invalidate-global-proof-state" in after_text

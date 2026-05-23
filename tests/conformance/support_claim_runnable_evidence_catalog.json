@@ -292,6 +292,36 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "owner_phase": "ir",
+      "conformance_fixture": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+      "traceability_fixture": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-standalone-textual-interface-payload",
+      "runtime_acceptance_case": "standalone-textual-interface-payload-import-roundtrip",
+      "positive_evidence": [
+        "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+        "scripts/check_objc3c_standalone_textual_interface_payload.py",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+        "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+        "scripts/check_objc3c_standalone_textual_interface_payload.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3IFC8238"
+      ],
+      "source_truth_requirements": [
+        "Standalone textual interface payload support is claimed only for the schema-registered payload artifact, fail-closed importer, checked package-lock identity, declaration/source-count identity, and supported interface roundtrip status",
+        "Implementation declarations remain reserved metadata and cannot become importable declarations through the standalone payload row",
+        "Stale schema, unlocked import, hidden declaration, source-count drift, and reserved roundtrip cases must fail closed through the public validation command"
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.modules.visibility-reexport-rebuild-contract",
       "capability_id": "modules.visibility-reexport-rebuild-contract",
       "owner_phase": "sema",
@@ -2358,7 +2388,10 @@
       ],
       "negative_evidence": [
         "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
         "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
         "scripts/objc3c_semantic_optimization_pipeline.py"
       ],
@@ -2369,6 +2402,7 @@
         "Semantic optimization support is bounded to deterministic pass ordering, explicit contracts, invalidation declarations, and post-pass verification",
         "Benchmark governance for semantic optimization must use checked-in workload manifests, fixture digests, and budget policy rather than generated report inputs",
         "Exact-target devirtualization cannot publish a success claim without sealed/final dispatch, static receiver, mutation invalidation, runtime-cache, ownership, source-map, ABI, and package proof",
+        "Method inlining support is bounded to exact callee identity, before/after IR proof, inline-frame source maps, side-effect replay, and runtime invalidation replay",
         "Direct dispatch optimization requires exact symbol/signature ownership and explicit global proof-state invalidation",
         "Cache-aware dispatch success claims require the runtime-owned checked helper, strict status-envelope handling, semantic miss replay, and source-map/debug preservation evidence"
       ]
@@ -2435,6 +2469,129 @@
         "Runtime debug trace support is bounded to schema-backed trace composition over runtime inspector, compile-stage trace, editor debug-map inputs, and source-owned runtime trace contract rows",
         "LLDB plugin integration, statement stepping, and full source-map publication remain reserved lanes",
         "Generated trace reports under tmp are replay outputs, not source truth for additional debugger claims"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping",
+      "capability_id": "runtime.debug-trace.statement-stepping",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "traceability_fixture": "schemas/objc3c-debug-source-maps-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-debug-source-maps",
+      "runtime_acceptance_case": "runtime-debug-trace-statement-stepping-source-maps",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+        "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+        "schemas/objc3c-debug-source-maps-v1.schema.json",
+        "scripts/objc3c_debug_maps/model.py",
+        "scripts/check_objc3c_debug_source_maps.py",
+        "tests/tooling/test_debug_source_maps.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        "scripts/objc3c_debug_maps/model.py",
+        "tests/tooling/test_debug_source_maps.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3DBG8176"
+      ],
+      "source_truth_requirements": [
+        "Statement stepping support is bounded to compiler-owned source-map entries, native line-table rows, debug-map anchors, and debugger replay records",
+        "Generated-only source maps, stale source graph identities, missing line-table evidence, and ambiguous stepping policy reject fail-closed",
+        "This row does not promote full source-map publication or broad production object-model stepping"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin",
+      "capability_id": "runtime.debug-trace.lldb-plugin",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+      "traceability_fixture": "schemas/objc3c-debugger-integration-replay-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-debugger-integration",
+      "runtime_acceptance_case": "runtime-debug-trace-lldb-protocol-replay",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+        "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+        "schemas/objc3c-debugger-integration-replay-v1.schema.json",
+        "scripts/objc3c_debugger_integration/model.py",
+        "scripts/check_objc3c_debugger_integration.py",
+        "tests/tooling/test_debugger_integration.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+        "scripts/objc3c_debugger_integration/model.py",
+        "tests/tooling/test_debugger_integration.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3DBG8176"
+      ],
+      "source_truth_requirements": [
+        "LLDB integration support is bounded to replayable checked protocol commands over durable source-map and runtime metadata fixtures",
+        "Generated-only maps, stale compiler identity, missing inline-frame chains, and unsupported runtime metadata reject fail-closed",
+        "This row does not claim arbitrary host debugger sessions or every optimized production binary path"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map",
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+      "traceability_fixture": "schemas/objc3c-debug-source-maps-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-debug-source-maps",
+      "runtime_acceptance_case": "runtime-debug-trace-inline-frame-source-map",
+      "positive_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+        "schemas/objc3c-debug-source-maps-v1.schema.json",
+        "scripts/objc3c_debug_maps/model.py",
+        "scripts/check_objc3c_debug_source_maps.py",
+        "tests/tooling/test_debug_source_maps.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+        "scripts/objc3c_debug_maps/model.py",
+        "tests/tooling/test_debug_source_maps.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3DBG8176"
+      ],
+      "source_truth_requirements": [
+        "Inline-frame source-map support is bounded to caller and callee source spans, native inline ranges, imported/emitted debug-map rows, and deterministic inline-frame chain ordering",
+        "Generated-only or ambiguous stepping cases reject fail-closed rather than broadening the optimization/source-map claim",
+        "This row stays tied to method-inlining preservation evidence and does not promote the full source-map umbrella"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering",
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "owner_phase": "ir",
+      "conformance_fixture": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+      "traceability_fixture": "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "runtime_acceptance_case": "runtime-typed-keypath-debugger-lowering-metadata",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+        "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+        "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
+        "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json",
+        "native/objc3c/src/runtime/selectors/keypath_descriptor.h",
+        "native/objc3c/src/lower/contracts/optional_keypath_lowering_contracts.h",
+        "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+        "scripts/objc3c_object_model_debugger_proof/model.py",
+        "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
+      ],
+      "required_diagnostic_codes": [
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Typed keypath debugger lowering support is bounded to checked descriptor metadata for source span, root and value type identity, object-model owner/member identity, source-map key, and diagnostic anchor",
+        "Fallback interpretation, missing runtime string-pool metadata, missing source-map anchors, and broad keypath shapes stay fail-closed",
+        "This row does not promote full object-model realization or broad debugger-grade keypath evaluation"
       ]
     },
     {

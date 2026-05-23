@@ -1,4 +1,5 @@
 {
+  "$schema": "https://objc3c.dev/schemas/objc3c-debug-source-maps-v1.schema.json",
   "contract_id": "objc3c.debug-source-maps.v1",
   "source": {
     "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",

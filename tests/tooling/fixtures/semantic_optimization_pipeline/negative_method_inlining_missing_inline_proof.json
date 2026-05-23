@@ -8,8 +8,11 @@
   "description": "A scalar-looking call cannot be inlined without callee body identity and linked original/callee source spans.",
   "candidate_overrides": {
     "method_inline_callee_body_identity_present": false,
+    "method_inline_exact_callee_identity_key": "",
     "method_inline_original_call_source_span_key": "",
     "method_inline_callee_source_span_key": "",
+    "method_inline_before_ir_proof_key": "",
+    "method_inline_after_ir_proof_key": "",
     "method_inline_original_call_source_span_present": false,
     "method_inline_inline_frame_id_key": "inline-frame:method-inline:caller+callee",
     "method_inline_inlined_callsite_source_span_key": "source-span:method-inline:inlined-callsite",
@@ -48,8 +51,11 @@
     "success_claim": false,
     "diagnostic_contains": [
       "method_inline_callee_body_identity_present",
+      "method_inline_exact_callee_identity_key",
       "method_inline_original_call_source_span_key",
       "method_inline_callee_source_span_key",
+      "method_inline_before_ir_proof_key",
+      "method_inline_after_ir_proof_key",
       "method_inline_original_call_source_span_present"
     ]
   }

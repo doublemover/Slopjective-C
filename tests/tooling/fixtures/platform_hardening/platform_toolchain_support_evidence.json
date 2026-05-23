@@ -59,6 +59,7 @@
         "install",
         "execution"
       ],
+      "required_missing_evidence_classes": [],
       "required_toolchain_components": [
         "llvm",
         "clang",
@@ -104,6 +105,12 @@
       "claim_class": "fail-closed",
       "tier_id": "unsupported",
       "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
         "build",
         "package",
         "install",
@@ -166,6 +173,12 @@
       "claim_class": "fail-closed",
       "tier_id": "unsupported",
       "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
         "build",
         "package",
         "install",
@@ -391,22 +404,15 @@
       {
         "tool_name": "llvm-ar",
         "capability": "package archive and static-library lanes",
-        "claim_state": "reserved",
-        "version_source": "reserved",
-        "failure_behavior": "fail-closed-before-support-claim"
-      },
-      {
-        "tool_name": "llvm-config",
-        "capability": "headers and libraries discovery",
-        "claim_state": "reserved",
-        "version_source": "reserved",
+        "claim_state": "required",
+        "version_source": "probe",
         "failure_behavior": "fail-closed-before-support-claim"
       },
       {
         "tool_name": "headers-libs",
-        "capability": "runtime headers and import libraries used by packaged native execution",
+        "capability": "runtime headers and import libraries discovered from llvm-config or an installed LLVM root",
         "claim_state": "required",
-        "version_source": "native-build-resolution",
+        "version_source": "probe-or-install-root",
         "failure_behavior": "fail-closed-before-support-claim"
       }
     ],
@@ -422,6 +428,8 @@
         "evidence_ids": [
           "objc3c.evidence.toolchain.llvm.current-probe",
           "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+          "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
+          "objc3c.evidence.clean-room.local-offline-install",
           "objc3c.evidence.platform.windows-x64.execution.native-smoke"
         ],
         "unsupported_version_behavior": "fail-closed-no-range-claim"
@@ -438,8 +446,18 @@
         "fallback_policy": "no-clang-fallback-success-claim"
       },
       {
+        "rule_id": "objc3c.llvm.reject.missing-archive-tool",
+        "condition": "llvm-ar is absent or cannot publish a versioned archive tool identity",
+        "diagnostic": "package archive and static-library lanes fail closed before package support is claimed"
+      },
+      {
+        "rule_id": "objc3c.llvm.reject.missing-headers-libs",
+        "condition": "LLVM header/library directories cannot be discovered from llvm-config or an installed LLVM root",
+        "diagnostic": "headers/libraries discovery fails closed before package or native execution support is claimed"
+      },
+      {
         "rule_id": "objc3c.llvm.reject.mixed-toolchain",
-        "condition": "clang, clang++, llc, headers, and runtime libraries resolve from incompatible toolchain roots",
+        "condition": "clang, clang++, llc, llvm-ar, LLVM headers, and runtime libraries resolve from incompatible toolchain roots",
         "diagnostic": "mixed LLVM toolchains fail closed until a single governed matrix entry proves compatibility"
       },
       {
@@ -483,6 +501,7 @@
         "install",
         "execution"
       ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
         "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
         "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
@@ -805,6 +824,16 @@
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
       ],
@@ -867,6 +896,16 @@
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
       "evidence_ids": [
         "objc3c.evidence.toolchain.sanitizer.policy.reserved"
       ],

@@ -22,6 +22,7 @@
       "typed_payload_refs": []
     },
     "diagnostic": "O3P182",
+    "diagnostic_symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
     "payload_shapes": [
       "empty-payload",
       "single-payload",
@@ -39,7 +40,9 @@
     "lowercase_alias_spelling": "optional<T>",
     "lowercase_alias_accepted": false,
     "canonical_diagnostic": "O3P159",
+    "canonical_diagnostic_symbol": "kObjc3ParserDiagnosticReservedValueOptionalCode",
     "lowercase_alias_diagnostic": "O3C004",
+    "lowercase_alias_diagnostic_symbol": "kObjc3ParserDiagnosticRemovedOptionalAliasCode",
     "abi_layout_status": "reserved-no-layout",
     "nil_to_scalar_coercion_allowed": false,
     "nullable_pointer_conversion_allowed": false,
@@ -54,13 +57,32 @@
     "runtime_lowering_claim_allowed": false
   },
   "source_anchors": [
+    "native/objc3c/src/contracts/objc3_language_evolution_reserved_diagnostic_codes.h",
     "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
+    "native/objc3c/src/parse/objc3_parser_diagnostics.h",
     "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
     "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
     "native/objc3c/src/sema/model/frontend_type_source_closure.h",
     "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_runtime_capability_artifacts.cpp"
   ],
+  "diagnostic_code_symbols": {
+    "typed_throws_reserved": {
+      "symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
+      "code": "O3P182",
+      "owner": "parser"
+    },
+    "value_optional_reserved": {
+      "symbol": "kObjc3ParserDiagnosticReservedValueOptionalCode",
+      "code": "O3P159",
+      "owner": "parser"
+    },
+    "lowercase_optional_alias_removed": {
+      "symbol": "kObjc3ParserDiagnosticRemovedOptionalAliasCode",
+      "code": "O3C004",
+      "owner": "parser"
+    }
+  },
   "negative_fixtures": [
     {
       "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",

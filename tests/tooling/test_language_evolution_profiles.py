@@ -66,11 +66,20 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
         "value_optionals": "reserved_fail_closed",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 0
+    assert contract["typed_throws"]["diagnostic_symbol"] == (
+        "kObjc3ParserDiagnosticReservedTypedThrowsCode"
+    )
     assert contract["typed_throws"]["silent_erasure_allowed"] is False
     assert contract["typed_throws"]["interface_roundtrip_status"] == (
         "reserved-feature-marker-imported"
     )
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
+    assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
+        "kObjc3ParserDiagnosticReservedValueOptionalCode"
+    )
+    assert contract["value_optionals"]["lowercase_alias_diagnostic_symbol"] == (
+        "kObjc3ParserDiagnosticRemovedOptionalAliasCode"
+    )
     assert contract["value_optionals"]["nil_to_scalar_coercion_allowed"] is False
     assert contract["value_optionals"]["nullable_pointer_conversion_allowed"] is False
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
@@ -83,6 +92,23 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
         "profile_widening_allowed": False,
         "objc2_compatibility_path_allowed": False,
         "runtime_lowering_claim_allowed": False,
+    }
+    assert contract["diagnostic_code_symbols"] == {
+        "typed_throws_reserved": {
+            "symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
+            "code": "O3P182",
+            "owner": "parser",
+        },
+        "value_optional_reserved": {
+            "symbol": "kObjc3ParserDiagnosticReservedValueOptionalCode",
+            "code": "O3P159",
+            "owner": "parser",
+        },
+        "lowercase_optional_alias_removed": {
+            "symbol": "kObjc3ParserDiagnosticRemovedOptionalAliasCode",
+            "code": "O3C004",
+            "owner": "parser",
+        },
     }
 
     expected_codes = {
@@ -107,6 +133,8 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
     ).read_text(encoding="utf-8")
     assert "value_optional_issue_ref = 8234" in type_source
     assert 'value_optional_canonical_spelling = "Optional<T>"' in type_source
+    assert "kObjc3ParserDiagnosticReservedValueOptionalCode" in type_source
+    assert "kObjc3ParserDiagnosticRemovedOptionalAliasCode" in type_source
     assert "lowercase_optional_alias_rejected = true" in type_source
     error_source = (
         ROOT
@@ -119,12 +147,16 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
     ).read_text(encoding="utf-8")
     assert "typed_throws_issue_ref = 8233" in error_source
     assert 'typed_throws_canonical_syntax = "throws(E)"' in error_source
+    assert "kObjc3ParserDiagnosticReservedTypedThrowsCode" in error_source
     assert "typed_throws_silent_erasure_allowed = false" in error_source
     capability_source = (
         ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "capability_status.h"
     ).read_text(encoding="utf-8")
     assert "summary.value_optional_issue_ref == 8234u" in capability_source
+    assert "summary.value_optional_reserved_diagnostic_code" in capability_source
+    assert "summary.lowercase_optional_alias_diagnostic_code" in capability_source
     assert "summary.typed_throws_issue_ref == 8233u" in capability_source
+    assert "summary.typed_throws_reserved_diagnostic_code" in capability_source
     artifact_source = (
         ROOT
         / "native"
@@ -134,7 +166,10 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
         / "objc3_frontend_source_closure_type_control_error_json.inc"
     ).read_text(encoding="utf-8")
     assert '\\"value_optional_issue_ref\\"' in artifact_source
+    assert '\\"value_optional_reserved_diagnostic_code\\"' in artifact_source
+    assert '\\"lowercase_optional_alias_diagnostic_code\\"' in artifact_source
     assert '\\"typed_throws_issue_ref\\"' in artifact_source
+    assert '\\"typed_throws_reserved_diagnostic_code\\"' in artifact_source
     for row in contract["negative_fixtures"]:
         fixture_path = str(row["fixture"])
         _assert_repo_file(fixture_path)
@@ -153,10 +188,19 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     assert matrix["profile_claim_policy"] == {
         "claimed_public_profiles": ["core"],
         "native_frontend_profiles": ["canonical"],
+        "targeted_release_evidence_profiles": [
+            "strict",
+            "strict-concurrency",
+            "strict-system",
+        ],
         "strict_profile_aliases_allowed": False,
         "strict_concurrency_aliases_allowed": False,
+        "strict_system_native_frontend_profile_allowed": False,
         "objc2_compatibility_profile_allowed": False,
         "local_temp_evidence_allowed": False,
+        "selection_source_anchor": (
+            "native/objc3c/src/config/objc3_language_profile_validation.cpp"
+        ),
     }
     accepted = {row["profile_id"]: row for row in matrix["accepted_profiles"]}
     rejected = {row["profile_id"]: row for row in matrix["rejected_profiles"]}
@@ -176,6 +220,7 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     assert cases == {
         "strict_language_profile_reserved": ("strict", "O3C036"),
         "strict_concurrency_language_profile_reserved": ("strict-concurrency", "O3C037"),
+        "strict_system_target_profile_rejected": ("strict-system", "O3C038"),
         "strict_concurrency_alias_rejected": ("strict_concurrency", "O3C001"),
     }
 
@@ -184,7 +229,9 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     ).read_text(encoding="utf-8")
     assert "O3C036" in profile_source
     assert "O3C037" in profile_source
+    assert "O3C038" in profile_source
     assert "strict-concurrency" in profile_source
+    assert "strict-system" in profile_source
     assert "strict_concurrency" not in profile_source
 
 
@@ -437,6 +484,12 @@ def test_language_evolution_fixtures_are_canonical_manifest_owned() -> None:
             "control-flow",
             "canonical_rejection",
             "O3P156",
+        ),
+        "tests/tooling/fixtures/native/match_type_test_pattern_fail_closed_negative.objc3": (
+            "parser",
+            "control-flow",
+            "canonical_rejection",
+            "O3P158",
         ),
     }
     for path, (owner_phase, behavior_family, fixture_kind, diagnostic) in expected.items():

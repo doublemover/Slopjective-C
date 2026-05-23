@@ -114,8 +114,18 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "clang++",
         "llc",
         "llvm-ar",
-        "llvm-config",
         "headers-libs",
+    }
+    assert all(tool["claim_state"] == "required" for tool in llvm_matrix["required_tools"])
+    assert {
+        tool["tool_name"]: tool["version_source"]
+        for tool in llvm_matrix["required_tools"]
+    } == {
+        "clang": "probe",
+        "clang++": "native-build-resolution",
+        "llc": "probe",
+        "llvm-ar": "probe",
+        "headers-libs": "probe-or-install-root",
     }
     assert [entry["entry_id"] for entry in llvm_matrix["matrix_entries"]] == [
         "objc3c.llvm.windows-x64.current-probed-19"
@@ -187,6 +197,8 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "evidence_ids": [
             "objc3c.evidence.toolchain.llvm.current-probe",
             "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+            "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
+            "objc3c.evidence.clean-room.local-offline-install",
             "objc3c.evidence.platform.windows-x64.execution.native-smoke",
         ],
         "unsupported_version_behavior": "fail-closed-no-range-claim",
@@ -196,6 +208,8 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         for rule in llvm_matrix["rejection_rules"]
     } == {
         "objc3c.llvm.reject.missing-llc",
+        "objc3c.llvm.reject.missing-archive-tool",
+        "objc3c.llvm.reject.missing-headers-libs",
         "objc3c.llvm.reject.mixed-toolchain",
         "objc3c.llvm.reject.unsupported-range",
     }
@@ -240,9 +254,21 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert package_rows["objc3c.package.runtime.windows-x64.release"]["claim_state"] == "evidence-bound"
     assert package_rows["objc3c.package.runtime.windows-x64.release"]["platform_ids"] == ["windows-x64"]
     assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"]["claim_state"] == "fail-closed"
+    assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
+        "required_missing_evidence_classes"
+    ] == ["build", "package", "install", "execution"]
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"]["platform_ids"] == []
+    assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
+        "required_missing_evidence_classes"
+    ] == ["build", "package", "install", "execution"]
     assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "reserved"
+    assert package_rows["objc3c.package.sanitizer.asan.reserved"][
+        "required_missing_evidence_classes"
+    ] == ["package", "install", "execution"]
     assert package_rows["objc3c.package.sanitizer.ubsan.reserved"]["platform_ids"] == []
+    assert package_rows["objc3c.package.sanitizer.ubsan.reserved"][
+        "required_missing_evidence_classes"
+    ] == ["package", "install", "execution"]
     assert all(
         row["metadata_freshness_guard"] == {
             "metadata_source": (
@@ -278,6 +304,12 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["sanitizer"] == "address"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["claim_state"] == "reserved"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
+        "required_promotion_evidence"
+    ] == ["package", "install", "execution"]
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
+        "required_missing_evidence_classes"
+    ] == ["package", "install", "execution"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["package_variant_row_id"] == "objc3c.package.sanitizer.asan.reserved"
     assert "-fsanitize=address" in sanitizer_rows["objc3c.toolchain.sanitizer.address"]["build_contract"]["compiler_flags"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["install_guard"] == {
@@ -291,6 +323,12 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["sanitizer"] == "undefined"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "reserved"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"][
+        "required_promotion_evidence"
+    ] == ["package", "install", "execution"]
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"][
+        "required_missing_evidence_classes"
+    ] == ["package", "install", "execution"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["package_variant_row_id"] == "objc3c.package.sanitizer.ubsan.reserved"
     assert "-fsanitize=undefined" in sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["build_contract"]["compiler_flags"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["install_guard"] == {
@@ -350,6 +388,33 @@ def test_platform_toolchain_support_evidence_rejects_missing_llc_matrix_tool() -
     ]
 
     with pytest.raises(RuntimeError, match="required tools drifted"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_reserved_archive_matrix_tool() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for tool in evidence["llvm_version_support_matrix"]["required_tools"]:
+        if tool["tool_name"] == "llvm-ar":
+            tool["claim_state"] = "reserved"
+            tool["version_source"] = "reserved"
+
+    with pytest.raises(RuntimeError, match="llvm-ar must be required"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_supported_row_with_missing_evidence() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["support_rows"][0]["required_missing_evidence_classes"] = ["package"]
+
+    with pytest.raises(RuntimeError, match="supported row cannot list missing evidence classes"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_sanitizer_missing_promotion_evidence() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["sanitizer_variants"][0]["required_promotion_evidence"] = ["package", "install"]
+
+    with pytest.raises(RuntimeError, match="sanitizer promotion prerequisites"):
         validate_evidence(evidence)
 
 

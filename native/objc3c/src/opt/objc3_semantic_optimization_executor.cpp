@@ -89,6 +89,7 @@ const std::vector<Objc3SemanticOptimizationPassPlan> &PassPlans() {
        true,
        "REJECT_FAIL_CLOSED",
        {"callee body identity is present",
+        "exact callee identity, target symbol, and before/after IR proof fixtures match",
         "original call source span and callee source span are linked",
         "inline frame id and inlined callsite source span are present",
         "imported and emitted debug maps both carry inline-frame records",
@@ -109,7 +110,7 @@ const std::vector<Objc3SemanticOptimizationPassPlan> &PassPlans() {
         "runtime cache and dispatch assumptions are fresh",
         "runtime invalidation replay is present for stale dispatch/cache assumptions",
         "invalidation covers callee body, generation, ownership, source-map, diagnostic, debug stepping, runtime cache, ABI, and package proof state"},
-       "method inlining requires callee body identity, original call/source spans, inline-frame source-map identity, receiver/dispatch assumptions, scalar subset, ownership, side-effect replay, source-map, debug stepping, diagnostic, ABI/package, depth, recursion, generation, runtime cache freshness, and invalidation replay proofs"},
+       "method inlining requires exact callee identity, callee body identity, original call/source spans, before/after IR proof, inline-frame source-map identity, receiver/dispatch assumptions, scalar subset, ownership, side-effect replay, source-map, debug stepping, diagnostic, ABI/package, depth, recursion, generation, runtime cache freshness, and invalidation replay proofs"},
       {"cache-aware-dispatch",
        80,
        Objc3SemanticOptimizationPassMode::kEnabled,
@@ -183,10 +184,16 @@ std::string BuildObjc3SemanticOptimizationMetadataKey(
     key << ";inline-callee-body-identity="
         << (candidate.method_inline_callee_body_identity_present ? "true"
                                                                  : "false")
+        << ";inline-exact-callee-identity="
+        << candidate.method_inline_exact_callee_identity_key
         << ";inline-original-call-source-span="
         << candidate.method_inline_original_call_source_span_key
         << ";inline-callee-source-span="
         << candidate.method_inline_callee_source_span_key
+        << ";inline-before-ir-proof="
+        << candidate.method_inline_before_ir_proof_key
+        << ";inline-after-ir-proof="
+        << candidate.method_inline_after_ir_proof_key
         << ";inline-original-call-source-span-present="
         << (candidate.method_inline_original_call_source_span_present ? "true"
                                                                       : "false")
@@ -319,10 +326,16 @@ std::string BuildMethodInliningFailClosedDiagnostic(
                     "benchmark_governance_ready", missing);
   AppendMissingGate(candidate.method_inline_callee_body_identity_present,
                     "method_inline_callee_body_identity_present", missing);
+  AppendMissingTextGate(candidate.method_inline_exact_callee_identity_key,
+                        "method_inline_exact_callee_identity_key", missing);
   AppendMissingTextGate(candidate.method_inline_original_call_source_span_key,
                         "method_inline_original_call_source_span_key", missing);
   AppendMissingTextGate(candidate.method_inline_callee_source_span_key,
                         "method_inline_callee_source_span_key", missing);
+  AppendMissingTextGate(candidate.method_inline_before_ir_proof_key,
+                        "method_inline_before_ir_proof_key", missing);
+  AppendMissingTextGate(candidate.method_inline_after_ir_proof_key,
+                        "method_inline_after_ir_proof_key", missing);
   AppendMissingGate(candidate.method_inline_original_call_source_span_present,
                     "method_inline_original_call_source_span_present", missing);
   AppendMissingTextGate(candidate.method_inline_inline_frame_id_key,
@@ -588,8 +601,11 @@ Objc3SemanticOptimizationResult EvaluateObjc3SemanticOptimizationCandidate(
 
   if (plan->pass_id == "method-inlining") {
     if (candidate.method_inline_callee_body_identity_present &&
+        !candidate.method_inline_exact_callee_identity_key.empty() &&
         !candidate.method_inline_original_call_source_span_key.empty() &&
         !candidate.method_inline_callee_source_span_key.empty() &&
+        !candidate.method_inline_before_ir_proof_key.empty() &&
+        !candidate.method_inline_after_ir_proof_key.empty() &&
         candidate.method_inline_original_call_source_span_present &&
         !candidate.method_inline_inline_frame_id_key.empty() &&
         candidate.method_inline_inline_frame_id_present &&

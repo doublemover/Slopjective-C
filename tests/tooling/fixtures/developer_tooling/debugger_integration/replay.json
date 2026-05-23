@@ -1,4 +1,5 @@
 {
+  "$schema": "https://objc3c.dev/schemas/objc3c-debugger-integration-replay-v1.schema.json",
   "contract_id": "objc3c.debugger-integration.replay.v1",
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
   "protocol_contract": {

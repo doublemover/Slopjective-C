@@ -65,6 +65,11 @@ def test_optimization_pipeline_applies_only_proven_mutating_passes() -> None:
     assert inline["rewrites_ir"] is True
     assert inline["invalidates_global_proof_state"] is True
     assert "invalidates-global-proof-state=true" in str(inline["metadata_key"])
+    assert "method_inline_exact_callee_identity_key=method:InlineMath.addOne:i32->i32" in str(
+        inline["metadata_key"]
+    )
+    assert "semantic_pipeline_method_inlining.before.ll" in str(inline["metadata_key"])
+    assert "semantic_pipeline_method_inlining.after.ll" in str(inline["metadata_key"])
     assert "method_inline_inline_frame_id_present=true" in str(inline["metadata_key"])
     assert "method_inline_generated_only_source_map=false" in str(
         inline["metadata_key"]
@@ -124,6 +129,11 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
     assert "method_inline_callee_body_identity_present" in str(
         missing_inline["diagnostic"]
     )
+    assert "method_inline_exact_callee_identity_key" in str(
+        missing_inline["diagnostic"]
+    )
+    assert "method_inline_before_ir_proof_key" in str(missing_inline["diagnostic"])
+    assert "method_inline_after_ir_proof_key" in str(missing_inline["diagnostic"])
     assert "method_inline_original_call_source_span_key" in str(
         missing_inline["diagnostic"]
     )
@@ -234,9 +244,10 @@ def test_optimization_pipeline_metadata_is_deterministic_and_source_backed() -> 
     assert "REJECTED_FAIL_CLOSED" in cpp_text
     assert "success_claim = false" in cpp_text
     assert "method_inline_callee_body_identity_present" in cpp_text
+    assert "method_inline_exact_callee_identity_key" in cpp_text
     assert "method_inline_debug_stepping_evidence_present" in cpp_text
     assert "method_inline_runtime_invalidation_replay_present" in cpp_text
-    assert "method inlining requires callee body identity" in cpp_text
+    assert "method inlining requires exact callee identity, callee body identity" in cpp_text
 
     pipeline_text = PIPELINE_SOURCE.read_text(encoding="utf-8")
     assert "RunObjc3SemanticOptimizationPipelineTrace" in pipeline_text

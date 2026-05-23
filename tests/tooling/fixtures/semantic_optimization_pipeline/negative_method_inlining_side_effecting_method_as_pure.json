@@ -9,8 +9,11 @@
   "description": "A method with writes, calls, allocation, runtime helper use, ownership transfer, or error edges cannot satisfy the pure inline candidate gates.",
   "candidate_overrides": {
     "method_inline_callee_body_identity_present": true,
+    "method_inline_exact_callee_identity_key": "method:InlineMath.addOne:i32->i32",
     "method_inline_original_call_source_span_key": "source-span:method-inline:original-callsite",
     "method_inline_callee_source_span_key": "source-span:method-inline:callee-body",
+    "method_inline_before_ir_proof_key": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+    "method_inline_after_ir_proof_key": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
     "method_inline_original_call_source_span_present": true,
     "method_inline_inline_frame_id_key": "inline-frame:method-inline:caller+callee",
     "method_inline_inlined_callsite_source_span_key": "source-span:method-inline:inlined-callsite",

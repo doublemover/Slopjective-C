@@ -10,15 +10,16 @@
 ; optimized IR/source correlation: ir-source-correlation:method-inline:optimized-ir-to-caller-callee
 ; receiver dispatch assumption: dispatch-assumption:method-inline:receiver-static-type+final-target
 ; side-effect replay: side-effect-replay:method-inline:pure-no-writes-no-calls-no-runtime-helpers
-; callee body identity: body:Math.addOne:v1
+; exact callee identity: method:InlineMath.addOne:i32->i32
+; callee body identity: body:InlineMath.addOne:v1
 ; callee generation: method-generation=G88
-; runtime invalidation replay: runtime-replay:method-inline:stale-dispatch-cache-fallback
+; runtime invalidation replay: runtime-replay:method-inline:stale-dispatch-cache-fail-closed
 
-declare i32 @objc3_inlineable_Math_addOne(i32)
+declare i32 @objc3_inlineable_InlineMath_addOne(i32)
 
 define i32 @objc3_callsite_compute(i32 %value) {
 entry:
-  %call = call i32 @objc3_inlineable_Math_addOne(i32 %value), !dbg !21
+  %call = call i32 @objc3_inlineable_InlineMath_addOne(i32 %value), !dbg !21
   ret i32 %call, !dbg !22
 }
 

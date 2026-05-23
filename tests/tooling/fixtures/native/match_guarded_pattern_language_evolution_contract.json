@@ -29,22 +29,31 @@
     {
       "surface": "match_expression_position",
       "expected_diagnostic": "O3P156",
+      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchExpressionCode",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3"
     },
     {
       "surface": "fat_arrow_match_arms",
       "expected_diagnostic": "O3P156",
+      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchExpressionCode",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
     },
     {
       "surface": "missing_where_condition",
       "expected_diagnostic": "O3P157",
+      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedGuardedMatchPatternCode",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3"
     },
     {
       "surface": "non_bool_guard_condition",
       "expected_diagnostic": "O3S206",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3"
+    },
+    {
+      "surface": "type_test_patterns",
+      "expected_diagnostic": "O3P158",
+      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchTypeTestPatternCode",
+      "negative_fixture": "tests/tooling/fixtures/native/match_type_test_pattern_fail_closed_negative.objc3"
     }
   ],
   "reserved_source_fields": [
@@ -59,6 +68,7 @@
     "native/objc3c/src/pipeline/source_closure/frontend_source_closure_replay_keys_core.cpp",
     "native/objc3c/src/pipeline/results/capability_status.h",
     "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc",
+    "native/objc3c/src/parse/objc3_parser_core_statement_match_patterns_diagnostics_recovery.inc",
     "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
   ],
   "public_claim_boundary": {

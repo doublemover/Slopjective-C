@@ -164,6 +164,7 @@ REQUIRED_DEVIRTUALIZATION_CANDIDATE_INPUT_FIELDS = {
     "devirtualized_target_symbol",
 }
 REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS = {
+    "exact_target_method_identity",
     "callee_body_identity",
     "callee_body_ir_digest",
     "inline_candidate_kind",
@@ -179,6 +180,8 @@ REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS = {
     "debug_identity_preservation",
     "runtime_identity_preservation",
     "runtime_invalidation_replay",
+    "ir_digest_before",
+    "ir_digest_after",
 }
 REQUIRED_PROOF_RESULT_FIELDS = {
     "decision",
@@ -611,6 +614,28 @@ def _method_inlining_candidate_failed_proofs(
     invalidation: dict[str, Any],
 ) -> list[str]:
     failed: list[str] = []
+    exact_identity = str(candidate.get("exact_target_method_identity", ""))
+    callee_identity = str(candidate.get("callee_body_identity", ""))
+    inlined_symbol = str(candidate.get("inlined_target_symbol", ""))
+
+    if (
+        not exact_identity.startswith("method:")
+        or not callee_identity.startswith("body:")
+        or not inlined_symbol.startswith("objc3_inlineable_")
+    ):
+        failed.append("callee_body_identity")
+    else:
+        method_name = exact_identity.removeprefix("method:").split(":", 1)[0]
+        symbol_name = method_name.replace(".", "_")
+        if method_name not in callee_identity or symbol_name not in inlined_symbol:
+            failed.append("callee_body_identity")
+
+    if not str(candidate.get("callee_body_ir_digest", "")).startswith("sha256:"):
+        failed.append("callee_body_identity")
+    if not str(candidate.get("ir_digest_before", "")).startswith("sha256:"):
+        failed.append("semantic_equivalence")
+    if not str(candidate.get("ir_digest_after", "")).startswith("sha256:"):
+        failed.append("semantic_equivalence")
 
     if str(candidate.get("inline_candidate_kind", "")) not in (
         SAFE_METHOD_INLINING_CANDIDATE_KINDS
@@ -1768,7 +1793,15 @@ def _validate_pass_registry(
         failures.append("method inlining pass must rewrite IR")
     if inline_pass.get("invalidates_global_proof_state") is not True:
         failures.append("method inlining pass must invalidate global proof state")
+    inline_fixtures = {str(fixture) for fixture in _as_list(inline_pass.get("fixtures"))}
+    if not {
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+    }.issubset(inline_fixtures):
+        failures.append("method inlining enabled pass must cite before/after IR and proof-case fixtures")
     for token in (
+        "exact callee",
         "callee body identity",
         "ownership",
         "side-effect",
@@ -1957,6 +1990,42 @@ def _validate_direct_dispatch_fixture(failures: list[str]) -> None:
                 failures.append(f"direct dispatch after fixture missing token: {token}")
     else:
         failures.append("direct dispatch after fixture missing")
+
+
+def _validate_method_inlining_ir_fixture(failures: list[str]) -> None:
+    before_path = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+    after_path = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+    if not before_path.is_file():
+        failures.append("method inlining before fixture missing")
+        return
+    if not after_path.is_file():
+        failures.append("method inlining after fixture missing")
+        return
+
+    before = before_path.read_text(encoding="utf-8")
+    after = after_path.read_text(encoding="utf-8")
+    for token in (
+        "call i32 @objc3_inlineable_InlineMath_addOne",
+        "callee body identity: body:InlineMath.addOne:v1",
+        "exact callee identity: method:InlineMath.addOne:i32->i32",
+        "original call source span: source-span:method-inline:original-callsite",
+    ):
+        if token not in before:
+            failures.append(f"method inlining before fixture missing token: {token}")
+    for token in (
+        "add nsw i32 %value, 1",
+        "inlined callee body identity: body:InlineMath.addOne:v1",
+        "exact callee identity preserved: method:InlineMath.addOne:i32->i32",
+        "source-map inline frame preserved",
+        "diagnostic location preserved",
+        "semantic-optimization.invalidate-global-proof-state",
+    ):
+        if token not in after:
+            failures.append(f"method inlining after fixture missing token: {token}")
+    if "call i32 @objc3_inlineable_InlineMath_addOne" in after:
+        failures.append("method inlining after fixture must remove the original call")
+    if "fallback" in (before + after).lower():
+        failures.append("method inlining IR fixtures must use fail-closed invalidation language, not fallback")
 
 
 def _validate_reserved_skip_fixtures(
@@ -2413,6 +2482,7 @@ def validate_pipeline(
         performance_governance.get("runtime_equivalence_validation")
     )
     _validate_direct_dispatch_fixture(failures)
+    _validate_method_inlining_ir_fixture(failures)
     reserved_skip_fixture_count = _validate_reserved_skip_fixtures(
         pass_by_id,
         preservation_contracts,

@@ -12,8 +12,15 @@
     "native_frontend_profiles": [
       "canonical"
     ],
+    "targeted_release_evidence_profiles": [
+      "strict",
+      "strict-concurrency",
+      "strict-system"
+    ],
+    "selection_source_anchor": "native/objc3c/src/config/objc3_language_profile_validation.cpp",
     "strict_profile_aliases_allowed": false,
     "strict_concurrency_aliases_allowed": false,
+    "strict_system_native_frontend_profile_allowed": false,
     "objc2_compatibility_profile_allowed": false,
     "local_temp_evidence_allowed": false
   },
@@ -75,6 +82,27 @@
         "parser-recognition-only-feature-macro"
       ],
       "rejection_policy": "Selection is rejected before compilation until concurrency runtime prerequisites have durable public evidence."
+    },
+    {
+      "profile_id": "strict-system",
+      "selection_state": "rejected-target-only-profile",
+      "diagnostic_codes": [
+        "O3C038"
+      ],
+      "required_capabilities": [
+        "strict",
+        "strict-concurrency",
+        "platform-release-evidence",
+        "public-release-evidence"
+      ],
+      "disabled_allowances": [
+        "native-frontend-selection",
+        "retired-mode",
+        "legacy-alias",
+        "local-temp-evidence",
+        "parser-recognition-only-feature-macro"
+      ],
+      "rejection_policy": "Selection is rejected before compilation because strict-system is only a targeted release-evidence profile, not a native frontend language profile."
     }
   ],
   "negative_selection_fixtures": [
@@ -95,6 +123,30 @@
       "selection": "strict_concurrency",
       "expected_diagnostic": "O3C001",
       "forbidden_outcome": "underscore alias accepted"
+    },
+    {
+      "case_id": "strict_system_target_profile_rejected",
+      "selection": "strict-system",
+      "expected_diagnostic": "O3C038",
+      "forbidden_outcome": "strict-system accepted as a native frontend language profile"
+    }
+  ],
+  "remaining_blockers": [
+    {
+      "blocker_id": "strict-profile-release-evidence",
+      "required_next_work": [
+        "strict diagnostics and match-expression result typing",
+        "textual-interface roundtrip and package replay evidence",
+        "public conformance publication that claims strict without aliasing canonical or core"
+      ]
+    },
+    {
+      "blocker_id": "strict-concurrency-runtime-evidence",
+      "required_next_work": [
+        "actor isolation and sendability enforcement",
+        "task lifecycle, scheduler, and mailbox runtime guarantees",
+        "public conformance publication that claims strict-concurrency without source-only concurrency support"
+      ]
     }
   ]
 }

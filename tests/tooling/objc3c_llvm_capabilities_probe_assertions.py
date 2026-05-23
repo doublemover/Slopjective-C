@@ -12,11 +12,26 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
     assert payload["failures"] == []
     assert payload["clang"]["version_duration_ms"] >= 0.0
     assert payload["llc"]["version_duration_ms"] >= 0.0
+    assert payload["clangxx"]["version_duration_ms"] >= 0.0
+    assert payload["llvm_ar"]["version_duration_ms"] >= 0.0
+    assert payload["llvm_config"]["version_duration_ms"] >= 0.0
     assert payload["llc_features"]["help_duration_ms"] >= 0.0
     assert payload["llc_features"]["version_with_filetype_duration_ms"] >= 0.0
     assert payload["llc_features"]["supports_filetype_obj"] is True
+    assert payload["llvm_config_features"]["headers_libraries_discovered"] is True
     assert payload["toolchain_resolution"]["clang"]["configured_path"] == "clang"
     assert payload["toolchain_resolution"]["llc"]["configured_path"] == "llc"
+    assert payload["toolchain_resolution"]["clang++"]["configured_path"] == "clang++"
+    assert payload["toolchain_resolution"]["llvm-ar"]["configured_path"] == "llvm-ar"
+    assert payload["toolchain_resolution"]["llvm-config"]["configured_path"] == "llvm-config"
+    assert payload["toolchain_resolution"]["llvm-config"]["includedir"] == "/opt/llvm/include"
+    assert payload["toolchain_resolution"]["llvm-config"]["libdir"] == "/opt/llvm/lib"
+    assert (
+        payload["toolchain_resolution"]["llvm-config"][
+            "headers_libraries_discovery_source"
+        ]
+        == "llvm-config"
+    )
     assert llvm_matrix["contract_id"] == "objc3c.llvm.version_support_matrix.v1"
     assert llvm_matrix["issue_ref"] == 8232
     assert llvm_matrix["native_object_emission_contract"] == {
@@ -33,13 +48,19 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
     }
     assert [record["tool_name"] for record in llvm_matrix["llvm_tool_records"]] == [
         "clang",
+        "clang++",
         "llc",
-        "archive-tool",
+        "llvm-ar",
+        "llvm-config",
     ]
     matrix_entry = llvm_matrix["toolchain_matrix_entries"][0]
     assert matrix_entry["support_status"] == "supported"
     assert matrix_entry["object_emission_capability"] == "supported"
+    assert matrix_entry["package_capability"] == "supported"
+    assert matrix_entry["native_execution_capability"] == "supported"
     assert "llvm-direct-object-emission" in matrix_entry["supported_features"]
+    assert "package-archive-tool" in matrix_entry["supported_features"]
+    assert "headers-libraries-discovery" in matrix_entry["supported_features"]
     assert sema_parity["deterministic_semantic_diagnostics"] is True
     assert sema_parity["deterministic_type_metadata_handoff"] is True
     assert sema_parity["parity_ready"] is True
@@ -131,6 +152,60 @@ def assert_llc_launch_file_not_found_payload(payload: dict[str, Any]) -> None:
     )
     assert sema_parity["parity_ready"] is False
     assert "llc executable missing" in sema_parity["blockers"]
+
+
+def assert_llvm_ar_missing_payload(payload: dict[str, Any]) -> None:
+    llvm_matrix = payload["llvm_support_matrix"]
+    matrix_entry = llvm_matrix["toolchain_matrix_entries"][0]
+
+    assert payload["ok"] is False
+    assert payload["llvm_ar"]["found"] is False
+    assert any("llvm-ar executable not found" in failure for failure in payload["failures"])
+    assert matrix_entry["object_emission_capability"] == "supported"
+    assert matrix_entry["package_capability"] == "rejected"
+    assert matrix_entry["native_execution_capability"] == "supported"
+    assert any(
+        feature["feature"] == "package-archive-tool"
+        for feature in matrix_entry["rejected_features"]
+    )
+
+
+def assert_llvm_config_headers_missing_payload(payload: dict[str, Any]) -> None:
+    llvm_matrix = payload["llvm_support_matrix"]
+    matrix_entry = llvm_matrix["toolchain_matrix_entries"][0]
+
+    assert payload["ok"] is False
+    assert payload["llvm_config"]["found"] is True
+    assert payload["llvm_config_features"]["headers_libraries_discovered"] is False
+    assert any("headers/libs discovery unavailable" in failure for failure in payload["failures"])
+    assert matrix_entry["object_emission_capability"] == "supported"
+    assert matrix_entry["package_capability"] == "rejected"
+    assert matrix_entry["native_execution_capability"] == "rejected"
+    assert any(
+        feature["feature"] == "headers-libraries-discovery"
+        for feature in matrix_entry["rejected_features"]
+    )
+
+
+def assert_windows_install_root_header_library_payload(payload: dict[str, Any]) -> None:
+    matrix_entry = payload["llvm_support_matrix"]["toolchain_matrix_entries"][0]
+    resolution = payload["toolchain_resolution"]["llvm-config"]
+
+    assert payload["ok"] is True
+    assert payload["llvm_config"]["found"] is False
+    assert payload["llvm_config_features"]["headers_libraries_discovered"] is True
+    assert payload["llvm_config_features"]["discovery_source"] == "install-root"
+    assert resolution["headers_libraries_discovered"] is True
+    assert resolution["headers_libraries_discovery_source"] == "install-root"
+    assert resolution["includedir"].endswith("LLVM\\include") or resolution[
+        "includedir"
+    ].endswith("LLVM/include")
+    assert resolution["libdir"].endswith("LLVM\\lib") or resolution["libdir"].endswith(
+        "LLVM/lib"
+    )
+    assert matrix_entry["support_status"] == "supported"
+    assert matrix_entry["package_capability"] == "supported"
+    assert matrix_entry["native_execution_capability"] == "supported"
 
 
 def assert_package_wires_llvm_capability_probe_script(

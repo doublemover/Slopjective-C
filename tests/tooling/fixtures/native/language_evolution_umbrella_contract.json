@@ -70,7 +70,8 @@
       "negative_case_ids": [
         "strict_language_profile_reserved",
         "strict_concurrency_language_profile_reserved",
-        "strict_concurrency_alias_rejected"
+        "strict_concurrency_alias_rejected",
+        "strict_system_target_profile_rejected"
       ]
     }
   ],
@@ -91,7 +92,8 @@
     "Optional<T> does not alias nullable object pointers or nil-to-scalar coercions",
     "generic callable metadata remains erased-default unless declaration-scoped reification lands with runtime evidence",
     "statement guarded match admits only bool where conditions and does not imply expression-position match support",
-    "strict and strict-concurrency profile names are not aliases for canonical or core"
+    "strict and strict-concurrency profile names are not aliases for canonical or core",
+    "strict-system remains a targeted release-evidence profile and is not a native frontend language profile"
   ],
   "lead_support_row_recommendations": [
     {

@@ -11,18 +11,30 @@ match arms. For #8233, empty, single, multi, and malformed parenthesized
 erased into bare untyped `throws`. For #8234, canonical `Optional<T>` remains
 `O3P159` reserved, lowercase `optional<T>` remains `O3C004` removed spelling
 rather than an alias, and neither spelling enables nil-to-scalar or
-nullable-pointer conversion. Statement-form
+nullable-pointer conversion. The parser-owned diagnostic symbols are
+`kObjc3ParserDiagnosticReservedTypedThrowsCode`,
+`kObjc3ParserDiagnosticReservedValueOptionalCode`, and
+`kObjc3ParserDiagnosticRemovedOptionalAliasCode` in the language-evolution
+reserved diagnostic contract; parser and source-closure summaries may publish
+those identifiers as fail-closed anchors, not support claims.
+Statement-form
 `match (expr) { case pattern where condition: { ... } default: { ... } }` is
 the only guarded-pattern spelling admitted by the parser; `where` remains
 contextual and is not a global keyword. Malformed guards, expression arms,
-type-test patterns, and expression-position `match` stay targeted diagnostics.
+type-test patterns, and expression-position `match` stay targeted diagnostics;
+type-test `case is Type:` patterns are parser-owned `O3P158` rejections rather
+than a semantic/runtime claim.
 For #8235, the parser admits only the Objective-C 3 generic free-function
 spelling `fn name<T>(...)`; Objective-C method type-parameter clauses,
 C/Objective-C style generic function declarations, and declaration-scoped
-`@reify_generics` markers remain reserved parser-owned diagnostics. For #8237,
+`@reify_generics` markers remain reserved parser-owned diagnostics. The parser
+does not infer runtime reification from admitted generic free functions; only
+the semantic erased-default metadata contract may record those callables.
+For #8237,
 language profile names are not grammar aliases: strict and strict-concurrency
 selection fails before compilation unless the profile validator reports
-durable release/runtime evidence.
+durable release/runtime evidence. `strict-system` is likewise target-only
+release evidence, not a native frontend language profile.
 
 The #8207 umbrella language-evolution contract is source-owned at
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`.

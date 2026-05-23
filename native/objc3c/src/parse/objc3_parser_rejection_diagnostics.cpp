@@ -43,7 +43,7 @@ std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
       token.column + static_cast<unsigned>(token.text.empty() ? 8u : token.text.size());
   return BuildObjc3ParserDiagnosticWithFixItAndRecovery(
       token,
-      "O3C004",
+      kObjc3ParserDiagnosticRemovedOptionalAliasCode,
       "optional<T> aliases are rejected; use canonical Optional<T> spelling",
       Objc3ParserDiagnosticFixIt{
           token.line,
@@ -61,7 +61,7 @@ std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
     const Objc3LexToken &token) {
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
-      "O3P159",
+      kObjc3ParserDiagnosticReservedValueOptionalCode,
       "Optional<T> value optionals are reserved until value-optional ABI, lowering, and interface roundtrip are implemented; Optional<T> remains distinct from nullable object pointers and nil-to-scalar conversions",
       "parser-reserved-value-optional-type-rejection",
       "type spelling");
@@ -72,7 +72,7 @@ std::string BuildObjc3ReservedTypedThrowsDiagnostic(
     std::string_view payload_shape) {
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
-      "O3P182",
+      kObjc3ParserDiagnosticReservedTypedThrowsCode,
       "typed throws payloads are reserved; use bare throws or remove the parenthesized error type; typed-payload-shape=" +
           std::string(payload_shape) +
           "; parenthesized payloads are not silently erased into untyped throws",
@@ -84,10 +84,20 @@ std::string BuildObjc3ReservedMatchExpressionDiagnostic(
     const Objc3LexToken &token) {
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
-      "O3P156",
+      kObjc3ParserDiagnosticReservedMatchExpressionCode,
       "match expressions are reserved; use statement-form match with ':' braced arms until expression result typing and lowering are release-evidenced",
       "parser-reserved-match-expression-rejection",
       "expression");
+}
+
+std::string BuildObjc3ReservedMatchTypeTestPatternDiagnostic(
+    const Objc3LexToken &token) {
+  return BuildObjc3ParserDiagnosticWithRecovery(
+      token,
+      kObjc3ParserDiagnosticReservedMatchTypeTestPatternCode,
+      "match type-test patterns are reserved; statement-form match currently admits wildcard, literal, binding, and Result case patterns only",
+      "parser-reserved-match-type-test-pattern-rejection",
+      "match case pattern");
 }
 
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(

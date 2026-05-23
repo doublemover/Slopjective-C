@@ -271,6 +271,16 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
         "runtime.typed-keypath.debugger-lowering": "bounded-supported",
         "runtime.object-model.full-realization": "reserved",
     }
+    assert {
+        row["capability_id"]: row["support_claim_published"]
+        for row in umbrella["bounded_capability_rows"]
+    } == {
+        "runtime.debug-trace.inline-frame-source-map": True,
+        "runtime.debug-trace.statement-stepping": True,
+        "runtime.debug-trace.lldb-plugin": True,
+        "runtime.typed-keypath.debugger-lowering": True,
+        "runtime.object-model.full-realization": False,
+    }
     assert umbrella["typed_keypath_policy"]["fallback_interpretation_allowed"] is False
     assert {
         case["case_id"]

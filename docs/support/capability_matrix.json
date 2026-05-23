@@ -543,7 +543,7 @@
       "id": "language.profiles.strict-admission",
       "title": "Strict and strict-concurrency profile admission",
       "state": "reserved",
-      "summary": "Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, and underscore or compatibility aliases are rejected rather than treated as source-only support.",
+      "summary": "Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, strict-system rejects as a target-only release-evidence profile with O3C038, and underscore or compatibility aliases are rejected rather than treated as source-only support.",
       "owner_modules": [
         "native/objc3c/src/config/objc3_language_profile_validation.cpp",
         "native/objc3c/src/io/objc3_conformance_profile_selection.cpp",
@@ -1439,7 +1439,7 @@
       "id": "language.generics.generic-callable-reification",
       "title": "Generic callable reification",
       "state": "reserved",
-      "summary": "Generic callable reification remains reserved under issue #8235. The native source records deterministic erased-default generic callable signature metadata for admitted Objective-C 3 generic free functions, but declaration-scoped reification markers, Objective-C method type-parameter clauses, C/Objective-C style generic free-function declarations, overload-by-generic-signature, variadic generic parameters, and runtime reified generic metadata remain fail-closed.",
+      "summary": "Generic callable reification remains reserved under issue #8235. The native source records deterministic erased-default generic callable signature metadata for admitted Objective-C 3 generic free functions only when the deterministic flag, erased-default reification policy, semantic mangling policy, and replay key agree; declaration-scoped reification markers, Objective-C method type-parameter clauses, C/Objective-C style generic free-function declarations, overload-by-generic-signature, variadic generic parameters, and runtime reified generic metadata remain fail-closed.",
       "owner_modules": [
         "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
         "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
@@ -5411,32 +5411,55 @@
     {
       "id": "compiler.optimization.method-inlining",
       "title": "Method inlining optimization lane",
-      "state": "reserved",
-      "summary": "Method inlining is reserved until ownership, source-map inline-frame, callee-body identity, and side-effect/invalidation replay proofs exist. The #8200 optimization/runtime proof now checks that production IR still retains the method-inlining candidate call and lacks inline-frame or global invalidation anchors, so the lane fails closed and publishes no success claim.",
+      "state": "implemented",
+      "support_claims": [
+        "objc3c.behavior.optimization.method-inlining-safe-subset"
+      ],
+      "summary": "Method inlining is promoted only for the bounded scalar safe subset. Success requires exact callee identity, before/after IR proof, source-map inline-frame preservation, side-effect replay, runtime invalidation replay, ABI/package identity, and checked proof-case evidence; missing or stale proof paths reject fail-closed and publish no success claim.",
       "owner_modules": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
-        },
-        {
-          "kind": "doc",
-          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         },
         {
           "kind": "test",
-          "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
-          "command": "npm run objc3c -- validate-cross-lane-e2e"
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         },
         {
-          "kind": "diagnostic",
-          "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         },
         {
-          "kind": "diagnostic",
-          "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+          "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
         }
       ]
     },
@@ -5557,15 +5580,21 @@
       "id": "runtime.debug-trace.full-source-map-publication",
       "title": "Full source-map publication",
       "state": "reserved",
-      "summary": "Full source-map publication remains reserved until source maps and native line tables are emitted by the canonical production artifact path for the relevant integrated programs. Current debug evidence may publish bounded source-to-artifact anchors and declaration debug-map entries, but those anchors do not enable full source maps or statement stepping.",
+      "summary": "Full source-map publication remains reserved for broad integrated-program claims. Bounded compiler-owned source-map bundles, native line-table rows, statement stepping evidence, inline-frame source correlations, and LLDB replay are now implemented by narrower rows; this umbrella still does not claim every production artifact path or integrated object-model program.",
       "owner_modules": [
         "scripts/objc3c_runtime_debug_trace/payload.py",
-        "scripts/objc3c_editor_tooling/source_index.py"
+        "scripts/objc3c_editor_tooling/source_index.py",
+        "scripts/objc3c_debug_maps/model.py"
       ],
       "evidence": [
         {
           "kind": "diagnostic",
           "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
         },
         {
           "kind": "diagnostic",
@@ -5581,15 +5610,26 @@
     {
       "id": "runtime.debug-trace.lldb-plugin",
       "title": "LLDB plugin debug integration",
-      "state": "reserved",
-      "summary": "LLDB plugin integration is reserved until a checked-in plugin and debugger protocol contract exist. Runtime debug trace evidence records this lane as reserved and does not imply debugger plugin support.",
+      "state": "implemented",
+      "summary": "The bounded LLDB protocol row is implemented for replayable checked commands over compiler-owned source maps, emitted native debug-info evidence, inline-frame chains, supported runtime metadata kinds, and fail-closed negative cases. This is not a claim that an arbitrary host debugger session or every optimized production binary is fully integrated.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug-trace.lldb-plugin"
+      ],
       "owner_modules": [
-        "scripts/objc3c_runtime_debug_trace/payload.py"
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_debugger_integration/model.py",
+        "scripts/check_objc3c_debugger_integration.py"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+          "command": "npm run objc3c -- validate-debugger-integration"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+          "command": "npm run objc3c -- validate-debugger-integration"
         },
         {
           "kind": "doc",
@@ -5600,19 +5640,96 @@
     {
       "id": "runtime.debug-trace.statement-stepping",
       "title": "Statement-level debugger stepping",
-      "state": "reserved",
-      "summary": "Statement-level debugger stepping is fail-closed until full source-map publication, native line-table evidence, and debugger stepping integration are emitted on the canonical toolchain path. The debug trace records source-to-artifact anchors only.",
+      "state": "implemented",
+      "summary": "Bounded statement, function, method, and message-send stepping are implemented through checked source-map entries, debug-map rows, native line-table rows, emitted native debug-info evidence, and LLDB replay records. Broad stepping over every integrated object-model production artifact remains reserved by the full source-map and object-model umbrella rows.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug-trace.statement-stepping"
+      ],
       "owner_modules": [
-        "scripts/objc3c_runtime_debug_trace/payload.py"
+        "scripts/objc3c_runtime_debug_trace/payload.py",
+        "scripts/objc3c_debug_maps/model.py",
+        "scripts/objc3c_debugger_integration/model.py"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+          "command": "npm run objc3c -- validate-debugger-integration"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
         },
         {
           "kind": "doc",
           "path": "docs/runbooks/objc3c_developer_tooling.md"
+        }
+      ]
+    },
+    {
+      "id": "runtime.debug-trace.inline-frame-source-map",
+      "title": "Inline-frame source-map preservation",
+      "state": "implemented",
+      "summary": "Method-inlining source-map preservation is implemented for checked inline-frame records that bind caller/callee source-map entries, callsite and callee body spans, imported and emitted debug-map entries, native inline ranges, debug-chain ordering, and fail-closed generated-only or ambiguous stepping cases.",
+      "support_claims": [
+        "objc3c.behavior.runtime.debug-trace.inline-frame-source-map"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_debug_maps/model.py",
+        "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+          "command": "npm run objc3c -- validate-debug-source-maps"
+        }
+      ]
+    },
+    {
+      "id": "runtime.typed-keypath.debugger-lowering",
+      "title": "Typed keypath debugger lowering metadata",
+      "state": "implemented",
+      "summary": "Typed keypath lowering now carries debugger-grade descriptor metadata for source span, root and value type identity, object-model owner/member identity, source-map keys, diagnostic anchors, and no fallback interpretation. The row is bounded to the native typed-keypath descriptor and lowering contracts rather than broad object-model debugger promotion.",
+      "support_claims": [
+        "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/lower/contracts/optional_keypath_lowering_contracts.h",
+        "native/objc3c/src/runtime/selectors/keypath_descriptor.h",
+        "native/objc3c/src/artifacts/objc3_frontend_type_system_optional_keypath_json.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
         }
       ]
     },
@@ -5800,7 +5917,7 @@
       "id": "toolchain.llvm.current-probed-executable",
       "title": "Current probed LLVM executable evidence",
       "state": "internal",
-      "summary": "LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves and proves llc --filetype=obj; missing llc, missing object-filetype support, mixed tool roots, unsupported versions, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.",
+      "summary": "LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves and proves llc --filetype=obj. Package and native execution claims additionally require clang++, llvm-ar, and LLVM header/library discovery from llvm-config or an installed LLVM root; missing required LLVM subtools, mixed tool roots, unsupported versions, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "scripts/probe_objc3c_llvm_capabilities.py",
@@ -6283,7 +6400,10 @@
     {
       "id": "modules.standalone-textual-interface-payload",
       "title": "Standalone textual interface payload",
-      "state": "internal",
+      "state": "implemented",
+      "support_claims": [
+        "objc3c.behavior.modules.standalone-textual-interface-payload"
+      ],
       "summary": "The native compiler now has a schema-registered standalone textual interface payload artifact emitted from compiler-owned AST and semantic metadata, plus a fail-closed importer contract that validates package lock identity, source/debug anchors, declaration identity, source counts, reserved metadata, and semantic roundtrip status through a public workflow command.",
       "owner_modules": [
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.h",

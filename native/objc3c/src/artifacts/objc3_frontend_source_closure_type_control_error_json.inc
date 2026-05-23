@@ -59,6 +59,10 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << summary.value_optional_issue_ref
       << ",\"value_optional_canonical_spelling\":\""
       << EscapeJsonString(summary.value_optional_canonical_spelling)
+      << "\",\"value_optional_reserved_diagnostic_code\":\""
+      << EscapeJsonString(summary.value_optional_reserved_diagnostic_code)
+      << "\",\"lowercase_optional_alias_diagnostic_code\":\""
+      << EscapeJsonString(summary.lowercase_optional_alias_diagnostic_code)
       << "\",\"lowercase_optional_alias_rejected\":"
       << (summary.lowercase_optional_alias_rejected ? "true" : "false")
       << ",\"value_optional_nil_to_scalar_coercion_allowed\":"
@@ -227,6 +231,8 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << summary.typed_throws_issue_ref
       << ",\"typed_throws_canonical_syntax\":\""
       << EscapeJsonString(summary.typed_throws_canonical_syntax)
+      << "\",\"typed_throws_reserved_diagnostic_code\":\""
+      << EscapeJsonString(summary.typed_throws_reserved_diagnostic_code)
       << "\",\"typed_throws_single_payload_reserved\":"
       << (summary.typed_throws_single_payload_reserved ? "true" : "false")
       << ",\"typed_throws_empty_payload_rejected\":"

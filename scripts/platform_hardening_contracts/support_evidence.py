@@ -36,7 +36,6 @@ REQUIRED_LLVM_MATRIX_TOOLS: tuple[str, ...] = (
     "clang++",
     "llc",
     "llvm-ar",
-    "llvm-config",
     "headers-libs",
 )
 REQUIRED_ROADMAP_ISSUE_REFS: tuple[int, ...] = (8206, 8228, 8229, 8230, 8231, 8232)
@@ -343,6 +342,10 @@ def _validate_package_variant_rows(
         if claim_state == "evidence-bound":
             expect(platform_ids, f"{row_id} evidence-bound package row missing platform_ids")
             expect(
+                not row.get("required_missing_evidence_classes"),
+                f"{row_id} evidence-bound package row cannot list missing evidence classes",
+            )
+            expect(
                 platform_ids <= boundary_supported_platform_ids,
                 f"{row_id} widened package support to unsupported platforms: {sorted(platform_ids - boundary_supported_platform_ids)}",
             )
@@ -365,6 +368,11 @@ def _validate_package_variant_rows(
         expect(
             row.get("required_missing_evidence_classes"),
             f"{row_id} missing required_missing_evidence_classes",
+        )
+        missing_classes = {str(item) for item in row.get("required_missing_evidence_classes", [])}
+        expect(
+            missing_classes <= required_classes,
+            f"{row_id} lists missing evidence outside required evidence classes: {sorted(missing_classes - required_classes)}",
         )
         for evidence_id in evidence_ids:
             expect(evidence_id in records_by_id, f"{row_id} missing policy evidence record {evidence_id}")
@@ -435,10 +443,8 @@ def _validate_llvm_version_support_matrix(
             tool.get("failure_behavior") == "fail-closed-before-support-claim",
             f"{tool_name} LLVM matrix tool does not fail closed",
         )
-        if tool_name in {"clang", "clang++", "llc", "headers-libs"}:
+        if tool_name in {"clang", "clang++", "llc", "llvm-ar", "headers-libs"}:
             expect(tool.get("claim_state") == "required", f"{tool_name} must be required")
-        if tool_name in {"llvm-ar", "llvm-config"}:
-            expect(tool.get("claim_state") == "reserved", f"{tool_name} must remain reserved")
 
     expect(
         set(tools_by_name) == set(REQUIRED_LLVM_MATRIX_TOOLS),
@@ -559,6 +565,10 @@ def validate_platform_toolchain_support_evidence(
             expect(row.get("claim_class") == "supported", f"{platform_id} support row must use supported claim_class")
             required_classes = tuple(str(item) for item in row.get("required_evidence_classes", []))
             expect(set(required_classes) == set(REQUIRED_SUPPORTED_EVIDENCE_CLASSES), f"{platform_id} missing required evidence classes")
+            expect(
+                not row.get("required_missing_evidence_classes"),
+                f"{platform_id} supported row cannot list missing evidence classes",
+            )
             row_toolchain_components = {str(item) for item in row.get("required_toolchain_components", [])}
             expect(
                 row_toolchain_components == required_toolchain_components,
@@ -606,6 +616,11 @@ def validate_platform_toolchain_support_evidence(
         expect(platform_id not in boundary_supported_ids, f"{platform_id} unsupported row is listed as supported")
         expect(row.get("claim_class") == "fail-closed", f"{platform_id} unsupported row must fail closed")
         expect(row.get("tier_id") == "unsupported", f"{platform_id} unsupported row must use unsupported tier")
+        expect(
+            set(str(item) for item in row.get("required_missing_evidence_classes", []))
+            == set(REQUIRED_SUPPORTED_EVIDENCE_CLASSES),
+            f"{platform_id} unsupported row must list all package/install/native execution promotion prerequisites as missing",
+        )
         expected_issue = EXPECTED_UNSUPPORTED_PLATFORM_ISSUES.get(platform_id)
         expect(expected_issue is not None and row.get("issue_ref") == expected_issue, f"{platform_id} unsupported issue_ref drifted")
         _negative_contracts_are_fail_closed(platform_id, row.get("negative_contracts"))
@@ -633,6 +648,16 @@ def validate_platform_toolchain_support_evidence(
         expect(package_row.get("package_id") == sanitizer.get("package_id"), f"{package_row_id} package_id drifted from sanitizer variant")
         expect(str(sanitizer.get("llvm_requirement", "")), f"{sanitizer.get('variant_id', '')} missing llvm_requirement")
         expect(str(sanitizer.get("runtime_requirement", "")), f"{sanitizer.get('variant_id', '')} missing runtime_requirement")
+        expect(
+            set(str(item) for item in sanitizer.get("required_promotion_evidence", []))
+            == {"package", "install", "execution"},
+            f"{sanitizer.get('variant_id', '')} sanitizer promotion prerequisites must be package/install/execution",
+        )
+        expect(
+            set(str(item) for item in sanitizer.get("required_missing_evidence_classes", []))
+            == {"package", "install", "execution"},
+            f"{sanitizer.get('variant_id', '')} sanitizer missing evidence must remain package/install/execution",
+        )
         _negative_contracts_are_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer.get("negative_contracts"))
         if sanitizer.get("claim_state") == "reserved":
             expect(not sanitizer.get("platform_ids"), f"{sanitizer['variant_id']} reserved sanitizer variant cannot list platforms")

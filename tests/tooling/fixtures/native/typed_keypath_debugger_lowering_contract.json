@@ -1,4 +1,5 @@
 {
+  "$schema": "https://objc3c.dev/schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json",
   "contract_id": "objc3c.typed-keypath.debugger-lowering-metadata.v1",
   "issue_refs": [
     8211,

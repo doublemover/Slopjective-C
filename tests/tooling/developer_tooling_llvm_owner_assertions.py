@@ -31,6 +31,9 @@ def fixture_contract_projection(contract: dict[str, Any]) -> dict[str, object]:
 
 def assert_local_diagnostic_truth_payload(payload: dict[str, Any]) -> None:
     assert payload["local_probe_diagnostic_only"] is True
+    assert payload["hosted_native_object_emission_supported"] is False
+    assert payload["hosted_package_archive_supported"] is False
+    assert payload["hosted_headers_libraries_supported"] is False
     assert payload["hosted_execution_supported"] is False
     assert payload["hosted_source_parity_supported"] is False
     assert payload["fail_closed_without_live_capability"] is True
@@ -42,6 +45,9 @@ def assert_local_diagnostic_truth_payload(payload: dict[str, Any]) -> None:
 
 def assert_object_emission_required_payload(payload: dict[str, Any]) -> None:
     assert payload["local_probe_diagnostic_only"] is False
+    assert payload["hosted_native_object_emission_supported"] is False
+    assert payload["hosted_package_archive_supported"] is False
+    assert payload["hosted_headers_libraries_supported"] is False
     assert payload["hosted_execution_supported"] is False
     assert payload["hosted_source_parity_supported"] is False
     assert payload["fail_closed_without_live_capability"] is True
@@ -58,6 +64,13 @@ def assert_hosted_success_payload(
 ) -> None:
     assert payload["source_kind"] == expected_source_kind
     assert payload["local_probe_diagnostic_only"] is False
+    assert payload["clangxx_found"] is True
+    assert payload["llvm_ar_found"] is True
+    assert payload["llvm_config_found"] is True
+    assert payload["headers_libraries_discovered"] is True
+    assert payload["hosted_native_object_emission_supported"] is True
+    assert payload["hosted_package_archive_supported"] is True
+    assert payload["hosted_headers_libraries_supported"] is True
     assert payload["hosted_execution_supported"] is True
     assert payload["hosted_source_parity_supported"] is True
     assert payload["fail_closed_without_live_capability"] is False

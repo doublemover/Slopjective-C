@@ -106,7 +106,10 @@ success claim. It closes only over checked-in source contracts:
 - #8232 native object emission is a toolchain prerequisite: `llc` must resolve
   and prove `llc --filetype=obj`; missing `llc` records
   `native_object_emission_missing_llc` and cannot publish object, package,
-  execution, or platform success.
+  execution, or platform success. Package and native execution promotion also
+  requires the hosted LLVM matrix to resolve clang++, llvm-ar, and LLVM
+  header/library discovery from llvm-config or an installed LLVM root; missing
+  subtools fail closed before those broader support claims.
 
 Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
 support. The only supported projection remains `windows-x64`.
@@ -234,6 +237,8 @@ Hard-fail classes:
 - unavailable native object emission, including missing `llc`, missing
   `llc --filetype=obj`, or any clang substitute published as object-emission
   success
+- missing required LLVM package/execution subtools, including clang++,
+  llvm-ar, or LLVM header/library discovery from llvm-config or an installed LLVM root
 - installer or package-channel invocation outside the published host/channel set
 - update or support publication that implies support outside the checked-in
   matrix

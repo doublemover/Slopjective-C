@@ -230,13 +230,17 @@
             { "contains": { "const": "source_graph_node_ids" } },
             { "contains": { "const": "static_receiver_type_proof" } },
             { "contains": { "const": "runtime_cache_version_dependency" } },
+            { "contains": { "const": "exact_target_method_identity" } },
             { "contains": { "const": "callee_body_identity" } },
+            { "contains": { "const": "callee_body_ir_digest" } },
             { "contains": { "const": "inlining_depth" } },
             { "contains": { "const": "callee_generation_snapshot" } },
             { "contains": { "const": "source_identity_preservation" } },
             { "contains": { "const": "debug_identity_preservation" } },
             { "contains": { "const": "runtime_identity_preservation" } },
-            { "contains": { "const": "runtime_invalidation_replay" } }
+            { "contains": { "const": "runtime_invalidation_replay" } },
+            { "contains": { "const": "ir_digest_before" } },
+            { "contains": { "const": "ir_digest_after" } }
           ]
         },
         "result_payload_fields": {

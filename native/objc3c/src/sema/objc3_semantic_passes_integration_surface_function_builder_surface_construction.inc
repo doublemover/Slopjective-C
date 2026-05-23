@@ -65,7 +65,11 @@
               info.generic_callable_reification_policy,
               info.generic_callable_mangling_policy_id);
       info.generic_callable_contract_deterministic =
-          !info.generic_callable_signature_replay_key.empty();
+          !info.generic_callable_signature_replay_key.empty() &&
+          IsObjc3GenericCallableReificationPolicyClaimable(
+              info.generic_callable_reification_policy) &&
+          IsObjc3GenericCallableManglingPolicyClaimable(
+              info.generic_callable_mangling_policy_id);
       info.param_types.reserve(fn.params.size());
       info.param_canonical_types.reserve(fn.params.size());
       info.param_is_vector.reserve(fn.params.size());

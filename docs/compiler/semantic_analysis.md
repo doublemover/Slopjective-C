@@ -17,11 +17,17 @@ deterministic erased-default signature replay keys for admitted
 signature drift reject instead of merging erased shapes. That metadata is not a
 runtime reification claim and does not admit Objective-C method type-parameter
 clauses, C/Objective-C style generic free functions, or `@reify_generics`.
+The semantic handoff is claimable only when the deterministic flag is set, the
+reification policy is `erased_default`, the mangling policy is
+`objc3c.generic-callable.semantic-mangling.v1`, and the replay key matches the
+source-order generic signature.
 
 Strict and strict-concurrency profiles are profile-selection contracts rather
 than semantic aliases. `core` may be claimed by public conformance publication;
 strict and strict-concurrency remain fail-closed until their release/runtime
-evidence rows are implemented.
+evidence rows are implemented. `strict-system` remains target-only release
+evidence and rejects as a native frontend selection rather than widening
+semantic support.
 
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and

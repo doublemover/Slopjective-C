@@ -40,6 +40,9 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.value_optional_type_fail_closed &&
          summary.value_optional_issue_ref == 8234u &&
          summary.value_optional_canonical_spelling == "Optional<T>" &&
+         summary.value_optional_reserved_diagnostic_code ==
+             "O3P159" &&
+         summary.lowercase_optional_alias_diagnostic_code == "O3C004" &&
          summary.lowercase_optional_alias_rejected &&
          !summary.value_optional_nil_to_scalar_coercion_allowed &&
          !summary.value_optional_nullable_pointer_conversion_allowed &&
@@ -139,6 +142,7 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.catch_keyword_reserved && summary.typed_throws_fail_closed &&
          summary.typed_throws_issue_ref == 8233u &&
          summary.typed_throws_canonical_syntax == "throws(E)" &&
+         summary.typed_throws_reserved_diagnostic_code == "O3P182" &&
          summary.typed_throws_single_payload_reserved &&
          summary.typed_throws_empty_payload_rejected &&
          summary.typed_throws_multi_payload_rejected &&

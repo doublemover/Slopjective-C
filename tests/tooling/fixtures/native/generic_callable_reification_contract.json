@@ -38,6 +38,18 @@
       "mangling_policy_id": "objc3c.generic-callable.semantic-mangling.v1"
     }
   ],
+  "source_anchors": {
+    "policy_constants": "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
+    "type_handoff_fields": "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc",
+    "semantic_metadata_fields": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
+    "artifact_publication": "native/objc3c/src/artifacts/json/semantic_type_manifest_records.cpp"
+  },
+  "claimable_metadata_requirements": [
+    "generic_callable_contract_deterministic is true",
+    "generic_callable_reification_policy is erased_default",
+    "generic_callable_mangling_policy_id is objc3c.generic-callable.semantic-mangling.v1",
+    "generic_callable_signature_replay_key matches the source-order name, variance, lexicographic constraints, reification policy, and mangling policy"
+  ],
   "reserved_surfaces": [
     {
       "surface": "objc_method_type_parameter_clause",
@@ -81,5 +93,23 @@
     "generic function overloading by generic signature",
     "variadic generic parameters",
     "runtime reified generic metadata"
+  ],
+  "remaining_blockers": [
+    {
+      "blocker_id": "generic-callable-reification-runtime",
+      "required_next_work": [
+        "define a non-erased reification policy and runtime metadata record",
+        "define ABI-governed non-erased callable mangling",
+        "publish source-owned parser and semantic support for any explicit reification syntax before adding a support claim"
+      ]
+    },
+    {
+      "blocker_id": "generic-callable-method-and-cstyle-syntax",
+      "required_next_work": [
+        "decide whether Objective-C method type-parameter clauses are admitted or permanently reserved",
+        "decide whether C/Objective-C style generic free-function declarations are admitted or permanently reserved",
+        "keep O3P114 fixtures as the source of truth until those decisions land"
+      ]
+    }
   ]
 }

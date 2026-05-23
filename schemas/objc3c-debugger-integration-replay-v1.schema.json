@@ -1,0 +1,168 @@
+{
+  "$id": "https://objc3c.dev/schemas/objc3c-debugger-integration-replay-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "objc3c Debugger Integration Replay",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "source_map_bundle",
+    "protocol_contract",
+    "debug_configuration",
+    "lldb_plugin",
+    "stepping_plan",
+    "value_inspection",
+    "negative_cases"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "contract_id": {
+      "const": "objc3c.debugger-integration.replay.v1"
+    },
+    "source_map_bundle": {
+      "type": "string",
+      "pattern": "^[^\\\\]+$"
+    },
+    "protocol_contract": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "compiler_identity_id",
+        "rejects_generated_only_maps",
+        "requires_inline_frame_chains",
+        "requires_supported_runtime_metadata"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.lldb-plugin.protocol.v1"
+        },
+        "rejects_generated_only_maps": {
+          "const": true
+        },
+        "requires_inline_frame_chains": {
+          "const": true
+        },
+        "requires_supported_runtime_metadata": {
+          "const": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "debug_configuration": {
+      "type": "object",
+      "required": [
+        "profile",
+        "optimization",
+        "native_debug_info"
+      ],
+      "properties": {
+        "profile": {
+          "const": "debug"
+        },
+        "optimization": {
+          "enum": [
+            "none",
+            "debug-preserved"
+          ]
+        },
+        "native_debug_info": {
+          "const": "present"
+        }
+      },
+      "additionalProperties": true
+    },
+    "lldb_plugin": {
+      "type": "object",
+      "required": [
+        "commands"
+      ],
+      "properties": {
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "command_id",
+              "plugin_command",
+              "script_entry",
+              "replayable"
+            ],
+            "properties": {
+              "replayable": {
+                "const": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "stepping_plan": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/steppingRecord"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "value_inspection": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "steppingRecord": {
+      "type": "object",
+      "required": [
+        "record_id",
+        "status",
+        "step_kind",
+        "source_map_entry_id",
+        "debug_map_entry_id",
+        "source_digest",
+        "lldb_command_id"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "supported",
+            "unsupported"
+          ]
+        },
+        "step_kind": {
+          "enum": [
+            "statement",
+            "function",
+            "method",
+            "message-send"
+          ]
+        },
+        "claims_stepping": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

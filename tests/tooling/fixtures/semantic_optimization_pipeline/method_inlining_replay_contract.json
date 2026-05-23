@@ -14,8 +14,11 @@
   },
   "required_native_gates": [
     "method_inline_callee_body_identity_present",
+    "method_inline_exact_callee_identity_key",
     "method_inline_original_call_source_span_key",
     "method_inline_callee_source_span_key",
+    "method_inline_before_ir_proof_key",
+    "method_inline_after_ir_proof_key",
     "method_inline_original_call_source_span_present",
     "method_inline_inline_frame_id_key",
     "method_inline_inlined_callsite_source_span_key",
@@ -50,6 +53,9 @@
     "method_inline_invalidation_complete"
   ],
   "metadata_key_requirements": [
+    "exact callee identity",
+    "before IR proof",
+    "after IR proof",
     "original call source span",
     "callee source span",
     "inline frame id",

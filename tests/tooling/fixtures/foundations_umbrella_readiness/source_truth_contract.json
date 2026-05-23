@@ -53,7 +53,7 @@
   "capability_truth_rows": [
     {
       "capability_id": "modules.standalone-textual-interface-payload",
-      "expected_state": "internal",
+      "expected_state": "implemented",
       "evidence_paths": [
         "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
         "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",

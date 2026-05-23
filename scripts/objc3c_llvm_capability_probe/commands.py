@@ -87,3 +87,72 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
         "version_with_filetype_duration_ms": version_with_filetype_duration_ms,
         "supports_filetype_obj": supports_filetype_obj,
     }
+
+
+def probe_llvm_config_paths(path: Path) -> dict[str, object]:
+    includedir_result, includedir_duration_ms = run_command([str(path), "--includedir"])
+    libdir_result, libdir_duration_ms = run_command([str(path), "--libdir"])
+
+    includedir = first_non_empty_line((includedir_result.stdout or "") + (includedir_result.stderr or ""))
+    libdir = first_non_empty_line((libdir_result.stdout or "") + (libdir_result.stderr or ""))
+    return {
+        "includedir_exit_code": includedir_result.returncode,
+        "includedir_duration_ms": includedir_duration_ms,
+        "includedir": includedir,
+        "libdir_exit_code": libdir_result.returncode,
+        "libdir_duration_ms": libdir_duration_ms,
+        "libdir": libdir,
+        "headers_libraries_discovered": (
+            includedir_result.returncode == 0
+            and libdir_result.returncode == 0
+            and bool(includedir)
+            and bool(libdir)
+        ),
+        "discovery_source": "llvm-config",
+    }
+
+
+def _install_root_from_resolved_tool(probe: dict[str, object]) -> Path | None:
+    resolved = str(probe.get("resolved_path", ""))
+    if not resolved:
+        return None
+    resolved_path = Path(resolved)
+    if resolved_path.parent.name.lower() != "bin":
+        return None
+    root = resolved_path.parent.parent
+    include_dir = root / "include"
+    lib_dir = root / "lib"
+    if include_dir.is_dir() and lib_dir.is_dir():
+        return root
+    return None
+
+
+def probe_llvm_install_root_paths(
+    *probes: dict[str, object],
+) -> dict[str, object]:
+    for probe in probes:
+        root = _install_root_from_resolved_tool(probe)
+        if root is None:
+            continue
+        includedir = root / "include"
+        libdir = root / "lib"
+        return {
+            "includedir_exit_code": 0,
+            "includedir_duration_ms": 0.0,
+            "includedir": str(includedir),
+            "libdir_exit_code": 0,
+            "libdir_duration_ms": 0.0,
+            "libdir": str(libdir),
+            "headers_libraries_discovered": True,
+            "discovery_source": "install-root",
+        }
+    return {
+        "includedir_exit_code": 1,
+        "includedir_duration_ms": 0.0,
+        "includedir": "",
+        "libdir_exit_code": 1,
+        "libdir_duration_ms": 0.0,
+        "libdir": "",
+        "headers_libraries_discovered": False,
+        "discovery_source": "unavailable",
+    }

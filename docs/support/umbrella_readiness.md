@@ -7,7 +7,6 @@ why broad capability rows remain reserved or when they are ready for
 promotion. It does not create public Objective-C 3.0 behavior claims.
 
 Authoritative inputs:
-
 - `docs/support/umbrella_readiness.json`
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
@@ -53,14 +52,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
 - `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 - `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
-- `blocked` Full source-map publication beyond bounded identity rows, emitted native debug info, and debugger stepping integration must still be owned by the production artifact path. (blocker_id: `object-model-debugger-source-identity`)
+- `blocked` Full source-map publication beyond bounded identity rows and broad debugger stepping over the integrated object-model production artifact path remain reserved. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
 - `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
-- `blocked` Debugger-grade statement stepping over emitted native debug line tables must be completed on the production compiler artifact path. (blocker_id: `object-model-debugger-source-identity`)
+- `blocked` Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping; debugger-grade stepping over the integrated object-model production artifact path remains blocked for the umbrella. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Positive Fixtures
 
@@ -110,9 +109,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, and production source-map/native-line-table publication now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
+- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
   - Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.
-  - Production debugger statement-stepping integration over emitted native debug info.
+  - Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row.
 
 ### Final Promotion Criteria
 
@@ -280,8 +279,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `blocked` Typed throws ABI, lowering, and runtime execution remain unimplemented. (blocker_id: `typed-throws-abi-lowering-interface`)
 - `blocked` Value optional layout, lowering, and runtime execution remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
-- `blocked` Runtime reified generic metadata remains unimplemented. (blocker_id: `generic-callable-reification-runtime`)
-- `blocked` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile. (blocker_id: `strict-profiles-release-evidence`)
+- `blocked` Runtime reified generic metadata remains unimplemented; current generic callable metadata is claimable only for deterministic erased-default free-function replay keys. (blocker_id: `generic-callable-reification-runtime`)
+- `blocked` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile; strict-system remains target-only release evidence and is not a native frontend language profile. (blocker_id: `strict-profiles-release-evidence`)
 
 #### Abi Governance Rows
 
@@ -320,14 +319,16 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - Optional<T> semantic type admission and conversions policy.
   - Stable ABI layout and textual-interface roundtrip.
   - Lowering/runtime behavior without nil/nullability aliases.
-- `generic-callable-reification-runtime`: Generic callable metadata is deterministic for the erased free-function subset, but runtime reification and broader syntax remain reserved.
-  - Explicit reification mode and runtime metadata model.
+- `generic-callable-reification-runtime`: Generic callable metadata is deterministic for the erased free-function subset only when the deterministic flag, erased-default reification policy, semantic mangling policy, and replay key agree; runtime reification and broader syntax remain reserved.
+  - Explicit non-erased reification mode and runtime metadata model.
   - Non-erased callable mangling and ABI governance.
   - Decision-complete handling for Objective-C method type-parameter clauses and C/Objective-C style generic function declarations.
-- `strict-profiles-release-evidence`: Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists.
+  - Source-owned support claim evidence before any declaration-scoped reification syntax is admitted.
+- `strict-profiles-release-evidence`: Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists; strict-system remains a target-only release-evidence profile and rejects as a native frontend selection.
   - Strict profile release evidence across parser, sema, lowering, textual interface, and package publication.
   - Strict-concurrency actor isolation, sendability, task lifecycle, scheduler, and mailbox runtime evidence.
   - Public conformance publication that claims strict profiles without aliases or compatibility modes.
+  - A separate promotion decision before strict-system can become a native frontend language profile.
 - `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234/#8235/#8237 prerequisite rows even though #8236 statement guarded match is source-level implemented.
   - Promote each reserved prerequisite only after native source contracts and public evidence exist.
   - Keep umbrella readiness blocked until no prerequisite row relies on reserved diagnostics or metadata placeholders.

@@ -112,7 +112,7 @@
         },
         {
           "id": "debugger-source-identity",
-          "description": "Full source-map publication beyond bounded identity rows, emitted native debug info, and debugger stepping integration must still be owned by the production artifact path.",
+          "description": "Full source-map publication beyond bounded identity rows and broad debugger stepping over the integrated object-model production artifact path remain reserved.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -138,7 +138,7 @@
         },
         {
           "id": "debugger-integration",
-          "description": "Debugger-grade statement stepping over emitted native debug line tables must be completed on the production compiler artifact path.",
+          "description": "Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping; debugger-grade stepping over the integrated object-model production artifact path remains blocked for the umbrella.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -282,10 +282,10 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, and production source-map/native-line-table publication now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
+          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
           "missing_work": [
             "Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.",
-            "Production debugger statement-stepping integration over emitted native debug info."
+            "Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row."
           ],
           "tracking_issue": "#8198"
         }
@@ -703,13 +703,13 @@
         },
         {
           "id": "generic-reified-runtime-metadata",
-          "description": "Runtime reified generic metadata remains unimplemented.",
+          "description": "Runtime reified generic metadata remains unimplemented; current generic callable metadata is claimable only for deterministic erased-default free-function replay keys.",
           "status": "blocked",
           "blocker_id": "generic-callable-reification-runtime"
         },
         {
           "id": "strict-concurrency-runtime",
-          "description": "Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile.",
+          "description": "Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile; strict-system remains target-only release evidence and is not a native frontend language profile.",
           "status": "blocked",
           "blocker_id": "strict-profiles-release-evidence"
         }
@@ -807,21 +807,23 @@
         },
         {
           "blocker_id": "generic-callable-reification-runtime",
-          "summary": "Generic callable metadata is deterministic for the erased free-function subset, but runtime reification and broader syntax remain reserved.",
+          "summary": "Generic callable metadata is deterministic for the erased free-function subset only when the deterministic flag, erased-default reification policy, semantic mangling policy, and replay key agree; runtime reification and broader syntax remain reserved.",
           "missing_work": [
-            "Explicit reification mode and runtime metadata model.",
+            "Explicit non-erased reification mode and runtime metadata model.",
             "Non-erased callable mangling and ABI governance.",
-            "Decision-complete handling for Objective-C method type-parameter clauses and C/Objective-C style generic function declarations."
+            "Decision-complete handling for Objective-C method type-parameter clauses and C/Objective-C style generic function declarations.",
+            "Source-owned support claim evidence before any declaration-scoped reification syntax is admitted."
           ],
           "tracking_issue": "#8235"
         },
         {
           "blocker_id": "strict-profiles-release-evidence",
-          "summary": "Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists.",
+          "summary": "Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists; strict-system remains a target-only release-evidence profile and rejects as a native frontend selection.",
           "missing_work": [
             "Strict profile release evidence across parser, sema, lowering, textual interface, and package publication.",
             "Strict-concurrency actor isolation, sendability, task lifecycle, scheduler, and mailbox runtime evidence.",
-            "Public conformance publication that claims strict profiles without aliases or compatibility modes."
+            "Public conformance publication that claims strict profiles without aliases or compatibility modes.",
+            "A separate promotion decision before strict-system can become a native frontend language profile."
           ],
           "tracking_issue": "#8237"
         },

@@ -498,6 +498,7 @@
         "support_state",
         "issue_ref",
         "required_evidence_classes",
+        "required_missing_evidence_classes",
         "required_toolchain_components",
         "failure_id",
         "fail_closed_evidence_id",
@@ -533,6 +534,19 @@
           "type": "integer"
         },
         "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
           "type": "array",
           "items": {
             "enum": [
@@ -603,6 +617,8 @@
         "runtime_library_contract",
         "metadata_freshness_guard",
         "claim_state",
+        "required_evidence_classes",
+        "required_missing_evidence_classes",
         "evidence_ids",
         "unsupported_behavior",
         "diagnostic"
@@ -646,6 +662,31 @@
             "reserved"
           ]
         },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "uniqueItems": true
+        },
         "evidence_ids": {
           "type": "array",
           "items": {
@@ -674,6 +715,8 @@
         "runtime_requirement",
         "metadata_freshness_guard",
         "install_guard",
+        "required_promotion_evidence",
+        "required_missing_evidence_classes",
         "diagnostic"
       ],
       "properties": {
@@ -741,6 +784,30 @@
               "const": "fail-closed-before-publication"
             }
           }
+        },
+        "required_promotion_evidence": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 3,
+          "uniqueItems": true
         },
         "diagnostic": {
           "type": "string"

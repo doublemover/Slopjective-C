@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "contracts/objc3_language_evolution_reserved_diagnostic_codes.h"
 #include "sema/model/frontend_linkage_summaries.h"
 #include "sema/model/frontend_type_source_closure.h"
 
@@ -131,6 +132,8 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool typed_throws_fail_closed = false;
   std::size_t typed_throws_issue_ref = 8233;
   std::string typed_throws_canonical_syntax = "throws(E)";
+  std::string typed_throws_reserved_diagnostic_code =
+      kObjc3ParserDiagnosticReservedTypedThrowsCode;
   bool typed_throws_single_payload_reserved = true;
   bool typed_throws_empty_payload_rejected = true;
   bool typed_throws_multi_payload_rejected = true;

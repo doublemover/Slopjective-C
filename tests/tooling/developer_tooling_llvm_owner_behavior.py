@@ -136,6 +136,7 @@ def assert_hosted_summary_truth_requires_mode_ok_clang_and_object_emission(
     )
 
     assert hosted_llvm_summary.hosted_llc_object_emission_available() is False
+    assert hosted_llvm_summary.hosted_full_toolchain_matrix_available() is False
     assert hosted_llvm_summary.hosted_native_object_emission_status() == "native_object_emission_unavailable"
 
     monkeypatch.setattr(
@@ -145,4 +146,5 @@ def assert_hosted_summary_truth_requires_mode_ok_clang_and_object_emission(
     )
 
     assert hosted_llvm_summary.hosted_llc_object_emission_available() is False
+    assert hosted_llvm_summary.hosted_full_toolchain_matrix_available() is False
     assert hosted_llvm_summary.hosted_native_object_emission_status() == "native_object_emission_missing_llc"

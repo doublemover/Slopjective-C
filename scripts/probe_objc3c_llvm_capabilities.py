@@ -14,6 +14,8 @@ if __package__:
     from .objc3c_llvm_capability_probe.commands import (
         probe_executable,
         probe_llc_filetype_obj,
+        probe_llvm_config_paths,
+        probe_llvm_install_root_paths,
         run_command,
     )
     from .objc3c_llvm_capability_probe.constants import (
@@ -32,6 +34,8 @@ else:
     from objc3c_llvm_capability_probe.commands import (
         probe_executable,
         probe_llc_filetype_obj,
+        probe_llvm_config_paths,
+        probe_llvm_install_root_paths,
         run_command,
     )
     from objc3c_llvm_capability_probe.constants import (
@@ -54,6 +58,8 @@ __all__ = [
     "parse_args",
     "probe_executable",
     "probe_llc_filetype_obj",
+    "probe_llvm_config_paths",
+    "probe_llvm_install_root_paths",
     "run",
     "run_command",
     "subprocess",

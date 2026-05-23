@@ -161,6 +161,7 @@
         "claim_class",
         "tier_id",
         "required_evidence_classes",
+        "required_missing_evidence_classes",
         "required_toolchain_components",
         "evidence",
         "issue_ref",
@@ -213,6 +214,18 @@
               "execution"
             ]
           }
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "uniqueItems": true
         },
         "required_toolchain_components": {
           "type": "array",
@@ -370,15 +383,14 @@
         },
         "claim_state": {
           "enum": [
-            "required",
-            "reserved"
+            "required"
           ]
         },
         "version_source": {
           "enum": [
             "probe",
             "native-build-resolution",
-            "reserved"
+            "probe-or-install-root"
           ]
         },
         "failure_behavior": {
@@ -418,20 +430,17 @@
         },
         "object_emission_capability": {
           "enum": [
-            "supported",
-            "reserved"
+            "supported"
           ]
         },
         "package_capability": {
           "enum": [
-            "supported",
-            "reserved"
+            "supported"
           ]
         },
         "native_execution_capability": {
           "enum": [
-            "supported",
-            "reserved"
+            "supported"
           ]
         },
         "evidence_ids": {
@@ -608,6 +617,7 @@
         "claim_state",
         "channel_scope",
         "required_evidence_classes",
+        "required_missing_evidence_classes",
         "evidence_ids",
         "unsupported_behavior",
         "diagnostic"
@@ -719,6 +729,8 @@
         "metadata_freshness_guard",
         "build_contract",
         "install_guard",
+        "required_promotion_evidence",
+        "required_missing_evidence_classes",
         "evidence_ids",
         "diagnostic"
       ],
@@ -830,6 +842,30 @@
               "const": "fail-closed-before-publication"
             }
           }
+        },
+        "required_promotion_evidence": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 3,
+          "uniqueItems": true
         },
         "diagnostic": {
           "type": "string"

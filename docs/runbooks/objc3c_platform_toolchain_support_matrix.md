@@ -59,6 +59,15 @@ for unsupported hosts, mixed sanitized/unsanitized runtime libraries, release
 channel publication, missing sanitizer runtime libraries, and stale package
 metadata.
 
+Promotion prerequisites are explicit source data, not prose-only policy. An
+unsupported host row must list every missing supported-host evidence class
+(`build`, `package`, `install`, and `execution`). A fail-closed or reserved
+package row must list the missing package/install/native-execution classes that
+block publication. ASan and UBSan sanitizer rows must list `package`,
+`install`, and `execution` as both their promotion prerequisites and their
+current missing evidence classes. Rows that omit those fields are not eligible
+for package, install, native execution, or capability-matrix promotion.
+
 Every platform support row records explicit host triples. The current source
 contract recognizes `x86_64-pc-windows-msvc` as the supported Windows x64
 triple, `x86_64-unknown-linux-gnu` as the fail-closed Linux x64 triple, and
@@ -100,15 +109,19 @@ The LLVM version support matrix is checked in under
 `llvm_version_support_matrix` in the platform support evidence fixture. It is
 not a broad LLVM compatibility promise. The current supported entry is
 `objc3c.llvm.windows-x64.current-probed-19`, which binds Windows x64 support to
-the public LLVM capability probe, native build resolution, and native execution
-smoke evidence. `clang`, `clang++`, `llc`, and runtime headers/libs are required
-for supported claims. `llvm-ar` and `llvm-config` remain reserved until package
-archive and header/library discovery lanes consume the same matrix directly.
+the public LLVM capability probe, native build resolution, package/archive
+evidence, clean-room install evidence, and native execution smoke evidence.
+`clang`, `clang++`, `llc`, `llvm-ar`, and runtime headers/libs discovered from
+llvm-config or an installed LLVM root are required for supported claims. Missing archive tooling or header/library
+discovery rejects package, native execution, and platform support before a claim
+can be published.
 
 Object emission is supported only when `llc` is resolved and the probe verifies
-`--filetype=obj`. Missing `llc`, mixed LLVM tool roots, or versions outside
-known-good evidence fail before package, native execution, or platform support
-claims are published. The source contract records
+`--filetype=obj`. Package/archive claims also require `llvm-ar`, and package or
+native execution claims require LLVM header/library discovery from llvm-config or
+an installed LLVM root. Missing `llc`, missing archive/header tools, mixed LLVM tool roots,
+or versions outside known-good evidence fail before package, native execution,
+or platform support claims are published. The source contract records
 `native_object_emission_missing_llc`,
 `native_object_emission_filetype_obj_unavailable`, and
 `native_object_emission_supported` as the native object-emission statuses.
@@ -143,4 +156,6 @@ build success does not imply package support, and report-only output cannot
 publish a new support claim. Missing runtime libraries, missing sanitizer
 runtime libraries, mixed sanitized/unsanitized runtime libraries, unsupported
 host triples, and stale package metadata all fail closed before package
-publication or native execution claims.
+publication or native execution claims. A row with any non-empty
+`required_missing_evidence_classes` list is a fail-closed prerequisite row, not
+a support row; generated reports may echo that list, but they cannot clear it.

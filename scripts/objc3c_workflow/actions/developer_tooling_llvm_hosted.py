@@ -39,7 +39,10 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
         source_kind=HOSTED_LLVM_CAPABILITY_TRUTH_SOURCE,
     )
     if probe_exit == 0 and truth.hosted_execution_supported:
-        print("Hosted runner exposes clang and llc object-emission capability.")
+        print(
+            "Hosted runner exposes the full LLVM toolchain matrix for package, "
+            "native object, and execution capability."
+        )
         return 0
 
     if truth.mode != HOSTED_LLVM_CAPABILITY_MODE:
@@ -73,9 +76,34 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
             "is not a supported capability claim."
         )
         return 0
+    if not truth.llc_supports_filetype_obj:
+        print(
+            "Hosted runner capability summary recorded no llc --filetype=obj support; "
+            "native_object_emission_filetype_obj_unavailable; hosted source parity "
+            "and execution support claims are unavailable."
+        )
+        return 0
+    if not truth.clangxx_found:
+        print(
+            "Hosted runner capability summary recorded no clang++ availability; "
+            "native runtime link and execution support claims are unavailable."
+        )
+        return 0
+    if not truth.llvm_ar_found:
+        print(
+            "Hosted runner capability summary recorded no llvm-ar availability; "
+            "package archive and static-library support claims are unavailable."
+        )
+        return 0
+    if not truth.headers_libraries_discovered:
+        print(
+            "Hosted runner capability summary recorded no LLVM headers/libs "
+            "discovery from llvm-config or an installed LLVM root; package and "
+            "native execution support claims are unavailable."
+        )
+        return 0
     print(
-        "Hosted runner capability summary recorded no llc --filetype=obj support; "
-        "native_object_emission_filetype_obj_unavailable; hosted source parity "
-        "and execution support claims are unavailable."
+        "Hosted runner capability summary did not satisfy the full LLVM toolchain "
+        "matrix; hosted package and execution support claims are unavailable."
     )
     return 0

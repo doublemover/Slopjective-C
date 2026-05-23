@@ -1,0 +1,235 @@
+{
+  "$id": "https://objc3c.dev/schemas/objc3c-debug-source-maps-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "objc3c Debug Source Maps",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "source",
+    "compiler_identity",
+    "debug_policy",
+    "native_debug_info",
+    "source_graph",
+    "source_maps",
+    "debug_maps",
+    "native_line_tables"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "contract_id": {
+      "const": "objc3c.debug-source-maps.v1"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^[^\\\\]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": true
+    },
+    "compiler_identity": {
+      "type": "object",
+      "required": [
+        "compiler_id",
+        "frontend_artifact_id",
+        "source_map_schema_version",
+        "native_debug_info_evidence_id"
+      ],
+      "additionalProperties": true
+    },
+    "debug_policy": {
+      "type": "object",
+      "required": [
+        "statement_stepping_requested",
+        "statement_stepping_supported"
+      ],
+      "properties": {
+        "statement_stepping_requested": {
+          "type": "boolean"
+        },
+        "statement_stepping_supported": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "native_debug_info": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "evidence_id",
+        "emitted_native_debug_info",
+        "native_line_table_emitted",
+        "ir_debug_metadata_present",
+        "statement_stepping_integrated",
+        "statement_stepping_evidence"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.debug-source-maps.native-debug-info.v1"
+        },
+        "statement_stepping_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/statementSteppingEvidence"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "source_maps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/sourceMapEntry"
+      }
+    },
+    "debug_maps": {
+      "type": "array",
+      "minItems": 1
+    },
+    "native_line_tables": {
+      "type": "array",
+      "minItems": 1
+    },
+    "inline_frames": {
+      "type": "object",
+      "properties": {
+        "frames": {
+          "type": "array"
+        },
+        "native_ranges": {
+          "type": "array"
+        },
+        "chains": {
+          "type": "array"
+        },
+        "failures": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "line",
+        "column",
+        "end_line",
+        "end_column"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_column": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceMapEntry": {
+      "type": "object",
+      "required": [
+        "entry_id",
+        "record_kind",
+        "source_file",
+        "source_range",
+        "source_graph_node_id",
+        "source_digest",
+        "ir_anchor",
+        "native_symbol",
+        "object_debug_line_anchor",
+        "capability_rows",
+        "runtime_anchor_ids",
+        "native_line_table_row_ids"
+      ],
+      "properties": {
+        "entry_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_file": {
+          "type": "string",
+          "pattern": "^[^\\\\]+$"
+        },
+        "source_range": {
+          "$ref": "#/$defs/sourceRange"
+        },
+        "generated": {
+          "type": "boolean"
+        },
+        "capability_rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "runtime_anchor_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "native_line_table_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "statementSteppingEvidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "source_map_entry_id",
+        "debug_map_entry_id",
+        "native_line_table_row_id",
+        "source_span_id",
+        "source_range",
+        "native_debug_info_evidence_id",
+        "stepping_policy"
+      ],
+      "properties": {
+        "source_range": {
+          "$ref": "#/$defs/sourceRange"
+        },
+        "stepping_policy": {
+          "const": "step-over-emitted-native-debug-info"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

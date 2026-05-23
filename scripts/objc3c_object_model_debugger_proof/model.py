@@ -137,6 +137,13 @@ REQUIRED_DEBUGGER_UMBRELLA_ROWS = {
     "runtime.typed-keypath.debugger-lowering": "bounded-supported",
     "runtime.object-model.full-realization": "reserved",
 }
+REQUIRED_DEBUGGER_UMBRELLA_ROW_SUPPORT_CLAIMS = {
+    "runtime.debug-trace.inline-frame-source-map": True,
+    "runtime.debug-trace.statement-stepping": True,
+    "runtime.debug-trace.lldb-plugin": True,
+    "runtime.typed-keypath.debugger-lowering": True,
+    "runtime.object-model.full-realization": False,
+}
 REQUIRED_DEBUGGER_UMBRELLA_NEGATIVE_CASES = frozenset(
     {
         "generated-only-source-maps",
@@ -1532,11 +1539,12 @@ def _validate_debugger_umbrella_readiness(
                     f"debugger_grade_umbrella_readiness.bounded_capability_rows.{capability_id}.recommended_status",
                 )
             )
-        if row.get("support_claim_published") is not False:
+        expected_support_claim = REQUIRED_DEBUGGER_UMBRELLA_ROW_SUPPORT_CLAIMS[capability_id]
+        if row.get("support_claim_published") is not expected_support_claim:
             diagnostics.append(
                 _diag(
                     "debugger-umbrella-overclaimed",
-                    f"debugger umbrella bounded row must not publish support directly: {capability_id}",
+                    f"debugger umbrella bounded row support claim state drifted: {capability_id}",
                     f"debugger_grade_umbrella_readiness.bounded_capability_rows.{capability_id}.support_claim_published",
                 )
             )

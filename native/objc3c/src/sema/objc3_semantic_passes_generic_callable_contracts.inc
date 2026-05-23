@@ -3,6 +3,16 @@ static constexpr const char *kObjc3GenericCallableReificationPolicyErasedDefault
 static constexpr const char *kObjc3GenericCallableManglingPolicyId =
     "objc3c.generic-callable.semantic-mangling.v1";
 
+static bool IsObjc3GenericCallableReificationPolicyClaimable(
+    const std::string &policy) {
+  return policy == kObjc3GenericCallableReificationPolicyErasedDefault;
+}
+
+static bool IsObjc3GenericCallableManglingPolicyClaimable(
+    const std::string &policy_id) {
+  return policy_id == kObjc3GenericCallableManglingPolicyId;
+}
+
 static std::string BuildObjc3GenericCallableConstraintReplayKey(
     const std::vector<std::vector<std::string>> &constraints) {
   std::ostringstream out;
@@ -119,10 +129,11 @@ static bool IsFunctionGenericCallableSignatureCompatibleWithDecl(
              CollectFunctionGenericParameterVarianceSourceOrder(fn) &&
          existing.generic_parameter_constraints_lexicographic ==
              CollectFunctionGenericParameterConstraintsLexicographic(fn) &&
-         existing.generic_callable_reification_policy ==
-             kObjc3GenericCallableReificationPolicyErasedDefault &&
-         existing.generic_callable_mangling_policy_id ==
-             kObjc3GenericCallableManglingPolicyId &&
+         existing.generic_callable_contract_deterministic &&
+         IsObjc3GenericCallableReificationPolicyClaimable(
+             existing.generic_callable_reification_policy) &&
+         IsObjc3GenericCallableManglingPolicyClaimable(
+             existing.generic_callable_mangling_policy_id) &&
          existing.generic_callable_signature_replay_key ==
              BuildFunctionGenericCallableSignatureReplayKeyFromDecl(fn);
 }

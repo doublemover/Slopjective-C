@@ -207,7 +207,7 @@
   "remaining_blockers": [
     {
       "blocker_id": "object-model-debugger-source-identity",
-      "summary": "Bounded runtime debug-anchor identity, replayable object-model debugger value inspection, production frontend artifact/runtime inventory proof, and debug-anchor ABI governance are now covered; full compiler-emitted source maps, native line tables, and statement stepping remain required before this reserved umbrella can become implemented."
+      "summary": "Bounded runtime debug-anchor identity, replayable object-model debugger value inspection, production frontend artifact/runtime inventory proof, debug-anchor ABI governance, bounded compiler-owned source maps, native line-table rows, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata are now covered; broad debugger-grade stepping over the integrated object-model production artifact path remains required before this reserved umbrella can become implemented."
     }
   ]
 }

@@ -200,9 +200,9 @@
         },
         {
           "capability_id": "compiler.optimization.method-inlining",
-          "support_claim": "",
-          "status": "reserved",
-          "claim_boundary": "production IR still retains the method-inlining candidate call and lacks inlined-body, inline-frame, and invalidation proof, so this cross-lane family records a fail-closed blocker instead of a support claim"
+          "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+          "status": "bounded-supported",
+          "claim_boundary": "method inlining is claimable only for exact-callee, before/after-IR-proven scalar candidates with inline-frame source maps, side-effect replay, and runtime invalidation replay; stale or missing proof paths reject fail-closed"
         },
         {
           "capability_id": "runtime.optimization.cache-aware-dispatch",

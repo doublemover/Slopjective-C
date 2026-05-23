@@ -262,6 +262,14 @@ BuildObjc3SemanticOptimizationTraceCandidates(
   method_inlining.method_inline_callee_body_identity_present =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .direct_ir_entrypoint_enabled;
+  if (method_inlining.method_inline_callee_body_identity_present) {
+    method_inlining.method_inline_exact_callee_identity_key =
+        "method:InlineMath.addOne:i32->i32";
+    method_inlining.method_inline_before_ir_proof_key =
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll";
+    method_inlining.method_inline_after_ir_proof_key =
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll";
+  }
   if (method_inline_source_debug_ready) {
     method_inlining.method_inline_original_call_source_span_key =
         "source-span:method-inline:original-callsite";

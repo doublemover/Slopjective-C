@@ -56,16 +56,18 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
     },
     {
         "id": "compiler.optimization.method-inlining",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "production ir still retains",
-            "fails closed",
+            "exact callee identity",
+            "reject fail-closed",
         ),
         "evidence_paths": (
-            "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
-            "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+            "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+            "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+            "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+            "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
         ),
-        "no_support_claims": True,
+        "support_claims": ("objc3c.behavior.optimization.method-inlining-safe-subset",),
     },
     {
         "id": "modules.direct-import-syntax",
@@ -85,23 +87,12 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
         "state": "reserved",
         "summary_tokens": (
             "full source-map publication remains reserved",
-            "statement stepping",
+            "narrower rows",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
             "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
-        ),
-        "no_support_claims": True,
-    },
-    {
-        "id": "runtime.debug-trace.statement-stepping",
-        "state": "reserved",
-        "summary_tokens": (
-            "statement-level debugger stepping is fail-closed",
-            "emitted on the canonical toolchain path",
-        ),
-        "evidence_paths": (
-            "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
         ),
         "no_support_claims": True,
     },
@@ -169,6 +160,37 @@ FOUNDATION_IMPLEMENTED_EVIDENCE_EXPECTATIONS = (
             "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
             "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
             "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.statement-stepping",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.lldb-plugin",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.inline-frame-source-map",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        ),
+    },
+    {
+        "id": "runtime.typed-keypath.debugger-lowering",
+        "evidence_paths": (
+            "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+            "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+            "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
         ),
     },
 )

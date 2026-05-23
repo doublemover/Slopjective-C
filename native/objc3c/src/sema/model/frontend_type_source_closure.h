@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "contracts/objc3_language_evolution_reserved_diagnostic_codes.h"
 #include "sema/objc3_sema_contract.h"
 #include "token/objc3_token_contract.h"
 
@@ -73,6 +74,10 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool value_optional_type_fail_closed = false;
   std::size_t value_optional_issue_ref = 8234;
   std::string value_optional_canonical_spelling = "Optional<T>";
+  std::string value_optional_reserved_diagnostic_code =
+      kObjc3ParserDiagnosticReservedValueOptionalCode;
+  std::string lowercase_optional_alias_diagnostic_code =
+      kObjc3ParserDiagnosticRemovedOptionalAliasCode;
   bool lowercase_optional_alias_rejected = true;
   bool value_optional_nil_to_scalar_coercion_allowed = false;
   bool value_optional_nullable_pointer_conversion_allowed = false;

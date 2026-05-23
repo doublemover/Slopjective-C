@@ -80,8 +80,9 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
         "invalidates_global_proof_state": True,
         "missing_proof_action": "REJECT_FAIL_CLOSED",
         "diagnostic": (
-            "method inlining requires callee body identity, original call/source "
-            "spans, inline-frame source-map identity, receiver/dispatch "
+            "method inlining requires exact callee identity, callee body identity, "
+            "original call/source spans, before/after IR proof, inline-frame "
+            "source-map identity, receiver/dispatch "
             "assumptions, scalar subset, ownership, side-effect replay, source-map, "
             "debug stepping, diagnostic, ABI/package, depth, recursion, generation, "
             "runtime cache freshness, and invalidation replay proofs"
@@ -109,8 +110,11 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
 }
 
 METHOD_INLINING_TEXT_GATES = (
+    "method_inline_exact_callee_identity_key",
     "method_inline_original_call_source_span_key",
     "method_inline_callee_source_span_key",
+    "method_inline_before_ir_proof_key",
+    "method_inline_after_ir_proof_key",
     "method_inline_inline_frame_id_key",
     "method_inline_inlined_callsite_source_span_key",
     "method_inline_stepping_policy_key",

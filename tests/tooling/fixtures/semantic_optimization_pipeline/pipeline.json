@@ -336,6 +336,7 @@
       "output_contract": "expanded IR body",
       "preconditions": [
         "callee body identity is present",
+        "exact callee identity, target symbol, and before/after IR proof fixtures match",
         "function or final method belongs to the scalar inline subset",
         "ownership and ARC effects are replayable",
         "side-effect summary is pure and call-free",
@@ -345,7 +346,7 @@
         "inlining depth is within limit and recursion is absent",
         "callee generation snapshot is pinned",
         "source, debug, and runtime identity preservation evidence is present",
-        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without fallback success"
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       ],
       "invalidation": "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
       "post_verify": [
@@ -355,7 +356,7 @@
         "source, debug, runtime identity, runtime generation dependency, and invalidation replay proofs are consumed"
       ],
       "fail_closed_diagnostics": [
-        "method inlining requires callee body identity, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs"
+        "method inlining requires exact callee identity, callee body identity, before/after IR proof, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs"
       ],
       "fixtures": [
         "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
@@ -496,6 +497,7 @@
       "pass_id": "method-inlining",
       "required_proofs": [
         "callee body identity is present",
+        "exact callee identity, target symbol, and before/after IR proof fixtures match",
         "function or final method belongs to the scalar inline subset",
         "ownership and ARC effects are replayable",
         "side-effect summary is pure and call-free",
@@ -506,11 +508,11 @@
         "callee generation snapshot is pinned",
         "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
         "source, debug, and runtime identity preservation evidence is present",
-        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without fallback success"
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       ],
       "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "method inlining is semantic-preserving only when source, debug, runtime, ownership, side-effect, ABI/package, generation, and invalidation replay evidence remains attached to the optimized site"
+      "semantic_equivalence": "method inlining is semantic-preserving only when exact callee identity, before/after IR proof, source, debug, runtime, ownership, side-effect, ABI/package, generation, and invalidation replay evidence remains attached to the optimized site"
     },
     {
       "pass_id": "cache-aware-dispatch",
@@ -688,7 +690,7 @@
       },
       {
         "proof_id": "runtime_invalidation_replay",
-        "source": "runtime mutation replay proving optimized inlined sites fail closed after invalidation without fallback success",
+        "source": "runtime mutation replay proving optimized inlined sites fail closed after invalidation without counting runtime dispatch as inline success",
         "fail_closed_if_missing": true
       }
     ],
@@ -725,7 +727,9 @@
       "source_identity_preservation",
       "debug_identity_preservation",
       "runtime_identity_preservation",
-      "runtime_invalidation_replay"
+      "runtime_invalidation_replay",
+      "ir_digest_before",
+      "ir_digest_after"
     ],
     "result_payload_fields": [
       "decision",
@@ -807,7 +811,7 @@
       },
       {
         "verifier_id": "runtime-invalidation-replay-verifier",
-        "verifies": "runtime generation dependencies and mutation replay prove stale optimized sites fail closed without fallback success"
+        "verifies": "runtime generation dependencies and mutation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       }
     ],
     "pass_proof_contracts": [
@@ -1039,7 +1043,7 @@
         "package_import_abi_identity_verdict": "required",
         "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
         "success_claim_on_skip": false,
-        "fail_closed_diagnostic": "method inlining requires callee body identity, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs",
+        "fail_closed_diagnostic": "method inlining requires exact callee identity, callee body identity, before/after IR proof, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs",
         "exact_target_eligibility_verdict": "not-applicable",
         "mutation_invalidation_verdict": "not-applicable",
         "runtime_cache_version_verdict": "not-applicable"

@@ -4989,29 +4989,59 @@
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
-    },
-    {
-      "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "doc",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
-    },
-    {
-      "capability_id": "compiler.optimization.method-inlining",
-      "command": "npm run objc3c -- validate-cross-lane-e2e",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json"
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline",
+      "evidence_kind": "test",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset"
     },
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
@@ -5134,6 +5164,12 @@
     },
     {
       "capability_id": "runtime.debug-trace.full-source-map-publication",
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json"
+    },
+    {
+      "capability_id": "runtime.debug-trace.full-source-map-publication",
       "command": "npm run objc3c -- validate-cross-lane-e2e",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json"
@@ -5145,23 +5181,92 @@
     },
     {
       "capability_id": "runtime.debug-trace.lldb-plugin",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+      "command": "npm run objc3c -- validate-debugger-integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin"
+    },
+    {
+      "capability_id": "runtime.debug-trace.lldb-plugin",
+      "command": "npm run objc3c -- validate-debugger-integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin"
     },
     {
       "capability_id": "runtime.debug-trace.lldb-plugin",
       "evidence_kind": "doc",
-      "path": "docs/runbooks/objc3c_developer_tooling.md"
+      "path": "docs/runbooks/objc3c_developer_tooling.md",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin"
     },
     {
       "capability_id": "runtime.debug-trace.statement-stepping",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping"
+    },
+    {
+      "capability_id": "runtime.debug-trace.statement-stepping",
+      "command": "npm run objc3c -- validate-debugger-integration",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping"
+    },
+    {
+      "capability_id": "runtime.debug-trace.statement-stepping",
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping"
     },
     {
       "capability_id": "runtime.debug-trace.statement-stepping",
       "evidence_kind": "doc",
-      "path": "docs/runbooks/objc3c_developer_tooling.md"
+      "path": "docs/runbooks/objc3c_developer_tooling.md",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "command": "npm run objc3c -- validate-debug-source-maps",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
     },
     {
       "capability_id": "runtime.debug-trace.async-tasks",
@@ -5708,39 +5813,46 @@
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "evidence_kind": "schema",
-      "path": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json"
+      "path": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "command": "npm run objc3c -- validate-standalone-textual-interface-payload",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json"
+      "path": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "command": "npm run objc3c -- validate-standalone-textual-interface-payload",
       "evidence_kind": "test",
-      "path": "tests/tooling/test_native_interface_and_runtime_contracts.py"
+      "path": "tests/tooling/test_native_interface_and_runtime_contracts.py",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp"
+      "path": "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     },
     {
       "capability_id": "modules.standalone-textual-interface-payload",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload"
     }
   ],
   "schema_version": "objc3c-capability-evidence-map-v1"

@@ -58,6 +58,9 @@ tables or examples.
 | `objc3c-compiler-throughput-summary-v1.schema.json` | Compiler throughput summaries keyed to the objc3c bridge. |
 | `objc3c-performance-telemetry-v1.schema.json` | Performance telemetry samples with npm-bridge command strings. |
 | `objc3c-optimization-runtime-debug-safety-v1.schema.json` | Optimization runtime/debug safety governance for checked budget records, deoptimization/invalidation boundaries, debug source-map preservation, and fail-closed overclaim cases. |
+| `objc3c-debug-source-maps-v1.schema.json` | Debug source-map bundles with compiler-owned source spans, debug maps, native line-table rows, native debug-info evidence, and inline-frame preservation records. |
+| `objc3c-debugger-integration-replay-v1.schema.json` | Replayable LLDB protocol fixtures, checked stepping plans, value-inspection records, supported runtime metadata, and fail-closed debugger negative cases. |
+| `objc3c-typed-keypath-debugger-lowering-v1.schema.json` | Typed keypath descriptor debugger metadata, source-map and diagnostic anchors, type/object-model identity fields, and no-fallback lowering policy. |
 | `objc3c-full-envelope-dashboard-summary-v1.schema.json` | Full-envelope claimability dashboard summaries over support, conformance, release, performance, and trust evidence. |
 | `objc3c-developer-tooling-editor-surface-v1.schema.json` | Combined editor tooling surface summaries for diagnostics, navigation, formatting, debug, and unpublished capability metadata. |
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |

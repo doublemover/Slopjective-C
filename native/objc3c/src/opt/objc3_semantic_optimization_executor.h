@@ -62,8 +62,11 @@ struct Objc3SemanticOptimizationCandidate {
   bool devirtualization_runtime_abi_safe = false;
   bool devirtualization_package_abi_identical = false;
   bool method_inline_callee_body_identity_present = false;
+  std::string method_inline_exact_callee_identity_key;
   std::string method_inline_original_call_source_span_key;
   std::string method_inline_callee_source_span_key;
+  std::string method_inline_before_ir_proof_key;
+  std::string method_inline_after_ir_proof_key;
   std::string method_inline_receiver_dispatch_assumption_key;
   std::string method_inline_debug_stepping_evidence_key;
   std::string method_inline_side_effect_replay_key;
