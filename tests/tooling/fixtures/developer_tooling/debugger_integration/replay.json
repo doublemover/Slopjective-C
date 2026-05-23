@@ -8,6 +8,7 @@
     "compiler_identity_id": "objc3c.compiler.objc3c-3.0.debug-info.v1",
     "rejects_generated_only_maps": true,
     "requires_inline_frame_chains": true,
+    "requires_step_over_emitted_native_debug_info": true,
     "required_inline_frame_chain_ids": [
       "inline.chain.main_helper"
     ],
@@ -118,6 +119,12 @@
         "replayable": true
       },
       {
+        "command_id": "step-property-accessor",
+        "plugin_command": "objc3 step property-accessor",
+        "script_entry": "objc3_lldb.commands.step_property_accessor",
+        "replayable": true
+      },
+      {
         "command_id": "explain-optimized-frame",
         "plugin_command": "objc3 explain optimized-frame",
         "script_entry": "objc3_lldb.commands.explain_optimized_frame",
@@ -131,6 +138,7 @@
         "record_id": "step.statement.value-binding",
         "status": "supported",
         "step_kind": "statement",
+        "step_operation": "step-over",
         "source_map_entry_id": "smap.statement",
         "debug_map_entry_id": "dmap.statement",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
@@ -150,6 +158,7 @@
         "record_id": "step.function.helper",
         "status": "supported",
         "step_kind": "function",
+        "step_operation": "step-over",
         "source_map_entry_id": "smap.function",
         "debug_map_entry_id": "dmap.function",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
@@ -169,6 +178,7 @@
         "record_id": "step.method.box-value",
         "status": "supported",
         "step_kind": "method",
+        "step_operation": "step-over",
         "source_map_entry_id": "smap.method",
         "debug_map_entry_id": "dmap.method",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
@@ -188,6 +198,7 @@
         "record_id": "step.message-send.box-value",
         "status": "supported",
         "step_kind": "message-send",
+        "step_operation": "step-over",
         "source_map_entry_id": "smap.message_send",
         "debug_map_entry_id": "dmap.message_send",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
@@ -204,9 +215,30 @@
         "lldb_command_id": "step-message-send"
       },
       {
+        "record_id": "step.property-accessor.count",
+        "status": "supported",
+        "step_kind": "property-access",
+        "step_operation": "step-over",
+        "source_map_entry_id": "smap.property_access",
+        "debug_map_entry_id": "dmap.property_access",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+        "source_span_id": "span.property-access.count",
+        "source_line": 9,
+        "source_column": 12,
+        "source_end_line": 9,
+        "source_end_column": 17,
+        "native_symbol": "_objc3_DebugMaps_Foundation_property_access",
+        "object_debug_line_anchor": "obj.line.property_access",
+        "native_line_table_row_id": "lt.property_access",
+        "native_debug_info_evidence_id": "debugmaps.foundation.native-debug-info",
+        "lldb_command_id": "step-property-accessor"
+      },
+      {
         "record_id": "step.optimized-away.direct-dispatch",
         "status": "unsupported",
         "step_kind": "statement",
+        "step_operation": "step-over",
         "source_map_entry_id": "smap.message_send",
         "debug_map_entry_id": "dmap.message_send",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
@@ -338,6 +370,12 @@
       "case_id": "unsupported-runtime-metadata",
       "unsupported_reason": "unsupported-runtime-metadata",
       "expected_diagnostic_code": "debugger.unsupported-runtime-metadata",
+      "claims_stepping": false
+    },
+    {
+      "case_id": "optimized-transform-map-missing",
+      "unsupported_reason": "optimized-transform-map-missing",
+      "expected_diagnostic_code": "debugger.optimized-transform-map-missing",
       "claims_stepping": false
     }
   ]

@@ -2574,6 +2574,7 @@
       "positive_evidence": [
         "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
         "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+        "tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3",
         "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
         "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json",
         "native/objc3c/src/runtime/selectors/keypath_descriptor.h",
@@ -2589,9 +2590,9 @@
         "O3S206"
       ],
       "source_truth_requirements": [
-        "Typed keypath debugger lowering support is bounded to checked descriptor metadata for source span, root and value type identity, object-model owner/member identity, source-map key, and diagnostic anchor",
-        "Fallback interpretation, missing runtime string-pool metadata, missing source-map anchors, and broad keypath shapes stay fail-closed",
-        "This row does not promote full object-model realization or broad debugger-grade keypath evaluation"
+        "Typed keypath debugger lowering support is bounded to checked descriptor metadata for source span, root/value type identity, nested component owner/member/type identity paths, object-model owner/member identity, source-map key, and diagnostic anchor",
+        "Fallback interpretation, missing runtime string-pool metadata, missing source-map anchors, id-root chains without concrete metadata, missing properties, ambiguous categories, and generic components stay fail-closed",
+        "This row does not promote full object-model realization or broad runtime keypath evaluation"
       ]
     },
     {

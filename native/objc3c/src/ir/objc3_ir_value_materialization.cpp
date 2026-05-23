@@ -71,6 +71,9 @@ std::string EmitObjc3IRTypedKeyPathLiteralValue(
   }
   const TypedKeyPathArtifact &artifact = artifact_it->second;
   if (artifact.fallback_interpretation_allowed ||
+      artifact.component_owner_identity_path.empty() ||
+      artifact.component_member_identity_path.empty() ||
+      artifact.component_type_identity_path.empty() ||
       artifact.source_span_id.empty() || artifact.root_type_identity.empty() ||
       artifact.value_type_identity.empty() ||
       artifact.object_model_owner_identity.empty() ||

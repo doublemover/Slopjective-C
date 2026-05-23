@@ -51,14 +51,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
 - `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
-- `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
-- `blocked` Full source-map publication beyond bounded identity rows and broad debugger stepping over the integrated object-model production artifact path remain reserved. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, emitted native debug-info evidence, and compiler-owned object-model source-map/native-line-table publication for class, metaclass, category, protocol, property, ivar, selector, method, reflection, and replay rows. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
+- `blocked` Production source identity and native debug-info evidence now cover the integrated object-model identity set; broad debugger stepping over that production artifact path remains reserved for the umbrella. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
-- `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
+- `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, compiler-owned object-model source identity rows for the full integrated identity set, emitted native debug-info evidence, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
 - `blocked` Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping; debugger-grade stepping over the integrated object-model production artifact path remains blocked for the umbrella. (blocker_id: `object-model-debugger-source-identity`)
 
 #### Positive Fixtures
@@ -109,8 +109,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
-  - Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.
+- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned production source identity rows for class/metaclass/category/protocol/property/ivar/selector/method/reflection/replay, emitted native debug-info evidence, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
   - Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row.
 
 ### Final Promotion Criteria
@@ -250,7 +249,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` The #8207 umbrella contract binds typed throws, value optionals, generic callable reification, guarded match, and strict profile rows to checked-in source truth. (path: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`)
 - `satisfied` Typed throws parser diagnostics classify parenthesized payload shapes and reject them without erasing to bare throws. (path: `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`)
-- `satisfied` Value optional source-closure and textual-interface records keep Optional<T> reserved and deny nil/nullability/error conversions. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` Typed throws and value optional source-closure plus textual-interface import records keep reserved feature markers fail-closed and deny typed payload arity, nil/nullability/error conversions, and ABI/layout claims. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
 - `satisfied` Generic callable metadata records are deterministic for admitted erased generic free functions while broader reification syntax remains reserved. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Statement-form guarded match records source support for where-guards and fail-closed expression/type-test boundaries. (path: `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`)
 - `satisfied` The guarded match fixture contract records statement-only admission and reserves expression-position match, fat-arrow arms, and type-test patterns. (path: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`)
@@ -284,7 +283,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Abi Governance Rows
 
-- `satisfied` Typed throws metadata slots exist only as reserved untyped defaults. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` Typed throws metadata slots import only none or reserved untyped defaults with zero typed payload arity. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
 - `blocked` Value optional ABI layout and interface roundtrip remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Generic callable signature metadata records the erased-default mangling policy without claiming runtime reification. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 

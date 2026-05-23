@@ -106,13 +106,13 @@
         },
         {
           "id": "production-object-model-artifact-probe",
-          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication.",
+          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, emitted native debug-info evidence, and compiler-owned object-model source-map/native-line-table publication for class, metaclass, category, protocol, property, ivar, selector, method, reflection, and replay rows.",
           "status": "satisfied",
           "path": "scripts/check_objc3c_object_model_debugger_proof.py"
         },
         {
           "id": "debugger-source-identity",
-          "description": "Full source-map publication beyond bounded identity rows and broad debugger stepping over the integrated object-model production artifact path remain reserved.",
+          "description": "Production source identity and native debug-info evidence now cover the integrated object-model identity set; broad debugger stepping over that production artifact path remains reserved for the umbrella.",
           "status": "blocked",
           "blocker_id": "object-model-debugger-source-identity"
         }
@@ -132,7 +132,7 @@
         },
         {
           "id": "object-model-debugger-proof",
-          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge.",
+          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, compiler-owned object-model source identity rows for the full integrated identity set, emitted native debug-info evidence, and source-map/native-line-table publication remain replayable through the npm bridge.",
           "status": "satisfied",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
         },
@@ -282,9 +282,8 @@
       "promotion_blockers": [
         {
           "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
+          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned production source identity rows for class/metaclass/category/protocol/property/ivar/selector/method/reflection/replay, emitted native debug-info evidence, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
           "missing_work": [
-            "Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.",
             "Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row."
           ],
           "tracking_issue": "#8198"
@@ -593,7 +592,7 @@
         },
         {
           "id": "value-optionals-type-contract",
-          "description": "Value optional source-closure and textual-interface records keep Optional<T> reserved and deny nil/nullability/error conversions.",
+          "description": "Typed throws and value optional source-closure plus textual-interface import records keep reserved feature markers fail-closed and deny typed payload arity, nil/nullability/error conversions, and ABI/layout claims.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },
@@ -717,7 +716,7 @@
       "required_abi_governance_rows": [
         {
           "id": "typed-throws-effect-slots",
-          "description": "Typed throws metadata slots exist only as reserved untyped defaults.",
+          "description": "Typed throws metadata slots import only none or reserved untyped defaults with zero typed payload arity.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },

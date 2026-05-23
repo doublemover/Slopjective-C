@@ -9,6 +9,7 @@
     "registry_id",
     "registry_version",
     "registry_state",
+    "service_boundary",
     "endpoint_identity",
     "network_policy",
     "resolver",
@@ -33,6 +34,7 @@
     "registry_id": { "type": "string", "minLength": 1 },
     "registry_version": { "type": "integer", "minimum": 1 },
     "registry_state": { "type": "string", "minLength": 1 },
+    "service_boundary": { "$ref": "#/$defs/serviceBoundary" },
     "endpoint_identity": { "$ref": "#/$defs/endpointIdentity" },
     "network_policy": { "type": "string", "minLength": 1 },
     "resolver": { "const": "deterministic-hosted-registry-offline-resolver-v1" },
@@ -64,6 +66,34 @@
     "packageId": {
       "type": "string",
       "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "serviceBoundary": {
+      "type": "object",
+      "required": [
+        "support_state",
+        "supported_capability_id",
+        "reserved_capability_id",
+        "availability",
+        "auth",
+        "moderation",
+        "live_network_fetch",
+        "fallback_registry_success",
+        "package_manager_parity",
+        "local_offline_replay_preserved"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "support_state": { "const": "fixture-only-offline" },
+        "supported_capability_id": { "const": "ecosystem.package-manager.hosted-registry-fixture" },
+        "reserved_capability_id": { "const": "ecosystem.package-manager.public-hosted-registry" },
+        "availability": { "const": "not-claimed" },
+        "auth": { "const": "not-implemented-reserved" },
+        "moderation": { "const": "not-implemented-reserved" },
+        "live_network_fetch": { "const": "forbidden-fail-closed" },
+        "fallback_registry_success": { "const": false },
+        "package_manager_parity": { "const": "not-claimed" },
+        "local_offline_replay_preserved": { "const": true }
+      }
     },
     "endpointIdentity": {
       "type": "object",

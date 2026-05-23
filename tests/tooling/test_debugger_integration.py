@@ -66,6 +66,7 @@ def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_
         "function",
         "method",
         "message-send",
+        "property-access",
     }
     for step in plan["steps"]:
         assert step["source_file"] == "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3"
@@ -122,8 +123,28 @@ def test_debugger_integration_rejects_stepping_debug_map_id_drift(tmp_path: Path
     assert "debug-map-entry-missing" in diagnostic_codes(path)
 
 
+def test_debugger_integration_rejects_non_step_over_native_debug_info(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "step_operation"], "step-into")
+
+    assert "stepping-operation-mismatch" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_step_command_kind_drift(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "lldb_command_id"], "step-method")
+
+    assert "stepping-command-mismatch" in diagnostic_codes(path)
+
+
 def test_debugger_integration_fails_closed_for_unsupported_debug_configuration(tmp_path: Path) -> None:
     path = mutated_fixture(tmp_path, ["debug_configuration", "optimization"], "release-optimized")
+    codes = diagnostic_codes(path)
+
+    assert "debug-configuration-unsupported" in codes
+    assert "stepping-debug-config-unsupported" in codes
+
+
+def test_debugger_integration_rejects_artifact_digest_drift(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["debug_configuration", "artifact_digest_status"], "stale-object")
     codes = diagnostic_codes(path)
 
     assert "debug-configuration-unsupported" in codes
@@ -137,7 +158,7 @@ def test_debugger_integration_rejects_unsupported_lldb_command(tmp_path: Path) -
 
 
 def test_debugger_integration_rejects_unsupported_record_that_claims_stepping(tmp_path: Path) -> None:
-    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 4, "claims_stepping"], True)
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 5, "claims_stepping"], True)
 
     assert "stepping-overclaimed" in diagnostic_codes(path)
 
@@ -158,6 +179,22 @@ def test_debugger_integration_rejects_missing_inline_frame_chain(tmp_path: Path)
     path = mutated_fixture(tmp_path, ["protocol_contract", "required_inline_frame_chain_ids"], ["inline.chain.missing"])
 
     assert "lldb-protocol-inline-frame-chain-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_protocol_without_native_debug_step_over(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["protocol_contract", "requires_step_over_emitted_native_debug_info"], False)
+
+    assert "lldb-protocol-step-over-native-debug-info-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_optimized_step_without_transform_map(tmp_path: Path) -> None:
+    path = mutated_fixture(
+        tmp_path,
+        ["stepping_plan", "records", 5, "optimization_transform_source_map_entry_id"],
+        "smap.message_send",
+    )
+
+    assert "optimized-transform-map-missing" in diagnostic_codes(path)
 
 
 def test_debugger_integration_rejects_unsupported_runtime_metadata(tmp_path: Path) -> None:

@@ -140,6 +140,8 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool typed_throws_silent_erasure_allowed = false;
   std::string typed_throws_effect_record_status = "bare-throws-untyped-only";
   std::string typed_throws_abi_status = "reserved-no-lowering";
+  std::string typed_throws_interface_roundtrip_status =
+      "reserved-feature-marker-imported";
   bool try_fail_closed = false;
   bool throw_fail_closed = false;
   bool do_catch_fail_closed = false;

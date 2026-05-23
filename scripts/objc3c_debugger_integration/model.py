@@ -25,7 +25,14 @@ DEFAULT_FIXTURE_PATH = (
     / "replay.json"
 )
 
-SUPPORTED_STEP_KINDS = frozenset({"statement", "function", "method", "message-send"})
+SUPPORTED_STEP_KINDS = frozenset({"statement", "function", "method", "message-send", "property-access"})
+STEP_KIND_COMMAND_IDS = {
+    "statement": "step-statement",
+    "function": "step-function",
+    "method": "step-method",
+    "message-send": "step-message-send",
+    "property-access": "step-property-accessor",
+}
 SUPPORTED_COMMANDS = frozenset(
     {
         "objc3 metadata load",
@@ -42,6 +49,7 @@ SUPPORTED_COMMANDS = frozenset(
         "objc3 step function",
         "objc3 step method",
         "objc3 step message-send",
+        "objc3 step property-accessor",
         "objc3 explain optimized-frame",
     }
 )
@@ -61,6 +69,7 @@ REQUIRED_COMMAND_IDS = frozenset(
         "step-function",
         "step-method",
         "step-message-send",
+        "step-property-accessor",
         "explain-optimized-frame",
     }
 )
@@ -88,6 +97,7 @@ UNSUPPORTED_REASONS = frozenset(
         "stale-compiler-id",
         "missing-inline-frame-chain",
         "unsupported-runtime-metadata",
+        "optimized-transform-map-missing",
     }
 )
 SUPPORTED_RUNTIME_METADATA_KINDS = frozenset(
@@ -250,12 +260,18 @@ def _debug_config_supported(debug_config: dict[str, Any], diagnostics: list[Diag
     profile = _safe_str(debug_config.get("profile"))
     optimization = _safe_str(debug_config.get("optimization"))
     native_debug_info = _safe_str(debug_config.get("native_debug_info"))
-    supported = profile == "debug" and optimization in {"none", "debug-preserved"} and native_debug_info == "present"
+    artifact_digest_status = _safe_str(debug_config.get("artifact_digest_status"))
+    supported = (
+        profile == "debug"
+        and optimization in {"none", "debug-preserved"}
+        and native_debug_info == "present"
+        and artifact_digest_status == "matches-source-map"
+    )
     if not supported:
         diagnostics.append(
             _diag(
                 "debug-configuration-unsupported",
-                "supported stepping requires a debug profile, preserved optimization mode, and native debug info",
+                "supported stepping requires a debug profile, preserved optimization mode, native debug info, and a source-map-matched artifact digest",
                 "debug_configuration",
             )
         )
@@ -301,6 +317,14 @@ def _validate_protocol_contract(
                 "lldb-protocol-inline-frame-chain-missing",
                 "LLDB protocol must require inline-frame chains for optimized frames",
                 "protocol_contract.requires_inline_frame_chains",
+            )
+        )
+    if contract.get("requires_step_over_emitted_native_debug_info") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-step-over-native-debug-info-missing",
+                "LLDB protocol must require step-over records to consume emitted native debug info",
+                "protocol_contract.requires_step_over_emitted_native_debug_info",
             )
         )
     inline_chain_ids = {chain.chain_id for chain in source_bundle.inline_debug_chains}
@@ -410,6 +434,14 @@ def _validate_stepping_records(
             diagnostics.append(
                 _diag("stepping-source-kind-mismatch", f"stepping kind does not match source-map kind: {entry_id}", path)
             )
+        if _safe_str(record.get("step_operation")) != "step-over":
+            diagnostics.append(
+                _diag(
+                    "stepping-operation-mismatch",
+                    f"stepping record must step over emitted native debug info: {entry_id}",
+                    path,
+                )
+            )
         debug_map = debug_maps_by_source.get(entry_id)
         if debug_map is None:
             diagnostics.append(_diag("debug-map-entry-missing", f"stepping record lacks debug-map entry: {entry_id}", path))
@@ -458,6 +490,14 @@ def _validate_stepping_records(
         command_id = _safe_str(record.get("lldb_command_id"))
         if command_id not in commands:
             diagnostics.append(_diag("lldb-command-missing", f"stepping record references missing LLDB command: {command_id}", path))
+        elif command_id != STEP_KIND_COMMAND_IDS.get(step_kind):
+            diagnostics.append(
+                _diag(
+                    "stepping-command-mismatch",
+                    f"stepping record command does not match step kind: {step_kind}",
+                    path,
+                )
+            )
 
     for step_kind in sorted(SUPPORTED_STEP_KINDS - supported_seen):
         diagnostics.append(_diag("stepping-record-missing", f"supported stepping record is missing: {step_kind}", step_kind))
@@ -502,6 +542,27 @@ def _validate_unsupported_step(
         diagnostics.append(_diag("debug-map-entry-missing", f"unsupported stepping record debug-map id drifted from source map: {entry_id}", path))
     if _safe_str(record.get("source_digest")) != entry.source_digest:
         diagnostics.append(_diag("source-digest-stale", f"unsupported stepping record source digest drifted from source map: {entry_id}", path))
+    if reason == "optimized-away":
+        inline_chain_id = _safe_str(record.get("inline_frame_chain_id"))
+        required_inline_chain_ids = set(_tuple_str(protocol_contract.get("required_inline_frame_chain_ids")))
+        if not inline_chain_id or inline_chain_id not in required_inline_chain_ids:
+            diagnostics.append(
+                _diag(
+                    "lldb-protocol-inline-frame-chain-missing",
+                    "optimized-away stepping must name a required inline-frame chain",
+                    path,
+                )
+            )
+        transform_entry_id = _safe_str(record.get("optimization_transform_source_map_entry_id"))
+        transform_entry = source_maps.get(transform_entry_id)
+        if transform_entry is None or transform_entry.record_kind != "optimization-transform-edge":
+            diagnostics.append(
+                _diag(
+                    "optimized-transform-map-missing",
+                    "optimized-away stepping must link the preserved optimization transform source map",
+                    path,
+                )
+            )
 
 
 def _validate_value_inspection(
@@ -548,6 +609,7 @@ def _validate_negative_cases(payload: dict[str, Any], diagnostics: list[Diagnost
         "stale-compiler-id",
         "missing-inline-frame-chain",
         "unsupported-runtime-metadata",
+        "optimized-transform-map-missing",
     }
     case_ids = {_safe_str(_object(item).get("case_id")) for item in cases}
     for case_id in sorted(expected - case_ids):

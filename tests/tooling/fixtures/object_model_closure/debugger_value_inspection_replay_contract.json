@@ -40,28 +40,36 @@
       "declaration_breakpoint_anchors": 6
     },
     "object_model_source_identity_minimums": {
-      "source_map_records": 6,
-      "native_line_table_rows": 6,
+      "source_map_records": 10,
+      "native_line_table_rows": 10,
       "stepping_candidates": 4,
       "required_identity_kinds": [
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
-        "method"
+        "selector",
+        "method",
+        "reflection",
+        "replay"
       ]
     },
     "source_map_native_line_table_minimums": {
-      "source_map_records": 6,
-      "native_line_table_rows": 6,
+      "source_map_records": 10,
+      "native_line_table_rows": 10,
       "required_identity_kinds": [
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
-        "method"
+        "selector",
+        "method",
+        "reflection",
+        "replay"
       ]
     },
     "debug_map_boundary": {
@@ -204,6 +212,9 @@
         "source_span_id",
         "root_type_identity",
         "value_type_identity",
+        "component_owner_identity_path",
+        "component_member_identity_path",
+        "component_type_identity_path",
         "object_model_owner_identity",
         "object_model_member_identity",
         "debug_source_map_key",

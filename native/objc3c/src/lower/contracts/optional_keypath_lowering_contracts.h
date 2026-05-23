@@ -14,7 +14,7 @@ inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringContractId =
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringOptionalModel =
     "optional-bindings-sends-optional-member-access-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringTypedKeypathModel =
-    "validated-single-component-typed-keypath-literals-lower-to-canonical-runtime-descriptor-handles-with-generic-type-source-object-model-debugger-metadata-preservation";
+    "validated-class-or-self-root-typed-keypath-literals-lower-to-canonical-runtime-descriptor-handles-with-nested-object-property-type-source-object-model-debugger-metadata-preservation";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringAuthorityModel =
     "type_system-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
 inline constexpr const char *kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel =
@@ -32,10 +32,10 @@ inline constexpr const char
         "optional-send-and-optional-member-access-sites-use-lowering-owned-nil-short-circuit-plus-public-runtime-selector-lookup-dispatch";
 inline constexpr const char
     *kObjc3TypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel =
-        "validated-single-component-typed-keypath-sites-publish-stable-descriptor-handles-and-retained-descriptor-sections-while-runtime-evaluation-helpers-remain-a-follow-on-private-runtime-step";
+        "validated-class-or-self-root-typed-keypath-sites-publish-stable-descriptor-handles-retained-descriptor-sections-and-component-owner-member-type-identity-paths-while-general-runtime-evaluation-helpers-remain-private";
 inline constexpr const char
     *kObjc3TypeSystemOptionalKeypathRuntimeHelperDiagnosticModel =
-        "unsupported-typed-keypath-shapes-and-non-objc-optional-member-access-fail-closed-before-runtime";
+        "invalid-roots-missing-properties-ambiguous-category-metadata-generic-components-and-non-objc-optional-member-access-fail-closed-before-runtime";
 
 struct Objc3TypeSystemOptionalKeypathLoweringContract {
   std::size_t optional_binding_sites = 0;

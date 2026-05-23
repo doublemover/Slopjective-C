@@ -24,7 +24,13 @@ inline bool RuntimeKeyPathProfileIsMaterializable(const char *profile) {
 
 inline bool RuntimeKeyPathDebuggerMetadataIsMaterializable(
     const EmittedKeyPathDescriptor &descriptor) {
-  return descriptor.source_span_id != nullptr &&
+  return descriptor.component_owner_identity_path != nullptr &&
+         descriptor.component_owner_identity_path[0] != '\0' &&
+         descriptor.component_member_identity_path != nullptr &&
+         descriptor.component_member_identity_path[0] != '\0' &&
+         descriptor.component_type_identity_path != nullptr &&
+         descriptor.component_type_identity_path[0] != '\0' &&
+         descriptor.source_span_id != nullptr &&
          descriptor.source_span_id[0] != '\0' &&
          descriptor.root_type_identity != nullptr &&
          descriptor.root_type_identity[0] != '\0' &&
@@ -83,6 +89,12 @@ inline bool RuntimeKeyPathDescriptorMatchesSlot(
          slot.profile_storage == descriptor.profile &&
          slot.generic_metadata_replay_key_storage ==
              RuntimeKeyPathGenericMetadataReplayKey(descriptor) &&
+         slot.component_owner_identity_path_storage ==
+             descriptor.component_owner_identity_path &&
+         slot.component_member_identity_path_storage ==
+             descriptor.component_member_identity_path &&
+         slot.component_type_identity_path_storage ==
+             descriptor.component_type_identity_path &&
          slot.source_span_id_storage == descriptor.source_span_id &&
          slot.root_type_identity_storage == descriptor.root_type_identity &&
          slot.value_type_identity_storage == descriptor.value_type_identity &&

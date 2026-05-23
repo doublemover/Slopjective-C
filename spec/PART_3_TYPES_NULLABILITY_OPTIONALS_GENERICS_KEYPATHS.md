@@ -39,17 +39,21 @@ Implementation note (`M265-C001`):
 - `?.` optional-member access now lowers natively by desugaring into the same
   optional-send/nil-short-circuit machinery already used for bracketed
   optional sends.
-- Typed key-path roots currently fail closed unless they resolve to `self`, a
-  known class type, or an ObjC-reference-compatible identifier.
-- Typed key-path literals now lower on the native path for the validated
-  single-component subset by emitting retained descriptor handles; full
-  key-path application/runtime behavior remains later work.
-- Single-component class-root key paths now fail closed unless the named
-  component is a readable property on the root type.
+- Typed key-path roots currently fail closed unless they resolve to `self` in a
+  concrete implementation or a known class/object metadata owner.
+- Typed key-path literals now lower on the native path for concrete class-root
+  and self-root object-property chains by emitting retained descriptor handles
+  with component owner/member/type identity metadata; full key-path application
+  runtime behavior remains later work.
+- Class-root and self-root key paths now fail closed unless every named
+  component is a readable property on the current concrete owner, every
+  intermediate component resolves to non-generic object metadata, and category
+  property metadata is deterministic.
 - Generic Objective-C method declarations written as `- <T> ...` remain
   reserved in v1 and now diagnose explicitly.
-- Multi-component typed key-path member chains still fail closed until later
-  executable key-path lowering work.
+- Multi-component typed key-path member chains are supported only for concrete
+  object-property chains; `id` roots, missing properties, ambiguous category
+  metadata, and generic component paths fail closed before lowering.
 - `?.` optional-member access now lowers natively through the same
   single-evaluation nil-short-circuit path used by bracketed optional sends.
 

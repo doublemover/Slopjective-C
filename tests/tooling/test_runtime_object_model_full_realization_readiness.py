@@ -164,28 +164,36 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
             "declaration_breakpoint_anchors": 6,
         },
         "object_model_source_identity_minimums": {
-            "source_map_records": 6,
-            "native_line_table_rows": 6,
+            "source_map_records": 10,
+            "native_line_table_rows": 10,
             "stepping_candidates": 4,
             "required_identity_kinds": [
                 "class",
+                "metaclass",
                 "category",
                 "protocol",
                 "property",
                 "ivar",
+                "selector",
                 "method",
+                "reflection",
+                "replay",
             ],
         },
         "source_map_native_line_table_minimums": {
-            "source_map_records": 6,
-            "native_line_table_rows": 6,
+            "source_map_records": 10,
+            "native_line_table_rows": 10,
             "required_identity_kinds": [
                 "class",
+                "metaclass",
                 "category",
                 "protocol",
                 "property",
                 "ivar",
+                "selector",
                 "method",
+                "reflection",
+                "replay",
             ],
         },
         "debug_map_boundary": {
@@ -475,14 +483,18 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
     }
     identity_kinds = [
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
+        "selector",
         "method",
         "method",
         "method",
         "method",
+        "reflection",
+        "replay",
     ]
     source_map_records = []
     native_line_table_rows = []
@@ -490,15 +502,17 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         source_map_record_id = f"fake.source-map.{identity_kind}.{index}"
         row_id = f"fake.native-line-table.{identity_kind}.{index}"
         display_name = f"Fake{identity_kind.title()}{index}"
-        owner_name = "RuntimeFullWidget" if identity_kind == "method" else ""
-        selector = f"fakeSelector{index}" if identity_kind == "method" else ""
+        owner_name = "RuntimeFullWidget" if identity_kind in {"method", "selector"} else ""
+        selector = f"fakeSelector{index}" if identity_kind in {"method", "selector"} else ""
         source_map_records.append(
             {
                 "source_map_record_id": source_map_record_id,
                 "runtime_identity_kind": identity_kind,
                 "source_map_record_kind": (
                     "declaration"
-                    if identity_kind in {"class", "category", "protocol"}
+                    if identity_kind in {"class", "metaclass", "category", "protocol", "reflection", "replay"}
+                    else "message-send"
+                    if identity_kind == "selector"
                     else "property-access"
                     if identity_kind == "property"
                     else "generated-accessor"
@@ -585,11 +599,15 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         ],
         "required_identity_kinds_present": [
             "class",
+            "metaclass",
             "category",
             "protocol",
             "property",
             "ivar",
+            "selector",
             "method",
+            "reflection",
+            "replay",
         ],
         "fail_closed_boundaries": [
             {
@@ -626,11 +644,15 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "stepping_candidate_count": len(stepping_candidates),
         "required_identity_kinds_present": [
             "class",
+            "metaclass",
             "category",
             "protocol",
             "property",
             "ivar",
+            "selector",
             "method",
+            "reflection",
+            "replay",
         ],
         "source_map_records": source_map_records,
         "native_line_table_rows": native_line_table_rows,

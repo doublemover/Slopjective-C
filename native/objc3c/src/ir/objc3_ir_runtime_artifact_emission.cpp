@@ -78,6 +78,12 @@ bool EmitObjc3IRTypedKeypathArtifacts(
         options.runtime_string_pool_globals.find(artifact.component_path);
     const auto profile_it =
         options.runtime_string_pool_globals.find(artifact.profile);
+    const auto component_owner_it = options.runtime_string_pool_globals.find(
+        artifact.component_owner_identity_path);
+    const auto component_member_it = options.runtime_string_pool_globals.find(
+        artifact.component_member_identity_path);
+    const auto component_type_it = options.runtime_string_pool_globals.find(
+        artifact.component_type_identity_path);
     const auto source_span_it =
         options.runtime_string_pool_globals.find(artifact.source_span_id);
     const auto root_type_it =
@@ -95,6 +101,9 @@ bool EmitObjc3IRTypedKeypathArtifacts(
     if (root_it == options.runtime_string_pool_globals.end() ||
         component_it == options.runtime_string_pool_globals.end() ||
         profile_it == options.runtime_string_pool_globals.end() ||
+        component_owner_it == options.runtime_string_pool_globals.end() ||
+        component_member_it == options.runtime_string_pool_globals.end() ||
+        component_type_it == options.runtime_string_pool_globals.end() ||
         source_span_it == options.runtime_string_pool_globals.end() ||
         root_type_it == options.runtime_string_pool_globals.end() ||
         value_type_it == options.runtime_string_pool_globals.end() ||
@@ -107,6 +116,9 @@ bool EmitObjc3IRTypedKeypathArtifacts(
       return false;
     }
     if (artifact.fallback_interpretation_allowed ||
+        artifact.component_owner_identity_path.empty() ||
+        artifact.component_member_identity_path.empty() ||
+        artifact.component_type_identity_path.empty() ||
         artifact.source_span_id.empty() || artifact.root_type_identity.empty() ||
         artifact.value_type_identity.empty() ||
         artifact.object_model_owner_identity.empty() ||
@@ -119,10 +131,12 @@ bool EmitObjc3IRTypedKeypathArtifacts(
     }
     descriptor_symbols.push_back(artifact.descriptor_symbol);
     out << artifact.descriptor_symbol
-        << " = private global { i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i32, i32, i1, i1 } { i64 "
+        << " = private global { i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i32, i32, i1, i1 } { i64 "
         << static_cast<unsigned long long>(artifact.ordinal + 1u) << ", ptr "
         << root_it->second << ", ptr " << component_it->second << ", ptr "
         << profile_it->second << ", ptr " << generic_metadata_replay_key_symbol
+        << ", ptr " << component_owner_it->second << ", ptr "
+        << component_member_it->second << ", ptr " << component_type_it->second
         << ", ptr " << source_span_it->second << ", ptr " << root_type_it->second
         << ", ptr " << value_type_it->second << ", ptr " << owner_it->second
         << ", ptr " << member_it->second << ", ptr "

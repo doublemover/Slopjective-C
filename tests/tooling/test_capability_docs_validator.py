@@ -743,6 +743,7 @@ def _minimal_umbrella_readiness(blocker_id: str = "missing-integrated-proof") ->
                     "source_truth_allowed": False,
                     "unsupported_sources": [
                         "tmp/",
+                        "temp/",
                         "generated markdown projections",
                         "issue comments",
                         "PR bodies",

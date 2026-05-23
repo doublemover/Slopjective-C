@@ -13,6 +13,26 @@
       "expected_failure": "O3PKG8055: unpinned hosted dependency for fixture:network.core"
     },
     {
+      "case_id": "live-network-fetch",
+      "failure_mode": "live-network-fetch",
+      "expected_failure": "O3PKG8055: network fetch request rejected"
+    },
+    {
+      "case_id": "fallback-registry-success",
+      "failure_mode": "fallback-registry-success",
+      "expected_failure": "O3PKG8055: fallback registry success path is forbidden"
+    },
+    {
+      "case_id": "ambiguous-module-identity",
+      "failure_mode": "ambiguous-module-identity",
+      "expected_failure": "O3PKG8055: nondeterministic candidates for fixture:network.core"
+    },
+    {
+      "case_id": "unlocked-version-selection",
+      "failure_mode": "unlocked-version-selection",
+      "expected_failure": "O3PKG8055: unpinned hosted dependency for fixture:network.core"
+    },
+    {
       "case_id": "registry-trust-mismatch",
       "failure_mode": "registry-trust-mismatch",
       "expected_failure": "O3PKG8055: hosted registry trust root mismatch for fixture:network.core"

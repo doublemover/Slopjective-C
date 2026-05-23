@@ -107,9 +107,9 @@ std::string Objc3TypeSystemOptionalKeypathRuntimeHelperContractSummary() {
   std::ostringstream out;
   // live-optional-send-and-keypath-runtime-support anchor: optional
   // sends stay on the public selector lookup/dispatch ABI while validated
-  // single-component typed key-path handles now feed the private runtime
-  // registry/testing helper surface without falsely claiming full
-  // multi-component key-path evaluation.
+  // concrete typed key-path handles now feed the private runtime
+  // registry/testing helper surface with component identity metadata, without
+  // falsely claiming full runtime key-path evaluation.
   out << "contract_id=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId
       << ";surface_path=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperSurfacePath
       << ";optional_model="

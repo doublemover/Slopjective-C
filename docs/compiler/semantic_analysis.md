@@ -10,6 +10,11 @@ pattern binding, must type-check as `bool`, and a guarded catch-all does not mak
 the match exhaustive by itself. Parser/source-closure records must keep match
 expressions fail-closed until result typing, interface preservation, lowering,
 and runtime semantics exist for that feature family.
+For #8233 and #8234 specifically, source-closure and textual-interface import
+records may publish only reserved markers: typed throws stays `none` or bare
+`untyped` with zero typed payload arity, while value optionals stay
+`reserved-rejected-before-sema` with no layout, nullable-pointer conversion,
+nil-to-scalar coercion, or throws/result conversion.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted

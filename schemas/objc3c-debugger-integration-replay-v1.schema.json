@@ -31,6 +31,7 @@
         "compiler_identity_id",
         "rejects_generated_only_maps",
         "requires_inline_frame_chains",
+        "requires_step_over_emitted_native_debug_info",
         "requires_supported_runtime_metadata"
       ],
       "properties": {
@@ -41,6 +42,9 @@
           "const": true
         },
         "requires_inline_frame_chains": {
+          "const": true
+        },
+        "requires_step_over_emitted_native_debug_info": {
           "const": true
         },
         "requires_supported_runtime_metadata": {
@@ -137,6 +141,7 @@
         "record_id",
         "status",
         "step_kind",
+        "step_operation",
         "source_map_entry_id",
         "debug_map_entry_id",
         "source_digest",
@@ -154,8 +159,12 @@
             "statement",
             "function",
             "method",
-            "message-send"
+            "message-send",
+            "property-access"
           ]
+        },
+        "step_operation": {
+          "const": "step-over"
         },
         "claims_stepping": {
           "type": "boolean"

@@ -388,12 +388,13 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.errors.typed-throws`
 - State: `reserved`
 - Support claims: None
-- Summary: Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface and source-closure records expose untyped bare-throws effect metadata without silently erasing parenthesized payloads into support.
+- Summary: Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface import and source-closure records expose only none or untyped bare-throws effect metadata with zero typed payload arity instead of silently erasing parenthesized payloads into support.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
   - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3`
@@ -402,19 +403,21 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
 
 ### Value optional type constructor
 
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked contract records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.
+- Summary: Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
   - `native/objc3c/src/parse/objc3_parser_cstyle_type_parser_diagnostics.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/model/frontend_type_source_closure.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
   - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3`
@@ -423,6 +426,7 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
 
 ### Statement-form guarded match patterns
 
@@ -696,7 +700,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.object-model.full-realization`
 - State: `reserved`
 - Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties bounded source-map records, native line-table rows, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, debug-anchor ABI governance, production compiler-owned object-model source identity rows, and production source-map/native-line-table publication together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, full source-map publication beyond those bounded identity rows, emitted native debug info, typed keypath lowering in the combined fixture, and statement-level debugger stepping remain reserved.
+- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties production compiler-owned object-model source identity rows for that same identity set, native line-table rows, emitted native debug-info evidence, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, debug-anchor ABI governance, and production source-map/native-line-table publication together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, broad full-source-map publication across every production path, typed keypath lowering in the combined fixture, and debugger-grade stepping over the integrated object-model production artifact path remain reserved.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -2242,7 +2246,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.hosted-registry-fixture`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.hosted-registry-fixture`
-- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim.
+- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.
 - Owner modules:
   - `scripts/objc3c_package_manager/hosted_registry.py`
   - `scripts/check_objc3c_package_registry_model.py`
@@ -2566,7 +2570,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.structured-inspection`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.debug_trace`
-- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, error/bridge trace contract rows, and source-to-artifact anchors. Statement stepping, LLDB plugin integration, and full source-map publication remain reserved.
+- Summary: The public workflow can now compose runtime inspector output, compile-stage tracing, editor debug-map artifacts, and source-owned runtime trace contracts into a deterministic schema-backed runtime debug trace with object inspection, message-send/cache observation, async/actor trace contract rows, memory trace contract rows, error/bridge trace contract rows, and source-to-artifact anchors. Bounded statement stepping and LLDB protocol integration are published by separate implemented rows; broad full-source-map publication remains reserved.
 - Owner modules:
   - `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - `scripts/build_objc3c_runtime_debug_trace.py`
@@ -2648,7 +2652,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.typed-keypath.debugger-lowering`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.typed-keypath.debugger-lowering`
-- Summary: Typed keypath lowering now carries debugger-grade descriptor metadata for source span, root and value type identity, object-model owner/member identity, source-map keys, diagnostic anchors, and no fallback interpretation. The row is bounded to the native typed-keypath descriptor and lowering contracts rather than broad object-model debugger promotion.
+- Summary: Typed keypath lowering now carries debugger-grade descriptor metadata for source span, root/value type identity, nested component owner/member/type identity paths, object-model owner/member identity, source-map keys, diagnostic anchors, and no fallback interpretation. Supported shapes are concrete class-root and self-root object-property chains; id-root, missing-property, ambiguous category, generic-component, and broad runtime-evaluation shapes fail closed.
 - Owner modules:
   - `native/objc3c/src/lower/contracts/optional_keypath_lowering_contracts.h`
   - `native/objc3c/src/runtime/selectors/keypath_descriptor.h`
@@ -2656,6 +2660,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
   - test: `tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3` via `npm run objc3c -- validate-object-model-debugger-proof`
+  - test: `tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3` via `npm run objc3c -- validate-object-model-debugger-proof`
   - test: `tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3` via `npm run objc3c -- validate-object-model-debugger-proof`
 
 ### Async task runtime inspection

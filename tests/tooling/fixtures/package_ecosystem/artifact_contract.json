@@ -74,6 +74,7 @@
     "package update and uninstall operation receipts must be deterministic artifact inputs and must preserve locked dependency ordering semantics",
     "direct @import provenance, hosted registry offline metadata, network dependency resolution, release-channel publication, signing, install distribution, package operations, and runnable package workflow claims must be jointly covered by the package umbrella contract",
     "mixed-image interop package metadata must be digest-checked across lock, mirror, and local registry artifacts",
+    "hosted registry fixture claims must carry an explicit service-boundary record that keeps live public hosted-registry service support reserved",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
   "package_bridge": "objc3c",
@@ -132,7 +133,7 @@
         "validate-package-ecosystem",
         "validate-runnable-package-ecosystem"
       ],
-      "claim_boundary": "registry publication means replayable local metadata and mirror evidence; hosted registry support fails closed"
+      "claim_boundary": "registry publication means replayable local metadata, mirror evidence, and hosted-registry service-boundary evidence; live hosted registry service support fails closed"
     },
     "authoring_owner": {
       "role": "package-ecosystem-authoring-owner",
@@ -179,6 +180,7 @@
       "offline restore receipt missing cache digest evidence",
       "clean install, update, or uninstall receipt missing or package metadata disagrees with lock-derived artifacts",
       "hosted registry claim without local package evidence",
+      "hosted registry fixture missing service-boundary evidence",
       "package publication action has no owner contract",
       "package publication action is wrapper-only",
       "package ecosystem umbrella action list omits direct import, hosted registry, network publication, security hardening, install distribution, package operations, or runnable package validation"

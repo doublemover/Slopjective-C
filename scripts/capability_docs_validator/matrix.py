@@ -33,7 +33,7 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
         "state": "reserved",
         "summary_tokens": (
             "production compiler-owned object-model source identity",
-            "statement-level debugger stepping remain reserved",
+            "debugger-grade stepping over the integrated object-model production artifact path remain reserved",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",

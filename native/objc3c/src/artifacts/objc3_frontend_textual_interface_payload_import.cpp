@@ -103,6 +103,45 @@ bool BoolMember(const JsonObject &object,
   return value->AsBool();
 }
 
+void ExpectStringMember(
+    const JsonObject &object,
+    const std::string &name,
+    const std::string &expected,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  if (StringMember(object, name, result, json_path) != expected) {
+    AddDiagnostic(result,
+                  "language evolution reserved contract drift for " + name,
+                  json_path + "/" + name);
+  }
+}
+
+void ExpectNumberMember(
+    const JsonObject &object,
+    const std::string &name,
+    double expected,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  if (NumberMember(object, name, result, json_path) != expected) {
+    AddDiagnostic(result,
+                  "language evolution reserved contract drift for " + name,
+                  json_path + "/" + name);
+  }
+}
+
+void ExpectBoolMember(
+    const JsonObject &object,
+    const std::string &name,
+    bool expected,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  if (BoolMember(object, name, result, json_path) != expected) {
+    AddDiagnostic(result,
+                  "language evolution reserved contract drift for " + name,
+                  json_path + "/" + name);
+  }
+}
+
 bool IsDurableSourcePath(const std::string &path) {
   static constexpr const char *kForbiddenPrefixes[] = {
       "tmp/",  "tmp\\",  "temp/", "temp\\", "generated/",
@@ -203,6 +242,98 @@ std::size_t CountTopLevelKind(const JsonArray &declarations,
   return count;
 }
 
+void ValidateValueOptionalReservedContract(
+    const JsonObject &type_signature,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  const JsonObject &contract = ObjectMember(
+      type_signature, "value_optional_contract", result, json_path);
+  ExpectNumberMember(contract, "issue_ref", 8234.0, result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "canonical_spelling", "Optional<T>", result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "source_status", "reserved-rejected-before-sema",
+                     result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "lowercase_alias_accepted", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "abi_layout_status", "reserved-no-layout",
+                     result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "nil_to_scalar_coercion_allowed", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "nullable_pointer_conversion_allowed", false,
+                   result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "throws_result_conversion_allowed", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "interface_roundtrip_status",
+                     "reserved-feature-marker-imported", result,
+                     json_path + "/value_optional_contract");
+}
+
+void ValidateTypedThrowsReservedContract(
+    const JsonObject &effects,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  const JsonObject &contract =
+      ObjectMember(effects, "typed_throws", result, json_path);
+  ExpectNumberMember(contract, "issue_ref", 8233.0, result,
+                     json_path + "/typed_throws");
+  ExpectStringMember(contract, "canonical_syntax", "throws(E)", result,
+                     json_path + "/typed_throws");
+  const std::string throws_kind =
+      StringMember(effects, "throws_kind", result, json_path);
+  const std::string declared_error_type =
+      StringMember(effects, "declared_error_type", result, json_path);
+  ExpectStringMember(contract, "throws_kind", throws_kind, result,
+                     json_path + "/typed_throws");
+  ExpectStringMember(contract, "declared_error_type", declared_error_type,
+                     result, json_path + "/typed_throws");
+  if (throws_kind != "none" && throws_kind != "untyped") {
+    AddDiagnostic(result,
+                  "typed throws metadata must remain none or untyped in v1",
+                  json_path + "/throws_kind");
+  }
+  if (throws_kind == "none" && !declared_error_type.empty()) {
+    AddDiagnostic(result,
+                  "non-throwing declarations must not import an error type",
+                  json_path + "/declared_error_type");
+  }
+  if (throws_kind == "untyped" && declared_error_type != "id<Error>") {
+    AddDiagnostic(result,
+                  "untyped throws declarations must import id<Error> only",
+                  json_path + "/declared_error_type");
+  }
+  ExpectNumberMember(contract, "typed_payload_arity", 0.0, result,
+                     json_path + "/typed_throws");
+  ExpectStringMember(contract, "typed_payload_status",
+                     "reserved-rejected-before-sema", result,
+                     json_path + "/typed_throws");
+  ExpectBoolMember(contract, "silent_erasure_allowed", false, result,
+                   json_path + "/typed_throws");
+  ExpectBoolMember(contract, "multi_payload_supported", false, result,
+                   json_path + "/typed_throws");
+  ExpectStringMember(contract, "abi_status", "reserved-no-lowering", result,
+                     json_path + "/typed_throws");
+  ExpectStringMember(contract, "interface_roundtrip_status",
+                     "reserved-feature-marker-imported", result,
+                     json_path + "/typed_throws");
+}
+
+void ValidateLanguageEvolutionReservedContracts(
+    const std::string &kind,
+    const JsonObject &type_signature,
+    const JsonObject &effects,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  if (kind == "function" || kind == "method" || kind == "property") {
+    ValidateValueOptionalReservedContract(type_signature, result,
+                                          json_path + "/type_signature");
+  }
+  if (kind == "function" || kind == "method") {
+    ValidateTypedThrowsReservedContract(effects, result,
+                                        json_path + "/effects");
+  }
+}
+
 void ValidateImport(
     const JsonValue &value,
     Objc3StandaloneTextualInterfaceImportResult &result,
@@ -268,11 +399,30 @@ void ValidateDeclaration(
                   json_path + "/visibility");
   }
   (void)StringMember(declaration, "name", result, json_path);
-  (void)ObjectMember(declaration, "type_signature", result, json_path);
-  (void)ObjectMember(declaration, "effects", result, json_path);
+  const JsonObject &type_signature =
+      ObjectMember(declaration, "type_signature", result, json_path);
+  const JsonObject &effects =
+      ObjectMember(declaration, "effects", result, json_path);
   (void)ArrayMember(declaration, "generics", result, json_path);
   (void)ObjectMember(declaration, "ownership", result, json_path);
   (void)ObjectMember(declaration, "runtime_metadata", result, json_path);
+  ValidateLanguageEvolutionReservedContracts(kind, type_signature, effects,
+                                             result, json_path);
+  const JsonValue *members = FindMember(type_signature, "members");
+  if (members != nullptr) {
+    if (!members->IsArray()) {
+      AddDiagnostic(result, "interface members must be declaration records",
+                    json_path + "/type_signature/members");
+    } else {
+      const JsonArray &member_array = members->AsArray();
+      for (std::size_t i = 0; i < member_array.size(); ++i) {
+        ValidateDeclaration(member_array[i], result,
+                            json_path + "/type_signature/members/" +
+                                std::to_string(i),
+                            declaration_ids);
+      }
+    }
+  }
   ValidateSourceAnchor(declaration, result, json_path);
 }
 

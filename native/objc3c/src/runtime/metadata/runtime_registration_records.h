@@ -25,6 +25,9 @@ struct KeyPathSlot {
   std::string component_path_storage;
   std::string profile_storage;
   std::string generic_metadata_replay_key_storage;
+  std::string component_owner_identity_path_storage;
+  std::string component_member_identity_path_storage;
+  std::string component_type_identity_path_storage;
   std::string source_span_id_storage;
   std::string root_type_identity_storage;
   std::string value_type_identity_storage;

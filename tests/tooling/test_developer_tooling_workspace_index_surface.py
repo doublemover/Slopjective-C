@@ -240,12 +240,26 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     }
     assert set(source_identity["required_identity_kinds_present"]) == {
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
+        "selector",
         "method",
+        "reflection",
+        "replay",
     }
+    records_by_kind = {
+        record["runtime_identity_kind"]: record
+        for record in source_identity["source_map_records"]
+    }
+    assert records_by_kind["metaclass"]["display_name"] == "RuntimeFullWidget.metaclass"
+    assert records_by_kind["selector"]["source_map_record_kind"] == "message-send"
+    assert records_by_kind["reflection"]["display_name"].startswith("reflection:")
+    assert records_by_kind["replay"]["display_name"] == (
+        "registration-replay:RuntimeFullWidget(ReplayReflection)"
+    )
     assert {
         row["expected_native_symbol"]
         for row in source_identity["native_line_table_rows"]

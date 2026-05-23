@@ -6,6 +6,18 @@
   "registry_id": "objc3c-hosted-registry-fixture-v1",
   "registry_version": 1,
   "registry_state": "not-revoked",
+  "service_boundary": {
+    "support_state": "fixture-only-offline",
+    "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+    "reserved_capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "availability": "not-claimed",
+    "auth": "not-implemented-reserved",
+    "moderation": "not-implemented-reserved",
+    "live_network_fetch": "forbidden-fail-closed",
+    "fallback_registry_success": false,
+    "package_manager_parity": "not-claimed",
+    "local_offline_replay_preserved": true
+  },
   "endpoint_identity": {
     "registry_id": "objc3c-hosted-registry-fixture-v1",
     "endpoint_id": "objc3c-hosted-registry-fixture-endpoint-v1",

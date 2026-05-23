@@ -21,6 +21,10 @@
   std::vector<std::string> typed_keypath_components;
   std::string typed_keypath_literal_profile;
   bool typed_keypath_literal_is_normalized = false;
+  mutable bool typed_keypath_metadata_expanded = false;
+  mutable std::vector<std::string> typed_keypath_component_owner_identities;
+  mutable std::vector<std::string> typed_keypath_component_member_identities;
+  mutable std::vector<std::string> typed_keypath_component_type_identities;
   bool try_expression_enabled = false;
   TryOperatorKind try_operator_kind = TryOperatorKind::None;
   bool try_expression_requires_throwing_context = false;

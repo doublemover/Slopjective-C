@@ -68,12 +68,14 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3` |  |
@@ -889,6 +891,7 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.debug-trace.inline-frame-source-map` | `objc3c.behavior.runtime.debug-trace.inline-frame-source-map` | `test` | `tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json` | `npm run objc3c -- validate-debug-source-maps` |
 | `runtime.typed-keypath.debugger-lowering` | `objc3c.behavior.runtime.typed-keypath.debugger-lowering` | `test` | `tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.typed-keypath.debugger-lowering` | `objc3c.behavior.runtime.typed-keypath.debugger-lowering` | `test` | `tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3` | `npm run objc3c -- validate-object-model-debugger-proof` |
+| `runtime.typed-keypath.debugger-lowering` | `objc3c.behavior.runtime.typed-keypath.debugger-lowering` | `test` | `tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.typed-keypath.debugger-lowering` | `objc3c.behavior.runtime.typed-keypath.debugger-lowering` | `test` | `tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |
 | `runtime.debug-trace.async-tasks` | `objc3c.behavior.runtime.debug_trace.async_tasks` | `test` | `tests/tooling/test_runtime_debug_trace_surface.py` | `npm run objc3c -- trace-runtime-debug tests/tooling/fixtures/native/hello.objc3` |

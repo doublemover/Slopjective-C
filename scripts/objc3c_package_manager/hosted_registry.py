@@ -44,6 +44,18 @@ HOSTED_REGISTRY_FAILURE_MODES = {
 }
 HOSTED_REGISTRY_CACHE_POLICY = "offline-cache-required-digest-pinned"
 HOSTED_REGISTRY_PROVENANCE_POLICY = "source-owned-package-manifest-required"
+HOSTED_REGISTRY_SERVICE_BOUNDARY = {
+    "support_state": "fixture-only-offline",
+    "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+    "reserved_capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "availability": "not-claimed",
+    "auth": "not-implemented-reserved",
+    "moderation": "not-implemented-reserved",
+    "live_network_fetch": "forbidden-fail-closed",
+    "fallback_registry_success": False,
+    "package_manager_parity": "not-claimed",
+    "local_offline_replay_preserved": True,
+}
 HOSTED_REGISTRY_SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
     / "schemas"
@@ -211,6 +223,21 @@ def collect_endpoint_identity_failures(index: dict[str, Any]) -> list[str]:
     return failures
 
 
+def collect_service_boundary_failures(index: dict[str, Any]) -> list[str]:
+    boundary = index.get("service_boundary", {})
+    if not isinstance(boundary, dict):
+        return [hosted_registry_diagnostic("missing hosted registry service boundary")]
+    failures: list[str] = []
+    for field_name, expected_value in HOSTED_REGISTRY_SERVICE_BOUNDARY.items():
+        if boundary.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry service boundary {field_name} drifted"
+                )
+            )
+    return failures
+
+
 def collect_lock_trust_material_failures(
     index: dict[str, Any],
     mirror: dict[str, Any],
@@ -314,6 +341,7 @@ def collect_hosted_registry_model_failures(
     if index.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
         failures.append(hosted_registry_diagnostic("hosted registry ABI identity drifted"))
     registry_id = str(index.get("registry_id", ""))
+    failures.extend(collect_service_boundary_failures(index))
     failures.extend(collect_endpoint_identity_failures(index))
     failures.extend(collect_lock_trust_material_failures(index, mirror, root=root))
     failures.extend(collect_failure_mode_failures(index))
@@ -508,11 +536,13 @@ __all__ = [
     "HOSTED_REGISTRY_RESOLVER_ID",
     "HOSTED_REGISTRY_SCHEMA_KEY",
     "HOSTED_REGISTRY_SCHEMA_PATH",
+    "HOSTED_REGISTRY_SERVICE_BOUNDARY",
     "HostedRegistryResolution",
     "HostedRegistryResolutionError",
     "HostedRegistryResolutionRequest",
     "collect_hosted_registry_model_failures",
     "collect_offline_mirror_contract_failures",
+    "collect_service_boundary_failures",
     "hosted_registry_diagnostic",
     "hosted_registry_record_digest",
     "hosted_registry_record_signature_subject",

@@ -31,6 +31,8 @@ std::string BuildTypeSystemTypeSourceClosureReplayKey(
       << summary.value_optional_reserved_diagnostic_code
       << ";lowercase_optional_alias_diagnostic="
       << summary.lowercase_optional_alias_diagnostic_code
+      << ";value_optional_interface_roundtrip="
+      << summary.value_optional_interface_roundtrip_status
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
@@ -94,6 +96,8 @@ std::string BuildErrorHandlingErrorSourceClosureReplayKey(
       << (summary.typed_throws_fail_closed ? "true" : "false")
       << ";typed_throws_reserved_diagnostic="
       << summary.typed_throws_reserved_diagnostic_code
+      << ";typed_throws_interface_roundtrip="
+      << summary.typed_throws_interface_roundtrip_status
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();

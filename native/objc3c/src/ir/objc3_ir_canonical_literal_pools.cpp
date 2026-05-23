@@ -87,6 +87,12 @@ class Objc3IRCanonicalLiteralPoolCollector {
     artifact.component_path =
         JoinStringParts(expr.typed_keypath_components, ".");
     artifact.profile = profile;
+    artifact.component_owner_identity_path =
+        JoinStringParts(expr.typed_keypath_component_owner_identities, "|");
+    artifact.component_member_identity_path =
+        JoinStringParts(expr.typed_keypath_component_member_identities, "|");
+    artifact.component_type_identity_path =
+        JoinStringParts(expr.typed_keypath_component_type_identities, "|");
     artifact.source_line = expr.line;
     artifact.source_column = expr.column;
     artifact.source_span_id =
@@ -108,10 +114,22 @@ class Objc3IRCanonicalLiteralPoolCollector {
         "diagnostic:typed-keypath:" + std::to_string(expr.line) + ":" +
         std::to_string(expr.column);
     artifact.fallback_interpretation_allowed = false;
+    if (!expr.typed_keypath_metadata_expanded ||
+        artifact.component_owner_identity_path.empty() ||
+        artifact.component_member_identity_path.empty() ||
+        artifact.component_type_identity_path.empty()) {
+      artifact.fallback_interpretation_allowed = true;
+    }
     pools_.typed_keypath_artifacts.emplace(profile, std::move(artifact));
     RegisterRuntimeStringLiteral(expr.typed_keypath_root_name);
     RegisterRuntimeStringLiteral(
         JoinStringParts(expr.typed_keypath_components, "."));
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_owner_identity_path);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_member_identity_path);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_type_identity_path);
     RegisterRuntimeStringLiteral(profile);
     RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
                                      .source_span_id);

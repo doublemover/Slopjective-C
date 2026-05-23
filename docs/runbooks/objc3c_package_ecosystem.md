@@ -185,8 +185,11 @@ Registry behavior is layered on top of the local lock and mirror model:
 - `publication-metadata` is supported as replayable release/update/package
   channel metadata.
 - `hosted-registry-fixture` is supported only as a checked-in offline index with
-  deterministic package identity, version, digest, trust, revocation, and mirror
-  evidence. It must not be described as a live hosted service.
+  deterministic package identity, version, digest, trust, revocation, mirror
+  evidence, and an explicit service-boundary record that preserves the
+  `ecosystem.package-manager.public-hosted-registry` reservation. It must not be
+  described as a live hosted service, an availability claim, auth/moderation
+  support, package-manager parity, or fallback registry success.
 - `network-dependency-resolution` is supported only for the offline fixture path
   that resolves trusted registry rows into locks and mirrors before install
   validation. Implicit fetches, unpinned dependencies, digest drift, and missing
@@ -194,9 +197,9 @@ Registry behavior is layered on top of the local lock and mirror model:
 - `release-channel-publication` is supported only for source-owned offline
   publication metadata and deterministic package-channel records.
 
-Any live hosted-registry, live network fetch, or remote publication claim before
-those proofs exist is release-blocking and must be demoted to offline fixture
-metadata.
+Any live hosted-registry, live network fetch, fallback registry success, or
+remote publication claim before those proofs exist is release-blocking and must
+be demoted to offline fixture metadata.
 
 ## Artifact Contract
 

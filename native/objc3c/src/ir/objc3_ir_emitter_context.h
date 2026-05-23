@@ -62,6 +62,9 @@ struct TypedKeyPathArtifact {
   std::string root_name;
   std::string component_path;
   std::string profile;
+  std::string component_owner_identity_path;
+  std::string component_member_identity_path;
+  std::string component_type_identity_path;
   std::string descriptor_symbol;
   unsigned source_line = 1;
   unsigned source_column = 1;

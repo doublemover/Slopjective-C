@@ -48,6 +48,8 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          !summary.value_optional_nullable_pointer_conversion_allowed &&
          !summary.value_optional_throws_conversion_allowed &&
          summary.value_optional_abi_status == "reserved-no-layout" &&
+         summary.value_optional_interface_roundtrip_status ==
+             "reserved-feature-marker-imported" &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -150,6 +152,8 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.typed_throws_effect_record_status ==
              "bare-throws-untyped-only" &&
          summary.typed_throws_abi_status == "reserved-no-lowering" &&
+         summary.typed_throws_interface_roundtrip_status ==
+             "reserved-feature-marker-imported" &&
          summary.try_fail_closed &&
          summary.throw_fail_closed && summary.do_catch_fail_closed &&
          summary.deterministic_handoff &&

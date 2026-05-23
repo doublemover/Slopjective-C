@@ -27,7 +27,12 @@
     "required_descriptor_fields": {
       "type": "array",
       "contains": {
-        "const": "debug_source_map_key"
+        "enum": [
+          "component_owner_identity_path",
+          "component_member_identity_path",
+          "component_type_identity_path",
+          "debug_source_map_key"
+        ]
       }
     },
     "debugger_evidence_policy": {
@@ -36,6 +41,7 @@
         "fallback_interpretation_allowed",
         "source_span_required",
         "type_identity_required",
+        "component_owner_member_type_identity_required",
         "object_model_owner_member_required",
         "source_map_key_required",
         "diagnostic_anchor_required"
@@ -50,6 +56,9 @@
         "type_identity_required": {
           "const": true
         },
+        "component_owner_member_type_identity_required": {
+          "const": true
+        },
         "object_model_owner_member_required": {
           "const": true
         },
@@ -61,6 +70,18 @@
         }
       },
       "additionalProperties": false
+    },
+    "supported_keypath_shapes": {
+      "type": "array",
+      "contains": {
+        "const": "class-root nested object-property chains whose intermediate components resolve to concrete non-generic object metadata"
+      }
+    },
+    "reserved_keypath_shapes": {
+      "type": "array",
+      "contains": {
+        "const": "generic component paths"
+      }
     }
   },
   "additionalProperties": true

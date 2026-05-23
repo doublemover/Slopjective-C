@@ -52,7 +52,7 @@
     {
       "layer_id": "hosted-registry",
       "support_state": "supported-source-fixture-offline-only",
-      "source_of_truth": "checked-in hosted registry index, offline mirror, fixture lock, cache policy, and trust material",
+      "source_of_truth": "checked-in hosted registry index, service-boundary record, offline mirror, fixture lock, cache policy, and trust material",
       "publication_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
       "claim_boundary": "source-owned hosted registry contract metadata only; live network fetch, auth, moderation, availability, and fallback registry success claims fail closed"
     },
@@ -85,7 +85,7 @@
     "local registry indexes must preserve exact locked target versions, dependency source authority digests, dependency source digests, package manifest digests, and replay commands",
     "interop loader metadata must fail closed when the mirror digest differs from the generated lock",
     "offline restore receipts must fail closed when any mirror cache entry is missing, extra, or digest-mismatched",
-    "hosted-registry behavior must fail closed unless it is the checked-in offline fixture contract with endpoint identity, channel identity, lock/trust material, cache policy, and explicit failure modes",
+    "hosted-registry behavior must fail closed unless it is the checked-in offline fixture contract with service-boundary metadata, endpoint identity, channel identity, lock/trust material, cache policy, and explicit failure modes",
     "network dependency resolution must fail closed unless it is the checked-in offline fixture contract with endpoint identity, exact locked version, fixture lock digest, trust root, provenance, cache signature, and no fallback registry success",
     "package release-channel publication must fail closed when channel freshness is stale, lock/trust/provenance drift, cache tamper, dependency identity drift, or hosted registry endpoint mismatch is detected",
     "package registry publication must not activate release or registry trust roots until installer/update keys and extraction path safety are source-backed and reviewed",

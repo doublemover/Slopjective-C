@@ -74,7 +74,10 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << ",\"value_optional_throws_conversion_allowed\":"
       << (summary.value_optional_throws_conversion_allowed ? "true" : "false")
       << ",\"value_optional_abi_status\":\""
-      << EscapeJsonString(summary.value_optional_abi_status) << "\""
+      << EscapeJsonString(summary.value_optional_abi_status)
+      << "\",\"value_optional_interface_roundtrip_status\":\""
+      << EscapeJsonString(summary.value_optional_interface_roundtrip_status)
+      << "\""
       << ",\"nil_coalescing_fail_closed\":"
       << (summary.nil_coalescing_fail_closed ? "true" : "false")
       << ",\"typed_keypath_literal_fail_closed\":"
@@ -244,7 +247,10 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << ",\"typed_throws_effect_record_status\":\""
       << EscapeJsonString(summary.typed_throws_effect_record_status)
       << "\",\"typed_throws_abi_status\":\""
-      << EscapeJsonString(summary.typed_throws_abi_status) << "\""
+      << EscapeJsonString(summary.typed_throws_abi_status)
+      << "\",\"typed_throws_interface_roundtrip_status\":\""
+      << EscapeJsonString(summary.typed_throws_interface_roundtrip_status)
+      << "\""
       << ",\"try_fail_closed\":"
       << (summary.try_fail_closed ? "true" : "false")
       << ",\"throw_fail_closed\":"

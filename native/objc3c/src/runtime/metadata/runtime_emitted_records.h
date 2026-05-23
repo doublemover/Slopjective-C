@@ -35,6 +35,9 @@ struct EmittedKeyPathDescriptor {
   const char *component_path;
   const char *profile;
   const char *generic_metadata_replay_key;
+  const char *component_owner_identity_path;
+  const char *component_member_identity_path;
+  const char *component_type_identity_path;
   const char *source_span_id;
   const char *root_type_identity;
   const char *value_type_identity;

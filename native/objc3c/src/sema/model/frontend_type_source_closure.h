@@ -83,6 +83,8 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool value_optional_nullable_pointer_conversion_allowed = false;
   bool value_optional_throws_conversion_allowed = false;
   std::string value_optional_abi_status = "reserved-no-layout";
+  std::string value_optional_interface_roundtrip_status =
+      "reserved-feature-marker-imported";
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;

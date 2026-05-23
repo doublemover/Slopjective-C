@@ -266,6 +266,11 @@
       "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
     },
     {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+    },
+    {
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3"
@@ -294,6 +299,11 @@
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "source",
       "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
     },
     {
       "capability_id": "language.control-flow.statement-guarded-match",
@@ -5259,6 +5269,13 @@
       "command": "npm run objc3c -- validate-object-model-debugger-proof",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3",
       "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering"
     },
     {

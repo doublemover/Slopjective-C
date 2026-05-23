@@ -116,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
             "allow_network": bool(args.allow_network),
             "registry_url": args.registry_url,
         },
+        "service_boundary": index.get("service_boundary"),
         "endpoint_identity": index.get("endpoint_identity"),
         "lock_trust_material": index.get("lock_trust_material"),
         "failure_modes": index.get("failure_modes"),

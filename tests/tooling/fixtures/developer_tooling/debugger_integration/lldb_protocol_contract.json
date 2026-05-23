@@ -13,6 +13,7 @@
   "requires": {
     "compiler_owned_source_maps": true,
     "emitted_native_debug_info": true,
+    "step_over_emitted_native_debug_info": true,
     "statement_source_span_identity": true,
     "inline_frame_chains_for_optimized_frames": true,
     "supported_runtime_metadata_only": true
@@ -29,6 +30,10 @@
     {
       "case_id": "missing-inline-frame-chain",
       "diagnostic_code": "lldb-protocol-inline-frame-chain-missing"
+    },
+    {
+      "case_id": "optimized-transform-map-missing",
+      "diagnostic_code": "optimized-transform-map-missing"
     },
     {
       "case_id": "unsupported-runtime-metadata",

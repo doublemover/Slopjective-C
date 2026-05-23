@@ -50,6 +50,23 @@
     "optional_id_distinct_from_nullable_object_pointer": true,
     "interface_roundtrip_status": "reserved-feature-marker-imported"
   },
+  "interface_import_contract": {
+    "artifact": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "importer": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+    "typed_throws_contract_required": true,
+    "value_optional_contract_required": true,
+    "typed_throws_supported_import_values": [
+      "none",
+      "untyped"
+    ],
+    "typed_throws_payload_arity": 0,
+    "typed_throws_payload_status": "reserved-rejected-before-sema",
+    "value_optional_source_status": "reserved-rejected-before-sema",
+    "value_optional_abi_layout_status": "reserved-no-layout",
+    "reserved_marker_import_status": "reserved-feature-marker-imported",
+    "fail_closed_on_contract_drift": true,
+    "public_support_claim_allowed": false
+  },
   "umbrella_alignment": {
     "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
     "profile_widening_allowed": false,
@@ -64,6 +81,7 @@
     "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
     "native/objc3c/src/sema/model/frontend_type_source_closure.h",
     "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_runtime_capability_artifacts.cpp"
   ],
   "diagnostic_code_symbols": {

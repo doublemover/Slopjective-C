@@ -50,6 +50,20 @@ DEBUG_ANCHOR_CONTRACT_ID = "objc3c.object_model.debug_anchor_identity_replay.v1"
 REQUIRED_IDENTITY_KINDS = frozenset(
     {"class", "category", "protocol", "property", "ivar", "method"}
 )
+REQUIRED_PRODUCTION_SOURCE_IDENTITY_KINDS = frozenset(
+    {
+        "class",
+        "metaclass",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "selector",
+        "method",
+        "reflection",
+        "replay",
+    }
+)
 DEBUG_ANCHOR_KIND_BY_IDENTITY = {
     "class": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS",
     "category": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY",
@@ -317,8 +331,10 @@ def _positive_int(value: object) -> bool:
 
 
 def _source_map_record_kind_for_identity(identity_kind: str) -> str:
-    if identity_kind in {"class", "category", "protocol"}:
+    if identity_kind in {"class", "metaclass", "category", "protocol", "reflection", "replay"}:
         return "declaration"
+    if identity_kind == "selector":
+        return "message-send"
     if identity_kind == "property":
         return "property-access"
     if identity_kind == "ivar":
@@ -2424,7 +2440,7 @@ def _validate_production_source_identity_payload(
 
     required_kinds = set(_safe_str(item) for item in _list(minimums.get("required_identity_kinds")))
     if not required_kinds:
-        required_kinds = set(REQUIRED_IDENTITY_KINDS)
+        required_kinds = set(REQUIRED_PRODUCTION_SOURCE_IDENTITY_KINDS)
     present_kinds = set(_safe_str(item) for item in _list(source_identity.get("required_identity_kinds_present")))
     record_kinds = {
         _safe_str(_object(record).get("runtime_identity_kind"))

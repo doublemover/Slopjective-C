@@ -17,6 +17,10 @@ nullable-pointer conversion. The parser-owned diagnostic symbols are
 `kObjc3ParserDiagnosticRemovedOptionalAliasCode` in the language-evolution
 reserved diagnostic contract; parser and source-closure summaries may publish
 those identifiers as fail-closed anchors, not support claims.
+Standalone textual-interface import also treats these rows as hard reserved
+contracts: `throws(E)` metadata may import only `none` or bare `untyped`
+records with zero typed payload arity, and `Optional<T>` metadata may import
+only the reserved feature marker with no ABI layout or implicit conversions.
 Statement-form
 `match (expr) { case pattern where condition: { ... } default: { ... } }` is
 the only guarded-pattern spelling admitted by the parser; `where` remains
