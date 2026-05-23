@@ -752,6 +752,10 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
   - source: `scripts/objc3c_editor_tooling/model.py`
   - source: `scripts/objc3c_object_model_debugger_proof/model.py`
+  - schema: `schemas/objc3c-debug-source-maps-v1.schema.json`
+  - schema: `schemas/objc3c-debugger-integration-replay-v1.schema.json`
+  - schema: `schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json`
+  - schema: `schemas/objc3c-runtime-debug-trace-v1.schema.json`
   - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
   - test: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
   - test: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`
@@ -2575,9 +2579,23 @@ the canonical manifest fixture and public npm command above.
 - Support claims: `objc3c.behavior.optimization.method-inlining-safe-subset`
 - Summary: Method inlining is promoted only for the bounded scalar safe subset. Success requires exact callee identity, before/after IR proof, source-map inline-frame preservation, side-effect replay, runtime invalidation replay, ABI/package identity, and checked proof-case evidence; missing or stale proof paths reject fail-closed and publish no success claim.
 - Owner modules:
+  - `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
+  - `native/objc3c/src/opt/objc3_semantic_optimization_executor.h`
+  - `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - `native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp`
+  - `scripts/objc3c_semantic_optimization_pipeline.py`
+  - `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
+  - `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
   - `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json`
   - `tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json`
 - Evidence:
+  - source: `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp`
+  - source: `native/objc3c/src/opt/objc3_semantic_optimization_executor.h`
+  - source: `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp`
+  - source: `scripts/objc3c_semantic_optimization_pipeline.py`
+  - schema: `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json`
+  - schema: `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`
   - test: `tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json` via `npm run objc3c -- validate-semantic-optimization-pipeline`

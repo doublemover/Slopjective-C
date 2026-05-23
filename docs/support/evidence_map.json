@@ -1006,6 +1006,30 @@
     {
       "capability_id": "runtime.object-model.full-realization",
       "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-debug-source-maps-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-debugger-integration-replay-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
       "command": "npm run objc3c -- validate-object-model-debugger-proof"
@@ -5168,6 +5192,48 @@
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.h"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",

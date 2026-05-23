@@ -109,10 +109,12 @@ fail closed with no range claim.
 
 The LLVM version support matrix is checked in under
 `llvm_version_support_matrix` in the platform support evidence fixture. It is
-not a broad LLVM compatibility promise. The current supported entry is
-`objc3c.llvm.windows-x64.current-probed-19`, which binds Windows x64 support to
-the public LLVM capability probe, native build resolution, package/archive
-evidence, clean-room install evidence, and native execution smoke evidence.
+not a broad LLVM compatibility promise. The minimum supported version family is
+`19.1`, and the current CI-pinned Windows evidence entry is
+`objc3c.llvm.windows-x64.current-probed-22` for LLVM `22.1.6`, which binds
+Windows x64 support to the public LLVM capability probe, native build
+resolution, package/archive evidence, clean-room install evidence, and native
+execution smoke evidence.
 `clang`, `clang++`, `llc`, `llvm-ar`, and runtime headers/libs discovered from
 llvm-config or an installed LLVM root are required for supported claims. Missing archive tooling or header/library
 discovery rejects package, native execution, and platform support before a claim

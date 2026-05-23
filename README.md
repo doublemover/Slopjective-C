@@ -239,8 +239,9 @@ also carries integrated programs that force systems to interact:
 - Text, collections, and packages: runtime text builders, collection literals,
   `for-in`, package import metadata, provider import surfaces, source graph
   package nodes, and declaration debug anchors.
-- Optimization/runtime equivalence: cache-aware dispatch and exact-target
-  devirtualization proof while method inlining remains fail-closed.
+- Optimization/runtime equivalence: cache-aware dispatch, exact-target
+  devirtualization, and the bounded method-inlining safe subset with
+  inline-frame/source-map, side-effect, and invalidation proof gates.
 - Distribution package lifecycle: package manager behavior, package channels,
   release evidence, and tamper/fail-closed distribution checks.
 
@@ -275,10 +276,14 @@ rejected rows include:
 - Live public hosted package registry services and arbitrary live network
   dependency resolution. Current package evidence is local/offline,
   fixture-backed, deterministic, and fail-closed.
-- Method inlining. Exact-target devirtualization is implemented; method
-  inlining remains reserved until ownership, inline-frame source-map,
-  callee-body identity, and side-effect/invalidation replay proofs exist.
-- Full source-map publication, statement stepping, and LLDB plugin integration.
+- Broad heuristic method inlining and arbitrary dynamic-dispatch inlining.
+  The bounded scalar safe subset is implemented only when every ownership,
+  inline-frame source-map, callee-body identity, side-effect, and invalidation
+  replay proof is present; missing proof paths still fail closed.
+- Broad full source-map publication for every production artifact path.
+  Bounded statement stepping and LLDB replay are implemented by narrower
+  debugger rows; arbitrary host debugger sessions and every optimized binary
+  remain outside the claim.
 - Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
   host row; Linux and macOS rows are source-owned fail-closed contracts until
   package/install/native execution evidence exists.

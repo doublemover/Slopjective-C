@@ -190,6 +190,10 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_editor_tooling/model.py` |  |
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_object_model_debugger_proof/model.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `schema` | `schemas/objc3c-debug-source-maps-v1.schema.json` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `schema` | `schemas/objc3c-debugger-integration-replay-v1.schema.json` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `schema` | `schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `schema` | `schemas/objc3c-runtime-debug-trace-v1.schema.json` |  |
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
 | `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json` |  |
@@ -873,6 +877,13 @@ diagnostic, documentation, or boundary evidence only.
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.devirtualization` | `objc3c.behavior.semantic_optimization.exact_target_devirtualization` | `test` | `tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `source` | `native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `source` | `native/objc3c/src/opt/objc3_semantic_optimization_executor.h` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `source` | `native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `source` | `native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `source` | `scripts/objc3c_semantic_optimization_pipeline.py` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `schema` | `schemas/objc3c-semantic-optimization-pipeline-v1.schema.json` |  |
+| `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `schema` | `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json` |  |
 | `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |
 | `compiler.optimization.method-inlining` | `objc3c.behavior.optimization.method-inlining-safe-subset` | `test` | `tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` |

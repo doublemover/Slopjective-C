@@ -381,7 +381,8 @@
     },
     "minimum_supported_version": "19.1.0",
     "known_good_versions": [
-      "19.1.0"
+      "19.1.0",
+      "22.1.6"
     ],
     "known_bad_versions": [],
     "required_tools": [
@@ -423,9 +424,9 @@
     ],
     "matrix_entries": [
       {
-        "entry_id": "objc3c.llvm.windows-x64.current-probed-19",
+        "entry_id": "objc3c.llvm.windows-x64.current-probed-22",
         "platform_id": "windows-x64",
-        "llvm_version_claim": "19.1.0-current-probed-only",
+        "llvm_version_claim": "22.1.6-current-probed-only",
         "support_status": "evidence-bound",
         "object_emission_capability": "supported",
         "package_capability": "supported",

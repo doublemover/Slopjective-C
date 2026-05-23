@@ -1230,6 +1230,22 @@
           "path": "scripts/objc3c_object_model_debugger_proof/model.py"
         },
         {
+          "kind": "schema",
+          "path": "schemas/objc3c-debug-source-maps-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-debugger-integration-replay-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+        },
+        {
           "kind": "test",
           "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
@@ -5555,10 +5571,45 @@
       ],
       "summary": "Method inlining is promoted only for the bounded scalar safe subset. Success requires exact callee identity, before/after IR proof, source-map inline-frame preservation, side-effect replay, runtime invalidation replay, ABI/package identity, and checked proof-case evidence; missing or stale proof paths reject fail-closed and publish no success claim.",
       "owner_modules": [
+        "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
+        "native/objc3c/src/opt/objc3_semantic_optimization_executor.h",
+        "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+        "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp",
+        "scripts/objc3c_semantic_optimization_pipeline.py",
+        "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json",
+        "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
         "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
         "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json"
       ],
       "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
+        },
         {
           "kind": "test",
           "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",

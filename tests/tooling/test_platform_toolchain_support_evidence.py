@@ -191,7 +191,7 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "headers-libs": "probe-or-install-root",
     }
     assert [entry["entry_id"] for entry in llvm_matrix["matrix_entries"]] == [
-        "objc3c.llvm.windows-x64.current-probed-19"
+        "objc3c.llvm.windows-x64.current-probed-22"
     ]
 
 
@@ -249,10 +249,12 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert all(row["required_evidence_classes"] == ["toolchain"] for row in toolchain_ranges)
     llvm_matrix = payload["toolchain_support"]["llvm_version_support_matrix"]
     assert llvm_matrix["support_claim_policy"] == "capability-probed-fail-closed"
+    assert llvm_matrix["minimum_supported_version"] == "19.1.0"
+    assert "22.1.6" in llvm_matrix["known_good_versions"]
     assert llvm_matrix["matrix_entries"][0] == {
-        "entry_id": "objc3c.llvm.windows-x64.current-probed-19",
+        "entry_id": "objc3c.llvm.windows-x64.current-probed-22",
         "platform_id": "windows-x64",
-        "llvm_version_claim": "19.1.0-current-probed-only",
+        "llvm_version_claim": "22.1.6-current-probed-only",
         "support_status": "evidence-bound",
         "object_emission_capability": "supported",
         "package_capability": "supported",
