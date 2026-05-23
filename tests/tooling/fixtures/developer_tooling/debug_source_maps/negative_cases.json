@@ -156,6 +156,66 @@
           }
         ]
       }
+    },
+    {
+      "case_id": "inline-frame-missing-callee",
+      "expected_code": "source-map-entry-missing",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "callee_source_map_entry_id"
+        ],
+        "value": "smap.missing_inline_callee"
+      }
+    },
+    {
+      "case_id": "inline-frame-native-range-drift",
+      "expected_code": "inline-native-range-drift",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "native_ranges",
+          0,
+          "artifact_symbol_id"
+        ],
+        "value": "_objc3_DebugMaps_Foundation_stale_inline_artifact"
+      }
+    },
+    {
+      "case_id": "inline-frame-non-inlining-proof",
+      "expected_code": "inline-frame-optimization-drift",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "optimization_proof_id"
+        ],
+        "value": "opt.direct_dispatch"
+      }
+    },
+    {
+      "case_id": "inline-frame-failure-record",
+      "expected_code": "inline-frame-failure",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "failures"
+        ],
+        "value": [
+          {
+            "failure_id": "inline.failure.missing_callee_body",
+            "native_range": {
+              "start_offset": 48,
+              "end_offset": 76
+            },
+            "failure_code": "missing-callee-body-span",
+            "missing_identity": "callee_body_span"
+          }
+        ]
+      }
     }
   ]
 }

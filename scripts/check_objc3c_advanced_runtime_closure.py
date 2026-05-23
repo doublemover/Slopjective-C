@@ -171,6 +171,51 @@ REQUIRED_NATIVE_ARTIFACTS = (
 )
 FORBIDDEN_NATIVE_SUCCESS_ARTIFACTS = ("module.exe",)
 FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS = ("|%", "%|")
+NATIVE_PHASE_STATUS_CONTRACT_ID = (
+    "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
+)
+NATIVE_PHASE_STATUS_ORDER = (
+    "compile",
+    "link",
+    "runtime_registration",
+    "runtime_metadata",
+    "error_replay",
+    "execution_status",
+)
+NATIVE_PHASE_STATUS_VALUES = {
+    "compile": (
+        "native_compile_succeeded",
+        "native_compile_failed",
+        "native_compile_launch_failed",
+    ),
+    "link": (
+        "native_link_succeeded",
+        "native_link_failed",
+        "native_link_unclaimed",
+    ),
+    "runtime_registration": (
+        "runtime_registration_artifact_present",
+        "runtime_registration_artifact_missing",
+    ),
+    "runtime_metadata": (
+        "runtime_metadata_artifact_present",
+        "runtime_metadata_artifact_missing",
+    ),
+    "error_replay": (
+        "error_replay_artifact_present",
+        "error_replay_artifact_missing",
+    ),
+    "execution_status": (
+        "native_execution_succeeded",
+        "native_execution_failed",
+        "native_execution_unclaimed",
+    ),
+}
+NATIVE_ARTIFACT_PHASES = {
+    "module.runtime-registration-manifest.json": "runtime_registration",
+    "module.runtime-metadata.bin": "runtime_metadata",
+    "module.error_handling-error-replay.json": "error_replay",
+}
 REQUIRED_POSITIVE_FEATURE_TOKENS = {
     "ownership": (
         "borrowed id *",
@@ -928,6 +973,76 @@ def _expected_native_diagnostic_signature(record: dict[str, Any]) -> dict[str, A
     }
 
 
+def _native_phase_statuses(
+    *,
+    compile_status: str,
+    link_claimed: bool,
+    run_claimed: bool,
+    generated_dir: Path,
+) -> dict[str, str]:
+    link_status = "native_link_succeeded" if link_claimed else "native_link_unclaimed"
+    execution_status = (
+        "native_execution_succeeded" if run_claimed else "native_execution_unclaimed"
+    )
+    statuses = {
+        "compile": compile_status,
+        "link": link_status,
+        "runtime_registration": "runtime_registration_artifact_missing",
+        "runtime_metadata": "runtime_metadata_artifact_missing",
+        "error_replay": "error_replay_artifact_missing",
+        "execution_status": execution_status,
+    }
+    for artifact_name, phase in NATIVE_ARTIFACT_PHASES.items():
+        if (generated_dir / artifact_name).is_file():
+            statuses[phase] = str(NATIVE_PHASE_STATUS_VALUES[phase][0])
+    return statuses
+
+
+def _validate_native_phase_status_contract(
+    contract: dict[str, Any],
+    failures: list[str],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    reporting = contract.get("typed_failure_reporting")
+    if not isinstance(reporting, dict):
+        failures.append(f"{label}: typed_failure_reporting is required")
+        return {}
+    if reporting.get("contract_id") != NATIVE_PHASE_STATUS_CONTRACT_ID:
+        failures.append(f"{label}: typed failure reporting contract_id drifted")
+    if int(reporting.get("issue_ref", 0)) != 8213:
+        failures.append(f"{label}: typed failure reporting issue_ref must be #8213")
+    if tuple(_as_list(reporting.get("phase_order"))) != NATIVE_PHASE_STATUS_ORDER:
+        failures.append(f"{label}: typed failure reporting phase_order drifted")
+    phase_statuses = reporting.get("phase_statuses")
+    if not isinstance(phase_statuses, dict):
+        failures.append(f"{label}: typed failure reporting phase_statuses is required")
+        return reporting
+    expected_phases = set(NATIVE_PHASE_STATUS_ORDER)
+    actual_phases = {str(phase) for phase in phase_statuses}
+    if actual_phases != expected_phases:
+        failures.append(
+            f"{label}: typed failure reporting phases drifted: "
+            f"expected {sorted(expected_phases)}, got {sorted(actual_phases)}"
+        )
+    for phase, expected_values in NATIVE_PHASE_STATUS_VALUES.items():
+        phase_payload = phase_statuses.get(phase)
+        if not isinstance(phase_payload, dict):
+            failures.append(f"{label}: typed failure reporting phase {phase} is required")
+            continue
+        values = tuple(str(value) for value in _as_list(phase_payload.get("values")))
+        if values != expected_values:
+            failures.append(
+                f"{label}: typed failure reporting values drifted for {phase}"
+            )
+        failure_value = str(phase_payload.get("failure_value", ""))
+        if failure_value not in expected_values:
+            failures.append(
+                f"{label}: typed failure reporting failure_value drifted for {phase}"
+            )
+    return reporting
+
+
 def _validate_native_artifact_contract(
     failures: list[str],
 ) -> dict[str, Any]:
@@ -938,6 +1053,8 @@ def _validate_native_artifact_contract(
         failures.append(f"{label}: contract_id drifted")
     if int(contract.get("issue_ref", 0)) != 8199:
         failures.append(f"{label}: issue_ref must be #8199")
+    if int(contract.get("followup_issue_ref", 0)) != 8213:
+        failures.append(f"{label}: followup_issue_ref must be #8213")
     if contract.get("status") != "native_artifact_ready":
         failures.append(f"{label}: status must stay native_artifact_ready")
     if contract.get("positive_fixture") != ADVANCED_CLOSURE_POSITIVE_FIXTURE:
@@ -993,6 +1110,11 @@ def _validate_native_artifact_contract(
     )
     if forbidden_ir_markers != FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS:
         failures.append(f"{label}: forbidden LLVM operand marker guard drifted")
+    phase_status_contract = _validate_native_phase_status_contract(
+        contract,
+        failures,
+        label=label,
+    )
 
     generated_dir = ROOT / ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR
     if not _safe_clean_generated_attempt_dir(generated_dir, failures, label):
@@ -1003,6 +1125,13 @@ def _validate_native_artifact_contract(
             "diagnostic_count": 0,
             "diagnostic_codes": [],
             "diagnostics_path": "",
+            "phase_status_contract": phase_status_contract.get("contract_id"),
+            "phase_statuses": _native_phase_statuses(
+                compile_status="native_compile_launch_failed",
+                link_claimed=contract.get("native_link_claimed") is True,
+                run_claimed=contract.get("native_run_claimed") is True,
+                generated_dir=generated_dir,
+            ),
             "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
             "native_artifact_ready": False,
             "native_executable_umbrella_promoted": False,
@@ -1031,6 +1160,13 @@ def _validate_native_artifact_contract(
             "diagnostic_count": 0,
             "diagnostic_codes": [],
             "diagnostics_path": "",
+            "phase_status_contract": phase_status_contract.get("contract_id"),
+            "phase_statuses": _native_phase_statuses(
+                compile_status="native_compile_launch_failed",
+                link_claimed=contract.get("native_link_claimed") is True,
+                run_claimed=contract.get("native_run_claimed") is True,
+                generated_dir=generated_dir,
+            ),
             "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
             "native_artifact_ready": False,
             "native_executable_umbrella_promoted": False,
@@ -1076,6 +1212,16 @@ def _validate_native_artifact_contract(
         failures.append(f"{label}: native compile emitted diagnostics")
 
     actual_codes = {str(signature["code"]) for signature in actual_signatures}
+    phase_statuses = _native_phase_statuses(
+        compile_status=(
+            "native_compile_succeeded"
+            if result.returncode == 0
+            else "native_compile_failed"
+        ),
+        link_claimed=contract.get("native_link_claimed") is True,
+        run_claimed=contract.get("native_run_claimed") is True,
+        generated_dir=generated_dir,
+    )
 
     return {
         "path": ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT,
@@ -1084,6 +1230,8 @@ def _validate_native_artifact_contract(
         "diagnostic_count": len(actual_signatures),
         "diagnostic_codes": sorted(actual_codes),
         "diagnostics_path": _repo_rel(diagnostics_path) if diagnostics_path.exists() else "",
+        "phase_status_contract": phase_status_contract.get("contract_id"),
+        "phase_statuses": phase_statuses,
         "generated_attempt_dir": ADVANCED_CLOSURE_NATIVE_ATTEMPT_DIR,
         "native_artifact_ready": result.returncode == 0,
         "native_executable_umbrella_promoted": False,
@@ -1664,6 +1812,12 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
         ),
         "advanced_runtime_native_compile_attempt_diagnostics_path": native_artifact.get(
             "diagnostics_path"
+        ),
+        "advanced_runtime_native_phase_status_contract": native_artifact.get(
+            "phase_status_contract"
+        ),
+        "advanced_runtime_native_phase_statuses": native_artifact.get(
+            "phase_statuses"
         ),
         "advanced_runtime_native_artifact_ready": native_artifact.get(
             "native_artifact_ready"

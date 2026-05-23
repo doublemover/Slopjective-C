@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.advanced-runtime.closure.native-artifact.v1",
   "issue_ref": 8199,
+  "followup_issue_ref": 8213,
   "status": "native_artifact_ready",
   "support_id": "advanced-runtime-native-object-artifacts",
   "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
@@ -34,6 +35,65 @@
     "|%",
     "%|"
   ],
+  "typed_failure_reporting": {
+    "contract_id": "objc3c.advanced-runtime.closure.typed-failure-reporting.v1",
+    "issue_ref": 8213,
+    "phase_order": [
+      "compile",
+      "link",
+      "runtime_registration",
+      "runtime_metadata",
+      "error_replay",
+      "execution_status"
+    ],
+    "phase_statuses": {
+      "compile": {
+        "values": [
+          "native_compile_succeeded",
+          "native_compile_failed",
+          "native_compile_launch_failed"
+        ],
+        "failure_value": "native_compile_failed"
+      },
+      "link": {
+        "values": [
+          "native_link_succeeded",
+          "native_link_failed",
+          "native_link_unclaimed"
+        ],
+        "failure_value": "native_link_failed"
+      },
+      "runtime_registration": {
+        "values": [
+          "runtime_registration_artifact_present",
+          "runtime_registration_artifact_missing"
+        ],
+        "failure_value": "runtime_registration_artifact_missing"
+      },
+      "runtime_metadata": {
+        "values": [
+          "runtime_metadata_artifact_present",
+          "runtime_metadata_artifact_missing"
+        ],
+        "failure_value": "runtime_metadata_artifact_missing"
+      },
+      "error_replay": {
+        "values": [
+          "error_replay_artifact_present",
+          "error_replay_artifact_missing"
+        ],
+        "failure_value": "error_replay_artifact_missing"
+      },
+      "execution_status": {
+        "values": [
+          "native_execution_succeeded",
+          "native_execution_failed",
+          "native_execution_unclaimed"
+        ],
+        "failure_value": "native_execution_failed"
+      }
+    }
+  },
   "parallelism_caps": {
     "CMAKE_BUILD_PARALLEL_LEVEL": "4",
     "CL_MPCount": "4",

@@ -80,6 +80,18 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
     assert payload["advanced_runtime_native_compile_attempt_status"] == "native_artifact_ready"
     assert payload["advanced_runtime_native_compile_attempt_exit_code"] == 0
     assert payload["advanced_runtime_native_compile_attempt_diagnostic_count"] == 0
+    assert (
+        payload["advanced_runtime_native_phase_status_contract"]
+        == "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
+    )
+    assert payload["advanced_runtime_native_phase_statuses"] == {
+        "compile": "native_compile_succeeded",
+        "link": "native_link_unclaimed",
+        "runtime_registration": "runtime_registration_artifact_present",
+        "runtime_metadata": "runtime_metadata_artifact_present",
+        "error_replay": "error_replay_artifact_present",
+        "execution_status": "native_execution_unclaimed",
+    }
     assert payload["advanced_runtime_native_artifact_ready"] is True
     assert payload["advanced_runtime_native_executable_umbrella_promoted"] is False
 
@@ -142,6 +154,7 @@ def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
     contract = _read_json(ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT)
 
     assert contract["issue_ref"] == 8199
+    assert contract["followup_issue_ref"] == 8213
     assert contract["status"] == "native_artifact_ready"
     assert contract["native_compile_claimed"] is True
     assert contract["native_object_artifact_claimed"] is True
@@ -158,6 +171,17 @@ def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
     assert tuple(contract["required_success_artifacts"]) == REQUIRED_NATIVE_ARTIFACTS
     assert tuple(contract["forbidden_success_artifacts"]) == FORBIDDEN_NATIVE_SUCCESS_ARTIFACTS
     assert tuple(contract["forbidden_llvm_operand_markers"]) == FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS
+    typed_reporting = contract["typed_failure_reporting"]
+    assert typed_reporting["contract_id"] == "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
+    assert typed_reporting["issue_ref"] == 8213
+    assert typed_reporting["phase_order"] == [
+        "compile",
+        "link",
+        "runtime_registration",
+        "runtime_metadata",
+        "error_replay",
+        "execution_status",
+    ]
 
 
 def test_canonical_source_debug_map_links_every_combined_identity_record() -> None:

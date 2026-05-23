@@ -80,6 +80,10 @@ def test_debug_source_map_positive_fixture_validates_source_debug_and_line_links
     assert len(bundle.source_graph_nodes) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
     assert len(bundle.debug_maps) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
     assert len(bundle.native_line_tables) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert len(bundle.inline_frames) == 1
+    assert len(bundle.native_inline_ranges) == 1
+    assert len(bundle.inline_debug_chains) == 1
+    assert bundle.inline_frame_failures == ()
     assert bundle.statement_stepping_supported is False
 
 
@@ -89,6 +93,10 @@ def test_debug_map_inspection_summary_is_stable_and_diagnostic_backed() -> None:
     assert payload["ok"] is True
     assert payload["contract_id"] == "objc3c.debug-map.inspection.v1"
     assert payload["source_map_count"] == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert payload["inline_frame_count"] == 1
+    assert payload["native_inline_range_count"] == 1
+    assert payload["inline_debug_chain_count"] == 1
+    assert payload["inline_frame_failure_count"] == 0
     assert set(payload["record_kinds"]) == REQUIRED_SOURCE_MAP_RECORD_KINDS
     assert set(payload["capability_rows"]) >= REQUIRED_CAPABILITY_ROWS
     assert payload["diagnostics"] == []
@@ -121,6 +129,10 @@ def test_debug_source_map_negative_case_catalog_is_explicit() -> None:
         "native-line-table-drift",
         "unstable-source-path",
         "missing-capability-row",
+        "inline-frame-missing-callee",
+        "inline-frame-native-range-drift",
+        "inline-frame-non-inlining-proof",
+        "inline-frame-failure-record",
     ]
 
 
@@ -180,6 +192,30 @@ def test_debug_source_maps_reject_unstable_source_path(tmp_path: Path) -> None:
 
 def test_debug_source_maps_reject_missing_capability_row(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][9]
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_missing_callee(tmp_path: Path) -> None:
+    case = load_json(NEGATIVE_CASES)["cases"][10]
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_native_range_drift(tmp_path: Path) -> None:
+    case = load_json(NEGATIVE_CASES)["cases"][11]
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_non_inlining_proof(tmp_path: Path) -> None:
+    case = load_json(NEGATIVE_CASES)["cases"][12]
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_failure_record(tmp_path: Path) -> None:
+    case = load_json(NEGATIVE_CASES)["cases"][13]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 

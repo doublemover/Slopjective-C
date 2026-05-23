@@ -1676,6 +1676,54 @@
       "native_line": 56
     }
   ],
+  "inline_frames": {
+    "frames": [
+      {
+        "frame_id": "inline.frame.main_helper",
+        "caller_source_map_entry_id": "smap.optimization_transform_edge",
+        "callee_source_map_entry_id": "smap.function",
+        "callsite_span": {
+          "line": 19,
+          "column": 15,
+          "end_line": 19,
+          "end_column": 41
+        },
+        "callee_body_span": {
+          "line": 14,
+          "column": 3,
+          "end_line": 14,
+          "end_column": 19
+        },
+        "caller_runtime_anchor_id": "runtime.anchor.optimization_transform_edge",
+        "callee_runtime_anchor_id": "runtime.anchor.function",
+        "optimization_proof_id": "opt.method_inlining",
+        "emitted_ir_anchor": "ir.anchor.optimization_transform_edge",
+        "emitted_native_symbol": "_objc3_DebugMaps_Foundation_optimization_transform_edge"
+      }
+    ],
+    "native_ranges": [
+      {
+        "range_id": "inline.range.main_helper",
+        "frame_id": "inline.frame.main_helper",
+        "artifact_symbol_id": "_objc3_DebugMaps_Foundation_optimization_transform_edge",
+        "native_range": {
+          "start_offset": 48,
+          "end_offset": 76
+        },
+        "nesting_depth": 1
+      }
+    ],
+    "chains": [
+      {
+        "chain_id": "inline.chain.main_helper",
+        "outer_frame_id": "inline.frame.main_helper",
+        "inner_frame_id": "inline.frame.main_helper",
+        "optimization_proof_id": "opt.method_inlining",
+        "ordering_index": 0
+      }
+    ],
+    "failures": []
+  },
   "provenance_links": [
     {
       "link_id": "prov.generated_accessor",

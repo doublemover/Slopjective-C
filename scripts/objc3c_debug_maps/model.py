@@ -245,6 +245,111 @@ class NativeLineTableRow:
 
 
 @dataclass(frozen=True)
+class NativeRange:
+    start_offset: int
+    end_offset: int
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "NativeRange":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            start_offset=_safe_int(item.get("start_offset")),
+            end_offset=_safe_int(item.get("end_offset")),
+        )
+
+    def is_valid(self) -> bool:
+        return self.start_offset >= 0 and self.end_offset > self.start_offset
+
+
+@dataclass(frozen=True)
+class InlineFrame:
+    frame_id: str
+    caller_source_map_entry_id: str
+    callee_source_map_entry_id: str
+    callsite_span: SourceRange
+    callee_body_span: SourceRange
+    caller_runtime_anchor_id: str
+    callee_runtime_anchor_id: str
+    optimization_proof_id: str
+    emitted_ir_anchor: str
+    emitted_native_symbol: str
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "InlineFrame":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            frame_id=_safe_str(item.get("frame_id")),
+            caller_source_map_entry_id=_safe_str(item.get("caller_source_map_entry_id")),
+            callee_source_map_entry_id=_safe_str(item.get("callee_source_map_entry_id")),
+            callsite_span=SourceRange.from_payload(item.get("callsite_span")),
+            callee_body_span=SourceRange.from_payload(item.get("callee_body_span")),
+            caller_runtime_anchor_id=_safe_str(item.get("caller_runtime_anchor_id")),
+            callee_runtime_anchor_id=_safe_str(item.get("callee_runtime_anchor_id")),
+            optimization_proof_id=_safe_str(item.get("optimization_proof_id")),
+            emitted_ir_anchor=_safe_str(item.get("emitted_ir_anchor")),
+            emitted_native_symbol=_safe_str(item.get("emitted_native_symbol")),
+        )
+
+
+@dataclass(frozen=True)
+class NativeInlineRange:
+    range_id: str
+    frame_id: str
+    artifact_symbol_id: str
+    native_range: NativeRange
+    nesting_depth: int
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "NativeInlineRange":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            range_id=_safe_str(item.get("range_id")),
+            frame_id=_safe_str(item.get("frame_id")),
+            artifact_symbol_id=_safe_str(item.get("artifact_symbol_id")),
+            native_range=NativeRange.from_payload(item.get("native_range")),
+            nesting_depth=_safe_int(item.get("nesting_depth")),
+        )
+
+
+@dataclass(frozen=True)
+class InlineDebugChain:
+    chain_id: str
+    outer_frame_id: str
+    inner_frame_id: str
+    optimization_proof_id: str
+    ordering_index: int
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "InlineDebugChain":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            chain_id=_safe_str(item.get("chain_id")),
+            outer_frame_id=_safe_str(item.get("outer_frame_id")),
+            inner_frame_id=_safe_str(item.get("inner_frame_id")),
+            optimization_proof_id=_safe_str(item.get("optimization_proof_id")),
+            ordering_index=_safe_int(item.get("ordering_index")),
+        )
+
+
+@dataclass(frozen=True)
+class InlineFrameFailure:
+    failure_id: str
+    native_range: NativeRange
+    failure_code: str
+    missing_identity: str
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "InlineFrameFailure":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            failure_id=_safe_str(item.get("failure_id")),
+            native_range=NativeRange.from_payload(item.get("native_range")),
+            failure_code=_safe_str(item.get("failure_code")),
+            missing_identity=_safe_str(item.get("missing_identity")),
+        )
+
+
+@dataclass(frozen=True)
 class ProvenanceLink:
     link_id: str
     source_graph_node_id: str
@@ -362,6 +467,10 @@ class DebugSourceMapBundle:
     source_maps: tuple[SourceMapEntry, ...]
     debug_maps: tuple[DebugMapEntry, ...]
     native_line_tables: tuple[NativeLineTableRow, ...]
+    inline_frames: tuple[InlineFrame, ...]
+    native_inline_ranges: tuple[NativeInlineRange, ...]
+    inline_debug_chains: tuple[InlineDebugChain, ...]
+    inline_frame_failures: tuple[InlineFrameFailure, ...]
     provenance_links: tuple[ProvenanceLink, ...]
     language_service_anchors: tuple[LanguageServiceAnchor, ...]
     optimization_claims: tuple[OptimizationPreservationClaim, ...]
@@ -479,6 +588,7 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
         "source_maps",
         "debug_maps",
         "native_line_tables",
+        "inline_frames",
         "provenance_links",
         "language_service",
         "optimization_preservation",
@@ -498,6 +608,7 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
     object_fields = (
         "source",
         "source_graph",
+        "inline_frames",
         "language_service",
         "optimization_preservation",
         "package_boundaries",
@@ -509,6 +620,10 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
             diagnostics.append(_diag("schema-type", f"{field} must be an object", field))
 
     _validate_list_items(_object(payload.get("source_graph")).get("nodes"), "source_graph.nodes", diagnostics)
+    _validate_list_items(_object(payload.get("inline_frames")).get("frames"), "inline_frames.frames", diagnostics)
+    _validate_list_items(_object(payload.get("inline_frames")).get("native_ranges"), "inline_frames.native_ranges", diagnostics)
+    _validate_list_items(_object(payload.get("inline_frames")).get("chains"), "inline_frames.chains", diagnostics)
+    _validate_list_items(_object(payload.get("inline_frames")).get("failures"), "inline_frames.failures", diagnostics)
     _validate_list_items(_object(payload.get("language_service")).get("anchors"), "language_service.anchors", diagnostics)
     _validate_list_items(_object(payload.get("optimization_preservation")).get("claims"), "optimization_preservation.claims", diagnostics)
     _validate_list_items(_object(payload.get("package_boundaries")).get("boundaries"), "package_boundaries.boundaries", diagnostics)
@@ -541,6 +656,7 @@ def load_bundle(path: Path | str) -> DebugSourceMapBundle:
     path_diagnostics: list[Diagnostic] = []
     source_path, source_display_path = _stable_source_path(source.get("path"), path_diagnostics)
     source_graph = _object(payload.get("source_graph"))
+    inline_frames = _object(payload.get("inline_frames"))
     language_service = _object(payload.get("language_service"))
     optimization = _object(payload.get("optimization_preservation"))
     packages = _object(payload.get("package_boundaries"))
@@ -560,6 +676,10 @@ def load_bundle(path: Path | str) -> DebugSourceMapBundle:
         source_maps=tuple(SourceMapEntry.from_payload(item) for item in _list(payload.get("source_maps"))),
         debug_maps=tuple(DebugMapEntry.from_payload(item) for item in _list(payload.get("debug_maps"))),
         native_line_tables=tuple(NativeLineTableRow.from_payload(item) for item in _list(payload.get("native_line_tables"))),
+        inline_frames=tuple(InlineFrame.from_payload(item) for item in _list(inline_frames.get("frames"))),
+        native_inline_ranges=tuple(NativeInlineRange.from_payload(item) for item in _list(inline_frames.get("native_ranges"))),
+        inline_debug_chains=tuple(InlineDebugChain.from_payload(item) for item in _list(inline_frames.get("chains"))),
+        inline_frame_failures=tuple(InlineFrameFailure.from_payload(item) for item in _list(inline_frames.get("failures"))),
         provenance_links=tuple(ProvenanceLink.from_payload(item) for item in _list(payload.get("provenance_links"))),
         language_service_anchors=tuple(LanguageServiceAnchor.from_payload(item) for item in _list(language_service.get("anchors"))),
         optimization_claims=tuple(OptimizationPreservationClaim.from_payload(item) for item in _list(optimization.get("claims"))),
@@ -605,6 +725,9 @@ def validate_bundle(bundle: DebugSourceMapBundle) -> ValidationResult:
     source_maps = _index_by_id(bundle.source_maps, "entry_id", "source_maps", diagnostics)
     debug_maps = _index_by_id(bundle.debug_maps, "entry_id", "debug_maps", diagnostics)
     line_rows = _index_by_id(bundle.native_line_tables, "row_id", "native_line_tables", diagnostics)
+    inline_frames = _index_by_id(bundle.inline_frames, "frame_id", "inline_frames.frames", diagnostics)
+    _index_by_id(bundle.native_inline_ranges, "range_id", "inline_frames.native_ranges", diagnostics)
+    _index_by_id(bundle.inline_debug_chains, "chain_id", "inline_frames.chains", diagnostics)
     links = _index_by_id(bundle.provenance_links, "link_id", "provenance_links", diagnostics)
     anchors = _index_by_id(bundle.language_service_anchors, "anchor_id", "language_service.anchors", diagnostics)
     claims = _index_by_id(bundle.optimization_claims, "claim_id", "optimization_preservation.claims", diagnostics)
@@ -641,6 +764,14 @@ def validate_bundle(bundle: DebugSourceMapBundle) -> ValidationResult:
 
     for claim in bundle.optimization_claims:
         _validate_optimization_claim(claim, source_maps, line_rows, diagnostics)
+
+    _validate_inline_frame_model(
+        bundle,
+        inline_frames,
+        source_maps,
+        claims,
+        diagnostics,
+    )
 
     for boundary in bundle.package_boundaries:
         if boundary.source_digest != actual_source_digest:
@@ -924,6 +1055,120 @@ def _validate_optimization_claim(
             diagnostics.append(_diag("line-table-row-missing", f"optimization claim references missing line-table row: {claim.claim_id}", claim.claim_id))
 
 
+def _validate_inline_frame_model(
+    bundle: DebugSourceMapBundle,
+    frames_by_id: dict[str, InlineFrame],
+    source_maps: dict[str, SourceMapEntry],
+    claims: dict[str, OptimizationPreservationClaim],
+    diagnostics: list[Diagnostic],
+) -> None:
+    ranges_by_frame: dict[str, list[NativeInlineRange]] = {}
+    for native_range in bundle.native_inline_ranges:
+        ranges_by_frame.setdefault(native_range.frame_id, []).append(native_range)
+
+    for frame in bundle.inline_frames:
+        _validate_inline_frame(frame, ranges_by_frame.get(frame.frame_id, []), source_maps, claims, diagnostics)
+
+    for native_range in bundle.native_inline_ranges:
+        frame = frames_by_id.get(native_range.frame_id)
+        if frame is None:
+            diagnostics.append(
+                _diag(
+                    "inline-frame-missing",
+                    f"native inline range references missing inline frame: {native_range.range_id}",
+                    native_range.range_id,
+                )
+            )
+            continue
+        if not native_range.native_range.is_valid() or native_range.nesting_depth < 0:
+            diagnostics.append(
+                _diag("inline-native-range-drift", f"native inline range is invalid: {native_range.range_id}", native_range.range_id)
+            )
+        if native_range.artifact_symbol_id != frame.emitted_native_symbol:
+            diagnostics.append(
+                _diag(
+                    "inline-native-range-drift",
+                    f"native inline range artifact symbol drifted from inline frame: {native_range.range_id}",
+                    native_range.range_id,
+                )
+            )
+
+    for chain in bundle.inline_debug_chains:
+        outer_frame = frames_by_id.get(chain.outer_frame_id)
+        inner_frame = frames_by_id.get(chain.inner_frame_id)
+        if outer_frame is None or inner_frame is None:
+            diagnostics.append(_diag("inline-frame-missing", f"inline debug chain references missing frame: {chain.chain_id}", chain.chain_id))
+            continue
+        if chain.ordering_index < 0:
+            diagnostics.append(_diag("inline-debug-chain-drift", f"inline debug chain ordering is invalid: {chain.chain_id}", chain.chain_id))
+        if chain.optimization_proof_id != inner_frame.optimization_proof_id:
+            diagnostics.append(
+                _diag(
+                    "inline-debug-chain-drift",
+                    f"inline debug chain optimization proof drifted from inner frame: {chain.chain_id}",
+                    chain.chain_id,
+                )
+            )
+
+    for failure in bundle.inline_frame_failures:
+        if not failure.failure_code or not failure.missing_identity or not failure.native_range.is_valid():
+            diagnostics.append(
+                _diag("inline-frame-failure", f"inline-frame failure record is incomplete: {failure.failure_id}", failure.failure_id)
+            )
+        else:
+            diagnostics.append(
+                _diag("inline-frame-failure", f"inline-frame failure record is present: {failure.failure_id}", failure.failure_id)
+            )
+
+    if bundle.inline_frames and not bundle.inline_debug_chains:
+        diagnostics.append(_diag("inline-debug-chain-missing", "inline frames require explicit debug-chain ordering", "inline_frames.chains"))
+    if bundle.inline_debug_chains and not bundle.inline_frames:
+        diagnostics.append(_diag("inline-frame-missing", "inline debug chains require inline frame records", "inline_frames.frames"))
+    if bundle.native_inline_ranges and not bundle.inline_frames:
+        diagnostics.append(_diag("inline-frame-missing", "native inline ranges require inline frame records", "inline_frames.frames"))
+
+
+def _validate_inline_frame(
+    frame: InlineFrame,
+    native_ranges: list[NativeInlineRange],
+    source_maps: dict[str, SourceMapEntry],
+    claims: dict[str, OptimizationPreservationClaim],
+    diagnostics: list[Diagnostic],
+) -> None:
+    caller = source_maps.get(frame.caller_source_map_entry_id)
+    callee = source_maps.get(frame.callee_source_map_entry_id)
+    if caller is None:
+        diagnostics.append(_diag("source-map-entry-missing", f"inline frame references missing caller source map: {frame.frame_id}", frame.frame_id))
+    if callee is None:
+        diagnostics.append(_diag("source-map-entry-missing", f"inline frame references missing callee source map: {frame.frame_id}", frame.frame_id))
+    if caller is None or callee is None:
+        return
+
+    if not frame.callsite_span.is_valid() or not frame.callee_body_span.is_valid():
+        diagnostics.append(_diag("inline-frame-range", f"inline frame source spans are invalid: {frame.frame_id}", frame.frame_id))
+    if frame.callsite_span != caller.source_range:
+        diagnostics.append(_diag("inline-frame-range-drift", f"inline frame callsite span drifted from caller source map: {frame.frame_id}", frame.frame_id))
+    if frame.callee_body_span.line < callee.source_range.line:
+        diagnostics.append(_diag("inline-frame-range-drift", f"inline frame callee body precedes callee declaration: {frame.frame_id}", frame.frame_id))
+    if frame.caller_runtime_anchor_id not in caller.runtime_anchor_ids:
+        diagnostics.append(_diag("inline-frame-runtime-anchor-drift", f"inline frame caller runtime anchor drifted: {frame.frame_id}", frame.frame_id))
+    if frame.callee_runtime_anchor_id not in callee.runtime_anchor_ids:
+        diagnostics.append(_diag("inline-frame-runtime-anchor-drift", f"inline frame callee runtime anchor drifted: {frame.frame_id}", frame.frame_id))
+    if frame.emitted_ir_anchor != caller.ir_anchor or frame.emitted_native_symbol != caller.native_symbol:
+        diagnostics.append(_diag("inline-frame-artifact-drift", f"inline frame artifact anchor drifted from caller source map: {frame.frame_id}", frame.frame_id))
+
+    claim = claims.get(frame.optimization_proof_id)
+    if claim is None:
+        diagnostics.append(_diag("inline-frame-optimization-missing", f"inline frame references missing optimization proof: {frame.frame_id}", frame.frame_id))
+    elif claim.transform_kind != "method-inlining" or not claim.preserves_source_map or claim.invalidates_source_map:
+        diagnostics.append(_diag("inline-frame-optimization-drift", f"inline frame optimization proof is not a preserving method-inlining proof: {frame.frame_id}", frame.frame_id))
+    elif frame.callee_source_map_entry_id not in claim.source_map_entry_ids:
+        diagnostics.append(_diag("inline-frame-optimization-drift", f"inline frame callee is absent from method-inlining proof: {frame.frame_id}", frame.frame_id))
+
+    if not native_ranges:
+        diagnostics.append(_diag("inline-native-range-missing", f"inline frame lacks native inline range: {frame.frame_id}", frame.frame_id))
+
+
 def validate_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> ValidationResult:
     try:
         bundle = load_bundle(path)
@@ -958,6 +1203,10 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
             "source_map_count": 0,
             "debug_map_count": 0,
             "native_line_table_count": 0,
+            "inline_frame_count": 0,
+            "native_inline_range_count": 0,
+            "inline_debug_chain_count": 0,
+            "inline_frame_failure_count": 0,
             "record_kinds": [],
             "capability_rows": [],
             "optimization_transforms": [],
@@ -972,6 +1221,10 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
         "source_map_count": len(bundle.source_maps),
         "debug_map_count": len(bundle.debug_maps),
         "native_line_table_count": len(bundle.native_line_tables),
+        "inline_frame_count": len(bundle.inline_frames),
+        "native_inline_range_count": len(bundle.native_inline_ranges),
+        "inline_debug_chain_count": len(bundle.inline_debug_chains),
+        "inline_frame_failure_count": len(bundle.inline_frame_failures),
         "record_kinds": sorted({entry.record_kind for entry in bundle.source_maps}),
         "capability_rows": sorted(row.row_id for row in bundle.capability_rows),
         "optimization_transforms": sorted(claim.transform_kind for claim in bundle.optimization_claims),
