@@ -57,6 +57,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Python workflow dependencies
+        run: python -m pip install --upgrade jsonschema
+
       - name: Install Node dependencies
         run: npm ci
 
