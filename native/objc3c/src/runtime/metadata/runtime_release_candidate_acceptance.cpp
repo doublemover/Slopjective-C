@@ -10,8 +10,7 @@ extern "C" int objc3_runtime_copy_release_candidate_claim_snapshot_for_testing(
   snapshot->claim_bundle_ready = 1;
   snapshot->deterministic = 1;
   snapshot->selected_profile = "core";
-  snapshot->claimed_profile_ids_csv =
-      "core,strict,strict-concurrency,strict-system";
+  snapshot->claimed_profile_ids_csv = "core";
   snapshot->targeted_profile_ids_csv =
       "strict,strict-concurrency,strict-system";
   snapshot->conformance_publication_contract_id =

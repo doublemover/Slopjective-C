@@ -53,6 +53,8 @@
       fn.return_instancetype_spelling = true;
     } else if (AtRemovedOptionalTemplateAlias()) {
       return RejectRemovedOptionalTemplateAlias(Peek());
+    } else if (AtReservedValueOptionalType()) {
+      return RejectReservedValueOptionalType(Peek());
     } else if (At(TokenKind::Identifier)) {
       const Token type_token = Advance();
       CaptureFunctionReturnIdentifierSpelling(fn, type_token);

@@ -12,6 +12,18 @@ bool RejectRemovedOptionalTemplateAliasLead(
   return true;
 }
 
+bool RejectReservedValueOptionalTypeLead(
+    const std::vector<Objc3LexToken> &tokens,
+    std::size_t index,
+    std::vector<std::string> &diagnostics) {
+  if (!IsObjc3ReservedValueOptionalTypeLead(tokens, index)) {
+    return false;
+  }
+  diagnostics.push_back(
+      BuildObjc3ReservedValueOptionalTypeDiagnostic(PeekToken(tokens, index)));
+  return true;
+}
+
 void EmitExpectedCStyleTypeDiagnostic(
     unsigned diag_line,
     unsigned diag_column,

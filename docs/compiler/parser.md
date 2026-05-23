@@ -4,6 +4,14 @@ Parser behavior is described through capability rows and executable tests.
 Unsupported grammar remains rejected or reserved until the capability matrix
 marks the behavior implemented.
 
+Current v1 parser truth is fail-closed for `throws(E)` typed throws payloads,
+canonical `Optional<T>` value optionals, expression-position `match`, `=>`
+match arms, and `case ... where ...` guarded match patterns. Negative fixtures
+for those spellings prove unavailable syntax is rejected; they do not claim the
+features are implemented. Lowercase `optional<T>` remains a removed spelling
+diagnostic even though canonical `Optional<T>` is still reserved as a value
+optional type.
+
 Parser support claims are owned by:
 
 - `native/objc3c/src/parse/` for parser implementation,

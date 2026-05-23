@@ -55,6 +55,10 @@ std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
       kObjc3UnsupportedFeatureClaimActors,
       kObjc3UnsupportedFeatureClaimBlocks,
       kObjc3UnsupportedFeatureClaimArc,
+      kObjc3UnsupportedFeatureClaimTypedThrows,
+      kObjc3UnsupportedFeatureClaimValueOptionals,
+      kObjc3UnsupportedFeatureClaimMatchExpressions,
+      kObjc3UnsupportedFeatureClaimGuardedPatterns,
   };
 }
 

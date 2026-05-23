@@ -25,6 +25,8 @@ std::string BuildTypeSystemTypeSourceClosureReplayKey(
       << summary.typed_keypath_literal_sites
       << ";optional_member_access_sites="
       << summary.optional_member_access_sites
+      << ";value_optional_fail_closed="
+      << (summary.value_optional_type_fail_closed ? "true" : "false")
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
@@ -72,6 +74,8 @@ std::string BuildErrorHandlingErrorSourceClosureReplayKey(
       << summary.status_code_mapping_clause_sites
       << ";reserved_keyword_sites=" << summary.try_keyword_sites << ":"
       << summary.throw_keyword_sites << ":" << summary.catch_keyword_sites
+      << ";typed_throws_fail_closed="
+      << (summary.typed_throws_fail_closed ? "true" : "false")
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();

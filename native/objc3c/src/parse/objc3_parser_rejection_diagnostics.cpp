@@ -57,6 +57,36 @@ std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
       "canonical type spelling");
 }
 
+std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
+    const Objc3LexToken &token) {
+  return BuildObjc3ParserDiagnosticWithRecovery(
+      token,
+      "O3P159",
+      "Optional<T> value optionals are reserved until value-optional ABI and interface roundtrip are implemented",
+      "parser-reserved-value-optional-type-rejection",
+      "type spelling");
+}
+
+std::string BuildObjc3ReservedTypedThrowsDiagnostic(
+    const Objc3LexToken &token) {
+  return BuildObjc3ParserDiagnosticWithRecovery(
+      token,
+      "O3P182",
+      "typed throws payloads are reserved; use bare throws or remove the parenthesized error type",
+      "parser-reserved-typed-throws-rejection",
+      "throws clause");
+}
+
+std::string BuildObjc3ReservedMatchExpressionDiagnostic(
+    const Objc3LexToken &token) {
+  return BuildObjc3ParserDiagnosticWithRecovery(
+      token,
+      "O3P156",
+      "match expressions are reserved; match is statement-only in Objective-C 3 v1",
+      "parser-reserved-match-expression-rejection",
+      "expression");
+}
+
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(
     const Objc3LexToken &token) {
   return BuildObjc3ParserDiagnosticWithRecovery(

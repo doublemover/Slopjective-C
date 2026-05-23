@@ -8,12 +8,16 @@
     "tests/tooling/fixtures/parser_conformance_corpus/reject_duplicate_pure_qualifier.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_duplicate_throws_modifier.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_extern_without_fn.objc3",
+    "tests/tooling/fixtures/parser_conformance_corpus/reject_guarded_match_pattern.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_i32_pointer_param.objc3",
+    "tests/tooling/fixtures/parser_conformance_corpus/reject_match_expression_position.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_misplaced_pure_after_fn.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_post_comma_nondecl.objc3",
-    "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3"
+    "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3",
+    "tests/tooling/fixtures/parser_conformance_corpus/reject_typed_throws_payload.objc3",
+    "tests/tooling/fixtures/parser_conformance_corpus/reject_value_optional_type.objc3"
   ],
-  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, and O3P181 for duplicate throws. Accepting these fixtures or routing them through old-mode, gate, retired route, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
+  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, O3P181 for duplicate throws, O3P159 for reserved value optionals, O3P182 for reserved typed throws, O3P156 for reserved match expressions, and O3P157 for guarded match patterns. Accepting these fixtures or routing them through old-mode, gate, retired route, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -25,6 +29,10 @@
     "case_id:A010-C007:diagnostic_code=O3P100",
     "case_id:A010-C008:diagnostic_code=O3P100",
     "case_id:A010-C009:diagnostic_code=O3P181",
+    "case_id:A010-C010:diagnostic_code=O3P159",
+    "case_id:A010-C011:diagnostic_code=O3P182",
+    "case_id:A010-C012:diagnostic_code=O3P156",
+    "case_id:A010-C013:diagnostic_code=O3P157",
     "strict_error:accepting-rejected-parser-corpus-case",
     "strict_error:missing-diagnostic-code",
     "strict_error:widened-diagnostic-code",
@@ -37,5 +45,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "accepted rejected parser corpus cases, missing diagnostic codes, widened diagnostic codes, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "accepted rejected parser corpus cases, reserved language-evolution syntax, missing diagnostic codes, widened diagnostic codes, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

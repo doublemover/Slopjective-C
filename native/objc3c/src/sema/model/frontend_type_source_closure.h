@@ -5,15 +5,16 @@
 #include <vector>
 
 #include "sema/objc3_sema_contract.h"
+#include "token/objc3_token_contract.h"
 
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureContractId =
     "objc3c.type_system.type.source.closure.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_type_system_type_source_closure";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
-    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces-while-Optional-value-optionals-remain-reserved";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "typed-keypath-literals-remain-source-sema-surfaces-while-native-lowering-now-emits-stable-descriptor-handles-for-the-validated-single-component-subset";
+    "value-optionals-remain-parse-owned-fail-closed-until-ABI-interface-roundtrip-and-lowering-support-land";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =
@@ -41,7 +42,12 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
       kObjc3SourceOnlyFeatureClaimNilCoalescing,
       kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals,
   };
-  std::vector<std::string> unsupported_claim_ids = {};
+  std::vector<std::string> unsupported_claim_ids = {
+      kObjc3UnsupportedFeatureClaimValueOptionals,
+  };
+  std::vector<std::string> fail_closed_construct_ids = {
+      kObjc3TypeSystemFailClosedConstructValueOptionals,
+  };
   std::size_t protocol_required_method_count = 0;
   std::size_t protocol_optional_method_count = 0;
   std::size_t protocol_required_property_count = 0;
@@ -64,6 +70,7 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool nil_coalescing_source_supported = false;
   bool typed_keypath_literal_source_supported = false;
   bool optional_member_access_fail_closed = false;
+  bool value_optional_type_fail_closed = false;
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;

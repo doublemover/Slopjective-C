@@ -209,3 +209,26 @@ def test_native_diagnostics_json_promotes_recovery_metadata_out_of_message(
         "recovery_counts_as_success": False,
         "strategy": "skip-unsupported-top-level-fragment",
     }
+
+
+def test_language_evolution_reserved_surfaces_fail_closed_with_specific_codes(
+    tmp_path: Path,
+) -> None:
+    cases = {
+        "negative_value_optional_canonical_reserved.objc3": "O3P159",
+        "negative_typed_throws_reserved.objc3": "O3P182",
+        "negative_match_expression_position_reserved.objc3": "O3P156",
+        "negative_guarded_match_pattern_reserved.objc3": "O3P157",
+    }
+
+    for fixture_name, expected_code in cases.items():
+        diagnostics = compile_negative_fixture(
+            FIXTURES / "negative" / fixture_name,
+            tmp_path,
+        )
+        observed_codes = {
+            diagnostic.get("code")
+            for diagnostic in diagnostics
+            if isinstance(diagnostic.get("code"), str)
+        }
+        assert expected_code in observed_codes

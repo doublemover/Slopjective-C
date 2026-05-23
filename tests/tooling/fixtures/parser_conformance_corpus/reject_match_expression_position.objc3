@@ -1,0 +1,8 @@
+fn classify(value: i32) -> i32 {
+  let result = match (value) {
+    case 0 => 1;
+    default => 2;
+  };
+  return result;
+}
+

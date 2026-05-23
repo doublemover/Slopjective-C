@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3P157.
+module NegativeGuardedMatchPatternReserved;
+
+fn main(value: i32) -> i32 {
+  match (value) {
+    case let candidate where candidate > 0: {
+      return candidate;
+    }
+    default: {
+      return 0;
+    }
+  }
+}
+

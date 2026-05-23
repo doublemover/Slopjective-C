@@ -23,6 +23,15 @@ bool IsObjc3RemovedOptionalTemplateAliasLead(
          tokens[index + 1u].kind == Objc3LexTokenKind::Less;
 }
 
+bool IsObjc3ReservedValueOptionalTypeLead(
+    const std::vector<Objc3LexToken> &tokens,
+    std::size_t index) {
+  return index + 1u < tokens.size() &&
+         tokens[index].kind == Objc3LexTokenKind::Identifier &&
+         tokens[index].text == "Optional" &&
+         tokens[index + 1u].kind == Objc3LexTokenKind::Less;
+}
+
 bool IsObjc3TopLevelFunctionQualifierLead(Objc3LexTokenKind kind) {
   return kind == Objc3LexTokenKind::KwPure ||
          kind == Objc3LexTokenKind::KwExtern ||

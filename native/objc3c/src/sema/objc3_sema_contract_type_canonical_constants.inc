@@ -46,6 +46,6 @@ inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurf
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 1u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 7u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount = 6u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 7u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 11u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 3u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount = 3u;

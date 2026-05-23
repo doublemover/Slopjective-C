@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P159.
+module NegativeValueOptionalCanonicalReserved;
+
+fn main(value: Optional<i32>) -> i32 {
+  return 0;
+}
+

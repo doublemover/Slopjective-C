@@ -1,0 +1,11 @@
+fn classify(value: i32) -> i32 {
+  match (value) {
+    case let captured where true: {
+      return captured;
+    }
+    default: {
+      return 0;
+    }
+  }
+}
+

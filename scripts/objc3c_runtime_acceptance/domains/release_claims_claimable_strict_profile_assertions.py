@@ -6,9 +6,8 @@ from typing import Any
 
 from ..expectation_matching import expect
 from .release_claims_claimable_residual_assertions import EXPECTED_CLAIMED_PROFILES
-
-
-EXPECTED_TARGETED_PROFILES = ["strict", "strict-concurrency", "strict-system"]
+from .release_claims_claimable_residual_assertions import EXPECTED_REJECTED_PROFILES
+from .release_claims_claimable_residual_assertions import EXPECTED_TARGETED_PROFILES
 
 
 def expect_strict_profile_feature_claim_surfaces(
@@ -74,8 +73,8 @@ def expect_strict_profile_feature_claim_surfaces(
     )
     expect(
         publication.get("supported_profile_ids") == EXPECTED_CLAIMED_PROFILES
-        and publication.get("rejected_profile_ids") == [],
-        "expected publication to preserve the full strict-profile claim set once claim implementation lands",
+        and publication.get("rejected_profile_ids") == EXPECTED_REJECTED_PROFILES,
+        "expected publication to preserve the core-only claim set and fail-closed strict profile inventory",
     )
     expect(
         publication.get("advanced_feature_targeted_profile_ids")
@@ -89,6 +88,5 @@ def expect_strict_profile_feature_claim_surfaces(
 
 
 __all__ = [
-    "EXPECTED_TARGETED_PROFILES",
     "expect_strict_profile_feature_claim_surfaces",
 ]

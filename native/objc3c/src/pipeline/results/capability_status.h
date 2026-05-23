@@ -23,7 +23,12 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
              kObjc3SourceOnlyFeatureClaimNilCoalescing &&
          summary.source_only_claim_ids[6] ==
              kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals &&
-         summary.unsupported_claim_ids.empty() &&
+         summary.unsupported_claim_ids.size() == 1 &&
+         summary.unsupported_claim_ids[0] ==
+             kObjc3UnsupportedFeatureClaimValueOptionals &&
+         summary.fail_closed_construct_ids.size() == 1 &&
+         summary.fail_closed_construct_ids[0] ==
+             kObjc3TypeSystemFailClosedConstructValueOptionals &&
          summary.protocol_optional_partition_source_supported &&
          summary.object_pointer_nullability_source_supported &&
          summary.pragmatic_generic_suffix_source_supported &&
@@ -32,6 +37,7 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.nil_coalescing_source_supported &&
          summary.typed_keypath_literal_source_supported &&
          !summary.optional_member_access_fail_closed &&
+         summary.value_optional_type_fail_closed &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -45,7 +51,7 @@ inline bool IsReadyObjc3FrontendControlFlowControlFlowSourceClosureSummary(
          summary.source_model == kObjc3ControlFlowControlFlowSourceClosureSourceModel &&
          summary.failure_model ==
              kObjc3ControlFlowControlFlowSourceClosureFailureModel &&
-         summary.supported_construct_ids.size() == 8 &&
+         summary.supported_construct_ids.size() == 9 &&
          summary.supported_construct_ids[0] ==
              kObjc3ControlFlowSourceSurfaceGuardBindings &&
          summary.supported_construct_ids[1] ==
@@ -103,19 +109,22 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
              kObjc3SourceOnlyFeatureClaimResultCarrierProfiles &&
          summary.source_only_claim_ids[2] ==
              kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles &&
-         summary.fail_closed_construct_ids.size() == 3 &&
+         summary.fail_closed_construct_ids.size() == 4 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3ErrorHandlingFailClosedConstructTryExpressions &&
+             kObjc3ErrorHandlingFailClosedConstructTypedThrows &&
          summary.fail_closed_construct_ids[1] ==
-             kObjc3ErrorHandlingFailClosedConstructThrowStatements &&
+             kObjc3ErrorHandlingFailClosedConstructTryExpressions &&
          summary.fail_closed_construct_ids[2] ==
+             kObjc3ErrorHandlingFailClosedConstructThrowStatements &&
+         summary.fail_closed_construct_ids[3] ==
              kObjc3ErrorHandlingFailClosedConstructDoCatchStatements &&
          summary.throws_declaration_source_supported &&
          summary.result_carrier_source_supported &&
          summary.ns_error_bridging_source_supported &&
          summary.error_bridge_marker_source_supported &&
          summary.try_keyword_reserved && summary.throw_keyword_reserved &&
-         summary.catch_keyword_reserved && summary.try_fail_closed &&
+         summary.catch_keyword_reserved && summary.typed_throws_fail_closed &&
+         summary.try_fail_closed &&
          summary.throw_fail_closed && summary.do_catch_fail_closed &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&

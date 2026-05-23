@@ -3,6 +3,11 @@
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
+Typed throws, value optionals, match expressions, and guarded match patterns are
+not semantic support claims in the current slice. Parser/source-closure records
+must keep those features fail-closed until ABI, interface preservation,
+lowering, and runtime semantics exist for the specific feature family.
+
 The semantic-analysis owner boundary is:
 
 - `native/objc3c/src/sema/` owns semantic phase implementation,

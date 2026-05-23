@@ -23,18 +23,18 @@ std::string BuildStringArrayJson(const std::vector<std::string> &values) {
 std::string BuildRuntimeCapabilityProfilesJson() {
   return "["
          "{\"id\":\"core\",\"status\":\"claimed\"},"
-         "{\"id\":\"strict\",\"status\":\"claimed\"},"
-         "{\"id\":\"strict-concurrency\",\"status\":\"claimed\"},"
-         "{\"id\":\"strict-system\",\"status\":\"claimed\"}"
+         "{\"id\":\"strict\",\"status\":\"not-claimed\"},"
+         "{\"id\":\"strict-concurrency\",\"status\":\"not-claimed\"},"
+         "{\"id\":\"strict-system\",\"status\":\"not-claimed\"}"
          "]";
 }
 
 std::vector<std::string> BuildClaimedConformanceProfileIds() {
-  return {"core", "strict", "strict-concurrency", "strict-system"};
+  return {"core"};
 }
 
 std::vector<std::string> BuildNotClaimedConformanceProfileIds() {
-  return {};
+  return {"strict", "strict-concurrency", "strict-system"};
 }
 
 std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
@@ -48,6 +48,9 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
       {"throws", "not-claimed",
        "runtime-backed throws/error propagation is not part of the runnable native surface yet",
        kObjc3UnsupportedFeatureClaimThrows},
+      {"typed-throws", "not-claimed",
+       "throws(E) payloads are reserved until typed error ABI, interface preservation, and lowering support land",
+       kObjc3UnsupportedFeatureClaimTypedThrows},
       {"async-await", "not-claimed",
        "async/await lowering and runtime scheduling are not part of the runnable native surface yet",
        kObjc3UnsupportedFeatureClaimAsyncAwait},
@@ -60,6 +63,15 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
       {"arc", "not-claimed",
        "ARC remains unsupported in the public conformance claim surface until the full runnable ARC contract closes",
        kObjc3UnsupportedFeatureClaimArc},
+      {"value-optionals", "not-claimed",
+       "Optional<T> value optionals are reserved until ABI, lowering, and interface roundtrip support land",
+       kObjc3UnsupportedFeatureClaimValueOptionals},
+      {"match-expressions", "not-claimed",
+       "expression-form match remains reserved; only statement match belongs to the current source surface",
+       kObjc3UnsupportedFeatureClaimMatchExpressions},
+      {"guarded-patterns", "not-claimed",
+       "guarded match patterns remain reserved until semantic and lowering support land",
+       kObjc3UnsupportedFeatureClaimGuardedPatterns},
   };
   constexpr std::size_t kEntryCount = sizeof(kEntries) / sizeof(kEntries[0]);
   std::ostringstream out;
@@ -94,9 +106,9 @@ std::string BuildPublicConformanceProfilesJson() {
   };
   constexpr ProfileEntry kProfiles[] = {
       {"core", "claimed"},
-      {"strict", "claimed"},
-      {"strict-concurrency", "claimed"},
-      {"strict-system", "claimed"},
+      {"strict", "not-claimed"},
+      {"strict-concurrency", "not-claimed"},
+      {"strict-system", "not-claimed"},
   };
   constexpr std::size_t kProfileCount = sizeof(kProfiles) / sizeof(kProfiles[0]);
   std::ostringstream out;

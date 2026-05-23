@@ -1,0 +1,4 @@
+fn main(value: Optional<i32>) -> i32 {
+  return 0;
+}
+

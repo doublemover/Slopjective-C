@@ -61,6 +61,12 @@ std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
     const Objc3LexToken &token);
 std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
     const Objc3LexToken &token);
+std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
+    const Objc3LexToken &token);
+std::string BuildObjc3ReservedTypedThrowsDiagnostic(
+    const Objc3LexToken &token);
+std::string BuildObjc3ReservedMatchExpressionDiagnostic(
+    const Objc3LexToken &token);
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(
     const Objc3LexToken &token);
 

@@ -1,0 +1,4 @@
+fn risky() throws(Error) -> i32 {
+  return 1;
+}
+

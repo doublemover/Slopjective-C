@@ -101,6 +101,7 @@ BuildErrorHandlingErrorSourceClosureSummary(
   summary.try_keyword_reserved = true;
   summary.throw_keyword_reserved = true;
   summary.catch_keyword_reserved = true;
+  summary.typed_throws_fail_closed = true;
   summary.try_fail_closed = true;
   summary.throw_fail_closed = true;
   summary.do_catch_fail_closed = true;

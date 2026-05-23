@@ -67,12 +67,7 @@ def build_runtime_release_candidate_claim_abi_surface(
         "release_candidate_matrix_contract_id": (
             "objc3c.tooling.release.candidate.execution.matrix.v1"
         ),
-        "claimed_profile_ids": [
-            "core",
-            "strict",
-            "strict-concurrency",
-            "strict-system",
-        ],
+        "claimed_profile_ids": ["core"],
         "targeted_profile_ids": ["strict", "strict-concurrency", "strict-system"],
         "runtime_claim_boundary_model": (
             "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-retired-artifact-rejection-without-widening-the-public-runtime-header"

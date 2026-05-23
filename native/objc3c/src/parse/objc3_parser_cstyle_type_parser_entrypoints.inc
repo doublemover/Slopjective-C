@@ -12,6 +12,10 @@ Objc3CStyleFunctionTypeParseResult ParseObjc3CStyleFunctionType(
     return result;
   }
 
+  if (RejectReservedValueOptionalTypeLead(tokens, index, diagnostics)) {
+    return result;
+  }
+
   if (!ParseObjc3CStyleTypeSpelling(tokens, index, result, diagnostics)) {
     EmitExpectedCStyleTypeDiagnostic(
         diag_line, diag_column, diagnostic_context, diagnostics);

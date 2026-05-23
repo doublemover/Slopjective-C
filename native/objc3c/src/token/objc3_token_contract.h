@@ -231,12 +231,16 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimResultCarrierProfiles =
     "source-only:result-carrier-profiles";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles =
     "source-only:nserror-bridging-profiles";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTypedThrows =
+    "error_handling-fail-closed:typed-throws";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTryExpressions =
     "error_handling-fail-closed:try-expressions";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructThrowStatements =
     "error_handling-fail-closed:throw-statements";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructDoCatchStatements =
     "error_handling-fail-closed:do-catch-statements";
+inline constexpr const char *kObjc3TypeSystemFailClosedConstructValueOptionals =
+    "type_system-fail-closed:value-optionals";
 
 // control-flow source+semantic surface anchor: the frontend now
 // owns the Part 5 keyword classification boundary directly. Guard bindings,
@@ -286,6 +290,14 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
     "unsupported:arc";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
     "unsupported:optional-member-access";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimTypedThrows =
+    "unsupported:typed-throws";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimValueOptionals =
+    "unsupported:value-optionals";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimMatchExpressions =
+    "unsupported:match-expressions";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimGuardedPatterns =
+    "unsupported:guarded-patterns";
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";

@@ -166,8 +166,9 @@ STRICT_PROFILE_CLAIM_IMPLEMENTATION_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
         release_model(
             "claim_implementation_model",
             (
-                "strict-strict-concurrency-and-strict-system-compile-publish-and-"
-                "validate-through-the-same-native-cli-claim-surface-as-core"
+                "strict-strict-concurrency-and-strict-system-selection-fails-closed-"
+                "through-the-same-native-cli-claim-policy-until-runtime-backed-"
+                "claim-implementation-lands"
             ),
         ),
     ),
@@ -175,9 +176,14 @@ STRICT_PROFILE_CLAIM_IMPLEMENTATION_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
     post_fixture_fields=payload_fields(
         payload_field(
             "claimed_profile_ids",
-            ("core", "strict", "strict-concurrency", "strict-system"),
+            ("core",),
+        ),
+        payload_field(
+            "rejected_profile_ids",
+            ("strict", "strict-concurrency", "strict-system"),
         ),
         explicit_non_goals(
+            "no-strict-profile-claim-before-runtime-backed-support",
             "no-non-json-publication-claim-yet",
             "no-optional-feature-overclaim-beyond-runtime-capability-report",
         ),

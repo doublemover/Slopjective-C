@@ -9,7 +9,7 @@ inline constexpr const char *kArtifactRuntimeCapabilityReportingSchemaId =
 inline constexpr const char *kArtifactRuntimeCapabilityReportingSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_capability_report";
 inline constexpr const char *kArtifactRuntimeCapabilityReportingProfileModel =
-    "core-and-strict-profiles-claimed-while-optional-feature-gaps-remain-not-claimed-until-runtime-backed";
+    "core-profile-claimed-while-strict-profiles-and-optional-feature-gaps-remain-not-claimed-until-runtime-backed";
 inline constexpr const char
     *kArtifactRuntimeCapabilityReportingOptionalFeatureModel =
         "unsupported-runtime-feature-ids-lower-into-not-claimed-public-optional-features";

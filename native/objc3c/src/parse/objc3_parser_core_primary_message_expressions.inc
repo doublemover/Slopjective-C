@@ -3,6 +3,75 @@
 #include "parse/objc3_parser_core_primary_message_expressions_dispatch_abi_lowering_annotations.inc"
 #include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations.inc"
 
+  bool AtReservedMatchExpressionRecoveryBoundary(int paren_depth,
+                                                 int brace_depth,
+                                                 int bracket_depth) const {
+    if (paren_depth != 0 || brace_depth != 0 || bracket_depth != 0) {
+      return false;
+    }
+    switch (Peek().kind) {
+      case TokenKind::Semicolon:
+      case TokenKind::RBrace:
+      case TokenKind::KwLet:
+      case TokenKind::KwVar:
+      case TokenKind::KwReturn:
+      case TokenKind::KwIf:
+      case TokenKind::KwGuard:
+      case TokenKind::KwDefer:
+      case TokenKind::KwDo:
+      case TokenKind::KwMatch:
+      case TokenKind::KwFor:
+      case TokenKind::KwSwitch:
+      case TokenKind::KwWhile:
+      case TokenKind::KwBreak:
+      case TokenKind::KwContinue:
+      case TokenKind::KwAtAutoreleasePool:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void ConsumeReservedMatchExpressionRemainder() {
+    int paren_depth = 0;
+    int brace_depth = 0;
+    int bracket_depth = 0;
+    while (!At(TokenKind::Eof) &&
+           !AtReservedMatchExpressionRecoveryBoundary(paren_depth, brace_depth,
+                                                      bracket_depth)) {
+      const TokenKind kind = Peek().kind;
+      Advance();
+      switch (kind) {
+        case TokenKind::LParen:
+          ++paren_depth;
+          break;
+        case TokenKind::RParen:
+          if (paren_depth > 0) {
+            --paren_depth;
+          }
+          break;
+        case TokenKind::LBrace:
+          ++brace_depth;
+          break;
+        case TokenKind::RBrace:
+          if (brace_depth > 0) {
+            --brace_depth;
+          }
+          break;
+        case TokenKind::LBracket:
+          ++bracket_depth;
+          break;
+        case TokenKind::RBracket:
+          if (bracket_depth > 0) {
+            --bracket_depth;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   std::unique_ptr<Expr> ParsePrimary() {
     if (At(TokenKind::Hash)) {
       return ParseCollectionLiteralExpression();
@@ -29,6 +98,14 @@
 
     if (Match(TokenKind::LBracket)) {
       return ParseMessageSendExpression();
+    }
+
+    if (At(TokenKind::KwMatch)) {
+      const Token match_token = Advance();
+      diagnostics_.push_back(
+          BuildObjc3ReservedMatchExpressionDiagnostic(match_token));
+      ConsumeReservedMatchExpressionRemainder();
+      return nullptr;
     }
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {

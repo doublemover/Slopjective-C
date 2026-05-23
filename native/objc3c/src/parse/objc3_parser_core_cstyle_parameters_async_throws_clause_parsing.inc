@@ -8,6 +8,11 @@
                                       "duplicate 'throws' declaration modifier"));
       return false;
     }
+    if (At(TokenKind::LParen)) {
+      diagnostics_.push_back(
+          BuildObjc3ReservedTypedThrowsDiagnostic(throws_token));
+      return false;
+    }
     fn.throws_declared = true;
     return true;
   }
@@ -20,6 +25,11 @@
     if (method.throws_declared) {
       diagnostics_.push_back(MakeDiag(throws_token.line, throws_token.column, "O3P181",
                                       "duplicate 'throws' declaration modifier"));
+      return false;
+    }
+    if (At(TokenKind::LParen)) {
+      diagnostics_.push_back(
+          BuildObjc3ReservedTypedThrowsDiagnostic(throws_token));
       return false;
     }
     method.throws_declared = true;

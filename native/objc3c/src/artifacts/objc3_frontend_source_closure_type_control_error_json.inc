@@ -10,6 +10,8 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << BuildStringArrayJson(summary.source_only_claim_ids)
       << ",\"unsupported_claim_ids\":"
       << BuildStringArrayJson(summary.unsupported_claim_ids)
+      << ",\"fail_closed_construct_ids\":"
+      << BuildStringArrayJson(summary.fail_closed_construct_ids)
       << ",\"protocol_required_method_count\":"
       << summary.protocol_required_method_count
       << ",\"protocol_optional_method_count\":"
@@ -51,6 +53,8 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << (summary.typed_keypath_literal_source_supported ? "true" : "false")
       << ",\"optional_member_access_fail_closed\":"
       << (summary.optional_member_access_fail_closed ? "true" : "false")
+      << ",\"value_optional_type_fail_closed\":"
+      << (summary.value_optional_type_fail_closed ? "true" : "false")
       << ",\"nil_coalescing_fail_closed\":"
       << (summary.nil_coalescing_fail_closed ? "true" : "false")
       << ",\"typed_keypath_literal_fail_closed\":"
@@ -189,6 +193,8 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << (summary.throw_keyword_reserved ? "true" : "false")
       << ",\"catch_keyword_reserved\":"
       << (summary.catch_keyword_reserved ? "true" : "false")
+      << ",\"typed_throws_fail_closed\":"
+      << (summary.typed_throws_fail_closed ? "true" : "false")
       << ",\"try_fail_closed\":"
       << (summary.try_fail_closed ? "true" : "false")
       << ",\"throw_fail_closed\":"

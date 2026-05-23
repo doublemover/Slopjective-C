@@ -8,6 +8,7 @@ from pathlib import Path
 from ..case_result import CaseResult
 from ..expectation_matching import expect
 from ..fixture_compilation import compile_fixture_with_args
+from ..fixture_compile_runner import run_fixture_compile
 from ..paths import NATIVE_EXE, ROOT
 from ..process_execution import run
 from ..runtime_contract_release import RELEASE_CLAIMABLE_SURFACE_FIXTURE
@@ -59,17 +60,14 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
         release_candidate_matrix_path.read_text(encoding="utf-8")
     )
 
-    strict_compile_dir = case_dir / "strict"
-    compile_fixture_with_args(
+    strict_reject_dir = case_dir / "strict-reject"
+    strict_reject, _ = run_fixture_compile(
         fixture,
-        strict_compile_dir,
-        ["--objc3-conformance-profile", "strict"],
+        strict_reject_dir,
+        extra_args=["--objc3-conformance-profile", "strict"],
+        write_provenance=False,
     )
-    strict_publication = json.loads(
-        (strict_compile_dir / "module.objc3-conformance-publication.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    strict_reject_text = (strict_reject.stderr or strict_reject.stdout).strip()
 
     yaml_reject = run(
         [
@@ -95,27 +93,23 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
     )
 
     expect(
-        strict_publication.get("selected_profile") == "strict"
-        and strict_publication.get("selected_profile_supported") is True,
-        "expected strict profile selection to publish through the centralized claim policy",
-    )
-    expect(
         publication.get("supported_profile_ids") == ["core"]
-        or publication.get("supported_profile_ids")
-        == ["core", "strict", "strict-concurrency", "strict-system"],
-        "expected conformance publication to preserve a recognized live claim policy profile set",
+        and publication.get("rejected_profile_ids")
+        == ["strict", "strict-concurrency", "strict-system"],
+        "expected conformance publication to preserve the centralized core-only claim policy profile sets",
     )
     expect(
-        publication.get("supported_profile_ids")
-        == ["core", "strict", "strict-concurrency", "strict-system"]
-        and publication.get("rejected_profile_ids") == [],
-        "expected conformance publication to preserve the centralized live claim policy profile sets",
+        validation_payload.get("supported_profile_ids") == ["core"]
+        and validation_payload.get("rejected_profile_ids")
+        == ["strict", "strict-concurrency", "strict-system"],
+        "expected conformance validation to preserve the centralized core-only claim policy profile sets",
     )
     expect(
-        validation_payload.get("supported_profile_ids")
-        == ["core", "strict", "strict-concurrency", "strict-system"]
-        and validation_payload.get("rejected_profile_ids") == [],
-        "expected conformance validation to preserve the centralized live claim policy profile sets",
+        strict_reject.returncode != 0
+        and "unsupported --objc3-conformance-profile selection: strict"
+        in strict_reject_text
+        and "claimed profiles: core" in strict_reject_text,
+        "expected strict profile selection to fail closed through the centralized claim policy",
     )
     expect(
         publication.get("advanced_feature_targeted_profile_ids")
@@ -143,7 +137,7 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
                 "targeted_profile_ids": publication.get(
                     "advanced_feature_targeted_profile_ids"
                 ),
-                "strict_selected_profile": strict_publication.get("selected_profile"),
+                "strict_reject_returncode": strict_reject.returncode,
                 "yaml_reject_returncode": yaml_reject.returncode,
             },
         ),

@@ -15,6 +15,14 @@ constexpr std::array<LanguageFeatureState, kReservedFeatureStateDataCount>
     kReservedFeatureStates = {{
         {"reserved-syntax", FeatureState::Reserved, "",
          "Reserved syntax must remain explicit and fail closed until implemented."},
+        {"reserved-typed-throws", FeatureState::Reserved, "O3P182",
+         "throws(E) typed throws payloads are unavailable until error ABI and interface preservation land."},
+        {"reserved-value-optionals", FeatureState::Reserved, "O3P159",
+         "Optional<T> value optionals are unavailable until ABI, lowering, and interface roundtrip land."},
+        {"reserved-match-expressions", FeatureState::Reserved, "O3P156",
+         "Expression-form match remains unavailable; the current frontend admits only statement match."},
+        {"reserved-guarded-match-patterns", FeatureState::Reserved, "O3P157",
+         "Guarded match patterns remain unavailable until semantic and lowering support land."},
     }};
 
 }  // namespace

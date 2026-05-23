@@ -248,6 +248,7 @@ BuildTypeSystemTypeSourceClosureSummary(
   summary.nil_coalescing_source_supported = true;
   summary.typed_keypath_literal_source_supported = true;
   summary.optional_member_access_fail_closed = false;
+  summary.value_optional_type_fail_closed = true;
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
       CollectTypeSystemTypeSourceClosureStmtSites(stmt.get(), summary);
