@@ -31,6 +31,12 @@ std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
           kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix);
 }
 
+std::filesystem::path BuildStandaloneTextualInterfacePayloadArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".interface-payload.json");
+}
+
 std::filesystem::path BuildErrorHandlingResultBridgeArtifactReplayPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {

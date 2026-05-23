@@ -18,6 +18,9 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildStandaloneTextualInterfacePayloadArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildErrorHandlingResultBridgeArtifactReplayPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);

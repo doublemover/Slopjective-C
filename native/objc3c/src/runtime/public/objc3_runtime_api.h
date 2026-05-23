@@ -2,6 +2,7 @@
 
 #include "runtime/public/objc3_runtime_artifact_contract.h"
 #include "runtime/public/objc3_runtime_diagnostic_contract.h"
+#include "runtime/public/objc3_runtime_executable_contract.h"
 #include "runtime/public/objc3_runtime_language_semantics.h"
 #include "runtime/public/objc3_runtime_ownership_contract.h"
 #include "runtime/public/objc3_runtime_reflection.h"
@@ -18,6 +19,9 @@
  * - objc3_runtime_artifact_contract.h owns image registration and registration
  *   snapshot artifact entrypoints.
  * - objc3_runtime_diagnostic_contract.h owns checked dispatch diagnostics.
+ * - objc3_runtime_executable_contract.h owns #8214/#8215 executable runtime
+ *   contract snapshots for typed dispatch, registration, scheduler, and
+ *   foreign-ABI support boundaries.
  * - objc3_runtime_language_semantics.h owns public language-semantics runtime
  *   evidence snapshots.
  * - objc3_runtime_ownership_contract.h owns public runtime state ownership

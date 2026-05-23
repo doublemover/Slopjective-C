@@ -85,6 +85,12 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-runtime-debug-trace-v1": ROOT
     / "schemas"
     / "objc3c-runtime-debug-trace-v1.schema.json",
+    "objc3c-advanced-runtime-executable-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-advanced-runtime-executable-contract-v1.schema.json",
+    "objc3c-standalone-textual-interface-payload-v1": ROOT
+    / "schemas"
+    / "objc3c-standalone-textual-interface-payload-v1.schema.json",
     "objc3c-performance-telemetry-v1": ROOT
     / "schemas"
     / "objc3c-performance-telemetry-v1.schema.json",

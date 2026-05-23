@@ -38,6 +38,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_conformance_validation_artifact_names.cpp
   objc3_driver_frontend_diagnostic_artifact_publication.cpp
   objc3_driver_frontend_error_bridge_artifact_publication.cpp
+  objc3_driver_frontend_interface_payload_artifact_publication.cpp
   objc3_driver_frontend_manifest_artifact_publication.cpp
   objc3_driver_frontend_runtime_metadata_artifact_publication.cpp
   objc3_driver_conformance_validation_paths.cpp

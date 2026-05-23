@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+  "title": "objc3c Advanced Runtime Executable Contract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_id",
+    "schema_version",
+    "schema_path",
+    "dependency_issue_ref",
+    "public_command",
+    "runtime_public_contract",
+    "support_boundary",
+    "surfaces",
+    "negative_fixtures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.advanced-runtime.executable-contract-surfaces.v1"
+    },
+    "schema_id": {
+      "const": "objc3c-advanced-runtime-executable-contract-v1"
+    },
+    "schema_version": {"const": 1},
+    "schema_path": {"const": "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json"},
+    "dependency_issue_ref": {"const": 8213},
+    "public_command": {"type": "string"},
+    "runtime_public_contract": {
+      "type": "object",
+      "required": [
+        "header",
+        "implementation",
+        "abi_version_macro",
+        "snapshot_type",
+        "copy_symbols",
+        "strict_invalid_query_status"
+      ],
+      "properties": {
+        "header": {"type": "string"},
+        "implementation": {"type": "string"},
+        "abi_version_macro": {"const": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_ABI_VERSION"},
+        "snapshot_type": {"const": "objc3_runtime_executable_contract_surface_snapshot"},
+        "copy_symbols": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"type": "string"}
+        },
+        "strict_invalid_query_status": {
+          "const": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_REJECTED"
+        }
+      },
+      "additionalProperties": false
+    },
+    "support_boundary": {
+      "type": "object",
+      "required": [
+        "typed_dispatch_required",
+        "native_registration_required",
+        "executable_runtime_required",
+        "compatibility_shims",
+        "unsupported_surface_policy"
+      ],
+      "properties": {
+        "typed_dispatch_required": {"const": true},
+        "native_registration_required": {"const": true},
+        "executable_runtime_required": {"const": true},
+        "compatibility_shims": {"const": false},
+        "unsupported_surface_policy": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "surfaces": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "surface_name",
+          "surface_kind",
+          "issue_ref",
+          "dependency_issue_ref",
+          "support_status",
+          "support_claim",
+          "typed_dispatch_required",
+          "native_registration_required",
+          "executable_runtime_required",
+          "fail_closed_required",
+          "compatibility_shim_allowed",
+          "supported_boundary",
+          "reserved_boundary",
+          "strict_failure_diagnostic",
+          "primary_fixture",
+          "negative_fixture",
+          "runtime_contract",
+          "source_anchors",
+          "replay_key"
+        ],
+        "properties": {
+          "surface_name": {"type": "string"},
+          "surface_kind": {
+            "enum": [
+              "scheduler-task-runtime-contract",
+              "foreign-abi-runtime-contract"
+            ]
+          },
+          "issue_ref": {"enum": [8214, 8215]},
+          "dependency_issue_ref": {"const": 8213},
+          "support_status": {"enum": ["supported", "reserved", "rejected"]},
+          "support_claim": {"type": "string"},
+          "typed_dispatch_required": {"const": true},
+          "native_registration_required": {"const": true},
+          "executable_runtime_required": {"const": true},
+          "fail_closed_required": {"const": true},
+          "compatibility_shim_allowed": {"const": false},
+          "supported_boundary": {"type": "string"},
+          "reserved_boundary": {"type": "string"},
+          "strict_failure_diagnostic": {"type": "string", "pattern": "^advanced-runtime\\."},
+          "primary_fixture": {"type": "string"},
+          "negative_fixture": {"type": "string"},
+          "runtime_contract": {"type": "string"},
+          "source_anchors": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string"}
+          },
+          "replay_key": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "negative_fixtures": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "fixture",
+          "issue_ref",
+          "expected_diagnostic",
+          "unsupported_boundary"
+        ],
+        "properties": {
+          "fixture": {"type": "string"},
+          "issue_ref": {"enum": [8214, 8215]},
+          "expected_diagnostic": {"type": "string", "pattern": "^advanced-runtime\\."},
+          "unsupported_boundary": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

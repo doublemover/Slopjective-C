@@ -1,0 +1,95 @@
+{
+  "contract_id": "objc3c.advanced-runtime.executable-contract-surfaces.v1",
+  "schema_id": "objc3c-advanced-runtime-executable-contract-v1",
+  "schema_version": 1,
+  "schema_path": "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+  "dependency_issue_ref": 8213,
+  "public_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "runtime_public_contract": {
+    "header": "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+    "implementation": "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+    "abi_version_macro": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_ABI_VERSION",
+    "snapshot_type": "objc3_runtime_executable_contract_surface_snapshot",
+    "copy_symbols": [
+      "objc3_runtime_copy_executable_contract_surface",
+      "objc3_runtime_copy_executable_contract_surface_by_kind",
+      "objc3_runtime_executable_contract_support_status_for_surface"
+    ],
+    "strict_invalid_query_status": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_REJECTED"
+  },
+  "support_boundary": {
+    "typed_dispatch_required": true,
+    "native_registration_required": true,
+    "executable_runtime_required": true,
+    "compatibility_shims": false,
+    "unsupported_surface_policy": "Unrecognized executable-contract surface kinds return rejected support status and never downgrade to compatibility, metadata-only, or generated-report support."
+  },
+  "surfaces": [
+    {
+      "surface_name": "scheduler-task-runtime-contract",
+      "surface_kind": "scheduler-task-runtime-contract",
+      "issue_ref": 8214,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.scheduler-task-contract",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Single-process deterministic task creation, start, completion, cooperative cancellation checkpoints, continuation lifecycle, executor-hop ordering, per-actor FIFO mailbox enqueue/dequeue, and bounded runtime snapshots.",
+      "reserved_boundary": "Fairness, priority inheritance, work stealing, distributed scheduling, cross-process actor transport, and external executor integration remain reserved or rejected.",
+      "strict_failure_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "runtime_contract": "objc3_runtime_task_runtime_state_snapshot+objc3_runtime_actor_runtime_state_snapshot",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation_state.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
+      ],
+      "replay_key": "advanced-runtime:#8214:scheduler-task-runtime-contract:v1"
+    },
+    {
+      "surface_name": "foreign-abi-runtime-contract",
+      "surface_kind": "foreign-abi-runtime-contract",
+      "issue_ref": 8215,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.foreign-abi-contract",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Narrow C ABI package/replay boundary with stable ownership, nullability, error, and async metadata normalized before lowering.",
+      "reserved_boundary": "Swift runtime ABI, C++ exception propagation, template/object-layout mirroring, actor-owned Swift callables, async foreign callbacks, and arbitrary foreign runtime mirroring remain rejected.",
+      "strict_failure_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_runtime_mirroring.objc3",
+      "runtime_contract": "objc3_runtime_dispatch_typed_result+Objc3CrossModuleRuntimeLinkPlanImportedInput",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_input_interop.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifact_interop_metadata.cpp"
+      ],
+      "replay_key": "advanced-runtime:#8215:foreign-abi-runtime-contract:v1"
+    }
+  ],
+  "negative_fixtures": [
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "issue_ref": 8214,
+      "expected_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "unsupported_boundary": "priority and fairness policy cannot be inferred from executor-hop or mailbox helper traffic"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_runtime_mirroring.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime",
+      "unsupported_boundary": "Swift runtime mirroring and C++ exception propagation remain rejected unless a runtime ABI bridge exists"
+    }
+  ]
+}

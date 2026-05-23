@@ -1,0 +1,23 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.scheduler-unsupported-policy
+module AdvancedRuntimeClosureNegativeSchedulerPriorityFairness;
+
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32;
+
+actor class PriorityFairnessSchedulerClaim
+- (i32)requiresPriorityFairness:(i32)token
+    __attribute__((objc_scheduler_guarantee(priority),
+                   objc_scheduler_guarantee(fairness)));
+@end
+
+@implementation PriorityFairnessSchedulerClaim
+- (i32)requiresPriorityFairness:(i32)token
+    __attribute__((objc_scheduler_guarantee(priority),
+                   objc_scheduler_guarantee(fairness))) {
+  // Unsupported scheduler policies fail closed: executor-hop traffic proves
+  // deterministic ordering only, not priority, fairness, work stealing, or
+  // distributed scheduling.
+  let spawned = objc3_runtime_spawn_task_i32(2, 1);
+  return objc3_runtime_executor_hop_i32(spawned + token, 1);
+}
+@end

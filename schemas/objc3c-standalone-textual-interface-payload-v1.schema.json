@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+  "title": "Objective-C 3 Standalone Textual Interface Payload v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-standalone-textual-interface-payload-v1",
+    "payload_id_field": "payload_kind",
+    "payload_id_value": "objc3c.standalone_textual_interface_payload.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "module-interface"
+  },
+  "type": "object",
+  "required": [
+    "payload_kind",
+    "schema_version",
+    "producer_version",
+    "module_id",
+    "package_id",
+    "interface_payload_id",
+    "source_anchor",
+    "target_constraints",
+    "imports",
+    "declarations",
+    "reserved_metadata",
+    "interface_roundtrip",
+    "source_counts",
+    "capability_requirements",
+    "public_commands"
+  ],
+  "properties": {
+    "payload_kind": {
+      "const": "objc3c.standalone_textual_interface_payload.v1"
+    },
+    "schema_version": {
+      "const": "objc3c-standalone-textual-interface-payload-v1"
+    },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "module_id": { "type": "string", "minLength": 1 },
+    "package_id": { "type": "string", "minLength": 1 },
+    "interface_payload_id": { "type": "string", "minLength": 1 },
+    "source_anchor": { "$ref": "#/$defs/sourceAnchor" },
+    "target_constraints": {
+      "type": "object",
+      "required": [
+        "language_version",
+        "language_profile",
+        "arc_mode",
+        "lowering_contract"
+      ],
+      "properties": {
+        "language_version": { "type": "number" },
+        "language_profile": { "const": "canonical" },
+        "arc_mode": { "enum": ["enabled", "disabled"] },
+        "lowering_contract": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "imports": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interfaceImport" }
+    },
+    "declarations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interfaceDeclaration" }
+    },
+    "reserved_metadata": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reservedMetadata" }
+    },
+    "interface_roundtrip": { "$ref": "#/$defs/interfaceRoundtrip" },
+    "source_counts": {
+      "type": "object",
+      "required": [
+        "globals",
+        "protocols",
+        "interfaces",
+        "implementations_reserved",
+        "functions"
+      ],
+      "properties": {
+        "globals": { "type": "number" },
+        "protocols": { "type": "number" },
+        "interfaces": { "type": "number" },
+        "implementations_reserved": { "type": "number" },
+        "functions": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "capability_requirements": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "public_commands": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "diagnostic_count": { "type": "number" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sourceAnchor": {
+      "type": "object",
+      "required": ["path", "line", "column"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "number" },
+        "column": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "interfaceImport": {
+      "type": "object",
+      "required": [
+        "from_module",
+        "to_module",
+        "interface_payload_id",
+        "lock_identity",
+        "capability_requirements"
+      ],
+      "properties": {
+        "from_module": { "type": "string", "minLength": 1 },
+        "to_module": { "type": "string", "minLength": 1 },
+        "interface_payload_id": { "type": "string", "minLength": 1 },
+        "lock_identity": { "type": "string", "minLength": 1 },
+        "capability_requirements": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "interfaceDeclaration": {
+      "type": "object",
+      "required": [
+        "declaration_id",
+        "kind",
+        "name",
+        "visibility",
+        "type_signature",
+        "effects",
+        "generics",
+        "ownership",
+        "runtime_metadata",
+        "source_anchor"
+      ],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "actor_interface",
+            "function",
+            "global",
+            "interface",
+            "method",
+            "property",
+            "protocol"
+          ]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "visibility": { "enum": ["public", "package", "internal"] },
+        "type_signature": { "type": "object" },
+        "effects": { "type": "object" },
+        "generics": { "type": "array" },
+        "ownership": { "type": "object" },
+        "runtime_metadata": { "type": "object" },
+        "source_anchor": { "$ref": "#/$defs/sourceAnchor" }
+      },
+      "additionalProperties": false
+    },
+    "reservedMetadata": {
+      "type": "object",
+      "required": [
+        "surface",
+        "name",
+        "status",
+        "diagnostic",
+        "fail_closed",
+        "source_anchor"
+      ],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "diagnostic": { "type": "string", "pattern": "^O3" },
+        "fail_closed": { "const": true },
+        "source_anchor": { "$ref": "#/$defs/sourceAnchor" }
+      },
+      "additionalProperties": false
+    },
+    "interfaceRoundtrip": {
+      "type": "object",
+      "required": [
+        "payload_id",
+        "parse_status",
+        "semantic_equivalence_status",
+        "drift_diagnostic"
+      ],
+      "properties": {
+        "payload_id": { "type": "string", "minLength": 1 },
+        "parse_status": { "type": "string", "minLength": 1 },
+        "semantic_equivalence_status": { "type": "string", "minLength": 1 },
+        "drift_diagnostic": { "type": "string", "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

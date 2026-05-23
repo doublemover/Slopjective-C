@@ -221,6 +221,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_dispatch_diagnostics.h
   public/objc3_runtime_dispatch_result.h
   public/objc3_runtime_dispatch_status.h
+  public/objc3_runtime_executable_contract.cpp
+  public/objc3_runtime_executable_contract.h
   public/objc3_runtime_language_semantics.cpp
   public/objc3_runtime_language_semantics.h
   public/objc3_runtime_ownership_contract.h

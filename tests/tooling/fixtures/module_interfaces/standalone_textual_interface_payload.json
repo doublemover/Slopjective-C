@@ -1,0 +1,199 @@
+{
+  "payload_kind": "objc3c.standalone_textual_interface_payload.v1",
+  "schema_version": "objc3c-standalone-textual-interface-payload-v1",
+  "producer_version": "objc3c-native",
+  "module_id": "InterfacePayloadFixture",
+  "package_id": "unpackaged:InterfacePayloadFixture",
+  "interface_payload_id": "InterfacePayloadFixture:standalone-textual-interface:v1",
+  "source_anchor": {
+    "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "line": 1,
+    "column": 1
+  },
+  "target_constraints": {
+    "language_version": 3,
+    "language_profile": "canonical",
+    "arc_mode": "enabled",
+    "lowering_contract": "objc3-lowering-contract-active"
+  },
+  "imports": [
+    {
+      "from_module": "InterfacePayloadFixture",
+      "to_module": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json",
+      "interface_payload_id": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json:standalone-textual-interface:v1",
+      "lock_identity": "unlocked:runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json",
+      "capability_requirements": [
+        "modules.public-import-lookup"
+      ]
+    }
+  ],
+  "declarations": [
+    {
+      "declaration_id": "InterfacePayloadFixture::interface::Box",
+      "kind": "interface",
+      "name": "Box",
+      "visibility": "public",
+      "type_signature": {
+        "super_name": "NSObject",
+        "category_name": "",
+        "is_actor": false,
+        "adopted_protocols": [
+          "NSCopying"
+        ],
+        "members": [
+          {
+            "declaration_id": "InterfacePayloadFixture::interface::Box::method::value",
+            "kind": "method",
+            "name": "value",
+            "visibility": "public",
+            "type_signature": {
+              "selector": "value",
+              "is_class_method": false,
+              "result_type": "i32",
+              "result_object_pointer_type_name": "",
+              "result_generic_suffix": "",
+              "result_pointer_depth": 0,
+              "parameters": []
+            },
+            "effects": {
+              "async": false,
+              "throws": false,
+              "typed_throws": "reserved",
+              "throws_profile": "",
+              "actor_nonisolated": false,
+              "actor_isolation_profile": "",
+              "executor_affinity_declared": false,
+              "executor_affinity_kind": "",
+              "executor_affinity_name": ""
+            },
+            "generics": [],
+            "ownership": {
+              "qualifier": "",
+              "symbol": "",
+              "operation_profile": "",
+              "lifetime_profile": "",
+              "weak_reference": false,
+              "unowned_reference": false,
+              "unowned_safe_reference": false
+            },
+            "runtime_metadata": {
+              "semantic_link_symbol": "InterfacePayloadFixture::Box::value",
+              "scope_owner_symbol": "InterfacePayloadFixture::Box",
+              "scope_path": [],
+              "lookup_symbols": [
+                "InterfacePayloadFixture::Box::value"
+              ]
+            },
+            "source_anchor": {
+              "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+              "line": 12,
+              "column": 1
+            }
+          }
+        ]
+      },
+      "effects": {},
+      "generics": [],
+      "ownership": {},
+      "runtime_metadata": {
+        "semantic_link_symbol": "InterfacePayloadFixture::Box",
+        "scope_owner_symbol": "InterfacePayloadFixture",
+        "scope_path": [
+          "InterfacePayloadFixture",
+          "Box"
+        ],
+        "lookup_symbols": [
+          "InterfacePayloadFixture::Box::value"
+        ]
+      },
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 10,
+        "column": 1
+      }
+    },
+    {
+      "declaration_id": "InterfacePayloadFixture::function::makeBox",
+      "kind": "function",
+      "name": "makeBox",
+      "visibility": "public",
+      "type_signature": {
+        "result_type": "object",
+        "result_object_pointer_type_name": "Box",
+        "result_generic_suffix": "",
+        "result_pointer_depth": 1,
+        "parameters": []
+      },
+      "effects": {
+        "async": false,
+        "throws": false,
+        "typed_throws": "reserved",
+        "throws_profile": "",
+        "actor_nonisolated": false,
+        "actor_isolation_profile": "",
+        "executor_affinity_declared": false,
+        "executor_affinity_kind": "",
+        "executor_affinity_name": ""
+      },
+      "generics": [],
+      "ownership": {
+        "qualifier": "__strong",
+        "symbol": "objc3.ownership.strong",
+        "operation_profile": "owned-return",
+        "lifetime_profile": "caller-owned",
+        "weak_reference": false,
+        "unowned_reference": false,
+        "unowned_safe_reference": false
+      },
+      "runtime_metadata": {
+        "semantic_link_symbol": "",
+        "scope_owner_symbol": "InterfacePayloadFixture",
+        "scope_path": [
+          "InterfacePayloadFixture",
+          "makeBox"
+        ],
+        "lookup_symbols": []
+      },
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 20,
+        "column": 1
+      }
+    }
+  ],
+  "reserved_metadata": [
+    {
+      "surface": "implementation_declaration",
+      "name": "Box",
+      "status": "reserved-not-exported",
+      "diagnostic": "O3IFC8238",
+      "fail_closed": true,
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 30,
+        "column": 1
+      }
+    }
+  ],
+  "interface_roundtrip": {
+    "payload_id": "InterfacePayloadFixture:standalone-textual-interface:v1",
+    "parse_status": "reserved-importer-not-landed",
+    "semantic_equivalence_status": "reserved-importer-not-landed",
+    "drift_diagnostic": "O3IFC8238"
+  },
+  "source_counts": {
+    "globals": 0,
+    "protocols": 0,
+    "interfaces": 1,
+    "implementations_reserved": 1,
+    "functions": 1
+  },
+  "capability_requirements": [
+    "modules.public-import-lookup",
+    "modules.standalone-textual-interface-payload"
+  ],
+  "public_commands": [
+    "npm run objc3c -- compile-objc3c <input.objc3>"
+  ],
+  "diagnostic_count": 0
+}
