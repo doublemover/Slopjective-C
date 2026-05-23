@@ -139,15 +139,15 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
     PackagePublicWorkflowAction(
         action="validate-package-registry-model",
         summary=(
-            "validate hosted registry fixture metadata, signatures, digests, "
-            "revocations, and offline mirror pins"
+            "validate reserved hosted-registry fixture metadata, signatures, "
+            "digests, revocations, and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
-            "hosted registry resolution stays deterministic from checked-in "
-            "fixture metadata and offline mirror pins; live network fetches "
-            "fail closed"
+            "hosted registry behavior remains fixture-only and offline; live "
+            "network fetches fail closed and no public hosted-registry support "
+            "claim is published"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
@@ -162,15 +162,15 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
     PackagePublicWorkflowAction(
         action="package-registry-resolve",
         summary=(
-            "resolve one hosted package record from checked-in fixture "
-            "metadata and offline mirror pins"
+            "resolve one reserved hosted-registry fixture record from "
+            "checked-in metadata and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
-            "package registry resolution rejects network fetches, missing "
+            "fixture registry resolution rejects network fetches, missing "
             "metadata, digest/signature drift, revocations, and ambiguous "
-            "candidates"
+            "candidates without publishing hosted service support"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,

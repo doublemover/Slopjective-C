@@ -40,6 +40,7 @@ PACKAGE_LOCK_SOURCE_PATHS = (
     "stdlib/package_surface.json",
     "stdlib/advanced_helper_package_surface.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
     "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
 )
@@ -55,7 +56,7 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "package locks stay deterministic, provenance-bearing, and derived "
-            "from checked-in local package surfaces"
+            "from checked-in local package and module graph surfaces"
         ),
         schema_contracts=(PACKAGE_LOCK_SCHEMA,),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
@@ -98,14 +99,15 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         action="validate-package-manager-model",
         summary=(
             "validate generated package manifests, local dependency resolution, "
-            "language/ABI requirements, and package trust metadata"
+            "module graph source truth, language/ABI requirements, and package "
+            "trust metadata"
         ),
         script_path="scripts/check_objc3c_package_manager_model.py",
         validation_tier="repo",
         guarantee_owner=(
             "package manager claims stay grounded in generated package "
-            "manifests, deterministic local locks, fail-closed network "
-            "resolution, and package trust envelopes"
+            "manifests, deterministic local locks, shared module graph metadata, "
+            "fail-closed network resolution, and package trust envelopes"
         ),
         schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
