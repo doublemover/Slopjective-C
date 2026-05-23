@@ -290,7 +290,21 @@ def resolve_llc() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_LLC_PATH")
     if configured:
         return configured
-    return shutil.which("llc") or "llc"
+    llvm_root = os.environ.get("LLVM_ROOT")
+    if llvm_root:
+        candidate = Path(llvm_root) / "bin" / "llc.exe"
+        if candidate.is_file():
+            return str(candidate)
+    program_files_candidate = Path("C:/Program Files/LLVM/bin/llc.exe")
+    if program_files_candidate.is_file():
+        return str(program_files_candidate)
+    resolved = shutil.which("llc")
+    if resolved:
+        return resolved
+    raise RuntimeError(
+        "LLVM object emission requires llc; set OBJC3C_NATIVE_EXECUTION_LLC_PATH "
+        "or install LLVM with llc on PATH"
+    )
 
 
 def link_driver_args() -> list[str]:

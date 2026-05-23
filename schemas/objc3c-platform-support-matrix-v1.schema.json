@@ -277,6 +277,7 @@
       "required": [
         "toolchain_evidence_requirements",
         "toolchain_ranges",
+        "llvm_version_support_matrix",
         "sanitizer_variants"
       ],
       "properties": {
@@ -285,6 +286,9 @@
         },
         "toolchain_ranges": {
           "type": "array"
+        },
+        "llvm_version_support_matrix": {
+          "type": "object"
         },
         "sanitizer_variants": {
           "type": "array"

@@ -31,6 +31,14 @@ REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS: tuple[str, ...] = (
     "node",
     "pwsh",
 )
+REQUIRED_LLVM_MATRIX_TOOLS: tuple[str, ...] = (
+    "clang",
+    "clang++",
+    "llc",
+    "llvm-ar",
+    "llvm-config",
+    "headers-libs",
+)
 FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
     "all",
     "best-effort",
@@ -240,6 +248,78 @@ def _toolchain_ranges_by_component(
     return by_component
 
 
+def _validate_llvm_version_support_matrix(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> None:
+    matrix = payload.get("llvm_version_support_matrix")
+    expect(isinstance(matrix, dict), "platform support evidence missing LLVM version support matrix")
+    expect(
+        matrix.get("contract_id") == "objc3c.llvm.version-support-matrix.source.v1",
+        "LLVM version support matrix contract_id drifted",
+    )
+    expect(matrix.get("issue_ref") == 8232, "LLVM version support matrix issue_ref drifted")
+    expect(
+        matrix.get("support_claim_policy") == "capability-probed-fail-closed",
+        "LLVM version support matrix policy drifted",
+    )
+    for claim_field in ("minimum_supported_version", "known_good_versions"):
+        value = matrix.get(claim_field)
+        expect(bool(value), f"LLVM version support matrix missing {claim_field}")
+
+    tools_by_name: dict[str, dict[str, Any]] = {}
+    for tool in matrix.get("required_tools", []):
+        expect(isinstance(tool, dict), "LLVM matrix required tool must be an object")
+        tool_name = str(tool.get("tool_name", ""))
+        expect(tool_name, "LLVM matrix required tool missing tool_name")
+        expect(tool_name not in tools_by_name, f"duplicate LLVM matrix tool: {tool_name}")
+        tools_by_name[tool_name] = tool
+        expect(
+            tool.get("failure_behavior") == "fail-closed-before-support-claim",
+            f"{tool_name} LLVM matrix tool does not fail closed",
+        )
+        if tool_name in {"clang", "clang++", "llc", "headers-libs"}:
+            expect(tool.get("claim_state") == "required", f"{tool_name} must be required")
+        if tool_name in {"llvm-ar", "llvm-config"}:
+            expect(tool.get("claim_state") == "reserved", f"{tool_name} must remain reserved")
+
+    expect(
+        set(tools_by_name) == set(REQUIRED_LLVM_MATRIX_TOOLS),
+        "LLVM version support matrix required tools drifted",
+    )
+
+    for entry in matrix.get("matrix_entries", []):
+        expect(isinstance(entry, dict), "LLVM matrix entry must be an object")
+        platform_id = str(entry.get("platform_id", ""))
+        expect(platform_id in boundary_supported_platform_ids, f"LLVM matrix widened support to {platform_id}")
+        expect(
+            entry.get("unsupported_version_behavior") == "fail-closed-no-range-claim",
+            f"{entry.get('entry_id', '')} LLVM matrix entry does not fail closed",
+        )
+        version_claim = str(entry.get("llvm_version_claim", "")).lower()
+        for forbidden_term in FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS:
+            expect(
+                forbidden_term not in version_claim,
+                f"LLVM matrix entry used unsupported compatibility language: {forbidden_term}",
+            )
+        for evidence_id in entry.get("evidence_ids", []):
+            evidence_text = str(evidence_id)
+            expect(evidence_text in records_by_id, f"LLVM matrix entry missing evidence record {evidence_text}")
+            record = records_by_id[evidence_text]
+            expect(record.get("claim_weight") == "supporting", f"{evidence_text} is not supporting evidence")
+            expect(platform_id in record.get("supports_platform_ids", []), f"{evidence_text} does not support {platform_id}")
+
+    rejection_rules = matrix.get("rejection_rules", [])
+    expect(isinstance(rejection_rules, list) and rejection_rules, "LLVM matrix missing rejection rules")
+    for rule in rejection_rules:
+        expect(isinstance(rule, dict), "LLVM matrix rejection rule must be an object")
+        expect(str(rule.get("rule_id", "")), "LLVM matrix rejection rule missing rule_id")
+        expect(str(rule.get("condition", "")), f"{rule.get('rule_id', '')} missing rejection condition")
+        expect(str(rule.get("diagnostic", "")), f"{rule.get('rule_id', '')} missing rejection diagnostic")
+
+
 def validate_platform_toolchain_support_evidence(
     payload: dict[str, Any],
     *,
@@ -259,6 +339,11 @@ def validate_platform_toolchain_support_evidence(
     boundary_supported_ids = {str(platform_id) for platform_id in boundary.get("supported_platform_ids", [])}
     required_toolchain_components = _required_toolchain_components(payload)
     toolchain_ranges = _toolchain_ranges_by_component(
+        payload,
+        records_by_id=records_by_id,
+        boundary_supported_platform_ids=boundary_supported_ids,
+    )
+    _validate_llvm_version_support_matrix(
         payload,
         records_by_id=records_by_id,
         boundary_supported_platform_ids=boundary_supported_ids,
@@ -359,6 +444,7 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
         "toolchain_support": {
             "toolchain_evidence_requirements": payload["toolchain_evidence_requirements"],
             "toolchain_ranges": payload["toolchain_ranges"],
+            "llvm_version_support_matrix": payload["llvm_version_support_matrix"],
             "sanitizer_variants": payload["sanitizer_variants"],
         },
         "evidence_records": records,
@@ -381,6 +467,10 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "unsupported_platform_ids": [str(row["platform_id"]) for row in unsupported_rows],
         "required_toolchain_components": list(REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS),
         "toolchain_range_ids": [str(row["toolchain_id"]) for row in payload["toolchain_ranges"]],
+        "llvm_matrix_entry_ids": [
+            str(row["entry_id"])
+            for row in payload["llvm_version_support_matrix"]["matrix_entries"]
+        ],
         "sanitizer_variant_ids": [str(row["variant_id"]) for row in payload["sanitizer_variants"]],
         "supporting_evidence_ids": [
             str(record["evidence_id"])

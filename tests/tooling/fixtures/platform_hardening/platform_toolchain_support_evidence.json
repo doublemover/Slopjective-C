@@ -219,6 +219,94 @@
       "unsupported_version_behavior": "fail-closed-no-range-claim"
     }
   ],
+  "llvm_version_support_matrix": {
+    "contract_id": "objc3c.llvm.version-support-matrix.source.v1",
+    "issue_ref": 8232,
+    "support_claim_policy": "capability-probed-fail-closed",
+    "minimum_supported_version": "19.1.0",
+    "known_good_versions": [
+      "19.1.0"
+    ],
+    "known_bad_versions": [],
+    "required_tools": [
+      {
+        "tool_name": "clang",
+        "capability": "semantic diagnostics and frontend compatibility probe",
+        "claim_state": "required",
+        "version_source": "probe",
+        "failure_behavior": "fail-closed-before-support-claim"
+      },
+      {
+        "tool_name": "clang++",
+        "capability": "native runtime link and execution smoke",
+        "claim_state": "required",
+        "version_source": "native-build-resolution",
+        "failure_behavior": "fail-closed-before-support-claim"
+      },
+      {
+        "tool_name": "llc",
+        "capability": "llvm-direct object emission with --filetype=obj",
+        "claim_state": "required",
+        "version_source": "probe",
+        "failure_behavior": "fail-closed-before-support-claim"
+      },
+      {
+        "tool_name": "llvm-ar",
+        "capability": "package archive and static-library lanes",
+        "claim_state": "reserved",
+        "version_source": "reserved",
+        "failure_behavior": "fail-closed-before-support-claim"
+      },
+      {
+        "tool_name": "llvm-config",
+        "capability": "headers and libraries discovery",
+        "claim_state": "reserved",
+        "version_source": "reserved",
+        "failure_behavior": "fail-closed-before-support-claim"
+      },
+      {
+        "tool_name": "headers-libs",
+        "capability": "runtime headers and import libraries used by packaged native execution",
+        "claim_state": "required",
+        "version_source": "native-build-resolution",
+        "failure_behavior": "fail-closed-before-support-claim"
+      }
+    ],
+    "matrix_entries": [
+      {
+        "entry_id": "objc3c.llvm.windows-x64.current-probed-19",
+        "platform_id": "windows-x64",
+        "llvm_version_claim": "19.1.0-current-probed-only",
+        "support_status": "evidence-bound",
+        "object_emission_capability": "supported",
+        "package_capability": "supported",
+        "native_execution_capability": "supported",
+        "evidence_ids": [
+          "objc3c.evidence.toolchain.llvm.current-probe",
+          "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+          "objc3c.evidence.platform.windows-x64.execution.native-smoke"
+        ],
+        "unsupported_version_behavior": "fail-closed-no-range-claim"
+      }
+    ],
+    "rejection_rules": [
+      {
+        "rule_id": "objc3c.llvm.reject.missing-llc",
+        "condition": "llc is absent or does not support --filetype=obj",
+        "diagnostic": "native object emission is rejected before package or execution support is claimed"
+      },
+      {
+        "rule_id": "objc3c.llvm.reject.mixed-toolchain",
+        "condition": "clang, clang++, llc, headers, and runtime libraries resolve from incompatible toolchain roots",
+        "diagnostic": "mixed LLVM toolchains fail closed until a single governed matrix entry proves compatibility"
+      },
+      {
+        "rule_id": "objc3c.llvm.reject.unsupported-range",
+        "condition": "the probed version is outside known-good evidence",
+        "diagnostic": "unsupported LLVM versions fail closed with no range support claim"
+      }
+    ]
+  },
   "sanitizer_variants": [
     {
       "variant_id": "objc3c.toolchain.sanitizer.address",
@@ -326,6 +414,8 @@
       "claim_weight": "supporting",
       "source_paths": [
         "scripts/probe_objc3c_llvm_capabilities.py",
+        "scripts/objc3c_llvm_capability_probe/reports.py",
+        "scripts/check_objc3c_cross_lane_e2e.py",
         "tests/tooling/test_probe_objc3c_llvm_capabilities.py"
       ],
       "replay_commands": [

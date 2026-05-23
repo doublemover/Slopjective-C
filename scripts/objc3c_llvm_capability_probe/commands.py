@@ -3,17 +3,33 @@
 from __future__ import annotations
 
 import subprocess
+import shutil
 from pathlib import Path
 
 from objc3c_tooling.subprocesses import run_timed
 
 from .models import ExecutableProbe
-from .parsing import first_non_empty_line, llc_help_mentions_filetype_obj
+from .parsing import (
+    first_non_empty_line,
+    llc_help_mentions_filetype_obj,
+    tool_vendor_from_headline,
+    tool_version_from_text,
+)
 
 
 def run_command(command: list[str]) -> tuple[subprocess.CompletedProcess[str], float]:
     execution = run_timed(command, cwd=None)
     return execution.completed_process(), execution.duration_ms
+
+
+def resolved_command_path(path: Path) -> tuple[str, str]:
+    configured = str(path)
+    if path.is_absolute():
+        return configured, "configured-absolute" if path.is_file() else "configured-absolute-missing"
+    resolved = shutil.which(configured)
+    if resolved:
+        return resolved, "path-resolved"
+    return "", "path-unresolved"
 
 
 def probe_executable(path: Path, *, role: str) -> dict[str, object]:
@@ -22,14 +38,27 @@ def probe_executable(path: Path, *, role: str) -> dict[str, object]:
     version_text = (version_result.stdout or "") + (version_result.stderr or "")
 
     found = version_result.returncode != 127
+    resolved_path, shadowing_status = resolved_command_path(path)
+    if found and not resolved_path:
+        resolved_path = str(path)
+        shadowing_status = "launch-resolved"
+    if not found and not path.is_absolute():
+        resolved_path = ""
+        shadowing_status = "path-unresolved"
     diagnostic = f"{role} executable not found: {path}" if not found else None
+    headline = first_non_empty_line(version_text)
     return ExecutableProbe(
         role=role,
         path=str(path),
+        configured_path=str(path),
+        resolved_path=resolved_path,
+        shadowing_status=shadowing_status,
         found=found,
         version_exit_code=version_result.returncode,
         version_duration_ms=version_duration_ms,
-        version_headline=first_non_empty_line(version_text),
+        version_headline=headline,
+        version=tool_version_from_text(version_text),
+        vendor=tool_vendor_from_headline(headline),
         diagnostic=diagnostic,
     ).as_payload()
 

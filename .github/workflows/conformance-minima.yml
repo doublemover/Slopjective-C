@@ -60,6 +60,60 @@ jobs:
       - name: Install Python workflow dependencies
         run: python -m pip install --upgrade jsonschema
 
+      - name: Resolve LLVM object-emission tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Resolve-Executable {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string] $Name,
+              [string[]] $CandidateDirectories = @()
+            )
+            foreach ($directory in $CandidateDirectories) {
+              if ([string]::IsNullOrWhiteSpace($directory)) {
+                continue
+              }
+              $candidate = Join-Path $directory $Name
+              if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                return (Resolve-Path -LiteralPath $candidate).Path
+              }
+            }
+            $command = Get-Command $Name -ErrorAction SilentlyContinue
+            if ($null -ne $command -and -not [string]::IsNullOrWhiteSpace($command.Source)) {
+              return $command.Source
+            }
+            return $null
+          }
+
+          $candidateDirectories = @()
+          if (-not [string]::IsNullOrWhiteSpace($env:LLVM_ROOT)) {
+            $candidateDirectories += (Join-Path $env:LLVM_ROOT "bin")
+          }
+          $candidateDirectories += "C:\Program Files\LLVM\bin"
+
+          $llc = Resolve-Executable -Name "llc.exe" -CandidateDirectories $candidateDirectories
+          if ([string]::IsNullOrWhiteSpace($llc)) {
+            choco install llvm -y --no-progress
+            $candidateDirectories = @("C:\Program Files\LLVM\bin") + $candidateDirectories
+            $llc = Resolve-Executable -Name "llc.exe" -CandidateDirectories $candidateDirectories
+          }
+          if ([string]::IsNullOrWhiteSpace($llc)) {
+            throw "llc.exe was not found after LLVM tool resolution"
+          }
+
+          $llvmBin = Split-Path -Parent $llc
+          Add-Content -Path $env:GITHUB_PATH -Value $llvmBin
+          Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llc"
+
+          $clangxx = Resolve-Executable -Name "clang++.exe" -CandidateDirectories @($llvmBin)
+          if (-not [string]::IsNullOrWhiteSpace($clangxx)) {
+            Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$clangxx"
+          }
+          "Resolved llc: $llc"
+          "Resolved clang++: $clangxx"
+
       - name: Install Node dependencies
         run: npm ci
 

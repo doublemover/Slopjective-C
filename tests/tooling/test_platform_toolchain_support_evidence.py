@@ -58,6 +58,21 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "objc3c.platform.linux-x64.unsupported",
         "objc3c.platform.darwin-arm64.unsupported",
     ]
+    llvm_matrix = evidence["llvm_version_support_matrix"]
+    assert llvm_matrix["contract_id"] == "objc3c.llvm.version-support-matrix.source.v1"
+    assert llvm_matrix["issue_ref"] == 8232
+    assert llvm_matrix["support_claim_policy"] == "capability-probed-fail-closed"
+    assert {tool["tool_name"] for tool in llvm_matrix["required_tools"]} == {
+        "clang",
+        "clang++",
+        "llc",
+        "llvm-ar",
+        "llvm-config",
+        "headers-libs",
+    }
+    assert [entry["entry_id"] for entry in llvm_matrix["matrix_entries"]] == [
+        "objc3c.llvm.windows-x64.current-probed-19"
+    ]
 
 
 def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> None:
@@ -112,6 +127,31 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "pwsh": "current-pwsh-executable-used-by-packaging-scripts-only",
     }
     assert all(row["required_evidence_classes"] == ["toolchain"] for row in toolchain_ranges)
+    llvm_matrix = payload["toolchain_support"]["llvm_version_support_matrix"]
+    assert llvm_matrix["support_claim_policy"] == "capability-probed-fail-closed"
+    assert llvm_matrix["matrix_entries"][0] == {
+        "entry_id": "objc3c.llvm.windows-x64.current-probed-19",
+        "platform_id": "windows-x64",
+        "llvm_version_claim": "19.1.0-current-probed-only",
+        "support_status": "evidence-bound",
+        "object_emission_capability": "supported",
+        "package_capability": "supported",
+        "native_execution_capability": "supported",
+        "evidence_ids": [
+            "objc3c.evidence.toolchain.llvm.current-probe",
+            "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
+            "objc3c.evidence.platform.windows-x64.execution.native-smoke",
+        ],
+        "unsupported_version_behavior": "fail-closed-no-range-claim",
+    }
+    assert {
+        rule["rule_id"]
+        for rule in llvm_matrix["rejection_rules"]
+    } == {
+        "objc3c.llvm.reject.missing-llc",
+        "objc3c.llvm.reject.mixed-toolchain",
+        "objc3c.llvm.reject.unsupported-range",
+    }
     clean_room_record = next(
         record
         for record in payload["evidence_records"]
@@ -195,4 +235,26 @@ def test_platform_toolchain_support_evidence_rejects_toolchain_compatibility_cla
     evidence["toolchain_ranges"][0]["range_claim"] = "compatible fallback LLVM versions"
 
     with pytest.raises(RuntimeError, match="unsupported compatibility language"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_missing_llc_matrix_tool() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["llvm_version_support_matrix"]["required_tools"] = [
+        tool
+        for tool in evidence["llvm_version_support_matrix"]["required_tools"]
+        if tool["tool_name"] != "llc"
+    ]
+
+    with pytest.raises(RuntimeError, match="required tools drifted"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_llvm_range_compatibility_claim() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    evidence["llvm_version_support_matrix"]["matrix_entries"][0][
+        "llvm_version_claim"
+    ] = "compatible with all LLVM 19 installs"
+
+    with pytest.raises(RuntimeError, match="LLVM matrix entry used unsupported compatibility language"):
         validate_evidence(evidence)

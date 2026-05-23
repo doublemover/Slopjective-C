@@ -67,6 +67,20 @@ matrix may describe only the executable and package-bridge shape that replayed
 through the public workflow surface. Unsupported versions and missing tools
 fail closed with no range claim.
 
+The LLVM version support matrix is checked in under
+`llvm_version_support_matrix` in the platform support evidence fixture. It is
+not a broad LLVM compatibility promise. The current supported entry is
+`objc3c.llvm.windows-x64.current-probed-19`, which binds Windows x64 support to
+the public LLVM capability probe, native build resolution, and native execution
+smoke evidence. `clang`, `clang++`, `llc`, and runtime headers/libs are required
+for supported claims. `llvm-ar` and `llvm-config` remain reserved until package
+archive and header/library discovery lanes consume the same matrix directly.
+
+Object emission is supported only when `llc` is resolved and the probe verifies
+`--filetype=obj`. Missing `llc`, mixed LLVM tool roots, or versions outside
+known-good evidence fail before package, native execution, or platform support
+claims are published.
+
 ## Replay Surface
 
 Use the public bridge for replay:
