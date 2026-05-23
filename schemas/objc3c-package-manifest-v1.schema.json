@@ -175,6 +175,8 @@
         "to_module",
         "to_package_id",
         "source",
+        "source_authority",
+        "source_authority_digest",
         "resolution",
         "required_version"
       ],
@@ -184,17 +186,39 @@
         "to_module": { "type": "string", "minLength": 1 },
         "to_package_id": { "$ref": "#/$defs/packageId" },
         "source": { "const": "checked-in-local-workspace" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
         "resolution": { "const": "locked-local-registry" },
         "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
       }
     },
     "dependency": {
       "type": "object",
-      "required": ["package_id", "source", "version_requirement", "language_requirement", "abi_requirement"],
+      "required": [
+        "package_id",
+        "source",
+        "source_authority",
+        "source_authority_digest",
+        "version_requirement",
+        "language_requirement",
+        "abi_requirement"
+      ],
       "additionalProperties": false,
       "properties": {
         "package_id": { "type": "string", "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$" },
         "source": { "const": "checked-in-local-workspace" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
         "version_requirement": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
         "language_requirement": { "const": "3.0" },
         "abi_requirement": { "const": "objc3-abi-2025Q4" }

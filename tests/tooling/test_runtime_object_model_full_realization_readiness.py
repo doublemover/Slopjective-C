@@ -107,6 +107,7 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     assert result.ok is True
     assert result.diagnostics == ()
     assert contract["issue"] == 8198
+    assert set(contract["roadmap_issue_links"]) == {8202, 8208, 8209, 8210, 8211, 8212}
     assert contract["capability_id"] == "runtime.object-model.full-realization"
     assert contract["public_status"] == "reserved"
     assert contract["support_claim_published"] is False

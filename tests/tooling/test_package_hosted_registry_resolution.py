@@ -183,6 +183,21 @@ def test_hosted_registry_language_and_abi_mismatch_fail_closed() -> None:
     assert f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI mismatch for fixture:network.core" in failures
 
 
+def test_hosted_registry_index_and_mirror_policy_drift_fail_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["language_version"] = "4.0"
+    index["abi_identity"] = "objc3-abi-drift"
+    mirror["network_policy"] = "network-allowed"
+
+    failures = assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry language version drifted",
+    )
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry ABI identity drifted" in failures
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: offline mirror network policy drifted" in failures
+
+
 def test_hosted_registry_cache_offline_mirror_pin_mismatch_fails_closed() -> None:
     index, mirror = hosted_registry_fixture()
     mirror["packages"][0]["cache_digest"] = "sha256:" + ("4" * 64)  # type: ignore[index]

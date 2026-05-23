@@ -144,6 +144,11 @@ def test_package_manager_model_generates_manifest_backed_lock() -> None:
         dependency["target_manifest_digest"].startswith("sha256:")
         for dependency in dependencies
     )
+    assert all(
+        dependency["source_authority"] == "showcase/portfolio.json"
+        and dependency["source_authority_digest"].startswith("sha256:")
+        for dependency in dependencies
+    )
     assert collect_lock_model_failures(payload, root=ROOT) == []
 
 
@@ -184,6 +189,14 @@ def test_package_manager_negative_package_metadata_contracts_fail_closed() -> No
             assert isinstance(package, dict)
             _apply_package_metadata_mutation(package, mutation)
             packages[0] = package
+            failures = collect_lock_model_failures(payload, root=ROOT)
+        elif target == "lock-dependency":
+            dependencies = payload["dependencies"]
+            assert isinstance(dependencies, list)
+            dependency = deepcopy(dependencies[0])
+            assert isinstance(dependency, dict)
+            _apply_package_metadata_mutation(dependency, mutation)
+            dependencies[0] = dependency
             failures = collect_lock_model_failures(payload, root=ROOT)
         elif target == "local-registry-package":
             registry = local_registry_payload(

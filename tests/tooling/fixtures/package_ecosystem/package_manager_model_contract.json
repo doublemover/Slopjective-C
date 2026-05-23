@@ -34,14 +34,14 @@
   "model_rules": [
     "package manifests are generated from checked-in stdlib and showcase source surfaces",
     "every locked package carries language version, ABI identity, source digest, manifest digest, and local trust metadata",
-    "dependency edges resolve only through the checked-in local registry model",
+    "dependency edges resolve only through the checked-in local registry model and carry checked-in source authority plus digest metadata",
     "local registry entries carry exact locked version selection, dependency edge digests, fail-closed hosted/network policy, and replay evidence",
     "the lock carries a deterministic dependency-first resolution plan that local registry indexes and clean installs must preserve exactly",
     "package manifests, lock package rows, and local registry entries carry the same module graph source-of-truth record derived from checked-in stdlib module inventory or showcase portfolio inputs",
     "manifest trust signatures are recomputed from explicit signature envelopes that bind package id, namespace, source digest, manifest digest, package version, language version, ABI identity, trust root, signing key, and revocation policy before lock acceptance",
     "ABI and language requirements on dependency edges must match the target package before a lock can be accepted",
-    "dependency version requirements, resolved versions, target source digests, and target manifest digests must match the locked target package",
-    "revoked packages, signature drift, digest drift, missing provenance, missing or unsafe module graph metadata, dependency cycles, hosted registry claims, and network resolution claims fail closed"
+    "dependency version requirements, resolved versions, source authority digests, target source digests, and target manifest digests must match the locked target package",
+    "revoked packages, signature drift, digest drift, missing provenance, missing or unsafe module graph metadata, unsafe dependency source authority, dependency cycles, hosted registry claims, and network resolution claims fail closed"
   ],
   "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, and install/restore receipts; hosted registry and arbitrary network dependency resolution remain unsupported"
 }

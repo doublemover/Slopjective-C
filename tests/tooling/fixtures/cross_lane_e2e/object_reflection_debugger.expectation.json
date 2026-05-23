@@ -114,7 +114,10 @@
       "minimums": {
         "semantic_typed_keypath_literal_sites": 1,
         "lowering_typed_keypath_literal_sites": 1,
-        "live_typed_keypath_artifact_sites": 1
+        "live_typed_keypath_artifact_sites": 1,
+        "typed_keypath_descriptor_publication_sites": 1,
+        "typed_keypath_source_map_evidence_sites": 1,
+        "typed_keypath_runtime_handle_evidence_sites": 1
       },
       "required_runtime_helper_symbols": [
         "objc3_runtime_keypath_component_count_for_testing",

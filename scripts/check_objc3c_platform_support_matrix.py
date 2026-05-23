@@ -29,6 +29,15 @@ DEFAULT_SUMMARY_PATH = ROOT / "tmp" / "reports" / "platform-matrix" / "matrix-va
 REQUIRED_SUPPORTED_EVIDENCE_CLASSES = ("build", "package", "install", "execution")
 REQUIRED_AUXILIARY_EVIDENCE_CLASSES = ("toolchain", "hosted_ci", "clean_room")
 REQUIRED_TOOLCHAIN_COMPONENTS = ("llvm", "clang", "cmake", "ninja", "python", "node", "pwsh")
+REQUIRED_ROADMAP_ISSUE_REFS = (8206, 8228, 8229, 8230, 8231, 8232)
+EXPECTED_UNSUPPORTED_PLATFORM_ISSUES = {
+    "linux-x64": 8228,
+    "darwin-arm64": 8229,
+}
+EXPECTED_SANITIZER_ISSUES = {
+    "address": 8230,
+    "undefined": 8231,
+}
 FORBIDDEN_SOURCE_PREFIXES = ("tmp/", "artifacts/")
 FORBIDDEN_RANGE_TERMS = ("all", "best effort", "best-effort", "compat", "fallback")
 
@@ -168,6 +177,22 @@ def _upstream_support_rows_by_id(platform_evidence: dict[str, Any], support_stat
     }
 
 
+def _upstream_package_rows_by_id(platform_evidence: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(row["row_id"]): row
+        for row in platform_evidence.get("package_variant_rows", [])
+        if isinstance(row, dict) and row.get("row_id")
+    }
+
+
+def _upstream_sanitizer_rows_by_id(platform_evidence: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(row["variant_id"]): row
+        for row in platform_evidence.get("sanitizer_variants", [])
+        if isinstance(row, dict) and row.get("variant_id")
+    }
+
+
 def _unsupported_failure_ids(policy: dict[str, Any]) -> set[str]:
     return {
         str(check["failure_id"])
@@ -209,9 +234,11 @@ def _validate_supported_rows(inputs: ValidationInputs, records_by_id: dict[str, 
         expect(platform_id in upstream_rows, f"{platform_id} is not in upstream platform support evidence")
         upstream_row = upstream_rows[platform_id]
         expect(row["row_id"] == upstream_row["row_id"], f"{platform_id} row_id drifted from upstream evidence")
+        expect(row["issue_ref"] == upstream_row["issue_ref"], f"{platform_id} issue_ref drifted from upstream evidence")
         expect(row["host_os"] == supported_by_id[platform_id]["host_os"], f"{platform_id} host_os drifted")
         expect(row["host_arch"] == supported_by_id[platform_id]["host_arch"], f"{platform_id} host_arch drifted")
         expect(row["required_evidence"] == upstream_row["evidence"], f"{platform_id} evidence ids drifted from upstream evidence")
+        expect(row["package_variant_row_ids"] == upstream_row["package_variant_row_ids"], f"{platform_id} package variant rows drifted")
         expect(row["toolchain_evidence_ids"] == upstream_row["toolchain_evidence_ids"], f"{platform_id} toolchain evidence ids drifted")
         expect(row["hosted_ci_evidence_ids"] == upstream_row["hosted_ci_evidence_ids"], f"{platform_id} hosted CI evidence ids drifted")
         expect(row["local_clean_room_evidence_ids"] == upstream_row["local_clean_room_evidence_ids"], f"{platform_id} clean-room evidence ids drifted")
@@ -264,12 +291,79 @@ def _validate_unsupported_rows(inputs: ValidationInputs, records_by_id: dict[str
         expect(platform_id in upstream_rows, f"{platform_id} is not in upstream unsupported evidence")
         upstream_row = upstream_rows[platform_id]
         expect(row["row_id"] == upstream_row["row_id"], f"{platform_id} row_id drifted from upstream unsupported evidence")
+        expect(row["issue_ref"] == upstream_row["issue_ref"], f"{platform_id} issue_ref drifted from upstream unsupported evidence")
+        expected_issue = EXPECTED_UNSUPPORTED_PLATFORM_ISSUES.get(platform_id)
+        expect(expected_issue is not None and row["issue_ref"] == expected_issue, f"{platform_id} unsupported issue_ref drifted")
         expect(row["failure_id"] == upstream_row["failure_id"], f"{platform_id} failure_id drifted from upstream unsupported evidence")
         expect(row["failure_id"] in failure_ids, f"{platform_id} failure_id not in unsupported host policy")
         expect(row["fail_closed_evidence_id"] == upstream_row["evidence"]["fail_closed"], f"{platform_id} fail-closed evidence drifted")
+        expect(row["package_variant_row_ids"] == upstream_row["package_variant_row_ids"], f"{platform_id} package variant rows drifted")
         _require_policy_record(records_by_id, row["fail_closed_evidence_id"])
         _require_public_commands(row["public_replay_commands"])
     return unsupported_ids
+
+
+def _validate_package_variant_rows(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], supported_ids: set[str]) -> list[str]:
+    upstream_rows = _upstream_package_rows_by_id(inputs.platform_evidence)
+    row_ids: list[str] = []
+    for row in inputs.source_truth["package_variant_rows"]:
+        row_id = str(row["row_id"])
+        row_ids.append(row_id)
+        expect(row_id in upstream_rows, f"{row_id} is not in upstream package variant evidence")
+        upstream = upstream_rows[row_id]
+        for field_name in (
+            "issue_ref",
+            "variant_kind",
+            "target_platform_id",
+            "platform_ids",
+            "package_id",
+            "claim_state",
+            "evidence_ids",
+            "unsupported_behavior",
+            "diagnostic",
+        ):
+            expect(row[field_name] == upstream[field_name], f"{row_id} {field_name} drifted from upstream package variant evidence")
+
+        platform_ids = {str(platform_id) for platform_id in row.get("platform_ids", [])}
+        if row["claim_state"] == "evidence-bound":
+            expect(platform_ids <= supported_ids, f"{row_id} widened package support: {sorted(platform_ids - supported_ids)}")
+            for evidence_id in row["evidence_ids"]:
+                record = records_by_id[str(evidence_id)]
+                expect(record.get("claim_weight") == "supporting", f"{row_id} evidence {evidence_id} is not supporting")
+            continue
+        expect(not platform_ids, f"{row_id} non-supported package row cannot list supported platform ids")
+        for evidence_id in row["evidence_ids"]:
+            _require_policy_record(records_by_id, str(evidence_id))
+    expect(sorted(row_ids) == sorted(upstream_rows), "source-truth package variant rows drifted from upstream evidence")
+    return row_ids
+
+
+def _validate_sanitizer_variant_rows(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], package_row_ids: set[str]) -> list[str]:
+    upstream_rows = _upstream_sanitizer_rows_by_id(inputs.platform_evidence)
+    variant_ids: list[str] = []
+    for row in inputs.source_truth["sanitizer_variant_rows"]:
+        variant_id = str(row["variant_id"])
+        variant_ids.append(variant_id)
+        expect(variant_id in upstream_rows, f"{variant_id} is not in upstream sanitizer evidence")
+        upstream = upstream_rows[variant_id]
+        for field_name in (
+            "issue_ref",
+            "sanitizer",
+            "claim_state",
+            "platform_ids",
+            "package_variant_row_id",
+            "package_id",
+            "diagnostic",
+        ):
+            expect(row[field_name] == upstream[field_name], f"{variant_id} {field_name} drifted from upstream sanitizer evidence")
+        expect(row["issue_ref"] == EXPECTED_SANITIZER_ISSUES[str(row["sanitizer"])], f"{variant_id} sanitizer issue_ref drifted")
+        expect(row["claim_state"] == "reserved", f"{variant_id} must remain reserved until package/install/native execution evidence exists")
+        expect(not row["platform_ids"], f"{variant_id} reserved sanitizer cannot list supported platform ids")
+        expect(row["package_variant_row_id"] in package_row_ids, f"{variant_id} package variant row missing from source truth")
+        for evidence_id in upstream.get("evidence_ids", []):
+            _require_policy_record(records_by_id, str(evidence_id))
+    expect(sorted(variant_ids) == sorted(upstream_rows), "source-truth sanitizer rows drifted from upstream evidence")
+    return variant_ids
 
 
 def _validate_toolchain_ranges(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], supported_ids: set[str]) -> list[str]:
@@ -300,6 +394,8 @@ def _validate_toolchain_ranges(inputs: ValidationInputs, records_by_id: dict[str
 
 def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUTH_PATH) -> dict[str, Any]:
     inputs = _load_inputs(source_truth_path)
+    issue_refs = {int(issue_ref) for issue_ref in inputs.source_truth.get("roadmap_issue_refs", [])}
+    expect(issue_refs == set(REQUIRED_ROADMAP_ISSUE_REFS), "source truth roadmap issue refs drifted")
     policy = inputs.source_truth["claim_policy"]
     expect(policy["supported_rows_require_checked_source"] is True, "supported rows must require checked source")
     expect(policy["support_claims_require_live_network"] is False, "support claims cannot require live network")
@@ -311,6 +407,8 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
     supported_ids = set(_validate_supported_rows(inputs, records_by_id))
     unsupported_ids = _validate_unsupported_rows(inputs, records_by_id, supported_ids)
     toolchain_components = _validate_toolchain_ranges(inputs, records_by_id, supported_ids)
+    package_variant_row_ids = _validate_package_variant_rows(inputs, records_by_id, supported_ids)
+    sanitizer_variant_ids = _validate_sanitizer_variant_rows(inputs, records_by_id, set(package_variant_row_ids))
 
     return {
         "contract_id": "objc3c.platform.support.source_truth.validation.summary.v1",
@@ -320,10 +418,13 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
         "issue": inputs.source_truth["issue"],
         "supported_platform_ids": sorted(supported_ids),
         "unsupported_platform_ids": sorted(unsupported_ids),
+        "roadmap_issue_refs": list(REQUIRED_ROADMAP_ISSUE_REFS),
         "required_supported_evidence_classes": list(REQUIRED_SUPPORTED_EVIDENCE_CLASSES),
         "required_auxiliary_evidence_classes": list(REQUIRED_AUXILIARY_EVIDENCE_CLASSES),
         "required_toolchain_components": list(REQUIRED_TOOLCHAIN_COMPONENTS),
         "validated_toolchain_components": sorted(toolchain_components),
+        "package_variant_row_ids": sorted(package_variant_row_ids),
+        "sanitizer_variant_ids": sorted(sanitizer_variant_ids),
         "public_action_count": len(ACTION_SPECS),
     }
 

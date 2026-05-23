@@ -53,7 +53,7 @@
     "package manifests are generated from checked-in source contracts and must preserve language, ABI, digest, and trust metadata",
     "package ecosystem artifacts must validate against checked-in schemas before publication claims",
     "registry metadata must be generated from lock and mirror evidence",
-    "registry indexes must validate exact locked versions, dependency digests, fail-closed hosted/network policy, and replay evidence",
+    "registry indexes must validate exact locked versions, dependency source authority digests, dependency digests, fail-closed hosted/network policy, and replay evidence",
     "offline mirror cache entries and restore receipts must be generated from the same lock-derived mirror index",
     "clean install validation roots must be re-created before package install credibility is claimed",
     "install receipts must be generated from lock, mirror, local registry, publication, and restore metadata that agree",

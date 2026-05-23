@@ -12,6 +12,46 @@
       "runtime.debug-trace.lldb-plugin"
     ]
   },
+  "native_debug_info": {
+    "contract_id": "objc3c.debug-source-maps.native-debug-info.v1",
+    "evidence_id": "advanced-runtime-closure.native-debug-info",
+    "object_artifact_id": "artifact.advanced-runtime-closure.object",
+    "emitted_native_debug_info": true,
+    "native_line_table_emitted": true,
+    "ir_debug_metadata_present": true,
+    "llvm_debug_location_count": 7,
+    "native_debug_sections": [
+      ".debug$S",
+      ".debug_abbrev",
+      ".debug_info",
+      ".debug_str",
+      ".debug_line"
+    ],
+    "native_line_table_sections": [
+      ".debug$S",
+      ".debug_line"
+    ],
+    "source_map_entry_ids": [
+      "advanced-runtime.smap.ownership-block",
+      "advanced-runtime.smap.async-cancellation",
+      "advanced-runtime.smap.actor-mailbox",
+      "advanced-runtime.smap.error-bridge",
+      "advanced-runtime.smap.property-behavior",
+      "advanced-runtime.smap.macro-provenance",
+      "advanced-runtime.smap.package-replay"
+    ],
+    "native_line_table_row_ids": [
+      "advanced-runtime.lt.ownership-block",
+      "advanced-runtime.lt.async-cancellation",
+      "advanced-runtime.lt.actor-mailbox",
+      "advanced-runtime.lt.error-bridge",
+      "advanced-runtime.lt.property-behavior",
+      "advanced-runtime.lt.macro-provenance",
+      "advanced-runtime.lt.package-replay"
+    ],
+    "statement_stepping_integrated": false,
+    "fail_closed_without_stepping_integration": true
+  },
   "required_record_kinds": [
     "ownership-cleanup-edge",
     "async-suspension-point",

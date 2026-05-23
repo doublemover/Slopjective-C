@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from .model import (
+    LOCAL_DEPENDENCY_RESOLUTION,
+    LOCAL_DEPENDENCY_SOURCE,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     LOCAL_PACKAGE_TRUST_KEY_ID,
@@ -11,6 +13,7 @@ from .model import (
     PackageManagerPaths,
     build_lock_components,
     cache_payload_from_mirror_package,
+    collect_dependency_source_authority_failures,
     collect_lock_model_failures,
     default_trust_policy_payload,
     file_digest,
@@ -41,6 +44,8 @@ from .trust import (
 
 __all__ = [
     "LOCAL_PACKAGE_ABI_IDENTITY",
+    "LOCAL_DEPENDENCY_RESOLUTION",
+    "LOCAL_DEPENDENCY_SOURCE",
     "LOCAL_PACKAGE_LANGUAGE_VERSION",
     "LOCAL_PACKAGE_TRUST_KEY_ID",
     "PACKAGE_MANAGER_TAMPER_CODE",
@@ -52,6 +57,7 @@ __all__ = [
     "PackageOperationRequest",
     "build_lock_components",
     "cache_payload_from_mirror_package",
+    "collect_dependency_source_authority_failures",
     "collect_lock_model_failures",
     "collect_manifest_trust_failures",
     "collect_package_operation_failures",

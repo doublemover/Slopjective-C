@@ -6,9 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from objc3c_package_manager.model import (
+    LOCAL_DEPENDENCY_RESOLUTION,
+    LOCAL_DEPENDENCY_SOURCE,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     PACKAGE_MANAGER_TAMPER_CODE,
+    collect_dependency_source_authority_failures,
     public_workflow_command,
 )
 
@@ -86,6 +89,8 @@ def dependency_edge_payload(
         "from": from_id,
         "to": to_id,
         "source": str(dependency.get("source")),
+        "source_authority": str(dependency.get("source_authority")),
+        "source_authority_digest": str(dependency.get("source_authority_digest")),
         "language_requirement": str(dependency.get("language_requirement")),
         "abi_requirement": str(dependency.get("abi_requirement")),
         "resolution": str(dependency.get("resolution")),
@@ -401,10 +406,16 @@ def collect_registry_index_failures(
         from_id = str(edge.get("from"))
         to_id = str(edge.get("to"))
         target = lock_packages_by_id.get(to_id, {})
-        if edge.get("resolution") != "locked-local-registry":
+        if edge.get("resolution") != LOCAL_DEPENDENCY_RESOLUTION:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency resolution drift for {from_id}->{to_id}")
-        if edge.get("source") != "checked-in-local-workspace":
+        if edge.get("source") != LOCAL_DEPENDENCY_SOURCE:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency source drift for {from_id}->{to_id}")
+        failures.extend(
+            collect_dependency_source_authority_failures(
+                edge,
+                root=root,
+            )
+        )
         if edge.get("language_requirement") != target.get("language_version"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency language mismatch for {from_id}->{to_id}")
         if edge.get("abi_requirement") != target.get("abi_identity"):

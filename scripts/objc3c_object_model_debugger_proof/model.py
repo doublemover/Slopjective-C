@@ -116,6 +116,7 @@ REQUIRED_DEBUG_ANCHOR_SOURCE_FIELDS = frozenset(
     }
 )
 DEBUG_ANCHOR_SIZE_NEGOTIATION_POLICY = "snapshot_size-zero-means-v1-prefix"
+REQUIRED_ROADMAP_ISSUE_LINKS = frozenset({8202, 8208, 8209, 8210, 8211, 8212})
 
 
 @dataclass(frozen=True)
@@ -2611,6 +2612,19 @@ def validate_contract_path(
         diagnostics.append(_diag("contract-id", f"contract_id must be {CONTRACT_ID}", "contract_id"))
     if payload.get("issue") != 8198:
         diagnostics.append(_diag("issue-id", "contract must be owned by issue 8198", "issue"))
+    roadmap_issue_links = {
+        _safe_int(item)
+        for item in _list(payload.get("roadmap_issue_links"))
+        if _safe_int(item)
+    }
+    for issue_id in sorted(REQUIRED_ROADMAP_ISSUE_LINKS - roadmap_issue_links):
+        diagnostics.append(
+            _diag(
+                "roadmap-issue-link-missing",
+                f"object-model debugger proof must link roadmap issue {issue_id}",
+                "roadmap_issue_links",
+            )
+        )
     if payload.get("capability_id") != "runtime.object-model.full-realization":
         diagnostics.append(
             _diag(

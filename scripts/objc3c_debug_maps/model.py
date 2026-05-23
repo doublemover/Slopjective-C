@@ -14,6 +14,7 @@ from objc3c_tooling.paths import ROOT, display_path, repo_rel, resolve_repo_path
 CONTRACT_ID = "objc3c.debug-source-maps.v1"
 VALIDATION_CONTRACT_ID = "objc3c.debug-source-maps.validation.v1"
 INSPECTION_CONTRACT_ID = "objc3c.debug-map.inspection.v1"
+NATIVE_DEBUG_INFO_CONTRACT_ID = "objc3c.debug-source-maps.native-debug-info.v1"
 DEFAULT_FIXTURE_PATH = (
     ROOT
     / "tests"
@@ -245,6 +246,42 @@ class NativeLineTableRow:
 
 
 @dataclass(frozen=True)
+class NativeDebugInfoEvidence:
+    contract_id: str
+    evidence_id: str
+    object_artifact_id: str
+    emitted_native_debug_info: bool
+    native_line_table_emitted: bool
+    ir_debug_metadata_present: bool
+    llvm_debug_location_count: int
+    native_debug_sections: tuple[str, ...]
+    native_line_table_sections: tuple[str, ...]
+    source_map_entry_ids: tuple[str, ...]
+    native_line_table_row_ids: tuple[str, ...]
+    statement_stepping_integrated: bool
+    fail_closed_without_stepping_integration: bool
+
+    @classmethod
+    def from_payload(cls, payload: object) -> "NativeDebugInfoEvidence":
+        item = payload if isinstance(payload, dict) else {}
+        return cls(
+            contract_id=_safe_str(item.get("contract_id")),
+            evidence_id=_safe_str(item.get("evidence_id")),
+            object_artifact_id=_safe_str(item.get("object_artifact_id")),
+            emitted_native_debug_info=item.get("emitted_native_debug_info") is True,
+            native_line_table_emitted=item.get("native_line_table_emitted") is True,
+            ir_debug_metadata_present=item.get("ir_debug_metadata_present") is True,
+            llvm_debug_location_count=_safe_int(item.get("llvm_debug_location_count")),
+            native_debug_sections=_tuple_str(item.get("native_debug_sections")),
+            native_line_table_sections=_tuple_str(item.get("native_line_table_sections")),
+            source_map_entry_ids=_tuple_str(item.get("source_map_entry_ids")),
+            native_line_table_row_ids=_tuple_str(item.get("native_line_table_row_ids")),
+            statement_stepping_integrated=item.get("statement_stepping_integrated") is True,
+            fail_closed_without_stepping_integration=item.get("fail_closed_without_stepping_integration") is True,
+        )
+
+
+@dataclass(frozen=True)
 class NativeRange:
     start_offset: int
     end_offset: int
@@ -467,6 +504,7 @@ class DebugSourceMapBundle:
     source_maps: tuple[SourceMapEntry, ...]
     debug_maps: tuple[DebugMapEntry, ...]
     native_line_tables: tuple[NativeLineTableRow, ...]
+    native_debug_info: NativeDebugInfoEvidence
     inline_frames: tuple[InlineFrame, ...]
     native_inline_ranges: tuple[NativeInlineRange, ...]
     inline_debug_chains: tuple[InlineDebugChain, ...]
@@ -588,6 +626,7 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
         "source_maps",
         "debug_maps",
         "native_line_tables",
+        "native_debug_info",
         "inline_frames",
         "provenance_links",
         "language_service",
@@ -607,6 +646,7 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
 
     object_fields = (
         "source",
+        "native_debug_info",
         "source_graph",
         "inline_frames",
         "language_service",
@@ -676,6 +716,7 @@ def load_bundle(path: Path | str) -> DebugSourceMapBundle:
         source_maps=tuple(SourceMapEntry.from_payload(item) for item in _list(payload.get("source_maps"))),
         debug_maps=tuple(DebugMapEntry.from_payload(item) for item in _list(payload.get("debug_maps"))),
         native_line_tables=tuple(NativeLineTableRow.from_payload(item) for item in _list(payload.get("native_line_tables"))),
+        native_debug_info=NativeDebugInfoEvidence.from_payload(payload.get("native_debug_info")),
         inline_frames=tuple(InlineFrame.from_payload(item) for item in _list(inline_frames.get("frames"))),
         native_inline_ranges=tuple(NativeInlineRange.from_payload(item) for item in _list(inline_frames.get("native_ranges"))),
         inline_debug_chains=tuple(InlineDebugChain.from_payload(item) for item in _list(inline_frames.get("chains"))),
@@ -736,6 +777,7 @@ def validate_bundle(bundle: DebugSourceMapBundle) -> ValidationResult:
 
     _validate_capabilities(bundle.capability_rows, capability_rows, diagnostics)
     _validate_debug_policy(bundle, diagnostics)
+    _validate_native_debug_info_evidence(bundle, diagnostics)
     _validate_required_record_kinds(bundle, diagnostics)
     _validate_required_optimization_hooks(bundle, diagnostics)
 
@@ -832,6 +874,108 @@ def _validate_debug_policy(bundle: DebugSourceMapBundle, diagnostics: list[Diagn
                         entry.entry_id,
                     )
                 )
+
+
+def _validate_native_debug_info_evidence(bundle: DebugSourceMapBundle, diagnostics: list[Diagnostic]) -> None:
+    evidence = bundle.native_debug_info
+    if evidence.contract_id != NATIVE_DEBUG_INFO_CONTRACT_ID:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-contract-id",
+                f"native debug-info evidence contract_id must be {NATIVE_DEBUG_INFO_CONTRACT_ID}",
+                "native_debug_info.contract_id",
+            )
+        )
+    if not evidence.evidence_id or not evidence.object_artifact_id:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-incomplete",
+                "native debug-info evidence must publish stable evidence and object artifact ids",
+                "native_debug_info",
+            )
+        )
+    if evidence.emitted_native_debug_info is not True:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-unavailable",
+                "source-map bundles must link to emitted native debug info",
+                "native_debug_info.emitted_native_debug_info",
+            )
+        )
+    if evidence.native_line_table_emitted is not True:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-unavailable",
+                "source-map bundles must link to emitted native line-table rows",
+                "native_debug_info.native_line_table_emitted",
+            )
+        )
+    if evidence.ir_debug_metadata_present is not True or evidence.llvm_debug_location_count < len(bundle.source_maps):
+        diagnostics.append(
+            _diag(
+                "native-debug-info-incomplete",
+                "native debug-info evidence must carry instruction-level LLVM DI locations for every source-map row",
+                "native_debug_info.llvm_debug_location_count",
+            )
+        )
+    if not evidence.native_debug_sections:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-incomplete",
+                "native debug-info evidence must list emitted native debug sections",
+                "native_debug_info.native_debug_sections",
+            )
+        )
+    if not evidence.native_line_table_sections:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-incomplete",
+                "native debug-info evidence must list emitted native line-table sections",
+                "native_debug_info.native_line_table_sections",
+            )
+        )
+    if set(evidence.native_line_table_sections) - set(evidence.native_debug_sections):
+        diagnostics.append(
+            _diag(
+                "native-debug-info-drift",
+                "native line-table sections must be present in the native debug section inventory",
+                "native_debug_info.native_line_table_sections",
+            )
+        )
+    expected_source_map_ids = tuple(entry.entry_id for entry in bundle.source_maps)
+    expected_line_row_ids = tuple(row.row_id for row in bundle.native_line_tables)
+    if evidence.source_map_entry_ids != expected_source_map_ids:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-drift",
+                "native debug-info source-map ids drifted from source_maps order",
+                "native_debug_info.source_map_entry_ids",
+            )
+        )
+    if evidence.native_line_table_row_ids != expected_line_row_ids:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-drift",
+                "native debug-info native line-table row ids drifted from native_line_tables order",
+                "native_debug_info.native_line_table_row_ids",
+            )
+        )
+    if evidence.statement_stepping_integrated:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-overclaimed",
+                "native debug-info evidence must not claim debugger stepping integration",
+                "native_debug_info.statement_stepping_integrated",
+            )
+        )
+    if evidence.fail_closed_without_stepping_integration is not True:
+        diagnostics.append(
+            _diag(
+                "native-debug-info-overclaimed",
+                "native debug-info evidence must remain fail-closed until debugger stepping consumes it",
+                "native_debug_info.fail_closed_without_stepping_integration",
+            )
+        )
 
 
 def _validate_required_record_kinds(bundle: DebugSourceMapBundle, diagnostics: list[Diagnostic]) -> None:
@@ -1203,6 +1347,7 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
             "source_map_count": 0,
             "debug_map_count": 0,
             "native_line_table_count": 0,
+            "native_debug_info_evidence_id": "",
             "inline_frame_count": 0,
             "native_inline_range_count": 0,
             "inline_debug_chain_count": 0,
@@ -1221,6 +1366,7 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
         "source_map_count": len(bundle.source_maps),
         "debug_map_count": len(bundle.debug_maps),
         "native_line_table_count": len(bundle.native_line_tables),
+        "native_debug_info_evidence_id": bundle.native_debug_info.evidence_id,
         "inline_frame_count": len(bundle.inline_frames),
         "native_inline_range_count": len(bundle.native_inline_ranges),
         "inline_debug_chain_count": len(bundle.inline_debug_chains),

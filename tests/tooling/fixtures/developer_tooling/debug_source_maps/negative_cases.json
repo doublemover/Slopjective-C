@@ -121,6 +121,18 @@
       }
     },
     {
+      "case_id": "native-debug-info-row-drift",
+      "expected_code": "native-debug-info-drift",
+      "mutation": {
+        "path": [
+          "native_debug_info",
+          "native_line_table_row_ids",
+          2
+        ],
+        "value": "lt.stale_native_debug_info_row"
+      }
+    },
+    {
       "case_id": "unstable-source-path",
       "expected_code": "source-path-unstable",
       "mutation": {

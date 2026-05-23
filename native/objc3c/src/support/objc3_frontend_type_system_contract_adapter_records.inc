@@ -16,6 +16,12 @@ ToFrontendOptionalKeypathLoweringRecord(
   record.live_typed_keypath_artifact_sites =
       contract.live_typed_keypath_artifact_sites;
   record.deferred_typed_keypath_sites = contract.deferred_typed_keypath_sites;
+  record.typed_keypath_descriptor_publication_sites =
+      contract.typed_keypath_descriptor_publication_sites;
+  record.typed_keypath_source_map_evidence_sites =
+      contract.typed_keypath_source_map_evidence_sites;
+  record.typed_keypath_runtime_handle_evidence_sites =
+      contract.typed_keypath_runtime_handle_evidence_sites;
   record.contract_violation_sites = contract.contract_violation_sites;
   record.deterministic = contract.deterministic;
   return record;
@@ -40,6 +46,12 @@ ToLowerOptionalKeypathLoweringContract(
   contract.live_typed_keypath_artifact_sites =
       record.live_typed_keypath_artifact_sites;
   contract.deferred_typed_keypath_sites = record.deferred_typed_keypath_sites;
+  contract.typed_keypath_descriptor_publication_sites =
+      record.typed_keypath_descriptor_publication_sites;
+  contract.typed_keypath_source_map_evidence_sites =
+      record.typed_keypath_source_map_evidence_sites;
+  contract.typed_keypath_runtime_handle_evidence_sites =
+      record.typed_keypath_runtime_handle_evidence_sites;
   contract.contract_violation_sites = record.contract_violation_sites;
   contract.deterministic = record.deterministic;
   return contract;

@@ -14,6 +14,7 @@ for import_root in (ROOT, SCRIPTS_ROOT):
         sys.path.insert(0, import_root_text)
 
 from scripts.objc3c_debug_maps import (
+    NATIVE_DEBUG_INFO_CONTRACT_ID,
     REQUIRED_CAPABILITY_ROWS,
     REQUIRED_OPTIMIZATION_TRANSFORMS,
     REQUIRED_SOURCE_MAP_RECORD_KINDS,
@@ -84,6 +85,10 @@ def test_debug_source_map_positive_fixture_validates_source_debug_and_line_links
     assert len(bundle.native_inline_ranges) == 1
     assert len(bundle.inline_debug_chains) == 1
     assert bundle.inline_frame_failures == ()
+    assert bundle.native_debug_info.contract_id == NATIVE_DEBUG_INFO_CONTRACT_ID
+    assert bundle.native_debug_info.emitted_native_debug_info is True
+    assert bundle.native_debug_info.native_line_table_emitted is True
+    assert bundle.native_debug_info.statement_stepping_integrated is False
     assert bundle.statement_stepping_supported is False
 
 
@@ -93,6 +98,7 @@ def test_debug_map_inspection_summary_is_stable_and_diagnostic_backed() -> None:
     assert payload["ok"] is True
     assert payload["contract_id"] == "objc3c.debug-map.inspection.v1"
     assert payload["source_map_count"] == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert payload["native_debug_info_evidence_id"] == "debugmaps.foundation.native-debug-info"
     assert payload["inline_frame_count"] == 1
     assert payload["native_inline_range_count"] == 1
     assert payload["inline_debug_chain_count"] == 1
@@ -127,6 +133,7 @@ def test_debug_source_map_negative_case_catalog_is_explicit() -> None:
         "statement-stepping-without-line-table",
         "package-boundary-mismatch",
         "native-line-table-drift",
+        "native-debug-info-row-drift",
         "unstable-source-path",
         "missing-capability-row",
         "inline-frame-missing-callee",
@@ -184,38 +191,44 @@ def test_debug_source_maps_reject_native_line_table_drift(tmp_path: Path) -> Non
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_unstable_source_path(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_native_debug_info_row_drift(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][8]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_missing_capability_row(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_unstable_source_path(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][9]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_inline_frame_missing_callee(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_missing_capability_row(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][10]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_inline_frame_native_range_drift(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_inline_frame_missing_callee(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][11]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_inline_frame_non_inlining_proof(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_inline_frame_native_range_drift(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][12]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 
 
-def test_debug_source_maps_reject_inline_frame_failure_record(tmp_path: Path) -> None:
+def test_debug_source_maps_reject_inline_frame_non_inlining_proof(tmp_path: Path) -> None:
     case = load_json(NEGATIVE_CASES)["cases"][13]
+
+    assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
+
+
+def test_debug_source_maps_reject_inline_frame_failure_record(tmp_path: Path) -> None:
+    case = load_json(NEGATIVE_CASES)["cases"][14]
 
     assert case["expected_code"] in diagnostic_codes(mutated_fixture(tmp_path, case))
 

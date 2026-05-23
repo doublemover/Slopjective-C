@@ -53,10 +53,26 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "support_claim_policy": "evidence-bound-current-probes-only",
         "unsupported_component_behavior": "fail-closed-no-range-claim",
     }
+    assert {8206, 8228, 8229, 8230, 8231} <= set(evidence["roadmap_issue_refs"])
     assert [row["row_id"] for row in evidence["support_rows"]] == [
         "objc3c.platform.windows-x64.tier1",
         "objc3c.platform.linux-x64.unsupported",
         "objc3c.platform.darwin-arm64.unsupported",
+    ]
+    assert {
+        row["platform_id"]: row["issue_ref"]
+        for row in evidence["support_rows"]
+    } == {
+        "windows-x64": 8206,
+        "linux-x64": 8228,
+        "darwin-arm64": 8229,
+    }
+    assert [row["row_id"] for row in evidence["package_variant_rows"]] == [
+        "objc3c.package.runtime.windows-x64.release",
+        "objc3c.package.runtime.linux-x64.release.fail-closed",
+        "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+        "objc3c.package.sanitizer.asan.reserved",
+        "objc3c.package.sanitizer.ubsan.reserved",
     ]
     llvm_matrix = evidence["llvm_version_support_matrix"]
     assert llvm_matrix["contract_id"] == "objc3c.llvm.version-support-matrix.source.v1"
@@ -177,26 +193,33 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "darwin-arm64": "unsupported-host-darwin-arm64-denied",
     }
     assert "objc3c.evidence.toolchain.llvm.current-probe" in payload["support_evidence_ids"]
-    assert payload["toolchain_support"]["sanitizer_variants"] == [
-        {
-            "variant_id": "objc3c.toolchain.sanitizer.address",
-            "claim_state": "reserved",
-            "platform_ids": [],
-            "evidence_ids": [
-                "objc3c.evidence.toolchain.sanitizer.policy.reserved",
-            ],
-            "diagnostic": "AddressSanitizer support is reserved until package install and native execution evidence exists for the sanitizer build.",
-        },
-        {
-            "variant_id": "objc3c.toolchain.sanitizer.undefined",
-            "claim_state": "reserved",
-            "platform_ids": [],
-            "evidence_ids": [
-                "objc3c.evidence.toolchain.sanitizer.policy.reserved",
-            ],
-            "diagnostic": "UBSan support is reserved until package install and native execution evidence exists for the sanitizer build.",
-        },
-    ]
+    package_rows = {
+        row["row_id"]: row
+        for row in payload["package_variant_rows"]
+    }
+    assert package_rows["objc3c.package.runtime.windows-x64.release"]["claim_state"] == "evidence-bound"
+    assert package_rows["objc3c.package.runtime.windows-x64.release"]["platform_ids"] == ["windows-x64"]
+    assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"]["claim_state"] == "fail-closed"
+    assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"]["platform_ids"] == []
+    assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "reserved"
+    assert package_rows["objc3c.package.sanitizer.ubsan.reserved"]["platform_ids"] == []
+
+    sanitizer_rows = {
+        row["variant_id"]: row
+        for row in payload["toolchain_support"]["sanitizer_variants"]
+    }
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["issue_ref"] == 8230
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["sanitizer"] == "address"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["claim_state"] == "reserved"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["package_variant_row_id"] == "objc3c.package.sanitizer.asan.reserved"
+    assert "-fsanitize=address" in sanitizer_rows["objc3c.toolchain.sanitizer.address"]["build_contract"]["compiler_flags"]
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["issue_ref"] == 8231
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["sanitizer"] == "undefined"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "reserved"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["package_variant_row_id"] == "objc3c.package.sanitizer.ubsan.reserved"
+    assert "-fsanitize=undefined" in sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["build_contract"]["compiler_flags"]
 
 
 def test_platform_toolchain_support_evidence_rejects_network_backed_support_claim() -> None:

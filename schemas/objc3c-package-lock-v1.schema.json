@@ -284,6 +284,8 @@
         "to_module",
         "to_package_id",
         "source",
+        "source_authority",
+        "source_authority_digest",
         "resolution",
         "required_version"
       ],
@@ -293,6 +295,13 @@
         "to_module": { "type": "string", "minLength": 1 },
         "to_package_id": { "$ref": "#/$defs/packageId" },
         "source": { "const": "checked-in-local-workspace" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
         "resolution": { "const": "locked-local-registry" },
         "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
       }
@@ -576,6 +585,8 @@
         "from",
         "to",
         "source",
+        "source_authority",
+        "source_authority_digest",
         "language_requirement",
         "abi_requirement",
         "resolution",
@@ -600,6 +611,15 @@
             "generated-local-package-artifact",
             "offline-mirror-artifact"
           ]
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
         },
         "language_requirement": {
           "const": "3.0"
@@ -673,6 +693,8 @@
             "required": [
               "from",
               "to",
+              "source_authority",
+              "source_authority_digest",
               "required_version",
               "resolved_version",
               "target_source_digest",
@@ -682,6 +704,15 @@
             "properties": {
               "from": { "type": "string", "minLength": 1 },
               "to": { "type": "string", "minLength": 1 },
+              "source_authority": {
+                "enum": [
+                  "stdlib/module_inventory.json",
+                  "showcase/portfolio.json"
+                ]
+              },
+              "source_authority_digest": {
+                "$ref": "#/$defs/sha256"
+              },
               "required_version": {
                 "type": "string",
                 "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"

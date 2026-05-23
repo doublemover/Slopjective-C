@@ -10,6 +10,7 @@
     "issue",
     "schema_path",
     "source_path",
+    "roadmap_issue_refs",
     "upstream_sources",
     "claim_policy",
     "required_supported_evidence_classes",
@@ -17,6 +18,8 @@
     "required_toolchain_components",
     "supported_rows",
     "unsupported_rows",
+    "package_variant_rows",
+    "sanitizer_variant_rows",
     "report_policy"
   ],
   "properties": {
@@ -35,6 +38,22 @@
     },
     "source_path": {
       "const": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    "roadmap_issue_refs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "enum": [
+          8206,
+          8228,
+          8229,
+          8230,
+          8231,
+          8232
+        ]
+      },
+      "minItems": 5,
+      "uniqueItems": true
     },
     "upstream_sources": {
       "type": "object",
@@ -142,6 +161,19 @@
         "$ref": "#/$defs/unsupportedRow"
       }
     },
+    "package_variant_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/packageVariantRow"
+      }
+    },
+    "sanitizer_variant_rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sanitizerVariantRow"
+      }
+    },
     "report_policy": {
       "type": "object",
       "additionalProperties": false,
@@ -178,7 +210,9 @@
         "host_os",
         "host_arch",
         "support_state",
+        "issue_ref",
         "required_evidence",
+        "package_variant_row_ids",
         "toolchain_evidence_ids",
         "hosted_ci_evidence_ids",
         "local_clean_room_evidence_ids",
@@ -200,6 +234,9 @@
         },
         "support_state": {
           "const": "supported"
+        },
+        "issue_ref": {
+          "type": "integer"
         },
         "required_evidence": {
           "type": "object",
@@ -224,6 +261,14 @@
               "$ref": "#/$defs/evidenceId"
             }
           }
+        },
+        "package_variant_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "toolchain_evidence_ids": {
           "type": "array",
@@ -272,8 +317,10 @@
         "host_os",
         "host_arch",
         "support_state",
+        "issue_ref",
         "failure_id",
         "fail_closed_evidence_id",
+        "package_variant_row_ids",
         "public_replay_commands",
         "diagnostic"
       ],
@@ -293,12 +340,23 @@
         "support_state": {
           "const": "unsupported"
         },
+        "issue_ref": {
+          "type": "integer"
+        },
         "failure_id": {
           "type": "string",
           "pattern": "^unsupported-host-"
         },
         "fail_closed_evidence_id": {
           "$ref": "#/$defs/evidenceId"
+        },
+        "package_variant_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "public_replay_commands": {
           "type": "array",
@@ -311,6 +369,118 @@
         "diagnostic": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "packageVariantRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "issue_ref",
+        "variant_kind",
+        "target_platform_id",
+        "platform_ids",
+        "package_id",
+        "claim_state",
+        "evidence_ids",
+        "unsupported_behavior",
+        "diagnostic"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string"
+        },
+        "issue_ref": {
+          "type": "integer"
+        },
+        "variant_kind": {
+          "enum": [
+            "release-runtime",
+            "sanitizer-runtime"
+          ]
+        },
+        "target_platform_id": {
+          "type": "string"
+        },
+        "platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "package_id": {
+          "type": "string"
+        },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "fail-closed",
+            "reserved"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceId"
+          }
+        },
+        "unsupported_behavior": {
+          "const": "fail-closed"
+        },
+        "diagnostic": {
+          "type": "string"
+        }
+      }
+    },
+    "sanitizerVariantRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "issue_ref",
+        "sanitizer",
+        "claim_state",
+        "platform_ids",
+        "package_variant_row_id",
+        "package_id",
+        "diagnostic"
+      ],
+      "properties": {
+        "variant_id": {
+          "type": "string"
+        },
+        "issue_ref": {
+          "type": "integer"
+        },
+        "sanitizer": {
+          "enum": [
+            "address",
+            "undefined"
+          ]
+        },
+        "claim_state": {
+          "enum": [
+            "reserved",
+            "evidence-bound"
+          ]
+        },
+        "platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "package_variant_row_id": {
+          "type": "string"
+        },
+        "package_id": {
+          "type": "string"
+        },
+        "diagnostic": {
+          "type": "string"
         }
       }
     }

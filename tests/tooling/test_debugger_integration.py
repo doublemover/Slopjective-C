@@ -73,6 +73,8 @@ def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_
         assert step["native_line"] > 0
         assert step["object_debug_line_anchor"]
         assert step["source_map_entry_id"].startswith("smap.")
+        assert step["debug_map_entry_id"].startswith("dmap.")
+        assert step["source_digest"] == "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
         assert step["native_line_table_row_id"].startswith("lt.")
 
 
@@ -101,6 +103,18 @@ def test_debugger_integration_rejects_stepping_without_object_debug_anchor(tmp_p
     path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "object_debug_line_anchor"], "")
 
     assert "stepping-anchor-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_stepping_source_digest_drift(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "source_digest"], "0" * 64)
+
+    assert "source-digest-stale" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_stepping_debug_map_id_drift(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "debug_map_entry_id"], "dmap.stale")
+
+    assert "debug-map-entry-missing" in diagnostic_codes(path)
 
 
 def test_debugger_integration_fails_closed_for_unsupported_debug_configuration(tmp_path: Path) -> None:

@@ -279,7 +279,7 @@ def _validate_stepping_records(
         entry = source_maps.get(entry_id)
 
         if status == "unsupported":
-            _validate_unsupported_step(record, path, diagnostics)
+            _validate_unsupported_step(record, path, commands, source_maps, debug_maps_by_source, diagnostics)
             continue
         if status != "supported":
             diagnostics.append(_diag("stepping-status-invalid", "stepping record status must be supported or unsupported", path))
@@ -305,6 +305,10 @@ def _validate_stepping_records(
         debug_map = debug_maps_by_source.get(entry_id)
         if debug_map is None:
             diagnostics.append(_diag("debug-map-entry-missing", f"stepping record lacks debug-map entry: {entry_id}", path))
+        elif _safe_str(record.get("debug_map_entry_id")) != debug_map.entry_id:
+            diagnostics.append(_diag("debug-map-entry-missing", f"stepping record debug-map id drifted from source map: {entry_id}", path))
+        if _safe_str(record.get("source_digest")) != entry.source_digest:
+            diagnostics.append(_diag("source-digest-stale", f"stepping record source digest drifted from source map: {entry_id}", path))
         if not entry.source_range.is_valid() or _safe_int(record.get("source_line")) != entry.source_range.line:
             diagnostics.append(_diag("stepping-anchor-missing", f"stepping record lacks a valid source line anchor: {entry_id}", path))
         if _safe_str(record.get("source_file")) != entry.source_file:
@@ -326,7 +330,14 @@ def _validate_stepping_records(
         diagnostics.append(_diag("stepping-record-missing", f"supported stepping record is missing: {step_kind}", step_kind))
 
 
-def _validate_unsupported_step(record: dict[str, Any], path: str, diagnostics: list[Diagnostic]) -> None:
+def _validate_unsupported_step(
+    record: dict[str, Any],
+    path: str,
+    commands: dict[str, dict[str, Any]],
+    source_maps: dict[str, Any],
+    debug_maps_by_source: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> None:
     reason = _safe_str(record.get("unsupported_reason"))
     if reason not in UNSUPPORTED_REASONS:
         diagnostics.append(_diag("unsupported-reason-invalid", f"unsupported stepping reason is invalid: {reason}", path))
@@ -334,6 +345,21 @@ def _validate_unsupported_step(record: dict[str, Any], path: str, diagnostics: l
         diagnostics.append(_diag("stepping-overclaimed", "unsupported stepping record must not claim stepping support", path))
     if not _safe_str(record.get("diagnostic_code")):
         diagnostics.append(_diag("diagnostic-missing", "unsupported stepping record lacks diagnostic_code", path))
+    command_id = _safe_str(record.get("lldb_command_id"))
+    if command_id not in commands:
+        diagnostics.append(_diag("lldb-command-missing", f"unsupported stepping record references missing LLDB command: {command_id}", path))
+    entry_id = _safe_str(record.get("source_map_entry_id"))
+    entry = source_maps.get(entry_id)
+    if entry is None:
+        diagnostics.append(_diag("source-map-entry-missing", f"unsupported stepping record references missing source map: {entry_id}", path))
+        return
+    debug_map = debug_maps_by_source.get(entry_id)
+    if debug_map is None:
+        diagnostics.append(_diag("debug-map-entry-missing", f"unsupported stepping record lacks debug-map entry: {entry_id}", path))
+    elif _safe_str(record.get("debug_map_entry_id")) != debug_map.entry_id:
+        diagnostics.append(_diag("debug-map-entry-missing", f"unsupported stepping record debug-map id drifted from source map: {entry_id}", path))
+    if _safe_str(record.get("source_digest")) != entry.source_digest:
+        diagnostics.append(_diag("source-digest-stale", f"unsupported stepping record source digest drifted from source map: {entry_id}", path))
 
 
 def _validate_value_inspection(payload: dict[str, Any], commands: dict[str, dict[str, Any]], diagnostics: list[Diagnostic]) -> None:
@@ -421,6 +447,8 @@ def generate_stepping_plan_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict
                 "source_line": entry.source_range.line,
                 "source_column": entry.source_range.column,
                 "native_symbol": entry.native_symbol,
+                "source_digest": entry.source_digest,
+                "debug_map_entry_id": _safe_str(item.get("debug_map_entry_id")),
                 "native_line": row.native_line,
                 "object_debug_line_anchor": entry.object_debug_line_anchor,
                 "source_map_entry_id": entry.entry_id,

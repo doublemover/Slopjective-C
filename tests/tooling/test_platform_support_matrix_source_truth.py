@@ -51,6 +51,17 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         "node",
         "pwsh",
     ]
+    assert summary["package_variant_row_ids"] == [
+        "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+        "objc3c.package.runtime.linux-x64.release.fail-closed",
+        "objc3c.package.runtime.windows-x64.release",
+        "objc3c.package.sanitizer.asan.reserved",
+        "objc3c.package.sanitizer.ubsan.reserved",
+    ]
+    assert summary["sanitizer_variant_ids"] == [
+        "objc3c.toolchain.sanitizer.address",
+        "objc3c.toolchain.sanitizer.undefined",
+    ]
 
 
 def test_platform_support_source_truth_rejects_source_only_support_row(tmp_path: Path) -> None:

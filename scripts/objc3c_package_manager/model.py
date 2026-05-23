@@ -31,6 +31,13 @@ LOCAL_PACKAGE_ABI_IDENTITY = "objc3-abi-2025Q4"
 LOCAL_PACKAGE_HOST_PLATFORM = "windows-x64"
 DIRECT_IMPORT_SYNTAX_SUPPORT = "reserved-fail-closed"
 LOCAL_MODULE_GRAPH_RESOLVER = "checked-in-local-registry"
+LOCAL_DEPENDENCY_SOURCE = "checked-in-local-workspace"
+LOCAL_DEPENDENCY_RESOLUTION = "locked-local-registry"
+DEPENDENCY_SOURCE_AUTHORITY_ALLOWLIST = {
+    "stdlib/module_inventory.json",
+    "showcase/portfolio.json",
+}
+FORBIDDEN_SOURCE_AUTHORITY_PREFIXES = ("tmp/", "artifacts/")
 
 
 @dataclass(frozen=True)
@@ -104,10 +111,18 @@ def trust_payload(package_id: str, signing_material: dict[str, Any]) -> dict[str
     )
 
 
-def dependency_payload(package_id: str, *, required_version: str) -> dict[str, str]:
+def dependency_payload(
+    package_id: str,
+    *,
+    required_version: str,
+    source_authority: str,
+    source_authority_digest: str,
+) -> dict[str, str]:
     return {
         "package_id": package_id,
-        "source": "checked-in-local-workspace",
+        "source": LOCAL_DEPENDENCY_SOURCE,
+        "source_authority": source_authority,
+        "source_authority_digest": source_authority_digest,
         "version_requirement": required_version,
         "language_requirement": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_requirement": LOCAL_PACKAGE_ABI_IDENTITY,
@@ -150,7 +165,9 @@ def module_import_edges(
                 "to_module": package_name(str(dependency["package_id"])),
                 "to_package_id": str(dependency["package_id"]),
                 "source": str(dependency["source"]),
-                "resolution": "locked-local-registry",
+                "source_authority": str(dependency["source_authority"]),
+                "source_authority_digest": str(dependency["source_authority_digest"]),
+                "resolution": LOCAL_DEPENDENCY_RESOLUTION,
                 "required_version": str(dependency["version_requirement"]),
             }
             for dependency in dependencies
@@ -286,9 +303,11 @@ def lock_dependency_payload(
         "from": from_package_id,
         "to": str(manifest_dependency["package_id"]),
         "source": str(manifest_dependency["source"]),
+        "source_authority": str(manifest_dependency["source_authority"]),
+        "source_authority_digest": str(manifest_dependency["source_authority_digest"]),
         "language_requirement": str(manifest_dependency["language_requirement"]),
         "abi_requirement": str(manifest_dependency["abi_requirement"]),
-        "resolution": "locked-local-registry",
+        "resolution": LOCAL_DEPENDENCY_RESOLUTION,
         "required_version": str(manifest_dependency.get("version_requirement", target_version)),
         "resolved_version": target_version,
         "target_source_digest": str(target_package.get("source_digest", "")),
@@ -354,6 +373,8 @@ def package_resolution_plan(
         {
             "from": from_id,
             "to": to_id,
+            "source_authority": str(edge.get("source_authority", "")),
+            "source_authority_digest": str(edge.get("source_authority_digest", "")),
             "required_version": str(edge.get("required_version", "")),
             "resolved_version": str(edge.get("resolved_version", "")),
             "target_source_digest": str(edge.get("target_source_digest", "")),
@@ -466,6 +487,8 @@ def build_lock_components(
             dependency_payload(
                 f"stdlib:{name}",
                 required_version=stdlib_versions.get(f"stdlib:{name}", "0.0.0"),
+                source_authority=showcase_portfolio_source,
+                source_authority_digest=showcase_portfolio_digest,
             )
             for name in sorted(str(name) for name in example.get("stdlib_followup_modules", []) if isinstance(name, str))
         ]
@@ -529,9 +552,11 @@ def build_lock_components(
                         "from": from_package_id,
                         "to": str(manifest_dependency["package_id"]),
                         "source": str(manifest_dependency["source"]),
+                        "source_authority": str(manifest_dependency["source_authority"]),
+                        "source_authority_digest": str(manifest_dependency["source_authority_digest"]),
                         "language_requirement": str(manifest_dependency["language_requirement"]),
                         "abi_requirement": str(manifest_dependency["abi_requirement"]),
-                        "resolution": "locked-local-registry",
+                        "resolution": LOCAL_DEPENDENCY_RESOLUTION,
                         "required_version": str(manifest_dependency["version_requirement"]),
                         "resolved_version": "",
                         "target_source_digest": "",
@@ -580,6 +605,37 @@ def cache_payload_from_mirror_package(mirror_package: dict[str, Any]) -> dict[st
         payload["interop_loader_metadata"] = interop_metadata
         payload["interop_loader_metadata_digest"] = str(interop_metadata.get("digest", ""))
     return payload
+
+
+def collect_dependency_source_authority_failures(
+    dependency: dict[str, Any],
+    *,
+    root: Path,
+    from_package_id: str | None = None,
+) -> list[str]:
+    from_id = from_package_id or str(dependency.get("from", ""))
+    to_id = str(dependency.get("to", dependency.get("package_id", "")))
+    edge_id = f"{from_id}->{to_id}" if from_id else to_id
+    source_authority = str(dependency.get("source_authority", ""))
+    source_authority_digest = str(dependency.get("source_authority_digest", ""))
+    if not source_authority:
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing dependency source authority for {edge_id}"]
+    normalized = source_authority.replace("\\", "/")
+    authority_path = Path(normalized)
+    if (
+        normalized != source_authority
+        or authority_path.is_absolute()
+        or ".." in authority_path.parts
+        or normalized.startswith(FORBIDDEN_SOURCE_AUTHORITY_PREFIXES)
+        or normalized not in DEPENDENCY_SOURCE_AUTHORITY_ALLOWLIST
+    ):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe dependency source authority for {edge_id}"]
+    resolved_authority = root / normalized
+    if not resolved_authority.is_file():
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing dependency source authority file for {edge_id}"]
+    if source_authority_digest != file_digest(resolved_authority):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: dependency source authority digest drift for {edge_id}"]
+    return []
 
 
 def collect_package_module_graph_failures(
@@ -653,6 +709,8 @@ def collect_package_module_graph_failures(
                 "to_module": package_name(to_package_id) if ":" in to_package_id else "",
                 "to_package_id": to_package_id,
                 "source": str(dependency.get("source", "")),
+                "source_authority": str(dependency.get("source_authority", "")),
+                "source_authority_digest": str(dependency.get("source_authority_digest", "")),
                 "resolution": str(dependency.get("resolution", "")),
                 "required_version": str(dependency.get("required_version", "")),
             }
@@ -796,6 +854,8 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                         {
                             "package_id": str(dependency.get("to")),
                             "source": str(dependency.get("source")),
+                            "source_authority": str(dependency.get("source_authority")),
+                            "source_authority_digest": str(dependency.get("source_authority_digest")),
                             "version_requirement": str(dependency.get("required_version")),
                             "language_requirement": str(dependency.get("language_requirement")),
                             "abi_requirement": str(dependency.get("abi_requirement")),
@@ -832,8 +892,14 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: dependency target is not locked: {to_id}")
         if dependency.get("source") != "checked-in-local-workspace":
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsupported dependency source for {from_id}->{to_id}")
-        if dependency.get("resolution") != "locked-local-registry":
+        if dependency.get("resolution") != LOCAL_DEPENDENCY_RESOLUTION:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsupported dependency resolution for {from_id}->{to_id}")
+        failures.extend(
+            collect_dependency_source_authority_failures(
+                dependency,
+                root=root,
+            )
+        )
         target_package = package_by_id.get(to_id)
         if target_package is not None and dependency.get("abi_requirement") != target_package.get("abi_identity"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI requirement mismatch for {from_id}->{to_id}")

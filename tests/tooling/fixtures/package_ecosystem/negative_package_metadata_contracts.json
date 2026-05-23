@@ -40,6 +40,15 @@
       "expected_failure": "O3PKG8055: missing package manifest envelope"
     },
     {
+      "case_id": "tmp-dependency-source-authority",
+      "target": "lock-dependency",
+      "mutation": {
+        "set": "source_authority",
+        "value": "tmp/package-network-edge.json"
+      },
+      "expected_failure": "O3PKG8055: unsafe dependency source authority"
+    },
+    {
       "case_id": "local-registry-module-graph-drift",
       "target": "local-registry-package",
       "mutation": {

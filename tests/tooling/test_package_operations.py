@@ -144,6 +144,8 @@ def test_package_install_and_update_bind_dependency_edges(
     assert install["package_order"][-1] == install["package_id"]
     assert all(edge["abi_requirement"] == "objc3-abi-2025Q4" for edge in install["dependency_edges"])
     assert all(edge["language_requirement"] == "3.0" for edge in install["dependency_edges"])
+    assert all(edge["source_authority"] == "showcase/portfolio.json" for edge in install["dependency_edges"])
+    assert all(edge["source_authority_digest"].startswith("sha256:") for edge in install["dependency_edges"])
 
 
 def test_package_publish_live_network_fails_closed(

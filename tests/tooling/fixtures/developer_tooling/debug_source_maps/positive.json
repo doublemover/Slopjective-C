@@ -12,6 +12,64 @@
       "runtime.debug-trace.lldb-plugin"
     ]
   },
+  "native_debug_info": {
+    "contract_id": "objc3c.debug-source-maps.native-debug-info.v1",
+    "evidence_id": "debugmaps.foundation.native-debug-info",
+    "object_artifact_id": "artifact.debugmaps.foundation.object",
+    "emitted_native_debug_info": true,
+    "native_line_table_emitted": true,
+    "ir_debug_metadata_present": true,
+    "llvm_debug_location_count": 16,
+    "native_debug_sections": [
+      ".debug$S",
+      ".debug_abbrev",
+      ".debug_info",
+      ".debug_str",
+      ".debug_line"
+    ],
+    "native_line_table_sections": [
+      ".debug$S",
+      ".debug_line"
+    ],
+    "source_map_entry_ids": [
+      "smap.module",
+      "smap.declaration",
+      "smap.statement",
+      "smap.expression",
+      "smap.function",
+      "smap.method",
+      "smap.message_send",
+      "smap.property_access",
+      "smap.generated_accessor",
+      "smap.macro_expansion",
+      "smap.runtime_helper_call",
+      "smap.stdlib_lowering_call",
+      "smap.async_suspension_point",
+      "smap.error_bridge_edge",
+      "smap.ownership_cleanup_edge",
+      "smap.optimization_transform_edge"
+    ],
+    "native_line_table_row_ids": [
+      "lt.module",
+      "lt.declaration",
+      "lt.statement",
+      "lt.expression",
+      "lt.function",
+      "lt.method",
+      "lt.message_send",
+      "lt.property_access",
+      "lt.generated_accessor",
+      "lt.macro_expansion",
+      "lt.runtime_helper_call",
+      "lt.stdlib_lowering_call",
+      "lt.async_suspension_point",
+      "lt.error_bridge_edge",
+      "lt.ownership_cleanup_edge",
+      "lt.optimization_transform_edge"
+    ],
+    "statement_stepping_integrated": false,
+    "fail_closed_without_stepping_integration": true
+  },
   "required_record_kinds": [
     "module",
     "declaration",

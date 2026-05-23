@@ -24,10 +24,16 @@
       "failure_mode": "unmapped aliases or ambiguous ids fail resolution"
     },
     {
+      "stage_id": "bind-dependency-source-authority",
+      "input": "checked-in stdlib module inventory and showcase portfolio paths",
+      "output": "dependency edge source_authority and source_authority_digest fields",
+      "failure_mode": "tmp, artifacts, network, missing, or digest-drifted source authority fails resolution"
+    },
+    {
       "stage_id": "capture-provenance",
       "input": "checked-in source paths and generator command surfaces",
       "output": "provenance envelope with source path, generator, and replay command",
-      "failure_mode": "dependency edges without provenance are not lockable"
+      "failure_mode": "dependency edges without provenance or checked-in source authority are not lockable"
     },
     {
       "stage_id": "capture-module-graph-source-truth",
@@ -85,6 +91,7 @@
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
       "missing dependency provenance",
+      "missing or unsafe dependency source authority",
       "ambiguous package identity",
       "unstable lock ordering or digest input set",
       "public workflow replay failure",
@@ -104,13 +111,14 @@
   "claim_rules": [
     "dependency resolution starts from checked-in local package surfaces",
     "lockfiles must be deterministic and provenance-bearing before registry publication can be claimed",
-    "module graph metadata must be source-derived from checked-in stdlib module inventory or showcase portfolio inputs and must match the generated manifest, lock, and local registry row",
+    "module graph metadata and dependency edge source authority must be source-derived from checked-in stdlib module inventory or showcase portfolio inputs and must match the generated manifest, lock, and local registry row",
     "package manifests must carry strict Objective-C 3.0 language and ABI requirements before dependencies can resolve",
     "network-backed dependency resolution fails closed until represented by replayable evidence",
     "tmp outputs may contain generated locks and reports but may not become source authority"
   ],
   "release_blocking_conditions": [
     "missing dependency provenance",
+    "missing or unsafe dependency source authority",
     "missing or unsafe module graph package metadata",
     "ambiguous package identity",
     "unstable lock ordering or digest input set",

@@ -1,6 +1,14 @@
 {
   "contract_id": "objc3c.object_model.debugger_value_inspection_replay.v1",
   "issue": 8198,
+  "roadmap_issue_links": [
+    8202,
+    8208,
+    8209,
+    8210,
+    8211,
+    8212
+  ],
   "capability_id": "runtime.object-model.full-realization",
   "public_status": "reserved",
   "support_claim_published": false,
@@ -661,6 +669,14 @@
       "mutation_path": [
         "statement_step_reservation_contract",
         "required_candidate_status"
+      ]
+    },
+    {
+      "case_id": "roadmap-issue-link-drift",
+      "expected_code": "roadmap-issue-link-missing",
+      "mutation_path": [
+        "roadmap_issue_links",
+        1
       ]
     }
   ],

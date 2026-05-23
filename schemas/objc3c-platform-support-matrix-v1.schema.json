@@ -19,6 +19,7 @@
     "claim_boundary",
     "support_evidence_contract",
     "platform_support_rows",
+    "package_variant_rows",
     "toolchain_support",
     "evidence_records",
     "support_evidence_ids",
@@ -267,6 +268,37 @@
           "evidence": {
             "type": "object"
           }
+        },
+        "additionalProperties": true
+      }
+    },
+    "package_variant_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "row_id",
+          "claim_state",
+          "platform_ids",
+          "package_id",
+          "unsupported_behavior"
+        ],
+        "properties": {
+          "row_id": { "type": "string" },
+          "claim_state": {
+            "enum": [
+              "evidence-bound",
+              "fail-closed",
+              "reserved"
+            ]
+          },
+          "platform_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "package_id": { "type": "string" },
+          "unsupported_behavior": { "const": "fail-closed" }
         },
         "additionalProperties": true
       }

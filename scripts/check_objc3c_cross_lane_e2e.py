@@ -849,8 +849,39 @@ def validate_object_typed_keypath_reflection_proof(
         minimum_key="live_typed_keypath_artifact_sites",
         domain="typed keypath lowering contract",
     )
+    typed_keypath_descriptor_publication_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_descriptor_publication_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_descriptor_publication_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_source_map_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_source_map_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_source_map_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_runtime_handle_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_runtime_handle_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_runtime_handle_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    if (
+        typed_keypath_descriptor_publication_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_source_map_evidence_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_runtime_handle_evidence_sites != live_typed_keypath_artifact_sites
+    ):
+        raise RuntimeError(f"{family_id}.typed keypath evidence counters drifted from live artifacts")
     if runtime_helper_contract.get("typed_keypath_descriptor_handles_ready") is not True:
         raise RuntimeError(f"{family_id}.typed keypath descriptor handles must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_source_map_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath source-map evidence must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_runtime_handle_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath runtime-handle evidence must be runtime-ready")
     if runtime_helper_contract.get("typed_keypath_runtime_execution_helper_landed") is not True:
         raise RuntimeError(f"{family_id}.typed keypath runtime helper must be landed")
 
@@ -881,7 +912,12 @@ def validate_object_typed_keypath_reflection_proof(
         "semantic_typed_keypath_literal_sites": semantic_typed_keypath_literal_sites,
         "lowering_typed_keypath_literal_sites": lowering_typed_keypath_literal_sites,
         "live_typed_keypath_artifact_sites": live_typed_keypath_artifact_sites,
+        "typed_keypath_descriptor_publication_sites": typed_keypath_descriptor_publication_sites,
+        "typed_keypath_source_map_evidence_sites": typed_keypath_source_map_evidence_sites,
+        "typed_keypath_runtime_handle_evidence_sites": typed_keypath_runtime_handle_evidence_sites,
         "descriptor_handles_ready": True,
+        "source_map_evidence_ready": True,
+        "runtime_handle_evidence_ready": True,
         "runtime_execution_helper_landed": True,
         "required_ir_tokens": required_ir_tokens,
     }

@@ -39,6 +39,15 @@ REQUIRED_LLVM_MATRIX_TOOLS: tuple[str, ...] = (
     "llvm-config",
     "headers-libs",
 )
+REQUIRED_ROADMAP_ISSUE_REFS: tuple[int, ...] = (8206, 8228, 8229, 8230, 8231, 8232)
+EXPECTED_UNSUPPORTED_PLATFORM_ISSUES: dict[str, int] = {
+    "linux-x64": 8228,
+    "darwin-arm64": 8229,
+}
+EXPECTED_SANITIZER_ISSUES: dict[str, int] = {
+    "address": 8230,
+    "undefined": 8231,
+}
 FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
     "all",
     "best-effort",
@@ -117,6 +126,18 @@ def _policy_record_is_fail_closed(record: dict[str, Any]) -> None:
     expect(record.get("requires_network") is False, f"{evidence_id} policy evidence requires network")
     expect(record.get("unsupported_host_behavior") == "fail-closed", f"{evidence_id} policy evidence is not fail-closed")
     _required_source_paths_exist(record)
+
+
+def _negative_contracts_are_fail_closed(owner_id: str, contracts: Any) -> None:
+    expect(isinstance(contracts, list), f"{owner_id} missing negative fail-closed contracts")
+    for contract in contracts:
+        expect(isinstance(contract, dict), f"{owner_id} negative contract must be an object")
+        contract_id = str(contract.get("contract_id", ""))
+        expect(contract_id, f"{owner_id} negative contract missing contract_id")
+        expect(str(contract.get("failure_class", "")), f"{contract_id} missing failure_class")
+        required_behavior = str(contract.get("required_behavior", ""))
+        expect(required_behavior.startswith("fail-closed"), f"{contract_id} does not fail closed")
+        expect(str(contract.get("source_owner", "")), f"{contract_id} missing source_owner")
 
 
 def _clean_room_record_proves_from_nothing_install(record: dict[str, Any]) -> None:
@@ -216,6 +237,11 @@ def _toolchain_ranges_by_component(
             toolchain_range.get("unsupported_version_behavior") == "fail-closed-no-range-claim",
             f"{component} toolchain range must fail closed outside evidence",
         )
+        expect(str(toolchain_range.get("source_owner", "")), f"{component} toolchain range missing source_owner")
+        expect(
+            str(toolchain_range.get("unsupported_contract_id", "")),
+            f"{component} toolchain range missing unsupported_contract_id",
+        )
         for forbidden_term in FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS:
             expect(
                 forbidden_term not in range_claim,
@@ -246,6 +272,62 @@ def _toolchain_ranges_by_component(
             _policy_record_is_fail_closed(records_by_id[evidence_id])
 
     return by_component
+
+
+def _validate_package_variant_rows(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    rows = payload.get("package_variant_rows")
+    expect(isinstance(rows, list) and rows, "platform support evidence missing package_variant_rows")
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        expect(isinstance(row, dict), "package variant row must be an object")
+        row_id = str(row.get("row_id", ""))
+        expect(row_id, "package variant row missing row_id")
+        expect(row_id not in by_id, f"duplicate package variant row: {row_id}")
+        by_id[row_id] = row
+        claim_state = str(row.get("claim_state", ""))
+        platform_ids = {str(platform_id) for platform_id in row.get("platform_ids", [])}
+        evidence_ids = [str(evidence_id) for evidence_id in row.get("evidence_ids", [])]
+        required_classes = {str(item) for item in row.get("required_evidence_classes", [])}
+        expect(evidence_ids, f"{row_id} missing evidence_ids")
+        expect(row.get("unsupported_behavior") == "fail-closed", f"{row_id} does not fail closed")
+
+        if claim_state == "evidence-bound":
+            expect(platform_ids, f"{row_id} evidence-bound package row missing platform_ids")
+            expect(
+                platform_ids <= boundary_supported_platform_ids,
+                f"{row_id} widened package support to unsupported platforms: {sorted(platform_ids - boundary_supported_platform_ids)}",
+            )
+            for evidence_id in evidence_ids:
+                expect(evidence_id in records_by_id, f"{row_id} missing evidence record {evidence_id}")
+                record = records_by_id[evidence_id]
+                expect(record.get("claim_weight") == "supporting", f"{row_id} evidence {evidence_id} is not supporting")
+                evidence_class = str(record.get("evidence_class", ""))
+                expect(evidence_class in required_classes, f"{row_id} evidence {evidence_id} class {evidence_class} is not required")
+                for platform_id in platform_ids:
+                    _supporting_record_is_claimable(record, platform_id, evidence_class)
+            _negative_contracts_are_fail_closed(row_id, row.get("negative_contracts", []))
+            continue
+
+        expect(
+            claim_state in {"fail-closed", "reserved"},
+            f"{row_id} package row used unknown claim_state {claim_state}",
+        )
+        expect(not platform_ids, f"{row_id} {claim_state} package row cannot list supported platform_ids")
+        expect(
+            row.get("required_missing_evidence_classes"),
+            f"{row_id} missing required_missing_evidence_classes",
+        )
+        for evidence_id in evidence_ids:
+            expect(evidence_id in records_by_id, f"{row_id} missing policy evidence record {evidence_id}")
+            _policy_record_is_fail_closed(records_by_id[evidence_id])
+        _negative_contracts_are_fail_closed(row_id, row.get("negative_contracts", []))
+
+    return by_id
 
 
 def _validate_llvm_version_support_matrix(
@@ -337,8 +419,18 @@ def validate_platform_toolchain_support_evidence(
 
     records_by_id = evidence_records_by_id(payload)
     boundary_supported_ids = {str(platform_id) for platform_id in boundary.get("supported_platform_ids", [])}
+    issue_refs = {int(issue_ref) for issue_ref in payload.get("roadmap_issue_refs", [])}
+    expect(
+        set(REQUIRED_ROADMAP_ISSUE_REFS) <= issue_refs,
+        "platform support evidence roadmap issue refs drifted",
+    )
     required_toolchain_components = _required_toolchain_components(payload)
     toolchain_ranges = _toolchain_ranges_by_component(
+        payload,
+        records_by_id=records_by_id,
+        boundary_supported_platform_ids=boundary_supported_ids,
+    )
+    package_variant_rows = _validate_package_variant_rows(
         payload,
         records_by_id=records_by_id,
         boundary_supported_platform_ids=boundary_supported_ids,
@@ -376,6 +468,11 @@ def validate_platform_toolchain_support_evidence(
                 row_toolchain_components == required_toolchain_components,
                 f"{platform_id} missing required toolchain components",
             )
+            for package_row_id in row.get("package_variant_row_ids", []):
+                package_row = package_variant_rows.get(str(package_row_id))
+                expect(package_row is not None, f"{platform_id} missing package variant row {package_row_id}")
+                expect(package_row.get("claim_state") == "evidence-bound", f"{platform_id} package row is not evidence-bound")
+                expect(platform_id in package_row.get("platform_ids", []), f"{platform_id} package row does not include the supported platform")
             evidence = row.get("evidence", {})
             expect(isinstance(evidence, dict), f"{platform_id} support row missing evidence map")
             for evidence_class in REQUIRED_SUPPORTED_EVIDENCE_CLASSES:
@@ -413,6 +510,14 @@ def validate_platform_toolchain_support_evidence(
         expect(platform_id not in boundary_supported_ids, f"{platform_id} unsupported row is listed as supported")
         expect(row.get("claim_class") == "fail-closed", f"{platform_id} unsupported row must fail closed")
         expect(row.get("tier_id") == "unsupported", f"{platform_id} unsupported row must use unsupported tier")
+        expected_issue = EXPECTED_UNSUPPORTED_PLATFORM_ISSUES.get(platform_id)
+        expect(expected_issue is not None and row.get("issue_ref") == expected_issue, f"{platform_id} unsupported issue_ref drifted")
+        _negative_contracts_are_fail_closed(platform_id, row.get("negative_contracts"))
+        for package_row_id in row.get("package_variant_row_ids", []):
+            package_row = package_variant_rows.get(str(package_row_id))
+            expect(package_row is not None, f"{platform_id} missing package variant row {package_row_id}")
+            expect(package_row.get("claim_state") == "fail-closed", f"{platform_id} package row must fail closed")
+            expect(not package_row.get("platform_ids"), f"{platform_id} package row widened support")
         failure_id = str(row.get("failure_id", ""))
         expect(failure_id in unsupported_failure_ids, f"{platform_id} failure_id is not in unsupported host policy")
         fail_closed_evidence_id = str(row.get("evidence", {}).get("fail_closed", ""))
@@ -422,8 +527,20 @@ def validate_platform_toolchain_support_evidence(
     expect(sorted(supported_row_ids) == sorted(boundary_supported_ids), "supported support rows drifted from boundary inventory")
 
     for sanitizer in payload.get("sanitizer_variants", []):
+        sanitizer_name = str(sanitizer.get("sanitizer", ""))
+        expected_issue = EXPECTED_SANITIZER_ISSUES.get(sanitizer_name)
+        expect(expected_issue is not None and sanitizer.get("issue_ref") == expected_issue, f"{sanitizer.get('variant_id', '')} issue_ref drifted")
+        package_row_id = str(sanitizer.get("package_variant_row_id", ""))
+        package_row = package_variant_rows.get(package_row_id)
+        expect(package_row is not None, f"{sanitizer.get('variant_id', '')} missing package variant row {package_row_id}")
+        expect(package_row.get("claim_state") == sanitizer.get("claim_state"), f"{package_row_id} claim_state drifted from sanitizer variant")
+        expect(package_row.get("package_id") == sanitizer.get("package_id"), f"{package_row_id} package_id drifted from sanitizer variant")
+        expect(str(sanitizer.get("llvm_requirement", "")), f"{sanitizer.get('variant_id', '')} missing llvm_requirement")
+        expect(str(sanitizer.get("runtime_requirement", "")), f"{sanitizer.get('variant_id', '')} missing runtime_requirement")
+        _negative_contracts_are_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer.get("negative_contracts"))
         if sanitizer.get("claim_state") == "reserved":
             expect(not sanitizer.get("platform_ids"), f"{sanitizer['variant_id']} reserved sanitizer variant cannot list platforms")
+            expect(package_row.get("claim_state") == "reserved", f"{package_row_id} package row must remain reserved")
         for evidence_id in sanitizer.get("evidence_ids", []):
             expect(str(evidence_id) in records_by_id, f"{sanitizer['variant_id']} missing sanitizer evidence {evidence_id}")
             _policy_record_is_fail_closed(records_by_id[str(evidence_id)])
@@ -441,6 +558,7 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
             "network_policy": payload["network_policy"],
         },
         "platform_support_rows": payload["support_rows"],
+        "package_variant_rows": payload["package_variant_rows"],
         "toolchain_support": {
             "toolchain_evidence_requirements": payload["toolchain_evidence_requirements"],
             "toolchain_ranges": payload["toolchain_ranges"],
@@ -467,6 +585,7 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "unsupported_platform_ids": [str(row["platform_id"]) for row in unsupported_rows],
         "required_toolchain_components": list(REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS),
         "toolchain_range_ids": [str(row["toolchain_id"]) for row in payload["toolchain_ranges"]],
+        "package_variant_row_ids": [str(row["row_id"]) for row in payload["package_variant_rows"]],
         "llvm_matrix_entry_ids": [
             str(row["entry_id"])
             for row in payload["llvm_version_support_matrix"]["matrix_entries"]

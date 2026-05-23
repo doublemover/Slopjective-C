@@ -96,6 +96,8 @@ def _dependency_edges(lock: dict[str, Any], package_id: str) -> list[dict[str, s
         {
             "from": str(edge.get("from")),
             "to": str(edge.get("to")),
+            "source_authority": str(edge.get("source_authority", "")),
+            "source_authority_digest": str(edge.get("source_authority_digest", "")),
             "required_version": str(edge.get("required_version", "")),
             "resolved_version": str(edge.get("resolved_version", "")),
             "language_requirement": str(edge.get("language_requirement", "")),

@@ -22,6 +22,14 @@ bool IsValidObjc3TypeSystemOptionalKeypathLoweringContract(
       contract.typed_keypath_literal_sites) {
     return false;
   }
+  if (contract.typed_keypath_descriptor_publication_sites !=
+          contract.live_typed_keypath_artifact_sites ||
+      contract.typed_keypath_source_map_evidence_sites !=
+          contract.live_typed_keypath_artifact_sites ||
+      contract.typed_keypath_runtime_handle_evidence_sites !=
+          contract.live_typed_keypath_artifact_sites) {
+    return false;
+  }
   if (contract.contract_violation_sites >
       contract.live_optional_lowering_sites +
           contract.live_typed_keypath_artifact_sites +
@@ -58,6 +66,12 @@ std::string Objc3TypeSystemOptionalKeypathLoweringReplayKey(
          std::to_string(contract.live_typed_keypath_artifact_sites) +
          ";deferred_typed_keypath_sites=" +
          std::to_string(contract.deferred_typed_keypath_sites) +
+         ";typed_keypath_descriptor_publication_sites=" +
+         std::to_string(contract.typed_keypath_descriptor_publication_sites) +
+         ";typed_keypath_source_map_evidence_sites=" +
+         std::to_string(contract.typed_keypath_source_map_evidence_sites) +
+         ";typed_keypath_runtime_handle_evidence_sites=" +
+         std::to_string(contract.typed_keypath_runtime_handle_evidence_sites) +
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
@@ -80,6 +94,8 @@ std::string Objc3TypeSystemOptionalKeypathLoweringSummary() {
       << kObjc3TypeSystemOptionalKeypathLoweringTypedKeypathModel
       << ";authority_model="
       << kObjc3TypeSystemOptionalKeypathLoweringAuthorityModel
+      << ";debug_evidence_model="
+      << kObjc3TypeSystemOptionalKeypathLoweringDebugEvidenceModel
       << ";fail_closed_model="
       << kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel
       << ";lane_contract="

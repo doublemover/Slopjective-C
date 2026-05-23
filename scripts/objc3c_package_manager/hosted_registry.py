@@ -27,6 +27,8 @@ HOSTED_REGISTRY_CONTRACT_ID = "objc3c.package_ecosystem.hosted_registry_index.v1
 HOSTED_REGISTRY_SCHEMA_KEY = "objc3c-package-hosted-registry-index-v1"
 HOSTED_REGISTRY_NETWORK_POLICY = "offline-fixture-metadata-only"
 HOSTED_REGISTRY_RESOLVER_ID = "deterministic-hosted-registry-offline-resolver-v1"
+OFFLINE_MIRROR_CONTRACT_ID = "objc3c.package_ecosystem.offline_mirror.v1"
+OFFLINE_MIRROR_NETWORK_POLICY = "no-network-during-validation"
 HOSTED_REGISTRY_SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
     / "schemas"
@@ -148,6 +150,18 @@ def mirror_packages_by_key(mirror: dict[str, Any]) -> dict[tuple[str, str], dict
     }
 
 
+def collect_offline_mirror_contract_failures(mirror: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if mirror.get("contract_id") != OFFLINE_MIRROR_CONTRACT_ID:
+        failures.append(hosted_registry_diagnostic("offline mirror contract id drifted"))
+    if mirror.get("network_policy") != OFFLINE_MIRROR_NETWORK_POLICY:
+        failures.append(hosted_registry_diagnostic("offline mirror network policy drifted"))
+    packages = mirror.get("packages", [])
+    if not isinstance(packages, list):
+        failures.append(hosted_registry_diagnostic("offline mirror packages field is not a list"))
+    return failures
+
+
 def _revoked_values(index: dict[str, Any], field_name: str) -> set[str]:
     revocations = index.get("revocations", {})
     if not isinstance(revocations, dict):
@@ -173,12 +187,17 @@ def collect_hosted_registry_model_failures(
         failures.append(hosted_registry_diagnostic("network fetch request rejected by hosted registry policy"))
     if index.get("resolver") != HOSTED_REGISTRY_RESOLVER_ID:
         failures.append(hosted_registry_diagnostic("hosted registry resolver id drifted"))
+    if index.get("language_version") != LOCAL_PACKAGE_LANGUAGE_VERSION:
+        failures.append(hosted_registry_diagnostic("hosted registry language version drifted"))
+    if index.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
+        failures.append(hosted_registry_diagnostic("hosted registry ABI identity drifted"))
     registry_id = str(index.get("registry_id", ""))
     if index.get("registry_state") != "not-revoked":
         failures.append(hosted_registry_diagnostic(f"revoked registry {registry_id}"))
     if registry_id in _revoked_values(index, "revoked_registry_ids"):
         failures.append(hosted_registry_diagnostic(f"revoked registry {registry_id}"))
 
+    failures.extend(collect_offline_mirror_contract_failures(mirror))
     mirror_packages = mirror_packages_by_key(mirror)
     packages = index.get("packages", [])
     if not isinstance(packages, list):
@@ -332,6 +351,7 @@ __all__ = [
     "HostedRegistryResolutionError",
     "HostedRegistryResolutionRequest",
     "collect_hosted_registry_model_failures",
+    "collect_offline_mirror_contract_failures",
     "hosted_registry_diagnostic",
     "hosted_registry_record_digest",
     "hosted_registry_record_signature_subject",
