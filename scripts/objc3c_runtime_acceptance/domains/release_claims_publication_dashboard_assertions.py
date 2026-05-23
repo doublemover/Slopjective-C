@@ -21,7 +21,7 @@ def expect_dashboard_schema_surface(
         and dashboard.get("dashboard_version") == "0.11.0"
         and dashboard.get("release_label") == "v0.11"
         and dashboard.get("status") == "blocked",
-        "expected dashboard artifact to preserve the live schema identity and strict-profile blocker surface",
+        "expected dashboard artifact to preserve the live schema identity and strict-system blocker surface",
     )
     expect(
         [entry.get("profile_id") for entry in dashboard.get("profiles", [])]
@@ -30,8 +30,8 @@ def expect_dashboard_schema_surface(
     )
     expect(
         [entry.get("status") for entry in dashboard.get("profiles", [])]
-        == ["pass", "blocked", "blocked", "blocked"],
-        "expected dashboard artifact to mark only core as currently passable and strict profiles as blocked",
+        == ["pass", "pass", "pass", "blocked"],
+        "expected dashboard artifact to mark core, strict, and strict-concurrency as passable with strict-system blocked",
     )
     expect(
         [entry.get("dependency_id") for entry in dashboard.get("dependencies", [])]
@@ -59,7 +59,7 @@ def expect_dashboard_schema_surface(
     )
     expect(
         dashboard.get("summary", {}).get("profile_counts")
-        == {"pass": 1, "fail": 0, "blocked": 3, "incomplete": 0}
+        == {"pass": 3, "fail": 0, "blocked": 1, "incomplete": 0}
         and dashboard.get("summary", {}).get("dependency_counts")
         == {"pass": 4, "fail": 0, "blocked": 0, "stale": 0, "missing": 0},
         "expected dashboard artifact to publish deterministic schema-shaped summary counts",
@@ -74,7 +74,7 @@ def expect_dashboard_schema_surface(
         len(dashboard.get("blockers", [])) == 1
         and dashboard["blockers"][0].get("blocker_id") == "BLK-STRICT-PROFILES"
         and dashboard["blockers"][0].get("state") == "open",
-        "expected dashboard artifact to publish the strict-profile blocker",
+        "expected dashboard artifact to publish the strict-system blocker",
     )
     expect(
         len(dashboard.get("change_history", [])) == 1

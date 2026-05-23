@@ -148,7 +148,7 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool typed_throws_multi_payload_rejected = true;
   bool typed_throws_silent_erasure_allowed = false;
   std::string typed_throws_effect_record_status =
-      "typed-and-untyped-effects-preserved";
+      "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
   std::string typed_throws_abi_status = "typed-error-abi-deferred";
   std::string typed_throws_interface_roundtrip_status =
       "typed-payload-preserved";

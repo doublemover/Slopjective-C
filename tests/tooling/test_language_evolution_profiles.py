@@ -63,7 +63,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
         "typed_throws": "source_owned_interface_preserved_lowering_fail_closed",
-        "value_optionals": "source_owned_type_signatures_interface_preserved_runtime_lowering_fail_closed",
+        "value_optionals": "semantic_type_signatures_stable_layout_interface_preserved_runtime_lowering_fail_closed",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
     assert contract["typed_throws"]["diagnostic_symbol"] == (
@@ -74,6 +74,12 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "typed-payload-preserved"
     )
     assert contract["typed_throws"]["abi_status"] == "typed-error-abi-deferred"
+    assert contract["typed_throws"]["effect_record"]["semantic_identity_status"] == (
+        "exact-effect-signature-preserved"
+    )
+    assert contract["interface_import_contract"][
+        "typed_throws_callable_compatibility_policy"
+    ] == "typed-throws-exact-payload-match-lowering-deferred"
     assert contract["typed_throws"]["runtime_execution_claimed"] is False
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
     assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
@@ -83,9 +89,12 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "kObjc3ParserDiagnosticRemovedOptionalAliasCode"
     )
     assert contract["value_optionals"]["nil_to_scalar_coercion_allowed"] is False
+    assert contract["value_optionals"]["semantic_value_model_supported"] is True
+    assert contract["value_optionals"]["binding_narrowing_supported"] is True
+    assert contract["value_optionals"]["implicit_nil_absence_allowed"] is False
     assert contract["value_optionals"]["nullable_pointer_conversion_allowed"] is False
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
-        "type-signature-carrier-imported-runtime-deferred"
+        "semantic-carrier-roundtrips-runtime-deferred"
     )
     assert contract["public_claim_boundary"]["support_claims"] == []
     assert contract["public_claim_boundary"]["no_compatibility_aliases"] is True
@@ -118,12 +127,14 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "negative_typed_throws_empty_payload_reserved.objc3": "O3P182",
         "negative_typed_throws_multi_payload_reserved.objc3": "O3P182",
         "negative_typed_throws_erasure_mismatch_reserved.objc3": "O3P182",
+        "negative_typed_throws_protocol_mismatch.objc3": "O3S218",
         "negative_value_optional_canonical_reserved.objc3": "O3P159",
         "negative_value_optional_nullable_pointer_conversion_reserved.objc3": "O3P159",
         "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3P159",
         "negative_value_optional_nested_lowercase_alias_reserved.objc3": "O3C004",
         "negative_value_optional_property_layout_unsupported.objc3": "O3P159",
         "negative_value_optional_nullable_suffix_mismatch.objc3": "O3P159",
+        "value_optionals_executable_semantics_negative.contract.json": "O3P159",
     }
     observed = {
         Path(row["fixture"]).name: row["expected_diagnostic"]
@@ -152,6 +163,8 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert "kObjc3ParserDiagnosticReservedValueOptionalCode" in type_source
     assert "kObjc3ParserDiagnosticRemovedOptionalAliasCode" in type_source
     assert "lowercase_optional_alias_rejected = true" in type_source
+    assert "value_optional_semantic_type_admission_supported = false" in type_source
+    assert "value_optional_stable_layout_contract_supported = false" in type_source
     error_source = (
         ROOT
         / "native"
@@ -195,7 +208,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         assert str(row["expected_diagnostic"]) in fixture_text
 
 
-def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None:
+def test_strict_and_strict_concurrency_profiles_are_claimable_without_aliases() -> None:
     matrix = _read_json(PROFILE_MATRIX)
 
     assert matrix["contract_id"] == "objc3c.language_profiles.strict_admission_matrix.v1"
@@ -421,8 +434,9 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "reserved_public_claims"
     ]
     assert "language.errors.typed-throws" not in contract["reserved_public_claims"]
-    assert "language.profiles.strict" in contract["reserved_public_claims"]
-    assert "language.profiles.strict-concurrency" in contract["reserved_public_claims"]
+    assert "language.profiles.strict-system" in contract["reserved_public_claims"]
+    assert "language.profiles.strict" not in contract["reserved_public_claims"]
+    assert "language.profiles.strict-concurrency" not in contract["reserved_public_claims"]
     assert "language.generics.generic-callable-reification" not in contract[
         "reserved_public_claims"
     ]
@@ -433,6 +447,9 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "admitted_public_claims"
     ]
     assert "objc3c.behavior.language.generics.generic-callable-reification" in contract[
+        "admitted_public_claims"
+    ]
+    assert "objc3c.behavior.language.profiles.strict-admission" in contract[
         "admitted_public_claims"
     ]
     support_rows = {row["row_id"]: row for row in contract["lead_support_row_recommendations"]}
@@ -452,6 +469,9 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"
+    )
+    assert support_rows["language.profiles.strict-admission"]["status"] == (
+        "implemented-strict-and-strict-concurrency-claimable"
     )
 
 
@@ -483,6 +503,18 @@ def test_language_evolution_support_docs_point_to_source_contracts() -> None:
     assert "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3" in generic_paths
     assert "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3" in generic_paths
 
+    strict_profiles = capabilities["language.profiles.strict-admission"]
+    assert strict_profiles["state"] == "implemented"
+    assert "objc3c.behavior.language.profiles.strict-admission" in strict_profiles[
+        "support_claims"
+    ]
+    strict_paths = {row["path"] for row in strict_profiles["evidence"]}
+    assert "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json" in strict_paths
+    assert "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3" in strict_paths
+    assert "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3" in strict_paths
+    assert "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3" in strict_paths
+    assert "schemas/objc3c-strict-profile-boundary-v1.schema.json" in strict_paths
+
     umbrella = capabilities["language.evolution.umbrella-alignment"]
     assert umbrella["state"] == "reserved"
     assert "support_claims" not in umbrella
@@ -513,6 +545,10 @@ def test_language_evolution_support_docs_point_to_source_contracts() -> None:
         "language.generics.generic-callable-reification",
         "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
     ) in evidence_paths
+    assert (
+        "language.profiles.strict-admission",
+        "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+    ) in evidence_paths
 
     readiness = _read_json(SUPPORT_UMBRELLA_READINESS)
     language_entry = next(
@@ -537,10 +573,22 @@ def test_language_evolution_fixtures_are_canonical_manifest_owned() -> None:
             "canonical_rejection",
             "O3P182",
         ),
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3": (
+            "sema",
+            "errors",
+            "diagnostic_negative",
+            "O3S218",
+        ),
         "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3": (
             "parser",
             "types",
             "canonical_rejection",
+            "O3P159",
+        ),
+        "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json": (
+            "sema",
+            "types",
+            "diagnostic_negative",
             "O3P159",
         ),
         "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3": (

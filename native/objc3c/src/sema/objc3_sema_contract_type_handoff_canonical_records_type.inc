@@ -32,6 +32,11 @@ struct Objc3SemanticCanonicalType {
   bool is_value_optional = false;
   std::string value_optional_payload_type_spelling;
   ValueType value_optional_payload_value_type = ValueType::Unknown;
+  bool value_optional_semantic_value_model_supported = false;
+  bool value_optional_stable_abi_layout_contract_supported = false;
+  bool value_optional_binding_narrowing_supported = false;
+  bool value_optional_interface_roundtrip_supported = false;
+  bool value_optional_unwrap_requires_presence_check = true;
   bool value_optional_runtime_execution_supported = false;
   bool value_optional_lowering_supported = false;
   bool has_explicit_nullability = false;

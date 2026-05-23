@@ -636,6 +636,8 @@
         "package_id",
         "runtime_library_contract",
         "metadata_freshness_guard",
+        "artifact_identity_contract",
+        "promotion_gate_contract",
         "claim_state",
         "required_evidence_classes",
         "required_missing_evidence_classes",
@@ -674,6 +676,12 @@
         },
         "metadata_freshness_guard": {
           "$ref": "#/$defs/metadataFreshnessGuard"
+        },
+        "artifact_identity_contract": {
+          "$ref": "#/$defs/packageArtifactIdentityContract"
+        },
+        "promotion_gate_contract": {
+          "$ref": "#/$defs/packagePromotionGateContract"
         },
         "claim_state": {
           "enum": [
@@ -735,6 +743,7 @@
         "runtime_requirement",
         "metadata_freshness_guard",
         "install_guard",
+        "package_runtime_contract",
         "required_promotion_evidence",
         "required_missing_evidence_classes",
         "diagnostic"
@@ -805,6 +814,9 @@
             }
           }
         },
+        "package_runtime_contract": {
+          "$ref": "#/$defs/sanitizerPackageRuntimeContract"
+        },
         "required_promotion_evidence": {
           "type": "array",
           "items": {
@@ -831,6 +843,159 @@
         },
         "diagnostic": {
           "type": "string"
+        }
+      }
+    },
+    "packageArtifactIdentityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_name_suffix",
+        "object_format",
+        "debug_format",
+        "runtime_library_names",
+        "loader_path_policy",
+        "package_root_layout",
+        "symbol_export_policy"
+      ],
+      "properties": {
+        "archive_name_suffix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object_format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "debug_format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_library_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "loader_path_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_root_layout": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "symbol_export_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "packagePromotionGateContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "promotion_source",
+        "required_positive_evidence_classes",
+        "blocked_until_evidence_classes",
+        "blocked_publication_surfaces",
+        "source_only_metadata_behavior",
+        "hosted_runner_summary_behavior"
+      ],
+      "properties": {
+        "promotion_source": {
+          "const": "checked-in-package-variant-row"
+        },
+        "required_positive_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "blocked_until_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "blocked_publication_surfaces": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "source_only_metadata_behavior": {
+          "const": "fail-closed-before-publication"
+        },
+        "hosted_runner_summary_behavior": {
+          "const": "summary-only-no-support-promotion"
+        }
+      }
+    },
+    "sanitizerPackageRuntimeContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_probe_required",
+        "runtime_library_resolution",
+        "default_release_channel_allowed",
+        "report_artifact_support_truth",
+        "mixed_release_sanitizer_runtime_behavior",
+        "required_metadata_fields"
+      ],
+      "properties": {
+        "runtime_probe_required": {
+          "const": true
+        },
+        "runtime_library_resolution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default_release_channel_allowed": {
+          "const": false
+        },
+        "report_artifact_support_truth": {
+          "const": false
+        },
+        "mixed_release_sanitizer_runtime_behavior": {
+          "const": "fail-closed"
+        },
+        "required_metadata_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 3,
+          "uniqueItems": true
         }
       }
     },

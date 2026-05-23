@@ -34,6 +34,115 @@ function Write-Objc3cNativeCMakeConfigureReason {
   }
 }
 
+function Convert-Objc3cNativeCMakeCachePathForComparison {
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowEmptyString()]
+    [string]$Path
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Path)) {
+    return ""
+  }
+
+  try {
+    return ([System.IO.Path]::GetFullPath($Path).TrimEnd('\', '/') -replace '\\', '/').ToLowerInvariant()
+  } catch {
+    return (($Path.TrimEnd('\', '/') -replace '\\', '/').ToLowerInvariant())
+  }
+}
+
+function Get-Objc3cNativeCMakeCacheValue {
+  param(
+    [Parameter(Mandatory = $true)][string]$CachePath,
+    [Parameter(Mandatory = $true)][string]$Key
+  )
+
+  if (!(Test-Path -LiteralPath $CachePath -PathType Leaf)) {
+    return $null
+  }
+
+  foreach ($line in (Get-Content -LiteralPath $CachePath)) {
+    if ($line.StartsWith($Key + ":", [System.StringComparison]::Ordinal)) {
+      $separator = $line.IndexOf("=")
+      if ($separator -ge 0) {
+        return $line.Substring($separator + 1)
+      }
+    }
+  }
+
+  return $null
+}
+
+function Test-Objc3cNativeCMakeCacheToolchainMatch {
+  param(
+    [Parameter(Mandatory = $true)][string]$BuildDir,
+    [Parameter(Mandatory = $true)][string]$Clangxx,
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$IncludeDir,
+    [Parameter(Mandatory = $true)][string]$Libclang
+  )
+
+  $cachePath = Join-Path $BuildDir "CMakeCache.txt"
+  if (!(Test-Path -LiteralPath $cachePath -PathType Leaf)) {
+    return $true
+  }
+
+  $expected = @{
+    CMAKE_CXX_COMPILER = $Clangxx
+    OBJC3C_LLVM_ROOT = $LlvmRoot
+    OBJC3C_LLVM_INCLUDE_DIR = $IncludeDir
+    OBJC3C_LIBCLANG_LIBRARY = $Libclang
+  }
+
+  foreach ($key in $expected.Keys) {
+    $actualValue = Get-Objc3cNativeCMakeCacheValue -CachePath $cachePath -Key $key
+    if ((Convert-Objc3cNativeCMakeCachePathForComparisonSafe -Path $actualValue) -ne (Convert-Objc3cNativeCMakeCachePathForComparison -Path $expected[$key])) {
+      return $false
+    }
+  }
+
+  return $true
+}
+
+function Convert-Objc3cNativeCMakeCachePathForComparisonSafe {
+  param(
+    [AllowNull()]
+    [string]$Path
+  )
+
+  if ($null -eq $Path) {
+    return ""
+  }
+
+  return Convert-Objc3cNativeCMakeCachePathForComparison -Path $Path
+}
+
+function Reset-Objc3cNativeCMakeCacheIfToolchainDrifted {
+  param(
+    [Parameter(Mandatory = $true)][string]$BuildDir,
+    [Parameter(Mandatory = $true)][string]$FingerprintPath,
+    [Parameter(Mandatory = $true)][string]$Clangxx,
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$IncludeDir,
+    [Parameter(Mandatory = $true)][string]$Libclang
+  )
+
+  if (Test-Objc3cNativeCMakeCacheToolchainMatch `
+      -BuildDir $BuildDir `
+      -Clangxx $Clangxx `
+      -LlvmRoot $LlvmRoot `
+      -IncludeDir $IncludeDir `
+      -Libclang $Libclang) {
+    return
+  }
+
+  Write-Objc3cNativeBuildStep "cmake_configure=toolchain-cache-mismatch"
+  Remove-Item -LiteralPath (Join-Path $BuildDir "CMakeCache.txt") -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath (Join-Path $BuildDir "CMakeFiles") -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath $FingerprintPath -Force -ErrorAction SilentlyContinue
+}
+
 function Invoke-Objc3cNativeCMakeConfigure {
   param(
     [Parameter(Mandatory = $true)][string]$CmakeTool,
@@ -52,6 +161,14 @@ function Invoke-Objc3cNativeCMakeConfigure {
     [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Fingerprint,
     [Parameter(Mandatory = $true)][bool]$ForceReconfigure
   )
+
+  Reset-Objc3cNativeCMakeCacheIfToolchainDrifted `
+    -BuildDir $BuildDir `
+    -FingerprintPath $FingerprintPath `
+    -Clangxx $Clangxx `
+    -LlvmRoot $LlvmRoot `
+    -IncludeDir $IncludeDir `
+    -Libclang $Libclang
 
   $needsConfigure = Get-Objc3cNativeCMakeConfigureNeeded `
     -BuildDir $BuildDir `

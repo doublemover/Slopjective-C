@@ -78,9 +78,9 @@ Supported in this boundary:
 - offline mirror evidence generated from local package artifacts
 - registry metadata as a generated, local, replayable artifact
 - fixture-backed hosted-registry indexes, offline network dependency
-  resolution, and source-owned release-channel publication metadata when every
-  row is checked in, locked, digest-bound, and replayed without live network
-  access
+  resolution, hermetic hosted-service contracts, and source-owned
+  release-channel publication metadata when every row is checked in, locked,
+  digest-bound, and replayed without live network access
 - from-nothing install distribution receipts under the package-ecosystem
   validation root, validated against package-ecosystem receipt schemas and
   pinned to `npm run objc3c -- validate-package-install-distribution
@@ -88,7 +88,9 @@ Supported in this boundary:
 
 Not supported in this boundary:
 
-- a live hosted package registry service
+- a live public hosted package registry service
+- production hosted-registry auth, moderation, availability SLOs, or registry
+  trust-root operations
 - arbitrary live network dependency resolution
 - system package manager publication
 - package manifests that bypass the `npm run objc3c -- <action>` bridge
@@ -124,10 +126,14 @@ Resolution is intentionally local-first:
   the allowed local/mirror roots
 
 The lock model does not claim arbitrary network fetching. Registry names may
-appear only through checked-in hosted-registry fixtures, offline network
-resolution fixtures, and release-channel metadata that are digest-bound to local
-package artifacts. Live registry availability, authentication, moderation, and
-remote fetch behavior remain outside this support claim.
+appear only through checked-in hosted-registry fixtures, the hermetic
+hosted-service fixture, offline network resolution fixtures, and release-channel
+metadata that are digest-bound to local package artifacts. The hermetic service
+contract covers fixture auth, trust-root operation, revocation, moderation,
+availability, and no-network fail-closed behavior. Live public registry
+availability, production authentication, production moderation, production
+registry trust roots, and remote fetch behavior remain outside this support
+claim.
 
 ## Local Workspace And Offline Mirror Semantics
 
@@ -186,10 +192,19 @@ Registry behavior is layered on top of the local lock and mirror model:
   channel metadata.
 - `hosted-registry-fixture` is supported only as a checked-in offline index with
   deterministic package identity, version, digest, trust, revocation, mirror
-  evidence, and an explicit service-boundary record that preserves the
-  `ecosystem.package-manager.public-hosted-registry` reservation. It must not be
-  described as a live hosted service, an availability claim, auth/moderation
-  support, package-manager parity, or fallback registry success.
+  evidence, an explicit service-boundary record, and a required hermetic service
+  contract that preserves the `ecosystem.package-manager.public-hosted-registry`
+  reservation. It must not be described as a live hosted service,
+  package-manager parity, or fallback registry success.
+- `hosted-registry-hermetic-service` is supported only as a local checked-in
+  service contract. It owns fixture token auth, local trust-root operation,
+  revocation-list checks, moderation checks, availability state, exact-version
+  request policy, and no-network fallback for the hosted-registry fixture path.
+  `package-registry-resolve` exposes the service id, auth subject, and auth
+  token as explicit request inputs and records the admitted service decision in
+  its summary before package metadata resolution is treated as supported.
+  It is not a production auth service, moderation service, registry SLO,
+  network transport, registry trust-root service, or public package host.
 - `network-dependency-resolution` is supported only for the offline fixture path
   that resolves trusted registry rows into locks and mirrors before install
   validation. Implicit fetches, unpinned dependencies, digest drift, and missing
@@ -197,9 +212,10 @@ Registry behavior is layered on top of the local lock and mirror model:
 - `release-channel-publication` is supported only for source-owned offline
   publication metadata and deterministic package-channel records.
 
-Any live hosted-registry, live network fetch, fallback registry success, or
-remote publication claim before those proofs exist is release-blocking and must
-be demoted to offline fixture metadata.
+Any live public hosted-registry, live network fetch, fallback registry success,
+production registry auth/moderation/availability, or remote publication claim
+before those proofs exist is release-blocking and must be demoted to hermetic
+fixture metadata or reserved fail-closed behavior.
 
 ## Artifact Contract
 
@@ -214,6 +230,7 @@ Schema surfaces:
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
 - `schemas/objc3c-package-local-registry-index-v1.schema.json`
 - `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+- `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
 - `schemas/objc3c-package-network-resolution-v1.schema.json`
 - `schemas/objc3c-package-release-channel-publication-v1.schema.json`
 - `schemas/objc3c-package-install-receipt-v1.schema.json`

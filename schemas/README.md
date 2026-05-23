@@ -49,6 +49,7 @@ tables or examples.
 | `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
 | `objc3c-package-lock-v1.schema.json` | Package lock provenance with npm-bridge replay commands. |
 | `objc3c-package-offline-mirror-index-v1.schema.json` | Offline package mirror metadata with npm-bridge replay commands. |
+| `objc3c-package-hosted-registry-service-v1.schema.json` | Hermetic hosted-registry service contracts for fixture auth, trust-root operation, revocation, moderation, availability, and no-network fail-closed behavior. |
 | `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands and canonical bootstrap entrypoints. |
 | `objc3c-package-install-distribution-receipt-v1.schema.json` | From-nothing package install distribution receipts with clean owned roots and explicit replay commands. |
 | `objc3c-package-install-distribution-operation-receipt-v1.schema.json` | Package install distribution update/uninstall plan receipts bound to clean local install evidence. |
@@ -68,6 +69,13 @@ tables or examples.
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |
 | `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated outputs, fixtures, and archive references without support-claim inflation. |
 | `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated-output rows, and active rejection findings. |
+
+## Language Feature Contract Schemas
+
+| Schema | Owns |
+| ------ | ---- |
+| `objc3c-typed-throws-effect-contract-v1.schema.json` | Typed throws source effect identity, exact callable compatibility policy, interface anchors, fail-closed lowering/runtime status, and negative rejection records. |
+| `objc3c-value-optionals-contract-v1.schema.json` | Value optional source/interface semantic contracts, ABI-layout identity, presence/payload records, runtime/lowering fail-closed boundaries, and rejection records. |
 
 ## Workflow Registry Schemas
 

@@ -66,6 +66,11 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3` |  |
+| `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
@@ -74,6 +79,11 @@ diagnostic, documentation, or boundary evidence only.
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
+| `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/value_optionals_contract_positive.json` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
+| `language.types.value-optionals` |  | `schema` | `schemas/objc3c-value-optionals-contract-v1.schema.json` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ast/objc3_ast_value_optional_type.h` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` |
@@ -97,9 +107,17 @@ diagnostic, documentation, or boundary evidence only.
 | `language.control-flow.match-expression` | `objc3c.behavior.language.control-flow.match-expression` | `source` | `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp` |  |
 | `language.control-flow.match-expression` | `objc3c.behavior.language.control-flow.match-expression` | `source` | `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp` |  |
 | `language.control-flow.match-expression` | `objc3c.behavior.language.control-flow.match-expression` | `source` | `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json` |  |
-| `language.profiles.strict-admission` |  | `diagnostic` | `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json` |  |
-| `language.profiles.strict-admission` |  | `source` | `native/objc3c/src/config/objc3_language_profile_validation.cpp` |  |
-| `language.profiles.strict-admission` |  | `source` | `native/objc3c/src/io/objc3_conformance_profile_selection.cpp` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `test` | `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json` | `npm run objc3c -- validate-release-candidate-conformance` |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `test` | `tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3` | `npm run objc3c -- validate-release-candidate-conformance` |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `test` | `tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3` | `npm run objc3c -- validate-release-candidate-conformance` |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `test` | `tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3` | `npm run objc3c -- validate-release-candidate-conformance` |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `schema` | `schemas/objc3c-strict-profile-boundary-v1.schema.json` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/config/objc3_language_profile_validation.cpp` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/driver/objc3_frontend_options.cpp` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/io/objc3_conformance_profile_selection.cpp` |  |
+| `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp` |  |
 | `language.evolution.umbrella-alignment` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
 | `language.evolution.umbrella-alignment` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
 | `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` |  |
@@ -789,10 +807,23 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/test_package_hosted_registry_resolution.py` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `schema` | `schemas/objc3c-package-hosted-registry-index-v1.schema.json` |  |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `schema` | `schemas/objc3c-package-hosted-registry-service-v1.schema.json` |  |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/objc3c_package_manager/hosted_registry.py` |  |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/objc3c_package_manager/hosted_service.py` |  |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/check_objc3c_package_registry_model.py` |  |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/test_package_hosted_registry_resolution.py` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `schema` | `schemas/objc3c-package-hosted-registry-service-v1.schema.json` |  |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `source` | `scripts/objc3c_package_manager/hosted_service.py` |  |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `source` | `scripts/objc3c_package_manager/hosted_registry.py` |  |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `source` | `scripts/check_objc3c_package_registry_model.py` |  |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-manager.network-dependency-resolution` | `objc3c.behavior.package.network-dependency-resolution` | `test` | `tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json` | `npm run objc3c -- validate-package-network-publication` |
 | `ecosystem.package-manager.network-dependency-resolution` | `objc3c.behavior.package.network-dependency-resolution` | `test` | `tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json` | `npm run objc3c -- validate-package-network-publication` |
 | `ecosystem.package-manager.network-dependency-resolution` | `objc3c.behavior.package.network-dependency-resolution` | `test` | `tests/tooling/test_package_network_publication_contract.py` | `npm run objc3c -- validate-package-network-publication` |

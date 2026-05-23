@@ -12,6 +12,7 @@
     "provider_model",
     "snapshot",
     "service_boundary",
+    "hosted_service",
     "service_availability",
     "endpoint_identity",
     "network_policy",
@@ -48,6 +49,7 @@
     "provider_model": { "$ref": "#/$defs/providerModel" },
     "snapshot": { "$ref": "#/$defs/snapshot" },
     "service_boundary": { "$ref": "#/$defs/serviceBoundary" },
+    "hosted_service": { "$ref": "#/$defs/hostedServiceRef" },
     "service_availability": { "$ref": "#/$defs/serviceAvailability" },
     "endpoint_identity": { "$ref": "#/$defs/endpointIdentity" },
     "network_policy": { "type": "string", "minLength": 1 },
@@ -229,6 +231,46 @@
         "health_source": { "const": "checked-in-fixture-only" }
       }
     },
+    "hostedServiceRef": {
+      "type": "object",
+      "required": [
+        "service_contract_id",
+        "service_id",
+        "schema",
+        "service_fixture_path",
+        "network_policy",
+        "public_service_claim",
+        "validation_behavior",
+        "no_network_fallback",
+        "fallback_registry_success",
+        "default_auth_subject_id",
+        "default_auth_token_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "service_contract_id": {
+          "const": "objc3c.package_ecosystem.hosted_registry_service.v1"
+        },
+        "service_id": {
+          "const": "objc3c-hermetic-hosted-registry-service-v1"
+        },
+        "schema": {
+          "const": "objc3c-package-hosted-registry-service-v1"
+        },
+        "service_fixture_path": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json"
+        },
+        "network_policy": { "const": "hermetic-no-network-service" },
+        "public_service_claim": { "const": "reserved-live-public-service" },
+        "validation_behavior": {
+          "const": "service-contract-required-before-resolution"
+        },
+        "no_network_fallback": { "const": "fail-closed" },
+        "fallback_registry_success": { "const": false },
+        "default_auth_subject_id": { "const": "fixture-developer" },
+        "default_auth_token_id": { "const": "fixture-developer-token-v1" }
+      }
+    },
     "endpointIdentity": {
       "type": "object",
       "required": [
@@ -302,15 +344,23 @@
         "invalid-semver",
         "live-network-fetch",
         "missing-package-provenance",
+        "missing-service-auth",
         "offline-mirror-handoff-drift",
         "registry-trust-mismatch",
         "revoked-subject",
         "rollback-snapshot",
+        "service-auth-token-drift",
+        "service-availability-unavailable",
+        "service-contract-drift",
+        "service-index-drift",
+        "service-moderation-blocked",
+        "service-revocation-unavailable",
         "unavailable-registry",
         "unlocked-version-selection",
         "unpinned-hosted-dependency",
         "unsigned-hosted-artifact",
         "unknown-trust-root",
+        "unknown-service-auth-subject",
         "unsupported-platform",
         "yanked-version"
       ]

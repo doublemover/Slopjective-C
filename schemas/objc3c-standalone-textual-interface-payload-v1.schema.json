@@ -311,6 +311,9 @@
         "canonical_syntax",
         "throws_kind",
         "declared_error_type",
+        "effect_signature_key",
+        "callable_compatibility_policy",
+        "semantic_identity_status",
         "typed_payload_arity",
         "typed_payload_status",
         "typed_payload_generic_suffix",
@@ -328,6 +331,20 @@
         "canonical_syntax": { "const": "throws(E)" },
         "throws_kind": { "enum": ["none", "untyped", "typed"] },
         "declared_error_type": { "type": "string" },
+        "effect_signature_key": {
+          "type": "string",
+          "pattern": "^throws:(?:none|untyped:id<Error>|typed:.+)$"
+        },
+        "callable_compatibility_policy": {
+          "enum": [
+            "nonthrowing-only",
+            "untyped-throws-id-error-carrier",
+            "typed-throws-exact-payload-match-lowering-deferred"
+          ]
+        },
+        "semantic_identity_status": {
+          "const": "exact-effect-signature-preserved"
+        },
         "typed_payload_arity": { "enum": [0, 1] },
         "typed_payload_status": {
           "enum": ["not-declared", "source-preserved-lowering-fail-closed"]

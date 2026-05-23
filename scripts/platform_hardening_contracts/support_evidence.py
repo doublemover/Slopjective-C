@@ -177,6 +177,120 @@ def _negative_contracts_are_fail_closed(owner_id: str, contracts: Any) -> None:
         expect(str(contract.get("source_owner", "")), f"{contract_id} missing source_owner")
 
 
+def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any]) -> None:
+    artifact = row.get("artifact_identity_contract")
+    expect(isinstance(artifact, dict), f"{row_id} missing artifact_identity_contract")
+    for field_name in (
+        "archive_name_suffix",
+        "object_format",
+        "debug_format",
+        "loader_path_policy",
+        "symbol_export_policy",
+    ):
+        expect(str(artifact.get(field_name, "")), f"{row_id} artifact identity missing {field_name}")
+
+    runtime_names = [str(item) for item in artifact.get("runtime_library_names", [])]
+    package_root_layout = [str(item) for item in artifact.get("package_root_layout", [])]
+    expect(runtime_names, f"{row_id} artifact identity missing runtime_library_names")
+    expect(package_root_layout, f"{row_id} artifact identity missing package_root_layout")
+    expect(
+        not any(path.startswith(("tmp/", "artifacts/")) for path in package_root_layout),
+        f"{row_id} artifact identity used generated report roots as package layout",
+    )
+
+    target_platform_id = str(row.get("target_platform_id", ""))
+    object_format = str(artifact.get("object_format", ""))
+    if target_platform_id == "linux-x64":
+        expect(object_format == "ELF", f"{row_id} Linux package identity must be ELF")
+        expect(
+            "libobjc3-runtime.so" in runtime_names,
+            f"{row_id} Linux package identity missing libobjc3-runtime.so",
+        )
+    elif target_platform_id == "darwin-arm64":
+        expect(object_format == "Mach-O", f"{row_id} macOS package identity must be Mach-O")
+        expect(
+            "libobjc3-runtime.dylib" in runtime_names,
+            f"{row_id} macOS package identity missing libobjc3-runtime.dylib",
+        )
+    elif target_platform_id == "windows-x64":
+        expect(object_format == "COFF", f"{row_id} Windows package identity must be COFF")
+        expect(
+            {"objc3-runtime.lib", "objc3-runtime.dll"} <= set(runtime_names),
+            f"{row_id} Windows package identity missing import library or DLL",
+        )
+
+
+def _package_promotion_gate_is_fail_closed(row_id: str, row: dict[str, Any]) -> None:
+    gate = row.get("promotion_gate_contract")
+    expect(isinstance(gate, dict), f"{row_id} missing promotion_gate_contract")
+    expect(
+        gate.get("promotion_source") == "checked-in-package-variant-row",
+        f"{row_id} promotion gate source drifted",
+    )
+    expect(
+        gate.get("source_only_metadata_behavior") == "fail-closed-before-publication",
+        f"{row_id} source-only package metadata did not fail closed",
+    )
+    expect(
+        gate.get("hosted_runner_summary_behavior") == "summary-only-no-support-promotion",
+        f"{row_id} hosted runner summary could promote support",
+    )
+    required_classes = {str(item) for item in row.get("required_evidence_classes", [])}
+    required_positive = {str(item) for item in gate.get("required_positive_evidence_classes", [])}
+    expect(required_positive, f"{row_id} promotion gate missing positive evidence classes")
+    expect(
+        required_positive <= required_classes,
+        f"{row_id} promotion gate required evidence is outside package row requirements",
+    )
+    blocked_surfaces = {str(item) for item in gate.get("blocked_publication_surfaces", [])}
+    expect("publication" in blocked_surfaces, f"{row_id} promotion gate does not block publication")
+
+    missing_classes = {str(item) for item in row.get("required_missing_evidence_classes", [])}
+    blocked_until = {str(item) for item in gate.get("blocked_until_evidence_classes", [])}
+    if row.get("claim_state") == "evidence-bound":
+        expect(not missing_classes, f"{row_id} evidence-bound package row listed missing evidence")
+        expect(not blocked_until, f"{row_id} evidence-bound package row still listed blocked evidence")
+        return
+    expect(missing_classes, f"{row_id} unclaimable package row missing blocked evidence classes")
+    expect(
+        missing_classes <= blocked_until,
+        f"{row_id} promotion gate did not block all missing evidence classes",
+    )
+    expect(
+        {"package", "install", "execution", "publication"} <= blocked_surfaces,
+        f"{row_id} unclaimable package row did not block package install execution and publication",
+    )
+
+
+def _sanitizer_package_runtime_contract_is_fail_closed(
+    variant_id: str,
+    row: dict[str, Any],
+) -> None:
+    package_runtime = row.get("package_runtime_contract")
+    expect(isinstance(package_runtime, dict), f"{variant_id} missing package_runtime_contract")
+    expect(
+        package_runtime.get("runtime_probe_required") is True,
+        f"{variant_id} sanitizer package runtime did not require runtime probe",
+    )
+    expect(
+        package_runtime.get("default_release_channel_allowed") is False,
+        f"{variant_id} sanitizer package allowed default release channel",
+    )
+    expect(
+        package_runtime.get("report_artifact_support_truth") is False,
+        f"{variant_id} sanitizer reports were treated as support truth",
+    )
+    expect(
+        package_runtime.get("mixed_release_sanitizer_runtime_behavior") == "fail-closed",
+        f"{variant_id} mixed release/sanitizer runtime did not fail closed",
+    )
+    metadata_fields = {str(field) for field in package_runtime.get("required_metadata_fields", [])}
+    expect(
+        {"target_platform_id", "sanitizer", "runtime_library_ids"} <= metadata_fields,
+        f"{variant_id} sanitizer package runtime metadata is incomplete",
+    )
+
+
 def _clean_room_record_proves_from_nothing_install(record: dict[str, Any]) -> None:
     evidence_id = str(record["evidence_id"])
     expect(record.get("evidence_class") == "clean_room", f"{evidence_id} is not clean-room evidence")
@@ -502,6 +616,14 @@ def _validate_platform_expansion_package_identity_cases(
             row.get("metadata_freshness_guard", {}).get("metadata_source") == case.get("metadata_source"),
             f"{identity_id} metadata source drifted from package row",
         )
+        expect(
+            row.get("artifact_identity_contract") == case.get("artifact_identity_contract"),
+            f"{identity_id} artifact identity drifted from package row",
+        )
+        expect(
+            row.get("promotion_gate_contract") == case.get("promotion_gate_contract"),
+            f"{identity_id} promotion gate drifted from package row",
+        )
         required_classes = {str(item) for item in row.get("required_evidence_classes", [])}
         expect(
             {str(item) for item in case.get("required_promotion_evidence", [])} <= required_classes,
@@ -540,10 +662,12 @@ def _validate_platform_expansion_sanitizer_cases(
             "package_variant_row_id",
             "package_id",
             "install_guard",
+            "package_runtime_contract",
             "required_promotion_evidence",
             "required_missing_evidence_classes",
         ):
             expect(row.get(field_name) == case.get(field_name), f"{variant_id} {field_name} drifted from sanitizer row")
+        _sanitizer_package_runtime_contract_is_fail_closed(variant_id, row)
         package_row_id = str(case.get("package_variant_row_id", ""))
         package_row = package_variant_rows.get(package_row_id)
         expect(package_row is not None, f"{variant_id} missing package variant row {package_row_id}")
@@ -751,6 +875,8 @@ def _validate_package_variant_rows(
         required_classes = {str(item) for item in row.get("required_evidence_classes", [])}
         expect(evidence_ids, f"{row_id} missing evidence_ids")
         expect(row.get("unsupported_behavior") == "fail-closed", f"{row_id} does not fail closed")
+        _package_artifact_identity_is_source_owned(row_id, row)
+        _package_promotion_gate_is_fail_closed(row_id, row)
 
         if claim_state == "evidence-bound":
             expect(platform_ids, f"{row_id} evidence-bound package row missing platform_ids")
@@ -1114,6 +1240,7 @@ def validate_platform_toolchain_support_evidence(
         expect(package_row.get("package_id") == sanitizer.get("package_id"), f"{package_row_id} package_id drifted from sanitizer variant")
         expect(str(sanitizer.get("llvm_requirement", "")), f"{sanitizer.get('variant_id', '')} missing llvm_requirement")
         expect(str(sanitizer.get("runtime_requirement", "")), f"{sanitizer.get('variant_id', '')} missing runtime_requirement")
+        _sanitizer_package_runtime_contract_is_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer)
         expect(
             set(str(item) for item in sanitizer.get("required_promotion_evidence", []))
             == {"package", "install", "execution"},

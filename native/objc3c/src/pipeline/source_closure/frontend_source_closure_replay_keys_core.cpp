@@ -27,8 +27,22 @@ std::string BuildTypeSystemTypeSourceClosureReplayKey(
       << summary.optional_member_access_sites
       << ";value_optional_type_signatures="
       << summary.value_optional_type_signature_sites
+      << ";value_optional_semantic_type_admission="
+      << (summary.value_optional_semantic_type_admission_supported ? "true"
+                                                                   : "false")
+      << ";value_optional_stable_layout_contract="
+      << (summary.value_optional_stable_layout_contract_supported ? "true"
+                                                                  : "false")
+      << ";value_optional_binding_narrowing_contract="
+      << (summary.value_optional_binding_narrowing_contract_supported ? "true"
+                                                                      : "false")
+      << ";value_optional_interface_roundtrip_contract="
+      << (summary.value_optional_interface_roundtrip_supported ? "true"
+                                                               : "false")
       << ";value_optional_runtime_fail_closed="
       << (summary.value_optional_runtime_execution_fail_closed ? "true" : "false")
+      << ";value_optional_implicit_nil_absence_allowed="
+      << (summary.value_optional_implicit_nil_absence_allowed ? "true" : "false")
       << ";value_optional_reserved_diagnostic="
       << summary.value_optional_reserved_diagnostic_code
       << ";lowercase_optional_alias_diagnostic="

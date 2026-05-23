@@ -407,13 +407,16 @@
       "id": "language.errors.typed-throws",
       "title": "Typed throws effect payloads",
       "state": "reserved",
-      "summary": "Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface import and source-closure records expose only none or untyped bare-throws effect metadata with zero typed payload arity instead of silently erasing parenthesized payloads into support.",
+      "summary": "Typed throws remains reserved as a runtime/ABI/lowering feature under issue #8233, but single-payload throws(E) is now a source-owned effect signature. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, malformed/empty/multi/non-type payloads fail closed with O3P182, and textual-interface import rejects erased payloads, runtime execution claims, or ABI-lowering drift.",
       "owner_modules": [
         "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
         "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+        "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+        "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
         "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+        "schemas/objc3c-typed-throws-effect-contract-v1.schema.json",
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ],
       "evidence": [
@@ -434,6 +437,26 @@
           "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3"
         },
         {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-typed-throws-effect-contract-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+        },
+        {
           "kind": "source",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },
@@ -451,14 +474,19 @@
       "id": "language.types.value-optionals",
       "title": "Value optional type constructor",
       "state": "reserved",
-      "summary": "Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.",
+      "summary": "Value optionals remain reserved as an executable/runtime feature under issue #8234. Canonical Optional<T> is admitted only as a semantic type-signature carrier with stable has_value/payload layout identity and textual-interface roundtrip; lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny executable construction, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer, throws/result, IR payload emission, and runtime lowering.",
       "owner_modules": [
+        "native/objc3c/src/ast/objc3_ast_value_optional_type.h",
         "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp",
         "native/objc3c/src/parse/objc3_parser_cstyle_type_parser_diagnostics.inc",
         "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
         "native/objc3c/src/sema/model/frontend_type_source_closure.h",
+        "native/objc3c/src/sema/objc3_semantic_passes_canonical_type_helpers.inc",
+        "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+        "schemas/objc3c-value-optionals-contract-v1.schema.json",
+        "tests/tooling/fixtures/native/value_optionals_contract_positive.json",
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ],
       "evidence": [
@@ -481,6 +509,26 @@
         {
           "kind": "source",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/value_optionals_contract_positive.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-value-optionals-contract-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/objc3_ast_value_optional_type.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h"
         },
         {
           "kind": "source",
@@ -621,16 +669,47 @@
     {
       "id": "language.profiles.strict-admission",
       "title": "Strict and strict-concurrency profile admission",
-      "state": "reserved",
-      "summary": "Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, strict-system rejects as a target-only release-evidence profile with O3C038, and underscore or compatibility aliases are rejected rather than treated as source-only support.",
+      "state": "implemented",
+      "summary": "Strict and strict-concurrency language profiles are implemented under issue #8237 as selectable native frontend profiles and claimable public conformance profiles. Strict enables strict diagnostics, strict-concurrency enables strict diagnostics plus actor isolation, sendability, task lifecycle, and scheduler enforcement, public publication claims core/strict/strict-concurrency, strict-system rejects as a target-only release-evidence profile with O3C038, and underscore or compatibility aliases reject instead of widening support.",
+      "support_claims": [
+        "objc3c.behavior.language.profiles.strict-admission"
+      ],
       "owner_modules": [
         "native/objc3c/src/config/objc3_language_profile_validation.cpp",
         "native/objc3c/src/io/objc3_conformance_profile_selection.cpp",
+        "native/objc3c/src/driver/objc3_frontend_options.cpp",
+        "native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc",
+        "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp",
+        "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
         "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
       ],
       "evidence": [
         {
-          "kind": "diagnostic",
+          "kind": "test",
+          "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+          "command": "npm run objc3c -- validate-release-candidate-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3",
+          "command": "npm run objc3c -- validate-release-candidate-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3",
+          "command": "npm run objc3c -- validate-release-candidate-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+          "command": "npm run objc3c -- validate-release-candidate-conformance"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-strict-profile-boundary-v1.schema.json"
+        },
+        {
+          "kind": "source",
           "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
         },
         {
@@ -639,7 +718,19 @@
         },
         {
           "kind": "source",
+          "path": "native/objc3c/src/driver/objc3_frontend_options.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc"
+        },
+        {
+          "kind": "source",
           "path": "native/objc3c/src/io/objc3_conformance_profile_selection.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp"
         }
       ]
     },
@@ -647,7 +738,7 @@
       "id": "language.evolution.umbrella-alignment",
       "title": "Language evolution umbrella alignment",
       "state": "reserved",
-      "summary": "Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws, value-optional, and strict-profile prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support and #8236 guarded-match/match-expression support without claiming runtime-specialized generics, typed error ABI, value optional ABI, or strict profile behavior.",
+      "summary": "Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws and value-optional prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier/layout identity without claiming runtime-specialized generics, typed error ABI, value-optional executable/runtime lowering, or strict-system behavior.",
       "owner_modules": [
         "docs/support/umbrella_readiness.json",
         "docs/support/capability_matrix.json",
@@ -4927,15 +5018,17 @@
       "id": "ecosystem.package-manager.hosted-registry-fixture",
       "title": "Source-owned hosted registry fixture resolution",
       "state": "implemented",
-      "summary": "Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.",
+      "summary": "Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, hermetic service reference, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live public registry availability, network fetches, production auth, production moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.",
       "support_claims": [
         "objc3c.behavior.package.hosted-registry-fixture"
       ],
       "owner_modules": [
         "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/objc3c_package_manager/hosted_service.py",
         "scripts/check_objc3c_package_registry_model.py",
         "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
-        "schemas/objc3c-package-hosted-registry-index-v1.schema.json"
+        "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+        "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
       ],
       "evidence": [
         {
@@ -4955,6 +5048,16 @@
         },
         {
           "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
           "path": "tests/tooling/test_package_hosted_registry_resolution.py",
           "command": "npm run objc3c -- validate-package-registry-model"
         },
@@ -4963,12 +5066,78 @@
           "path": "schemas/objc3c-package-hosted-registry-index-v1.schema.json"
         },
         {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/hosted_registry.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/hosted_service.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_package_registry_model.py"
+        }
+      ]
+    },
+    {
+      "id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "title": "Hermetic hosted registry service contract",
+      "state": "implemented",
+      "summary": "A source-owned hermetic hosted-registry service contract now gates the hosted-registry fixture path. The service fixture validates fixture token auth, local trust-root operation, revocation service state, moderation policy, availability state, exact-version request policy, offline mirror handoff, and no-network fallback before package resolution. This is not a live public registry, production auth service, production moderation service, registry availability SLO, or network transport claim.",
+      "support_claims": [
+        "objc3c.behavior.package.hosted-registry-hermetic-service"
+      ],
+      "owner_modules": [
+        "scripts/objc3c_package_manager/hosted_service.py",
+        "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/check_objc3c_package_registry_model.py",
+        "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+        "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_package_hosted_registry_resolution.py",
+          "command": "npm run objc3c -- validate-package-registry-model"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_manager/hosted_service.py"
+        },
+        {
           "kind": "source",
           "path": "scripts/objc3c_package_manager/hosted_registry.py"
         },
         {
           "kind": "source",
           "path": "scripts/check_objc3c_package_registry_model.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_package_ecosystem.md"
         }
       ]
     },
@@ -5126,7 +5295,7 @@
       "id": "ecosystem.package-manager.public-hosted-registry",
       "title": "Public hosted package registry",
       "state": "reserved",
-      "summary": "Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, and offline fixture-backed network/publication contracts, but no live hosted service, auth, moderation, availability, or fallback registry success claim.",
+      "summary": "Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, a hermetic local hosted-service contract, and offline fixture-backed network/publication contracts, but no live public service, production auth, production moderation, production availability, production registry trust-root operation, or fallback registry success claim.",
       "owner_modules": [
         "scripts/objc3c_package_manager/registry.py",
         "docs/runbooks/objc3c_package_ecosystem.md"

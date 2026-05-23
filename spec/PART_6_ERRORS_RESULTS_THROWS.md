@@ -300,6 +300,14 @@ Metadata slots for module/interface exchange:
   `typed_payload_arity=1`, and `declared_error_type=E`.
 - A declaration without `throws` has effect record `throws_kind=none` and
   `typed_payload_arity=0`.
+- Semantic callable metadata shall derive an effect signature key from those
+  slots. The v1 keys are `throws:none`, `throws:untyped:id<Error>`, and
+  `throws:typed:<declared_error_type>`.
+- Protocol conformance, duplicate protocol requirement detection, and callable
+  compatibility checks shall compare the typed throws effect key exactly. A
+  `throws(E)` requirement is not satisfied by bare `throws`, and a `throws(E1)`
+  requirement is not satisfied by `throws(E2)`, until a later version specifies
+  typed error variance or bridge conversions.
 
 Version and lowering constraints:
 

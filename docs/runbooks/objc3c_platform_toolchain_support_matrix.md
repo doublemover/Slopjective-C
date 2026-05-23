@@ -77,6 +77,29 @@ triple, `x86_64-unknown-linux-gnu` as the fail-closed Linux x64 triple, and
 rows also carry a `metadata_freshness_guard`; stale generated package metadata
 blocks publication and cannot be used as source truth.
 
+Package variant rows also carry source-owned artifact identity and promotion
+gates. These fields are not support claims by themselves; they are the exact
+contract a future host or sanitizer package must satisfy before publication:
+
+- `windows-x64` release packages are COFF/PDB packages with
+  `objc3-runtime.lib`, `objc3-runtime.dll`, and the runnable CLI layout proved
+  by package, install, and execution evidence.
+- `linux-x64` release packages are fail-closed ELF/DWARF packages with
+  `libobjc3-runtime.so`, package-root loader behavior, and symbol export policy
+  blocked until Linux build, package, install, and native execution evidence
+  exists.
+- `darwin-arm64` release packages are fail-closed Mach-O/DWARF/dSYM packages
+  with `libobjc3-runtime.dylib`, `@rpath`/`install_name`/codesign loader
+  behavior, and native execution evidence required before support.
+- ASan and UBSan packages are reserved target-native sanitizer runtime
+  packages. Their metadata must capture exact target platform, sanitizer
+  runtime library identity, compile/link flags, and runtime mode before any
+  install or execution claim can publish.
+
+A package row can move from fail-closed or reserved to support only by changing
+checked-in source rows and evidence references together. Hosted-runner summaries
+remain summary-only and cannot clear a promotion gate.
+
 ## Required Host Evidence
 
 Every supported host row must provide all four evidence classes:

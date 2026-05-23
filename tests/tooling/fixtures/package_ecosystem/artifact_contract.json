@@ -17,6 +17,7 @@
     "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
     "local_registry_index": "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "hosted_registry_index": "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+    "hosted_registry_service": "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
     "network_dependency_resolution": "schemas/objc3c-package-network-resolution-v1.schema.json",
     "package_release_channel_publication": "schemas/objc3c-package-release-channel-publication-v1.schema.json",
     "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json",
@@ -72,10 +73,10 @@
     "install receipts must be generated from lock, mirror, local registry, publication, and restore metadata that agree",
     "package signing, verification, installation, and update evidence must preserve pre-mutation extraction plans, path safety policy, installer/update-key policy hooks, and reserved release/registry trust roots",
     "package update and uninstall operation receipts must be deterministic artifact inputs and must preserve locked dependency ordering semantics",
-    "direct @import provenance, hosted registry offline metadata, network dependency resolution, release-channel publication, signing, install distribution, package operations, and runnable package workflow claims must be jointly covered by the package umbrella contract",
+    "direct @import provenance, hosted registry offline metadata, hermetic hosted service contracts, network dependency resolution, release-channel publication, signing, install distribution, package operations, and runnable package workflow claims must be jointly covered by the package umbrella contract",
     "mixed-image interop package metadata must be digest-checked across lock, mirror, and local registry artifacts",
-    "hosted registry fixture claims must carry explicit provider, snapshot, service-boundary, trust-result, revocation/yank, cache-identity, and offline-mirror-handoff records that keep live public hosted-registry service support reserved",
-    "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
+    "hosted registry fixture claims must carry explicit provider, snapshot, service-boundary, hermetic service reference, trust-result, revocation/yank, cache-identity, and offline-mirror-handoff records that keep live public hosted-registry service support reserved",
+    "hosted registry service claims are limited to the hermetic checked-in service fixture until production auth, moderation, availability, and network service evidence exists"
   ],
   "package_bridge": "objc3c",
   "owner_policy": {
@@ -115,6 +116,8 @@
         "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
         "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
         "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
@@ -133,7 +136,7 @@
         "validate-package-ecosystem",
         "validate-runnable-package-ecosystem"
       ],
-      "claim_boundary": "registry publication means replayable local metadata, mirror evidence, and hosted-registry service-boundary evidence; live hosted registry service support fails closed"
+      "claim_boundary": "registry publication means replayable local metadata, mirror evidence, hosted-registry service-boundary evidence, and a hermetic local service contract; live public hosted registry service support fails closed"
     },
     "authoring_owner": {
       "role": "package-ecosystem-authoring-owner",
@@ -180,7 +183,7 @@
       "offline restore receipt missing cache digest evidence",
       "clean install, update, or uninstall receipt missing or package metadata disagrees with lock-derived artifacts",
       "hosted registry claim without local package evidence",
-      "hosted registry fixture missing provider, snapshot, service-boundary, trust-result, cache-identity, or offline-mirror-handoff evidence",
+      "hosted registry fixture missing provider, snapshot, service-boundary, hosted service contract, trust-result, cache-identity, or offline-mirror-handoff evidence",
       "package publication action has no owner contract",
       "package publication action is wrapper-only",
       "package ecosystem umbrella action list omits direct import, hosted registry, network publication, security hardening, install distribution, package operations, or runnable package validation"

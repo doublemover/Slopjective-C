@@ -45,6 +45,16 @@ PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA = PackageSchemaContract(
     document_contract_id="objc3c.package_ecosystem.hosted_registry_index.v1",
 )
 
+PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA = PackageSchemaContract(
+    contract_key="hosted_registry_service",
+    schema_path="schemas/objc3c-package-hosted-registry-service-v1.schema.json",
+    schema_id=(
+        "https://objc3c.dev/schemas/"
+        "objc3c-package-hosted-registry-service-v1.schema.json"
+    ),
+    document_contract_id="objc3c.package_ecosystem.hosted_registry_service.v1",
+)
+
 PACKAGE_NETWORK_RESOLUTION_SCHEMA = PackageSchemaContract(
     contract_key="network_dependency_resolution",
     schema_path="schemas/objc3c-package-network-resolution-v1.schema.json",
@@ -94,6 +104,14 @@ PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH = (
 PACKAGE_HOSTED_REGISTRY_NEGATIVE_CASES_PATH = (
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/"
     "negative-registry-cases.json"
+)
+PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/"
+    "hosted-registry-service.json"
+)
+PACKAGE_HOSTED_REGISTRY_SERVICE_NEGATIVE_CASES_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/"
+    "negative-service-cases.json"
 )
 PACKAGE_NETWORK_RESOLUTION_FIXTURE_PATH = (
     "tests/tooling/fixtures/package_ecosystem/network_resolution/"
@@ -147,6 +165,12 @@ PACKAGE_REGISTRY_PUBLICATION_LAYERS = (
         source_of_truth="release, update, and package-channel manifests",
         publication_path=PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
         claim_boundary="replayable package publication metadata",
+    ),
+    PackageRegistryPublicationLayer(
+        layer_id="hosted-registry-service",
+        source_of_truth="source-owned hermetic hosted registry service fixture plus hosted registry index",
+        publication_path=PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
+        claim_boundary="local hosted service contract with fixture auth, trust, revocation, moderation, availability, and no-network fail-closed policy",
     ),
     PackageRegistryPublicationLayer(
         layer_id="network-resolution",
@@ -205,22 +229,26 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
     PackagePublicWorkflowAction(
         action="validate-package-registry-model",
         summary=(
-            "validate source-owned hosted-registry fixture metadata, endpoint "
-            "identity, signatures, digests, revocations, and offline mirror pins"
+            "validate source-owned hosted-registry fixture metadata, hermetic "
+            "service contract, endpoint identity, signatures, digests, "
+            "revocations, and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
-            "hosted registry behavior remains fixture-only and offline; live "
-            "network fetches fail closed and no public hosted-registry support "
-            "claim is published without the source-owned registry contract"
+            "hosted registry behavior remains hermetic and offline; live "
+            "network fetches fail closed and no live public hosted-registry "
+            "support claim is published without production service evidence"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
         ),
         source_paths=(
             PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_NEGATIVE_CASES_PATH,
             PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH,
             PACKAGE_HOSTED_REGISTRY_NEGATIVE_CASES_PATH,
             PACKAGE_ECOSYSTEM_UMBRELLA_FIXTURE_PATH,
@@ -231,21 +259,25 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
         action="package-registry-resolve",
         summary=(
             "resolve one source-owned hosted-registry fixture record from "
-            "checked-in metadata and offline mirror pins"
+            "checked-in metadata, hermetic service policy, and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
             "fixture registry resolution rejects network fetches, missing "
-            "metadata, digest/signature drift, revocations, and ambiguous "
-            "candidates without fallback registry success"
+            "metadata, service contract drift, digest/signature drift, "
+            "revocations, and ambiguous candidates without fallback registry "
+            "success"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
         ),
         source_paths=(
             PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_NEGATIVE_CASES_PATH,
             PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH,
             PACKAGE_HOSTED_REGISTRY_NEGATIVE_CASES_PATH,
             PACKAGE_ECOSYSTEM_UMBRELLA_FIXTURE_PATH,
@@ -269,12 +301,15 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA,
             PACKAGE_OFFLINE_MIRROR_SCHEMA,
             PACKAGE_NETWORK_RESOLUTION_SCHEMA,
             PACKAGE_RELEASE_CHANNEL_PUBLICATION_SCHEMA,
         ),
         source_paths=(
             PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_SERVICE_NEGATIVE_CASES_PATH,
             PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH,
             PACKAGE_NETWORK_RESOLUTION_FIXTURE_PATH,
             PACKAGE_RELEASE_CHANNEL_PUBLICATION_FIXTURE_PATH,
@@ -297,6 +332,9 @@ __all__ = [
     "PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA",
     "PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH",
     "PACKAGE_HOSTED_REGISTRY_NEGATIVE_CASES_PATH",
+    "PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH",
+    "PACKAGE_HOSTED_REGISTRY_SERVICE_NEGATIVE_CASES_PATH",
+    "PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA",
     "PACKAGE_ECOSYSTEM_UMBRELLA_FIXTURE_PATH",
     "PACKAGE_HOSTED_REGISTRY_RESOLUTION_SUMMARY_PATH",
     "PACKAGE_NETWORK_PUBLICATION_NEGATIVE_CASES_PATH",

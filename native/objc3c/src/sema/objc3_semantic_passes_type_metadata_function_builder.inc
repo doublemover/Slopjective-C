@@ -15,6 +15,16 @@
     Objc3SemanticFunctionTypeMetadata metadata;
     metadata.name = name;
     metadata.arity = source.arity;
+    metadata.throws_declared = source.throws_declared;
+    metadata.typed_throws_declared = source.typed_throws_declared;
+    metadata.typed_throws_error_type_spelling =
+        source.typed_throws_error_type_spelling;
+    metadata.typed_throws_effect_signature_key =
+        source.typed_throws_effect_signature_key;
+    metadata.typed_throws_callable_compatibility_policy =
+        source.typed_throws_callable_compatibility_policy;
+    metadata.typed_throws_abi_lowering_ready =
+        source.typed_throws_abi_lowering_ready;
     metadata.generic_parameter_names_source_order =
         source.generic_parameter_names_source_order;
     metadata.generic_parameter_variance_source_order =

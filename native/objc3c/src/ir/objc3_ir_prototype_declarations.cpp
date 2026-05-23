@@ -26,7 +26,7 @@ void EmitObjc3IRExternalFunctionDeclarations(
     const LoweredFunctionSignature &signature = entry.second;
     if (signature.has_value_optional_type_signature &&
         !signature.value_optional_lowering_supported) {
-      out << "; value optional source-only signature not emitted for @"
+      out << "; value optional semantic signature not emitted for @"
           << entry.first << " (O3P159)\n";
       emitted = true;
       continue;

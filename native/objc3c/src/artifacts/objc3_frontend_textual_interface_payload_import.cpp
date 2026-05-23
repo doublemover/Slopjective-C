@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "artifacts/objc3_frontend_textual_interface_payload_artifact.h"
+#include "ast/objc3_ast_value_optional_type.h"
 #include "io/json/json_parser.h"
 #include "io/json/json_value.h"
 
@@ -267,32 +268,57 @@ void ValidateValueOptionalContract(
   ExpectStringMember(contract, "canonical_spelling", "Optional<T>", result,
                      json_path + "/value_optional_contract");
   ExpectStringMember(contract, "source_status",
-                     "type-signature-admitted-runtime-execution-fail-closed",
+                     kObjc3ValueOptionalSourceStatus,
                      result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "semantic_value_model_supported", true, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "explicit_present_absent_construction_modeled",
+                   true, result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "binding_narrowing_supported", true, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "unwrap_requires_presence_check", true, result,
+                   json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "lowercase_alias_accepted", false, result,
                    json_path + "/value_optional_contract");
   ExpectStringMember(contract, "abi_layout_status",
-                     "stable-contract-runtime-lowering-deferred", result,
+                     kObjc3ValueOptionalAbiLayoutStatus, result,
                      json_path + "/value_optional_contract");
   ExpectStringMember(contract, "abi_layout_id",
                      kObjc3ValueOptionalAbiLayoutId, result,
                      json_path + "/value_optional_contract");
-  ExpectStringMember(contract, "presence_field", "has_value", result,
+  ExpectStringMember(contract, "presence_field",
+                     kObjc3ValueOptionalPresenceField, result,
                      json_path + "/value_optional_contract");
-  ExpectStringMember(contract, "payload_storage_field", "payload", result,
+  ExpectStringMember(contract, "payload_storage_field",
+                     kObjc3ValueOptionalPayloadStorageField, result,
                      json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "payload_cleanup_contract",
+                     kObjc3ValueOptionalPayloadCleanupContract, result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "absence_state",
+                     kObjc3ValueOptionalAbsenceState, result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "presence_state",
+                     kObjc3ValueOptionalPresenceState, result,
+                     json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "stable_abi_layout_contract_supported", true,
+                   result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "interface_roundtrip_supported", true, result,
+                   json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "runtime_execution_supported", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "lowering_supported", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nil_to_scalar_coercion_allowed", false, result,
                    json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "implicit_nil_absence_allowed", false, result,
+                   json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nullable_pointer_conversion_allowed", false,
                    result, json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "throws_result_conversion_allowed", false, result,
                    json_path + "/value_optional_contract");
   ExpectStringMember(contract, "interface_roundtrip_status",
-                     "type-signature-carrier-imported-runtime-deferred", result,
+                     kObjc3ValueOptionalInterfaceRoundtripStatus, result,
                      json_path + "/value_optional_contract");
   const char *required_records[] = {"optional_type", "optional_value",
                                     "optional_flow", "optional_rejection"};
@@ -327,6 +353,24 @@ void ValidateTypedThrowsContract(
                   json_path + "/typed_throws/declared_error_type");
   }
   const bool throws_declared = BoolMember(effects, "throws", result, json_path);
+  const std::string expected_effect_signature_key =
+      throws_kind == "none" ? "throws:none"
+                            : "throws:" + throws_kind + ":" +
+                                  declared_error_type;
+  ExpectStringMember(contract, "effect_signature_key",
+                     expected_effect_signature_key, result,
+                     json_path + "/typed_throws");
+  ExpectStringMember(
+      contract,
+      "callable_compatibility_policy",
+      throws_kind == "typed"
+          ? "typed-throws-exact-payload-match-lowering-deferred"
+          : (throws_kind == "untyped" ? "untyped-throws-id-error-carrier"
+                                      : "nonthrowing-only"),
+      result, json_path + "/typed_throws");
+  ExpectStringMember(contract, "semantic_identity_status",
+                     "exact-effect-signature-preserved", result,
+                     json_path + "/typed_throws");
   if (throws_kind != "none" && throws_kind != "untyped" &&
       throws_kind != "typed") {
     AddDiagnostic(result,

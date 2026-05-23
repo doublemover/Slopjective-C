@@ -120,13 +120,34 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         and row["metadata_freshness_guard"]["blocks_publication_on_stale"] is True
         and row["metadata_freshness_guard"]["stale_package_metadata_behavior"]
         == "fail-closed-before-publication"
+        and row["promotion_gate_contract"]["promotion_source"]
+        == "checked-in-package-variant-row"
+        and row["promotion_gate_contract"]["hosted_runner_summary_behavior"]
+        == "summary-only-no-support-promotion"
         for row in source_truth["package_variant_rows"]
     )
+    package_rows = {
+        row["row_id"]: row
+        for row in source_truth["package_variant_rows"]
+    }
+    assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["runtime_library_names"] == ["libobjc3-runtime.so"]
+    assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["runtime_library_names"] == ["libobjc3-runtime.dylib"]
+    assert set(
+        package_rows["objc3c.package.sanitizer.asan.reserved"][
+            "promotion_gate_contract"
+        ]["blocked_publication_surfaces"]
+    ) == {"package", "install", "execution", "publication"}
     assert all(
         row["install_guard"]["missing_runtime_behavior"]
         == "fail-closed-before-package-install"
         and row["install_guard"]["stale_package_metadata_behavior"]
         == "fail-closed-before-publication"
+        and row["package_runtime_contract"]["runtime_probe_required"] is True
+        and row["package_runtime_contract"]["report_artifact_support_truth"] is False
         for row in source_truth["sanitizer_variant_rows"]
     )
 

@@ -64,6 +64,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-package-hosted-registry-index-v1": ROOT
     / "schemas"
     / "objc3c-package-hosted-registry-index-v1.schema.json",
+    "objc3c-package-hosted-registry-service-v1": ROOT
+    / "schemas"
+    / "objc3c-package-hosted-registry-service-v1.schema.json",
     "objc3c-package-network-resolution-v1": ROOT
     / "schemas"
     / "objc3c-package-network-resolution-v1.schema.json",
@@ -115,6 +118,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-standalone-textual-interface-payload-v1": ROOT
     / "schemas"
     / "objc3c-standalone-textual-interface-payload-v1.schema.json",
+    "objc3c-typed-throws-effect-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-typed-throws-effect-contract-v1.schema.json",
     "objc3c-foundations-umbrella-source-truth-v1": ROOT
     / "schemas"
     / "objc3c-foundations-umbrella-source-truth-v1.schema.json",

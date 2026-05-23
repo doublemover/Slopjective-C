@@ -3,7 +3,7 @@
   "surface_kind": "package-ecosystem-negative-package-metadata",
   "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
   "diagnostic_code": "O3PKG8055",
-  "claim_boundary": "negative fixture contract for local package manifest, direct @import module graph, local registry metadata, and source-owned hosted registry fixture boundaries; live network install support remains fail-closed",
+  "claim_boundary": "negative fixture contract for local package manifest, direct @import module graph, local registry metadata, source-owned hosted registry fixture boundaries, and hermetic hosted-service boundaries; live network install support remains fail-closed",
   "cases": [
     {
       "case_id": "missing-module-graph",

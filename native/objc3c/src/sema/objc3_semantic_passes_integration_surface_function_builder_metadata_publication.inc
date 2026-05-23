@@ -4,6 +4,15 @@
       info.typed_throws_declared = fn.typed_throws_declared;
       info.typed_throws_error_type_spelling =
           fn.typed_throws_payload.canonical_spelling;
+      info.typed_throws_effect_signature_key =
+          Objc3BuildTypedThrowsEffectSignatureKey(
+              fn.throws_declared,
+              fn.typed_throws_declared,
+              fn.typed_throws_payload.canonical_spelling);
+      info.typed_throws_callable_compatibility_policy =
+          Objc3BuildTypedThrowsCallableCompatibilityPolicy(
+              fn.throws_declared,
+              fn.typed_throws_declared);
       info.typed_throws_abi_lowering_ready = false;
       const bool has_macro_marker = fn.objc_macro_declared;
       const bool has_macro_package = fn.objc_macro_package_declared;

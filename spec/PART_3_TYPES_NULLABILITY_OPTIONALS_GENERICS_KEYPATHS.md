@@ -368,10 +368,12 @@ In strict mode, `b` must be type-compatible with the unwrapped type of `a`; othe
 ### 3.3.5 Value-optional type-signature carrier and ABI guardrails {#part-3-3-5}
 
 Objective‑C 3.0 v1 admits canonical `Optional<T>` in source type
-signatures as a source/interface carrier. The carrier has a stable ABI contract
-identity, `objc3.value_optional.inline_presence_payload.v1`, with explicit
-`has_value` presence and `payload` storage fields, but v1 does not yet provide
-runnable construction, unwrap, property/ivar storage layout, IR payload
+signatures as a semantic value-optional carrier. The carrier has a stable ABI
+contract identity, `objc3.value_optional.inline_presence_payload.v1`, with
+explicit `has_value` presence and `payload` storage fields, and semantic
+records model present/absent construction, binding/narrowing, checked unwrap,
+payload lifetime, and interface roundtrip. v1 does not yet provide runnable
+construction, unchecked unwrap, property/ivar storage layout, IR payload
 emission, or call ABI lowering for that carrier.
 
 The following remain ill-formed in v1 user code unless escaped per
@@ -384,10 +386,11 @@ The following remain ill-formed in v1 user code unless escaped per
 
 The current #8234 compiler contract owns the canonical spelling boundary but
 does not claim value-optional execution: canonical `Optional<T>` type
-signatures may be parsed, semantically carried, and round-tripped through
-textual interfaces, while executable use and layout/lowering claims are rejected
-with `O3P159`. Textual interfaces must preserve the value-optional carrier
-metadata and must fail closed on layout identity drift.
+signatures may be parsed, admitted as semantic types, and round-tripped through
+textual interfaces, while executable use, implicit nil absence, nullable-pointer
+erasure, and runtime lowering claims are rejected with `O3P159`. Textual
+interfaces must preserve the value-optional carrier metadata and must fail
+closed on layout identity drift.
 
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 

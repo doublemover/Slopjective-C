@@ -18,6 +18,12 @@ from objc3c_package_manager.hosted_registry import (  # noqa: E402
     collect_hosted_registry_model_failures,
     resolve_hosted_registry_package,
 )
+from objc3c_package_manager.hosted_service import (  # noqa: E402
+    HostedRegistryServiceRequest,
+    collect_hosted_registry_service_failures,
+    collect_hosted_registry_service_request_failures,
+    resolve_hosted_registry_service_request,
+)
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
 from scripts.objc3c_workflow.action_catalog_package_registry import (  # noqa: E402
@@ -25,6 +31,7 @@ from scripts.objc3c_workflow.action_catalog_package_registry import (  # noqa: E
 )
 from scripts.objc3c_workflow.action_catalog_package_registry_publication import (  # noqa: E402
     PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+    PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA,
     PACKAGE_REGISTRY_PUBLIC_ACTIONS,
 )
 from scripts.objc3c_workflow.actions.ecosystem_publication_owner_contracts import (  # noqa: E402
@@ -35,10 +42,18 @@ FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "
 REGISTRY_FIXTURE = FIXTURE_ROOT / "hosted-registry-index.json"
 MIRROR_FIXTURE = FIXTURE_ROOT / "offline-mirror-index.json"
 NEGATIVE_CASES_FIXTURE = FIXTURE_ROOT / "negative-registry-cases.json"
+SERVICE_FIXTURE = FIXTURE_ROOT / "service" / "hosted-registry-service.json"
+SERVICE_NEGATIVE_CASES_FIXTURE = (
+    FIXTURE_ROOT / "service" / "negative-service-cases.json"
+)
 
 
 def hosted_registry_fixture() -> tuple[dict[str, object], dict[str, object]]:
     return load_json(REGISTRY_FIXTURE), load_json(MIRROR_FIXTURE)
+
+
+def hosted_registry_service_fixture() -> dict[str, object]:
+    return load_json(SERVICE_FIXTURE)
 
 
 def resolve_default(
@@ -97,6 +112,61 @@ def test_hosted_registry_fixture_resolves_from_offline_metadata() -> None:
     assert resolved.registry_record_digest.startswith("sha256:")
     assert resolved.registry_signature_id.startswith("sha256:")
     assert resolved.trust_result_id == "fixture-network-core-1.0.0-trust-result"
+
+
+def test_hosted_registry_service_contract_resolves_from_hermetic_fixture() -> None:
+    index, _mirror = hosted_registry_fixture()
+    service = hosted_registry_service_fixture()
+
+    failures = collect_hosted_registry_service_failures(
+        service,
+        index=index,
+        root=ROOT,
+    )
+    decision = resolve_hosted_registry_service_request(
+        service,
+        HostedRegistryServiceRequest(
+            package_id="fixture:network.core",
+            package_version="1.0.0",
+        ),
+        index=index,
+        root=ROOT,
+    )
+
+    assert failures == []
+    assert decision.service_id == "objc3c-hermetic-hosted-registry-service-v1"
+    assert decision.package_id == "fixture:network.core"
+    assert decision.package_version == "1.0.0"
+    assert decision.registry_index_path == (
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"
+    )
+    assert decision.offline_mirror_path == (
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json"
+    )
+    assert decision.auth_subject_id == "fixture-developer"
+
+
+def test_hosted_registry_service_request_failures_are_fail_closed() -> None:
+    index, _mirror = hosted_registry_fixture()
+
+    failures = collect_hosted_registry_service_request_failures(
+        index["hosted_service"],  # type: ignore[index]
+        HostedRegistryServiceRequest(
+            package_id="fixture:network.core",
+            package_version=None,
+            auth_subject_id="fixture:unknown",
+            auth_token_id="fixture-bad-token",
+            allow_network=True,
+        ),
+    )
+
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry service network request rejected" in failures
+    assert (
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry service requires exact package version "
+        "for fixture:network.core"
+    ) in failures
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: unknown hosted registry service auth subject fixture:unknown" in failures
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry service auth token drift for fixture:unknown" in failures
 
 
 def test_hosted_registry_live_network_fetch_fails_closed() -> None:
@@ -423,10 +493,49 @@ def test_hosted_registry_negative_cases_are_source_owned() -> None:
         "unpinned-hosted-dependency",
         "unsigned-hosted-artifact",
         "yanked-version",
+        "missing-service-auth",
+        "service-auth-token-drift",
+        "service-availability-unavailable",
+        "service-contract-drift",
+        "service-index-drift",
+        "service-moderation-blocked",
+        "service-revocation-unavailable",
+        "unknown-service-auth-subject",
     } <= case_ids
     assert str(payload["fixture_index"]) == (
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"
     )
+
+
+def test_hosted_registry_service_negative_cases_are_source_owned() -> None:
+    service = hosted_registry_service_fixture()
+    payload = load_json(SERVICE_NEGATIVE_CASES_FIXTURE)
+    service_modes = {
+        str(case["failure_mode"])
+        for case in service["negative_cases"]  # type: ignore[index]
+    }
+    payload_modes = {
+        str(case["failure_mode"])
+        for case in payload["cases"]  # type: ignore[index]
+    }
+
+    assert payload["diagnostic_code"] == PACKAGE_MANAGER_TAMPER_CODE
+    assert payload["service_fixture"] == (
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json"
+    )
+    assert service_modes == payload_modes
+    assert {
+        "missing-service-auth",
+        "unknown-service-auth-subject",
+        "service-auth-token-drift",
+        "service-contract-drift",
+        "service-index-drift",
+        "service-revocation-unavailable",
+        "service-moderation-blocked",
+        "service-availability-unavailable",
+        "live-network-fetch",
+        "fallback-registry-success",
+    } == payload_modes
 
 
 def test_hosted_registry_public_actions_are_registered() -> None:
@@ -436,6 +545,7 @@ def test_hosted_registry_public_actions_are_registered() -> None:
     assert any(
         action.action == "validate-package-registry-model"
         and PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA in action.schema_contracts
+        and PACKAGE_HOSTED_REGISTRY_SERVICE_SCHEMA in action.schema_contracts
         for action in PACKAGE_REGISTRY_PUBLIC_ACTIONS
     )
     assert (

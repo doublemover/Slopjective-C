@@ -31,6 +31,16 @@ bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs
            rhs.canonical_type.is_value_optional &&
            lhs.canonical_type.value_optional_payload_type_spelling ==
                rhs.canonical_type.value_optional_payload_type_spelling &&
+           lhs.canonical_type.value_optional_semantic_value_model_supported ==
+               rhs.canonical_type.value_optional_semantic_value_model_supported &&
+           lhs.canonical_type.value_optional_stable_abi_layout_contract_supported ==
+               rhs.canonical_type.value_optional_stable_abi_layout_contract_supported &&
+           lhs.canonical_type.value_optional_binding_narrowing_supported ==
+               rhs.canonical_type.value_optional_binding_narrowing_supported &&
+           lhs.canonical_type.value_optional_interface_roundtrip_supported ==
+               rhs.canonical_type.value_optional_interface_roundtrip_supported &&
+           lhs.canonical_type.value_optional_unwrap_requires_presence_check ==
+               rhs.canonical_type.value_optional_unwrap_requires_presence_check &&
            lhs.canonical_type.value_optional_runtime_execution_supported ==
                rhs.canonical_type.value_optional_runtime_execution_supported &&
            lhs.canonical_type.value_optional_lowering_supported ==

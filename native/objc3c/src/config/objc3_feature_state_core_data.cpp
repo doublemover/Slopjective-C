@@ -18,7 +18,7 @@ constexpr std::array<LanguageFeatureState, kReservedFeatureStateDataCount>
         {"reserved-typed-throws", FeatureState::Reserved, "O3P182",
          "throws(E) single payloads are source/interface preserved; empty, multi, malformed, and non-type payloads remain O3P182 while typed error ABI and lowering are deferred."},
         {"reserved-value-optionals", FeatureState::Reserved, "O3P159",
-         "Optional<T> value optional type signatures are source/interface carriers; executable construction, unwrap, ABI emission, and lowering remain unavailable."},
+         "Optional<T> value optional type signatures have semantic type identity and stable presence/payload layout; executable construction, unwrap, IR payload emission, and runtime lowering remain unavailable."},
         {"reserved-match-expressions", FeatureState::Reserved, "O3P156",
          "Expression-form match remains unavailable; the current frontend admits only statement match."},
         {"reserved-guarded-match-patterns", FeatureState::Reserved, "O3P157",

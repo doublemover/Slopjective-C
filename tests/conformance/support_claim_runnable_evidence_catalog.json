@@ -30,7 +30,8 @@
     8184,
     8207,
     8235,
-    8236
+    8236,
+    8237
   ],
   "policy": {
     "source_truth": "checked-in conformance rows, native fixtures, runtime probes, and canonical support manifests",
@@ -237,6 +238,47 @@
       "source_truth_requirements": [
         "Expression match support is bounded to expression arms with bool guards, scoped bindings, exhaustiveness checks, and converged result types",
         "Result payload ABI extraction and type-test patterns remain fail-closed until their dedicated runtime/lowering contracts exist"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "capability_id": "language.profiles.strict-admission",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+      "traceability_fixture": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+      "runnable_command": "npm run objc3c -- validate-release-candidate-conformance",
+      "runtime_acceptance_case": "strict-profile-claim-implementation",
+      "positive_evidence": [
+        "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+        "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3",
+        "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3",
+        "native/objc3c/src/config/objc3_language_profile_validation.cpp",
+        "native/objc3c/src/driver/objc3_frontend_options.cpp",
+        "native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc",
+        "native/objc3c/src/io/objc3_conformance_profile_selection.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp",
+        "schemas/objc3c-strict-profile-boundary-v1.schema.json"
+      ],
+      "negative_evidence": [
+        "tests/conformance/profile_strict_boundary/strict_concurrency_actor_isolation_negative.objc3",
+        "tests/conformance/profile_strict_boundary/strict_concurrency_sendability_negative.objc3",
+        "tests/conformance/profile_strict_boundary/strict_concurrency_scheduler_negative.objc3",
+        "tests/conformance/profile_strict_boundary/strict_concurrency_task_lifecycle_negative.objc3",
+        "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3C001",
+        "O3C038",
+        "O3S228",
+        "O3S232",
+        "O3S286",
+        "O3S343"
+      ],
+      "source_truth_requirements": [
+        "Strict and strict-concurrency support is claimed only through native frontend profile validation, public conformance publication, and release-candidate replay evidence",
+        "Strict-concurrency requires actor isolation, sendability, task lifecycle, and scheduler diagnostics rather than parser-only recognition",
+        "Strict-system and underscore compatibility aliases remain fail-closed and cannot widen support"
       ]
     },
     {
@@ -2230,24 +2272,58 @@
       "runtime_acceptance_case": "package-hosted-registry-offline-fixture-resolution",
       "positive_evidence": [
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
         "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+        "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
         "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/objc3c_package_manager/hosted_service.py",
         "scripts/check_objc3c_package_registry_model.py",
         "tests/tooling/test_package_hosted_registry_resolution.py"
       ],
       "negative_evidence": [
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
         "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json"
       ],
       "required_diagnostic_codes": [
         "O3PKG8055"
       ],
       "source_truth_requirements": [
-        "Hosted registry support is bounded to checked-in offline fixture metadata, fixture lock, local trust root, and offline mirror pins",
-        "Live network fetches, registry availability, auth, moderation, package-manager parity, and fallback registry success must fail closed",
+        "Hosted registry support is bounded to checked-in offline fixture metadata, hermetic hosted service contract, fixture lock, local trust root, and offline mirror pins",
+        "Live network fetches, live public registry availability, production auth, production moderation, package-manager parity, and fallback registry success must fail closed",
         "Endpoint identity, channel identity, language version, ABI identity, package signatures, cache digest, and trust material must agree before resolution"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+      "runnable_command": "npm run objc3c -- validate-package-registry-model",
+      "runtime_acceptance_case": "package-hosted-registry-hermetic-service-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
+        "scripts/objc3c_package_manager/hosted_service.py",
+        "scripts/objc3c_package_manager/hosted_registry.py",
+        "scripts/check_objc3c_package_registry_model.py",
+        "tests/tooling/test_package_hosted_registry_resolution.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3PKG8055"
+      ],
+      "source_truth_requirements": [
+        "Hermetic hosted service support is bounded to checked-in service fixtures and cannot imply a live public hosted registry",
+        "Fixture token auth, local trust-root operation, revocation, moderation, availability, exact-version request policy, and no-network fallback must all be present before resolution",
+        "Production auth, moderation, availability SLOs, registry trust roots, live network transport, and fallback registry success remain fail-closed"
       ]
     },
     {

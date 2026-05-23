@@ -10,6 +10,20 @@ inline constexpr const char *kObjc3ValueOptionalAbiLayoutId =
     "objc3.value_optional.inline_presence_payload.v1";
 inline constexpr const char *kObjc3ValueOptionalCanonicalSpelling =
     "Optional<T>";
+inline constexpr const char *kObjc3ValueOptionalSourceStatus =
+    "semantic-type-signature-admitted-runtime-execution-fail-closed";
+inline constexpr const char *kObjc3ValueOptionalAbiLayoutStatus =
+    "stable-inline-presence-payload-contract-runtime-lowering-deferred";
+inline constexpr const char *kObjc3ValueOptionalInterfaceRoundtripStatus =
+    "semantic-carrier-roundtrips-runtime-deferred";
+inline constexpr const char *kObjc3ValueOptionalPresenceField = "has_value";
+inline constexpr const char *kObjc3ValueOptionalPayloadStorageField = "payload";
+inline constexpr const char *kObjc3ValueOptionalAbsenceState =
+    "has_value=false";
+inline constexpr const char *kObjc3ValueOptionalPresenceState =
+    "has_value=true";
+inline constexpr const char *kObjc3ValueOptionalPayloadCleanupContract =
+    "payload-cleanup-after-narrowed-scope";
 
 struct Objc3ValueOptionalTypeDescriptor {
   bool present = false;
@@ -23,13 +37,24 @@ struct Objc3ValueOptionalTypeDescriptor {
   bool payload_nested_value_optional = false;
   bool payload_lowercase_optional_alias = false;
   std::string abi_layout_id = kObjc3ValueOptionalAbiLayoutId;
-  std::string presence_field = "has_value";
-  std::string payload_storage_field = "payload";
+  std::string abi_layout_status = kObjc3ValueOptionalAbiLayoutStatus;
+  std::string interface_roundtrip_status =
+      kObjc3ValueOptionalInterfaceRoundtripStatus;
+  std::string presence_field = kObjc3ValueOptionalPresenceField;
+  std::string payload_storage_field = kObjc3ValueOptionalPayloadStorageField;
   bool source_type_admitted = false;
   bool semantic_carrier_modeled = false;
+  bool semantic_value_model_supported = false;
+  bool stable_abi_layout_contract_supported = false;
+  bool interface_roundtrip_supported = false;
+  bool explicit_present_absent_construction_modeled = false;
+  bool binding_narrowing_supported = false;
+  bool unwrap_requires_presence_check = true;
+  bool semantic_present_absent_state_supported = false;
   bool runtime_execution_supported = false;
   bool lowering_supported = false;
   bool nil_to_scalar_coercion_allowed = false;
+  bool implicit_nil_absence_allowed = false;
   bool nullable_pointer_conversion_allowed = false;
   bool throws_result_conversion_allowed = false;
   bool cleanup_contract_preserved = true;
@@ -92,6 +117,13 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
   descriptor.present = true;
   descriptor.source_type_admitted = true;
   descriptor.semantic_carrier_modeled = true;
+  descriptor.semantic_value_model_supported = true;
+  descriptor.stable_abi_layout_contract_supported = true;
+  descriptor.interface_roundtrip_supported = true;
+  descriptor.explicit_present_absent_construction_modeled = true;
+  descriptor.binding_narrowing_supported = true;
+  descriptor.unwrap_requires_presence_check = true;
+  descriptor.semantic_present_absent_state_supported = true;
   descriptor.line = line;
   descriptor.column = column;
   descriptor.payload_type_spelling =

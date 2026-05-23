@@ -28,6 +28,15 @@ std::string BuildThrowsDeclarationProfile(
   const bool propagation_ready =
       declaration_shape_valid && method_selector_surface_ready &&
       typed_payload_ready;
+  const std::string typed_effect_signature =
+      typed_throws_declared
+          ? "throws:typed:" + typed_error_type_spelling
+          : (throws_declared ? "throws:untyped:id<Error>" : "throws:none");
+  const std::string callable_compatibility_policy =
+      typed_throws_declared
+          ? "typed-throws-exact-payload-match-lowering-deferred"
+          : (throws_declared ? "untyped-throws-id-error-carrier"
+                             : "nonthrowing-only");
 
   std::ostringstream out;
   out << "throws-declaration:declared=" << (throws_declared ? "true" : "false")
@@ -42,6 +51,8 @@ std::string BuildThrowsDeclarationProfile(
       << ";selector-piece-count=" << selector_piece_count
       << ";typed-error-type=" << typed_error_type_spelling
       << ";typed-error-pointer-depth=" << typed_error_pointer_depth
+      << ";effect-signature=" << typed_effect_signature
+      << ";callable-compatibility=" << callable_compatibility_policy
       << ";typed-payload-ready=" << (typed_payload_ready ? "true" : "false")
       << ";untyped-error-abi-ready="
       << (untyped_error_abi_ready ? "true" : "false")

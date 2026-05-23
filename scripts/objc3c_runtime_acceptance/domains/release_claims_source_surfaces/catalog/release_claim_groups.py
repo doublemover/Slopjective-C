@@ -75,7 +75,7 @@ CLAIMABLE_RESIDUAL_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
         ),
         explicit_non_goals(
             "no-sidecar-only-claim-boundary",
-            "no-strict-profile-overclaim-without-live-selection-support",
+            "no-strict-system-overclaim-without-live-selection-support",
             "no-release-claim-widening-without-coupled-native-cli-publication",
         ),
         required_truth("requires_conformance_report_artifact"),
@@ -97,9 +97,9 @@ STRICT_PROFILE_FEATURE_CLAIM_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
         release_model(
             "strict_profile_feature_claim_model",
             (
-                "strict-profile-targeting-stays-bounded-to-fail-closed-feature-"
-                "claim-truth-semantics-and-release-gate-artifacts-until-real-"
-                "selection-support-lands"
+                "strict-and-strict-concurrency-profile-selection-is-live-while-"
+                "feature-macro-claim-truth-stays-fail-closed-and-release-gate-"
+                "artifacts-target-only-strict-system"
             ),
         ),
     ),
@@ -107,11 +107,11 @@ STRICT_PROFILE_FEATURE_CLAIM_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
     post_fixture_fields=payload_fields(
         payload_field(
             "targeted_profile_ids",
-            ("strict", "strict-concurrency", "strict-system"),
+            ("strict-system",),
         ),
         explicit_non_goals(
-            "no-strict-profile-selection-support-claim-yet",
-            "no-feature-macro-publication-claim-yet",
+            "no-strict-system-selection-support-claim-yet",
+            "no-source-only-feature-macro-promotion",
             "no-publication-path-bypass-around-native-cli-sidecars",
         ),
         required_truth("requires_conformance_report_artifact"),
@@ -166,9 +166,9 @@ STRICT_PROFILE_CLAIM_IMPLEMENTATION_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
         release_model(
             "claim_implementation_model",
             (
-                "strict-strict-concurrency-and-strict-system-selection-fails-closed-"
-                "through-the-same-native-cli-claim-policy-until-runtime-backed-"
-                "claim-implementation-lands"
+                "strict-and-strict-concurrency-selection-is-supported-while-"
+                "strict-system-fails-closed-through-the-same-native-cli-claim-"
+                "policy"
             ),
         ),
     ),
@@ -176,14 +176,14 @@ STRICT_PROFILE_CLAIM_IMPLEMENTATION_RELEASE_CLAIM_GROUP = ReleaseClaimGroup(
     post_fixture_fields=payload_fields(
         payload_field(
             "claimed_profile_ids",
-            ("core",),
+            ("core", "strict", "strict-concurrency"),
         ),
         payload_field(
             "rejected_profile_ids",
-            ("strict", "strict-concurrency", "strict-system"),
+            ("strict-system",),
         ),
         explicit_non_goals(
-            "no-strict-profile-claim-before-runtime-backed-support",
+            "no-strict-system-claim-before-release-evidence",
             "no-non-json-publication-claim-yet",
             "no-optional-feature-overclaim-beyond-runtime-capability-report",
         ),

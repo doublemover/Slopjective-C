@@ -258,6 +258,31 @@
     },
     {
       "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-typed-throws-effect-contract-v1.schema.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
     },
@@ -295,6 +320,31 @@
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/value_optionals_contract_positive.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-value-optionals-contract-v1.schema.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_value_optional_type.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h"
     },
     {
       "capability_id": "language.types.value-optionals",
@@ -436,18 +486,73 @@
     },
     {
       "capability_id": "language.profiles.strict-admission",
-      "evidence_kind": "diagnostic",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-strict-profile-boundary-v1.schema.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
     },
     {
       "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
       "evidence_kind": "source",
       "path": "native/objc3c/src/config/objc3_language_profile_validation.cpp"
     },
     {
       "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/objc3_frontend_options.cpp"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
       "evidence_kind": "source",
       "path": "native/objc3c/src/io/objc3_conformance_profile_selection.cpp"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp"
     },
     {
       "capability_id": "language.evolution.umbrella-alignment",
@@ -4645,6 +4750,20 @@
       "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
       "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
       "path": "tests/tooling/test_package_hosted_registry_resolution.py",
       "command": "npm run objc3c -- validate-package-registry-model"
     },
@@ -4657,6 +4776,12 @@
     {
       "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
       "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
       "evidence_kind": "source",
       "path": "scripts/objc3c_package_manager/hosted_registry.py"
     },
@@ -4664,7 +4789,71 @@
       "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
       "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
       "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_service.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "source",
       "path": "scripts/check_objc3c_package_registry_model.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_hosted_registry_resolution.py",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_service.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_registry.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_registry_model.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_package_ecosystem.md"
     },
     {
       "capability_id": "ecosystem.package-manager.network-dependency-resolution",

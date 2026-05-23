@@ -90,6 +90,12 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.profiles.strict-admission",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+      "executable_command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
       "claim_id": "objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
@@ -477,6 +483,12 @@
       "claim_id": "objc3c.behavior.package.hosted-registry-fixture",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "executable_command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "claim_id": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
       "executable_command": "npm run objc3c -- validate-package-registry-model"
     },
     {
@@ -1476,6 +1488,14 @@
       "expected_diagnostic_code": "O3P182"
     },
     {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S218"
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
@@ -1521,6 +1541,14 @@
       "owner_phase": "parser",
       "behavior_family": "types",
       "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "diagnostic_negative",
       "expected_diagnostic_code": "O3P159"
     },
     {
@@ -2034,6 +2062,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "public-conformance",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
@@ -2051,6 +2087,22 @@
     },
     {
       "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3PKG8055"
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
       "behavior_family": "package-ecosystem",

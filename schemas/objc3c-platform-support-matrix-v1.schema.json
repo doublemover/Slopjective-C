@@ -282,6 +282,8 @@
           "claim_state",
           "platform_ids",
           "package_id",
+          "artifact_identity_contract",
+          "promotion_gate_contract",
           "unsupported_behavior"
         ],
         "properties": {
@@ -298,6 +300,8 @@
             "items": { "type": "string" }
           },
           "package_id": { "type": "string" },
+          "artifact_identity_contract": { "type": "object" },
+          "promotion_gate_contract": { "type": "object" },
           "unsupported_behavior": { "const": "fail-closed" }
         },
         "additionalProperties": true

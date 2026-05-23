@@ -448,7 +448,13 @@ def collect_package_operation_failures(
         if not isinstance(hosted_registry, dict) or not isinstance(hosted_mirror, dict):
             failures.append(package_operation_diagnostic("hosted registry inputs are incomplete"))
         else:
-            failures.extend(collect_hosted_registry_model_failures(hosted_registry, hosted_mirror))
+            failures.extend(
+                collect_hosted_registry_model_failures(
+                    hosted_registry,
+                    hosted_mirror,
+                    root=root,
+                )
+            )
             try:
                 resolve_hosted_registry_package(
                     hosted_registry,

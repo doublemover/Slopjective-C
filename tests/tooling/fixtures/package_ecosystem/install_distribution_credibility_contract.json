@@ -109,7 +109,7 @@
     "update and uninstall operation receipts must be deterministic, digest-bound to the locked package graph, and stored under the clean install receipt root",
     "update receipts preserve dependency-first package order while uninstall receipts use reverse dependency order",
     "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
-    "install distribution consumes hosted registry and network publication only as checked-in offline fixture contracts; live network install and fallback registry success remain fail-closed",
+    "install distribution consumes hosted registry, hermetic hosted service, and network publication only as checked-in offline fixture contracts; live network install and fallback registry success remain fail-closed",
     "clean install materialization must validate extraction plan path safety, duplicate and case-conflicting paths, symlink rejection, installer/update-key policy hooks, and reserved release/registry trust roots before filesystem mutation",
     "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
     "public package install distribution support truth must name the from-nothing replay command and must not present a generated report as source authority",
@@ -117,7 +117,7 @@
     "offline mirror cache entries must digest-match the lock-derived mirror index before an install claim can pass",
     "install receipts must be machine-generated under the package ecosystem validation root, validate against the package-ecosystem install distribution receipt schema, publish the objc3c package bridge, and name the from-nothing public replay command",
     "update and uninstall receipts must use the package-ecosystem install distribution operation receipt schema instead of the package operation schema used by publish/install/update/rollback operations",
-    "network install, hosted registry, and alternate package-manager claims remain fail-closed until separate evidence exists"
+    "network install, live public hosted registry, and alternate package-manager claims remain fail-closed until separate evidence exists"
   ],
   "blocker_metadata": {
     "blocker_owner": "package-ecosystem-blockers",
@@ -135,5 +135,5 @@
       "generated install evidence escaped the package ecosystem artifact root"
     ]
   },
-  "claim_boundary": "clean local package install credibility only: checked-in source contracts generate package manifests, a deterministic lock, an offline mirror, local registry metadata, offline hosted/network/release-channel fixture inputs, an extraction safety plan, an install receipt, and a clean-root verification record; live hosted registry access, live network dependency resolution, fallback registry success, system installer publication, and remote release-channel operations remain outside this contract"
+  "claim_boundary": "clean local package install credibility only: checked-in source contracts generate package manifests, a deterministic lock, an offline mirror, local registry metadata, offline hosted/service/network/release-channel fixture inputs, an extraction safety plan, an install receipt, and a clean-root verification record; live hosted registry access, live network dependency resolution, fallback registry success, system installer publication, and remote release-channel operations remain outside this contract"
 }

@@ -1881,9 +1881,10 @@ early-exit for carriers whose runtime ABI is implemented:
 - future runtime-complete `Optional<T>` carrier: `if (!x.has_value) return absent; else use x.payload;`
 - `Result<T,E>` carrier: `if (isErr(x)) return Err(e); else use t;`
 
-In the v1 #8234 slice, `Optional<T>` is a source/interface type-signature
-carrier only. It must not lower through this path until construction, unwrap,
-layout, and call ABI support are implemented.
+In the v1 #8234 slice, `Optional<T>` is a semantic source/interface
+type-signature carrier with stable `has_value` plus `payload` layout identity.
+It must not lower through this path until executable construction, checked
+unwrap emission, and call ABI support are implemented.
 
 Implementations should preserve left-to-right evaluation and should not introduce hidden temporaries with observable lifetimes beyond what ARC already requires.
 

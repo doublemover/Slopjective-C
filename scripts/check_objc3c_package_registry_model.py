@@ -19,6 +19,14 @@ from objc3c_package_manager.hosted_registry import (  # noqa: E402
     collect_hosted_registry_model_failures,
     resolve_hosted_registry_package,
 )
+from objc3c_package_manager.hosted_service import (  # noqa: E402
+    HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
+    HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
+    HOSTED_REGISTRY_SERVICE_ID,
+    HostedRegistryServiceError,
+    HostedRegistryServiceRequest,
+    resolve_hosted_registry_service_request,
+)
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file  # noqa: E402
 from objc3c_tooling.paths import repo_rel  # noqa: E402
@@ -58,6 +66,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--package-version", default="1.0.0")
     parser.add_argument("--language-version", default="3.0")
     parser.add_argument("--abi-identity", default="objc3-abi-2025Q4")
+    parser.add_argument("--service-id", default=HOSTED_REGISTRY_SERVICE_ID)
+    parser.add_argument(
+        "--auth-subject-id",
+        default=HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
+    )
+    parser.add_argument(
+        "--auth-token-id",
+        default=HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
+    )
     parser.add_argument("--registry-url")
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("positional", nargs="*")
@@ -80,14 +97,57 @@ def main(argv: list[str] | None = None) -> int:
 
     failures = collect_hosted_registry_model_failures(index, mirror, root=ROOT)
     resolution: dict[str, Any] | None = None
+    service_decision: dict[str, Any] | None = None
     request = HostedRegistryResolutionRequest(
         package_id=str(args.package_id),
         package_version=str(args.package_version),
         language_version=str(args.language_version),
         abi_identity=str(args.abi_identity),
+        service_id=str(args.service_id),
+        auth_subject_id=str(args.auth_subject_id),
+        auth_token_id=str(args.auth_token_id),
         allow_network=bool(args.allow_network),
         registry_url=args.registry_url,
     )
+    service_request = HostedRegistryServiceRequest(
+        package_id=request.package_id,
+        package_version=request.package_version,
+        service_id=request.service_id,
+        endpoint_id=request.endpoint_id,
+        channel_id=request.channel_id,
+        auth_subject_id=request.auth_subject_id,
+        auth_token_id=request.auth_token_id,
+        allow_network=request.allow_network or request.registry_url is not None,
+    )
+    service_ref = index.get("hosted_service")
+    if isinstance(service_ref, dict):
+        service_fixture_path = service_ref.get("service_fixture_path")
+        if isinstance(service_fixture_path, str):
+            try:
+                service = load_json(ROOT / service_fixture_path)
+                decision = resolve_hosted_registry_service_request(
+                    service,
+                    service_request,
+                    index=index,
+                    root=ROOT,
+                )
+                service_decision = {
+                    "service_id": decision.service_id,
+                    "package_id": decision.package_id,
+                    "package_version": decision.package_version,
+                    "operation": decision.operation,
+                    "registry_index_path": decision.registry_index_path,
+                    "offline_mirror_path": decision.offline_mirror_path,
+                    "auth_subject_id": decision.auth_subject_id,
+                }
+            except HostedRegistryServiceError as exc:
+                failures.extend(
+                    failure for failure in exc.failures if failure not in failures
+                )
+            except RuntimeError as exc:
+                failure = f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry service fixture load failed: {exc}"
+                if failure not in failures:
+                    failures.append(failure)
     try:
         resolved = resolve_hosted_registry_package(index, mirror, request)
         resolution = {
@@ -120,7 +180,15 @@ def main(argv: list[str] | None = None) -> int:
             "allow_network": bool(args.allow_network),
             "registry_url": args.registry_url,
         },
+        "service_request": {
+            "service_id": args.service_id,
+            "auth_subject_id": args.auth_subject_id,
+            "auth_token_id": args.auth_token_id,
+            "operation": service_request.operation,
+        },
+        "service_decision": service_decision,
         "service_boundary": index.get("service_boundary"),
+        "hosted_service": index.get("hosted_service"),
         "provider_model": index.get("provider_model"),
         "snapshot": index.get("snapshot"),
         "service_availability": index.get("service_availability"),

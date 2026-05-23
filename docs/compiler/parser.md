@@ -5,15 +5,18 @@ Unsupported grammar remains rejected or reserved until the capability matrix
 marks the behavior implemented.
 
 Current v1 parser truth admits single-payload `throws(E)` as a source-owned
-typed-throws effect while staying fail-closed for canonical `Optional<T>` value
-optionals, expression-position `match`, and `=>` match arms. For #8233, empty,
+typed-throws effect and admits canonical `Optional<T>` only as a semantic
+type-signature carrier while staying fail-closed for value-optional executable
+construction/unwrap, expression-position `match`, and `=>` match arms. For #8233, empty,
 multi, malformed, and non-type parenthesized `throws(...)` payload shapes are
 parser-owned `O3P182` rejections and are never erased into bare untyped
 `throws`; exactly one type payload is preserved for later interface contracts.
-For #8234, canonical `Optional<T>` remains
-`O3P159` reserved, lowercase `optional<T>` remains `O3C004` removed spelling
-rather than an alias, and neither spelling enables nil-to-scalar or
-nullable-pointer conversion. The parser-owned diagnostic symbols are
+For #8234, canonical `Optional<T>` has first-class type identity plus a stable
+`has_value`/`payload` contract in source and textual-interface records.
+Lowercase `optional<T>` remains `O3C004` removed spelling rather than an alias,
+and neither spelling enables executable construction, unchecked unwrap,
+implicit nil absence, nil-to-scalar, throws/result, or nullable-pointer
+conversion. The parser-owned diagnostic symbols are
 `kObjc3ParserDiagnosticReservedTypedThrowsCode`,
 `kObjc3ParserDiagnosticReservedValueOptionalCode`, and
 `kObjc3ParserDiagnosticRemovedOptionalAliasCode` in the language-evolution
@@ -22,8 +25,9 @@ those identifiers as fail-closed anchors, not support claims.
 Standalone textual-interface import also treats these rows as hard contracts:
 `throws(E)` metadata may import `typed` only with one preserved payload, no
 runtime execution claim, and no untyped erasure; `none` and bare `untyped`
-records keep zero typed payload arity. `Optional<T>` metadata may import only
-the reserved feature marker with no ABI layout or implicit conversions.
+records keep zero typed payload arity. `Optional<T>` metadata imports only the
+semantic carrier, stable layout identity, and fail-closed conversion/runtime
+flags; layout drift or runtime-support claims fail closed.
 Statement-form
 `match (expr) { case pattern where condition: { ... } default: { ... } }` is
 the only guarded-pattern spelling admitted by the parser; `where` remains

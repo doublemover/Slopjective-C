@@ -66,6 +66,15 @@ def test_sanitizer_validation_contract_pins_asan_ubsan_runtime_and_compiler_surf
         == "fail-closed-before-package-install"
         and variant["install_guard"]["stale_package_metadata_behavior"]
         == "fail-closed-before-publication"
+        and variant["package_runtime_contract"]["runtime_probe_required"] is True
+        and variant["package_runtime_contract"]["default_release_channel_allowed"]
+        is False
+        and variant["package_runtime_contract"]["report_artifact_support_truth"]
+        is False
+        and variant["package_runtime_contract"][
+            "mixed_release_sanitizer_runtime_behavior"
+        ]
+        == "fail-closed"
         for variant in package_variants.values()
     )
     assert package_variants["objc3c.toolchain.sanitizer.address"][

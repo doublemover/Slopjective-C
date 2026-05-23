@@ -15,6 +15,7 @@
     "issue_ref",
     "canonical_spelling",
     "source_status",
+    "semantic_model",
     "abi_layout",
     "interface_roundtrip_status",
     "records",
@@ -25,14 +26,39 @@
     "issue_ref": { "const": 8234 },
     "canonical_spelling": { "const": "Optional<T>" },
     "source_status": {
-      "const": "type-signature-admitted-runtime-execution-fail-closed"
+      "const": "semantic-type-signature-admitted-runtime-execution-fail-closed"
+    },
+    "semantic_model": {
+      "type": "object",
+      "required": [
+        "type_admission_supported",
+        "explicit_present_absent_construction_modeled",
+        "binding_narrowing_supported",
+        "unwrap_requires_presence_check",
+        "implicit_nil_absence_allowed",
+        "optional_id_distinct_from_nullable_object_pointer"
+      ],
+      "properties": {
+        "type_admission_supported": { "const": true },
+        "explicit_present_absent_construction_modeled": { "const": true },
+        "binding_narrowing_supported": { "const": true },
+        "unwrap_requires_presence_check": { "const": true },
+        "implicit_nil_absence_allowed": { "const": false },
+        "optional_id_distinct_from_nullable_object_pointer": { "const": true }
+      },
+      "additionalProperties": false
     },
     "abi_layout": {
       "type": "object",
       "required": [
         "layout_id",
+        "layout_status",
         "presence_field",
         "payload_storage_field",
+        "payload_cleanup_contract",
+        "absence_state",
+        "presence_state",
+        "stable_layout_contract_supported",
         "runtime_execution_supported",
         "lowering_supported"
       ],
@@ -40,15 +66,24 @@
         "layout_id": {
           "const": "objc3.value_optional.inline_presence_payload.v1"
         },
+        "layout_status": {
+          "const": "stable-inline-presence-payload-contract-runtime-lowering-deferred"
+        },
         "presence_field": { "const": "has_value" },
         "payload_storage_field": { "const": "payload" },
+        "payload_cleanup_contract": {
+          "const": "payload-cleanup-after-narrowed-scope"
+        },
+        "absence_state": { "const": "has_value=false" },
+        "presence_state": { "const": "has_value=true" },
+        "stable_layout_contract_supported": { "const": true },
         "runtime_execution_supported": { "const": false },
         "lowering_supported": { "const": false }
       },
       "additionalProperties": false
     },
     "interface_roundtrip_status": {
-      "const": "type-signature-carrier-imported-runtime-deferred"
+      "const": "semantic-carrier-roundtrips-runtime-deferred"
     },
     "records": {
       "type": "object",
@@ -71,12 +106,14 @@
       "required": [
         "lowercase_alias_accepted",
         "nil_to_scalar_coercion_allowed",
+        "implicit_nil_absence_allowed",
         "nullable_pointer_conversion_allowed",
         "throws_result_conversion_allowed"
       ],
       "properties": {
         "lowercase_alias_accepted": { "const": false },
         "nil_to_scalar_coercion_allowed": { "const": false },
+        "implicit_nil_absence_allowed": { "const": false },
         "nullable_pointer_conversion_allowed": { "const": false },
         "throws_result_conversion_allowed": { "const": false }
       },
@@ -87,12 +124,21 @@
   "$defs": {
     "optionalType": {
       "type": "object",
-      "required": ["type_id", "payload_type", "abi_layout", "canonical_spelling"],
+      "required": [
+        "type_id",
+        "payload_type",
+        "abi_layout",
+        "semantic_model",
+        "canonical_spelling"
+      ],
       "properties": {
         "type_id": { "type": "string", "minLength": 1 },
         "payload_type": { "type": "string", "minLength": 1 },
         "abi_layout": {
           "const": "objc3.value_optional.inline_presence_payload.v1"
+        },
+        "semantic_model": {
+          "const": "first-class-value-optional-type-constructor"
         },
         "canonical_spelling": {
           "pattern": "^Optional<.+>$"
@@ -102,12 +148,25 @@
     },
     "optionalValue": {
       "type": "object",
-      "required": ["value_id", "optional_type", "presence_state", "payload_storage"],
+      "required": [
+        "value_id",
+        "optional_type",
+        "presence_state",
+        "payload_storage",
+        "absence_state",
+        "present_state",
+        "payload_lifetime"
+      ],
       "properties": {
         "value_id": { "type": "string", "minLength": 1 },
         "optional_type": { "type": "string", "minLength": 1 },
         "presence_state": { "const": "has_value" },
-        "payload_storage": { "const": "payload" }
+        "payload_storage": { "const": "payload" },
+        "absence_state": { "const": "has_value=false" },
+        "present_state": { "const": "has_value=true" },
+        "payload_lifetime": {
+          "const": "payload-live-only-when-has_value-true"
+        }
       },
       "additionalProperties": false
     },
@@ -118,7 +177,8 @@
         "narrowing_kind",
         "before_type",
         "after_type",
-        "cleanup_contract"
+        "cleanup_contract",
+        "presence_test_required"
       ],
       "properties": {
         "source_span": { "type": "string", "minLength": 1 },
@@ -127,7 +187,8 @@
         },
         "before_type": { "pattern": "^Optional<.+>$" },
         "after_type": { "type": "string", "minLength": 1 },
-        "cleanup_contract": { "type": "string", "minLength": 1 }
+        "cleanup_contract": { "type": "string", "minLength": 1 },
+        "presence_test_required": { "const": true }
       },
       "additionalProperties": false
     },

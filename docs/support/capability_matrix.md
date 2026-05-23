@@ -57,6 +57,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.metaprogramming.macro-safety-sandbox-determinism` | `sema` | `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.macro-safety-sandbox-determinism` |
 | `objc3c.behavior.language.metaprogramming.property-behavior-semantics` | `sema` | `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3` | `npm run objc3c -- test-runtime-acceptance` | `language.metaprogramming.property-behavior-semantics` |
 | `objc3c.behavior.language.ownership-memory-model` | `sema` | `tests/tooling/fixtures/native/borrowed_retainable_abi_completion_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.ownership.memory-model` |
+| `objc3c.behavior.language.profiles.strict-admission` | `e2e` | `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json` | `npm run objc3c -- validate-release-candidate-conformance` | `language.profiles.strict-admission` |
 | `objc3c.behavior.language.protocols.existential-witness-model` | `runtime` | `tests/tooling/fixtures/native/execution/positive/id_protocol_qualifier_alias_signature.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.existential-witness-model` |
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
 | `objc3c.behavior.language.text.source-string-interpolation` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3` | `npm run objc3c -- test-execution-smoke` | `language.text.source-string-interpolation` |
@@ -69,6 +70,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.modules.visibility-reexport-rebuild-contract` | `sema` | `tests/tooling/fixtures/module_interop_contracts/foundation_next_visibility_bridge_contract.json` | `npm run objc3c -- validate-module-interop-contracts` | `modules.visibility-reexport-rebuild-contract` |
 | `objc3c.behavior.optimization.method-inlining-safe-subset` | `ir` | `tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json` | `npm run objc3c -- validate-semantic-optimization-pipeline` | `compiler.optimization.method-inlining` |
 | `objc3c.behavior.package.hosted-registry-fixture` | `e2e` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` | `npm run objc3c -- validate-package-registry-model` | `ecosystem.package-manager.hosted-registry-fixture` |
+| `objc3c.behavior.package.hosted-registry-hermetic-service` | `e2e` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` | `npm run objc3c -- validate-package-registry-model` | `ecosystem.package-manager.hosted-registry-hermetic-service` |
 | `objc3c.behavior.package.install-clean-distribution` | `e2e` | `tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json` | `npm run objc3c -- validate-package-install-distribution --from-nothing` | `ecosystem.package-install.clean-distribution` |
 | `objc3c.behavior.package.manager-local-registry` | `e2e` | `tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json` | `npm run objc3c -- validate-package-manager-model` | `ecosystem.package-manager.local-registry` |
 | `objc3c.behavior.package.network-dependency-resolution` | `e2e` | `tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json` | `npm run objc3c -- validate-package-network-publication` | `ecosystem.package-manager.network-dependency-resolution` |
@@ -391,19 +393,27 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.errors.typed-throws`
 - State: `reserved`
 - Support claims: None
-- Summary: Typed throws remains reserved under issue #8233. The parser owns throws(...) payload syntax as deterministic O3P182 rejection, including empty, single, multi, and malformed payload shapes; textual-interface import and source-closure records expose only none or untyped bare-throws effect metadata with zero typed payload arity instead of silently erasing parenthesized payloads into support.
+- Summary: Typed throws remains reserved as a runtime/ABI/lowering feature under issue #8233, but single-payload throws(E) is now a source-owned effect signature. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, malformed/empty/multi/non-type payloads fail closed with O3P182, and textual-interface import rejects erased payloads, runtime execution claims, or ABI-lowering drift.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
+  - `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
   - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
+  - `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
   - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3`
+  - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
+  - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
+  - source: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
@@ -413,14 +423,19 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved under issue #8234. Canonical Optional<T> is parser-owned O3P159 reserved syntax, lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny nil-to-scalar, nullable-pointer, throws/result, ABI layout, lowering, runtime, and semantic value-optional interface support beyond reserved feature markers.
+- Summary: Value optionals remain reserved as an executable/runtime feature under issue #8234. Canonical Optional<T> is admitted only as a semantic type-signature carrier with stable has_value/payload layout identity and textual-interface roundtrip; lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny executable construction, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer, throws/result, IR payload emission, and runtime lowering.
 - Owner modules:
+  - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
   - `native/objc3c/src/parse/objc3_parser_cstyle_type_parser_diagnostics.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/model/frontend_type_source_closure.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes_canonical_type_helpers.inc`
+  - `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
+  - `schemas/objc3c-value-optionals-contract-v1.schema.json`
+  - `tests/tooling/fixtures/native/value_optionals_contract_positive.json`
   - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3`
@@ -428,6 +443,11 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - source: `tests/tooling/fixtures/native/value_optionals_contract_positive.json`
+  - diagnostic: `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json`
+  - schema: `schemas/objc3c-value-optionals-contract-v1.schema.json`
+  - source: `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
+  - source: `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
 
@@ -487,24 +507,36 @@ the canonical manifest fixture and public npm command above.
 ### Strict and strict-concurrency profile admission
 
 - Capability ID: `language.profiles.strict-admission`
-- State: `reserved`
-- Support claims: None
-- Summary: Strict and strict-concurrency language profiles remain reserved under issue #8237. Canonical frontend compilation remains canonical-only, public conformance publication may claim core only, strict is rejected with O3C036, strict-concurrency is rejected with O3C037, strict-system rejects as a target-only release-evidence profile with O3C038, and underscore or compatibility aliases are rejected rather than treated as source-only support.
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.profiles.strict-admission`
+- Summary: Strict and strict-concurrency language profiles are implemented under issue #8237 as selectable native frontend profiles and claimable public conformance profiles. Strict enables strict diagnostics, strict-concurrency enables strict diagnostics plus actor isolation, sendability, task lifecycle, and scheduler enforcement, public publication claims core/strict/strict-concurrency, strict-system rejects as a target-only release-evidence profile with O3C038, and underscore or compatibility aliases reject instead of widening support.
 - Owner modules:
   - `native/objc3c/src/config/objc3_language_profile_validation.cpp`
   - `native/objc3c/src/io/objc3_conformance_profile_selection.cpp`
+  - `native/objc3c/src/driver/objc3_frontend_options.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp`
+  - `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json`
   - `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
 - Evidence:
-  - diagnostic: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+  - test: `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json` via `npm run objc3c -- validate-release-candidate-conformance`
+  - test: `tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3` via `npm run objc3c -- validate-release-candidate-conformance`
+  - test: `tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3` via `npm run objc3c -- validate-release-candidate-conformance`
+  - test: `tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3` via `npm run objc3c -- validate-release-candidate-conformance`
+  - schema: `schemas/objc3c-strict-profile-boundary-v1.schema.json`
+  - source: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
   - source: `native/objc3c/src/config/objc3_language_profile_validation.cpp`
+  - source: `native/objc3c/src/driver/objc3_frontend_options.cpp`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc`
   - source: `native/objc3c/src/io/objc3_conformance_profile_selection.cpp`
+  - source: `native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp`
 
 ### Language evolution umbrella alignment
 
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws, value-optional, and strict-profile prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support and #8236 guarded-match/match-expression support without claiming runtime-specialized generics, typed error ABI, value optional ABI, or strict profile behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws and value-optional prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier/layout identity without claiming runtime-specialized generics, typed error ABI, value-optional executable/runtime lowering, or strict-system behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -2296,20 +2328,49 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.hosted-registry-fixture`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.hosted-registry-fixture`
-- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live registry availability, network fetches, auth, moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.
+- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, hermetic service reference, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live public registry availability, network fetches, production auth, production moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.
 - Owner modules:
   - `scripts/objc3c_package_manager/hosted_registry.py`
+  - `scripts/objc3c_package_manager/hosted_service.py`
   - `scripts/check_objc3c_package_registry_model.py`
   - `scripts/objc3c_workflow/action_catalog_package_registry_publication.py`
   - `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+  - `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
 - Evidence:
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/test_package_hosted_registry_resolution.py` via `npm run objc3c -- validate-package-registry-model`
   - schema: `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+  - schema: `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/hosted_registry.py`
+  - source: `scripts/objc3c_package_manager/hosted_service.py`
+  - source: `scripts/check_objc3c_package_registry_model.py`
+
+### Hermetic hosted registry service contract
+
+- Capability ID: `ecosystem.package-manager.hosted-registry-hermetic-service`
+- State: `implemented`
+- Support claims: `objc3c.behavior.package.hosted-registry-hermetic-service`
+- Summary: A source-owned hermetic hosted-registry service contract now gates the hosted-registry fixture path. The service fixture validates fixture token auth, local trust-root operation, revocation service state, moderation policy, availability state, exact-version request policy, offline mirror handoff, and no-network fallback before package resolution. This is not a live public registry, production auth service, production moderation service, registry availability SLO, or network transport claim.
+- Owner modules:
+  - `scripts/objc3c_package_manager/hosted_service.py`
+  - `scripts/objc3c_package_manager/hosted_registry.py`
+  - `scripts/check_objc3c_package_registry_model.py`
+  - `scripts/objc3c_workflow/action_catalog_package_registry_publication.py`
+  - `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/test_package_hosted_registry_resolution.py` via `npm run objc3c -- validate-package-registry-model`
+  - schema: `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
+  - source: `scripts/objc3c_package_manager/hosted_service.py`
   - source: `scripts/objc3c_package_manager/hosted_registry.py`
   - source: `scripts/check_objc3c_package_registry_model.py`
+  - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 
 ### Offline fixture-backed network dependency resolution
 
@@ -2380,7 +2441,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.public-hosted-registry`
 - State: `reserved`
 - Support claims: None
-- Summary: Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, and offline fixture-backed network/publication contracts, but no live hosted service, auth, moderation, availability, or fallback registry success claim.
+- Summary: Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, a hermetic local hosted-service contract, and offline fixture-backed network/publication contracts, but no live public service, production auth, production moderation, production availability, production registry trust-root operation, or fallback registry success claim.
 - Owner modules:
   - `scripts/objc3c_package_manager/registry.py`
   - `docs/runbooks/objc3c_package_ecosystem.md`

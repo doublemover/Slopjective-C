@@ -48,6 +48,46 @@
       "expected_failure": "O3PKG8055: missing package provenance for fixture:network.core"
     },
     {
+      "case_id": "missing-service-auth",
+      "failure_mode": "missing-service-auth",
+      "expected_failure": "O3PKG8055: missing hosted registry service auth policy"
+    },
+    {
+      "case_id": "unknown-service-auth-subject",
+      "failure_mode": "unknown-service-auth-subject",
+      "expected_failure": "O3PKG8055: unknown hosted registry service auth subject fixture:unknown"
+    },
+    {
+      "case_id": "service-auth-token-drift",
+      "failure_mode": "service-auth-token-drift",
+      "expected_failure": "O3PKG8055: hosted registry service auth token drift for fixture-developer"
+    },
+    {
+      "case_id": "service-contract-drift",
+      "failure_mode": "service-contract-drift",
+      "expected_failure": "O3PKG8055: hosted registry service contract id drifted"
+    },
+    {
+      "case_id": "service-index-drift",
+      "failure_mode": "service-index-drift",
+      "expected_failure": "O3PKG8055: hosted registry service index path drifted"
+    },
+    {
+      "case_id": "service-revocation-unavailable",
+      "failure_mode": "service-revocation-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service revocation unavailable"
+    },
+    {
+      "case_id": "service-moderation-blocked",
+      "failure_mode": "service-moderation-blocked",
+      "expected_failure": "O3PKG8055: hosted registry service moderation blocked package"
+    },
+    {
+      "case_id": "service-availability-unavailable",
+      "failure_mode": "service-availability-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service availability state drifted"
+    },
+    {
       "case_id": "unknown-trust-root",
       "failure_mode": "unknown-trust-root",
       "expected_failure": "O3PKG8055: unknown trust root unknown-registry-root"

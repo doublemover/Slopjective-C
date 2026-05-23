@@ -152,6 +152,12 @@ static std::string CanonicalTypeReplayKey(
       << type.value_optional_payload_type_spelling << ":"
       << objc3c::support::ValueTypeName(
              type.value_optional_payload_value_type) << ":"
+      << (type.value_optional_semantic_value_model_supported ? 1 : 0) << ":"
+      << (type.value_optional_stable_abi_layout_contract_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_binding_narrowing_supported ? 1 : 0) << ":"
+      << (type.value_optional_interface_roundtrip_supported ? 1 : 0) << ":"
+      << (type.value_optional_unwrap_requires_presence_check ? 1 : 0) << ":"
       << (type.value_optional_runtime_execution_supported ? 1 : 0) << ":"
       << (type.value_optional_lowering_supported ? 1 : 0)
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
@@ -170,6 +176,16 @@ static void ApplyValueOptionalCanonicalDescriptor(
   type.value_optional_payload_type_spelling =
       descriptor.payload_type_spelling;
   type.value_optional_payload_value_type = descriptor.payload_value_type;
+  type.value_optional_semantic_value_model_supported =
+      descriptor.semantic_value_model_supported;
+  type.value_optional_stable_abi_layout_contract_supported =
+      descriptor.stable_abi_layout_contract_supported;
+  type.value_optional_binding_narrowing_supported =
+      descriptor.binding_narrowing_supported;
+  type.value_optional_interface_roundtrip_supported =
+      descriptor.interface_roundtrip_supported;
+  type.value_optional_unwrap_requires_presence_check =
+      descriptor.unwrap_requires_presence_check;
   type.value_optional_runtime_execution_supported =
       descriptor.runtime_execution_supported;
   type.value_optional_lowering_supported = descriptor.lowering_supported;

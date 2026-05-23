@@ -25,6 +25,16 @@
       method_metadata.selector_has_normalization_flag_mismatch = source.selector_has_normalization_flag_mismatch;
       method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
+      method_metadata.throws_declared = source.throws_declared;
+      method_metadata.typed_throws_declared = source.typed_throws_declared;
+      method_metadata.typed_throws_error_type_spelling =
+          source.typed_throws_error_type_spelling;
+      method_metadata.typed_throws_effect_signature_key =
+          source.typed_throws_effect_signature_key;
+      method_metadata.typed_throws_callable_compatibility_policy =
+          source.typed_throws_callable_compatibility_policy;
+      method_metadata.typed_throws_abi_lowering_ready =
+          source.typed_throws_abi_lowering_ready;
       method_metadata.generic_parameter_names_source_order =
           source.generic_parameter_names_source_order;
       method_metadata.generic_parameter_variance_source_order =

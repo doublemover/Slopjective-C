@@ -24,15 +24,17 @@
         "negative_typed_throws_empty_payload_reserved",
         "negative_typed_throws_multi_payload_reserved",
         "negative_typed_throws_erasure_mismatch_reserved",
+        "negative_typed_throws_protocol_mismatch",
         "typed_throws_abi_lifting_negative",
-        "typed_throws_interface_mismatch_negative"
+        "typed_throws_interface_mismatch_negative",
+        "typed_throws_semantic_effect_identity"
       ]
     },
     {
       "feature_id": "value_optionals",
       "issue_ref": 8234,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "source_owned_type_signatures_interface_preserved_runtime_lowering_fail_closed",
+      "support_state": "semantic_type_signatures_stable_layout_interface_preserved_runtime_lowering_fail_closed",
       "negative_case_ids": [
         "negative_value_optional_canonical_reserved",
         "negative_value_optional_nullable_pointer_conversion_reserved",
@@ -42,7 +44,8 @@
         "negative_value_optional_nullable_suffix_mismatch",
         "value_optionals_layout_mismatch_negative",
         "value_optionals_lowering_claim_negative",
-        "value_optionals_interface_mismatch_negative"
+        "value_optionals_interface_mismatch_negative",
+        "value_optionals_executable_semantics_negative"
       ]
     },
     {
@@ -80,10 +83,8 @@
       "feature_id": "strict_profiles",
       "issue_ref": 8237,
       "contract": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json",
-      "support_state": "core_only_claimed_strict_profiles_rejected",
+      "support_state": "strict_and_strict_concurrency_claimed_strict_system_rejected",
       "negative_case_ids": [
-        "strict_language_profile_reserved",
-        "strict_concurrency_language_profile_reserved",
         "strict_concurrency_alias_rejected",
         "strict_system_target_profile_rejected"
       ]
@@ -93,18 +94,18 @@
     "objc3c.behavior.language.control-flow.statement-guarded-match",
     "objc3c.behavior.language.control-flow.match-expression",
     "objc3c.behavior.language.generics.callable-type-parameters",
-    "objc3c.behavior.language.generics.generic-callable-reification"
+    "objc3c.behavior.language.generics.generic-callable-reification",
+    "objc3c.behavior.language.profiles.strict-admission"
   ],
   "reserved_public_claims": [
     "language.errors.typed-throws-runtime-lowering",
     "language.types.value-optionals-runtime-lowering",
     "language.control-flow.type-test-patterns",
-    "language.profiles.strict",
-    "language.profiles.strict-concurrency"
+    "language.profiles.strict-system"
   ],
   "hard_fail_closed_requirements": [
-    "single typed throws payloads are source/interface-preserved and are not silently erased into untyped throws",
-    "Optional<T> type signatures are source/interface carriers only and do not alias nullable object pointers or nil-to-scalar coercions",
+    "single typed throws payloads are source/interface-preserved, semantically exact callable effect signatures, and not silently erased into untyped throws",
+    "Optional<T> type signatures are semantic value-optional carriers with stable presence/payload layout and do not alias nullable object pointers, implicit nil absence, throws/result, or nil-to-scalar coercions",
     "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
     "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
     "strict and strict-concurrency profile names are not aliases for canonical or core",
@@ -122,12 +123,13 @@
       "row_id": "language.errors.typed-throws",
       "status": "source-owned-interface-preserved-lowering-fail-closed",
       "evidence": [
-        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
       ]
     },
     {
       "row_id": "language.types.value-optionals",
-      "status": "source-owned-type-signature-carrier-runtime-lowering-fail-closed",
+      "status": "semantic-type-signature-stable-layout-runtime-lowering-fail-closed",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ]
@@ -148,7 +150,7 @@
     },
     {
       "row_id": "language.profiles.strict-admission",
-      "status": "reserved-fail-closed",
+      "status": "implemented-strict-and-strict-concurrency-claimable",
       "evidence": [
         "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
       ]

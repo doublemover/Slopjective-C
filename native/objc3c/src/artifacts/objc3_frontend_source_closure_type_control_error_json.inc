@@ -57,6 +57,18 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << summary.value_optional_type_signature_sites
       << ",\"value_optional_type_signature_source_supported\":"
       << (summary.value_optional_type_signature_source_supported ? "true" : "false")
+      << ",\"value_optional_semantic_type_admission_supported\":"
+      << (summary.value_optional_semantic_type_admission_supported ? "true"
+                                                                   : "false")
+      << ",\"value_optional_stable_layout_contract_supported\":"
+      << (summary.value_optional_stable_layout_contract_supported ? "true"
+                                                                  : "false")
+      << ",\"value_optional_binding_narrowing_contract_supported\":"
+      << (summary.value_optional_binding_narrowing_contract_supported ? "true"
+                                                                      : "false")
+      << ",\"value_optional_interface_roundtrip_supported\":"
+      << (summary.value_optional_interface_roundtrip_supported ? "true"
+                                                              : "false")
       << ",\"value_optional_runtime_execution_fail_closed\":"
       << (summary.value_optional_runtime_execution_fail_closed ? "true" : "false")
       << ",\"value_optional_issue_ref\":"
@@ -72,6 +84,9 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << ",\"value_optional_nil_to_scalar_coercion_allowed\":"
       << (summary.value_optional_nil_to_scalar_coercion_allowed ? "true"
                                                                 : "false")
+      << ",\"value_optional_implicit_nil_absence_allowed\":"
+      << (summary.value_optional_implicit_nil_absence_allowed ? "true"
+                                                             : "false")
       << ",\"value_optional_nullable_pointer_conversion_allowed\":"
       << (summary.value_optional_nullable_pointer_conversion_allowed ? "true"
                                                                      : "false")

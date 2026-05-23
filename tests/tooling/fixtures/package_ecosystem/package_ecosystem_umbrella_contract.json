@@ -11,6 +11,8 @@
     "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
     "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
@@ -33,6 +35,7 @@
     "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
     "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+    "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
     "schemas/objc3c-package-network-resolution-v1.schema.json",
     "schemas/objc3c-package-release-channel-publication-v1.schema.json",
     "schemas/objc3c-package-install-receipt-v1.schema.json",
@@ -138,6 +141,8 @@
         "lock_trust_material.source_lock_digest",
         "lock_trust_material.trust_root_id",
         "lock_trust_material.cache_policy",
+        "hosted_service.service_contract_id",
+        "hosted_service.no_network_fallback",
         "trust_results.0.status",
         "cache_identities.0.cache_key",
         "offline_mirror_handoffs.0.network_required_after_lock"
@@ -148,6 +153,10 @@
         "unsupported-platform",
         "registry-trust-mismatch",
         "missing-package-provenance",
+        "missing-service-auth",
+        "service-revocation-unavailable",
+        "service-moderation-blocked",
+        "service-availability-unavailable",
         "unsigned-hosted-artifact",
         "offline-mirror-handoff-drift",
         "hosted-registry-endpoint-mismatch"
@@ -212,7 +221,7 @@
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
       "direct @import support lacks locked package provenance or stable diagnostics",
-      "hosted registry fixture lacks provider, endpoint, channel, snapshot, lock, trust, cache identity, offline mirror handoff, revocation/yank, or failure-mode metadata",
+      "hosted registry fixture lacks provider, endpoint, channel, snapshot, hermetic service, lock, trust, cache identity, offline mirror handoff, revocation/yank, or failure-mode metadata",
       "network dependency resolution accepts live fetches or fallback registry success",
       "release-channel publication accepts stale channel, endpoint drift, lock drift, cache tamper, dependency identity drift, or missing provenance",
       "package signing or verification can succeed without source-owned trust policy and reserved release/registry root handling",
@@ -221,5 +230,5 @@
       "package ecosystem validation omits any direct import, hosted registry, network publication, signing, install distribution, operations, or runnable ecosystem action"
     ]
   },
-  "claim_boundary": "Objective-C 3.0 package ecosystem closure is source-owned only when direct @import provenance, hosted registry offline metadata, network dependency resolution, package release-channel publication, signing and verification trust policy, install distribution, package operations, and runnable package ecosystem actions all agree through checked-in contracts and fail closed without live network or fallback registry success."
+  "claim_boundary": "Objective-C 3.0 package ecosystem closure is source-owned only when direct @import provenance, hosted registry offline metadata, hermetic hosted service contracts, network dependency resolution, package release-channel publication, signing and verification trust policy, install distribution, package operations, and runnable package ecosystem actions all agree through checked-in contracts and fail closed without live network or fallback registry success."
 }

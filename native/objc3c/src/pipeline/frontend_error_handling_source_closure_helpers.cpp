@@ -126,7 +126,7 @@ BuildErrorHandlingErrorSourceClosureSummary(
   summary.typed_throws_abi_lowering_fail_closed = true;
   summary.typed_throws_single_payload_reserved = false;
   summary.typed_throws_effect_record_status =
-      "typed-and-untyped-effects-preserved";
+      "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
   summary.typed_throws_abi_status = "typed-error-abi-deferred";
   summary.typed_throws_interface_roundtrip_status = "typed-payload-preserved";
   summary.try_fail_closed = true;

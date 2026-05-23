@@ -39,6 +39,10 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.nil_coalescing_source_supported &&
          summary.typed_keypath_literal_source_supported &&
          summary.value_optional_type_signature_source_supported &&
+         summary.value_optional_semantic_type_admission_supported &&
+         summary.value_optional_stable_layout_contract_supported &&
+         summary.value_optional_binding_narrowing_contract_supported &&
+         summary.value_optional_interface_roundtrip_supported &&
          !summary.optional_member_access_fail_closed &&
          summary.value_optional_runtime_execution_fail_closed &&
          summary.value_optional_issue_ref == 8234u &&
@@ -48,12 +52,13 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.lowercase_optional_alias_diagnostic_code == "O3C004" &&
          summary.lowercase_optional_alias_rejected &&
          !summary.value_optional_nil_to_scalar_coercion_allowed &&
+         !summary.value_optional_implicit_nil_absence_allowed &&
          !summary.value_optional_nullable_pointer_conversion_allowed &&
          !summary.value_optional_throws_conversion_allowed &&
          summary.value_optional_abi_status ==
-             "stable-contract-runtime-lowering-deferred" &&
+             "stable-inline-presence-payload-contract-runtime-lowering-deferred" &&
          summary.value_optional_interface_roundtrip_status ==
-             "type-signature-carrier-imported-runtime-deferred" &&
+             "semantic-carrier-roundtrips-runtime-deferred" &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -160,7 +165,7 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.typed_throws_multi_payload_rejected &&
          !summary.typed_throws_silent_erasure_allowed &&
          summary.typed_throws_effect_record_status ==
-             "typed-and-untyped-effects-preserved" &&
+             "typed-and-untyped-effects-preserved-with-exact-callable-compatibility" &&
          summary.typed_throws_abi_status == "typed-error-abi-deferred" &&
          summary.typed_throws_interface_roundtrip_status ==
              "typed-payload-preserved" &&

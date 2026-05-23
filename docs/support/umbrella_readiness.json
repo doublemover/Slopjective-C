@@ -535,22 +535,22 @@
       "intended_public_meaning": "Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profile selection are aligned as one source-owned language-evolution surface with parser, semantic, artifact, fixture, capability, and evidence truth agreeing on what is supported and what remains fail-closed.",
       "forbidden_overclaims": [
         "Typed throws runtime behavior, typed error ABI, or parenthesized throws payload erasure from parser diagnostics alone.",
-        "Value optional ABI, nil-to-scalar conversion, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.",
+        "Value optional executable construction, unchecked unwrap, IR payload emission, runtime lowering, nil-to-scalar conversion, implicit nil absence, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.",
         "Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.",
         "Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.",
-        "Strict or strict-concurrency profiles as aliases, preview modes, source-only concurrency support, or public conformance claims before release/runtime evidence exists.",
+        "Strict-system profile support from strict-concurrency aliasing, preview modes, source-only concurrency support, or public conformance claims before release/system evidence exists.",
         "Issue comments, PR bodies, temp files, generated projections, or validation logs as source of truth."
       ],
       "required_prerequisite_rows": [
         {
           "capability_id": "language.errors.typed-throws",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until typed throws has real parser, sema, interface, ABI/lowering, and runtime behavior instead of reserved diagnostics."
+          "reason": "The umbrella cannot be implemented until typed throws moves beyond source/interface/sema effect identity into ABI/lowering and runtime behavior."
         },
         {
           "capability_id": "language.types.value-optionals",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until value optionals have semantic type admission, interface roundtrip, ABI layout, lowering, and runtime behavior."
+          "reason": "The umbrella cannot be implemented until value optionals move beyond semantic type admission, interface roundtrip, and stable layout identity into executable construction, unwrap, lowering, and runtime behavior."
         },
         {
           "capability_id": "language.generics.generic-callable-reification",
@@ -564,8 +564,8 @@
         },
         {
           "capability_id": "language.profiles.strict-admission",
-          "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until strict and strict-concurrency profiles are claimable without aliases or source-only overclaims."
+          "required_state": "implemented",
+          "reason": "Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed."
         }
       ],
       "required_source_anchors": [
@@ -577,13 +577,19 @@
         },
         {
           "id": "typed-throws-parser-contract",
-          "description": "Typed throws parser diagnostics classify parenthesized payload shapes and reject them without erasing to bare throws.",
+          "description": "Typed throws parser diagnostics classify invalid parenthesized payload shapes and reject them without erasing to bare throws, while single payloads are preserved for effect metadata.",
           "status": "satisfied",
           "path": "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc"
         },
         {
+          "id": "typed-throws-sema-effect-contract",
+          "description": "Typed throws sema records preserve an exact effect signature key for callable compatibility while keeping ABI/lowering fail-closed.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+        },
+        {
           "id": "value-optionals-type-contract",
-          "description": "Typed throws and value optional source-closure plus textual-interface import records keep reserved feature markers fail-closed and deny typed payload arity, nil/nullability/error conversions, and ABI/layout claims.",
+          "description": "Typed throws and value optional source-closure plus textual-interface import records keep runtime feature markers fail-closed, preserve value-optional semantic type/layout identity, and deny typed error ABI/lowering, nil/nullability/error conversions, executable Optional<T> construction, unchecked unwrap, IR payload emission, and runtime-lowering claims.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },
@@ -607,7 +613,7 @@
         },
         {
           "id": "strict-profile-selection-contract",
-          "description": "Strict and strict-concurrency profile selection rejects before compilation until the required release/runtime evidence exists.",
+          "description": "Strict and strict-concurrency profile selection is accepted through native frontend profile validation, while strict-system rejects before compilation as target-only release evidence.",
           "status": "satisfied",
           "path": "native/objc3c/src/config/objc3_language_profile_validation.cpp"
         }
@@ -647,7 +653,7 @@
         },
         {
           "id": "strict-core-profile-contract",
-          "description": "Canonical and core profile rows are distinguished from rejected strict profile selections.",
+          "description": "Canonical/core, strict, and strict-concurrency profile rows are distinguished from rejected strict-system profile selection.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
         }
@@ -658,6 +664,12 @@
           "description": "Parenthesized typed throws payloads are not silently erased into untyped throws.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3"
+        },
+        {
+          "id": "typed-throws-protocol-mismatch",
+          "description": "Protocol conformance rejects typed throws effect payload erasure or payload drift.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3"
         },
         {
           "id": "value-optional-nil-scalar",
@@ -685,7 +697,7 @@
         },
         {
           "id": "strict-profile-selection-negative",
-          "description": "Strict, strict-concurrency, and alias selections reject rather than widening support.",
+          "description": "Strict-system and underscore alias selections reject rather than widening support.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
         }
@@ -699,7 +711,7 @@
         },
         {
           "id": "value-optionals-runtime",
-          "description": "Value optional layout, lowering, and runtime execution remain unimplemented.",
+          "description": "Value optional executable construction, unwrap emission, IR payload lowering, and runtime execution remain unimplemented.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -711,21 +723,21 @@
         },
         {
           "id": "strict-concurrency-runtime",
-          "description": "Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile; strict-system remains target-only release evidence and is not a native frontend language profile.",
-          "status": "blocked",
-          "blocker_id": "strict-profiles-release-evidence"
+          "description": "Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile.",
+          "status": "satisfied",
+          "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json"
         }
       ],
       "required_abi_governance_rows": [
         {
           "id": "typed-throws-effect-slots",
-          "description": "Typed throws metadata slots import only none or reserved untyped defaults with zero typed payload arity.",
+          "description": "Typed throws metadata slots import none, untyped, or single-payload typed effects only when effect signature and declared payload metadata agree.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },
         {
           "id": "value-optional-abi",
-          "description": "Value optional ABI layout and interface roundtrip remain blocked.",
+          "description": "Value optional ABI layout identity and interface roundtrip are now contracted; executable call ABI and runtime payload emission remain blocked.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -763,13 +775,13 @@
         },
         {
           "id": "errors-spec",
-          "description": "Error spec describes reserved typed throws slots and fail-closed parser behavior.",
+          "description": "Error spec describes typed throws source effect slots, exact compatibility, and fail-closed ABI/lowering/runtime behavior.",
           "status": "satisfied",
           "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
         },
         {
           "id": "parser-sema-docs",
-          "description": "Parser and semantic-analysis docs separate accepted guarded match syntax from reserved typed throws, value optionals, generic reification, and profile selection.",
+          "description": "Parser and semantic-analysis docs separate typed throws source/sema effect metadata from reserved ABI/lowering/runtime behavior and from other language-evolution rows.",
           "status": "satisfied",
           "path": "docs/compiler/parser.md"
         }
@@ -789,38 +801,26 @@
       "promotion_blockers": [
         {
           "blocker_id": "typed-throws-abi-lowering-interface",
-          "summary": "Typed throws still rejects at parse time and has only reserved metadata/default effect slots.",
+          "summary": "Typed throws now has parser/source/interface/sema effect identity, but ABI/lowering/runtime execution remains unimplemented.",
           "missing_work": [
-            "Typed error payload type checking and effect compatibility.",
-            "Textual-interface roundtrip for non-default typed throws metadata.",
             "ABI/lowering/runtime behavior for typed error payloads."
           ],
           "tracking_issue": "#8233"
         },
         {
           "blocker_id": "value-optionals-abi-lowering-interface",
-          "summary": "Value optionals still reject before type admission and have no layout, lowering, runtime, or semantic interface behavior.",
+          "summary": "Value optionals now have semantic type admission, stable presence/payload layout identity, and textual-interface roundtrip; executable construction, unchecked unwrap, IR payload lowering, and runtime behavior remain blocked.",
           "missing_work": [
-            "Optional<T> semantic type admission and conversions policy.",
-            "Stable ABI layout and textual-interface roundtrip.",
+            "Optional<T> executable construction and checked unwrap lowering.",
+            "Optional<T> call ABI payload emission.",
+            "Property/ivar storage lifetime once executable layout lowering exists.",
             "Lowering/runtime behavior without nil/nullability aliases."
           ],
           "tracking_issue": "#8234"
         },
         {
-          "blocker_id": "strict-profiles-release-evidence",
-          "summary": "Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists; strict-system remains a target-only release-evidence profile and rejects as a native frontend selection.",
-          "missing_work": [
-            "Strict profile release evidence across parser, sema, lowering, textual interface, and package publication.",
-            "Strict-concurrency actor isolation, sendability, task lifecycle, scheduler, and mailbox runtime evidence.",
-            "Public conformance publication that claims strict profiles without aliases or compatibility modes.",
-            "A separate promotion decision before strict-system can become a native frontend language profile."
-          ],
-          "tracking_issue": "#8237"
-        },
-        {
           "blocker_id": "language-evolution-prerequisites",
-          "summary": "The #8207 umbrella is blocked by the reserved #8233/#8234/#8237 prerequisite rows even though #8235 generic callable metadata policy and #8236 guarded match plus bounded expression match are source-level implemented.",
+          "summary": "The #8207 umbrella is blocked by the reserved #8233/#8234 prerequisite rows even though #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.",
           "missing_work": [
             "Promote each reserved prerequisite only after native source contracts and public evidence exist.",
             "Keep umbrella readiness blocked until no prerequisite row relies on reserved diagnostics or metadata placeholders."
@@ -833,7 +833,7 @@
         "Typed throws, value optionals, generic callable reification, guarded match, bounded expression match, and strict profile admission rows are all implemented or explicitly scoped out by a future umbrella decision.",
         "All source, fixture, capability, evidence, README, parser, sema, and spec docs agree on the same support boundary.",
         "No prerequisite relies on temp/generated evidence, compatibility aliases, preview labels, or silent erasure.",
-        "Strict and strict-concurrency profiles are claimable through public release/runtime evidence rather than source-only assertions."
+        "Strict and strict-concurrency profiles remain claimable through public release/runtime evidence rather than source-only assertions, while strict-system remains target-only until separate system evidence exists."
       ]
     },
     {

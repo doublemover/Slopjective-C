@@ -194,10 +194,11 @@ Checked modules live under [`stdlib/modules/`](stdlib/modules/).
   mirror records, local trust envelopes, install/update/uninstall/rollback
   receipts, package signing, package verification, and clean distribution
   checks.
-- Source-owned hosted-registry fixture resolution, offline fixture-backed
-  network dependency resolution, source-owned release-channel publication
-  metadata, and package security hardening with pre-mutation extraction path
-  checks.
+- Source-owned hosted-registry fixture resolution with a hermetic local service
+  contract for fixture auth, trust, revocation, moderation, availability, and
+  no-network fail-closed behavior; offline fixture-backed network dependency
+  resolution, source-owned release-channel publication metadata, and package
+  security hardening with pre-mutation extraction path checks.
 - Runnable toolchain package channels, release manifests, SBOM/provenance
   publication, release operation policy, release channel lifecycle, ABI/API
   drift checks, and platform/toolchain support matrix checks.
@@ -258,18 +259,23 @@ rejected rows include:
   envelope. The combined fixture compiles, links, and runs with checked runtime
   evidence, while broad scheduler fairness, Swift ABI mirroring, distributed
   actor networking, and arbitrary macro-host execution remain reserved.
-- Typed throws and value optionals. `throws(E)` is parser-owned `O3P182`
-  reserved syntax with no silent erasure to bare `throws`; `Optional<T>` is
-  parser-owned `O3P159` reserved syntax, lowercase `optional<T>` is rejected as
-  `O3C004` rather than an alias, and neither path claims nil-to-scalar,
-  nullable-pointer, semantic interface, ABI, lowering, or runtime support.
+- Typed throws and value optionals. `throws(E)` is source-admitted as an exact
+  typed effect signature for parser, sema, and textual-interface metadata, but
+  typed error ABI/lowering/runtime execution remains reserved and fail-closed;
+  malformed typed-throws payloads still reject as `O3P182` with no silent
+  erasure to bare `throws`. `Optional<T>` is parser-owned `O3P159` reserved
+  syntax, lowercase `optional<T>` is rejected as `O3C004` rather than an alias,
+  and value optionals do not claim nil-to-scalar, nullable-pointer, ABI,
+  lowering, or runtime support.
 - Generic callable reification. Current support is the erased generic class
   receiver/free-function subset named by the generic callable row; explicit
   `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C
   style generic functions, and runtime reified metadata remain reserved.
-- Strict and strict-concurrency language profiles. Canonical/core are the only
-  current language/conformance selections; strict profile selections reject
-  fail-closed until release/runtime evidence exists.
+- Strict-system language profile selection. `strict` and `strict-concurrency`
+  are current claimable conformance selections with native profile validation,
+  strict diagnostics, and strict-concurrency actor/sendability/task/scheduler
+  checks. `strict-system` remains target-only release evidence and rejects
+  fail-closed rather than aliasing strict-concurrency.
 - The #8207 language-evolution umbrella. It is a readiness/truth row over
   typed throws, value optionals, generic callable reification, guarded match,
   and strict profiles, not a separate behavior claim.

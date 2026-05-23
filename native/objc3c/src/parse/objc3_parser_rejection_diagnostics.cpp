@@ -62,7 +62,7 @@ std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       kObjc3ParserDiagnosticReservedValueOptionalCode,
-      "Optional<T> value optional type signatures are source/interface carriers only; construction, unwrap, ABI emission, lowering, nullable-pointer conversion, and nil-to-scalar conversion remain fail-closed",
+      "Optional<T> value optional type signatures have a semantic type and stable presence/payload contract; executable construction, unwrap, IR payload emission, nullable-pointer conversion, implicit nil absence, and nil-to-scalar conversion remain fail-closed",
       "parser-reserved-value-optional-type-rejection",
       "type spelling");
 }

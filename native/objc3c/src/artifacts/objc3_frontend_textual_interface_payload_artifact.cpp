@@ -7,6 +7,7 @@
 
 #include "artifacts/json/artifact_json_publication_contract.h"
 #include "artifacts/json/artifact_json_writer.h"
+#include "ast/objc3_ast_value_optional_type.h"
 #include "io/json/json_value.h"
 #include "support/objc3_value_type_names.h"
 
@@ -47,35 +48,61 @@ std::string TypeName(ValueType type) {
 JsonValue ValueOptionalContract() {
   JsonObject contract;
   contract["issue_ref"] = SizeValue(8234u);
-  contract["canonical_spelling"] = JsonValue::String("Optional<T>");
+  contract["canonical_spelling"] =
+      JsonValue::String(kObjc3ValueOptionalCanonicalSpelling);
   contract["source_status"] =
-      JsonValue::String("type-signature-admitted-runtime-execution-fail-closed");
+      JsonValue::String(kObjc3ValueOptionalSourceStatus);
+  contract["semantic_value_model_supported"] = JsonValue::Bool(true);
+  contract["explicit_present_absent_construction_modeled"] =
+      JsonValue::Bool(true);
+  contract["binding_narrowing_supported"] = JsonValue::Bool(true);
+  contract["unwrap_requires_presence_check"] = JsonValue::Bool(true);
   contract["lowercase_alias_accepted"] = JsonValue::Bool(false);
   contract["abi_layout_status"] =
-      JsonValue::String("stable-contract-runtime-lowering-deferred");
+      JsonValue::String(kObjc3ValueOptionalAbiLayoutStatus);
   contract["abi_layout_id"] = JsonValue::String(kObjc3ValueOptionalAbiLayoutId);
-  contract["presence_field"] = JsonValue::String("has_value");
-  contract["payload_storage_field"] = JsonValue::String("payload");
+  contract["presence_field"] =
+      JsonValue::String(kObjc3ValueOptionalPresenceField);
+  contract["payload_storage_field"] =
+      JsonValue::String(kObjc3ValueOptionalPayloadStorageField);
+  contract["payload_cleanup_contract"] =
+      JsonValue::String(kObjc3ValueOptionalPayloadCleanupContract);
+  contract["absence_state"] = JsonValue::String(kObjc3ValueOptionalAbsenceState);
+  contract["presence_state"] =
+      JsonValue::String(kObjc3ValueOptionalPresenceState);
+  contract["stable_abi_layout_contract_supported"] = JsonValue::Bool(true);
+  contract["interface_roundtrip_supported"] = JsonValue::Bool(true);
   contract["runtime_execution_supported"] = JsonValue::Bool(false);
   contract["lowering_supported"] = JsonValue::Bool(false);
   contract["nil_to_scalar_coercion_allowed"] = JsonValue::Bool(false);
+  contract["implicit_nil_absence_allowed"] = JsonValue::Bool(false);
   contract["nullable_pointer_conversion_allowed"] = JsonValue::Bool(false);
   contract["throws_result_conversion_allowed"] = JsonValue::Bool(false);
   contract["interface_roundtrip_status"] =
-      JsonValue::String("type-signature-carrier-imported-runtime-deferred");
+      JsonValue::String(kObjc3ValueOptionalInterfaceRoundtripStatus);
   JsonObject optional_type;
   optional_type["record_id"] = JsonValue::String("optional_type");
   optional_type["type_id"] = JsonValue::String("Optional<T>");
   optional_type["payload_type"] = JsonValue::String("T");
   optional_type["abi_layout"] = JsonValue::String(kObjc3ValueOptionalAbiLayoutId);
+  optional_type["semantic_model"] =
+      JsonValue::String("first-class-value-optional-type-constructor");
   optional_type["canonical_spelling"] = JsonValue::String("Optional<T>");
   contract["optional_type"] = JsonValue::ObjectValue(std::move(optional_type));
   JsonObject optional_value;
   optional_value["record_id"] = JsonValue::String("optional_value");
   optional_value["value_id"] = JsonValue::String("optional-value-carrier");
   optional_value["optional_type"] = JsonValue::String("Optional<T>");
-  optional_value["presence_state"] = JsonValue::String("has_value");
-  optional_value["payload_storage"] = JsonValue::String("payload");
+  optional_value["presence_state"] =
+      JsonValue::String(kObjc3ValueOptionalPresenceField);
+  optional_value["payload_storage"] =
+      JsonValue::String(kObjc3ValueOptionalPayloadStorageField);
+  optional_value["absence_state"] =
+      JsonValue::String(kObjc3ValueOptionalAbsenceState);
+  optional_value["present_state"] =
+      JsonValue::String(kObjc3ValueOptionalPresenceState);
+  optional_value["payload_lifetime"] =
+      JsonValue::String("payload-live-only-when-has_value-true");
   contract["optional_value"] = JsonValue::ObjectValue(std::move(optional_value));
   JsonObject optional_flow;
   optional_flow["record_id"] = JsonValue::String("optional_flow");
@@ -85,7 +112,8 @@ JsonValue ValueOptionalContract() {
   optional_flow["before_type"] = JsonValue::String("Optional<T>");
   optional_flow["after_type"] = JsonValue::String("T");
   optional_flow["cleanup_contract"] =
-      JsonValue::String("payload-cleanup-after-narrowed-scope");
+      JsonValue::String(kObjc3ValueOptionalPayloadCleanupContract);
+  optional_flow["presence_test_required"] = JsonValue::Bool(true);
   contract["optional_flow"] = JsonValue::ObjectValue(std::move(optional_flow));
   JsonObject optional_rejection;
   optional_rejection["record_id"] = JsonValue::String("optional_rejection");
@@ -119,14 +147,33 @@ JsonValue ValueOptionalTypeShape(
   shape["payload_nested_value_optional"] =
       JsonValue::Bool(descriptor.payload_nested_value_optional);
   shape["abi_layout_id"] = JsonValue::String(descriptor.abi_layout_id);
+  shape["abi_layout_status"] = JsonValue::String(descriptor.abi_layout_status);
+  shape["interface_roundtrip_status"] =
+      JsonValue::String(descriptor.interface_roundtrip_status);
   shape["presence_field"] = JsonValue::String(descriptor.presence_field);
   shape["payload_storage_field"] =
       JsonValue::String(descriptor.payload_storage_field);
+  shape["semantic_value_model_supported"] =
+      JsonValue::Bool(descriptor.semantic_value_model_supported);
+  shape["stable_abi_layout_contract_supported"] =
+      JsonValue::Bool(descriptor.stable_abi_layout_contract_supported);
+  shape["interface_roundtrip_supported"] =
+      JsonValue::Bool(descriptor.interface_roundtrip_supported);
+  shape["explicit_present_absent_construction_modeled"] =
+      JsonValue::Bool(descriptor.explicit_present_absent_construction_modeled);
+  shape["binding_narrowing_supported"] =
+      JsonValue::Bool(descriptor.binding_narrowing_supported);
+  shape["unwrap_requires_presence_check"] =
+      JsonValue::Bool(descriptor.unwrap_requires_presence_check);
+  shape["semantic_present_absent_state_supported"] =
+      JsonValue::Bool(descriptor.semantic_present_absent_state_supported);
   shape["runtime_execution_supported"] =
       JsonValue::Bool(descriptor.runtime_execution_supported);
   shape["lowering_supported"] = JsonValue::Bool(descriptor.lowering_supported);
   shape["nil_to_scalar_coercion_allowed"] =
       JsonValue::Bool(descriptor.nil_to_scalar_coercion_allowed);
+  shape["implicit_nil_absence_allowed"] =
+      JsonValue::Bool(descriptor.implicit_nil_absence_allowed);
   shape["nullable_pointer_conversion_allowed"] =
       JsonValue::Bool(descriptor.nullable_pointer_conversion_allowed);
   shape["throws_result_conversion_allowed"] =
@@ -239,6 +286,26 @@ std::string DeclaredErrorType(bool throws_declared,
   return throws_declared ? "id<Error>" : "";
 }
 
+std::string TypedThrowsEffectSignatureKey(bool throws_declared,
+                                          bool typed_throws_declared,
+                                          const std::string &declared_error_type) {
+  const std::string throws_kind =
+      ThrowsKind(throws_declared, typed_throws_declared);
+  if (throws_kind == "none") {
+    return "throws:none";
+  }
+  return "throws:" + throws_kind + ":" + declared_error_type;
+}
+
+std::string TypedThrowsCallableCompatibilityPolicy(bool throws_declared,
+                                                   bool typed_throws_declared) {
+  if (typed_throws_declared) {
+    return "typed-throws-exact-payload-match-lowering-deferred";
+  }
+  return throws_declared ? "untyped-throws-id-error-carrier"
+                         : "nonthrowing-only";
+}
+
 JsonValue TypedThrowsContract(bool throws_declared,
                               bool typed_throws_declared,
                               const Objc3TypedThrowsPayload &payload) {
@@ -251,6 +318,15 @@ JsonValue TypedThrowsContract(bool throws_declared,
   contract["canonical_syntax"] = JsonValue::String("throws(E)");
   contract["throws_kind"] = JsonValue::String(throws_kind);
   contract["declared_error_type"] = JsonValue::String(declared_error_type);
+  contract["effect_signature_key"] = JsonValue::String(
+      TypedThrowsEffectSignatureKey(throws_declared,
+                                    typed_throws_declared,
+                                    declared_error_type));
+  contract["callable_compatibility_policy"] = JsonValue::String(
+      TypedThrowsCallableCompatibilityPolicy(throws_declared,
+                                             typed_throws_declared));
+  contract["semantic_identity_status"] =
+      JsonValue::String("exact-effect-signature-preserved");
   contract["typed_payload_arity"] =
       SizeValue(typed_throws_declared ? 1u : 0u);
   contract["typed_payload_status"] =

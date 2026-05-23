@@ -328,6 +328,23 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
         "required_missing_evidence_classes"
     ] == ["build", "package", "install", "execution"]
+    assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["object_format"] == "ELF"
+    assert package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["runtime_library_names"] == ["libobjc3-runtime.so"]
+    assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["object_format"] == "Mach-O"
+    assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
+        "artifact_identity_contract"
+    ]["runtime_library_names"] == ["libobjc3-runtime.dylib"]
+    assert set(
+        package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
+            "promotion_gate_contract"
+        ]["blocked_publication_surfaces"]
+    ) == {"package", "install", "execution", "publication"}
     assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "reserved"
     assert package_rows["objc3c.package.sanitizer.asan.reserved"][
         "required_missing_evidence_classes"
@@ -402,6 +419,12 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication",
     }
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
+        "package_runtime_contract"
+    ]["runtime_probe_required"] is True
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
+        "package_runtime_contract"
+    ]["default_release_channel_allowed"] is False
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["issue_ref"] == 8231
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["sanitizer"] == "undefined"
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "reserved"
@@ -421,6 +444,9 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication",
     }
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"][
+        "package_runtime_contract"
+    ]["mixed_release_sanitizer_runtime_behavior"] == "fail-closed"
 
 
 def test_platform_toolchain_support_evidence_rejects_network_backed_support_claim() -> None:
@@ -509,6 +535,17 @@ def test_platform_toolchain_support_evidence_rejects_expansion_package_identity_
             break
 
     with pytest.raises(RuntimeError, match="package_id drifted"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_package_promotion_gate_drift() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for row in evidence["package_variant_rows"]:
+        if row["row_id"] == "objc3c.package.runtime.linux-x64.release.fail-closed":
+            row["promotion_gate_contract"]["blocked_publication_surfaces"] = ["publication"]
+            break
+
+    with pytest.raises(RuntimeError, match="did not block package install execution and publication"):
         validate_evidence(evidence)
 
 

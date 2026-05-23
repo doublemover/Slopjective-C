@@ -43,6 +43,7 @@
     "claim_boundary",
     "support_evidence_contract",
     "platform_support_rows",
+    "package_variant_rows",
     "toolchain_support",
     "evidence_records",
     "support_evidence_ids",

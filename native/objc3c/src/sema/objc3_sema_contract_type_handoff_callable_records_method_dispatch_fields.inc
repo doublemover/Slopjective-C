@@ -7,4 +7,6 @@
   bool throws_declared = false;
   bool typed_throws_declared = false;
   std::string typed_throws_error_type_spelling;
+  std::string typed_throws_effect_signature_key;
+  std::string typed_throws_callable_compatibility_policy;
   bool typed_throws_abi_lowering_ready = false;

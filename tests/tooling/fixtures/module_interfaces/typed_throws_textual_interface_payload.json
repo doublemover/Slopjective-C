@@ -49,23 +49,34 @@
         "value_optional_contract": {
           "issue_ref": 8234,
           "canonical_spelling": "Optional<T>",
-          "source_status": "type-signature-admitted-runtime-execution-fail-closed",
+          "source_status": "semantic-type-signature-admitted-runtime-execution-fail-closed",
+          "semantic_value_model_supported": true,
+          "explicit_present_absent_construction_modeled": true,
+          "binding_narrowing_supported": true,
+          "unwrap_requires_presence_check": true,
           "lowercase_alias_accepted": false,
-          "abi_layout_status": "stable-contract-runtime-lowering-deferred",
+          "abi_layout_status": "stable-inline-presence-payload-contract-runtime-lowering-deferred",
           "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
           "presence_field": "has_value",
           "payload_storage_field": "payload",
+          "payload_cleanup_contract": "payload-cleanup-after-narrowed-scope",
+          "absence_state": "has_value=false",
+          "presence_state": "has_value=true",
+          "stable_abi_layout_contract_supported": true,
+          "interface_roundtrip_supported": true,
           "runtime_execution_supported": false,
           "lowering_supported": false,
           "nil_to_scalar_coercion_allowed": false,
+          "implicit_nil_absence_allowed": false,
           "nullable_pointer_conversion_allowed": false,
           "throws_result_conversion_allowed": false,
-          "interface_roundtrip_status": "type-signature-carrier-imported-runtime-deferred",
+          "interface_roundtrip_status": "semantic-carrier-roundtrips-runtime-deferred",
           "optional_type": {
             "record_id": "optional_type",
             "type_id": "Optional<T>",
             "payload_type": "T",
             "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+            "semantic_model": "first-class-value-optional-type-constructor",
             "canonical_spelling": "Optional<T>"
           },
           "optional_value": {
@@ -73,7 +84,10 @@
             "value_id": "optional-value-carrier",
             "optional_type": "Optional<T>",
             "presence_state": "has_value",
-            "payload_storage": "payload"
+            "payload_storage": "payload",
+            "absence_state": "has_value=false",
+            "present_state": "has_value=true",
+            "payload_lifetime": "payload-live-only-when-has_value-true"
           },
           "optional_flow": {
             "record_id": "optional_flow",
@@ -81,7 +95,8 @@
             "narrowing_kind": "binding-or-guard-binding",
             "before_type": "Optional<T>",
             "after_type": "T",
-            "cleanup_contract": "payload-cleanup-after-narrowed-scope"
+            "cleanup_contract": "payload-cleanup-after-narrowed-scope",
+            "presence_test_required": true
           },
           "optional_rejection": {
             "record_id": "optional_rejection",
@@ -102,6 +117,9 @@
           "canonical_syntax": "throws(E)",
           "throws_kind": "typed",
           "declared_error_type": "NSError",
+          "effect_signature_key": "throws:typed:NSError",
+          "callable_compatibility_policy": "typed-throws-exact-payload-match-lowering-deferred",
+          "semantic_identity_status": "exact-effect-signature-preserved",
           "typed_payload_arity": 1,
           "typed_payload_status": "source-preserved-lowering-fail-closed",
           "typed_payload_generic_suffix": "",

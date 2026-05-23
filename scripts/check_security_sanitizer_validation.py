@@ -197,6 +197,23 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
             raise RuntimeError(f"{variant_id} must not claim native package execution")
         if variant.get("unsupported_behavior") != "fail-closed":
             raise RuntimeError(f"{variant_id} package variant does not fail closed")
+        package_runtime_contract = variant.get("package_runtime_contract")
+        if not isinstance(package_runtime_contract, dict):
+            raise RuntimeError(f"{variant_id} missing package_runtime_contract")
+        if package_runtime_contract.get("runtime_probe_required") is not True:
+            raise RuntimeError(f"{variant_id} sanitizer runtime probe is not required")
+        if package_runtime_contract.get("default_release_channel_allowed") is not False:
+            raise RuntimeError(f"{variant_id} sanitizer package leaked into the default release channel")
+        if package_runtime_contract.get("report_artifact_support_truth") is not False:
+            raise RuntimeError(f"{variant_id} sanitizer reports were treated as support truth")
+        if package_runtime_contract.get("mixed_release_sanitizer_runtime_behavior") != "fail-closed":
+            raise RuntimeError(f"{variant_id} mixed release/sanitizer runtime did not fail closed")
+        required_metadata_fields = {
+            str(field)
+            for field in package_runtime_contract.get("required_metadata_fields", [])
+        }
+        if not {"target_platform_id", "sanitizer", "runtime_library_ids"} <= required_metadata_fields:
+            raise RuntimeError(f"{variant_id} package runtime metadata requirements drifted")
         required_package_evidence = [str(item) for item in variant.get("required_package_evidence", [])]
         if set(required_package_evidence) != {"build", "package", "install", "execution"}:
             raise RuntimeError(f"{variant_id} package variant evidence requirements drifted")
@@ -208,6 +225,7 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
                 "package_id": str(variant["package_id"]),
                 "claim_state": "reserved",
                 "native_package_execution_claimed": False,
+                "runtime_probe_required": True,
             }
         )
     return checked

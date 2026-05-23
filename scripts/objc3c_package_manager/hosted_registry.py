@@ -16,6 +16,14 @@ from .model import (
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     PACKAGE_MANAGER_TAMPER_CODE,
 )
+from .hosted_service import (
+    HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
+    HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
+    HOSTED_REGISTRY_SERVICE_ID,
+    HostedRegistryServiceRequest,
+    collect_hosted_registry_service_reference_failures,
+    collect_hosted_registry_service_request_failures,
+)
 from .trust import (
     collect_signature_envelope_failures,
     default_trust_policy_payload,
@@ -51,15 +59,23 @@ HOSTED_REGISTRY_FAILURE_MODES = {
     "invalid-semver",
     "live-network-fetch",
     "missing-package-provenance",
+    "missing-service-auth",
     "offline-mirror-handoff-drift",
     "registry-trust-mismatch",
     "revoked-subject",
     "rollback-snapshot",
+    "service-auth-token-drift",
+    "service-availability-unavailable",
+    "service-contract-drift",
+    "service-index-drift",
+    "service-moderation-blocked",
+    "service-revocation-unavailable",
     "unavailable-registry",
     "unlocked-version-selection",
     "unpinned-hosted-dependency",
     "unsigned-hosted-artifact",
     "unknown-trust-root",
+    "unknown-service-auth-subject",
     "unsupported-platform",
     "yanked-version",
 }
@@ -100,6 +116,9 @@ class HostedRegistryResolutionRequest:
     minimum_snapshot_sequence: int = 1
     allow_network: bool = False
     registry_url: str | None = None
+    service_id: str = HOSTED_REGISTRY_SERVICE_ID
+    auth_subject_id: str = HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID
+    auth_token_id: str = HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID
 
 
 @dataclass(frozen=True)
@@ -875,6 +894,9 @@ def collect_hosted_registry_model_failures(
     failures.extend(collect_registry_snapshot_failures(index))
     failures.extend(collect_service_availability_failures(index))
     failures.extend(collect_service_boundary_failures(index))
+    failures.extend(
+        collect_hosted_registry_service_reference_failures(index, root=root)
+    )
     failures.extend(collect_endpoint_identity_failures(index))
     failures.extend(collect_lock_materialization_failures(index, mirror))
     failures.extend(collect_lock_trust_material_failures(index, mirror, root=root))
@@ -1031,6 +1053,21 @@ def resolve_hosted_registry_package(
             trust_policy=trust_policy,
         )
     )
+    failures.extend(
+        collect_hosted_registry_service_request_failures(
+            index.get("hosted_service"),
+            HostedRegistryServiceRequest(
+                package_id=request.package_id,
+                package_version=request.package_version,
+                service_id=request.service_id,
+                endpoint_id=request.endpoint_id,
+                channel_id=request.channel_id,
+                auth_subject_id=request.auth_subject_id,
+                auth_token_id=request.auth_token_id,
+                allow_network=request.allow_network or request.registry_url is not None,
+            ),
+        )
+    )
     if request.language_version != LOCAL_PACKAGE_LANGUAGE_VERSION:
         failures.append(hosted_registry_diagnostic(f"language mismatch for {request.package_id}"))
     if request.abi_identity != LOCAL_PACKAGE_ABI_IDENTITY:
@@ -1133,6 +1170,7 @@ __all__ = [
     "HOSTED_REGISTRY_SCHEMA_PATH",
     "HOSTED_REGISTRY_SERVICE_BOUNDARY",
     "HOSTED_REGISTRY_TRUST_VALIDATOR_ID",
+    "HOSTED_REGISTRY_SERVICE_ID",
     "HostedRegistryCacheIdentity",
     "HostedRegistryDependencyRecord",
     "HostedRegistryOfflineMirrorHandoff",
@@ -1141,11 +1179,14 @@ __all__ = [
     "HostedRegistryResolution",
     "HostedRegistryResolutionError",
     "HostedRegistryResolutionRequest",
+    "HostedRegistryServiceRequest",
     "HostedRegistrySnapshot",
     "HostedRegistryTrustResult",
     "collect_cache_identity_failures",
     "collect_dependency_record_failures",
     "collect_hosted_registry_model_failures",
+    "collect_hosted_registry_service_reference_failures",
+    "collect_hosted_registry_service_request_failures",
     "collect_lock_materialization_failures",
     "collect_offline_mirror_contract_failures",
     "collect_offline_mirror_handoff_failures",

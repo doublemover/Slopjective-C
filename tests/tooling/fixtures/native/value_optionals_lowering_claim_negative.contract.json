@@ -4,18 +4,20 @@
   "issue_ref": 8234,
   "mutated_fields": [
     "abi_layout.runtime_execution_supported",
-    "abi_layout.lowering_supported"
+    "abi_layout.lowering_supported",
+    "semantic_model.implicit_nil_absence_allowed"
   ],
   "expected_values": {
     "abi_layout.runtime_execution_supported": false,
-    "abi_layout.lowering_supported": false
+    "abi_layout.lowering_supported": false,
+    "semantic_model.implicit_nil_absence_allowed": false
   },
   "actual_values": {
     "abi_layout.runtime_execution_supported": true,
-    "abi_layout.lowering_supported": true
+    "abi_layout.lowering_supported": true,
+    "semantic_model.implicit_nil_absence_allowed": true
   },
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "Source type-signature support cannot be upgraded into construction, unwrap, IR payload emission, or ABI lowering by contract drift."
+  "notes": "Semantic type-signature support cannot be upgraded into executable construction, unchecked unwrap, implicit nil absence, IR payload emission, or runtime ABI lowering by contract drift."
 }
-

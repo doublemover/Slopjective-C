@@ -269,6 +269,37 @@
         "objc3-runtime"
       ],
       "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.windows-x64.release",
+      "artifact_identity_contract": {
+        "archive_name_suffix": "windows-x64-release",
+        "object_format": "COFF",
+        "debug_format": "PDB",
+        "runtime_library_names": [
+          "objc3-runtime.lib",
+          "objc3-runtime.dll"
+        ],
+        "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
+        "package_root_layout": [
+          "bin/objc3c-native.exe",
+          "bin/objc3-runtime.dll",
+          "lib/objc3-runtime.lib",
+          "include/objc3/runtime"
+        ],
+        "symbol_export_policy": "exports are owned by the native runtime package manifest and import library"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [],
+        "blocked_publication_surfaces": [
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
       "required_promotion_evidence": [
         "package",
         "install",
@@ -296,6 +327,44 @@
         "objc3-runtime"
       ],
       "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.linux-x64.release.fail-closed",
+      "artifact_identity_contract": {
+        "archive_name_suffix": "linux-x64-release",
+        "object_format": "ELF",
+        "debug_format": "DWARF",
+        "runtime_library_names": [
+          "libobjc3-runtime.so"
+        ],
+        "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
+        "package_root_layout": [
+          "bin/objc3c-native",
+          "lib/libobjc3-runtime.so",
+          "include/objc3/runtime"
+        ],
+        "symbol_export_policy": "ELF dynamic symbol exports must match the checked runtime package manifest"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
       "required_promotion_evidence": [
         "build",
         "package",
@@ -325,6 +394,44 @@
         "objc3-runtime"
       ],
       "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "artifact_identity_contract": {
+        "archive_name_suffix": "darwin-arm64-release",
+        "object_format": "Mach-O",
+        "debug_format": "DWARF/dSYM",
+        "runtime_library_names": [
+          "libobjc3-runtime.dylib"
+        ],
+        "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
+        "package_root_layout": [
+          "bin/objc3c-native",
+          "lib/libobjc3-runtime.dylib",
+          "include/objc3/runtime"
+        ],
+        "symbol_export_policy": "Mach-O exported symbols and install_name must match the checked runtime package manifest"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
       "required_promotion_evidence": [
         "build",
         "package",
@@ -355,6 +462,44 @@
         "clang_rt.asan"
       ],
       "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.asan.reserved",
+      "artifact_identity_contract": {
+        "archive_name_suffix": "asan",
+        "object_format": "target-platform-native",
+        "debug_format": "target-platform-native-debug-info-plus-sanitizer-symbolization",
+        "runtime_library_names": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "loader_path_policy": "exact target ASan runtime discovery must be captured by sanitizer package metadata before install or execution claims",
+        "package_root_layout": [
+          "lib/objc3-runtime-sanitized",
+          "lib/clang_rt.asan",
+          "share/objc3c/sanitizer/asan-metadata.json"
+        ],
+        "symbol_export_policy": "sanitizer runtime symbols are excluded from default release runtime identity"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
       "required_promotion_evidence": [
         "package",
         "install",
@@ -384,6 +529,44 @@
         "clang_rt.ubsan"
       ],
       "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.ubsan.reserved",
+      "artifact_identity_contract": {
+        "archive_name_suffix": "ubsan",
+        "object_format": "target-platform-native",
+        "debug_format": "target-platform-native-debug-info-plus-sanitizer-symbolization",
+        "runtime_library_names": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "loader_path_policy": "exact target UBSan runtime discovery and trap-or-recover policy must be captured by sanitizer package metadata before install or execution claims",
+        "package_root_layout": [
+          "lib/objc3-runtime-sanitized",
+          "lib/clang_rt.ubsan",
+          "share/objc3c/sanitizer/ubsan-metadata.json"
+        ],
+        "symbol_export_policy": "sanitizer runtime symbols and UBSan handlers are excluded from default release runtime identity"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
       "required_promotion_evidence": [
         "package",
         "install",
@@ -427,6 +610,21 @@
         "missing_runtime_behavior": "fail-closed-before-package-install",
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
+      },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "compiler_flags",
+          "linker_flags",
+          "environment"
+        ]
       },
       "required_promotion_evidence": [
         "package",
@@ -476,6 +674,21 @@
         "missing_runtime_behavior": "fail-closed-before-package-install",
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
+      },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "compiler_flags",
+          "linker_flags",
+          "trap_or_recover_mode"
+        ]
       },
       "required_promotion_evidence": [
         "package",

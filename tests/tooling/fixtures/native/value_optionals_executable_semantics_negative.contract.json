@@ -1,0 +1,18 @@
+{
+  "contract_id": "objc3c.value_optional.executable_semantics.negative.v1",
+  "fixture_kind": "negative_contract",
+  "issue_ref": 8234,
+  "semantic_contract_available": true,
+  "stable_layout_contract_available": true,
+  "blocked_operations": [
+    "runtime-present-construction",
+    "runtime-absent-construction",
+    "unchecked-unwrap",
+    "implicit-nil-absence",
+    "ir-payload-emission",
+    "call-abi-lowering"
+  ],
+  "expected_diagnostic": "O3P159",
+  "fail_closed": true,
+  "notes": "The semantic Optional<T> carrier and stable has_value/payload identity must not be widened into executable behavior until construction, checked unwrap, call ABI, and runtime payload emission land together."
+}

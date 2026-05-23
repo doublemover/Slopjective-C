@@ -282,6 +282,15 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.typed_throws_declared = method.typed_throws_declared;
   info.typed_throws_error_type_spelling =
       method.typed_throws_payload.canonical_spelling;
+  info.typed_throws_effect_signature_key =
+      Objc3BuildTypedThrowsEffectSignatureKey(
+          method.throws_declared,
+          method.typed_throws_declared,
+          method.typed_throws_payload.canonical_spelling);
+  info.typed_throws_callable_compatibility_policy =
+      Objc3BuildTypedThrowsCallableCompatibilityPolicy(
+          method.throws_declared,
+          method.typed_throws_declared);
   info.typed_throws_abi_lowering_ready = false;
   return info;
 }

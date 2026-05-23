@@ -5,7 +5,10 @@ Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
 Typed throws is a source/interface semantic surface in the current slice, while
 typed error ABI/lowering/runtime execution remains unclaimed. Value optionals
-and match expressions are not semantic support claims in the current slice.
+now have semantic type identity for canonical `Optional<T>` type signatures,
+while executable construction, unwrap, IR payload emission, and runtime lowering
+remain unclaimed. Match expressions are bounded to their current evidence-backed
+surface.
 Statement-form guarded match patterns are admitted only as `case pattern where
 bool_condition: { ... }`; the guard is checked after
 pattern binding, must type-check as `bool`, and a guarded catch-all does not make
@@ -15,9 +18,16 @@ and runtime semantics exist for that feature family.
 For #8233 and #8234 specifically, source-closure and textual-interface import
 records may publish typed throws as `typed` only with one preserved payload,
 `typed-error-abi-deferred`, and `runtime_execution_claimed=false`; erased or
-drifted typed payload metadata fails closed. Value optionals stay
-`reserved-rejected-before-sema` with no layout, nullable-pointer conversion,
-nil-to-scalar coercion, or throws/result conversion.
+drifted typed payload metadata fails closed. The semantic handoff now treats the
+typed payload as callable effect identity: protocol conformance and duplicate
+requirement compatibility compare `throws:typed:<payload>` exactly, and bare
+`throws` is not compatible with `throws(E)` unless a later ABI/runtime bridge
+explicitly defines such a conversion. Value optionals are modeled as
+`Optional<T>` semantic carriers with stable `has_value` plus `payload` layout
+identity, checked presence/narrowing records, and textual-interface roundtrip.
+They still cannot be widened into implicit nil absence, nullable-pointer
+conversion, nil-to-scalar coercion, throws/result conversion, executable
+construction, unchecked unwrap, or runtime lowering.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted
@@ -31,19 +41,22 @@ reification policy is `erased_default`, the mangling policy is
 source-order generic signature.
 
 Strict and strict-concurrency profiles are profile-selection contracts rather
-than semantic aliases. `core` may be claimed by public conformance publication;
-strict and strict-concurrency remain fail-closed until their release/runtime
-evidence rows are implemented. `strict-system` remains target-only release
-evidence and rejects as a native frontend selection rather than widening
+than semantic aliases. `core`, `strict`, and `strict-concurrency` may be
+claimed by public conformance publication when the native profile validation,
+strict diagnostics, strict-concurrency actor/sendability/task/scheduler checks,
+and release-candidate replay evidence agree. `strict-system` remains target-only
+release evidence and rejects as a native frontend selection rather than widening
 semantic support.
 
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
-metadata into runtime lowering, and value optionals, runtime generic
-reification, match expressions, and strict profiles cannot be widened from
-source-only metadata, generated reports, or Objective-C 2 compatibility paths.
-Statement-form guarded match remains the only admitted #8236 surface.
+metadata into runtime lowering, and value optionals cannot widen past the
+semantic type/layout carrier into executable/runtime support. Runtime generic
+reification, type-test match patterns, and strict-system profile support cannot
+be widened from source metadata, generated reports, or Objective-C 2
+compatibility paths. Statement-form guarded match and bounded expression-form
+match are the admitted #8236 surfaces.
 
 The semantic-analysis owner boundary is:
 

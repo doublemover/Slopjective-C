@@ -220,6 +220,17 @@ sanitizer rows must fail closed for unsupported hosts, release-channel installs,
 mixed runtime libraries, missing sanitizer runtime libraries, and stale package
 metadata.
 
+Every future platform or sanitizer promotion must preserve the package identity
+contract checked into the support evidence fixture. Linux promotion requires the
+ELF/DWARF `libobjc3-runtime.so` package layout, package-root loader policy,
+clean install evidence, and native execution evidence. macOS arm64 promotion
+requires the Mach-O/DWARF/dSYM `libobjc3-runtime.dylib` layout,
+`@rpath`/`install_name`/codesign loader proof, clean install evidence, and
+native execution evidence. ASan and UBSan promotion requires exact target
+sanitizer runtime discovery, sanitizer package metadata, isolated opt-in
+package channels, and native execution evidence; sanitizer reports alone are
+validation artifacts, not support truth.
+
 Package variant rows are required to carry source-owned metadata freshness
 guards. Generated package metadata can be emitted as replay output, but stale or
 generated metadata is never source truth and must block package publication

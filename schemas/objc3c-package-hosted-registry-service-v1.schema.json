@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-hosted-registry-service-v1.schema.json",
+  "title": "objc3c Package Hosted Registry Service Contract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_refs",
+    "service_id",
+    "service_version",
+    "service_mode",
+    "network_policy",
+    "fallback_registry_success",
+    "public_service_boundary",
+    "provider",
+    "auth_policy",
+    "trust_root_operation",
+    "revocation_service",
+    "moderation_policy",
+    "availability",
+    "request_policy",
+    "resolution_output",
+    "negative_cases",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.hosted_registry_service.v1"
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "contains": { "const": 8220 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "service_id": { "const": "objc3c-hermetic-hosted-registry-service-v1" },
+    "service_version": { "type": "integer", "minimum": 1 },
+    "service_mode": { "const": "hermetic-local-service" },
+    "network_policy": { "const": "hermetic-no-network-service" },
+    "fallback_registry_success": { "const": false },
+    "public_service_boundary": { "$ref": "#/$defs/publicServiceBoundary" },
+    "provider": { "$ref": "#/$defs/provider" },
+    "auth_policy": { "$ref": "#/$defs/authPolicy" },
+    "trust_root_operation": { "$ref": "#/$defs/trustRootOperation" },
+    "revocation_service": { "$ref": "#/$defs/revocationService" },
+    "moderation_policy": { "$ref": "#/$defs/moderationPolicy" },
+    "availability": { "$ref": "#/$defs/availability" },
+    "request_policy": { "$ref": "#/$defs/requestPolicy" },
+    "resolution_output": { "$ref": "#/$defs/resolutionOutput" },
+    "negative_cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/negativeCase" },
+      "minItems": 10
+    },
+    "replay": { "$ref": "#/$defs/replay" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "packageVersionRef": {
+      "type": "object",
+      "required": ["package_id", "package_version"],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": { "$ref": "#/$defs/packageId" },
+        "package_version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "publicServiceBoundary": {
+      "type": "object",
+      "required": [
+        "implemented_capability_id",
+        "support_claim",
+        "reserved_capability_id",
+        "live_public_service",
+        "production_auth_service",
+        "production_moderation_service",
+        "production_availability_slo",
+        "local_offline_replay_preserved"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "implemented_capability_id": {
+          "const": "ecosystem.package-manager.hosted-registry-hermetic-service"
+        },
+        "support_claim": {
+          "const": "objc3c.behavior.package.hosted-registry-hermetic-service"
+        },
+        "reserved_capability_id": {
+          "const": "ecosystem.package-manager.public-hosted-registry"
+        },
+        "live_public_service": { "const": "reserved-fail-closed" },
+        "production_auth_service": { "const": "reserved-fail-closed" },
+        "production_moderation_service": { "const": "reserved-fail-closed" },
+        "production_availability_slo": { "const": "reserved-fail-closed" },
+        "local_offline_replay_preserved": { "const": true }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": [
+        "provider_id",
+        "service_id",
+        "registry_index_path",
+        "endpoint_id",
+        "channel_id",
+        "base_url",
+        "transport",
+        "network_fetch_allowed",
+        "request_source",
+        "response_source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider_id": { "const": "schema-backed-hosted-registry-provider-v1" },
+        "service_id": { "const": "objc3c-hermetic-hosted-registry-service-v1" },
+        "registry_index_path": { "type": "string", "minLength": 1 },
+        "endpoint_id": { "const": "objc3c-hosted-registry-fixture-endpoint-v1" },
+        "channel_id": { "const": "stable-fixture" },
+        "base_url": { "const": "https://registry.objc3c.invalid/fixture/v1" },
+        "transport": { "const": "disabled-network-transport" },
+        "network_fetch_allowed": { "const": false },
+        "request_source": { "const": "checked-in-local-service-fixture" },
+        "response_source": { "const": "checked-in-hosted-registry-index" }
+      }
+    },
+    "authPolicy": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "auth_required",
+        "anonymous_access",
+        "token_transport",
+        "accepted_subjects",
+        "missing_token_policy",
+        "unknown_subject_policy",
+        "token_replay_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": { "const": "hermetic-fixture-token-auth-v1" },
+        "auth_required": { "const": true },
+        "anonymous_access": { "const": false },
+        "token_transport": { "const": "fixture-header" },
+        "accepted_subjects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/authSubject" },
+          "minItems": 1
+        },
+        "missing_token_policy": { "const": "fail-closed" },
+        "unknown_subject_policy": { "const": "fail-closed" },
+        "token_replay_policy": { "const": "fail-closed" }
+      }
+    },
+    "authSubject": {
+      "type": "object",
+      "required": [
+        "subject_id",
+        "token_id",
+        "auth_scope",
+        "package_namespaces",
+        "trust_root_id",
+        "revocation_checked"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "subject_id": { "type": "string", "minLength": 1 },
+        "token_id": { "type": "string", "minLength": 1 },
+        "auth_scope": { "const": "resolve-package" },
+        "package_namespaces": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "trust_root_id": { "const": "objc3c-local-deterministic-trust-root-v1" },
+        "revocation_checked": { "const": true }
+      }
+    },
+    "trustRootOperation": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "active_trust_root_id",
+        "active_root_source",
+        "production_registry_root_state",
+        "requires_signature",
+        "requires_revocation_check",
+        "fallback_trust_root_allowed",
+        "reserved_root_use_fails_closed",
+        "unknown_root_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "hermetic-hosted-registry-trust-root-operation-v1"
+        },
+        "active_trust_root_id": {
+          "const": "objc3c-local-deterministic-trust-root-v1"
+        },
+        "active_root_source": {
+          "const": "checked-in-local-deterministic-trust-policy"
+        },
+        "production_registry_root_state": { "const": "reserved-fail-closed" },
+        "requires_signature": { "const": true },
+        "requires_revocation_check": { "const": true },
+        "fallback_trust_root_allowed": { "const": false },
+        "reserved_root_use_fails_closed": { "const": true },
+        "unknown_root_policy": { "const": "fail-closed" }
+      }
+    },
+    "revocationService": {
+      "type": "object",
+      "required": [
+        "service_id",
+        "source",
+        "available",
+        "checked_before_resolution",
+        "unavailable_behavior",
+        "revocations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "service_id": { "const": "hermetic-registry-revocation-service-v1" },
+        "source": { "const": "checked-in-revocation-list" },
+        "available": { "const": true },
+        "checked_before_resolution": { "const": true },
+        "unavailable_behavior": { "const": "fail-closed" },
+        "revocations": { "$ref": "#/$defs/revocations" }
+      }
+    },
+    "moderationPolicy": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "source",
+        "available",
+        "checked_before_publication",
+        "checked_before_resolution",
+        "unavailable_behavior",
+        "unknown_package_policy",
+        "blocked_packages",
+        "blocked_versions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": { "const": "hermetic-registry-moderation-policy-v1" },
+        "source": { "const": "checked-in-moderation-policy" },
+        "available": { "const": true },
+        "checked_before_publication": { "const": true },
+        "checked_before_resolution": { "const": true },
+        "unavailable_behavior": { "const": "fail-closed" },
+        "unknown_package_policy": { "const": "fail-closed" },
+        "blocked_packages": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/packageId" },
+          "uniqueItems": true
+        },
+        "blocked_versions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/packageVersionRef" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "required": [
+        "state",
+        "live_service_available",
+        "network_fetch_allowed",
+        "health_source",
+        "unavailable_behavior"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "const": "hermetic-local-service-available" },
+        "live_service_available": { "const": false },
+        "network_fetch_allowed": { "const": false },
+        "health_source": { "const": "checked-in-service-fixture" },
+        "unavailable_behavior": { "const": "fail-closed" }
+      }
+    },
+    "requestPolicy": {
+      "type": "object",
+      "required": [
+        "allowed_operations",
+        "require_exact_version",
+        "require_lock_materialization",
+        "require_offline_mirror_handoff",
+        "live_network_fetch",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "allowed_operations": {
+          "type": "array",
+          "items": { "const": "resolve-package" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "require_exact_version": { "const": true },
+        "require_lock_materialization": { "const": true },
+        "require_offline_mirror_handoff": { "const": true },
+        "live_network_fetch": { "const": "fail-closed" },
+        "fallback_registry_success": { "const": false }
+      }
+    },
+    "resolutionOutput": {
+      "type": "object",
+      "required": [
+        "registry_index_path",
+        "offline_mirror_path",
+        "lock_materialization_required",
+        "offline_mirror_handoff_required",
+        "offline_replay_sufficient",
+        "network_required_after_lock"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "registry_index_path": { "type": "string", "minLength": 1 },
+        "offline_mirror_path": { "type": "string", "minLength": 1 },
+        "lock_materialization_required": { "const": true },
+        "offline_mirror_handoff_required": { "const": true },
+        "offline_replay_sufficient": { "const": true },
+        "network_required_after_lock": { "const": false }
+      }
+    },
+    "negativeCase": {
+      "type": "object",
+      "required": ["case_id", "failure_mode", "expected_failure"],
+      "additionalProperties": false,
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "failure_mode": {
+          "enum": [
+            "fallback-registry-success",
+            "live-network-fetch",
+            "missing-service-auth",
+            "service-auth-token-drift",
+            "service-availability-unavailable",
+            "service-contract-drift",
+            "service-index-drift",
+            "service-moderation-blocked",
+            "service-revocation-unavailable",
+            "unknown-service-auth-subject"
+          ]
+        },
+        "expected_failure": { "type": "string", "minLength": 1 }
+      }
+    },
+    "revocations": {
+      "type": "object",
+      "required": [
+        "revoked_registry_ids",
+        "revoked_package_ids",
+        "revoked_signature_ids",
+        "revoked_trust_root_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "revoked_registry_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "revoked_package_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/packageId" },
+          "uniqueItems": true
+        },
+        "revoked_signature_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sha256" },
+          "uniqueItems": true
+        },
+        "revoked_trust_root_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "required": ["commands"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@
   "package_signing_trust_schema": "schemas/objc3c-package-signing-trust-v1.schema.json",
   "local_registry_index_schema": "schemas/objc3c-package-local-registry-index-v1.schema.json",
   "hosted_registry_index_schema": "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+  "hosted_registry_service_schema": "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
   "network_resolution_schema": "schemas/objc3c-package-network-resolution-v1.schema.json",
   "release_channel_publication_schema": "schemas/objc3c-package-release-channel-publication-v1.schema.json",
   "package_ecosystem_umbrella": "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
@@ -14,6 +15,8 @@
     "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
     "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
@@ -76,7 +79,7 @@
     "the lock carries a deterministic dependency-first resolution plan that local registry indexes and clean installs must preserve exactly",
     "package manifests, lock package rows, and local registry entries carry the same module graph source-of-truth record derived from checked-in stdlib module inventory or showcase portfolio inputs",
     "direct @import syntax is admitted only when module graph direct_imports carry locked package provenance, exact source authority, and O3PKG8055 fail-closed diagnostics for missing or ambiguous provenance",
-    "hosted registry fixtures are source-owned offline metadata only and must bind registry endpoint identity, channel identity, lock/trust material, offline cache policy, and explicit failure modes before resolution",
+    "hosted registry fixtures are source-owned offline metadata with a hermetic service contract and must bind registry endpoint identity, channel identity, fixture auth, trust-root operation, revocation, moderation, availability, lock/trust material, offline cache policy, and explicit failure modes before resolution",
     "network dependency resolution is admitted only through source-owned offline fixtures that bind hosted endpoint identity, exact locked version, fixture lock digest, trust root, package provenance, cache signature, and no fallback registry success",
     "package release-channel publication is admitted only when channel freshness, release-channel id, hosted registry channel id, network resolution proof, cache pin, lock digest, and trust provenance remain current",
     "package security hardening requires repo-relative non-overwriting trust CLI paths, pre-mutation extraction plans, duplicate/case-conflicting path rejection, installer/update-key fail-closed policy hooks, and reserved release/registry trust roots",
@@ -85,5 +88,5 @@
     "dependency version requirements, resolved versions, source authority digests, target source digests, and target manifest digests must match the locked target package",
     "revoked packages, signature drift, digest drift, missing provenance, missing or unsafe module graph metadata, unsafe dependency source authority, dependency cycles, unpinned hosted dependencies, hosted trust drift, stale channels, cache tamper, lock mismatch, dependency identity drift, endpoint mismatch, unsafe extraction paths, active reserved trust roots, missing installer/update key policy, and unsupported network resolution claims fail closed"
   ],
-  "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, install/restore receipts, source-owned direct @import provenance, offline hosted-registry fixture metadata, offline fixture-backed network dependency resolution, and source-owned package release-channel publication contracts; arbitrary live network dependency resolution remains unsupported"
+  "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, install/restore receipts, source-owned direct @import provenance, offline hosted-registry fixture metadata, hermetic hosted-service contracts, offline fixture-backed network dependency resolution, and source-owned package release-channel publication contracts; arbitrary live network dependency resolution remains unsupported"
 }

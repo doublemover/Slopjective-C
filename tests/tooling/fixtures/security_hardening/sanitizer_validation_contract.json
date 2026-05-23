@@ -102,6 +102,21 @@
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
       },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "compiler_flags",
+          "linker_flags",
+          "environment"
+        ]
+      },
       "claim_state": "reserved",
       "native_package_execution_claimed": false,
       "unsupported_behavior": "fail-closed",
@@ -138,6 +153,21 @@
         "missing_runtime_behavior": "fail-closed-before-package-install",
         "mixed_runtime_behavior": "fail-closed",
         "stale_package_metadata_behavior": "fail-closed-before-publication"
+      },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "compiler_flags",
+          "linker_flags",
+          "trap_or_recover_mode"
+        ]
       },
       "claim_state": "reserved",
       "native_package_execution_claimed": false,

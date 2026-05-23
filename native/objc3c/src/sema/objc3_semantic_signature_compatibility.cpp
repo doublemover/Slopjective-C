@@ -1,5 +1,7 @@
 #include "sema/objc3_semantic_signature_compatibility.h"
 
+#include "sema/objc3_typed_throws_effect_contract.h"
+
 bool AreEquivalentProtocolCompositions(
     bool lhs_has_composition, const std::vector<std::string> &lhs_names,
     bool rhs_has_composition, const std::vector<std::string> &rhs_names) {
@@ -115,6 +117,19 @@ bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs,
   if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type ||
       lhs.return_is_vector != rhs.return_is_vector ||
       lhs.is_class_method != rhs.is_class_method ||
+      !Objc3TypedThrowsCallableEffectsCompatible(
+          lhs.throws_declared,
+          lhs.typed_throws_declared,
+          lhs.typed_throws_error_type_spelling,
+          lhs.typed_throws_abi_lowering_ready,
+          rhs.throws_declared,
+          rhs.typed_throws_declared,
+          rhs.typed_throws_error_type_spelling,
+          rhs.typed_throws_abi_lowering_ready) ||
+      lhs.typed_throws_effect_signature_key !=
+          rhs.typed_throws_effect_signature_key ||
+      lhs.typed_throws_callable_compatibility_policy !=
+          rhs.typed_throws_callable_compatibility_policy ||
       lhs.generic_parameter_names_source_order !=
           rhs.generic_parameter_names_source_order ||
       lhs.generic_parameter_variance_source_order !=

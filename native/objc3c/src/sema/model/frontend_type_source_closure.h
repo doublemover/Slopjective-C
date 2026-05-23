@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ast/objc3_ast_value_optional_type.h"
 #include "contracts/objc3_language_evolution_reserved_diagnostic_codes.h"
 #include "sema/objc3_sema_contract.h"
 #include "token/objc3_token_contract.h"
@@ -15,7 +16,7 @@ inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
     "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "value-optional-runtime-execution-and-lowering-remain-fail-closed-until ABI storage emission and runtime construction semantics land";
+    "value-optional-executable-construction-unwrap-and-ir-payload-emission-remain-fail-closed-until runtime execution semantics land";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =
@@ -73,6 +74,10 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool nil_coalescing_source_supported = false;
   bool typed_keypath_literal_source_supported = false;
   bool value_optional_type_signature_source_supported = false;
+  bool value_optional_semantic_type_admission_supported = false;
+  bool value_optional_stable_layout_contract_supported = false;
+  bool value_optional_binding_narrowing_contract_supported = false;
+  bool value_optional_interface_roundtrip_supported = false;
   bool optional_member_access_fail_closed = false;
   bool value_optional_runtime_execution_fail_closed = false;
   std::size_t value_optional_issue_ref = 8234;
@@ -83,12 +88,13 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
       kObjc3ParserDiagnosticRemovedOptionalAliasCode;
   bool lowercase_optional_alias_rejected = true;
   bool value_optional_nil_to_scalar_coercion_allowed = false;
+  bool value_optional_implicit_nil_absence_allowed = false;
   bool value_optional_nullable_pointer_conversion_allowed = false;
   bool value_optional_throws_conversion_allowed = false;
   std::string value_optional_abi_status =
-      "stable-contract-runtime-lowering-deferred";
+      kObjc3ValueOptionalAbiLayoutStatus;
   std::string value_optional_interface_roundtrip_status =
-      "type-signature-carrier-imported-runtime-deferred";
+      kObjc3ValueOptionalInterfaceRoundtripStatus;
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;

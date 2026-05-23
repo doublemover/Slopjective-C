@@ -19,6 +19,12 @@ struct Objc3SemanticMethodTypeMetadata {
   bool selector_has_normalization_flag_mismatch = false;
   bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
+  bool throws_declared = false;
+  bool typed_throws_declared = false;
+  std::string typed_throws_error_type_spelling;
+  std::string typed_throws_effect_signature_key;
+  std::string typed_throws_callable_compatibility_policy;
+  bool typed_throws_abi_lowering_ready = false;
 #include "sema/objc3_sema_contract_semantic_type_metadata_generic_callable_fields.inc"
   std::vector<ValueType> param_types;
   std::vector<Objc3SemanticCanonicalType> param_canonical_types;
